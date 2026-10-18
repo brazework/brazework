@@ -1,6 +1,6 @@
 -- Forge database (Supabase / Postgres).
 -- The database only lets people do what the app allows; hiding a button is never enough.
--- Run once on a new Supabase project: node scripts/apply-schema.mjs (or paste into the SQL editor).
+-- Run once on a new Supabase project (paste into the SQL editor and click Run).
 -- Signing in requires a confirmed email, so "authenticated" here always means a verified member.
 
 -- ---------- Members ----------
@@ -130,6 +130,12 @@ $$;
 create function public.is_banned(cid text, who uuid) returns boolean
 language sql stable security definer set search_path = public as $$
   select exists (select 1 from public.community_bans where community_id = cid and uid = who)
+$$;
+
+-- Members can only ask whether they themselves are banned.
+create function public.am_banned(cid text) returns boolean
+language sql stable security definer set search_path = public as $$
+  select public.is_banned(cid, auth.uid())
 $$;
 
 -- Public communities: any member of Forge can read. Approval-required: members only.
@@ -408,8 +414,16 @@ revoke all on all tables in schema public from anon, authenticated;
 revoke all on all functions in schema public from anon, public;
 grant execute on function public.create_community(text, text, text, text, text, text[], text),
                           public.approve_request(text, uuid), public.my_rank(text), public.can_view(text),
-                          public.is_banned(text, uuid), public.role_rank(text)
+                          public.am_banned(text), public.role_rank(text)
   to authenticated;
+-- Internal functions (triggers and helpers) aren't part of the app's API.
+revoke execute on function public.handle_new_user(), public.person_info(uuid), public.posts_before_insert(),
+  public.posts_before_update(), public.likes_count(), public.comments_before_insert(), public.comments_count(),
+  public.fill_person(), public.members_count(), public.connections_before(), public.follows_before_insert(),
+  public.org_interest_before_insert(), public.is_banned(text, uuid)
+  from anon, authenticated, public;
+alter function public.role_rank(text) set search_path = public;
+alter function public.org_interest_before_insert() set search_path = public;
 
 alter table public.profiles enable row level security;
 alter table public.org_interest enable row level security;
@@ -453,7 +467,7 @@ create policy "read members" on public.community_members for select to authentic
 create policy "join public communities" on public.community_members for insert to authenticated
   with check (uid = auth.uid() and role = 'member'
     and exists (select 1 from public.communities c where c.id = community_id and c.privacy = 'public')
-    and not public.is_banned(community_id, auth.uid()));
+    and not public.am_banned(community_id));
 create policy "admins change roles below theirs" on public.community_members for update to authenticated
   using (public.my_rank(community_id) >= 4 and public.role_rank(role) < public.my_rank(community_id))
   with check (public.role_rank(role) >= 1 and public.role_rank(role) < public.my_rank(community_id));
@@ -470,7 +484,7 @@ create policy "ask to join" on public.community_requests for insert to authentic
   with check (uid = auth.uid()
     and exists (select 1 from public.communities c where c.id = community_id and c.privacy = 'approval')
     and public.my_rank(community_id) = 0
-    and not public.is_banned(community_id, auth.uid()));
+    and not public.am_banned(community_id));
 create policy "withdraw or decline requests" on public.community_requests for delete to authenticated
   using (uid = auth.uid() or public.my_rank(community_id) >= 2);
 
