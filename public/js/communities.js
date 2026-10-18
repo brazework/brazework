@@ -1,9 +1,6 @@
 // Communities: roles, joining and leaving, requests, moderation and auto-moderation.
-import {
-  db, doc, getDoc, getDocs, setDoc, deleteDoc, updateDoc, collection, collectionGroup, query, where, limit,
-  runTransaction, writeBatch, serverTimestamp
-} from "./firebase.js";
-import { esc, toast, friendlyError } from "./util.js";
+import { sb, run, row, many, one, changed } from "./supabase.js";
+import { esc, toast, friendlyError, ms } from "./util.js";
 
 export const ROLE_LABEL = { owner: "Owner", admin: "Admin", moderator: "Moderator", helper: "Helper", member: "Member" };
 export const RANK = { owner: 5, admin: 4, moderator: 3, helper: 2, member: 1 };
@@ -37,101 +34,68 @@ export function cInitials(name) {
 export function badge(c, size = 44) {
   return `<span class="c-badge" style="width:${size}px;height:${size}px;font-size:${Math.round(size / 3)}px;background:${tint(c.id)}">${esc(cInitials(c.name))}</span>`;
 }
-export const postsCol = cid => `communities/${cid}/posts`;
 export const membersLabel = n => `${fmtCount(n)} ${Number(n) === 1 ? "member" : "members"}`;
 export const fmtCount = n => { n = Number(n || 0); return n >= 10000 ? Math.round(n / 1000) + "k" : n >= 1000 ? (n / 1000).toFixed(1).replace(/\.0$/, "") + "k" : String(n); };
 
-export async function getCommunity(cid) {
-  const s = await getDoc(doc(db, "communities", cid));
-  return s.exists() ? { id: s.id, ...s.data() } : null;
-}
+export const getCommunity = cid => one(sb.from("communities").select("*").eq("id", cid));
+export const getMembership = (cid, uid) => one(sb.from("community_members").select("*").eq("community_id", cid).eq("uid", uid));
 
-export async function getMembership(cid, uid) {
-  const s = await getDoc(doc(db, "communities", cid, "members", uid));
-  return s.exists() ? s.data() : null;
+// Communities with the most members first (for Discover and suggestions).
+export const topCommunities = (n = 200) => many(sb.from("communities").select("*").order("member_count", { ascending: false }).limit(n));
+export async function nameTaken(name) {
+  return (await run(sb.from("communities").select("id").eq("name_lower", name.toLowerCase()).limit(1))).length > 0;
 }
 
 // Every community you belong to, with your role, most recently joined first.
 export async function myCommunities(uid) {
-  const snap = await getDocs(query(collectionGroup(db, "members"), where("uid", "==", uid), limit(100)));
-  const rows = await Promise.all(snap.docs.map(async d => {
-    const cid = d.ref.parent.parent.id;
-    try { const c = await getCommunity(cid); return c ? { ...c, myRole: d.data().role, joinedAt: d.data().joinedAt } : null; }
-    catch (e) { return null; }
-  }));
-  const ms = t => (t && t.toMillis ? t.toMillis() : 0);
-  return rows.filter(Boolean).sort((a, b) => ms(b.joinedAt) - ms(a.joinedAt));
+  const rs = await run(sb.from("community_members").select("role, joined_at, communities(*)").eq("uid", uid).limit(100));
+  return rs.filter(r => r.communities)
+    .map(r => ({ ...row(r.communities), myRole: r.role, joinedAt: r.joined_at }))
+    .sort((a, b) => ms(b.joinedAt) - ms(a.joinedAt));
 }
 
-const memberDoc = (p, uid, role) => ({
-  uid, role, firstName: p.firstName || "", lastName: p.lastName || "", headline: p.headline || "", joinedAt: serverTimestamp()
-});
-
+// Creates the community with you as owner, in one step.
 export async function createCommunity(state, { name, about, field, type, privacy, topics, rules }) {
-  const uid = state.user.uid, p = state.profile;
-  const ref = doc(collection(db, "communities"));
-  const batch = writeBatch(db);
-  batch.set(ref, {
-    name, nameLower: name.toLowerCase(), about, field, type, privacy, topics, rules: rules || "",
-    ownerId: uid, ownerName: `${p.firstName} ${p.lastName}`, memberCount: 1, lastMemberChange: uid,
-    automod: { words: [], holdNewLinks: false }, createdAt: serverTimestamp()
-  });
-  batch.set(doc(db, "communities", ref.id, "members", uid), memberDoc(p, uid, "owner"));
-  await batch.commit();
-  return ref.id;
-}
-
-// Adds a member and moves the member count by one, together.
-async function addMember(cid, uid, data, alsoDelete) {
-  const cRef = doc(db, "communities", cid);
-  await runTransaction(db, async tx => {
-    const c = await tx.get(cRef);
-    if (!c.exists()) throw Object.assign(new Error("This community no longer exists."), { code: "not-found" });
-    tx.set(doc(db, "communities", cid, "members", uid), data);
-    tx.update(cRef, { memberCount: Number(c.data().memberCount || 0) + 1, lastMemberChange: uid });
-    if (alsoDelete) tx.delete(alsoDelete);
-  });
-}
-
-async function dropMember(cid, uid, banRef) {
-  const cRef = doc(db, "communities", cid);
-  await runTransaction(db, async tx => {
-    const c = await tx.get(cRef);
-    tx.delete(doc(db, "communities", cid, "members", uid));
-    if (c.exists()) tx.update(cRef, { memberCount: Math.max(0, Number(c.data().memberCount || 0) - 1), lastMemberChange: uid });
-    if (banRef) tx.set(banRef.ref, banRef.data);
-  });
+  return run(sb.rpc("create_community", {
+    p_name: name, p_about: about, p_field: field, p_type: type, p_privacy: privacy, p_topics: topics, p_rules: rules || ""
+  }));
 }
 
 // Public: join right away. Approval required: send a request.
+// The database fills in your name and moves the member count.
 export async function join(c, state) {
-  const uid = state.user.uid, p = state.profile;
-  if (c.privacy === "public") { await addMember(c.id, uid, memberDoc(p, uid, "member")); return "joined"; }
-  await setDoc(doc(db, "communities", c.id, "requests", uid), {
-    uid, firstName: p.firstName || "", lastName: p.lastName || "", headline: p.headline || "", at: serverTimestamp()
-  });
+  if (c.privacy === "public") {
+    await run(sb.from("community_members").insert({ community_id: c.id, uid: state.user.uid, role: "member" }));
+    return "joined";
+  }
+  await run(sb.from("community_requests").insert({ community_id: c.id }));
   return "requested";
 }
-export const cancelRequest = (cid, uid) => deleteDoc(doc(db, "communities", cid, "requests", uid));
+export const cancelRequest = (cid, uid) => run(sb.from("community_requests").delete().eq("community_id", cid).eq("uid", uid));
 export async function hasRequested(cid, uid) {
-  try { return (await getDoc(doc(db, "communities", cid, "requests", uid))).exists(); } catch (e) { return false; }
+  try { return (await run(sb.from("community_requests").select("uid").eq("community_id", cid).eq("uid", uid))).length > 0; }
+  catch (e) { return false; }
 }
-export const leave = (cid, uid) => dropMember(cid, uid);
+export const leave = (cid, uid) => run(sb.from("community_members").delete().eq("community_id", cid).eq("uid", uid));
 
-export async function approve(cid, req) {
-  await addMember(cid, req.uid, {
-    uid: req.uid, role: "member", firstName: req.firstName || "", lastName: req.lastName || "", headline: req.headline || "", joinedAt: serverTimestamp()
-  }, doc(db, "communities", cid, "requests", req.uid));
+export const requests = cid => many(sb.from("community_requests").select("*").eq("community_id", cid).order("at", { ascending: true }).limit(100));
+export const members = (cid, n = 500) => many(sb.from("community_members").select("*").eq("community_id", cid).limit(n));
+export const bans = cid => many(sb.from("community_bans").select("*").eq("community_id", cid));
+export const heldPosts = cid => many(sb.from("posts").select("*").eq("community_id", cid).eq("status", "held").order("created_at", { ascending: false }).limit(100));
+export const visiblePosts = (cids, n = 50) => many(sb.from("posts").select("*").in("community_id", cids).eq("status", "visible").order("created_at", { ascending: false }).limit(n));
+
+export const approve = (cid, req) => run(sb.rpc("approve_request", { p_cid: cid, p_uid: req.uid }));
+export const decline = (cid, uid) => run(sb.from("community_requests").delete().eq("community_id", cid).eq("uid", uid));
+export const setRole = (cid, uid, role) => changed(sb.from("community_members").update({ role }).eq("community_id", cid).eq("uid", uid));
+export async function removeMember(cid, member, state, ban = false) {
+  // The ban goes in first, while they're still a member, so the database can check their role.
+  if (ban) await run(sb.from("community_bans").insert({ community_id: cid, uid: member.uid }));
+  await changed(sb.from("community_members").delete().eq("community_id", cid).eq("uid", member.uid));
 }
-export const decline = (cid, uid) => deleteDoc(doc(db, "communities", cid, "requests", uid));
-export const setRole = (cid, uid, role) => updateDoc(doc(db, "communities", cid, "members", uid), { role });
-export function removeMember(cid, member, state, ban = false) {
-  return dropMember(cid, member.uid, ban ? {
-    ref: doc(db, "communities", cid, "bans", member.uid),
-    data: { uid: member.uid, name: `${member.firstName} ${member.lastName}`, by: state.user.uid, at: serverTimestamp() }
-  } : null);
-}
-export const unban = (cid, uid) => deleteDoc(doc(db, "communities", cid, "bans", uid));
+export const unban = (cid, uid) => run(sb.from("community_bans").delete().eq("community_id", cid).eq("uid", uid));
+export const approvePost = id => changed(sb.from("posts").update({ status: "visible" }).eq("id", id));
+// changes: any of name, about, field, type, privacy, rules, topics, automod.
+export const updateCommunity = (cid, changes) => changed(sb.from("communities").update(changes).eq("id", cid));
 
 // Auto-moderation runs when someone posts. Matching posts are held for a moderator.
 export function autoModVerdict(c, membership, text) {
@@ -141,7 +105,7 @@ export function autoModVerdict(c, membership, text) {
   const hit = (am.words || []).find(w => w && lower.includes(String(w).toLowerCase()));
   if (hit) return { status: "held", note: "Your post is waiting for a moderator's review because it matched one of this community's filters." };
   if (am.holdNewLinks && /https?:\/\/|www\./i.test(text)) {
-    const j = membership && membership.joinedAt && membership.joinedAt.toMillis ? membership.joinedAt.toMillis() : Date.now();
+    const j = membership && membership.joinedAt ? ms(membership.joinedAt) : Date.now();
     if (Date.now() - j < 7 * 86400000) return { status: "held", note: "Posts with links from members who joined this week are reviewed first. A moderator will look at it soon." };
   }
   return { status: "visible" };

@@ -1,0 +1,8 @@
+{
+  "name": "forge-app",
+  "private": true,
+  "description": "Forge, the professional network for STEM. Static site on Vercel with Supabase.",
+  "scripts": {
+    "build": "node scripts/build-config.mjs"
+  }
+}

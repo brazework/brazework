@@ -24,9 +24,12 @@ export function ageFrom(isoDate) {
   return a;
 }
 
+// Milliseconds since 1970 for a database timestamp (0 if missing).
+export const ms = ts => { const n = ts ? Date.parse(ts) : NaN; return isNaN(n) ? 0 : n; };
+
 export function timeAgo(ts) {
   if (!ts) return "just now";
-  const d = ts.toDate ? ts.toDate() : new Date(ts);
+  const d = new Date(ts);
   const s = Math.max(0, (Date.now() - d.getTime()) / 1000);
   if (s < 60) return "just now";
   if (s < 3600) return Math.floor(s / 60) + "m";
@@ -35,23 +38,36 @@ export function timeAgo(ts) {
   return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
 }
 
-// Turns Firebase's error codes into plain sentences.
+// Turns Supabase's error codes into plain sentences.
 export function friendlyError(err) {
-  const code = (err && err.code) || "";
+  const code = String((err && err.code) || "");
+  const text = String((err && err.message) || "");
   const map = {
-    "auth/email-already-in-use": "An account with that email already exists. Try logging in.",
-    "auth/invalid-email": "That email address doesn't look right.",
-    "auth/weak-password": "Choose a password with at least 8 characters.",
-    "auth/invalid-credential": "Email or password is incorrect.",
-    "auth/wrong-password": "Email or password is incorrect.",
-    "auth/user-not-found": "Email or password is incorrect.",
-    "auth/too-many-requests": "Too many attempts. Wait a few minutes and try again.",
-    "auth/network-request-failed": "Can't reach Forge right now. Check your connection.",
+    // Sign-in
+    "user_already_exists": "An account with that email already exists. Try logging in.",
+    "email_exists": "An account with that email already exists. Try logging in.",
+    "email_address_invalid": "That email address doesn't look right.",
+    "validation_failed": "That email address doesn't look right.",
+    "weak_password": "Choose a password with at least 8 characters.",
+    "same_password": "Choose a password that's different from your old one.",
+    "invalid_credentials": "Email or password is incorrect.",
+    "email_not_confirmed": "Confirm your email first. We sent you a link when you signed up.",
+    "over_request_rate_limit": "Too many attempts. Wait a few minutes and try again.",
+    "over_email_send_rate_limit": "Too many emails sent. Wait a few minutes and try again.",
+    "email_address_not_authorized": "Forge can't send email to that address yet. Ask the site owner to set up email sending.",
+    // Database
+    "42501": "You don't have permission to do that.",
     "permission-denied": "You don't have permission to do that.",
+    "23503": "That post was removed.",
     "not-found": "That post was removed.",
-    "failed-precondition": "The database needs a one-time setup step (an index). See SETUP.md, step 7."
+    "P0002": "That request was withdrawn.",
+    "23514": "Some of that is too long or isn't allowed.",
+    "23505": /communit/i.test(text) ? "A community with that name already exists. Try another name." : "That's already done."
   };
-  return map[code] || (err && err.message) || "Something went wrong. Please try again.";
+  if (map[code]) return map[code];
+  if (/failed to fetch|network/i.test(text)) return "Can't reach Forge right now. Check your connection.";
+  if (/row-level security/i.test(text)) return map["42501"];
+  return text || "Something went wrong. Please try again.";
 }
 
 export function toast(html, ms = 5000) {

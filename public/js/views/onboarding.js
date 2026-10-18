@@ -1,5 +1,5 @@
 // Step 3: about you and your interests.
-import { db, doc, updateDoc } from "../firebase.js";
+import { sb, run } from "../supabase.js";
 import { esc, TOPICS, FIELDS, friendlyError } from "../util.js";
 
 export function render({ view, state, navigate, refreshProfile }) {
@@ -47,7 +47,7 @@ export function render({ view, state, navigate, refreshProfile }) {
     const btn = view.querySelector("#ob-submit");
     btn.disabled = true; btn.textContent = "Saving…";
     try {
-      await updateDoc(doc(db, "users", state.user.uid), { headline: role, field, interests: [...selected], onboarded: true });
+      await run(sb.from("profiles").update({ headline: role, field, interests: [...selected], onboarded: true }).eq("id", state.user.uid));
       await refreshProfile();
       try { sessionStorage.setItem("forge.welcome", "new"); } catch (e2) {}
       navigate("feed");

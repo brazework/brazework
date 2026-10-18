@@ -1,9 +1,12 @@
-# Your Firebase project settings stay on your computer, not on GitHub.
-# A teammate copies public/js/firebase-config.example.js to firebase-config.js and fills it in.
+# Your Supabase settings stay off GitHub. Vercel writes this file at build time;
+# to run locally, copy public/js/supabase-config.example.js to supabase-config.js and fill it in.
+public/js/supabase-config.js
+.env*
+.vercel/
+
+# Left over from Firebase (kept on your computer only)
 public/js/firebase-config.js
 .firebaserc
-
-# Firebase's local deploy cache
 .firebase/
 
 # Logs, packages and system files

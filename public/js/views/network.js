@@ -1,9 +1,8 @@
 // Network: invitations, connections, sent requests, following, followers and people you may know.
-import { db, collection, query, where, limit, getDocs } from "../firebase.js";
-import { esc, friendlyError, toast, timeAgo } from "../util.js";
+import { esc, friendlyError, toast, timeAgo, ms } from "../util.js";
 import {
   incoming, sent, connections, following, followers, accept, removeConnection, follow, unfollow,
-  sendRequest, otherOf, personRow, askNote, pairId
+  sendRequest, otherOf, personRow, askNote, peopleWithInterests, peopleInField
 } from "../network.js";
 
 const TABS = [["invitations", "Invitations"], ["connections", "Connections"], ["sent", "Sent"], ["following", "Following"], ["followers", "Followers"], ["suggested", "People you may know"]];
@@ -180,8 +179,8 @@ export function render({ view, state, params, navigate }) {
     const known = new Set([me, ...data.con.map(c => otherOf(c, me).id), ...data.snt.map(c => c.to), ...data.inv.map(c => c.from)]);
     try {
       const found = new Map();
-      if (interests.length) (await getDocs(query(collection(db, "users"), where("interests", "array-contains-any", interests.slice(0, 10)), limit(40)))).docs.forEach(d => found.set(d.id, d.data()));
-      if (p.field) (await getDocs(query(collection(db, "users"), where("field", "==", p.field), limit(20)))).docs.forEach(d => found.set(d.id, d.data()));
+      if (interests.length) (await peopleWithInterests(interests, 40)).forEach(u => found.set(u.id, u));
+      if (p.field) (await peopleInField(p.field, 20)).forEach(u => found.set(u.id, u));
       const mineI = new Set(interests);
       const people = [...found].filter(([id, u]) => !known.has(id) && u.onboarded)
         .map(([id, u]) => ({ id, ...u, shared: (u.interests || []).filter(t => mineI.has(t)) }))
@@ -197,7 +196,7 @@ export function render({ view, state, params, navigate }) {
         const note = await askNote(x); if (note === null) return;
         act(b, async () => {
           await sendRequest(state, x, note);
-          data.snt.unshift({ id: pairId(me, x.id), from: me, to: x.id, users: [me, x.id], note, people: { [x.id]: x }, createdAt: nowTs() });
+          data.snt = await sent(me);
           if (!data.fg.some(f => f.target === x.id)) data.fg.unshift({ target: x.id, targetInfo: x, createdAt: nowTs() });
           toast(`Request sent to <strong>${esc(x.firstName)}</strong>.`);
         }, true);
@@ -217,6 +216,5 @@ export function render({ view, state, params, navigate }) {
 }
 
 // A stand-in timestamp for things just created on this page.
-const nowTs = () => { const n = Date.now(); return { toMillis: () => n, toDate: () => new Date(n) }; };
-const ms = t => (t && t.toMillis ? t.toMillis() : 0);
+const nowTs = () => new Date().toISOString();
 const byNewest = (a, b) => ms(b.createdAt) - ms(a.createdAt);

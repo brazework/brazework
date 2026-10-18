@@ -1,5 +1,5 @@
 // Log in, with a short welcome before entering the app.
-import { auth, signInWithEmailAndPassword, sendPasswordResetEmail } from "../firebase.js";
+import { sb, toUser } from "../supabase.js";
 import { esc, EMAIL_RE, friendlyError, LOGO } from "../util.js";
 
 export function render({ view, navigate, refreshProfile, state }) {
@@ -23,7 +23,11 @@ export function render({ view, navigate, refreshProfile, state }) {
 
   view.querySelector("#forgot").onclick = async () => {
     if (!EMAIL_RE.test(email.value.trim())) { msg.className = "error"; msg.textContent = "Enter your email above first."; return; }
-    try { await sendPasswordResetEmail(auth, email.value.trim()); msg.className = "success"; msg.textContent = "Password reset email sent."; }
+    try {
+      const { error } = await sb.auth.resetPasswordForEmail(email.value.trim(), { redirectTo: `${location.origin}/?flow=reset` });
+      if (error) throw error;
+      msg.className = "success"; msg.textContent = "If there's an account for that email, a reset link is on its way.";
+    }
     catch (e) { msg.className = "error"; msg.textContent = friendlyError(e); }
   };
 
@@ -34,8 +38,13 @@ export function render({ view, navigate, refreshProfile, state }) {
     btn.disabled = true; btn.textContent = "Signing in…"; msg.textContent = "";
     state.hold = true;
     try {
-      const cred = await signInWithEmailAndPassword(auth, em, pw);
-      state.user = cred.user;
+      const { data, error } = await sb.auth.signInWithPassword({ email: em, password: pw });
+      if (error) {
+        // Signed up but never clicked the link: send them to the "check your inbox" step.
+        if (error.code === "email_not_confirmed") { state.hold = false; state.pendingEmail = em; navigate("verify"); return; }
+        throw error;
+      }
+      state.user = toUser(data.user);
       await refreshProfile();
       const first = state.profile ? state.profile.firstName : "";
       // Welcome moment, then into the app.

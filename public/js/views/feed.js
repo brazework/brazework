@@ -1,10 +1,10 @@
 // Home feed: share posts, see what members are building, comment, like and save.
-import { db, collection, query, where, orderBy, limit, onSnapshot, getDocs } from "../firebase.js";
-import { esc, initials, friendlyError, toast } from "../util.js";
+import { sb, many, live } from "../supabase.js";
+import { esc, initials, friendlyError, toast, ms as msOf } from "../util.js";
 import { composerHTML, bindComposer, createPostList, skeletonPosts } from "../posts.js";
-import { myCommunities, badge, fmtCount, membersLabel, postsCol, runJoinAction, PRIVACY_LABEL } from "../communities.js";
+import { myCommunities, badge, fmtCount, membersLabel, runJoinAction, PRIVACY_LABEL, topCommunities, visiblePosts } from "../communities.js";
 import { openCreate } from "./communities.js";
-import { following as followingOf } from "../network.js";
+import { following as followingOf, peopleWithInterests } from "../network.js";
 
 const DAY = 86400000;
 
@@ -86,7 +86,7 @@ export function render({ view, state, navigate }) {
   bindComposer(view.querySelector("[data-composer]"), state);
 
   let tab = "foryou", filter = "", posts = [], cPosts = null, joined = null;
-  const cUnsubs = [];
+  let cUnsub = null;
   let fPosts = null, fCount = null, fUnsub = null;
   const listEl = view.querySelector("#feed-list");
   const filterEl = view.querySelector("#feed-filter");
@@ -111,7 +111,7 @@ export function render({ view, state, navigate }) {
     ? `No recent posts tagged ${esc(filter)} yet. Be the first.`
     : "No posts yet. Be the first to share what you're building."}</p></div>`;
 
-  const ms = post => (post.createdAt && post.createdAt.toMillis ? post.createdAt.toMillis() : Date.now());
+  const ms = post => msOf(post.createdAt) || Date.now();
   const draw = () => {
     if ((tab === "communities" && cPosts === null) || (tab === "following" && fPosts === null)) { listEl.innerHTML = skeletonPosts(2); return; }
     const source = tab === "communities" ? cPosts : tab === "following" ? fPosts : posts;
@@ -160,8 +160,9 @@ export function render({ view, state, navigate }) {
   };
 
   // Live updates: new posts appear without refreshing.
-  const unsub = onSnapshot(query(collection(db, "posts"), orderBy("createdAt", "desc"), limit(60)),
-    snap => { posts = snap.docs.map(d => ({ id: d.id, ...d.data() })); draw(); drawTrending(); },
+  const unsub = live(["posts"],
+    () => many(sb.from("posts").select("*").is("community_id", null).order("created_at", { ascending: false }).limit(60)),
+    list => { posts = list; draw(); drawTrending(); },
     err => { listEl.innerHTML = `<div class="card"><p class="error">${esc(friendlyError(err))}</p></div>`; });
 
   loadPeople(view, uid, interests);
@@ -183,9 +184,8 @@ export function render({ view, state, navigate }) {
     el.innerHTML = head + `<p class="small muted">Find people working on the same things as you.</p><div class="stack" style="gap:10px" id="c-suggest"></div>
       <div class="row" style="gap:8px"><a class="btn" href="#/communities/discover" style="min-height:36px">Browse</a><button class="btn ghost" id="c-start" style="min-height:36px">Start one</button></div>`;
     el.querySelector("#c-start").onclick = () => openCreate(state, navigate);
-    getDocs(query(collection(db, "communities"), orderBy("memberCount", "desc"), limit(50))).then(snap => {
+    topCommunities(50).then(all => {
       const box = el.querySelector("#c-suggest"); if (!box) return;
-      const all = snap.docs.map(d => ({ id: d.id, ...d.data() }));
       const score = c => (c.topics || []).filter(t => mine.has(t)).length * 2 + (c.field === p.field ? 1 : 0);
       const picks = all.filter(c => score(c) > 0).sort((a, b) => score(b) - score(a)).slice(0, 3);
       box.innerHTML = picks.map(c => `
@@ -203,22 +203,18 @@ export function render({ view, state, navigate }) {
     }).catch(() => {});
   }
 
-  // Latest posts from up to 10 of your communities, merged and kept live.
+  // Latest posts from your communities, kept live.
   async function startCommunityFeed(force) {
-    if (cUnsubs.length && !force) { draw(); return; }
-    cUnsubs.splice(0).forEach(u => u());
+    if (cUnsub && !force) { draw(); return; }
+    if (cUnsub) cUnsub();
+    cUnsub = () => {};
     draw();
     const mineList = await joinedReady;
-    const use = (joined || mineList).filter(c => c.privacy === "public" || c.myRole).slice(0, 10);
-    const per = new Map();
-    if (!use.length) { cPosts = []; draw(); return; }
-    use.forEach(c => {
-      cUnsubs.push(onSnapshot(query(collection(db, postsCol(c.id)), where("status", "==", "visible"), orderBy("createdAt", "desc"), limit(15)), snap => {
-        per.set(c.id, snap.docs.map(d => ({ id: d.id, _col: postsCol(c.id), ...d.data() })));
-        cPosts = [...per.values()].flat();
-        if (tab === "communities") draw();
-      }, () => { per.set(c.id, []); cPosts = [...per.values()].flat(); if (tab === "communities") draw(); }));
-    });
+    const ids = (joined || mineList).map(c => c.id).slice(0, 100);
+    if (!ids.length) { cPosts = []; draw(); return; }
+    cUnsub = live(["posts"], () => visiblePosts(ids, 60),
+      list => { cPosts = list; if (tab === "communities") draw(); },
+      () => { cPosts = []; if (tab === "communities") draw(); });
   }
 
   // Posts from up to 30 people you follow (connecting with someone follows them too).
@@ -227,15 +223,16 @@ export function render({ view, state, navigate }) {
     fUnsub = () => {};
     draw();
     let ids = [];
-    try { ids = (await followingOf(uid)).sort((a, b) => ms(b) - ms(a)).map(f => f.target).slice(0, 30); } catch (e) { ids = []; }
+    try { ids = (await followingOf(uid)).sort((a, b) => ms(b) - ms(a)).map(f => f.target).slice(0, 200); } catch (e) { ids = []; }
     fCount = ids.length;
     if (!ids.length) { fPosts = []; draw(); return; }
-    fUnsub = onSnapshot(query(collection(db, "posts"), where("authorId", "in", ids), orderBy("createdAt", "desc"), limit(50)),
-      snap => { fPosts = snap.docs.map(d => ({ id: d.id, ...d.data() })); if (tab === "following") draw(); },
+    fUnsub = live(["posts"],
+      () => many(sb.from("posts").select("*").in("author_id", ids).is("community_id", null).order("created_at", { ascending: false }).limit(50)),
+      list => { fPosts = list; if (tab === "following") draw(); },
       err => { fPosts = []; if (tab === "following") listEl.innerHTML = `<div class="card"><p class="error">${esc(friendlyError(err))}</p></div>`; });
   }
 
-  return () => { unsub(); cUnsubs.forEach(u => u()); if (fUnsub) fUnsub(); list.destroy(); };
+  return () => { unsub(); if (cUnsub) cUnsub(); if (fUnsub) fUnsub(); list.destroy(); };
 }
 
 // Members who share at least one of your interests.
@@ -243,10 +240,10 @@ async function loadPeople(view, uid, interests) {
   const el = view.querySelector("#people");
   if (!interests.length) { el.innerHTML = `<span class="small muted">Add interests in Settings to meet people in your fields.</span>`; return; }
   try {
-    const snap = await getDocs(query(collection(db, "users"), where("interests", "array-contains-any", interests.slice(0, 10)), limit(12)));
+    const found = await peopleWithInterests(interests, 12);
     const mine = new Set(interests);
-    const people = snap.docs.filter(d => d.id !== uid && d.data().onboarded)
-      .map(d => ({ id: d.id, ...d.data(), shared: (d.data().interests || []).filter(t => mine.has(t)) }))
+    const people = found.filter(u => u.id !== uid)
+      .map(u => ({ ...u, shared: (u.interests || []).filter(t => mine.has(t)) }))
       .sort((a, b) => b.shared.length - a.shared.length).slice(0, 4);
     if (!el.isConnected) return;
     el.innerHTML = people.length ? people.map(m => `

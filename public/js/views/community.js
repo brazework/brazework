@@ -1,10 +1,10 @@
 // One community: its posts, members and rules. #/c/<id>, and #/c/<id>/manage for moderators.
-import { db, collection, query, where, orderBy, limit, onSnapshot, getDocs } from "../firebase.js";
+import { live } from "../supabase.js";
 import { esc, initials, friendlyError, timeAgo } from "../util.js";
 import { composerHTML, bindComposer, createPostList, skeletonPosts } from "../posts.js";
 import {
-  getCommunity, getMembership, hasRequested, runJoinAction, badge, fmtCount, membersLabel, tint, postsCol, autoModVerdict,
-  PRIVACY_LABEL, TYPE_LABEL, ROLE_LABEL, PERMS, rank, can, rolesTable
+  getCommunity, getMembership, hasRequested, runJoinAction, badge, fmtCount, membersLabel, tint, autoModVerdict,
+  PRIVACY_LABEL, TYPE_LABEL, ROLE_LABEL, PERMS, rank, can, rolesTable, visiblePosts, heldPosts, members
 } from "../communities.js";
 import * as manage from "./community-manage.js";
 
@@ -99,8 +99,7 @@ export async function render(ctx) {
       <div id="c-held"></div>
       <div id="c-posts" class="stack" style="gap:16px">${skeletonPosts(2)}</div>`;
     if (me) bindComposer(pane.querySelector("[data-composer]"), state, {
-      col: postsCol(cid),
-      extra: { communityId: cid, communityName: c.name },
+      communityId: cid,
       decide: text => autoModVerdict(c, me, text)
     });
     const listEl = pane.querySelector("#c-posts");
@@ -110,14 +109,14 @@ export async function render(ctx) {
       canComment: () => !!me,
       empty: `<div class="card" style="text-align:center;border-style:dashed"><p class="muted">No posts yet. ${me ? "Start the first conversation above." : ""}</p></div>`
     });
-    const un = onSnapshot(query(collection(db, postsCol(cid)), where("status", "==", "visible"), orderBy("createdAt", "desc"), limit(50)),
-      snap => list.update(snap.docs.map(d => ({ id: d.id, _col: postsCol(cid), ...d.data() }))),
+    const un = live(["posts"], () => visiblePosts([cid], 50), posts => list.update(posts),
       err => { listEl.innerHTML = `<div class="card"><p class="error">${esc(friendlyError(err))}</p></div>`; });
     let unHeld = () => {};
     if (myRank >= 3) {
-      unHeld = onSnapshot(query(collection(db, postsCol(cid)), where("status", "==", "held"), limit(50)), snap => {
+      unHeld = live(["posts"], () => heldPosts(cid), held => {
         const el = pane.querySelector("#c-held"); if (!el) return;
-        el.innerHTML = snap.size ? `<a class="card row" href="#/c/${esc(cid)}/manage" style="justify-content:space-between;text-decoration:none;border-color:var(--accent)"><span><strong>${snap.size}</strong> ${snap.size === 1 ? "post is" : "posts are"} waiting for review</span><span class="small" style="color:var(--accent)">Review →</span></a>` : "";
+        const n = held.length;
+        el.innerHTML = n ? `<a class="card row" href="#/c/${esc(cid)}/manage" style="justify-content:space-between;text-decoration:none;border-color:var(--accent)"><span><strong>${n}</strong> ${n === 1 ? "post is" : "posts are"} waiting for review</span><span class="small" style="color:var(--accent)">Review →</span></a>` : "";
       }, () => {});
     }
     return () => { un(); unHeld(); list.destroy(); };
@@ -126,15 +125,15 @@ export async function render(ctx) {
   async function drawMembers() {
     pane.innerHTML = skeletonPosts(1);
     try {
-      const snap = await getDocs(query(collection(db, "communities", cid, "members"), limit(300)));
-      const ms = snap.docs.map(d => d.data()).sort((a, b) => rank(b.role) - rank(a.role) || `${a.firstName} ${a.lastName}`.localeCompare(`${b.firstName} ${b.lastName}`));
+      const list = await members(cid, 300);
+      const ms = list.sort((a, b) => rank(b.role) - rank(a.role) || `${a.firstName} ${a.lastName}`.localeCompare(`${b.firstName} ${b.lastName}`));
       pane.innerHTML = `<div class="card stack" style="gap:0;padding:8px 0">${ms.map(m => `
         <a href="#/u/${esc(m.uid)}" class="member-row">
           <span class="avatar sm">${esc(initials(m.firstName, m.lastName))}</span>
           <span style="display:flex;flex-direction:column;min-width:0;flex:1"><strong style="font-size:15px">${esc(m.firstName)} ${esc(m.lastName)}</strong><span class="small faint">${esc(m.headline || "")}</span></span>
           ${m.role !== "member" ? `<span class="role-chip role-${esc(m.role)}">${esc(ROLE_LABEL[m.role])}</span>` : ""}
         </a>`).join("")}</div>
-        ${snap.size >= 300 ? `<p class="small faint">Showing the first 300 members.</p>` : ""}`;
+        ${list.length >= 300 ? `<p class="small faint">Showing the first 300 members.</p>` : ""}`;
     } catch (e) { pane.innerHTML = `<div class="card"><p class="error">${esc(friendlyError(e))}</p></div>`; }
   }
 

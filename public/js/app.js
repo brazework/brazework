@@ -1,6 +1,7 @@
 // Forge app entry: keeps track of who's signed in, decides which page to show,
 // and runs the shared shell (top bar, side menu, theme, page transitions).
-import { isConfigured, auth, db, onAuthStateChanged, doc, getDoc } from "./firebase.js";
+import { isConfigured, sb, one, toUser, PROFILE_COLS } from "./supabase.js";
+import { toast, esc } from "./util.js";
 import { renderShell } from "./shell.js";
 import { applyTheme } from "./theme.js";
 import * as landing from "./views/landing.js";
@@ -17,13 +18,15 @@ import * as community from "./views/community.js";
 import * as network from "./views/network.js";
 import * as soon from "./views/soon.js";
 import * as setup from "./views/setup.js";
+import * as reset from "./views/reset.js";
 
 // "hold" pauses automatic redirects while a page finishes something (like the log-in welcome).
-export const state = { user: null, profile: null, authReady: false, hold: false };
+// "pendingEmail" is the address waiting to be confirmed after sign-up; "recovery" is set by a password reset link.
+export const state = { user: null, profile: null, authReady: false, hold: false, pendingEmail: "", recovery: false };
 
 const PUBLIC = new Set(["", "login", "signup"]);
 const ROUTES = {
-  "": landing, login, signup, verify, onboarding, feed, profile, u: profile, settings,
+  "": landing, login, signup, verify, reset, onboarding, feed, profile, u: profile, settings,
   communities, c: community, network, messages: soon, events: soon, saved, analytics: soon, marketplace: soon
 };
 
@@ -38,8 +41,7 @@ export function navigate(path) {
 
 export async function refreshProfile() {
   if (!state.user) { state.profile = null; return; }
-  const snap = await getDoc(doc(db, "users", state.user.uid));
-  state.profile = snap.exists() ? { id: snap.id, ...snap.data() } : null;
+  state.profile = await one(sb.from("profiles").select(PROFILE_COLS).eq("id", state.user.uid));
 }
 
 function parseHash() {
@@ -55,7 +57,8 @@ function reduced() {
 // Decides where someone is allowed to be, based on their sign-in progress.
 function guard(name) {
   const u = state.user;
-  if (!u) return PUBLIC.has(name) ? name : "login";
+  if (state.recovery && u) return "reset";
+  if (!u) return PUBLIC.has(name) || (name === "verify" && state.pendingEmail) ? name : "login";
   if (!u.emailVerified) return name === "verify" ? name : "verify";
   if (!state.profile || !state.profile.onboarded) return name === "onboarding" ? name : "onboarding";
   if (PUBLIC.has(name) || name === "verify" || name === "onboarding") return "feed";
@@ -102,10 +105,28 @@ window.addEventListener("hashchange", route);
 if (!isConfigured) {
   route();
 } else {
-  onAuthStateChanged(auth, async (user) => {
-    state.user = user;
-    try { await refreshProfile(); } catch (e) { state.profile = null; console.error(e); }
-    state.authReady = true;
-    route();
+  // Links in Supabase's emails come back with ?flow=reset (password reset), or an error if the link is bad.
+  const qs = new URLSearchParams(location.search);
+  if (qs.get("flow") === "reset") state.recovery = true;
+  const linkError = qs.get("error_description");
+  if (qs.has("flow") || linkError) {
+    ["flow", "error", "error_code", "error_description"].forEach(k => qs.delete(k));
+    const rest = qs.toString();
+    history.replaceState(null, "", location.pathname + (rest ? "?" + rest : "") + location.hash);
+  }
+  if (linkError) setTimeout(() => toast(esc(/expired|invalid/i.test(linkError) ? "That link has expired or was already used. Ask for a new one." : linkError), 8000), 400);
+
+  sb.auth.onAuthStateChange((event, session) => {
+    if (event === "PASSWORD_RECOVERY") state.recovery = true;
+    const next = toUser(session && session.user);
+    const sameUser = state.authReady && (state.user && state.user.uid) === (next && next.uid);
+    state.user = next;
+    if (sameUser && event !== "USER_UPDATED" && event !== "PASSWORD_RECOVERY") return; // e.g. a token refresh
+    // Supabase asks that its own calls aren't awaited inside this callback.
+    setTimeout(async () => {
+      try { await refreshProfile(); } catch (e) { state.profile = null; console.error(e); }
+      state.authReady = true;
+      route();
+    }, 0);
   });
 }

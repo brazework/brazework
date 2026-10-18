@@ -1,19 +1,14 @@
 // Everything about posts, shared by the feed, profiles and Saved:
 // the composer, the post card, likes, comments, saving and deleting.
-import {
-  db, doc, getDoc, setDoc, deleteDoc, addDoc, collection, query, orderBy, limit,
-  onSnapshot, runTransaction, serverTimestamp, getDocs
-} from "./firebase.js";
+import { sb, run, many, live } from "./supabase.js";
 import { esc, initials, timeAgo, friendlyError, toast, icon, TOPICS } from "./util.js";
 
 export const KINDS = [["update", "Update"], ["question", "Question"], ["result", "Result"], ["project", "Project"]];
 const KIND_LABEL = Object.fromEntries(KINDS);
 const MAX_TAGS = 3;
 
-// Posts live in "posts" (the main feed) or in "communities/{id}/posts".
-// Each post object carries _col so every action knows where it lives.
-export const colOf = post => post._col || "posts";
-const postRef = post => doc(db, colOf(post), post.id);
+// All posts live in one table: the main feed has no community, community posts have its id.
+// The database fills in the author's name, the community's name, the counts and the time.
 
 /* ---------- Composer ---------- */
 
@@ -41,7 +36,7 @@ export function composerHTML(p, { placeholder = "Share a project update, questio
     </form>`;
 }
 
-// opts.col: where to save; opts.extra: fields added to every post;
+// opts.communityId: post into a community instead of the main feed;
 // opts.decide(text): optional auto-moderation, returns { status, note }.
 export function bindComposer(form, state, opts = {}) {
   const p = state.profile, uid = state.user.uid;
@@ -92,11 +87,11 @@ export function bindComposer(form, state, opts = {}) {
     btn.disabled = true;
     try {
       const verdict = opts.decide ? opts.decide(text) : null;
-      await addDoc(collection(db, opts.col || "posts"), {
-        authorId: uid, authorFirst: p.firstName, authorLast: p.lastName, authorHeadline: p.headline || "",
-        body: text, kind, tags: [...picked], likeCount: 0, commentCount: 0, createdAt: serverTimestamp(),
-        ...(opts.extra || {}), ...(verdict ? { status: verdict.status } : {})
-      });
+      await run(sb.from("posts").insert({
+        body: text, kind, tags: [...picked],
+        ...(opts.communityId ? { community_id: opts.communityId } : {}),
+        ...(verdict ? { status: verdict.status } : {})
+      }));
       body.value = ""; body.dispatchEvent(new Event("input"));
       picked.clear(); drawTags(); more.hidden = true;
       toast(verdict && verdict.note ? esc(verdict.note) : "Posted.", verdict && verdict.note ? 8000 : 5000);
@@ -141,66 +136,41 @@ export function postCard(post, { liked = false, saved = false, open = false, min
 
 /* ---------- Data actions ---------- */
 
-// Like or unlike: creates/removes your like and moves the count by one, together.
+// Like or unlike. The database moves the post's like count by one to match.
 // Returns true if the post is now liked.
 export async function toggleLike(post, uid) {
-  const ref = postRef(post);
-  const likeRef = doc(db, colOf(post), post.id, "likes", uid);
-  return runTransaction(db, async tx => {
-    const [p, l] = await Promise.all([tx.get(ref), tx.get(likeRef)]);
-    if (!p.exists()) throw Object.assign(new Error("This post was removed."), { code: "not-found" });
-    const count = Number(p.data().likeCount || 0);
-    if (l.exists()) { tx.delete(likeRef); tx.update(ref, { likeCount: count - 1 }); return false; }
-    tx.set(likeRef, { at: Date.now() }); tx.update(ref, { likeCount: count + 1 }); return true;
-  });
-}
-
-export async function likedSet(posts, uid) {
-  const out = new Set();
-  await Promise.all(posts.map(async post => {
-    try { const s = await getDoc(doc(db, colOf(post), post.id, "likes", uid)); if (s.exists()) out.add(post.id); } catch (e) {}
-  }));
-  return out;
-}
-
-export async function addComment(post, state, text) {
-  const p = state.profile, uid = state.user.uid;
-  const ref = postRef(post);
-  const cRef = doc(collection(db, colOf(post), post.id, "comments"));
-  await runTransaction(db, async tx => {
-    const snap = await tx.get(ref);
-    if (!snap.exists()) throw Object.assign(new Error("This post was removed."), { code: "not-found" });
-    tx.set(cRef, { authorId: uid, authorFirst: p.firstName, authorLast: p.lastName, body: text, createdAt: serverTimestamp() });
-    tx.update(ref, { commentCount: Number(snap.data().commentCount || 0) + 1 });
-  });
-}
-
-export async function deleteComment(post, commentId) {
-  const ref = postRef(post);
-  const cRef = doc(db, colOf(post), post.id, "comments", commentId);
-  await runTransaction(db, async tx => {
-    const [snap, c] = await Promise.all([tx.get(ref), tx.get(cRef)]);
-    if (!c.exists()) return;
-    tx.delete(cRef);
-    const n = snap.exists() ? Number(snap.data().commentCount || 0) : 0;
-    if (n > 0) tx.update(ref, { commentCount: n - 1 });
-  });
-}
-
-export async function toggleSave(post, uid, isSaved) {
-  const ref = doc(db, "users", uid, "saved", post.id);
-  if (isSaved) { await deleteDoc(ref); return false; }
-  await setDoc(ref, { postId: post.id, col: colOf(post), authorId: post.authorId || "", savedAt: serverTimestamp() });
+  const mine = await run(sb.from("likes").select("post_id").eq("post_id", post.id).eq("user_id", uid));
+  if (mine.length) { await run(sb.from("likes").delete().eq("post_id", post.id).eq("user_id", uid)); return false; }
+  await run(sb.from("likes").insert({ post_id: post.id }));
   return true;
 }
 
-// Removes a post's comments first so nothing is left behind, then the post.
-export async function deletePost(post) {
+export async function likedSet(posts, uid) {
+  if (!posts.length) return new Set();
   try {
-    const cs = await getDocs(collection(db, colOf(post), post.id, "comments"));
-    await Promise.all(cs.docs.map(d => deleteDoc(d.ref)));
-  } catch (e) { /* the post itself is what matters */ }
-  await deleteDoc(postRef(post));
+    const rs = await run(sb.from("likes").select("post_id").eq("user_id", uid).in("post_id", posts.map(x => x.id)));
+    return new Set(rs.map(r => r.post_id));
+  } catch (e) { return new Set(); }
+}
+
+// The database fills in your name and moves the post's comment count.
+export async function addComment(post, state, text) {
+  await run(sb.from("comments").insert({ post_id: post.id, body: text }));
+}
+
+export async function deleteComment(post, commentId) {
+  await run(sb.from("comments").delete().eq("id", commentId));
+}
+
+export async function toggleSave(post, uid, isSaved) {
+  if (isSaved) { await run(sb.from("saved").delete().eq("user_id", uid).eq("post_id", post.id)); return false; }
+  await run(sb.from("saved").insert({ post_id: post.id }));
+  return true;
+}
+
+// Deleting a post also removes its likes, comments and saves.
+export async function deletePost(post) {
+  await run(sb.from("posts").delete().eq("id", post.id));
 }
 
 /* ---------- Live post list ---------- */
@@ -253,8 +223,8 @@ export function createPostList(container, { state, empty, reasonFor, onTag, modF
     refreshActions();
   };
 
-  const unsubSaved = onSnapshot(query(collection(db, "users", uid, "saved"), limit(500)), snap => {
-    saved.clear(); snap.forEach(d => saved.add(d.id)); savedReady = true; refreshActions();
+  const unsubSaved = live(["saved"], () => run(sb.from("saved").select("post_id").eq("user_id", uid).limit(500)), rs => {
+    saved.clear(); rs.forEach(r => saved.add(r.post_id)); savedReady = true; refreshActions();
   }, () => {});
 
   function closeThread(id) {
@@ -290,8 +260,7 @@ export function createPostList(container, { state, empty, reasonFor, onTag, modF
       catch (err) { toast(esc(friendlyError(err))); }
       b.disabled = false; input.focus();
     };
-    const un = onSnapshot(query(collection(db, colOf(post), id, "comments"), orderBy("createdAt", "asc"), limit(100)), snap => {
-      const cs = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const un = live(["comments"], () => many(sb.from("comments").select("*").eq("post_id", id).order("created_at", { ascending: true }).limit(100)), cs => {
       listEl.innerHTML = cs.length ? cs.map(c => `
         <div class="comment row" style="gap:10px;align-items:flex-start;flex-wrap:nowrap">
           <a class="avatar sm" href="#/u/${esc(c.authorId)}">${esc(initials(c.authorFirst, c.authorLast))}</a>

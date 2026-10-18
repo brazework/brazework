@@ -1,5 +1,5 @@
 // The shared frame around every page: top bar and the side menu.
-import { auth, signOut } from "./firebase.js";
+import { sb } from "./supabase.js";
 import { esc, initials, LOGO, icon } from "./util.js";
 import { myCommunities, badge } from "./communities.js";
 import { pendingCount } from "./network.js";
@@ -33,7 +33,7 @@ export function renderShell({ state, current, navigate }) {
         </nav>
       </div></header>`;
     const so = document.getElementById("shell-signout");
-    if (so) so.onclick = () => signOut(auth).then(() => navigate("login"));
+    if (so) so.onclick = () => sb.auth.signOut().then(() => navigate("login"));
     return;
   }
 
@@ -119,5 +119,5 @@ function openMenu({ state, current, navigate }) {
   document.addEventListener("keydown", onKey);
   wrap.querySelectorAll("[data-close]").forEach(el => el.onclick = close);
   wrap.querySelectorAll("[data-go]").forEach(el => el.addEventListener("click", close));
-  wrap.querySelector("#menu-logout").onclick = () => { close(); signOut(auth).then(() => navigate("login")); };
+  wrap.querySelector("#menu-logout").onclick = () => { close(); sb.auth.signOut().then(() => navigate("login")); };
 }

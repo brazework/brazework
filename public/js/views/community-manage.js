@@ -1,10 +1,11 @@
 // Manage a community: join requests, held posts, members and roles, auto-moderation and settings.
 // What you see depends on your role; the database rules enforce the same limits.
-import { db, collection, query, where, orderBy, limit, onSnapshot, getDocs, doc, updateDoc } from "../firebase.js";
+import { live } from "../supabase.js";
 import { esc, initials, friendlyError, toast, timeAgo, FIELDS } from "../util.js";
 import { deletePost } from "../posts.js";
 import {
-  approve, decline, setRole, removeMember, unban, rank, membersLabel, ROLE_LABEL, RANK, postsCol, badge, PRIVACY, TYPES, rolesTable
+  approve, decline, setRole, removeMember, unban, rank, membersLabel, ROLE_LABEL, RANK, badge, PRIVACY, TYPES, rolesTable,
+  getCommunity, requests, heldPosts, members as membersOf, bans as bansOf, approvePost, updateCommunity
 } from "../communities.js";
 
 export function render({ view, state, navigate, c, me }) {
@@ -48,29 +49,29 @@ export function render({ view, state, navigate, c, me }) {
   // Badge counts on the tabs.
   const counts = [];
   const setCount = (k, n) => { const el = view.querySelector(`[data-count="${k}"]`); if (el) el.textContent = n ? ` ${n}` : ""; };
-  counts.push(onSnapshot(collection(db, "communities", cid, "requests"), s => setCount("requests", s.size), () => {}));
-  counts.push(onSnapshot(doc(db, "communities", cid), s => {
-    if (!s.exists()) return;
-    c.memberCount = s.data().memberCount;
+  counts.push(live(["community_requests"], () => requests(cid), rs => setCount("requests", rs.length), () => {}));
+  counts.push(live(["communities"], () => getCommunity(cid), fresh => {
+    if (!fresh) return;
+    c.memberCount = fresh.memberCount;
     const el = view.querySelector("#m-sub");
     if (el) el.textContent = el.textContent.replace(/·.*$/, `· ${membersLabel(c.memberCount)}`);
   }, () => {}));
-  if (myRank >= 3) counts.push(onSnapshot(query(collection(db, postsCol(cid)), where("status", "==", "held"), limit(100)), s => setCount("review", s.size), () => {}));
+  if (myRank >= 3) counts.push(live(["posts"], () => heldPosts(cid), ps => setCount("review", ps.length), () => {}));
 
   const empty = msg => `<div class="card" style="text-align:center;border-style:dashed"><p class="muted">${msg}</p></div>`;
 
   function drawRequests() {
     pane.innerHTML = skeleton();
-    return onSnapshot(query(collection(db, "communities", cid, "requests"), orderBy("at", "asc"), limit(100)), snap => {
-      if (!snap.size) { pane.innerHTML = empty(c.privacy === "public" ? "This community is public, so people join without a request." : "No one is waiting to join right now."); return; }
-      pane.innerHTML = snap.docs.map(d => { const r = d.data(); return `
+    return live(["community_requests"], () => requests(cid), reqs => {
+      if (!reqs.length) { pane.innerHTML = empty(c.privacy === "public" ? "This community is public, so people join without a request." : "No one is waiting to join right now."); return; }
+      pane.innerHTML = reqs.map(r => { return `
         <div class="card row" data-req="${esc(r.uid)}">
           <a class="avatar md" href="#/u/${esc(r.uid)}">${esc(initials(r.firstName, r.lastName))}</a>
           <div class="stack" style="gap:2px;flex:1 1 240px"><a href="#/u/${esc(r.uid)}" style="font-weight:600;text-decoration:none">${esc(r.firstName)} ${esc(r.lastName)}</a><span class="small faint">${esc(r.headline || "")} · asked ${esc(timeAgo(r.at))}</span></div>
           <div class="row" style="gap:8px"><button class="btn primary" data-approve>Approve</button><button class="btn" data-decline>Decline</button></div>
         </div>`; }).join("");
       pane.querySelectorAll("[data-req]").forEach(row => {
-        const r = snap.docs.find(d => d.id === row.dataset.req).data();
+        const r = reqs.find(x => x.uid === row.dataset.req);
         row.querySelector("[data-approve]").onclick = e => act(e.target, () => approve(cid, r), `${r.firstName} is now a member.`);
         row.querySelector("[data-decline]").onclick = e => act(e.target, () => decline(cid, r.uid), "Request declined.");
       });
@@ -79,10 +80,10 @@ export function render({ view, state, navigate, c, me }) {
 
   function drawReview() {
     pane.innerHTML = skeleton();
-    return onSnapshot(query(collection(db, postsCol(cid)), where("status", "==", "held"), limit(100)), snap => {
-      if (!snap.size) { pane.innerHTML = empty("Nothing waiting for review. Posts caught by auto-moderation show up here."); return; }
-      pane.innerHTML = snap.docs.map(d => { const x = d.data(); return `
-        <div class="card stack" data-held="${esc(d.id)}">
+    return live(["posts"], () => heldPosts(cid), held => {
+      if (!held.length) { pane.innerHTML = empty("Nothing waiting for review. Posts caught by auto-moderation show up here."); return; }
+      pane.innerHTML = held.map(x => { return `
+        <div class="card stack" data-held="${esc(x.id)}">
           <div class="row" style="gap:10px"><span class="avatar sm">${esc(initials(x.authorFirst, x.authorLast))}</span>
             <span style="display:flex;flex-direction:column"><strong style="font-size:14px">${esc(x.authorFirst)} ${esc(x.authorLast)}</strong><span class="small faint">Held by auto-moderation · ${esc(timeAgo(x.createdAt))}</span></span></div>
           <p class="post-body">${esc(x.body)}</p>
@@ -90,8 +91,8 @@ export function render({ view, state, navigate, c, me }) {
         </div>`; }).join("");
       pane.querySelectorAll("[data-held]").forEach(card => {
         const id = card.dataset.held;
-        card.querySelector("[data-ok]").onclick = e => act(e.target, () => updateDoc(doc(db, postsCol(cid), id), { status: "visible" }), "Post approved and published.");
-        card.querySelector("[data-rm]").onclick = e => act(e.target, () => deletePost({ id, _col: postsCol(cid) }), "Post removed.");
+        card.querySelector("[data-ok]").onclick = e => act(e.target, () => approvePost(id), "Post approved and published.");
+        card.querySelector("[data-rm]").onclick = e => act(e.target, () => deletePost({ id }), "Post removed.");
       });
     }, err => { pane.innerHTML = `<div class="card"><p class="error">${esc(friendlyError(err))}</p></div>`; });
   }
@@ -134,9 +135,9 @@ export function render({ view, state, navigate, c, me }) {
         row.querySelector("[data-unban]").onclick = e => act(e.target, async () => { await unban(cid, row.dataset.banId); bans = bans.filter(b => b.uid !== row.dataset.banId); draw(); }, "Ban lifted.");
       });
     };
-    const loadBans = async () => { try { bans = (await getDocs(collection(db, "communities", cid, "bans"))).docs.map(d => d.data()); } catch (e) { bans = []; } };
-    Promise.all([getDocs(query(collection(db, "communities", cid, "members"), limit(500))), loadBans()])
-      .then(([s]) => { members = s.docs.map(d => d.data()); draw(); })
+    const loadBans = async () => { try { bans = await bansOf(cid); } catch (e) { bans = []; } };
+    Promise.all([membersOf(cid, 500), loadBans()])
+      .then(([list]) => { members = list; draw(); })
       .catch(err => { pane.innerHTML = `<div class="card"><p class="error">${esc(friendlyError(err))}</p></div>`; });
     return null;
   }
@@ -159,7 +160,7 @@ export function render({ view, state, navigate, c, me }) {
     pane.querySelector("#am-save").onclick = e => {
       const words = [...new Set(pane.querySelector("#am-words").value.split(/[\n,]/).map(w => w.trim()).filter(Boolean))].slice(0, 50);
       const automod = { words, holdNewLinks: links.getAttribute("aria-pressed") === "true" };
-      act(e.target, async () => { await updateDoc(doc(db, "communities", cid), { automod }); c.automod = automod; }, "Auto-moderation saved.");
+      act(e.target, async () => { await updateCommunity(cid, { automod }); c.automod = automod; }, "Auto-moderation saved.");
     };
     return null;
   }
@@ -184,8 +185,8 @@ export function render({ view, state, navigate, c, me }) {
       const name = pane.querySelector("#s-name").value.trim().replace(/\s+/g, " ");
       const about = pane.querySelector("#s-about").value.trim();
       if (name.length < 3 || !about) { pane.querySelector("#s-error").textContent = "A name (3+ characters) and an About line are required."; return; }
-      const changes = { name, nameLower: name.toLowerCase(), about, field: pane.querySelector("#s-field").value, type, privacy, rules: pane.querySelector("#s-rules").value.trim() };
-      act(e.target, async () => { await updateDoc(doc(db, "communities", cid), changes); Object.assign(c, changes); }, "Settings saved.");
+      const changes = { name, about, field: pane.querySelector("#s-field").value, type, privacy, rules: pane.querySelector("#s-rules").value.trim() };
+      act(e.target, async () => { await updateCommunity(cid, changes); Object.assign(c, changes); }, "Settings saved.");
     };
     return null;
   }

@@ -1,8 +1,5 @@
 // Create an account: details, then a verification email.
-import {
-  auth, db, createUserWithEmailAndPassword, updateProfile, sendEmailVerification,
-  doc, setDoc, serverTimestamp
-} from "../firebase.js";
+import { sb } from "../supabase.js";
 import { EMAIL_RE, ACADEMIC_RE, ageFrom, friendlyError } from "../util.js";
 
 export function render({ view, navigate, state, refreshProfile }) {
@@ -59,15 +56,15 @@ export function render({ view, navigate, state, refreshProfile }) {
     btn.disabled = true; btn.textContent = "Creating your account…"; msg.textContent = "";
     state.hold = true;
     try {
-      const cred = await createUserWithEmailAndPassword(auth, email, pass);
-      await updateProfile(cred.user, { displayName: `${first} ${last}` });
-      await setDoc(doc(db, "users", cred.user.uid), {
-        firstName: first, lastName: last, birthday: bday, accountType: type, email,
-        headline: "", bio: "", field: "", interests: [], onboarded: false, createdAt: serverTimestamp()
+      // The database makes the profile from these details; Supabase emails the confirmation link.
+      const { data, error } = await sb.auth.signUp({
+        email, password: pass,
+        options: { data: { firstName: first, lastName: last, birthday: bday, accountType: type }, emailRedirectTo: location.origin }
       });
-      await sendEmailVerification(cred.user);
-      state.user = cred.user;
-      await refreshProfile();
+      if (error) throw error;
+      // Supabase doesn't say outright that an address is taken; an account with no sign-in methods means it is.
+      if (data.user && Array.isArray(data.user.identities) && !data.user.identities.length) throw { code: "user_already_exists" };
+      state.pendingEmail = email;
       state.hold = false;
       navigate("verify");
     } catch (err) {

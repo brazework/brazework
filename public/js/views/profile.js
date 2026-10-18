@@ -1,8 +1,8 @@
 // Profile page: yours (editable) or another member's.
-import { db, doc, getDoc, updateDoc, collection, query, where, orderBy, limit, onSnapshot } from "../firebase.js";
+import { sb, run, many, live } from "../supabase.js";
 import { esc, initials, friendlyError, toast } from "../util.js";
 import { composerHTML, bindComposer, createPostList, skeletonPosts } from "../posts.js";
-import { relationship, sendRequest, accept, removeConnection, follow, unfollow, counts, askNote } from "../network.js";
+import { relationship, sendRequest, accept, removeConnection, follow, unfollow, counts, askNote, getProfile } from "../network.js";
 
 export async function render({ view, state, params, name, refreshProfile, navigate }) {
   const myUid = state.user.uid;
@@ -14,7 +14,7 @@ export async function render({ view, state, params, name, refreshProfile, naviga
   let p;
   if (isMe) p = state.profile;
   else {
-    try { const s = await getDoc(doc(db, "users", uid)); p = s.exists() ? s.data() : null; }
+    try { p = await getProfile(uid); }
     catch (e) { p = null; }
   }
   if (!p) { view.innerHTML = `<div class="page"><div class="card"><h1 style="font-size:22px">Profile not found</h1><p class="muted">This member may have left Forge.</p></div></div>`; return; }
@@ -109,8 +109,9 @@ export async function render({ view, state, params, name, refreshProfile, naviga
     state,
     empty: `<div class="card" style="border-style:dashed;text-align:center"><p class="muted">${isMe ? "Nothing posted yet. Share your first update above." : "No posts yet."}</p></div>`
   });
-  const unsub = onSnapshot(query(collection(db, "posts"), where("authorId", "==", uid), orderBy("createdAt", "desc"), limit(50)),
-    snap => list.update(snap.docs.map(d => ({ id: d.id, ...d.data() }))),
+  const unsub = live(["posts"],
+    () => many(sb.from("posts").select("*").eq("author_id", uid).is("community_id", null).order("created_at", { ascending: false }).limit(50)),
+    posts => list.update(posts),
     err => { listEl.innerHTML = `<div class="card"><p class="error">${esc(friendlyError(err))}</p></div>`; });
   return () => { unsub(); list.destroy(); };
 }
@@ -127,7 +128,7 @@ function openEditor(view, state, refreshProfile) {
   about.querySelector("#ed-save").onclick = async () => {
     const headline = about.querySelector("#ed-head").value.trim(), bio = about.querySelector("#ed-bio").value.trim();
     try {
-      await updateDoc(doc(db, "users", state.user.uid), { headline, bio });
+      await run(sb.from("profiles").update({ headline, bio }).eq("id", state.user.uid));
       await refreshProfile();
       toast("Profile saved.");
       about.innerHTML = `<h2 style="font-size:17px">About</h2><p class="muted" style="white-space:pre-wrap">${bio ? esc(bio) : "Add a short bio so people know what you work on."}</p>`;

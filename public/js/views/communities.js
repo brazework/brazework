@@ -1,9 +1,8 @@
 // Communities hub: the communities you're in, discovery, and creating a new one.
-import { db, collection, query, where, orderBy, limit, getDocs } from "../firebase.js";
 import { esc, friendlyError, toast, FIELDS, TOPICS } from "../util.js";
 import {
   myCommunities, createCommunity, badge, fmtCount, membersLabel, PRIVACY, PRIVACY_LABEL, TYPES, TYPE_LABEL, ROLE_LABEL,
-  hasRequested, runJoinAction
+  hasRequested, runJoinAction, topCommunities, nameTaken
 } from "../communities.js";
 
 export function render({ view, state, navigate, params }) {
@@ -130,8 +129,8 @@ export function render({ view, state, navigate, params }) {
 
   myCommunities(uid).then(r => { mine = r; countLabel(); tab === "yours" ? drawYours() : drawResults(); })
     .catch(e => { mine = []; body.innerHTML = `<div class="card"><p class="error">${esc(friendlyError(e))}</p></div>`; });
-  getDocs(query(collection(db, "communities"), orderBy("memberCount", "desc"), limit(200)))
-    .then(s => { all = s.docs.map(d => ({ id: d.id, ...d.data() })); if (tab === "discover") drawResults(); })
+  topCommunities(200)
+    .then(list => { all = list; if (tab === "discover") drawResults(); })
     .catch(e => { all = []; if (tab === "discover") toast(esc(friendlyError(e))); });
 }
 
@@ -210,8 +209,7 @@ export function openCreate(state, navigate) {
     if (!field) { err.textContent = "Choose a main field."; return; }
     const btn = $("#cc-submit"); btn.disabled = true; btn.textContent = "Creating…";
     try {
-      const dup = await getDocs(query(collection(db, "communities"), where("nameLower", "==", name.toLowerCase()), limit(1)));
-      if (!dup.empty) { err.textContent = "A community with that name already exists. Try another name."; btn.disabled = false; btn.textContent = "Create community"; return; }
+      if (await nameTaken(name)) { err.textContent = "A community with that name already exists. Try another name."; btn.disabled = false; btn.textContent = "Create community"; return; }
       const id = await createCommunity(state, { name, about, field, type, privacy, topics: [...topics], rules: $("#cc-rules").value.trim() });
       close();
       toast(`<strong>${esc(name)}</strong> is live. Invite people by sharing its page.`, 7000);

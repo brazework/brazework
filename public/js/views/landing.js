@@ -1,5 +1,5 @@
 // Public landing page.
-import { db, addDoc, collection, serverTimestamp } from "../firebase.js";
+import { sb, run } from "../supabase.js";
 import { esc, EMAIL_RE, TOPICS, friendlyError } from "../util.js";
 
 const FREE_MAIL = ["gmail.com", "yahoo.com", "outlook.com", "hotmail.com", "icloud.com", "aol.com", "proton.me", "protonmail.com"];
@@ -166,7 +166,7 @@ export function render({ view }) {
     const btn = view.querySelector("#lp-org-submit");
     btn.disabled = true; btn.textContent = "Sending…";
     try {
-      await addDoc(collection(db, "orgInterest"), { type: orgType, name, contact, email, role, createdAt: serverTimestamp() });
+      await run(sb.from("org_interest").insert({ type: orgType, name, contact, email, role }));
       view.querySelector("#lp-org-form").innerHTML = `<h3 style="font-size:20px">Thanks, ${esc(contact.split(" ")[0])}.</h3><p class="muted">We've noted ${esc(name)}'s interest and will reach out at ${esc(email)} when organization accounts open.</p>`;
     } catch (err) {
       btn.disabled = false; btn.textContent = "Register interest";

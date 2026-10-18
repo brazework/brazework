@@ -1,84 +1,74 @@
 // Network: connections (two-way, by request) and follows (one-way).
 // Sending a request also follows that person; accepting follows them back.
-import {
-  db, doc, getDoc, getDocs, setDoc, deleteDoc, collection, query, where, limit,
-  writeBatch, serverTimestamp, getCountFromServer
-} from "./firebase.js";
+import { sb, run, many, rows, count, changed, PROFILE_COLS } from "./supabase.js";
 import { esc, initials } from "./util.js";
 
-export const pairId = (a, b) => (a < b ? `${a}_${b}` : `${b}_${a}`);
-export const followId = (follower, target) => `${follower}_${target}`;
+// The database copies each person's name, headline, field and account type onto
+// connections and follows, so lists load fast.
 
-// The few profile fields stored alongside a connection or follow, so lists load fast.
-export const info = (p = {}) => ({
-  firstName: p.firstName || "", lastName: p.lastName || "", headline: p.headline || "",
-  field: p.field || "", accountType: p.accountType || ""
-});
+// Connection rows, with "from" and "to" like the rest of the app expects.
+const conns = list => rows(list).map(c => ({ ...c, from: c.fromId, to: c.toId }));
+const pair = (a, b) => `and(from_id.eq.${a},to_id.eq.${b}),and(from_id.eq.${b},to_id.eq.${a})`;
 
 // Where you stand with someone: none, sent, received or connected; and whether you follow them.
 export async function relationship(meUid, otherUid) {
   const [c, f] = await Promise.all([
-    getDoc(doc(db, "connections", pairId(meUid, otherUid))),
-    getDoc(doc(db, "follows", followId(meUid, otherUid)))
+    run(sb.from("connections").select("*").or(pair(meUid, otherUid)).limit(1)),
+    run(sb.from("follows").select("target").eq("follower", meUid).eq("target", otherUid))
   ]);
   let status = "none", conn = null;
-  if (c.exists()) {
-    conn = { id: c.id, ...c.data() };
+  if (c.length) {
+    conn = conns(c)[0];
     status = conn.status === "accepted" ? "connected" : conn.from === meUid ? "sent" : "received";
   }
-  return { status, conn, following: f.exists() };
+  return { status, conn, following: f.length > 0 };
 }
 
+const followQuietly = target => run(sb.from("follows").upsert({ target }, { onConflict: "follower,target", ignoreDuplicates: true }));
+
 export async function sendRequest(state, other, note = "") {
-  const me = state.user.uid;
-  const batch = writeBatch(db);
-  batch.set(doc(db, "connections", pairId(me, other.id)), {
-    users: [me, other.id], from: me, to: other.id, status: "pending", note: note.slice(0, 300),
-    people: { [me]: info(state.profile), [other.id]: info(other) }, createdAt: serverTimestamp()
-  });
-  const f = await getDoc(doc(db, "follows", followId(me, other.id)));
-  if (!f.exists()) batch.set(doc(db, "follows", followId(me, other.id)), followDoc(state, other));
-  await batch.commit();
+  await run(sb.from("connections").insert({ to_id: other.id, note: note.slice(0, 300) }));
+  await followQuietly(other.id);
 }
 
 export async function accept(state, conn) {
-  const me = state.user.uid, them = conn.from;
-  const batch = writeBatch(db);
-  batch.update(doc(db, "connections", conn.id), { status: "accepted", acceptedAt: serverTimestamp() });
-  const f = await getDoc(doc(db, "follows", followId(me, them)));
-  if (!f.exists()) batch.set(doc(db, "follows", followId(me, them)), followDoc(state, { id: them, ...(conn.people || {})[them] }));
-  await batch.commit();
+  await changed(sb.from("connections").update({ status: "accepted" }).eq("id", conn.id));
+  await followQuietly(conn.from);
 }
 
 // Decline, withdraw and remove are all the same thing: the connection record goes away.
-export const removeConnection = connId => deleteDoc(doc(db, "connections", connId));
+export const removeConnection = connId => run(sb.from("connections").delete().eq("id", connId));
 
-function followDoc(state, other) {
-  return { follower: state.user.uid, target: other.id, followerInfo: info(state.profile), targetInfo: info(other), createdAt: serverTimestamp() };
-}
-export const follow = (state, other) => setDoc(doc(db, "follows", followId(state.user.uid, other.id)), followDoc(state, other));
-export const unfollow = (meUid, otherUid) => deleteDoc(doc(db, "follows", followId(meUid, otherUid)));
+export const follow = (state, other) => followQuietly(other.id);
+export const unfollow = (meUid, otherUid) => run(sb.from("follows").delete().eq("follower", meUid).eq("target", otherUid));
 
-const rows = snap => snap.docs.map(d => ({ id: d.id, ...d.data() }));
-export const incoming = uid => getDocs(query(collection(db, "connections"), where("to", "==", uid), where("status", "==", "pending"), limit(200))).then(rows);
-export const sent = uid => getDocs(query(collection(db, "connections"), where("from", "==", uid), where("status", "==", "pending"), limit(200))).then(rows);
-export const connections = uid => getDocs(query(collection(db, "connections"), where("users", "array-contains", uid), where("status", "==", "accepted"), limit(1000))).then(rows);
-export const following = uid => getDocs(query(collection(db, "follows"), where("follower", "==", uid), limit(1000))).then(rows);
-export const followers = uid => getDocs(query(collection(db, "follows"), where("target", "==", uid), limit(1000))).then(rows);
+const C = () => sb.from("connections").select("*");
+export const incoming = async uid => conns(await run(C().eq("to_id", uid).eq("status", "pending").limit(200)));
+export const sent = async uid => conns(await run(C().eq("from_id", uid).eq("status", "pending").limit(200)));
+export const connections = async uid => conns(await run(C().contains("users", [uid]).eq("status", "accepted").limit(1000)));
+export const following = uid => many(sb.from("follows").select("*").eq("follower", uid).limit(1000));
+export const followers = uid => many(sb.from("follows").select("*").eq("target", uid).limit(1000));
 
+const head = t => sb.from(t).select("*", { count: "exact", head: true });
 export async function counts(uid) {
-  const n = async q => { try { return (await getCountFromServer(q)).data().count; } catch (e) { return null; } };
+  const n = async q => { try { return await count(q); } catch (e) { return null; } };
   const [c, fr, fg] = await Promise.all([
-    n(query(collection(db, "connections"), where("users", "array-contains", uid), where("status", "==", "accepted"))),
-    n(query(collection(db, "follows"), where("target", "==", uid))),
-    n(query(collection(db, "follows"), where("follower", "==", uid)))
+    n(head("connections").contains("users", [uid]).eq("status", "accepted")),
+    n(head("follows").eq("target", uid)),
+    n(head("follows").eq("follower", uid))
   ]);
   return { connections: c, followers: fr, following: fg };
 }
 export async function pendingCount(uid) {
-  try { return (await getCountFromServer(query(collection(db, "connections"), where("to", "==", uid), where("status", "==", "pending")))).data().count; }
+  try { return await count(head("connections").eq("to_id", uid).eq("status", "pending")); }
   catch (e) { return 0; }
 }
+
+// Members who share interests with you, or work in your field.
+export const peopleWithInterests = (interests, n) => many(sb.from("profiles").select(PROFILE_COLS).overlaps("interests", interests).eq("onboarded", true).limit(n));
+export const peopleInField = (field, n) => many(sb.from("profiles").select(PROFILE_COLS).eq("field", field).eq("onboarded", true).limit(n));
+export const getProfile = async uid => (await peopleById([uid]))[0] || null;
+export const peopleById = ids => many(sb.from("profiles").select(PROFILE_COLS).in("id", ids));
 
 // The other person in a connection record.
 export function otherOf(conn, me) {

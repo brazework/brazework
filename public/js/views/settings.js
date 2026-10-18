@@ -1,5 +1,5 @@
 // Settings: appearance, interests and account.
-import { auth, db, doc, updateDoc, signOut } from "../firebase.js";
+import { sb, run } from "../supabase.js";
 import { esc, TOPICS, friendlyError, toast } from "../util.js";
 import { applyTheme } from "../theme.js";
 
@@ -70,10 +70,10 @@ export function render({ view, state, navigate, refreshProfile }) {
     });
     view.querySelector("#st-save-int").onclick = async () => {
       if (picked.size < 3) { toast("Pick at least 3 interests."); return; }
-      try { await updateDoc(doc(db, "users", state.user.uid), { interests: [...picked] }); await refreshProfile(); toast("Interests saved."); }
+      try { await run(sb.from("profiles").update({ interests: [...picked] }).eq("id", state.user.uid)); await refreshProfile(); toast("Interests saved."); }
       catch (e) { toast(esc(friendlyError(e))); }
     };
-    view.querySelector("#st-out").onclick = () => signOut(auth).then(() => navigate("login"));
+    view.querySelector("#st-out").onclick = () => sb.auth.signOut().then(() => navigate("login"));
   };
   draw();
 }
