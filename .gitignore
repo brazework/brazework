@@ -1,0 +1,14 @@
+# Your Firebase project settings stay on your computer, not on GitHub.
+# A teammate copies public/js/firebase-config.example.js to firebase-config.js and fills it in.
+public/js/firebase-config.js
+.firebaserc
+
+# Firebase's local deploy cache
+.firebase/
+
+# Logs, packages and system files
+*.log
+node_modules/
+.DS_Store
+Thumbs.db
+desktop.ini

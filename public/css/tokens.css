@@ -1,0 +1,22 @@
+/* Forge design tokens: every color comes from here so both themes work everywhere. */
+:root {
+  color-scheme: dark;
+  --accent: #FF7A2F;
+  --bg:#0E1217; --surface:#151B23; --surface-2:#121820; --raised:#1B2430; --hover:#1A212B;
+  --chip:#2A3440; --border:#2A3440; --border-strong:#364250; --divider:#1F2731;
+  --text:#E6EAF0; --text-2:#C3CBD6; --muted:#A9B3C1; --faint:#8A95A5; --disabled:#6E7A8A; --track:#4A5A6E;
+  --media:#121921; --media-grid:#1E283480; --shimmer:#26313F;
+  --scrim:#05080BB3; --on-accent:#0E1217;
+  --ok:#8FD9B6; --warn:#FFB38A; --danger:#FF7A5C; --caution:#F5C542; --info:#3FB6FF;
+  --font: 'IBM Plex Sans', 'Helvetica Neue', system-ui, sans-serif;
+  --mono: 'IBM Plex Mono', ui-monospace, monospace;
+}
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg:#F5F6F8; --surface:#FFFFFF; --surface-2:#FAFBFC; --raised:#EEF1F5; --hover:#F0F2F5;
+  --chip:#E3E7EC; --border:#D6DCE3; --border-strong:#C3CAD3; --divider:#E4E8ED;
+  --text:#12171D; --text-2:#2E3742; --muted:#56606D; --faint:#6B7480; --disabled:#9AA3AE; --track:#B8C2CE;
+  --media:#E7EBF0; --media-grid:#D5DCE4; --shimmer:#F7F8FA;
+  --scrim:#0E121766; --on-accent:#0E1217;
+  --ok:#1B7F52; --warn:#B4541A; --danger:#C2410C; --caution:#8A6A00; --info:#0B6FB0;
+}
