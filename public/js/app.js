@@ -115,9 +115,20 @@ if (!isConfigured) {
     history.replaceState(null, "", location.pathname + (rest ? "?" + rest : "") + location.hash);
   }
   if (linkError) setTimeout(() => toast(esc(/expired|invalid/i.test(linkError) ? "That link has expired or was already used. Ask for a new one." : linkError), 8000), 400);
+  // A link from an email signs you in only in the browser you used to ask for it. Opened anywhere else
+  // (for example inside an email app), the email still counts as confirmed, so explain what to do next.
+  const fromEmailLink = qs.has("code");
 
   sb.auth.onAuthStateChange((event, session) => {
     if (event === "PASSWORD_RECOVERY") state.recovery = true;
+    if (event === "INITIAL_SESSION" && fromEmailLink && !session) {
+      const wasReset = state.recovery;
+      state.recovery = false;
+      setTimeout(() => toast(wasReset
+        ? "Open the reset link in the same browser where you asked for it, or ask for a new one below."
+        : "<strong>Your email is confirmed.</strong> Log in to continue.", 9000), 400);
+      if (!location.hash.startsWith("#/login")) location.hash = "#/login";
+    }
     const next = toUser(session && session.user);
     const sameUser = state.authReady && (state.user && state.user.uid) === (next && next.uid);
     state.user = next;
