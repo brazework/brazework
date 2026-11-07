@@ -2,21 +2,27 @@
 // On narrow screens only one side shows at a time.
 import { live } from "../supabase.js";
 import { esc, initials, timeAgo, friendlyError, toast, ms } from "../util.js";
-import { conversations, thread, send, accept, decline, markRead, MAX_REQUEST_MESSAGES } from "../messages.js";
+import { conversations, thread, send, accept, decline, blockAndReport, markRead, messageSettings } from "../messages.js";
 
 export function render({ view, state, params, navigate }) {
   const me = state.user.uid;
   const cid = params[0] || "";
-  let convs = null, tab = "inbox", msgs = null, tabChosen = false;
+  let convs = null, tab = "inbox", msgs = null, tabChosen = false, requestsOn = true;
 
   view.innerHTML = `
     <div class="page" style="max-width:1100px">
       <div class="card msg-wrap" data-open="${cid ? "thread" : "list"}">
         <aside class="msg-list-pane">
           <div class="msg-list-head">
-            <h1 style="font-size:22px">Messages</h1>
+            <div class="row" style="justify-content:space-between;flex-wrap:nowrap">
+              <h1 style="font-size:22px">Messages</h1>
+              <a class="btn ghost" href="#/settings/messaging" aria-label="Message settings" title="Message settings" style="min-height:36px;padding:0 8px">
+                <svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M10 12.5 a2.5 2.5 0 1 0 0 -5 a2.5 2.5 0 1 0 0 5 Z M10 2 V4 M10 16 V18 M2 10 H4 M16 10 H18 M4.3 4.3 L5.7 5.7 M14.3 14.3 L15.7 15.7 M4.3 15.7 L5.7 14.3 M14.3 5.7 L15.7 4.3"></path></svg>
+              </a>
+            </div>
             <div class="tabs" role="tablist" aria-label="Messages">
               <button class="tab" role="tab" data-tab="inbox" aria-selected="true">Inbox<span class="tab-count" data-count="inbox"></span></button>
+              <button class="tab" role="tab" data-tab="unread" aria-selected="false">Unread</button>
               <button class="tab" role="tab" data-tab="requests" aria-selected="false">Requests<span class="tab-count" data-count="requests"></span></button>
             </div>
           </div>
@@ -41,13 +47,17 @@ export function render({ view, state, params, navigate }) {
 
   function drawList() {
     if (!convs) return;
-    const requests = convs.filter(isRequestToMe), inbox = convs.filter(c => !isRequestToMe(c));
-    const unread = list => list.filter(c => c.unread).length;
+    // With the request inbox off, requests stay in the Inbox, marked "Not connected".
+    const requests = convs.filter(isRequestToMe), inbox = requestsOn ? convs.filter(c => !isRequestToMe(c)) : convs;
+    const unread = inbox.filter(c => c.unread);
+    if (!requestsOn && tab === "requests") tab = "inbox";
     const setCount = (k, n) => { const el = view.querySelector(`[data-count="${k}"]`); if (el) el.textContent = n ? ` ${n}` : ""; };
-    setCount("inbox", unread(inbox)); setCount("requests", requests.length);
+    setCount("inbox", unread.length); setCount("requests", requests.length);
+    view.querySelector(`[data-tab="requests"]`).style.display = requestsOn ? "" : "none";
     view.querySelectorAll("[data-tab]").forEach(x => x.setAttribute("aria-selected", String(x.dataset.tab === tab)));
-    const shown = tab === "requests" ? requests : inbox;
-    listEl.innerHTML = shown.length ? shown.map(c => `
+    const shown = tab === "requests" ? requests : tab === "unread" ? unread : inbox;
+    const note = tab === "requests" ? `<p class="small muted msg-list-note">People you're not connected with land here first. They can't see that you've read their message until you accept.</p>` : "";
+    listEl.innerHTML = note + (shown.length ? shown.map(c => `
       <a class="msg-row${c.id === cid ? " active" : ""}${c.unread ? " unread" : ""}" href="#/messages/${esc(c.id)}">
         <span class="avatar md">${esc(initials(c.other.firstName, c.other.lastName))}</span>
         <span class="msg-row-text">
@@ -55,13 +65,14 @@ export function render({ view, state, params, navigate }) {
             <strong class="msg-name">${esc(c.other.firstName)} ${esc(c.other.lastName)}</strong>
             <span class="small faint" style="flex:none">${c.lastAt ? esc(timeAgo(c.lastAt)) : ""}</span>
           </span>
-          <span class="small ${c.unread ? "" : "muted"} msg-preview">${c.status === "request" && c.startedByMe ? `<span class="faint">Request sent · </span>` : ""}${c.lastFromMe ? "You: " : ""}${esc(c.lastBody || "No messages yet")}</span>
+          <span class="small ${c.unread ? "" : "muted"} msg-preview">${c.status === "request" && c.startedByMe ? `<span class="faint">Request sent · </span>` : ""}${isRequestToMe(c) && !requestsOn ? `<span class="faint">Not connected · </span>` : ""}${c.lastFromMe ? "You: " : ""}${esc(c.lastBody || "No messages yet")}</span>
         </span>
         ${c.unread ? `<span class="msg-dot" aria-label="Unread"></span>` : ""}
       </a>`).join("")
       : `<p class="muted small" style="padding:20px">${tab === "requests"
-        ? "No message requests. Messages from people you're not connected with show up here."
-        : "No conversations yet. Use <strong>Message</strong> on a profile or connection to start one."}</p>`;
+        ? "No message requests. You're all caught up."
+        : tab === "unread" ? "No unread messages."
+        : "No conversations yet. Use <strong>Message</strong> on a profile or connection to start one."}</p>`);
   }
 
   // ---------- The open conversation ----------
@@ -87,15 +98,21 @@ export function render({ view, state, params, navigate }) {
   let footState = "";
   function drawFoot(c) {
     const foot = view.querySelector("#m-foot"); if (!foot) return;
-    const sentByMe = (msgs || []).filter(m => m.senderId === me).length;
-    const mode = isRequestToMe(c) ? "incoming" : c.status === "request" ? (sentByMe >= MAX_REQUEST_MESSAGES ? "limit" : "outgoing") : "open";
+    // Only the person who started a request can send in it, so a preview means their one message has gone.
+    const mode = isRequestToMe(c) ? "incoming" : c.status === "request" ? (c.lastAt ? "sent" : "outgoing") : "open";
     if (mode === footState) return; // keep whatever is being typed
     footState = mode;
     const name = esc(c.other.firstName);
     if (mode === "incoming") {
       foot.innerHTML = `<div class="msg-request stack">
-        <p><strong>${name} wants to message you.</strong> <span class="muted">You're not connected yet. Accept to reply, or decline to remove this conversation.</span></p>
-        <div class="row" style="gap:8px"><button class="btn primary" id="m-accept">Accept</button><button class="btn" id="m-decline">Decline</button></div></div>`;
+        <p><strong>${name} wants to message you.</strong> <span class="muted">Accept to reply. Until then, ${name} can't send more messages or see that you've read this.</span></p>
+        <div class="row" style="gap:8px"><button class="btn primary" id="m-accept">Accept</button><button class="btn" id="m-decline">Decline</button><button class="btn ghost" id="m-block" style="color:var(--warn)">Block &amp; report</button></div></div>`;
+      foot.querySelector("#m-block").onclick = async e => {
+        if (e.target.dataset.confirm !== "1") { e.target.dataset.confirm = "1"; e.target.textContent = "Click again to block and report"; return; }
+        e.target.disabled = true;
+        try { await blockAndReport(c.id); toast(`${name} is blocked and can't message you again. Forge has your report.`); navigate("messages"); }
+        catch (err) { toast(esc(friendlyError(err))); e.target.disabled = false; }
+      };
       foot.querySelector("#m-accept").onclick = async e => {
         e.target.disabled = true;
         try { await accept(c.id); toast(`You can now message <strong>${name}</strong>.`); }
@@ -109,12 +126,12 @@ export function render({ view, state, params, navigate }) {
       };
       return;
     }
-    if (mode === "limit") {
-      foot.innerHTML = `<p class="msg-request small muted">You've sent ${MAX_REQUEST_MESSAGES} messages. You can send more once ${name} accepts your request or you connect.</p>`;
+    if (mode === "sent") {
+      foot.innerHTML = `<p class="msg-request small muted">Your message request was sent. You can send more once ${name} accepts it or you connect.</p>`;
       return;
     }
     foot.innerHTML = `
-      ${mode === "outgoing" ? `<p class="small faint" style="padding:0 18px">${name} will see this as a message request until they accept or you connect. You can send up to ${MAX_REQUEST_MESSAGES} messages until then.</p>` : ""}
+      ${mode === "outgoing" ? `<p class="small faint" style="padding:0 18px">${name} will see this as a message request. You can send one message until they accept or you connect.</p>` : ""}
       <form class="msg-compose" id="m-form">
         <label class="sr-only" for="m-input">Write a message</label>
         <textarea id="m-input" class="input" rows="1" maxlength="2000" placeholder="Write a message"></textarea>
@@ -157,7 +174,8 @@ export function render({ view, state, params, navigate }) {
   let readTimer = null;
   const markSeen = () => {
     const c = current();
-    if (!c || !c.unread || document.hidden) return;
+    // A request stays unread until you accept it, as in the prototype.
+    if (!c || !c.unread || isRequestToMe(c) || document.hidden) return;
     clearTimeout(readTimer);
     readTimer = setTimeout(() => markRead(cid).catch(() => {}), 400);
   };
@@ -166,9 +184,11 @@ export function render({ view, state, params, navigate }) {
 
   // ---------- Live data ----------
 
-  const stopList = live(["conversations"], () => conversations(me), data => {
+  messageSettings(me).then(s => { requestsOn = s.requestsOn; drawList(); }).catch(() => {});
+
+  const stopList = live(["conversations", "conversation_reads"], () => conversations(me), data => {
     convs = data;
-    if (!tabChosen && cid) { const c = current(); if (c && isRequestToMe(c)) tab = "requests"; }
+    if (!tabChosen && cid) { const c = current(); if (c && isRequestToMe(c) && requestsOn) tab = "requests"; }
     drawList();
     if (cid) { drawHead(); markSeen(); }
   }, err => { listEl.innerHTML = `<p class="error" style="padding:20px">${esc(friendlyError(err))}</p>`; });

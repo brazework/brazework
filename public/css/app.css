@@ -202,9 +202,11 @@ a.pf-count:hover { color: var(--accent); }
 
 /* ---------- Messages ---------- */
 .msg-wrap { padding: 0; display: grid; grid-template-columns: minmax(260px, 340px) 1fr; height: calc(100vh - 140px); min-height: 480px; overflow: hidden; }
-.msg-list-pane { border-right: 1px solid var(--border); display: flex; flex-direction: column; min-height: 0; }
+.msg-list-pane { border-right: 1px solid var(--border); display: flex; flex-direction: column; min-height: 0; min-width: 0; }
 .msg-list-head { padding: 18px 18px 0; display: flex; flex-direction: column; gap: 10px; }
+.msg-list-head .tab { padding: 0 12px; }
 .msg-list { overflow-y: auto; flex: 1 1 auto; padding: 6px 0; }
+.msg-list-note { padding: 8px 18px 12px; border-bottom: 1px solid var(--border); }
 .msg-row { display: flex; align-items: center; gap: 12px; padding: 12px 18px; text-decoration: none; color: var(--text); border-left: 3px solid transparent; }
 .msg-row:hover { background: var(--hover); }
 .msg-row.active { background: var(--raised); border-left-color: var(--accent); }
@@ -230,7 +232,7 @@ a.pf-count:hover { color: var(--accent); }
 .msg-request { padding: 16px 18px; border-top: 1px solid var(--border); background: var(--surface-2); gap: 12px; }
 .msg-empty { margin: auto; max-width: 380px; text-align: center; align-items: center; padding: 24px; }
 @media (max-width: 800px) {
-  .msg-wrap { grid-template-columns: 1fr; height: calc(100vh - 120px); }
+  .msg-wrap { grid-template-columns: minmax(0, 1fr); height: calc(100vh - 120px); }
   .msg-wrap[data-open="thread"] .msg-list-pane, .msg-wrap[data-open="list"] .msg-thread-pane { display: none; }
   .msg-list-pane { border-right: none; }
   .msg-back { display: inline-flex; }

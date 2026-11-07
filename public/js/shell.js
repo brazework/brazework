@@ -72,7 +72,7 @@ export function renderShell({ state, current, navigate }) {
   document.getElementById("menu-open").onclick = () => openMenu({ state, current, navigate });
 
   drawUnread();
-  if (!stopUnread) stopUnread = live(["conversations"], unreadCount, n => { unread = n; drawUnread(); }, () => {});
+  if (!stopUnread) stopUnread = live(["conversations", "conversation_reads"], unreadCount, n => { unread = n; drawUnread(); }, () => {});
 
   // Pending connection requests, shown as a small number next to Network.
   pendingCount(state.user.uid).then(n => {

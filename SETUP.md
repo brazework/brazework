@@ -46,7 +46,10 @@ In Vercel, open **Deployments**, click **⋮** on the newest one and choose **Re
 - [ ] From your second account, join (or request to join) the community; approve the request from **Manage**, then make that account a Moderator
 - [ ] From your second account, open your main profile and click **Connect**; on your main account, accept it under **Network**, then check the **Following** tab on your feed
 - [ ] Open your second account's profile and click **Message**; reply from the second account and watch the unread badge next to Messages
-- [ ] From an account you're not connected with, send a message; it shows under **Requests**, where you can accept or decline it
+- [ ] From an account you're not connected with, send a message; it shows under **Requests**, and the sender can't send a second one until you accept
+- [ ] From another account you're not connected with, send a request, then choose **Block & report**; that account can't message you again until you unblock it in **Settings**
+- [ ] In **Settings → Messaging**, choose **Connections only**, then try messaging that account from one you're not connected with; it's refused
+- [ ] Turn **Message requests** off; the Requests tab goes away and requests show in your Inbox marked "Not connected"
 - [ ] As a Forge admin, open **Your organization** from the menu and add an event; it shows under **Events**
 - [ ] From another account, RSVP and bookmark that event, then check **Saved events** and **Add to calendar**
 - [ ] Sign up with a work email, register your company, and add an event; a personal email can't register one
@@ -72,13 +75,13 @@ In Vercel, open **Deployments**, click **⋮** on the newest one and choose **Re
 | Email verification and log-in, password reset | Projects with build logs and critiques |
 | Interests and field (onboarding) | Community events, invite-only communities |
 | Network: connections, requests with notes, following, People you may know | |
-| Messages: one-to-one, live, with a separate Requests inbox for people you're not connected with | |
+| Messages: one-to-one, live, with Inbox, Unread and Requests; one message until accepted, block and report, and settings for who can message you | Message spam filter |
 | Events: matched to your interests, filters, RSVP, saved events, add to calendar; leave the tab 24 hours after they end | |
 | Organizations: companies and schools verified by work email, hosting events with a past-events log | |
 | Feed with live posts, likes, comments, topics and saving; For you, Latest, Following and Communities tabs | |
 | Profiles with posts, posting, headline, bio, connect and follow | Saved folders and saved events |
 | Communities: discover, create, join or request, roles, moderation, auto-moderation | Organizations (companies and schools), admin console |
-| Settings: theme, accent, text size, reduce motion, interests | |
+| Settings: theme, accent, text size, reduce motion, messaging, blocked people, interests | |
 | Side menu, page transitions, light and dark themes | Analytics, marketplace and NDA process (stay off until launch) |
 
 ## If something goes wrong
