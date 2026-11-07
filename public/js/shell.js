@@ -8,10 +8,10 @@ import { unreadCount } from "./messages.js";
 const MENU = [
   { title: "Explore", items: [
     ["feed", "Home feed", "home"], ["profile", "Your profile", "user"], ["communities", "Communities", "groups"],
-    ["network", "Network", "network"], ["messages", "Messages", "chat"], ["events", "Events", "calendar", true],
+    ["network", "Network", "network"], ["messages", "Messages", "chat"], ["events", "Events", "calendar"],
     ["saved", "Saved", "saved"]
   ] },
-  { title: "Your tools", items: [["analytics", "Analytics", "chart", true], ["marketplace", "Marketplace", "market", true]] },
+  { title: "Your tools", items: [["org", "Your organization", "groups"], ["analytics", "Analytics", "chart", true], ["marketplace", "Marketplace", "market", true]] },
   { title: "Account", items: [["settings", "Settings", "gear"]] }
 ];
 
@@ -63,6 +63,7 @@ export function renderShell({ state, current, navigate }) {
         ${link("communities", "Communities")}
         <a href="#/network" ${current === "network" ? 'aria-current="page"' : ""}>Network<span class="nav-badge" id="nav-invites" hidden></span></a>
         <a href="#/messages" ${current === "messages" ? 'aria-current="page"' : ""}>Messages<span class="nav-badge" id="nav-msgs" hidden></span></a>
+        ${link("events", "Events")}
         ${link("settings", "Settings")}
         <a href="#/profile" class="avatar sm" aria-label="Your profile">${esc(ini)}</a>
       </nav>

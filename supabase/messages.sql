@@ -135,6 +135,9 @@ create trigger connections_open_conversation after insert or update of status on
 -- Only the two people in a conversation can see it. Messages go in only through the rules above;
 -- nobody can edit someone else's. The person who received a request can decline it (it's removed).
 
+-- Supabase grants full table permissions on new tables by default; start from none.
+revoke all on public.conversations, public.messages from anon, authenticated;
+
 alter table public.conversations enable row level security;
 alter table public.messages enable row level security;
 

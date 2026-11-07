@@ -90,7 +90,7 @@ export function render({ view }) {
         <div class="lp-head">
           <div class="kicker">For organizations</div>
           <h2>Companies and schools have a home here too.</h2>
-          <p class="muted lp-sub">Organization accounts open soon and are verified through a work email. Register your interest and we'll reach out when they're ready.</p>
+          <p class="muted lp-sub">Companies and schools can host events on Forge, verified through a work email: sign up with your work or school address, then register your organization. Not ready yet? Tell us and we'll reach out.</p>
         </div>
         <div class="lp-grid2">
           <article class="card stack lp-org">${icon.company}<h3>For companies</h3><p class="muted">Find engineers and scientists by what they've actually built. Post openings and internships, sponsor student projects and host events.</p></article>

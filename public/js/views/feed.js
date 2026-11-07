@@ -5,15 +5,17 @@ import { composerHTML, bindComposer, createPostList, skeletonPosts } from "../po
 import { myCommunities, badge, fmtCount, membersLabel, runJoinAction, PRIVACY_LABEL, topCommunities, visiblePosts } from "../communities.js";
 import { openCreate } from "./communities.js";
 import { following as followingOf, peopleWithInterests } from "../network.js";
+import { tabEvents, isOver, dateParts, timeRange } from "../events.js";
 
 const DAY = 86400000;
 
 // What's new on Forge. Add a line here whenever an update ships.
 const UPDATES = [
+  ["New", "Events: career fairs, workshops and talks picked for your interests. Companies and schools can host their own."],
   ["New", "Messages: talk one-to-one with your connections. Messages from anyone else arrive as requests."],
   ["New", "Network: connect with people, follow them, and see their posts in your Following feed."],
   ["New", "Communities: join groups in your field, start your own, and pick moderators."],
-  ["Next", "Events."]
+  ["Next", "Projects with build logs and critiques."]
 ];
 
 export function render({ view, state, navigate }) {
@@ -73,8 +75,8 @@ export function render({ view, state, navigate }) {
           <div class="stack" style="gap:12px" id="people"><div class="skeleton" style="height:40px"></div></div>
         </section>
         <section class="card stack">
-          <h2 style="font-size:16px">Career events and STEM news</h2>
-          <p class="small muted">Career fairs, networking nights and news picked for your interests are on the way.</p>
+          <div class="row" style="justify-content:space-between"><h2 style="font-size:16px">Career and networking events</h2><a href="#/events" class="small muted">See all</a></div>
+          <div class="stack" style="gap:12px" id="feed-events"><div class="skeleton" style="height:40px"></div></div>
         </section>
       </aside>
     </div></div>`;
@@ -167,6 +169,7 @@ export function render({ view, state, navigate }) {
     err => { listEl.innerHTML = `<div class="card"><p class="error">${esc(friendlyError(err))}</p></div>`; });
 
   loadPeople(view, uid, interests);
+  loadEvents(view, interests);
 
   // Your communities, for the left column and the Communities tab.
   const joinedReady = myCommunities(uid).then(r => { joined = r; drawMyCommunities(); return r; })
@@ -234,6 +237,27 @@ export function render({ view, state, navigate }) {
   }
 
   return () => { unsub(); if (cUnsub) cUnsub(); if (fUnsub) fUnsub(); list.destroy(); };
+}
+
+// The next few events, matched to your interests first.
+async function loadEvents(view, interests) {
+  const el = view.querySelector("#feed-events");
+  try {
+    const mine = new Set(interests);
+    const all = (await tabEvents()).filter(e => !isOver(e));
+    const picks = [...all.filter(e => mine.has(e.topic)), ...all.filter(e => !mine.has(e.topic))].slice(0, 3);
+    if (!el.isConnected) return;
+    el.innerHTML = picks.length ? picks.map(e => { const d = dateParts(e.startsAt); return `
+      <a href="#/events/all" class="row" style="gap:10px;text-decoration:none;flex-wrap:nowrap;align-items:flex-start">
+        <span class="ev-date" style="width:44px;padding:4px 0"><span class="ev-mon">${esc(d.mon)}</span><span style="font-size:16px;font-weight:700">${esc(d.day)}</span></span>
+        <span style="display:flex;flex-direction:column;min-width:0">
+          <strong style="font-size:14px">${esc(e.title)}</strong>
+          <span class="small faint">${esc(e.host)} · ${esc(timeRange(e))}</span>
+        </span>
+      </a>`; }).join("") : `<span class="small muted">Career fairs and networking events will show up here.</span>`;
+  } catch (e) {
+    if (el.isConnected) el.innerHTML = `<span class="small muted">Couldn't load events right now.</span>`;
+  }
 }
 
 // Members who share at least one of your interests.

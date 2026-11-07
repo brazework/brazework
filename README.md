@@ -12,6 +12,7 @@ vercel.json              Static site from public/, build step, cache headers
 scripts/build-config.mjs Writes public/js/supabase-config.js from Vercel's Supabase variables
 supabase/schema.sql      Tables, row-level security (who can do what), triggers and live-update setup
 supabase/messages.sql    Conversations and messages (run after schema.sql)
+supabase/events.sql      Organizations and events (run after schema.sql)
 public/
   index.html             Applies saved theme before first paint
   css/tokens.css         Dark and light color tokens (use these, never fixed colors)
@@ -24,6 +25,7 @@ public/
   js/communities.js      Community roles and permissions, joining, requests, moderation, auto-moderation
   js/network.js          Connections (requests, accept, remove), follows, people suggestions
   js/messages.js         Conversations: list, thread, send, accept or decline requests, unread count
+  js/events.js           Events, RSVPs, saved events, organizations, calendar files
   js/util.js             Helpers, icons, error messages, starter topic list
   js/views/*.js          One file per page (reset.js: choose a new password from a reset link)
 ```
@@ -39,6 +41,8 @@ The database fills in names, counts and times itself, so the app can't fake them
 - `follows`: follower, target, plus their names.
 - `communities`, `community_members` (role: owner, admin, moderator, helper, member), `community_requests`, `community_bans`.
 - `conversations`, `messages`: one conversation per pair of people. Between connections it's open right away; otherwise it's a request the other person accepts or declines, and the sender can send up to 3 messages until then. Only the two people can read it. Each conversation keeps a preview and when each person last read it.
+- `organizations`, `organization_admins`: companies and schools, verified when the registering account's confirmed email matches the website's domain (personal providers are rejected). The `forge` organization posts Forge's own events; add its admins in the dashboard.
+- `events`, `event_rsvps`, `event_saves`: hosted by an organization. Events are never deleted. Row-level security hides them from members 24 hours after they end, and from then on only the host's admins can see them, which is the past-events log. Ended events can't be edited.
 - `org_interest`: company and school interest from the landing page (write-only from the site; read it in the Supabase dashboard under Table Editor).
 
 ## Known limits of this slice
@@ -50,4 +54,6 @@ The database fills in names, counts and times itself, so the app can't fake them
 - Communities can't be deleted or have ownership transferred yet. Invite-only communities, community events and a moderation log come later.
 - Anyone who was declined can send a new request later; blocking comes later.
 - Messages are one-to-one text only (no group chats, attachments, editing or deleting yet), and there are no email notifications for new messages.
+- Organizations have one admin (the person who registered) and no public page yet; adding colleagues as admins and the company page come later. Their name isn't checked, only their email domain, and unlisted schools aren't reviewed yet: a school needs an academic domain.
+- Events have one topic each and no reminders. Communities can't host events yet.
 - Supabase's built-in email sender only sends a few emails an hour; set up your own email sender before launch (SETUP.md, step 4).

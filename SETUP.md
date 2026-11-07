@@ -19,7 +19,8 @@ Forge's code lives on GitHub. Vercel puts it online and redeploys automatically 
 
 1. Open your Supabase project (Vercel's Storage tab has an **Open in Supabase** button).
 2. Go to **SQL Editor**, click **New query**, paste everything from `supabase/schema.sql`, and click **Run**. It should say "Success. No rows returned."
-3. Do the same with `supabase/messages.sql`.
+3. Do the same with `supabase/messages.sql`, then `supabase/events.sql`.
+4. To post Forge's own events, open **Table Editor → organization_admins** and add a row with the `Forge` organization's id and your user id.
 
 > The anon key is safe to have in a website. What protects your data is row-level security in `supabase/schema.sql`.
 
@@ -46,6 +47,9 @@ In Vercel, open **Deployments**, click **⋮** on the newest one and choose **Re
 - [ ] From your second account, open your main profile and click **Connect**; on your main account, accept it under **Network**, then check the **Following** tab on your feed
 - [ ] Open your second account's profile and click **Message**; reply from the second account and watch the unread badge next to Messages
 - [ ] From an account you're not connected with, send a message; it shows under **Requests**, where you can accept or decline it
+- [ ] As a Forge admin, open **Your organization** from the menu and add an event; it shows under **Events**
+- [ ] From another account, RSVP and bookmark that event, then check **Saved events** and **Add to calendar**
+- [ ] Sign up with a work email, register your company, and add an event; a personal email can't register one
 - [ ] Edit your headline and bio on your profile
 - [ ] Log out, click **Forgot password?**, follow the email link and choose a new password
 - [ ] In Settings, switch between Dark, Light and Match device
@@ -63,12 +67,14 @@ In Vercel, open **Deployments**, click **⋮** on the newest one and choose **Re
 
 | Built and working | Coming next (designed in the prototype) |
 | --- | --- |
-| Landing page | Events |
+| Landing page | Company and school pages, more organization admins |
 | Sign-up (student or professional, 18+, university email check) | Group messages, attachments |
 | Email verification and log-in, password reset | Projects with build logs and critiques |
 | Interests and field (onboarding) | Community events, invite-only communities |
 | Network: connections, requests with notes, following, People you may know | |
 | Messages: one-to-one, live, with a separate Requests inbox for people you're not connected with | |
+| Events: matched to your interests, filters, RSVP, saved events, add to calendar; leave the tab 24 hours after they end | |
+| Organizations: companies and schools verified by work email, hosting events with a past-events log | |
 | Feed with live posts, likes, comments, topics and saving; For you, Latest, Following and Communities tabs | |
 | Profiles with posts, posting, headline, bio, connect and follow | Saved folders and saved events |
 | Communities: discover, create, join or request, roles, moderation, auto-moderation | Organizations (companies and schools), admin console |

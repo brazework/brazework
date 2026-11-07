@@ -17,6 +17,8 @@ import * as communities from "./views/communities.js";
 import * as community from "./views/community.js";
 import * as network from "./views/network.js";
 import * as messages from "./views/messages.js";
+import * as events from "./views/events.js";
+import * as org from "./views/org.js";
 import * as soon from "./views/soon.js";
 import * as setup from "./views/setup.js";
 import * as reset from "./views/reset.js";
@@ -28,7 +30,7 @@ export const state = { user: null, profile: null, authReady: false, hold: false,
 const PUBLIC = new Set(["", "login", "signup"]);
 const ROUTES = {
   "": landing, login, signup, verify, reset, onboarding, feed, profile, u: profile, settings,
-  communities, c: community, network, messages, events: soon, saved, analytics: soon, marketplace: soon
+  communities, c: community, network, messages, events, org, saved, analytics: soon, marketplace: soon
 };
 
 let cleanup = null;
