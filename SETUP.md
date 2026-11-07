@@ -19,7 +19,7 @@ Forge's code lives on GitHub. Vercel puts it online and redeploys automatically 
 
 1. Open your Supabase project (Vercel's Storage tab has an **Open in Supabase** button).
 2. Go to **SQL Editor**, click **New query**, paste everything from `supabase/schema.sql`, and click **Run**. It should say "Success. No rows returned."
-3. Do the same with `supabase/messages.sql`, then `supabase/events.sql`.
+3. Do the same with `supabase/messages.sql`, then `supabase/events.sql`, then `supabase/activity.sql`.
 4. To post Forge's own events, open **Table Editor → organization_admins** and add a row with the `Forge` organization's id and your user id.
 
 > The anon key is safe to have in a website. What protects your data is row-level security in `supabase/schema.sql`.
@@ -53,6 +53,9 @@ In Vercel, open **Deployments**, click **⋮** on the newest one and choose **Re
 - [ ] As a Forge admin, open **Your organization** from the menu and add an event; it shows under **Events**
 - [ ] From another account, RSVP and bookmark that event, then check **Saved events** and **Add to calendar**
 - [ ] Sign up with a work email, register your company, and add an event; a personal email can't register one
+- [ ] From your second account, like and comment on a post of yours and follow you; on your main account the bell shows a number, and **Notifications** lists them and links to the post
+- [ ] Unlike the post from the second account; that notification disappears
+- [ ] From your second account, open your main profile; on your main account, open **Analytics** from your profile and check the profile view for today
 - [ ] Edit your headline and bio on your profile
 - [ ] Log out, click **Forgot password?**, follow the email link and choose a new password
 - [ ] In Settings, switch between Dark, Light and Match device
@@ -74,6 +77,8 @@ In Vercel, open **Deployments**, click **⋮** on the newest one and choose **Re
 | Sign-up (student or professional, 18+, university email check) | Group messages, attachments |
 | Email verification and log-in, password reset | Projects with build logs and critiques |
 | Interests and field (onboarding) | Community events, invite-only communities |
+| Notifications: likes, comments, follows, connection requests and community joins, live, with a badge on the bell | Email and push notifications, notification settings |
+| Analytics: profile views over 7, 30, 90 days and 12 months, engagement, who viewed (as totals), top posts | Career benchmark, project and search analytics, company analytics |
 | Network: connections, requests with notes, following, People you may know | |
 | Messages: one-to-one, live, with Inbox, Unread and Requests; one message until accepted, block and report, and settings for who can message you | Message spam filter |
 | Events: matched to your interests, filters, RSVP, saved events, add to calendar; leave the tab 24 hours after they end | |
@@ -82,7 +87,7 @@ In Vercel, open **Deployments**, click **⋮** on the newest one and choose **Re
 | Profiles with posts, posting, headline, bio, connect and follow | Saved folders and saved events |
 | Communities: discover, create, join or request, roles, moderation, auto-moderation | Organizations (companies and schools), admin console |
 | Settings: theme, accent, text size, reduce motion, messaging, blocked people, interests | |
-| Side menu, page transitions, light and dark themes | Analytics, marketplace and NDA process (stay off until launch) |
+| Side menu, page transitions, light and dark themes | Marketplace and NDA process (stay off until launch) |
 
 ## If something goes wrong
 

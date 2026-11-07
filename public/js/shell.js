@@ -4,6 +4,7 @@ import { esc, initials, LOGO, icon } from "./util.js";
 import { myCommunities, badge } from "./communities.js";
 import { pendingCount } from "./network.js";
 import { unreadCount } from "./messages.js";
+import { unreadNotifications } from "./activity.js";
 
 const MENU = [
   { title: "Explore", items: [
@@ -11,20 +12,28 @@ const MENU = [
     ["network", "Network", "network"], ["messages", "Messages", "chat"], ["events", "Events", "calendar"],
     ["saved", "Saved", "saved"]
   ] },
-  { title: "Your tools", items: [["org", "Your organization", "groups"], ["analytics", "Analytics", "chart", true], ["marketplace", "Marketplace", "market", true]] },
-  { title: "Account", items: [["settings", "Settings", "gear"]] }
+  { title: "Your tools", items: [["org", "Your organization", "groups"], ["analytics", "Analytics", "chart"], ["marketplace", "Marketplace", "market", true]] },
+  { title: "Account", items: [["notifications", "Notifications", "bell"], ["settings", "Settings", "gear"]] }
 ];
 
 let menuOpen = false;
 
 // Unread conversations, shown next to Messages. One live subscription for the whole visit,
 // since the top bar is redrawn on every page.
-let stopUnread = null, unread = 0;
+let stopUnread = null, unread = 0, stopNotes = null, notes = 0;
 function drawUnread() {
   const b = document.getElementById("nav-msgs"); if (!b) return;
   b.hidden = !unread;
   b.textContent = unread > 99 ? "99+" : String(unread);
   b.setAttribute("aria-label", `${unread} unread ${unread === 1 ? "conversation" : "conversations"}`);
+}
+
+function drawNotes() {
+  const b = document.getElementById("nav-notes"); if (!b) return;
+  b.hidden = !notes;
+  b.textContent = notes > 99 ? "99+" : String(notes);
+  const l = document.getElementById("nav-bell");
+  if (l) l.setAttribute("aria-label", notes ? `Notifications, ${notes} new` : "Notifications");
 }
 
 export function renderShell({ state, current, navigate }) {
@@ -33,6 +42,7 @@ export function renderShell({ state, current, navigate }) {
 
   if (!signedInApp) {
     if (stopUnread) { stopUnread(); stopUnread = null; unread = 0; }
+    if (stopNotes) { stopNotes(); stopNotes = null; notes = 0; }
     const authed = !!state.user;
     shell.innerHTML = `
       <header class="topbar"><div class="topbar-inner">
@@ -64,6 +74,7 @@ export function renderShell({ state, current, navigate }) {
         <a href="#/network" ${current === "network" ? 'aria-current="page"' : ""}>Network<span class="nav-badge" id="nav-invites" hidden></span></a>
         <a href="#/messages" ${current === "messages" ? 'aria-current="page"' : ""}>Messages<span class="nav-badge" id="nav-msgs" hidden></span></a>
         ${link("events", "Events")}
+        <a href="#/notifications" id="nav-bell" class="bell-link" aria-label="Notifications" title="Notifications" ${current === "notifications" ? 'aria-current="page"' : ""}>${icon("bell")}<span class="nav-badge" id="nav-notes" hidden aria-hidden="true"></span></a>
         ${link("settings", "Settings")}
         <a href="#/profile" class="avatar sm" aria-label="Your profile">${esc(ini)}</a>
       </nav>
@@ -72,6 +83,8 @@ export function renderShell({ state, current, navigate }) {
   document.getElementById("menu-open").onclick = () => openMenu({ state, current, navigate });
 
   drawUnread();
+  drawNotes();
+  if (!stopNotes) stopNotes = live(["notifications"], unreadNotifications, n => { notes = n; drawNotes(); }, () => {});
   if (!stopUnread) stopUnread = live(["conversations", "conversation_reads"], unreadCount, n => { unread = n; drawUnread(); }, () => {});
 
   // Pending connection requests, shown as a small number next to Network.

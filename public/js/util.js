@@ -94,6 +94,8 @@ export const ICONS = {
   calendar: "M3 5 H17 V17 H3 Z M3 9 H17 M7 3 V6 M13 3 V6",
   saved: "M5 3 H15 V17 L10 13.5 L5 17 Z",
   chart: "M3 17 H17 M5 14 V10 M9 14 V5 M13 14 V8",
+  bell: "M5 14 V9 a5 5 0 0 1 10 0 V14 L16.5 15.5 H3.5 Z M8 17.5 H12",
+  lock: "M5 9 H15 V17 H5 Z M7 9 V6.5 a3 3 0 0 1 6 0 V9",
   market: "M3 7 H17 L16 17 H4 Z M7 7 V5 a3 3 0 0 1 6 0 V7",
   gear: "M10 12.5 a2.5 2.5 0 1 0 0 -5 a2.5 2.5 0 1 0 0 5 Z M10 2 V4 M10 16 V18 M2 10 H4 M16 10 H18 M4.3 4.3 L5.7 5.7 M14.3 14.3 L15.7 15.7 M4.3 15.7 L5.7 14.3 M14.3 5.7 L15.7 4.3",
   logout: "M8 3 H4 V17 H8 M13 6 L17 10 L13 14 M17 10 H8",

@@ -1,9 +1,10 @@
 // Profile page: yours (editable) or another member's.
 import { sb, run, many, live } from "../supabase.js";
-import { esc, initials, friendlyError, toast } from "../util.js";
+import { esc, initials, friendlyError, toast, icon } from "../util.js";
 import { composerHTML, bindComposer, createPostList, skeletonPosts } from "../posts.js";
 import { relationship, sendRequest, accept, removeConnection, follow, unfollow, counts, askNote, getProfile } from "../network.js";
 import { start as startConversation } from "../messages.js";
+import { recordView } from "../activity.js";
 
 export async function render({ view, state, params, name, refreshProfile, navigate }) {
   const myUid = state.user.uid;
@@ -20,6 +21,7 @@ export async function render({ view, state, params, name, refreshProfile, naviga
   }
   if (!p) { view.innerHTML = `<div class="page"><div class="card"><h1 style="font-size:22px">Profile not found</h1><p class="muted">This member may have left Forge.</p></div></div>`; return; }
 
+  if (!isMe) recordView(uid);
   const badge = p.accountType === "student" ? "Verified student" : "Verified professional";
   view.innerHTML = `
     <div class="page stack" style="gap:24px">
@@ -33,7 +35,7 @@ export async function render({ view, state, params, name, refreshProfile, naviga
             <span class="small faint">${esc(p.field || "")}</span>
             <div class="row small" id="pf-counts" style="gap:16px;margin-top:6px"><span class="skeleton" style="width:220px;height:14px"></span></div>
           </div>
-          ${isMe ? `<button class="btn" id="pf-edit">Edit profile</button>` : `<div class="row" style="gap:8px" id="pf-actions"><span class="skeleton" style="width:180px;height:44px"></span></div>`}
+          ${isMe ? `<div class="row" style="gap:8px"><a class="btn" href="#/analytics">${icon("chart", 16)}Analytics</a><button class="btn" id="pf-edit">Edit profile</button></div>` : `<div class="row" style="gap:8px" id="pf-actions"><span class="skeleton" style="width:180px;height:44px"></span></div>`}
         </div>
       </section>
       <div class="cols">

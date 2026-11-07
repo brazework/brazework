@@ -13,6 +13,7 @@ scripts/build-config.mjs Writes public/js/supabase-config.js from Vercel's Supab
 supabase/schema.sql      Tables, row-level security (who can do what), triggers and live-update setup
 supabase/messages.sql    Conversations and messages (run after schema.sql)
 supabase/events.sql      Organizations and events (run after schema.sql)
+supabase/activity.sql    Notifications and profile views for analytics (run last)
 public/
   index.html             Applies saved theme before first paint
   css/tokens.css         Dark and light color tokens (use these, never fixed colors)
@@ -26,6 +27,7 @@ public/
   js/network.js          Connections (requests, accept, remove), follows, people suggestions
   js/messages.js         Conversations: list, thread, send, accept, decline, block and report, unread count, settings
   js/events.js           Events, RSVPs, saved events, organizations, calendar files
+  js/activity.js         Notifications, profile views, analytics
   js/util.js             Helpers, icons, error messages, starter topic list
   js/views/*.js          One file per page (reset.js: choose a new password from a reset link)
 ```
@@ -47,6 +49,8 @@ The database fills in names, counts and times itself, so the app can't fake them
 - `message_reports`: created by Block & report, with a copy of the messages. Can't be read from the site; review them in the Supabase dashboard under Table Editor.
 - `organizations`, `organization_admins`: companies and schools, verified when the registering account's confirmed email matches the website's domain (personal providers are rejected). The `forge` organization posts Forge's own events; add its admins in the dashboard.
 - `events`, `event_rsvps`, `event_saves`: hosted by an organization. Events are never deleted. Row-level security hides them from members 24 hours after they end, and from then on only the host's admins can see them, which is the past-events log. Ended events can't be edited.
+- `notifications`: written only by the database when someone likes or comments on your post, follows you, sends or accepts a connection request, asks to join a community you help run, or approves your request. Unliking, unfollowing or withdrawing removes it again. Nothing is sent about your own actions or by people you've blocked. Only you can read, mark read or clear yours.
+- `profile_views`: one row per viewer, per profile, per day (your own visits don't count). Nobody can read it from the site; `my_analytics()` gives the owner totals only, and the viewer breakdown appears only once at least 3 different people have viewed you.
 - `org_interest`: company and school interest from the landing page (write-only from the site; read it in the Supabase dashboard under Table Editor).
 
 ## Known limits of this slice
@@ -62,4 +66,6 @@ The database fills in names, counts and times itself, so the app can't fake them
 - Read status is never shown to anyone, even after a request is accepted.
 - Organizations have one admin (the person who registered) and no public page yet; adding colleagues as admins and the company page come later. Their name isn't checked, only their email domain, and unlisted schools aren't reviewed yet: a school needs an academic domain.
 - Events have one topic each and no reminders. Communities can't host events yet.
+- Notifications appear in the app only; there are no emails or phone push notifications yet, and no settings to turn kinds off.
+- Analytics counts profile views and engagement on your posts. Project views, search appearances and access requests from the prototype wait on those features. Career progression only shows when you joined until profiles have experience and education, and the career benchmark waits on deciding how skill levels are measured. Company analytics wait on the company page.
 - Supabase's built-in email sender only sends a few emails an hour; set up your own email sender before launch (SETUP.md, step 4).
