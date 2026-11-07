@@ -3,6 +3,7 @@ import { sb, run, many, live } from "../supabase.js";
 import { esc, initials, friendlyError, toast } from "../util.js";
 import { composerHTML, bindComposer, createPostList, skeletonPosts } from "../posts.js";
 import { relationship, sendRequest, accept, removeConnection, follow, unfollow, counts, askNote, getProfile } from "../network.js";
+import { start as startConversation } from "../messages.js";
 
 export async function render({ view, state, params, name, refreshProfile, navigate }) {
   const myUid = state.user.uid;
@@ -80,7 +81,7 @@ export async function render({ view, state, params, name, refreshProfile, naviga
       box.innerHTML = main + (rel.following
         ? `<button class="btn ghost" data-a="unfollow">Following</button>`
         : `<button class="btn ghost" data-a="follow">+ Follow</button>`)
-        + `<button class="btn ghost" disabled title="Messages are coming soon">Message</button>`;
+        + `<button class="btn ghost" data-a="message" title="${rel.status === "connected" ? "" : "Not connected yet: this arrives as a message request"}">Message</button>`;
       if (rel.status === "received" && rel.conn.note) box.insertAdjacentHTML("beforeend", `<p class="small person-note" style="flex-basis:100%">“${esc(rel.conn.note)}”</p>`);
       box.querySelectorAll("[data-a]").forEach(b => b.onclick = async () => {
         const a = b.dataset.a;
@@ -89,6 +90,7 @@ export async function render({ view, state, params, name, refreshProfile, naviga
         if (a === "connect") { note = await askNote(other); if (note === null) return; }
         b.disabled = true;
         try {
+          if (a === "message") { navigate(`messages/${await startConversation(uid)}`); return; }
           if (a === "connect") { await sendRequest(state, other, note); toast(`Request sent to <strong>${esc(p.firstName)}</strong>.`); }
           if (a === "withdraw") { await removeConnection(rel.conn.id); toast("Invitation withdrawn."); }
           if (a === "accept") { await accept(state, rel.conn); toast(`You're now connected with <strong>${esc(p.firstName)}</strong>.`); }

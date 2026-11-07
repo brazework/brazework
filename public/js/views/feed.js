@@ -10,9 +10,10 @@ const DAY = 86400000;
 
 // What's new on Forge. Add a line here whenever an update ships.
 const UPDATES = [
+  ["New", "Messages: talk one-to-one with your connections. Messages from anyone else arrive as requests."],
   ["New", "Network: connect with people, follow them, and see their posts in your Following feed."],
   ["New", "Communities: join groups in your field, start your own, and pick moderators."],
-  ["Next", "Messages, then events."]
+  ["Next", "Events."]
 ];
 
 export function render({ view, state, navigate }) {

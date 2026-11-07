@@ -19,6 +19,7 @@ Forge's code lives on GitHub. Vercel puts it online and redeploys automatically 
 
 1. Open your Supabase project (Vercel's Storage tab has an **Open in Supabase** button).
 2. Go to **SQL Editor**, click **New query**, paste everything from `supabase/schema.sql`, and click **Run**. It should say "Success. No rows returned."
+3. Do the same with `supabase/messages.sql`.
 
 > The anon key is safe to have in a website. What protects your data is row-level security in `supabase/schema.sql`.
 
@@ -43,6 +44,8 @@ In Vercel, open **Deployments**, click **⋮** on the newest one and choose **Re
 - [ ] Create a community, post in it, and check the Communities tab on your feed
 - [ ] From your second account, join (or request to join) the community; approve the request from **Manage**, then make that account a Moderator
 - [ ] From your second account, open your main profile and click **Connect**; on your main account, accept it under **Network**, then check the **Following** tab on your feed
+- [ ] Open your second account's profile and click **Message**; reply from the second account and watch the unread badge next to Messages
+- [ ] From an account you're not connected with, send a message; it shows under **Requests**, where you can accept or decline it
 - [ ] Edit your headline and bio on your profile
 - [ ] Log out, click **Forgot password?**, follow the email link and choose a new password
 - [ ] In Settings, switch between Dark, Light and Match device
@@ -60,11 +63,12 @@ In Vercel, open **Deployments**, click **⋮** on the newest one and choose **Re
 
 | Built and working | Coming next (designed in the prototype) |
 | --- | --- |
-| Landing page | Messages with request inbox |
-| Sign-up (student or professional, 18+, university email check) | Events |
+| Landing page | Events |
+| Sign-up (student or professional, 18+, university email check) | Group messages, attachments |
 | Email verification and log-in, password reset | Projects with build logs and critiques |
 | Interests and field (onboarding) | Community events, invite-only communities |
 | Network: connections, requests with notes, following, People you may know | |
+| Messages: one-to-one, live, with a separate Requests inbox for people you're not connected with | |
 | Feed with live posts, likes, comments, topics and saving; For you, Latest, Following and Communities tabs | |
 | Profiles with posts, posting, headline, bio, connect and follow | Saved folders and saved events |
 | Communities: discover, create, join or request, roles, moderation, auto-moderation | Organizations (companies and schools), admin console |

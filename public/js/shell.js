@@ -1,13 +1,14 @@
 // The shared frame around every page: top bar and the side menu.
-import { sb } from "./supabase.js";
+import { sb, live } from "./supabase.js";
 import { esc, initials, LOGO, icon } from "./util.js";
 import { myCommunities, badge } from "./communities.js";
 import { pendingCount } from "./network.js";
+import { unreadCount } from "./messages.js";
 
 const MENU = [
   { title: "Explore", items: [
     ["feed", "Home feed", "home"], ["profile", "Your profile", "user"], ["communities", "Communities", "groups"],
-    ["network", "Network", "network"], ["messages", "Messages", "chat", true], ["events", "Events", "calendar", true],
+    ["network", "Network", "network"], ["messages", "Messages", "chat"], ["events", "Events", "calendar", true],
     ["saved", "Saved", "saved"]
   ] },
   { title: "Your tools", items: [["analytics", "Analytics", "chart", true], ["marketplace", "Marketplace", "market", true]] },
@@ -16,11 +17,22 @@ const MENU = [
 
 let menuOpen = false;
 
+// Unread conversations, shown next to Messages. One live subscription for the whole visit,
+// since the top bar is redrawn on every page.
+let stopUnread = null, unread = 0;
+function drawUnread() {
+  const b = document.getElementById("nav-msgs"); if (!b) return;
+  b.hidden = !unread;
+  b.textContent = unread > 99 ? "99+" : String(unread);
+  b.setAttribute("aria-label", `${unread} unread ${unread === 1 ? "conversation" : "conversations"}`);
+}
+
 export function renderShell({ state, current, navigate }) {
   const shell = document.getElementById("shell");
   const signedInApp = state.user && state.user.emailVerified && state.profile && state.profile.onboarded;
 
   if (!signedInApp) {
+    if (stopUnread) { stopUnread(); stopUnread = null; unread = 0; }
     const authed = !!state.user;
     shell.innerHTML = `
       <header class="topbar"><div class="topbar-inner">
@@ -50,12 +62,16 @@ export function renderShell({ state, current, navigate }) {
         ${link("feed", "Feed")}
         ${link("communities", "Communities")}
         <a href="#/network" ${current === "network" ? 'aria-current="page"' : ""}>Network<span class="nav-badge" id="nav-invites" hidden></span></a>
+        <a href="#/messages" ${current === "messages" ? 'aria-current="page"' : ""}>Messages<span class="nav-badge" id="nav-msgs" hidden></span></a>
         ${link("settings", "Settings")}
         <a href="#/profile" class="avatar sm" aria-label="Your profile">${esc(ini)}</a>
       </nav>
     </div></header>`;
 
   document.getElementById("menu-open").onclick = () => openMenu({ state, current, navigate });
+
+  drawUnread();
+  if (!stopUnread) stopUnread = live(["conversations"], unreadCount, n => { unread = n; drawUnread(); }, () => {});
 
   // Pending connection requests, shown as a small number next to Network.
   pendingCount(state.user.uid).then(n => {

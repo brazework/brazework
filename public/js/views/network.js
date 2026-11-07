@@ -4,6 +4,7 @@ import {
   incoming, sent, connections, following, followers, accept, removeConnection, follow, unfollow,
   sendRequest, otherOf, personRow, askNote, peopleWithInterests, peopleInField
 } from "../network.js";
+import { start as startConversation } from "../messages.js";
 
 const TABS = [["invitations", "Invitations"], ["connections", "Connections"], ["sent", "Sent"], ["following", "Following"], ["followers", "Followers"], ["suggested", "People you may know"]];
 
@@ -124,12 +125,17 @@ export function render({ view, state, params, navigate }) {
       <div class="row" style="gap:6px">${[["all", "All"], ["pro", "Professionals"], ["student", "Students"]].map(([k, l]) => `<button class="chip sm" data-kind="${k}" aria-pressed="${k === kind}">${l}</button>`).join("")}</div>
       ${rows.length ? list(rows.map(({ c, x }) => personRow(x, {
         sub: `Connected ${esc(timeAgo(c.acceptedAt))}`,
-        actions: `<button class="btn ghost" disabled title="Messages are coming soon">Message</button><button class="btn ghost" data-remove="${esc(c.id)}">Remove</button>`
+        actions: `<button class="btn ghost" data-message="${esc(x.id)}">Message</button><button class="btn ghost" data-remove="${esc(c.id)}">Remove</button>`
       }))) : empty("No connections match.")}`;
     const input = pane.querySelector("#n-search");
     input.oninput = () => { search = input.value; drawConnections(); const i = pane.querySelector("#n-search"); i.focus(); i.setSelectionRange(i.value.length, i.value.length); };
     pane.querySelector("#n-sort").onchange = e => { sort = e.target.value; drawConnections(); };
     pane.querySelectorAll("[data-kind]").forEach(b => b.onclick = () => { kind = b.dataset.kind; drawConnections(); });
+    pane.querySelectorAll("[data-message]").forEach(b => b.onclick = async () => {
+      b.disabled = true;
+      try { navigate(`messages/${await startConversation(b.dataset.message)}`); }
+      catch (e) { toast(esc(friendlyError(e))); b.disabled = false; }
+    });
     pane.querySelectorAll("[data-remove]").forEach(b => b.onclick = () => {
       const c = data.con.find(x => x.id === b.dataset.remove), x = otherOf(c, me);
       if (b.dataset.confirm !== "1") { b.dataset.confirm = "1"; b.textContent = `Remove ${x.firstName}?`; return; }

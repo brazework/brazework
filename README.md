@@ -11,6 +11,7 @@ Plain HTML, CSS and JavaScript modules served by Vercel, with Supabase for sign-
 vercel.json              Static site from public/, build step, cache headers
 scripts/build-config.mjs Writes public/js/supabase-config.js from Vercel's Supabase variables
 supabase/schema.sql      Tables, row-level security (who can do what), triggers and live-update setup
+supabase/messages.sql    Conversations and messages (run after schema.sql)
 public/
   index.html             Applies saved theme before first paint
   css/tokens.css         Dark and light color tokens (use these, never fixed colors)
@@ -22,6 +23,7 @@ public/
   js/posts.js            Composer, post card, live post list, likes, comments, saves, delete
   js/communities.js      Community roles and permissions, joining, requests, moderation, auto-moderation
   js/network.js          Connections (requests, accept, remove), follows, people suggestions
+  js/messages.js         Conversations: list, thread, send, accept or decline requests, unread count
   js/util.js             Helpers, icons, error messages, starter topic list
   js/views/*.js          One file per page (reset.js: choose a new password from a reset link)
 ```
@@ -36,6 +38,7 @@ The database fills in names, counts and times itself, so the app can't fake them
 - `connections`: from_id, to_id, status (pending, accepted), note, people (name and headline of both). Only one per pair of people.
 - `follows`: follower, target, plus their names.
 - `communities`, `community_members` (role: owner, admin, moderator, helper, member), `community_requests`, `community_bans`.
+- `conversations`, `messages`: one conversation per pair of people. Between connections it's open right away; otherwise it's a request the other person accepts or declines, and the sender can send up to 3 messages until then. Only the two people can read it. Each conversation keeps a preview and when each person last read it.
 - `org_interest`: company and school interest from the landing page (write-only from the site; read it in the Supabase dashboard under Table Editor).
 
 ## Known limits of this slice
@@ -45,5 +48,6 @@ The database fills in names, counts and times itself, so the app can't fake them
 - Feed loads the latest 60 posts. "For you" ranks them by recency with a boost for your interests.
 - Auto-moderation (word filter, holding links from new members) runs in the app when someone posts. A person tampering with the app could skip it; moderators can still remove anything. Moving it into the database later makes it airtight.
 - Communities can't be deleted or have ownership transferred yet. Invite-only communities, community events and a moderation log come later.
-- Anyone who was declined can send a new request later; blocking and request limits come with Messages.
+- Anyone who was declined can send a new request later; blocking comes later.
+- Messages are one-to-one text only (no group chats, attachments, editing or deleting yet), and there are no email notifications for new messages.
 - Supabase's built-in email sender only sends a few emails an hour; set up your own email sender before launch (SETUP.md, step 4).
