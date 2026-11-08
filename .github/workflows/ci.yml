@@ -1,0 +1,59 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  app:
+    name: App builds and loads
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Build (writes public/js/supabase-config.js)
+        run: npm run build
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: https://ci-placeholder.supabase.co
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder-key
+      - name: Config was written
+        run: grep -q "ci-placeholder.supabase.co" public/js/supabase-config.js
+      - name: Every JS file parses
+        run: npm run check
+      - name: Smoke test (site serves, every file loads)
+        run: |
+          python3 -m http.server 3000 -d public >/dev/null 2>&1 &
+          sleep 2
+          curl -fsS http://localhost:3000/ | grep -q "<title>Forge"
+          for f in public/js/*.js public/js/views/*.js public/css/*.css; do
+            curl -fsS -o /dev/null "http://localhost:3000/${f#public/}" || { echo "missing: $f"; exit 1; }
+          done
+
+  database:
+    name: Database schema applies
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Start a fresh Supabase Postgres
+        run: |
+          docker run -d --name db -e POSTGRES_PASSWORD=postgres public.ecr.aws/supabase/postgres:17.11.0.004
+          for i in $(seq 1 60); do docker exec db pg_isready -U postgres -h localhost && break; sleep 2; done
+          sleep 3
+      - name: Apply schema, messages, events, activity (in order)
+        run: |
+          for f in schema messages events activity; do
+            echo "::group::$f.sql"
+            docker exec -i db psql -U postgres -h localhost -d postgres -v ON_ERROR_STOP=1 -q < supabase/$f.sql
+            echo "::endgroup::"
+          done
+      - name: Count tables
+        run: docker exec db psql -U postgres -h localhost -d postgres -tAc "select count(*) from information_schema.tables where table_schema='public'"

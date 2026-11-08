@@ -3,6 +3,7 @@
   "private": true,
   "description": "Forge, the professional network for STEM. Static site on Vercel with Supabase.",
   "scripts": {
-    "build": "node scripts/build-config.mjs"
+    "build": "node scripts/build-config.mjs",
+    "check": "for f in public/js/*.js public/js/views/*.js; do node --check \"$f\" || exit 1; done"
   }
 }
