@@ -3,7 +3,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { ALL_TOPICS } from "@/lib/forge";
-import { COMMUNITY_FIELDS, LIMITS, cleanName, communityError } from "@/lib/communities";
+import { COMMUNITY_FIELDS, LIMITS, autoModVerdict, can, cleanName, communityError, normalizeAutomod, parseWords, rank, type Role } from "@/lib/communities";
 import { getViewer } from "@/lib/supabase/server";
 
 export type Result = { ok: boolean; message: string };
@@ -127,4 +127,137 @@ export async function leaveCommunity(cidRaw: string): Promise<JoinResult> {
   const rel = me.communities as unknown as { name?: string } | { name?: string }[] | null;
   const name = (Array.isArray(rel) ? rel[0]?.name : rel?.name) || "the community";
   return { ok: true, message: `You left ${name}.`, state: "none" };
+}
+
+/* ---------- Posting (with auto-moderation) ---------- */
+
+
+export async function postInCommunity(cidRaw: string, body: string, kind: string, tags: string[]): Promise<Result & { held?: boolean }> {
+  const cid = cidSchema.safeParse(cidRaw);
+  const text = body.trim();
+  if (!cid.success) return { ok: false, message: "That community doesn't exist." };
+  if (!text) return { ok: false, message: "Write something first." };
+  if (text.length > 3000) return { ok: false, message: "Posts can be up to 3,000 characters." };
+  if (!["update", "question", "result", "project"].includes(kind)) return { ok: false, message: "Pick a post type." };
+  const cleanTags = tags.filter((t) => ALL_TOPICS.includes(t)).slice(0, 3);
+  const { supabase, user } = await getViewer();
+  if (!user) return { ok: false, message: "Log in again to post." };
+  const [{ data: c }, { data: me }] = await Promise.all([
+    supabase.from("communities").select("automod").eq("id", cid.data).maybeSingle(),
+    supabase.from("community_members").select("role, joined_at").eq("community_id", cid.data).eq("uid", user.id).maybeSingle(),
+  ]);
+  if (!me) return { ok: false, message: "Join this community to post." };
+  // Same rules as the vanilla app: matching posts wait for a moderator.
+  const verdict = autoModVerdict(c?.automod, me, text, Date.now());
+  const { error } = await supabase.from("posts").insert({ body: text, kind, tags: cleanTags, community_id: cid.data, status: verdict.status });
+  if (error) return { ok: false, message: communityError(error) };
+  revalidateCommunity(cid.data);
+  revalidatePath("/feed");
+  return { ok: true, message: verdict.note ?? "", held: verdict.status === "held" };
+}
+
+/* ---------- Moderation (the database re-checks every rank) ---------- */
+
+async function myRole(cid: string) {
+  const { supabase, user } = await getViewer();
+  if (!user) return { supabase, user: null, role: null as Role | null };
+  const { data } = await supabase.from("community_members").select("role").eq("community_id", cid).eq("uid", user.id).maybeSingle();
+  return { supabase, user, role: (data?.role as Role | undefined) ?? null };
+}
+const denied: Result = { ok: false, message: "You don't have permission to do that." };
+
+export async function approvePost(cid: string, postId: string): Promise<Result> {
+  const { supabase, role } = await myRole(cid);
+  if (!can(role, "review")) return denied;
+  const { data, error } = await supabase.from("posts").update({ status: "visible" }).eq("id", postId).eq("community_id", cid).select("id");
+  if (error) return { ok: false, message: communityError(error) };
+  if (!data?.length) return denied;
+  revalidateCommunity(cid);
+  return { ok: true, message: "Post published." };
+}
+
+export async function removeCommunityPost(cid: string, postId: string): Promise<Result> {
+  const { supabase, user, role } = await myRole(cid);
+  if (!user) return denied;
+  const { data, error } = await supabase.from("posts").delete().eq("id", postId).eq("community_id", cid).select("id");
+  if (error) return { ok: false, message: communityError(error) };
+  if (!data?.length) return can(role, "removePosts") ? { ok: false, message: "That post was already removed." } : denied;
+  revalidateCommunity(cid);
+  return { ok: true, message: "Post removed." };
+}
+
+export async function approveJoin(cid: string, uid: string): Promise<Result> {
+  const { supabase, role } = await myRole(cid);
+  if (!can(role, "approve")) return denied;
+  const { error } = await supabase.rpc("approve_request", { p_cid: cid, p_uid: uid });
+  if (error) return { ok: false, message: communityError(error) };
+  revalidateCommunity(cid);
+  return { ok: true, message: "Approved." };
+}
+
+export async function declineJoin(cid: string, uid: string): Promise<Result> {
+  const { supabase, role } = await myRole(cid);
+  if (!can(role, "approve")) return denied;
+  const { error } = await supabase.from("community_requests").delete().eq("community_id", cid).eq("uid", uid);
+  if (error) return { ok: false, message: communityError(error) };
+  revalidateCommunity(cid);
+  return { ok: true, message: "Declined." };
+}
+
+// Everyone can only act on people below their own role.
+export async function setMemberRole(cid: string, uid: string, current: Role, next: Role): Promise<Result> {
+  const { supabase, user, role } = await myRole(cid);
+  if (!user || !can(role, "roles") || uid === user.id) return denied;
+  if (rank(current) >= rank(role) || rank(next) >= rank(role)) return { ok: false, message: "You can only assign roles below your own." };
+  const { data, error } = await supabase.from("community_members").update({ role: next }).eq("community_id", cid).eq("uid", uid).select("uid");
+  if (error) return { ok: false, message: communityError(error) };
+  if (!data?.length) return denied;
+  revalidateCommunity(cid);
+  return { ok: true, message: "Role updated." };
+}
+
+export async function removeMember(cid: string, uid: string, current: Role, ban: boolean): Promise<Result> {
+  const { supabase, user, role } = await myRole(cid);
+  if (!user || !can(role, "removeMembers") || uid === user.id || rank(current) >= rank(role)) return denied;
+  if (ban) {
+    const { error } = await supabase.from("community_bans").insert({ community_id: cid, uid });
+    if (error && error.code !== "23505") return { ok: false, message: communityError(error) };
+  }
+  const { data, error } = await supabase.from("community_members").delete().eq("community_id", cid).eq("uid", uid).select("uid");
+  if (error) return { ok: false, message: communityError(error) };
+  if (!data?.length) return denied;
+  revalidateCommunity(cid);
+  return { ok: true, message: ban ? "Removed and banned." : "Removed." };
+}
+
+export async function unbanMember(cid: string, uid: string): Promise<Result> {
+  const { supabase, role } = await myRole(cid);
+  if (!can(role, "removeMembers")) return denied;
+  const { error } = await supabase.from("community_bans").delete().eq("community_id", cid).eq("uid", uid);
+  if (error) return { ok: false, message: communityError(error) };
+  revalidateCommunity(cid);
+  return { ok: true, message: "Unbanned." };
+}
+
+export async function updateCommunitySettings(_prev: CreateState, form: FormData): Promise<CreateState> {
+  const cid = str(form.get("cid"));
+  const { supabase, role } = await myRole(cid);
+  if (!can(role, "editInfo")) return denied;
+  const about = str(form.get("about")).trim();
+  const rules = str(form.get("rules")).trim();
+  const privacy = str(form.get("privacy"));
+  if (!about || about.length > LIMITS.about) return { ok: false, message: "Add a description under 500 characters." };
+  if (rules.length > LIMITS.rules) return { ok: false, message: "Rules can be up to 1,500 characters." };
+  if (privacy !== "public" && privacy !== "approval") return { ok: false, message: "Choose who can join." };
+  const changes: Record<string, unknown> = { about, rules, privacy };
+  if (can(role, "automod")) {
+    const wordsText = str(form.get("words"));
+    if (wordsText.length > LIMITS.wordsText) return { ok: false, message: "The word list is too long." };
+    changes.automod = normalizeAutomod({ words: parseWords(wordsText), holdNewLinks: form.get("holdNewLinks") === "on" });
+  }
+  const { data, error } = await supabase.from("communities").update(changes).eq("id", cid).select("id");
+  if (error) return { ok: false, message: communityError(error) };
+  if (!data?.length) return denied;
+  revalidateCommunity(cid);
+  return { ok: true, message: "Saved." };
 }
