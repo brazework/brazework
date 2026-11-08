@@ -1,0 +1,49 @@
+import { createServerClient } from "@supabase/ssr";
+import { NextResponse, type NextRequest } from "next/server";
+import { env } from "@/lib/env";
+
+const APP_PATHS = ["/feed", "/onboarding"];
+const AUTH_PATHS = ["/login", "/signup", "/forgot"];
+
+// Refreshes the Supabase session cookie on every request and does optimistic redirects.
+// Layouts re-check on the server, so this is a fast path, not the security boundary.
+export async function proxy(request: NextRequest) {
+  let response = NextResponse.next({ request });
+  if (!env.supabaseUrl || !env.supabaseAnonKey) return response;
+
+  const supabase = createServerClient(env.supabaseUrl, env.supabaseAnonKey, {
+    cookies: {
+      getAll() {
+        return request.cookies.getAll();
+      },
+      setAll(cookiesToSet, headers) {
+        cookiesToSet.forEach(({ name, value }) => request.cookies.set(name, value));
+        response = NextResponse.next({ request });
+        cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options));
+        Object.entries(headers ?? {}).forEach(([k, v]) => response.headers.set(k, v));
+      },
+    },
+  });
+
+  // Don't put code between createServerClient and getClaims: it can sign people out at random.
+  const { data } = await supabase.auth.getClaims();
+  const signedIn = Boolean(data?.claims?.sub);
+  const path = request.nextUrl.pathname;
+
+  const redirect = (to: string) => {
+    const url = request.nextUrl.clone();
+    url.pathname = to;
+    url.search = to === "/login" ? `?next=${encodeURIComponent(path)}` : "";
+    const r = NextResponse.redirect(url);
+    response.cookies.getAll().forEach((c) => r.cookies.set(c));
+    return r;
+  };
+
+  if (!signedIn && APP_PATHS.some((p) => path.startsWith(p))) return redirect("/login");
+  if (signedIn && AUTH_PATHS.some((p) => path.startsWith(p))) return redirect("/feed");
+  return response;
+}
+
+export const config = {
+  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp|ico|txt)$).*)"],
+};

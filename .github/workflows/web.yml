@@ -1,0 +1,49 @@
+name: Web (Next.js)
+
+# Runs alongside ci.yml (the vanilla app) for any change to the Next.js app in web/.
+on:
+  pull_request:
+    paths: ["web/**", ".github/workflows/web.yml"]
+  push:
+    branches: [main]
+    paths: ["web/**", ".github/workflows/web.yml"]
+
+concurrency:
+  group: web-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  web:
+    name: Lint, typecheck and build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: web
+    env:
+      NEXT_PUBLIC_SUPABASE_URL: https://ci-placeholder.supabase.co
+      NEXT_PUBLIC_SUPABASE_ANON_KEY: ci-placeholder-key
+      NEXT_PUBLIC_SITE_URL: http://localhost:3000
+      NEXT_TELEMETRY_DISABLED: 1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - run: npx next typegen
+      - name: Typecheck
+        run: npx tsc --noEmit
+      - name: Lint
+        run: npm run lint
+      - name: Build
+        run: npm run build
+      - name: Smoke test (pages serve, protected pages redirect)
+        run: |
+          npx next start -p 3000 >/dev/null 2>&1 &
+          for i in $(seq 1 30); do curl -fsS -o /dev/null http://localhost:3000/ && break; sleep 1; done
+          curl -fsS http://localhost:3000/ | grep -q "Proof of work"
+          for p in /signup /login; do curl -fsS -o /dev/null "http://localhost:3000$p" || { echo "failed: $p"; exit 1; }; done
+          code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/feed); [ "$code" = "307" ] || { echo "/feed returned $code, expected 307"; exit 1; }

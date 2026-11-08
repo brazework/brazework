@@ -1,0 +1,146 @@
+@import "tailwindcss";
+
+/* Forge design tokens. Same names and brand accent as the vanilla app's css/tokens.css,
+   so both apps stay visually in step during the migration. Use these, never fixed colours. */
+:root {
+  color-scheme: dark;
+  --accent: #ff7a2f;
+  --accent-2: #ffb547;
+  --ember: #ff4d1a;
+  --bg: #07090c;
+  --surface: #0e1217;
+  --surface-2: #121820;
+  --raised: #1b2430;
+  --hover: #1a212b;
+  --border: #1f2731;
+  --border-strong: #364250;
+  --text: #e6eaf0;
+  --text-2: #c3cbd6;
+  --muted: #a9b3c1;
+  --faint: #8a95a5;
+  --on-accent: #0e1217;
+  --ok: #8fd9b6;
+  --danger: #ff7a5c;
+  --info: #3fb6ff;
+}
+
+@theme inline {
+  --color-accent: var(--accent);
+  --color-accent-2: var(--accent-2);
+  --color-ember: var(--ember);
+  --color-bg: var(--bg);
+  --color-surface: var(--surface);
+  --color-surface-2: var(--surface-2);
+  --color-raised: var(--raised);
+  --color-hover: var(--hover);
+  --color-line: var(--border);
+  --color-line-strong: var(--border-strong);
+  --color-text: var(--text);
+  --color-text-2: var(--text-2);
+  --color-muted: var(--muted);
+  --color-faint: var(--faint);
+  --color-on-accent: var(--on-accent);
+  --color-ok: var(--ok);
+  --color-danger: var(--danger);
+  --color-info: var(--info);
+
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  --font-display: var(--font-instrument-serif), ui-serif, Georgia, serif;
+
+  --animate-marquee: marquee 40s linear infinite;
+  --animate-shimmer: shimmer 2.4s linear infinite;
+  --animate-pulse-ring: pulse-ring 2.2s cubic-bezier(0.2, 0.6, 0.3, 1) infinite;
+
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+  @keyframes shimmer {
+    from { background-position: -200% 0; }
+    to { background-position: 200% 0; }
+  }
+  @keyframes pulse-ring {
+    0% { transform: scale(0.8); opacity: 0.7; }
+    100% { transform: scale(2.2); opacity: 0; }
+  }
+}
+
+html { background: var(--bg); overflow-x: clip; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+::selection { background: color-mix(in oklab, var(--accent) 35%, transparent); color: var(--text); }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
+input, select, textarea { color-scheme: dark; }
+input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.75); cursor: pointer; }
+
+@utility no-scrollbar {
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+}
+
+@utility text-molten {
+  background: linear-gradient(100deg, var(--accent-2) 0%, var(--accent) 45%, var(--ember) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Engineering-paper grid, faded out toward the edges. */
+@utility bg-blueprint {
+  background-image:
+    linear-gradient(to right, color-mix(in oklab, var(--text) 5%, transparent) 1px, transparent 1px),
+    linear-gradient(to bottom, color-mix(in oklab, var(--text) 5%, transparent) 1px, transparent 1px);
+  background-size: 56px 56px;
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, #000 30%, transparent 100%);
+}
+
+@utility glass {
+  background: color-mix(in oklab, var(--surface) 80%, transparent);
+  backdrop-filter: blur(14px) saturate(140%);
+  border: 1px solid color-mix(in oklab, var(--text) 9%, transparent);
+}
+
+/* Entrance and scroll reveals are pure CSS, so text is visible before (and without) JavaScript. */
+@keyframes rise-in {
+  from { opacity: 0; transform: translateY(24px); filter: blur(8px); }
+}
+@keyframes reveal-in {
+  from { opacity: 0; transform: translateY(32px); }
+}
+/* The hero's main text: visible from the first frame (so it counts as painted right away), it just pulls into focus. */
+@keyframes focus-in {
+  from { transform: translateY(14px); filter: blur(10px); }
+}
+.rise-in {
+  animation: rise-in 0.9s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: var(--delay, 0s);
+}
+.focus-in {
+  animation: focus-in 1s cubic-bezier(0.16, 1, 0.3, 1) both;
+  animation-delay: var(--delay, 0s);
+}
+/* Scroll-driven where supported; elsewhere sections are simply visible. */
+@supports (animation-timeline: view()) {
+  .reveal {
+    animation: reveal-in linear both;
+    animation-timeline: view();
+    animation-range: entry calc(var(--rd, 0) * 1%) entry calc(55% + var(--rd, 0) * 1%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rise-in, .focus-in, .reveal { animation: none !important; }
+
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
