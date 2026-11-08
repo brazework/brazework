@@ -64,7 +64,7 @@ export function renderShell({ state, current, navigate }) {
   const link = (key, label) => `<a href="#/${key}" ${current === key ? 'aria-current="page"' : ""}>${label}</a>`;
   shell.innerHTML = `
     <header class="topbar"><div class="topbar-inner">
-      <button class="icon-btn" id="menu-open" aria-label="Open menu" aria-expanded="false">${icon("menu")}</button>
+      <button class="icon-btn" id="menu-open" data-tour="menu" aria-label="Open menu" aria-expanded="false">${icon("menu")}</button>
       <a class="brand" href="#/feed">${LOGO}<span class="brand-name">Forge</span></a>
       <label for="global-search" class="sr-only">Search Forge</label>
       <input id="global-search" class="search" type="search" placeholder="Search people, projects, topics (coming soon)" disabled>
@@ -74,7 +74,7 @@ export function renderShell({ state, current, navigate }) {
         <a href="#/network" ${current === "network" ? 'aria-current="page"' : ""}>Network<span class="nav-badge" id="nav-invites" hidden></span></a>
         <a href="#/messages" ${current === "messages" ? 'aria-current="page"' : ""}>Messages<span class="nav-badge" id="nav-msgs" hidden></span></a>
         ${link("events", "Events")}
-        <a href="#/notifications" id="nav-bell" class="bell-link" aria-label="Notifications" title="Notifications" ${current === "notifications" ? 'aria-current="page"' : ""}>${icon("bell")}<span class="nav-badge" id="nav-notes" hidden aria-hidden="true"></span></a>
+        <a href="#/notifications" id="nav-bell" data-tour="bell" class="bell-link" aria-label="Notifications" title="Notifications" ${current === "notifications" ? 'aria-current="page"' : ""}>${icon("bell")}<span class="nav-badge" id="nav-notes" hidden aria-hidden="true"></span></a>
         ${link("settings", "Settings")}
         <a href="#/profile" class="avatar sm" aria-label="Your profile">${esc(ini)}</a>
       </nav>

@@ -2,6 +2,7 @@
 // the composer, the post card, likes, comments, saving and deleting.
 import { sb, run, many, live } from "./supabase.js";
 import { esc, initials, timeAgo, friendlyError, toast, icon, TOPICS } from "./util.js";
+import { projectsByIds, projectBlock } from "./projects.js";
 
 export const KINDS = [["update", "Update"], ["question", "Question"], ["result", "Result"], ["project", "Project"]];
 const KIND_LABEL = Object.fromEntries(KINDS);
@@ -109,7 +110,7 @@ function actionsHTML(post, { liked, saved, open }) {
     <button data-act="save" aria-pressed="${saved}" style="margin-left:auto">${icon("saved", 18)}<span>${saved ? "Saved" : "Save"}</span></button>`;
 }
 
-export function postCard(post, { liked = false, saved = false, open = false, mine = false, canRemove = false, reason = "", tagsClickable = false, showCommunity = false } = {}) {
+export function postCard(post, { liked = false, saved = false, open = false, mine = false, canRemove = false, reason = "", tagsClickable = false, showCommunity = false, project = null } = {}) {
   const tags = Array.isArray(post.tags) ? post.tags : [];
   const kind = KIND_LABEL[post.kind];
   return `
@@ -126,6 +127,7 @@ export function postCard(post, { liked = false, saved = false, open = false, min
         ${mine || canRemove ? `<button class="btn ghost small" data-act="delete" style="min-height:34px;padding:0 8px">${mine ? "Delete" : "Remove"}</button>` : ""}
       </div>
       <p class="post-body">${esc(post.body)}</p>
+      ${post.projectId ? projectBlock(project, post.authorId) : ""}
       ${tags.length ? `<div class="row" style="gap:6px">${tags.map(t => tagsClickable
         ? `<button class="tag tag-btn" data-act="tag" data-tag="${esc(t)}">#${esc(t)}</button>`
         : `<span class="tag">#${esc(t)}</span>`).join("")}</div>` : ""}
@@ -181,6 +183,7 @@ export async function deletePost(post) {
 export function createPostList(container, { state, empty, reasonFor, onTag, modFor, showCommunity = false, canComment }) {
   const uid = state.user.uid;
   const liked = new Set(), saved = new Set(), known = new Set();
+  const projects = new Map(); // project id -> project, for project posts
   const nodes = new Map();      // post id -> element
   const threads = new Map();    // post id -> unsubscribe
   let posts = [], seq = 0, destroyed = false, savedReady = false;
@@ -188,7 +191,7 @@ export function createPostList(container, { state, empty, reasonFor, onTag, modF
   const optsFor = post => ({
     liked: liked.has(post.id), saved: saved.has(post.id), open: threads.has(post.id),
     mine: post.authorId === uid, canRemove: !!(modFor && modFor(post)), reason: reasonFor ? reasonFor(post) : "",
-    tagsClickable: !!onTag, showCommunity
+    tagsClickable: !!onTag, showCommunity, project: projects.get(post.projectId) || null
   });
   const sig = post => [post.likeCount || 0, post.commentCount || 0, liked.has(post.id), saved.has(post.id), threads.has(post.id)].join("|");
 
@@ -324,8 +327,10 @@ export function createPostList(container, { state, empty, reasonFor, onTag, modF
       posts = list;
       const unknown = list.filter(x => !known.has(x.id));
       if (unknown.length) {
-        const s = await likedSet(unknown, uid);
+        const needProjects = [...new Set(unknown.map(x => x.projectId).filter(id => id && !projects.has(id)))];
+        const [s, prs] = await Promise.all([likedSet(unknown, uid), projectsByIds(needProjects).catch(() => [])]);
         if (destroyed || mySeq !== seq) return;
+        prs.forEach(pr => projects.set(pr.id, pr));
         unknown.forEach(x => { known.add(x.id); if (s.has(x.id)) liked.add(x.id); });
       }
       paint();

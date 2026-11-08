@@ -6,17 +6,11 @@ import { myCommunities, badge, fmtCount, membersLabel, runJoinAction, PRIVACY_LA
 import { openCreate } from "./communities.js";
 import { following as followingOf, peopleWithInterests } from "../network.js";
 import { tabEvents, isOver, dateParts, timeRange } from "../events.js";
+import { UPDATES } from "../updates.js";
+import { startToursFor, startUpdateTour } from "../tour.js";
 
 const DAY = 86400000;
 
-// What's new on Forge. Add a line here whenever an update ships.
-const UPDATES = [
-  ["New", "Events: career fairs, workshops and talks picked for your interests. Companies and schools can host their own."],
-  ["New", "Messages: talk one-to-one with your connections. Messages from anyone else arrive as requests."],
-  ["New", "Network: connect with people, follow them, and see their posts in your Following feed."],
-  ["New", "Communities: join groups in your field, start your own, and pick moderators."],
-  ["Next", "Projects with build logs and critiques."]
-];
 
 export function render({ view, state, navigate }) {
   const p = state.profile, uid = state.user.uid;
@@ -41,7 +35,7 @@ export function render({ view, state, navigate }) {
           <div class="row" style="justify-content:space-between"><h2 style="font-size:15px">Your communities</h2><a href="#/communities" class="small muted">See all</a></div>
           <div class="skeleton" style="height:36px"></div>
         </section>
-        <section class="card stack">
+        <section class="card stack" data-tour="interests">
           <h2 style="font-size:15px">Your focus areas</h2>
           <div class="row" style="gap:6px">${interests.map(t => `<button class="tag tag-btn" data-filter="${esc(t)}">${esc(t)}</button>`).join("")}</div>
           <a href="#/settings" class="small muted">Edit interests in Settings</a>
@@ -49,7 +43,7 @@ export function render({ view, state, navigate }) {
       </aside>
 
       <section class="col-main">
-        <div class="tabs" role="tablist" aria-label="Feed">
+        <div class="tabs" role="tablist" aria-label="Feed" data-tour="feed-tabs">
           <button class="tab" role="tab" aria-selected="true" data-tab="foryou">For you</button>
           <button class="tab" role="tab" aria-selected="false" data-tab="latest">Latest</button>
           <button class="tab" role="tab" aria-selected="false" data-tab="following">Following</button>
@@ -61,10 +55,10 @@ export function render({ view, state, navigate }) {
       </section>
 
       <aside class="col-right">
-        <section class="card stack">
+        <section class="card stack" data-tour="updates">
           <div class="kicker">Your briefing</div>
           <h2 style="font-size:16px">Forge updates</h2>
-          <ul class="brief-list">${UPDATES.map(([k, t]) => `<li><span class="brief-k">${k}</span><span class="small">${esc(t)}</span></li>`).join("")}</ul>
+          <ul class="brief-list" style="gap:2px">${UPDATES.map((u, i) => `<li><button class="brief-item" data-update="${i}" aria-haspopup="dialog"><span class="brief-k">${esc(u.kind)}</span><span class="brief-title">${esc(u.title)}</span></button></li>`).join("")}</ul>
         </section>
         <section class="card stack">
           <h2 style="font-size:16px">Trending topics</h2>
@@ -87,8 +81,11 @@ export function render({ view, state, navigate }) {
   }
 
   bindComposer(view.querySelector("[data-composer]"), state);
+  view.querySelector("[data-composer]").dataset.tour = "composer";
+  view.querySelectorAll("[data-update]").forEach(b => b.onclick = () => openUpdate(UPDATES[Number(b.dataset.update)], b));
+  const tourTimer = setTimeout(() => startToursFor(state), 700);
 
-  let tab = "foryou", filter = "", posts = [], cPosts = null, joined = null;
+  let tab = "foryou", filter = "", posts = [], cPosts = null, joined = null, fyPosts = null;
   let cUnsub = null;
   let fPosts = null, fCount = null, fUnsub = null;
   const listEl = view.querySelector("#feed-list");
@@ -101,12 +98,17 @@ export function render({ view, state, navigate }) {
     reasonFor: post => {
       if (tab !== "foryou" || post.authorId === uid) return "";
       const m = matchOf(post);
-      return m.length ? `Matches your interest: ${m[0]}` : "";
+      return m.length ? `${post.projectId ? "Project · " : ""}Matches your interest: ${m[0]}` : "";
     },
     onTag: t => setFilter(t)
   });
 
-  const emptyHTML = () => tab === "following" && !filter
+  const emptyHTML = () => tab === "foryou" && !filter
+    ? `<div class="card stack" style="text-align:center;border-style:dashed;align-items:center"><p class="muted">${interests.length
+        ? "Nothing matching your interests yet. For you only shows posts tagged with topics you follow, so it stays focused."
+        : "For you shows posts that match your interests. Add some to get started."}</p>
+        <div class="row" style="gap:8px;justify-content:center">${interests.length ? "" : `<a class="btn primary" href="#/settings">Add interests</a>`}<button class="btn" data-go-latest>See all posts in Latest</button></div></div>`
+    : tab === "following" && !filter
     ? `<div class="card stack" style="text-align:center;border-style:dashed;align-items:center"><p class="muted">${fCount ? "The people you follow haven't posted recently." : "Follow people or connect with them, and their posts show up here."}</p><a class="btn primary" href="#/network/suggested">Find people</a></div>`
     : tab === "communities" && joined && !joined.length
     ? `<div class="card stack" style="text-align:center;border-style:dashed;align-items:center"><p class="muted">Join communities and their latest posts show up here.</p><a class="btn primary" href="#/communities/discover">Discover communities</a></div>`
@@ -116,8 +118,8 @@ export function render({ view, state, navigate }) {
 
   const ms = post => msOf(post.createdAt) || Date.now();
   const draw = () => {
-    if ((tab === "communities" && cPosts === null) || (tab === "following" && fPosts === null)) { listEl.innerHTML = skeletonPosts(2); return; }
-    const source = tab === "communities" ? cPosts : tab === "following" ? fPosts : posts;
+    if ((tab === "communities" && cPosts === null) || (tab === "following" && fPosts === null) || (tab === "foryou" && fyPosts === null && interests.length)) { listEl.innerHTML = skeletonPosts(2); return; }
+    const source = tab === "communities" ? cPosts : tab === "following" ? fPosts : tab === "foryou" ? forYou() : posts;
     let shown = filter ? source.filter(x => (x.tags || []).includes(filter)) : source.slice();
     if (tab === "communities") shown.sort((a, b) => ms(b) - ms(a));
     if (tab === "foryou") {
@@ -128,6 +130,14 @@ export function render({ view, state, navigate }) {
     }
     list.update(shown);
   };
+
+  // For you: only posts tagged with at least one of your interests, plus your own.
+  function forYou() {
+    const byId = new Map();
+    (fyPosts || []).forEach(x => byId.set(x.id, x));
+    posts.filter(x => x.authorId === uid).forEach(x => byId.set(x.id, x));
+    return [...byId.values()];
+  }
 
   function setFilter(t) {
     filter = filter === t ? "" : t;
@@ -167,6 +177,13 @@ export function render({ view, state, navigate }) {
     () => many(sb.from("posts").select("*").is("community_id", null).order("created_at", { ascending: false }).limit(60)),
     list => { posts = list; draw(); drawTrending(); },
     err => { listEl.innerHTML = `<div class="card"><p class="error">${esc(friendlyError(err))}</p></div>`; });
+
+  const fyUnsub = interests.length ? live(["posts"],
+    () => many(sb.from("posts").select("*").is("community_id", null).overlaps("tags", interests).order("created_at", { ascending: false }).limit(60)),
+    list => { fyPosts = list; if (tab === "foryou") draw(); },
+    err => { fyPosts = []; if (tab === "foryou") listEl.innerHTML = `<div class="card"><p class="error">${esc(friendlyError(err))}</p></div>`; })
+    : () => {};
+  listEl.addEventListener("click", e => { if (e.target.closest("[data-go-latest]")) view.querySelector('[data-tab="latest"]').click(); });
 
   loadPeople(view, uid, interests);
   loadEvents(view, interests);
@@ -236,7 +253,35 @@ export function render({ view, state, navigate }) {
       err => { fPosts = []; if (tab === "following") listEl.innerHTML = `<div class="card"><p class="error">${esc(friendlyError(err))}</p></div>`; });
   }
 
-  return () => { unsub(); if (cUnsub) cUnsub(); if (fUnsub) fUnsub(); list.destroy(); };
+  return () => { clearTimeout(tourTimer); unsub(); fyUnsub(); if (cUnsub) cUnsub(); if (fUnsub) fUnsub(); list.destroy(); };
+}
+
+// An update's note: what changed, and a walkthrough if it has one.
+function openUpdate(u, from) {
+  const host = document.getElementById("overlay");
+  const wrap = document.createElement("div");
+  const date = u.date ? new Date(u.date + "T00:00:00").toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }) : "Coming soon";
+  wrap.innerHTML = `
+    <div class="scrim" data-x></div>
+    <div class="modal stack" role="dialog" aria-modal="true" aria-labelledby="upd-title" style="width:min(520px,calc(100vw - 32px));gap:14px">
+      <div class="row" style="justify-content:space-between"><span class="kicker">${esc(u.kind)} · ${esc(date)}</span>
+        <button class="btn ghost" data-x aria-label="Close" style="min-height:36px;padding:0 10px;font-size:20px">×</button></div>
+      <h2 id="upd-title" style="font-size:22px">${esc(u.title)}</h2>
+      <p>${esc(u.summary)}</p>
+      ${(u.points || []).length ? `<ul class="upd-points">${u.points.map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}
+      <div class="row" style="justify-content:flex-end;gap:8px">
+        <button class="btn" data-x>Close</button>
+        ${u.tour ? `<button class="btn primary" data-show>Show me around</button>` : ""}
+      </div>
+    </div>`;
+  host.appendChild(wrap);
+  const done = () => { wrap.remove(); document.removeEventListener("keydown", onKey); if (from && from.isConnected) from.focus(); };
+  const onKey = e => { if (e.key === "Escape") done(); };
+  document.addEventListener("keydown", onKey);
+  wrap.querySelectorAll("[data-x]").forEach(el => el.onclick = done);
+  const show = wrap.querySelector("[data-show]");
+  if (show) show.onclick = () => { done(); startUpdateTour(u); };
+  (show || wrap.querySelector(".modal [data-x]")).focus();
 }
 
 // The next few events, matched to your interests first.
