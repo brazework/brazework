@@ -1,21 +1,23 @@
 "use client";
 import { motion } from "motion/react";
-import { Bell, Bookmark, CalendarDays, Home, LogOut, MessageSquare, UserRound, Users, Network } from "lucide-react";
+import { Bell, Bookmark, CalendarDays, Home, LogOut, MessageSquare, Network, Settings, UserRound, Users } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Avatar, Logo } from "@/components/ui";
 import { cn } from "@/lib/forge";
 
-// Feed is migrated; the rest still live in the vanilla app until their migration PRs land.
+// Every screen of the signed-in app. `match` = path prefixes that light the item up.
 const NAV = [
-  { href: "/feed", label: "Feed", icon: Home, ready: true },
-  { href: "#", label: "Communities", icon: Users },
-  { href: "#", label: "Network", icon: Network },
-  { href: "#", label: "Messages", icon: MessageSquare },
-  { href: "#", label: "Events", icon: CalendarDays },
-  { href: "#", label: "Notifications", icon: Bell },
-  { href: "#", label: "Saved", icon: Bookmark },
-  { href: "#", label: "Profile", icon: UserRound },
+  { href: "/feed", label: "Feed", icon: Home, match: ["/feed", "/post/"] },
+  { href: "/communities", label: "Communities", icon: Users, match: ["/communities", "/c/"] },
+  { href: "/network", label: "Network", icon: Network, match: ["/network"] },
+  { href: "/messages", label: "Messages", icon: MessageSquare, match: ["/messages"] },
+  { href: "/events", label: "Events", icon: CalendarDays, match: ["/events", "/org"] },
+  { href: "/notifications", label: "Notifications", icon: Bell, match: ["/notifications"] },
+  { href: "/saved", label: "Saved", icon: Bookmark, match: ["/saved"] },
+  { href: "/profile", label: "Profile", icon: UserRound, match: ["/profile", "/u/", "/analytics"] },
+  { href: "/settings", label: "Settings", icon: Settings, match: ["/settings"] },
 ];
 
 export function SidebarSkeleton() {
@@ -34,20 +36,20 @@ export function Sidebar({ first, last, headline }: { first: string; last: string
   const path = usePathname();
   return (
     <aside className="sticky top-0 hidden h-dvh w-60 shrink-0 flex-col py-8 md:flex">
-      <Link href="/feed" className="px-3"><Logo /></Link>
+      <div className="flex items-center justify-between pr-1 pl-3">
+        <Link href="/feed"><Logo /></Link>
+        <ThemeToggle />
+      </div>
       <nav className="mt-10 flex flex-col gap-1">
         {NAV.map((n) => {
-          const active = n.ready && path.startsWith(n.href);
-          const body = (
-            <>
+          const active = n.match.some((m) => path.startsWith(m));
+          return (
+            <Link key={n.label} href={n.href} aria-current={active ? "page" : undefined} className={cn("relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition", active ? "text-text" : "text-muted hover:bg-hover hover:text-text")}>
               {active && <motion.span layoutId="nav-active" className="absolute inset-0 rounded-xl bg-raised" transition={{ type: "spring", stiffness: 400, damping: 34 }} />}
-              <n.icon className={cn("relative size-[18px]", active ? "text-accent" : "")} />
+              <n.icon className="relative size-[18px]" />
               <span className="relative">{n.label}</span>
-              {!n.ready && <span className="relative ml-auto rounded-md border border-line px-1.5 font-mono text-[9px] text-faint uppercase">Soon</span>}
-            </>
+            </Link>
           );
-          const cls = cn("relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition", active ? "text-text" : "text-muted hover:bg-hover hover:text-text", !n.ready && "pointer-events-none opacity-60");
-          return n.ready ? <Link key={n.label} href={n.href} className={cls}>{body}</Link> : <span key={n.label} className={cls} aria-disabled="true">{body}</span>;
         })}
       </nav>
       <div className="mt-auto flex items-center gap-3 rounded-2xl border border-line bg-surface/60 p-3">
@@ -70,6 +72,7 @@ export function MobileBar({ first, last }: { first: string; last: string }) {
     <header className="glass -mx-4 flex items-center gap-3 px-4 py-3">
       <Link href="/feed" aria-label="Forge feed"><Logo /></Link>
       <div className="ml-auto flex items-center gap-2">
+        <ThemeToggle />
         <Avatar first={first} last={last} size={30} />
         <form action="/auth/signout" method="post">
           <button aria-label="Log out" className="grid size-9 place-items-center rounded-lg text-faint transition hover:bg-hover hover:text-text"><LogOut className="size-4" /></button>

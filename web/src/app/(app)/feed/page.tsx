@@ -5,7 +5,7 @@ import { Suspense } from "react";
 import { cn, type Post } from "@/lib/forge";
 import { getViewer } from "@/lib/supabase/server";
 import { Composer } from "./composer";
-import { LiveRefresh } from "./live-refresh";
+import { LiveRefresh } from "@/components/app/live-refresh";
 import { PostCard } from "./post-card";
 
 export const metadata: Metadata = { title: "Feed" };
@@ -18,7 +18,7 @@ const TABS = [
 export default function FeedPage({ searchParams }: PageProps<"/feed">) {
   return (
     <div className="mx-auto max-w-2xl">
-      <LiveRefresh />
+      <LiveRefresh tables={["posts"]} />
       <Suspense fallback={<FeedSkeleton />}>
         <Feed searchParams={searchParams} />
       </Suspense>

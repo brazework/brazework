@@ -3,10 +3,11 @@ import { useEffect, useRef } from "react";
 
 type Spark = { x: number; y: number; vx: number; vy: number; r: number; heat: number; phase: number };
 
-const HEAT_STEPS = 6; // pre-rendered glow sprites, from deep ember red to bright amber
+const HEAT_STEPS = 6; // pre-rendered glow sprites, from dim to bright
 const ALPHA_STEPS = 8; // link opacity buckets, so lines are stroked in a handful of batches
 
-// Rising forge embers that link into a network when they drift close: people becoming connections.
+// Rising sparks that link into a network when they drift close: people becoming connections.
+// Monochrome: the colour comes from the --spark token, so it follows light and dark mode.
 // The cursor acts like a magnet and lights up nearby links. Built to stay cheap on phones:
 // glow sprites are drawn once and stamped with drawImage, links are batched by opacity, the spark
 // count scales with screen area, and it starts after first paint, pauses offscreen and in
@@ -28,23 +29,36 @@ export function SparkField({ className }: { className?: string }) {
     const sparks: Spark[] = [];
     const mouse = { x: -9999, y: -9999, active: false };
 
-    const hsl = (heat: number, a: number) => `hsla(${12 + heat * 26}, 100%, ${52 + heat * 14}%, ${a})`;
+    let rgb = "255, 255, 255";
+    let dark = true;
+    const hsl = (heat: number, a: number) => `rgba(${rgb}, ${a * (0.45 + heat * 0.55)})`;
 
-    // One soft glow per heat step, rendered once.
+    // One soft glow per brightness step, re-rendered only when the theme changes.
     const SPRITE = 48;
-    const sprites = Array.from({ length: HEAT_STEPS }, (_, i) => {
-      const heat = i / (HEAT_STEPS - 1);
-      const c = document.createElement("canvas");
-      c.width = c.height = SPRITE;
-      const g = c.getContext("2d")!;
-      const grad = g.createRadialGradient(SPRITE / 2, SPRITE / 2, 0, SPRITE / 2, SPRITE / 2, SPRITE / 2);
-      grad.addColorStop(0, hsl(heat, 0.95));
-      grad.addColorStop(0.22, hsl(heat, 0.38));
-      grad.addColorStop(1, hsl(heat, 0));
-      g.fillStyle = grad;
-      g.fillRect(0, 0, SPRITE, SPRITE);
-      return c;
-    });
+    let sprites: HTMLCanvasElement[] = [];
+    const paintSprites = () => {
+      rgb = getComputedStyle(document.documentElement).getPropertyValue("--spark").trim() || "255, 255, 255";
+      dark = !rgb.startsWith("9,");
+      sprites = Array.from({ length: HEAT_STEPS }, (_, i) => {
+        const heat = i / (HEAT_STEPS - 1);
+        const c = document.createElement("canvas");
+        c.width = c.height = SPRITE;
+        const g = c.getContext("2d")!;
+        const grad = g.createRadialGradient(SPRITE / 2, SPRITE / 2, 0, SPRITE / 2, SPRITE / 2, SPRITE / 2);
+        grad.addColorStop(0, hsl(heat, dark ? 0.9 : 0.55));
+        grad.addColorStop(0.22, hsl(heat, dark ? 0.3 : 0.16));
+        grad.addColorStop(1, hsl(heat, 0));
+        g.fillStyle = grad;
+        g.fillRect(0, 0, SPRITE, SPRITE);
+        return c;
+      });
+    };
+    paintSprites();
+    const themeObserver = new MutationObserver(() => { paintSprites(); if (reduce) frame(0); });
+    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+    const schemeQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    const onScheme = () => { paintSprites(); if (reduce) frame(0); };
+    schemeQuery.addEventListener("change", onScheme);
 
     const spawn = (anywhere: boolean): Spark => ({
       x: Math.random() * w,
@@ -111,7 +125,7 @@ export function SparkField({ className }: { className?: string }) {
       for (let q = 0; q < ALPHA_STEPS; q++) {
         const pts = buckets[q];
         if (!pts.length) continue;
-        ctx.strokeStyle = hsl(0.55, ((q + 0.5) / ALPHA_STEPS) * 0.22);
+        ctx.strokeStyle = hsl(0.55, ((q + 0.5) / ALPHA_STEPS) * (dark ? 0.24 : 0.2));
         ctx.beginPath();
         for (let p = 0; p < pts.length; p += 4) {
           ctx.moveTo(pts[p], pts[p + 1]);
@@ -123,7 +137,7 @@ export function SparkField({ className }: { className?: string }) {
       // Brighter links to the cursor.
       if (mouse.active) {
         ctx.lineWidth = 0.9;
-        ctx.strokeStyle = hsl(1, 0.28);
+        ctx.strokeStyle = hsl(1, dark ? 0.3 : 0.22);
         ctx.beginPath();
         for (const s of sparks) {
           if (Math.hypot(mouse.x - s.x, mouse.y - s.y) < MAGNET) {
@@ -135,7 +149,7 @@ export function SparkField({ className }: { className?: string }) {
       }
 
       // The embers: stamp a pre-rendered glow, with a soft flicker.
-      ctx.globalCompositeOperation = "lighter";
+      ctx.globalCompositeOperation = dark ? "lighter" : "source-over";
       for (const s of sparks) {
         ctx.globalAlpha = reduce ? 1 : 0.75 + Math.sin(t * 0.004 + s.phase * 3) * 0.25;
         const size = s.r * 12;
@@ -192,6 +206,8 @@ export function SparkField({ className }: { className?: string }) {
       if (ric) window.cancelIdleCallback(handle);
       else clearTimeout(handle);
       cancelAnimationFrame(raf);
+      themeObserver.disconnect();
+      schemeQuery.removeEventListener("change", onScheme);
       io.disconnect();
       ro.disconnect();
       window.removeEventListener("pointermove", onMove);

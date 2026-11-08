@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { Logo } from "@/components/ui";
@@ -11,6 +12,7 @@ export default function OnboardingPage() {
   return (
     <div className="relative isolate min-h-dvh">
       <div className="bg-blueprint absolute inset-0 -z-10" />
+      <ThemeToggle className="absolute top-5 right-5" />
       <div className="mx-auto max-w-3xl px-6 py-14">
         <Logo />
         <div className="mt-14">

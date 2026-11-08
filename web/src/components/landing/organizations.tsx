@@ -25,7 +25,7 @@ export function Organizations() {
           <Reveal>
             <Kicker>For organizations</Kicker>
             <h2 className="mt-4 text-[clamp(2rem,4.5vw,3.5rem)] leading-[1.02] font-semibold tracking-[-0.035em]">
-              Clubs, companies and schools <span className="font-display font-normal italic text-molten">have a home here.</span>
+              Clubs, companies and schools <span className="text-shine">have a home here.</span>
             </h2>
           </Reveal>
           <div className="mt-10 space-y-3">

@@ -1,33 +1,79 @@
 @import "tailwindcss";
 
-/* Forge design tokens. Same names and brand accent as the vanilla app's css/tokens.css,
-   so both apps stay visually in step during the migration. Use these, never fixed colours. */
+/* Forge design tokens: monochrome, light and dark. Use these, never fixed colours.
+   Theme = the visitor's system setting, unless they pick one (html[data-theme], set before paint in layout.tsx). */
 :root {
+  color-scheme: light;
+  --bg: #ffffff;
+  --surface: #fafafa;
+  --surface-2: #f4f4f5;
+  --raised: #ececee;
+  --hover: #f4f4f5;
+  --border: #e4e4e7;
+  --border-strong: #d4d4d8;
+  --text: #09090b;
+  --text-2: #27272a;
+  --muted: #52525b;
+  --faint: #71717a;
+  --accent: #09090b;
+  --on-accent: #ffffff;
+  --ok: #15803d;
+  --danger: #dc2626;
+  --info: #2563eb;
+  --glow: rgba(9, 9, 11, 0.07);
+  --spark: 9, 9, 11;
+  --shadow: 0 1px 2px rgba(9, 9, 11, 0.06), 0 12px 32px -12px rgba(9, 9, 11, 0.18);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #09090b;
+    --surface: #101012;
+    --surface-2: #161618;
+    --raised: #1f1f22;
+    --hover: #18181b;
+    --border: #232326;
+    --border-strong: #3a3a3f;
+    --text: #fafafa;
+    --text-2: #d4d4d8;
+    --muted: #a1a1aa;
+    --faint: #8b8b94;
+    --accent: #fafafa;
+    --on-accent: #09090b;
+    --ok: #4ade80;
+    --danger: #f87171;
+    --info: #60a5fa;
+    --glow: rgba(255, 255, 255, 0.09);
+    --spark: 255, 255, 255;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 16px 40px -16px rgba(0, 0, 0, 0.8);
+  }
+}
+:root[data-theme="dark"] {
   color-scheme: dark;
-  --accent: #ff7a2f;
-  --accent-2: #ffb547;
-  --ember: #ff4d1a;
-  --bg: #07090c;
-  --surface: #0e1217;
-  --surface-2: #121820;
-  --raised: #1b2430;
-  --hover: #1a212b;
-  --border: #1f2731;
-  --border-strong: #364250;
-  --text: #e6eaf0;
-  --text-2: #c3cbd6;
-  --muted: #a9b3c1;
-  --faint: #8a95a5;
-  --on-accent: #0e1217;
-  --ok: #8fd9b6;
-  --danger: #ff7a5c;
-  --info: #3fb6ff;
+  --bg: #09090b;
+  --surface: #101012;
+  --surface-2: #161618;
+  --raised: #1f1f22;
+  --hover: #18181b;
+  --border: #232326;
+  --border-strong: #3a3a3f;
+  --text: #fafafa;
+  --text-2: #d4d4d8;
+  --muted: #a1a1aa;
+  --faint: #8b8b94;
+  --accent: #fafafa;
+  --on-accent: #09090b;
+  --ok: #4ade80;
+  --danger: #f87171;
+  --info: #60a5fa;
+  --glow: rgba(255, 255, 255, 0.09);
+  --spark: 255, 255, 255;
+  --shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 16px 40px -16px rgba(0, 0, 0, 0.8);
 }
 
 @theme inline {
   --color-accent: var(--accent);
-  --color-accent-2: var(--accent-2);
-  --color-ember: var(--ember);
+  --color-glow: var(--glow);
   --color-bg: var(--bg);
   --color-surface: var(--surface);
   --color-surface-2: var(--surface-2);
@@ -46,7 +92,6 @@
 
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
-  --font-display: var(--font-instrument-serif), ui-serif, Georgia, serif;
 
   --animate-marquee: marquee 40s linear infinite;
   --animate-shimmer: shimmer 2.4s linear infinite;
@@ -66,7 +111,7 @@
   }
 }
 
-html { background: var(--bg); overflow-x: clip; }
+html { background: var(--bg); overflow-x: clip; transition: background-color 0.3s ease; }
 body {
   background: var(--bg);
   color: var(--text);
@@ -74,18 +119,18 @@ body {
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }
-::selection { background: color-mix(in oklab, var(--accent) 35%, transparent); color: var(--text); }
+::selection { background: var(--text); color: var(--bg); }
 :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 6px; }
-input, select, textarea { color-scheme: dark; }
-input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.75); cursor: pointer; }
+input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity: 0.6; }
 
 @utility no-scrollbar {
   scrollbar-width: none;
   &::-webkit-scrollbar { display: none; }
 }
 
-@utility text-molten {
-  background: linear-gradient(100deg, var(--accent-2) 0%, var(--accent) 45%, var(--ember) 100%);
+/* Headline second lines: a quiet top-to-bottom fade from the text colour into muted. */
+@utility text-shine {
+  background: linear-gradient(180deg, var(--text) 20%, var(--faint) 100%);
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -144,3 +189,9 @@ input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(0.75); cu
     scroll-behavior: auto !important;
   }
 }
+
+/* Icons that swap with the theme without waiting for JavaScript (no hydration flash). */
+.dark-only { display: none; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .dark-only { display: block; } :root:not([data-theme="light"]) .light-only { display: none; } }
+:root[data-theme="dark"] .dark-only { display: block; }
+:root[data-theme="dark"] .light-only { display: none; }

@@ -3,6 +3,7 @@ import { AnimatePresence, motion, useMotionValueEvent, useScroll } from "motion/
 import { Menu, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { ThemeToggle } from "@/components/theme-toggle";
 import { Button, Logo } from "@/components/ui";
 import { cn } from "@/lib/forge";
 
@@ -45,6 +46,7 @@ export function Nav() {
           ))}
         </ul>
         <div className="ml-auto flex items-center gap-1">
+          <ThemeToggle />
           <Button href="/login" variant="ghost" className="hidden sm:inline-flex">Log in</Button>
           <Button href="/signup">Get started</Button>
           <button

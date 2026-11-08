@@ -19,7 +19,7 @@ export function OnboardingForm({ firstName, student }: { firstName: string; stud
       <div>
         <div className="font-mono text-[11px] tracking-[0.18em] text-accent uppercase">Step 3 of 3</div>
         <h1 className="mt-2 text-4xl font-semibold tracking-tight">
-          Welcome{firstName ? `, ${firstName}` : ""}. <span className="font-display font-normal italic text-molten">What do you build?</span>
+          Welcome{firstName ? `, ${firstName}` : ""}. <span className="text-shine">What do you build?</span>
         </h1>
       </div>
 

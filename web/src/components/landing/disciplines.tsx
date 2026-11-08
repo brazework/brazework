@@ -45,7 +45,7 @@ export function Disciplines() {
         <Reveal className="max-w-3xl">
           <Kicker>Communities</Kicker>
           <h2 className="mt-4 text-[clamp(2rem,4.5vw,3.5rem)] leading-[1.02] font-semibold tracking-[-0.035em]">
-            Find your people. <span className="font-display font-normal italic text-molten">Every discipline.</span>
+            Find your people. <span className="text-shine">Every discipline.</span>
           </h2>
           <p className="mt-5 text-lg text-muted">Feeds and project galleries that stay on topic. Pick a field to look inside.</p>
         </Reveal>
@@ -89,7 +89,7 @@ export function Disciplines() {
               className="relative"
             >
               <div className="flex flex-wrap items-baseline justify-between gap-4">
-                <h3 className="font-display text-3xl italic sm:text-4xl">{group.name}</h3>
+                <h3 className="text-3xl font-semibold tracking-tight sm:text-4xl">{group.name}</h3>
                 <Link href="/signup" className="inline-flex items-center gap-1 text-sm text-accent hover:underline">
                   Join {group.name} on Forge <ArrowUpRight className="size-4" />
                 </Link>

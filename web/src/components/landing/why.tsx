@@ -22,7 +22,7 @@ export function Why() {
         <Reveal className="lg:sticky lg:top-32">
           <Kicker>Why Forge</Kicker>
           <h2 className="mt-4 text-[clamp(2rem,4.5vw,3.5rem)] leading-[1.02] font-semibold tracking-[-0.035em]">
-            General networks weren&apos;t <span className="font-display font-normal italic text-molten">built for builders.</span>
+            General networks weren&apos;t <span className="text-shine">built for builders.</span>
           </h2>
           <p className="mt-5 text-lg text-muted">
             Hiring is drowning in AI-generated applications and polished profiles. What still cuts through is real work, vouched for by people who saw it happen.

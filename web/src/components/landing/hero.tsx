@@ -28,7 +28,7 @@ export function Hero() {
     <section ref={ref} id="top" className="relative isolate overflow-hidden pt-32 pb-24 sm:pt-40">
       {/* Atmosphere */}
       <div className="bg-blueprint absolute inset-0 -z-20" />
-      <div className="absolute left-1/2 top-[-20%] -z-20 h-[720px] w-[1100px] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,color-mix(in_oklab,var(--ember)_28%,transparent),transparent)] blur-2xl" />
+      <div className="absolute left-1/2 top-[-20%] -z-20 h-[720px] w-[1100px] -translate-x-1/2 rounded-full bg-[radial-gradient(closest-side,var(--glow),transparent)] blur-2xl" />
       <SparkField className="absolute inset-0 -z-10 size-full" />
 
       <motion.div style={reduce ? undefined : { y, opacity: fade }} className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-16 px-6 lg:grid-cols-[1.05fr_1fr] [&>*]:min-w-0">
@@ -41,15 +41,15 @@ export function Hero() {
             <ArrowRight className="size-3.5 shrink-0 transition group-hover:translate-x-0.5" />
           </a>
 
-          <h1 style={delay(0)} className="focus-in mt-7 text-[clamp(2.75rem,7vw,5.5rem)] leading-[0.95] font-semibold tracking-[-0.04em]">
+          <h1 style={delay(0)} className="focus-in mt-7 text-[clamp(2.6rem,5.6vw,4.6rem)] leading-[1] font-semibold tracking-[-0.045em]">
             Proof of work
             <br />
-            <span className="font-display font-normal italic tracking-[-0.02em] text-molten">beats a résumé.</span>
+            <span className="text-shine">beats a résumé.</span>
           </h1>
 
           <p style={delay(0.1)} className="focus-in mt-7 max-w-xl text-lg leading-relaxed text-muted">
             Forge is where{" "}
-            <span className="relative inline-grid overflow-hidden pb-[0.12em] align-bottom leading-[inherit] text-text">
+            <span className="relative inline-grid overflow-hidden pb-[0.12em] align-[-0.32em] leading-[inherit] text-text">
               <AnimatePresence mode="popLayout" initial={false}>
                 <motion.span
                   key={WHO[i]}

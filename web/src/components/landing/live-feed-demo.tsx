@@ -60,17 +60,17 @@ export function LiveFeedDemo() {
         }}
         onPointerLeave={() => { mx.set(0.5); my.set(0.5); }}
         style={reduce ? undefined : { rotateX: rx, rotateY: ry, transformStyle: "preserve-3d" }}
-        className="glass relative overflow-hidden rounded-[22px] shadow-[0_40px_120px_-30px_rgba(255,90,30,0.35),0_0_0_1px_rgba(255,255,255,0.04)]"
+        className="glass relative overflow-hidden rounded-[22px] shadow-[var(--shadow)]"
       >
         <motion.div
           className="pointer-events-none absolute inset-0 opacity-60"
-          style={{ background: useTransform([glowX, glowY], ([x, y]) => `radial-gradient(420px circle at ${x} ${y}, color-mix(in oklab, var(--accent) 16%, transparent), transparent 60%)`) }}
+          style={{ background: useTransform([glowX, glowY], ([x, y]) => `radial-gradient(420px circle at ${x} ${y}, var(--glow), transparent 60%)`) }}
         />
         {/* Window chrome */}
         <div className="relative flex items-center gap-2 border-b border-line px-4 py-3">
-          <span className="size-2.5 rounded-full bg-[#ff5f57]" />
-          <span className="size-2.5 rounded-full bg-[#febc2e]" />
-          <span className="size-2.5 rounded-full bg-[#28c840]" />
+          <span className="size-2.5 rounded-full bg-line-strong" />
+          <span className="size-2.5 rounded-full bg-line-strong" />
+          <span className="size-2.5 rounded-full bg-line-strong" />
           <div className="ml-3 flex items-center gap-2 font-mono text-[11px] text-faint">
             <span className="relative flex size-2">
               <span className="absolute inline-flex size-full animate-pulse-ring rounded-full bg-ok" />
@@ -98,11 +98,11 @@ export function LiveFeedDemo() {
                   <div className="min-w-0">
                     <div className="flex items-center gap-1.5 text-sm font-medium">
                       {p.first} {p.last}
-                      <BadgeCheck className="size-3.5 text-accent" aria-label={`Verified ${p.verified}`} />
+                      <BadgeCheck className="size-3.5 text-text" aria-label={`Verified ${p.verified}`} />
                     </div>
                     <div className="truncate text-xs text-faint">{p.role}</div>
                   </div>
-                  <span className="ml-auto inline-flex items-center gap-1 rounded-full bg-accent/10 px-2 py-0.5 font-mono text-[10px] text-accent">
+                  <span className="ml-auto inline-flex items-center gap-1 rounded-full border border-line px-2 py-0.5 font-mono text-[10px] text-muted">
                     <p.icon className="size-3" /> {p.kind}
                   </span>
                 </header>
@@ -114,7 +114,7 @@ export function LiveFeedDemo() {
                 </div>
                 <footer className="mt-3 flex items-center gap-5 text-xs text-faint">
                   <span className="inline-flex items-center gap-1.5">
-                    <Heart className="size-3.5 fill-accent/30 text-accent" />
+                    <Heart className="size-3.5 fill-text/20 text-text" />
                     <motion.span key={bumps[p.key] ?? 0} initial={{ y: -6, opacity: 0 }} animate={{ y: 0, opacity: 1 }} className="tabular-nums">
                       {p.likes + (bumps[p.key] ?? 0)}
                     </motion.span>
