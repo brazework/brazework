@@ -11,11 +11,13 @@ const DAY = 86400000;
 
 // What's new on Forge. Add a line here whenever an update ships.
 const UPDATES = [
+  ["New", "Projects: add what you've built to your profile, keep it private or public, and share updates to the feed."],
+  ["New", "For you now shows only posts that match your interests. Latest has everything."],
   ["New", "Events: career fairs, workshops and talks picked for your interests. Companies and schools can host their own."],
   ["New", "Messages: talk one-to-one with your connections. Messages from anyone else arrive as requests."],
   ["New", "Network: connect with people, follow them, and see their posts in your Following feed."],
   ["New", "Communities: join groups in your field, start your own, and pick moderators."],
-  ["Next", "Projects with build logs and critiques."]
+  ["Next", "Project access requests, build logs and critiques."]
 ];
 
 export function render({ view, state, navigate }) {
@@ -88,7 +90,7 @@ export function render({ view, state, navigate }) {
 
   bindComposer(view.querySelector("[data-composer]"), state);
 
-  let tab = "foryou", filter = "", posts = [], cPosts = null, joined = null;
+  let tab = "foryou", filter = "", posts = [], cPosts = null, joined = null, fyPosts = null;
   let cUnsub = null;
   let fPosts = null, fCount = null, fUnsub = null;
   const listEl = view.querySelector("#feed-list");
@@ -101,12 +103,17 @@ export function render({ view, state, navigate }) {
     reasonFor: post => {
       if (tab !== "foryou" || post.authorId === uid) return "";
       const m = matchOf(post);
-      return m.length ? `Matches your interest: ${m[0]}` : "";
+      return m.length ? `${post.projectId ? "Project · " : ""}Matches your interest: ${m[0]}` : "";
     },
     onTag: t => setFilter(t)
   });
 
-  const emptyHTML = () => tab === "following" && !filter
+  const emptyHTML = () => tab === "foryou" && !filter
+    ? `<div class="card stack" style="text-align:center;border-style:dashed;align-items:center"><p class="muted">${interests.length
+        ? "Nothing matching your interests yet. For you only shows posts tagged with topics you follow, so it stays focused."
+        : "For you shows posts that match your interests. Add some to get started."}</p>
+        <div class="row" style="gap:8px;justify-content:center">${interests.length ? "" : `<a class="btn primary" href="#/settings">Add interests</a>`}<button class="btn" data-go-latest>See all posts in Latest</button></div></div>`
+    : tab === "following" && !filter
     ? `<div class="card stack" style="text-align:center;border-style:dashed;align-items:center"><p class="muted">${fCount ? "The people you follow haven't posted recently." : "Follow people or connect with them, and their posts show up here."}</p><a class="btn primary" href="#/network/suggested">Find people</a></div>`
     : tab === "communities" && joined && !joined.length
     ? `<div class="card stack" style="text-align:center;border-style:dashed;align-items:center"><p class="muted">Join communities and their latest posts show up here.</p><a class="btn primary" href="#/communities/discover">Discover communities</a></div>`
@@ -116,8 +123,8 @@ export function render({ view, state, navigate }) {
 
   const ms = post => msOf(post.createdAt) || Date.now();
   const draw = () => {
-    if ((tab === "communities" && cPosts === null) || (tab === "following" && fPosts === null)) { listEl.innerHTML = skeletonPosts(2); return; }
-    const source = tab === "communities" ? cPosts : tab === "following" ? fPosts : posts;
+    if ((tab === "communities" && cPosts === null) || (tab === "following" && fPosts === null) || (tab === "foryou" && fyPosts === null && interests.length)) { listEl.innerHTML = skeletonPosts(2); return; }
+    const source = tab === "communities" ? cPosts : tab === "following" ? fPosts : tab === "foryou" ? forYou() : posts;
     let shown = filter ? source.filter(x => (x.tags || []).includes(filter)) : source.slice();
     if (tab === "communities") shown.sort((a, b) => ms(b) - ms(a));
     if (tab === "foryou") {
@@ -128,6 +135,14 @@ export function render({ view, state, navigate }) {
     }
     list.update(shown);
   };
+
+  // For you: only posts tagged with at least one of your interests, plus your own.
+  function forYou() {
+    const byId = new Map();
+    (fyPosts || []).forEach(x => byId.set(x.id, x));
+    posts.filter(x => x.authorId === uid).forEach(x => byId.set(x.id, x));
+    return [...byId.values()];
+  }
 
   function setFilter(t) {
     filter = filter === t ? "" : t;
@@ -167,6 +182,13 @@ export function render({ view, state, navigate }) {
     () => many(sb.from("posts").select("*").is("community_id", null).order("created_at", { ascending: false }).limit(60)),
     list => { posts = list; draw(); drawTrending(); },
     err => { listEl.innerHTML = `<div class="card"><p class="error">${esc(friendlyError(err))}</p></div>`; });
+
+  const fyUnsub = interests.length ? live(["posts"],
+    () => many(sb.from("posts").select("*").is("community_id", null).overlaps("tags", interests).order("created_at", { ascending: false }).limit(60)),
+    list => { fyPosts = list; if (tab === "foryou") draw(); },
+    err => { fyPosts = []; if (tab === "foryou") listEl.innerHTML = `<div class="card"><p class="error">${esc(friendlyError(err))}</p></div>`; })
+    : () => {};
+  listEl.addEventListener("click", e => { if (e.target.closest("[data-go-latest]")) view.querySelector('[data-tab="latest"]').click(); });
 
   loadPeople(view, uid, interests);
   loadEvents(view, interests);
@@ -236,7 +258,7 @@ export function render({ view, state, navigate }) {
       err => { fPosts = []; if (tab === "following") listEl.innerHTML = `<div class="card"><p class="error">${esc(friendlyError(err))}</p></div>`; });
   }
 
-  return () => { unsub(); if (cUnsub) cUnsub(); if (fUnsub) fUnsub(); list.destroy(); };
+  return () => { unsub(); fyUnsub(); if (cUnsub) cUnsub(); if (fUnsub) fUnsub(); list.destroy(); };
 }
 
 // The next few events, matched to your interests first.

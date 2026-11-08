@@ -5,11 +5,15 @@ import { composerHTML, bindComposer, createPostList, skeletonPosts } from "../po
 import { relationship, sendRequest, accept, removeConnection, follow, unfollow, counts, askNote, getProfile } from "../network.js";
 import { start as startConversation } from "../messages.js";
 import { recordView } from "../activity.js";
+import { renderProjects } from "./profile-projects.js";
 
 export async function render({ view, state, params, name, refreshProfile, navigate }) {
   const myUid = state.user.uid;
   const uid = name === "u" && params[0] ? params[0] : myUid;
   const isMe = uid === myUid;
+  // #/profile/projects/<id> or #/u/<uid>/projects/<id> open the Projects tab (and that project).
+  const rest = name === "u" ? params.slice(1) : params;
+  const startTab = rest[0] === "projects" ? "projects" : "posts", focusId = rest[1] || "";
 
   view.innerHTML = `<div class="page"><div class="skeleton" style="height:180px;border-radius:14px"></div><div style="height:16px"></div>${skeletonPosts(2)}</div>`;
 
@@ -50,9 +54,15 @@ export async function render({ view, state, params, name, refreshProfile, naviga
           </section>
         </aside>
         <section class="col-main">
-          <div class="tabs" role="tablist"><button class="tab" role="tab" aria-selected="true">Posts</button><button class="tab" role="tab" aria-selected="false" disabled title="Coming soon">Projects · soon</button></div>
-          ${isMe ? composerHTML(p, { placeholder: "Share an update on your profile" }) : ""}
-          <div id="pf-posts" class="stack" style="gap:16px">${skeletonPosts(2)}</div>
+          <div class="tabs" role="tablist" aria-label="Profile">
+            <button class="tab" role="tab" data-ptab="posts" aria-selected="${startTab === "posts"}">Posts</button>
+            <button class="tab" role="tab" data-ptab="projects" aria-selected="${startTab === "projects"}">Projects<span class="tab-count" id="pf-pcount"></span></button>
+          </div>
+          <div id="pf-tab-posts" class="stack" style="gap:16px" ${startTab === "posts" ? "" : "hidden"}>
+            ${isMe ? composerHTML(p, { placeholder: "Share an update on your profile" }) : ""}
+            <div id="pf-posts" class="stack" style="gap:16px">${skeletonPosts(2)}</div>
+          </div>
+          <div id="pf-tab-projects" class="stack" style="gap:16px" ${startTab === "projects" ? "" : "hidden"}></div>
         </section>
       </div>
     </div>`;
@@ -117,7 +127,18 @@ export async function render({ view, state, params, name, refreshProfile, naviga
     () => many(sb.from("posts").select("*").eq("author_id", uid).is("community_id", null).order("created_at", { ascending: false }).limit(50)),
     posts => list.update(posts),
     err => { listEl.innerHTML = `<div class="card"><p class="error">${esc(friendlyError(err))}</p></div>`; });
-  return () => { unsub(); list.destroy(); };
+
+  // Projects tab.
+  const stopProjects = renderProjects(view.querySelector("#pf-tab-projects"), {
+    state, uid, isMe, ownerFirst: p.firstName, focusId,
+    onCount: n => { const el = view.querySelector("#pf-pcount"); if (el) el.textContent = n ? " " + n : ""; }
+  });
+  view.querySelectorAll("[data-ptab]").forEach(b => b.onclick = () => {
+    view.querySelectorAll("[data-ptab]").forEach(x => x.setAttribute("aria-selected", String(x === b)));
+    view.querySelector("#pf-tab-posts").hidden = b.dataset.ptab !== "posts";
+    view.querySelector("#pf-tab-projects").hidden = b.dataset.ptab !== "projects";
+  });
+  return () => { unsub(); list.destroy(); stopProjects(); };
 }
 
 function openEditor(view, state, refreshProfile) {

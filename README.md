@@ -13,7 +13,8 @@ scripts/build-config.mjs Writes public/js/supabase-config.js from Vercel's Supab
 supabase/schema.sql      Tables, row-level security (who can do what), triggers and live-update setup
 supabase/messages.sql    Conversations and messages (run after schema.sql)
 supabase/events.sql      Organizations and events (run after schema.sql)
-supabase/activity.sql    Notifications and profile views for analytics (run last)
+supabase/activity.sql    Notifications and profile views for analytics
+supabase/projects.sql    Projects on profiles and project posts in the feed (run last)
 public/
   index.html             Applies saved theme before first paint
   css/tokens.css         Dark and light color tokens (use these, never fixed colors)
@@ -28,6 +29,7 @@ public/
   js/messages.js         Conversations: list, thread, send, accept, decline, block and report, unread count, settings
   js/events.js           Events, RSVPs, saved events, organizations, calendar files
   js/activity.js         Notifications, profile views, analytics
+  js/projects.js         Projects: load, save, privacy, share to the feed, the project box on posts
   js/util.js             Helpers, icons, error messages, starter topic list
   js/views/*.js          One file per page (reset.js: choose a new password from a reset link)
 ```
@@ -37,7 +39,8 @@ public/
 The database fills in names, counts and times itself, so the app can't fake them. See `supabase/schema.sql` for exactly who can read and change what.
 
 - `profiles`: one per account (id = the Supabase user). first_name, last_name, birthday (private), account_type, headline, bio, field, interests[], onboarded. Made automatically at sign-up.
-- `posts`: author, body, kind (update, question, result, project), tags[] (up to 3), like_count, comment_count. `community_id` is empty for the main feed; community posts also have status (visible, held).
+- `posts`: author, body, kind (update, question, result, project), tags[] (up to 3), like_count, comment_count. `community_id` is empty for the main feed; community posts also have status (visible, held). `project_id` marks a post about one of the author's projects.
+- `projects`: owner, title, summary, status (in progress, completed), year, tags[] (up to 3), private. `project_details`: the write-up and link, readable by others only while the project is public.
 - `likes`, `comments`, `saved`: one like per member per post; comments up to 1000 characters; saves are private. Deleting a post removes all three.
 - `connections`: from_id, to_id, status (pending, accepted), note, people (name and headline of both). Only one per pair of people.
 - `follows`: follower, target, plus their names.
@@ -57,7 +60,8 @@ The database fills in names, counts and times itself, so the app can't fake them
 
 - University email is checked by domain pattern only; a maintained school-domain list comes later.
 - Author names on posts, and names on connections and follows, are copied when created; profile name changes don't update old ones yet.
-- Feed loads the latest 60 posts. "For you" ranks them by recency with a boost for your interests.
+- "For you" shows only posts tagged with at least one of your interests (the latest 60), plus your own, ranked by recency with a boost for each matching topic. Untagged posts and posts on other topics only appear in Latest and Following. Latest shows the newest 60 posts.
+- Projects: a private project's title, summary and topics are visible to every member; the write-up and link are hidden from others. Requests to see a private project, build logs and critiques come later. Project posts take the project's topics, so they reach For you for people interested in them.
 - Auto-moderation (word filter, holding links from new members) runs in the app when someone posts. A person tampering with the app could skip it; moderators can still remove anything. Moving it into the database later makes it airtight.
 - Communities can't be deleted or have ownership transferred yet. Invite-only communities, community events and a moderation log come later.
 - Anyone who was declined can send a new request later; blocking them stops that. Blocking only covers messages: a blocked person can still see your profile and send a connection request.

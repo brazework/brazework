@@ -19,7 +19,7 @@ Forge's code lives on GitHub. Vercel puts it online and redeploys automatically 
 
 1. Open your Supabase project (Vercel's Storage tab has an **Open in Supabase** button).
 2. Go to **SQL Editor**, click **New query**, paste everything from `supabase/schema.sql`, and click **Run**. It should say "Success. No rows returned."
-3. Do the same with `supabase/messages.sql`, then `supabase/events.sql`, then `supabase/activity.sql`.
+3. Do the same with `supabase/messages.sql`, then `supabase/events.sql`, then `supabase/activity.sql`, then `supabase/projects.sql`.
 4. To post Forge's own events, open **Table Editor → organization_admins** and add a row with the `Forge` organization's id and your user id.
 
 > The anon key is safe to have in a website. What protects your data is row-level security in `supabase/schema.sql`.
@@ -56,6 +56,9 @@ In Vercel, open **Deployments**, click **⋮** on the newest one and choose **Re
 - [ ] From your second account, like and comment on a post of yours and follow you; on your main account the bell shows a number, and **Notifications** lists them and links to the post
 - [ ] Unlike the post from the second account; that notification disappears
 - [ ] From your second account, open your main profile; on your main account, open **Analytics** from your profile and check the profile view for today
+- [ ] On your profile, open **Projects**, choose **New project**, pick a topic and keep **Share it to the feed** on; the post shows in **Latest**, and in **For you** on an account interested in that topic, with a box linking back to the project
+- [ ] Make the project private; from your second account the project shows only its summary, with no write-up or link
+- [ ] Post a tagged update on a topic your second account doesn't follow; it shows in their **Latest** but not their **For you**
 - [ ] Edit your headline and bio on your profile
 - [ ] Log out, click **Forgot password?**, follow the email link and choose a new password
 - [ ] In Settings, switch between Dark, Light and Match device
@@ -75,8 +78,10 @@ In Vercel, open **Deployments**, click **⋮** on the newest one and choose **Re
 | --- | --- |
 | Landing page | Company and school pages, more organization admins |
 | Sign-up (student or professional, 18+, university email check) | Group messages, attachments |
-| Email verification and log-in, password reset | Projects with build logs and critiques |
+| Email verification and log-in, password reset | Project access requests, build logs and critiques |
 | Interests and field (onboarding) | Community events, invite-only communities |
+| Projects on profiles: public or private, shared to the feed, updates posted from the project | |
+| For you: only posts on your interests | |
 | Notifications: likes, comments, follows, connection requests and community joins, live, with a badge on the bell | Email and push notifications, notification settings |
 | Analytics: profile views over 7, 30, 90 days and 12 months, engagement, who viewed (as totals), top posts | Career benchmark, project and search analytics, company analytics |
 | Network: connections, requests with notes, following, People you may know | |

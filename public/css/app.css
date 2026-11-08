@@ -287,3 +287,13 @@ a.pf-count:hover { color: var(--accent); }
 .an-dot { width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--border-strong); margin-top: 4px; flex: none; }
 .an-dot.on { border-color: var(--accent); background: var(--accent); }
 .an-locked { opacity: .75; }
+
+/* Projects */
+.post-project { display: flex; flex-direction: column; gap: 4px; padding: 14px 16px; border: 1px solid var(--border-strong); border-left: 3px solid var(--accent); border-radius: 10px; text-decoration: none; color: var(--text); }
+.post-project:hover { border-color: var(--accent); }
+.pj-private { display: inline-flex; align-items: center; gap: 4px; font-family: var(--mono); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; border: 1px solid var(--border-strong); border-radius: 4px; padding: 2px 6px; color: var(--text-2); }
+.pj-check { gap: 10px; flex-wrap: nowrap; align-items: flex-start; font-size: 14px; cursor: pointer; }
+.pj-check input { width: 18px; height: 18px; margin-top: 2px; accent-color: var(--accent); flex: 0 0 auto; }
+.pj-more summary { cursor: pointer; color: var(--accent); font-size: 14px; }
+.pj-focus { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
+.pj-card h3, .post-project strong { overflow-wrap: anywhere; }
