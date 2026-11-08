@@ -44,10 +44,12 @@ async function Communities({ searchParams }: { searchParams: PageProps<"/communi
   discover.sort((a, b) => fit(b) - fit(a) || b.member_count - a.member_count);
 
   const card = (c: Community, role?: Role) => (
-    <Link key={c.id} href={`/c/${c.id}`} className="group flex flex-col overflow-hidden rounded-3xl border border-line bg-surface/70 transition hover:-translate-y-0.5 hover:border-line-strong">
-      {c.cover_path && <div className="relative h-24 border-b border-line"><Image src={mediaUrl(c.cover_path)} alt="" fill sizes="(min-width: 640px) 440px, 100vw" className="object-cover" /></div>}
+    <Link key={c.id} href={`/c/${c.id}`} className="grad-edge group flex flex-col overflow-hidden rounded-3xl border shadow-[var(--shadow)] transition duration-300 hover:-translate-y-1">
+      <div className="relative h-24 overflow-hidden border-b border-line">
+        {c.cover_path ? <Image src={mediaUrl(c.cover_path)} alt="" fill sizes="(min-width: 640px) 440px, 100vw" className="object-cover transition duration-500 group-hover:scale-105" /> : <div className="bg-accent-grad absolute inset-0 opacity-80 transition duration-500 group-hover:opacity-100" />}
+      </div>
       <div className="flex gap-4 p-5">
-      <CommunityBadge id={c.id} name={c.name} />
+      <CommunityBadge id={c.id} name={c.name} className="relative z-10 -mt-11 border-4 border-surface shadow-[var(--shadow)]" />
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
           <span className="truncate font-semibold group-hover:underline">{c.name}</span>

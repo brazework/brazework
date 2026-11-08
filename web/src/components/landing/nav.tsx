@@ -33,7 +33,7 @@ export function Nav() {
       <nav
         aria-label="Main"
         className={cn(
-          "relative flex w-full max-w-6xl flex-wrap items-center gap-6 rounded-[26px] px-4 py-2.5 transition-all duration-500",
+          "relative flex w-full max-w-6xl flex-wrap items-center gap-6 rounded-xl px-4 py-2.5 transition-all duration-500",
           scrolled || open ? "glass shadow-[0_10px_40px_-12px_rgba(0,0,0,0.6)]" : "border border-transparent",
         )}
       >
@@ -41,14 +41,14 @@ export function Nav() {
         <ul className="ml-4 hidden items-center gap-1 md:flex">
           {LINKS.map((l) => (
             <li key={l.href}>
-              <a href={l.href} className="rounded-full px-3 py-1.5 text-sm text-muted transition hover:bg-hover hover:text-text">{l.label}</a>
+              <a href={l.href} className="rounded-md px-3 py-1.5 text-sm text-muted transition hover:bg-hover hover:text-text">{l.label}</a>
             </li>
           ))}
         </ul>
         <div className="ml-auto flex items-center gap-1">
           <ThemeToggle />
           <Button href="/login" variant="ghost" className="hidden sm:inline-flex">Log in</Button>
-          <Button href="#founding">Bring your club</Button>
+          <Button href="#founding" className="rounded-md">Bring your club</Button>
           <button
             type="button"
             onClick={() => setOpen((v) => !v)}

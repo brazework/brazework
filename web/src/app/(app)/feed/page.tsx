@@ -151,7 +151,7 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
 function FeedHeader({ tab }: { tab?: TabId }) {
   return (
     <header data-tour="feed-tabs" className="flex flex-col gap-4">
-      <h1 className="text-3xl font-semibold tracking-tight">Feed</h1>
+      <h1 className="text-grad text-3xl font-semibold tracking-tight">Feed</h1>
       <Tabs active={tab ?? ""} tabs={TABS.map((t) => ({ id: t.id, label: t.label, href: t.id === "for-you" ? "/feed" : `/feed?tab=${t.id}` }))} />
     </header>
   );

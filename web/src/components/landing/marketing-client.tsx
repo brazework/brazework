@@ -33,22 +33,22 @@ export function AudienceTabs() {
     <div>
       <div role="tablist" aria-label="Who it's for" className="no-scrollbar -mx-6 flex gap-2 overflow-x-auto px-6 sm:mx-0 sm:px-0">
         {AUDIENCES.map((x) => (
-          <button key={x.id} role="tab" aria-selected={active === x.id} aria-controls="audience-panel" onClick={() => setActive(x.id)} className="relative inline-flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-sm whitespace-nowrap text-muted transition hover:text-text aria-selected:text-on-accent">
-            {active === x.id && <motion.span layoutId="aud-pill" className="absolute inset-0 rounded-full bg-accent" transition={{ type: "spring", stiffness: 380, damping: 32 }} />}
+          <button key={x.id} role="tab" aria-selected={active === x.id} aria-controls="audience-panel" onClick={() => setActive(x.id)} className="relative inline-flex shrink-0 items-center gap-2 rounded-md border border-line px-4 py-2 font-mono text-xs tracking-wide whitespace-nowrap text-muted uppercase transition hover:text-text aria-selected:border-transparent aria-selected:text-on-accent">
+            {active === x.id && <motion.span layoutId="aud-pill" className="absolute inset-0 rounded-md bg-accent" transition={{ type: "spring", stiffness: 380, damping: 32 }} />}
             <x.icon className="relative size-4" /> <span className="relative">{x.label}</span>
           </button>
         ))}
       </div>
-      <div id="audience-panel" role="tabpanel" className="mt-6 overflow-hidden rounded-3xl border border-line bg-bg/60">
+      <div id="audience-panel" role="tabpanel" className="mt-6 overflow-hidden border border-line-strong bg-surface/70">
         <AnimatePresence mode="wait">
           <motion.div key={a.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.25 }} className="grid gap-8 p-7 sm:p-10 lg:grid-cols-[1fr_1.2fr] lg:items-center">
             <div>
               <h3 className="text-3xl font-semibold tracking-tight">{a.headline}</h3>
-              <Button href={a.cta.href} className="mt-6">{a.cta.label} <ArrowRight className="size-4" /></Button>
+              <Button href={a.cta.href} className="mt-6 rounded-md">{a.cta.label} <ArrowRight className="size-4" /></Button>
             </div>
             <ul className="flex flex-col gap-3">
               {a.points.map((p) => (
-                <li key={p} className="flex gap-3 text-[15px] text-text-2"><span className="mt-0.5 grid size-5 shrink-0 place-items-center rounded-full bg-accent text-on-accent"><Check className="size-3" /></span>{p}</li>
+                <li key={p} className="flex gap-3 text-[15px] text-text-2"><span className="mt-0.5 grid size-5 shrink-0 place-items-center rounded-sm border border-accent text-accent"><Check className="size-3" /></span>{p}</li>
               ))}
             </ul>
           </motion.div>
@@ -69,19 +69,19 @@ const QA = [
 export function Faq() {
   const [open, setOpen] = useState<number | null>(0);
   return (
-    <div className="divide-y divide-line rounded-3xl border border-line bg-surface/70">
+    <div className="divide-y divide-line border border-line-strong bg-surface/70">
       {QA.map(([q, a], i) => (
         <div key={q}>
           <h3>
             <button type="button" aria-expanded={open === i} aria-controls={`faq-${i}`} onClick={() => setOpen(open === i ? null : i)} className="flex w-full items-center justify-between gap-4 px-6 py-5 text-left font-medium">
-              {q}
+              <span className="flex gap-4"><span className="font-mono text-xs text-accent">N{i + 1}</span>{q}</span>
               <ChevronDown className={cn("size-5 shrink-0 text-faint transition", open === i && "rotate-180")} />
             </button>
           </h3>
           <AnimatePresence initial={false}>
             {open === i && (
               <motion.div id={`faq-${i}`} initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
-                <p className="px-6 pb-5 text-muted">{a}</p>
+                <p className="px-6 pb-5 pl-[3.25rem] text-muted">{a}</p>
               </motion.div>
             )}
           </AnimatePresence>

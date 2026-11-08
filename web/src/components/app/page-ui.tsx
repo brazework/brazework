@@ -7,7 +7,7 @@ export function PageHeader({ title, subtitle, actions }: { title: string; subtit
   return (
     <header className="flex flex-wrap items-end justify-between gap-4">
       <div className="min-w-0">
-        <h1 className="text-3xl font-semibold tracking-tight">{title}</h1>
+        <h1 className="text-grad text-3xl font-semibold tracking-tight">{title}</h1>
         {subtitle && <p className="mt-1.5 text-sm text-muted">{subtitle}</p>}
       </div>
       {actions && <div className="flex items-center gap-2">{actions}</div>}
@@ -16,7 +16,7 @@ export function PageHeader({ title, subtitle, actions }: { title: string; subtit
 }
 
 export function Panel({ className, children }: { className?: string; children: React.ReactNode }) {
-  return <section className={cn("rounded-3xl border border-line bg-surface/70 p-5", className)}>{children}</section>;
+  return <section className={cn("rounded-3xl border border-line bg-surface/80 p-5 shadow-[var(--shadow)] backdrop-blur-sm", className)}>{children}</section>;
 }
 
 export function EmptyState({ icon, title, body, action }: { icon?: React.ReactNode; title: string; body?: React.ReactNode; action?: React.ReactNode }) {
@@ -41,7 +41,7 @@ export function Tabs({ tabs, active }: { tabs: { id: string; label: string; href
           aria-current={t.id === active ? "page" : undefined}
           className={cn(
             "inline-flex shrink-0 items-center gap-2 rounded-full px-4 py-1.5 text-sm whitespace-nowrap transition",
-            t.id === active ? "bg-accent text-on-accent" : "text-muted hover:bg-hover hover:text-text",
+            t.id === active ? "bg-accent-grad text-on-accent shadow-[0_6px_18px_-8px_var(--accent)]" : "text-muted hover:bg-hover hover:text-text",
           )}
         >
           {t.label}

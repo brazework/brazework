@@ -72,14 +72,19 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
   return (
     <>
       <Panel className="overflow-hidden p-0">
-        {c.cover_path && (
-          <div className="relative h-36 border-b border-line sm:h-44">
+        <div className="relative h-36 overflow-hidden border-b border-line sm:h-44">
+          {c.cover_path ? (
             <Image src={mediaUrl(c.cover_path)} alt="" fill sizes="(min-width: 768px) 768px, 100vw" className="object-cover" priority />
-          </div>
-        )}
+          ) : (
+            <>
+              <div className="bg-accent-grad absolute inset-0 opacity-90" />
+              <div className="bg-blueprint absolute inset-0 opacity-60 mix-blend-overlay" />
+            </>
+          )}
+        </div>
         <div className="p-6">
         <div className="flex flex-wrap items-start gap-4">
-          <CommunityBadge id={c.id} name={c.name} size={64} />
+          <CommunityBadge id={c.id} name={c.name} size={64} className="relative z-10 -mt-14 border-4 border-surface shadow-[var(--shadow)]" />
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-2xl font-semibold tracking-tight">{c.name}</h1>

@@ -196,20 +196,91 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity
 :root[data-theme="dark"] .dark-only { display: block; }
 :root[data-theme="dark"] .light-only { display: none; }
 
-/* Accent themes (Settings → Appearance). Mono is the default: the accent is the ink colour.
-   Each accent has its own light and dark values, picked for contrast on that theme's surfaces. */
-:root[data-accent="blue"] { --accent: #2563eb; --on-accent: #ffffff; --glow: rgba(37, 99, 235, 0.12); --spark: 37, 99, 235; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"])[data-accent="blue"] { --accent: #60a5fa; --on-accent: #09090b; --glow: rgba(96, 165, 250, 0.14); --spark: 96, 165, 250; } }
-:root[data-theme="dark"][data-accent="blue"] { --accent: #60a5fa; --on-accent: #09090b; --glow: rgba(96, 165, 250, 0.14); --spark: 96, 165, 250; }
-:root[data-accent="violet"] { --accent: #7c3aed; --on-accent: #ffffff; --glow: rgba(124, 58, 237, 0.12); --spark: 124, 58, 237; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"])[data-accent="violet"] { --accent: #a78bfa; --on-accent: #09090b; --glow: rgba(167, 139, 250, 0.14); --spark: 167, 139, 250; } }
-:root[data-theme="dark"][data-accent="violet"] { --accent: #a78bfa; --on-accent: #09090b; --glow: rgba(167, 139, 250, 0.14); --spark: 167, 139, 250; }
-:root[data-accent="emerald"] { --accent: #047857; --on-accent: #ffffff; --glow: rgba(4, 120, 87, 0.12); --spark: 4, 120, 87; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"])[data-accent="emerald"] { --accent: #34d399; --on-accent: #09090b; --glow: rgba(52, 211, 153, 0.14); --spark: 52, 211, 153; } }
-:root[data-theme="dark"][data-accent="emerald"] { --accent: #34d399; --on-accent: #09090b; --glow: rgba(52, 211, 153, 0.14); --spark: 52, 211, 153; }
-:root[data-accent="amber"] { --accent: #b45309; --on-accent: #ffffff; --glow: rgba(180, 83, 9, 0.12); --spark: 180, 83, 9; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"])[data-accent="amber"] { --accent: #fbbf24; --on-accent: #09090b; --glow: rgba(251, 191, 36, 0.14); --spark: 251, 191, 36; } }
-:root[data-theme="dark"][data-accent="amber"] { --accent: #fbbf24; --on-accent: #09090b; --glow: rgba(251, 191, 36, 0.14); --spark: 251, 191, 36; }
-:root[data-accent="rose"] { --accent: #e11d48; --on-accent: #ffffff; --glow: rgba(225, 29, 72, 0.12); --spark: 225, 29, 72; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"])[data-accent="rose"] { --accent: #fb7185; --on-accent: #09090b; --glow: rgba(251, 113, 133, 0.14); --spark: 251, 113, 133; } }
-:root[data-theme="dark"][data-accent="rose"] { --accent: #fb7185; --on-accent: #09090b; --glow: rgba(251, 113, 133, 0.14); --spark: 251, 113, 133; }
+/* ---------- Blueprint: the marketing pages' drafting-sheet look ----------
+   Scoped to .bp (landing + auth). Paper and blue ink in light mode, a deep blueprint sheet in dark.
+   Same token names, so every component inside just works. */
+.bp {
+  --bg: #f4f7fb; --surface: #ffffff; --surface-2: #eef3fa; --raised: #e2eaf6; --hover: #e9f0f9;
+  --border: #c9d7ea; --border-strong: #a7bedc;
+  --text: #0e2a52; --text-2: #1e3d6b; --muted: #3c5c8a; --faint: #4b6a95;
+  --accent: #1f5fbf; --on-accent: #ffffff; --glow: rgba(31, 95, 191, 0.10); --spark: 31, 95, 191;
+  --accent-grad: linear-gradient(135deg, #2563eb, #1f5fbf 55%, #1e40af); --text-grad: linear-gradient(90deg, #1f5fbf, #1e40af);
+  --ink: #1f5fbf; --grid-minor: rgba(31, 95, 191, 0.06); --grid-major: rgba(31, 95, 191, 0.12);
+  --shadow: 0 1px 0 rgba(14, 42, 82, 0.04), 0 18px 40px -24px rgba(14, 42, 82, 0.35);
+  background: var(--bg);
+  color: var(--text);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .bp {
+    --bg: #0a1c35; --surface: #0e2645; --surface-2: #112d52; --raised: #15365f; --hover: #13325a;
+    --border: #23477a; --border-strong: #3a649f;
+    --text: #eaf2ff; --text-2: #c8daf4; --muted: #9db9df; --faint: #8aa8d2;
+    --accent: #7cc4ff; --on-accent: #0a1c35; --glow: rgba(124, 196, 255, 0.10); --spark: 124, 196, 255;
+    --accent-grad: linear-gradient(135deg, #a5d8ff, #7cc4ff 50%, #5b9dff); --text-grad: linear-gradient(90deg, #a5d8ff, #6aa8ff);
+    --ink: #8fcbff; --grid-minor: rgba(143, 203, 255, 0.06); --grid-major: rgba(143, 203, 255, 0.12);
+    --shadow: 0 1px 0 rgba(0, 0, 0, 0.3), 0 24px 48px -24px rgba(0, 0, 0, 0.7);
+  }
+}
+:root[data-theme="dark"] .bp {
+  --bg: #0a1c35; --surface: #0e2645; --surface-2: #112d52; --raised: #15365f; --hover: #13325a;
+  --border: #23477a; --border-strong: #3a649f;
+  --text: #eaf2ff; --text-2: #c8daf4; --muted: #9db9df; --faint: #8aa8d2;
+  --accent: #7cc4ff; --on-accent: #0a1c35; --glow: rgba(124, 196, 255, 0.10); --spark: 124, 196, 255;
+  --accent-grad: linear-gradient(135deg, #a5d8ff, #7cc4ff 50%, #5b9dff); --text-grad: linear-gradient(90deg, #a5d8ff, #6aa8ff);
+  --ink: #8fcbff; --grid-minor: rgba(143, 203, 255, 0.06); --grid-major: rgba(143, 203, 255, 0.12);
+  --shadow: 0 1px 0 rgba(0, 0, 0, 0.3), 0 24px 48px -24px rgba(0, 0, 0, 0.7);
+}
+
+/* Drafting paper: a fine 24px grid with a heavier line every 120px. */
+@utility bp-grid {
+  background-image:
+    linear-gradient(var(--grid-major) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-major) 1px, transparent 1px),
+    linear-gradient(var(--grid-minor) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-minor) 1px, transparent 1px);
+  background-size: 120px 120px, 120px 120px, 24px 24px, 24px 24px;
+  background-position: -1px -1px;
+}
+
+/* Line art that draws itself in (CSS only, so it shows before and without JavaScript).
+   Paths use pathLength="1"; reduced motion shows the finished drawing. */
+@keyframes bp-draw { to { stroke-dashoffset: 0; } }
+.bp-draw { stroke-dasharray: 1; stroke-dashoffset: 1; animation: bp-draw 1.8s cubic-bezier(0.65, 0, 0.35, 1) forwards; animation-delay: var(--d, 0s); }
+@keyframes bp-fade { from { opacity: 0; } }
+.bp-label { animation: bp-fade 0.6s ease both; animation-delay: var(--d, 0s); }
+@media (prefers-reduced-motion: reduce) {
+  .bp-draw { stroke-dashoffset: 0; animation: none !important; }
+}
+
+/* ---------- Themes ("skins"): the whole app, light and dark ----------
+   Settings → Appearance sets html[data-skin]. Mono (no attribute) is the default. Each skin swaps the
+   surfaces, text, accent and a signature gradient (--accent-grad), tuned so button text stays readable. */
+:root { --accent-grad: linear-gradient(135deg, var(--accent), var(--accent)); --text-grad: linear-gradient(90deg, var(--text), var(--faint)); }
+:root[data-skin="blueprint"] { --bg: #f4f7fb; --surface: #ffffff; --surface-2: #eef3fa; --raised: #e2eaf6; --hover: #e9f0f9; --border: #c9d7ea; --border-strong: #a7bedc; --text: #0e2a52; --text-2: #1e3d6b; --muted: #3c5c8a; --faint: #4b6a95; --accent: #1f5fbf; --on-accent: #ffffff; --accent-grad: linear-gradient(135deg, #2563eb 0%, #1f5fbf 55%, #1e40af 100%); --text-grad: linear-gradient(90deg, #1f5fbf, #1e40af); --glow: rgba(31, 95, 191, 0.10); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"])[data-skin="blueprint"] { color-scheme: dark; --bg: #0a1c35; --surface: #0e2645; --surface-2: #112d52; --raised: #15365f; --hover: #13325a; --border: #23477a; --border-strong: #3a649f; --text: #eaf2ff; --text-2: #c8daf4; --muted: #9db9df; --faint: #8aa8d2; --accent: #7cc4ff; --on-accent: #0a1c35; --accent-grad: linear-gradient(135deg, #a5d8ff 0%, #7cc4ff 50%, #5b9dff 100%); --text-grad: linear-gradient(90deg, #a5d8ff, #6aa8ff); --glow: rgba(124, 196, 255, 0.12); } }
+:root[data-theme="dark"][data-skin="blueprint"] { color-scheme: dark; --bg: #0a1c35; --surface: #0e2645; --surface-2: #112d52; --raised: #15365f; --hover: #13325a; --border: #23477a; --border-strong: #3a649f; --text: #eaf2ff; --text-2: #c8daf4; --muted: #9db9df; --faint: #8aa8d2; --accent: #7cc4ff; --on-accent: #0a1c35; --accent-grad: linear-gradient(135deg, #a5d8ff 0%, #7cc4ff 50%, #5b9dff 100%); --text-grad: linear-gradient(90deg, #a5d8ff, #6aa8ff); --glow: rgba(124, 196, 255, 0.12); }
+:root[data-skin="fire"] { --bg: #fff8f3; --surface: #ffffff; --surface-2: #fff1e7; --raised: #ffe6d5; --hover: #fff0e5; --border: #f3d6c2; --border-strong: #e7b998; --text: #2a1208; --text-2: #4a2413; --muted: #7a4528; --faint: #8a5434; --accent: #ea580c; --on-accent: #2a1208; --accent-grad: linear-gradient(135deg, #fcd34d 0%, #fb923c 50%, #f87171 100%); --text-grad: linear-gradient(90deg, #ea580c, #dc2626); --glow: rgba(234, 88, 12, 0.12); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"])[data-skin="fire"] { color-scheme: dark; --bg: #120a07; --surface: #1a100b; --surface-2: #21150e; --raised: #2b1b12; --hover: #24170f; --border: #3a2518; --border-strong: #5a3820; --text: #fff4ec; --text-2: #f3d9c6; --muted: #d4ab8e; --faint: #bd9172; --accent: #ff7a2f; --on-accent: #1a0b04; --accent-grad: linear-gradient(135deg, #ffd166 0%, #ff8a3d 45%, #ff4d4d 100%); --text-grad: linear-gradient(90deg, #ffd166, #ff7a2f 50%, #ff4d4d); --glow: rgba(255, 106, 26, 0.18); } }
+:root[data-theme="dark"][data-skin="fire"] { color-scheme: dark; --bg: #120a07; --surface: #1a100b; --surface-2: #21150e; --raised: #2b1b12; --hover: #24170f; --border: #3a2518; --border-strong: #5a3820; --text: #fff4ec; --text-2: #f3d9c6; --muted: #d4ab8e; --faint: #bd9172; --accent: #ff7a2f; --on-accent: #1a0b04; --accent-grad: linear-gradient(135deg, #ffd166 0%, #ff8a3d 45%, #ff4d4d 100%); --text-grad: linear-gradient(90deg, #ffd166, #ff7a2f 50%, #ff4d4d); --glow: rgba(255, 106, 26, 0.18); }
+:root[data-skin="aurora"] { --bg: #f7f6ff; --surface: #ffffff; --surface-2: #f1efff; --raised: #e7e3ff; --hover: #efecff; --border: #dcd6f7; --border-strong: #c2b8ee; --text: #1b1442; --text-2: #2e2563; --muted: #544a8a; --faint: #665c9c; --accent: #6d28d9; --on-accent: #1b1442; --accent-grad: linear-gradient(135deg, #67e8f9 0%, #a5b4fc 50%, #f0abfc 100%); --text-grad: linear-gradient(90deg, #0891b2, #6d28d9 50%, #c026d3); --glow: rgba(109, 40, 217, 0.10); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"])[data-skin="aurora"] { color-scheme: dark; --bg: #0b0a1a; --surface: #121029; --surface-2: #171433; --raised: #1f1b42; --hover: #191636; --border: #2c2757; --border-strong: #443d7d; --text: #f1efff; --text-2: #d6d1fb; --muted: #aaa3df; --faint: #968fcf; --accent: #a78bfa; --on-accent: #0b0a1a; --accent-grad: linear-gradient(135deg, #22d3ee 0%, #818cf8 50%, #e879f9 100%); --text-grad: linear-gradient(90deg, #22d3ee, #a78bfa 50%, #f0abfc); --glow: rgba(129, 140, 248, 0.16); } }
+:root[data-theme="dark"][data-skin="aurora"] { color-scheme: dark; --bg: #0b0a1a; --surface: #121029; --surface-2: #171433; --raised: #1f1b42; --hover: #191636; --border: #2c2757; --border-strong: #443d7d; --text: #f1efff; --text-2: #d6d1fb; --muted: #aaa3df; --faint: #968fcf; --accent: #a78bfa; --on-accent: #0b0a1a; --accent-grad: linear-gradient(135deg, #22d3ee 0%, #818cf8 50%, #e879f9 100%); --text-grad: linear-gradient(90deg, #22d3ee, #a78bfa 50%, #f0abfc); --glow: rgba(129, 140, 248, 0.16); }
+:root[data-skin="emerald"] { --bg: #f4fbf7; --surface: #ffffff; --surface-2: #ecf8f1; --raised: #dcf2e5; --hover: #e9f7ef; --border: #c6e8d3; --border-strong: #a1d6b6; --text: #06291c; --text-2: #0d3d2a; --muted: #2f6650; --faint: #3f735c; --accent: #047857; --on-accent: #06291c; --accent-grad: linear-gradient(135deg, #bef264 0%, #6ee7b7 50%, #67e8f9 100%); --text-grad: linear-gradient(90deg, #047857, #0e7490); --glow: rgba(4, 120, 87, 0.10); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"])[data-skin="emerald"] { color-scheme: dark; --bg: #06140f; --surface: #0a1d16; --surface-2: #0e241b; --raised: #132f24; --hover: #10281f; --border: #1d3d30; --border-strong: #2f5c49; --text: #ecfff6; --text-2: #c9f2dd; --muted: #94cdb2; --faint: #7fbca0; --accent: #34d399; --on-accent: #06140f; --accent-grad: linear-gradient(135deg, #d9f99d 0%, #34d399 50%, #22d3ee 100%); --text-grad: linear-gradient(90deg, #a3e635, #34d399 50%, #22d3ee); --glow: rgba(52, 211, 153, 0.14); } }
+:root[data-theme="dark"][data-skin="emerald"] { color-scheme: dark; --bg: #06140f; --surface: #0a1d16; --surface-2: #0e241b; --raised: #132f24; --hover: #10281f; --border: #1d3d30; --border-strong: #2f5c49; --text: #ecfff6; --text-2: #c9f2dd; --muted: #94cdb2; --faint: #7fbca0; --accent: #34d399; --on-accent: #06140f; --accent-grad: linear-gradient(135deg, #d9f99d 0%, #34d399 50%, #22d3ee 100%); --text-grad: linear-gradient(90deg, #a3e635, #34d399 50%, #22d3ee); --glow: rgba(52, 211, 153, 0.14); }
+
+/* Depth helpers used across the app. */
+@utility bg-accent-grad { background-color: var(--accent); background-image: var(--accent-grad); }
+@utility text-grad { background: var(--text-grad); -webkit-background-clip: text; background-clip: text; color: transparent; }
+/* A gradient edge that appears on hover (rounded corners keep working). */
+@utility grad-edge {
+  border-color: transparent;
+  background: linear-gradient(var(--surface), var(--surface)) padding-box, linear-gradient(var(--border), var(--border)) border-box;
+  &:hover, &:focus-within { background: linear-gradient(var(--surface), var(--surface)) padding-box, var(--accent-grad) border-box; }
+}
+/* The app's backdrop: the theme's glow from the top corners, fixed while content scrolls. */
+@utility app-backdrop {
+  background-color: var(--bg);
+  background-image: radial-gradient(900px 520px at 85% -8%, var(--glow), transparent 65%), radial-gradient(700px 420px at -5% 5%, var(--glow), transparent 60%);
+  background-attachment: fixed;
+}

@@ -34,10 +34,10 @@ export function PostCard({ post, liked, saved = false, own = false, index, proje
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45, delay: Math.min(index, 8) * 0.04, ease: [0.16, 1, 0.3, 1] }}
-      className="rounded-3xl border border-line bg-surface/70 p-5 transition hover:border-line-strong"
+      className="grad-edge rounded-3xl border p-5 shadow-[var(--shadow)] transition duration-300 hover:-translate-y-0.5"
     >
       <header className="flex items-center gap-3">
-        <Link href={`/u/${post.author_id}`} aria-hidden="true" tabIndex={-1}><Avatar first={post.author_first} last={post.author_last} size={40} src={avatarSrc(post.author)} /></Link>
+        <Link href={`/u/${post.author_id}`} aria-hidden="true" tabIndex={-1} className="rounded-full bg-accent-grad p-[2px]"><Avatar first={post.author_first} last={post.author_last} size={38} src={avatarSrc(post.author)} className="border-2 border-surface" /></Link>
         <div className="min-w-0">
           <Link href={`/u/${post.author_id}`} className="text-[15px] font-medium hover:underline">{post.author_first} {post.author_last}</Link>
           <div className="truncate text-xs text-faint">
@@ -46,7 +46,7 @@ export function PostCard({ post, liked, saved = false, own = false, index, proje
             {post.community_name && <> · {post.community_name}</>}
           </div>
         </div>
-        <span className="ml-auto rounded-full border border-line px-2.5 py-0.5 font-mono text-[10px] tracking-wide text-muted uppercase">{kind}</span>
+        <span className="ml-auto rounded-full bg-accent-grad px-2.5 py-0.5 font-mono text-[10px] font-medium tracking-wide text-on-accent uppercase">{kind}</span>
       </header>
       {reason && <p className="mt-3 font-mono text-[11px] text-faint">{reason}</p>}
       <p className="mt-4 text-[15px] leading-relaxed whitespace-pre-wrap text-text-2">{post.body}</p>
@@ -72,15 +72,15 @@ export function PostCard({ post, liked, saved = false, own = false, index, proje
       <footer className="mt-4 flex items-center gap-1 text-sm text-faint">
         <button onClick={() => act({ liked: !opt.liked, count: opt.count + (opt.liked ? -1 : 1) }, () => toggleLike(post.id, !opt.liked))} aria-pressed={opt.liked} aria-label={opt.liked ? "Unlike" : "Like"} className="inline-flex h-9 items-center gap-1.5 rounded-full px-3 transition hover:bg-hover hover:text-text">
           <motion.span animate={opt.liked ? { scale: [1, 1.3, 1] } : {}} transition={{ duration: 0.3 }}>
-            <Heart className={cn("size-[18px] transition", opt.liked && "fill-text text-text")} />
+            <Heart className={cn("size-[18px] transition", opt.liked && "fill-[var(--accent)] text-accent")} />
           </motion.span>
-          <span className={cn("tabular-nums", opt.liked && "text-text")}>{opt.count}</span>
+          <span className={cn("tabular-nums", opt.liked && "text-accent")}>{opt.count}</span>
         </button>
         <Link href={`/post/${post.id}`} aria-label={`${post.comment_count} comments`} className="inline-flex h-9 items-center gap-1.5 rounded-full px-3 transition hover:bg-hover hover:text-text">
           <MessageSquare className="size-[18px]" /> <span className="tabular-nums">{post.comment_count}</span>
         </Link>
         <button onClick={() => act({ saved: !opt.saved }, () => toggleSave(post.id, !opt.saved))} aria-pressed={opt.saved} aria-label={opt.saved ? "Unsave" : "Save"} className="inline-flex h-9 items-center gap-1.5 rounded-full px-3 transition hover:bg-hover hover:text-text">
-          <Bookmark className={cn("size-[18px]", opt.saved && "fill-text text-text")} />
+          <Bookmark className={cn("size-[18px]", opt.saved && "fill-[var(--accent)] text-accent")} />
         </button>
         {own && (
           <button

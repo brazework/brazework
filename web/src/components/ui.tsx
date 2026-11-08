@@ -20,7 +20,7 @@ export function Button({ href, variant = "primary", size = "md", className, chil
   const cls = cn(
     "group relative inline-flex items-center justify-center gap-2 rounded-full font-medium transition-all duration-200 select-none disabled:opacity-50 disabled:pointer-events-none",
     size === "lg" ? "h-12 px-6 text-[15px]" : "h-10 px-4 text-sm",
-    variant === "primary" && "bg-accent text-on-accent shadow-[var(--shadow)] hover:-translate-y-px hover:opacity-90 active:translate-y-0",
+    variant === "primary" && "bg-accent-grad text-on-accent shadow-[0_8px_24px_-10px_var(--accent)] hover:-translate-y-px hover:shadow-[0_12px_32px_-10px_var(--accent)] hover:brightness-105 active:translate-y-0",
     variant === "outline" && "glass text-text hover:bg-hover hover:border-line-strong",
     variant === "ghost" && "text-muted hover:text-text",
     className,

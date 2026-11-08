@@ -3,8 +3,9 @@ import { AnimatePresence, motion } from "motion/react";
 import { Building2, GraduationCap, Loader2, PartyPopper, Wrench } from "lucide-react";
 import { useActionState, useState } from "react";
 import { registerOrgInterest, type OrgInterestState } from "@/app/actions/org-interest";
-import { Button, Field, Kicker, inputCls } from "@/components/ui";
+import { Button, Field, inputCls } from "@/components/ui";
 import { cn } from "@/lib/forge";
+import { CornerMarks, FigLabel } from "./blueprint";
 import { Reveal } from "./reveal";
 import { submitWithoutReset } from "@/lib/submit";
 
@@ -19,11 +20,11 @@ export function Organizations() {
   const [state, action, pending] = useActionState<OrgInterestState, FormData>(registerOrgInterest, { ok: false, message: "" });
 
   return (
-    <section id="founding" className="relative scroll-mt-24 border-t border-line bg-surface/30 py-24 sm:py-32">
+    <section id="founding" className="bp-grid relative scroll-mt-24 border-b border-line py-24 sm:py-32">
       <div className="mx-auto grid max-w-7xl gap-14 px-6 lg:grid-cols-2">
         <div>
           <Reveal>
-            <Kicker>Founding clubs program</Kicker>
+            <FigLabel n="07">Founding clubs program</FigLabel>
             <h2 className="mt-4 text-[clamp(2rem,4.5vw,3.25rem)] leading-[1.05] font-semibold tracking-[-0.035em]">
               Be one of the first clubs <span className="text-shine">on Forge.</span>
             </h2>
@@ -40,8 +41,8 @@ export function Organizations() {
                   type="button"
                   onClick={() => setType(t.id)}
                   className={cn(
-                    "flex w-full items-start gap-4 rounded-2xl border p-5 text-left transition",
-                    type === t.id ? "border-accent/60 bg-accent/[0.06]" : "border-line bg-surface/40 hover:border-line-strong",
+                    "flex w-full items-start gap-4 border p-5 text-left transition",
+                    type === t.id ? "border-accent bg-surface" : "border-line bg-surface/60 hover:border-line-strong",
                   )}
                 >
                   <t.icon className={cn("mt-0.5 size-6 shrink-0", type === t.id ? "text-accent" : "text-faint")} />
@@ -56,7 +57,8 @@ export function Organizations() {
         </div>
 
         <Reveal delay={0.1}>
-          <div className="glass relative overflow-hidden rounded-3xl p-6 sm:p-8">
+          <div className="relative overflow-hidden border border-line-strong bg-surface p-6 shadow-[var(--shadow)] sm:p-8">
+            <CornerMarks />
             <AnimatePresence mode="wait">
               {state.ok ? (
                 <motion.div key="done" initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} className="flex min-h-[420px] flex-col items-center justify-center text-center">
@@ -70,7 +72,7 @@ export function Organizations() {
                   <input type="hidden" name="type" value={type} />
                   <div role="group" aria-label="Organization type" className="flex flex-wrap gap-2">
                     {TYPES.map((t) => (
-                      <button key={t.id} type="button" aria-pressed={type === t.id} onClick={() => setType(t.id)} className="rounded-full border border-line px-4 py-1.5 text-sm text-muted transition aria-pressed:border-accent aria-pressed:bg-accent/10 aria-pressed:text-accent">
+                      <button key={t.id} type="button" aria-pressed={type === t.id} onClick={() => setType(t.id)} className="rounded-md border border-line px-4 py-1.5 font-mono text-xs tracking-wide text-muted uppercase transition aria-pressed:border-accent aria-pressed:bg-accent aria-pressed:text-on-accent">
                         {t.label}
                       </button>
                     ))}
@@ -82,7 +84,7 @@ export function Organizations() {
                     <Field label="Your role"><input name="role" maxLength={60} placeholder={type === "club" ? "e.g. President" : "e.g. University recruiter"} className={inputCls} /></Field>
                   </div>
                   <p role="status" className="min-h-5 text-sm text-danger">{state.message}</p>
-                  <Button type="submit" size="lg" disabled={pending} className="self-start">
+                  <Button type="submit" size="lg" disabled={pending} className="self-start rounded-md">
                     {pending && <Loader2 className="size-4 animate-spin" />} {pending ? "Sending…" : "Register interest"}
                   </Button>
                 </motion.form>

@@ -3,7 +3,7 @@ import { ROLE_LABEL, cInitials, rank, type Role } from "@/lib/communities";
 
 // Monochrome stand-in for the vanilla app's tinted badges: the same community always gets the same tone.
 const TONES = [
-  "bg-accent text-on-accent",
+  "bg-accent-grad text-on-accent",
   "bg-raised text-text border border-line-strong",
   "bg-surface-2 text-text-2 border border-line",
 ];

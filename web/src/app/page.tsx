@@ -8,7 +8,7 @@ import { Organizations } from "@/components/landing/organizations";
 // why we're building it, the founding clubs program, and questions.
 export default function Landing() {
   return (
-    <>
+    <div className="bp min-h-dvh">
       <LegacyLinks />
       <Nav />
       <main className="scroll-smooth">
@@ -23,6 +23,6 @@ export default function Landing() {
         <FinalCta />
       </main>
       <Footer />
-    </>
+    </div>
   );
 }

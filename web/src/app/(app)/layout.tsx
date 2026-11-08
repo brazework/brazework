@@ -10,11 +10,13 @@ import { MobileBar, Sidebar, SidebarSkeleton, type Badges } from "./sidebar";
 // proxy.ts redirects signed-out visitors first; SignedInShell re-checks on the server.
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
+    <div className="app-backdrop min-h-dvh">
     <div className="mx-auto flex min-h-dvh max-w-7xl gap-8 px-4 sm:px-6">
       <Suspense fallback={<SidebarSkeleton />}>
         <SignedInShell />
       </Suspense>
       <main className="min-w-0 flex-1 pt-20 pb-28 md:py-8">{children}</main>
+    </div>
     </div>
   );
 }

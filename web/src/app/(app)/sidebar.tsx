@@ -30,7 +30,7 @@ const isActive = (path: string, match: string[]) => match.some((m) => path.start
 function Count({ n, className }: { n: number; className?: string }) {
   if (!n) return null;
   return (
-    <span className={cn("grid h-[18px] min-w-[18px] place-items-center rounded-full bg-accent px-1 font-mono text-[10px] leading-none text-on-accent tabular-nums", className)}>
+    <span className={cn("grid h-[18px] min-w-[18px] place-items-center rounded-full bg-accent-grad px-1 font-mono text-[10px] leading-none text-on-accent tabular-nums", className)}>
       {n > 99 ? "99+" : n}
     </span>
   );
@@ -69,7 +69,7 @@ export function Sidebar({ first, last, headline, badges, avatar }: { first: stri
               aria-label={count ? `${n.label}, ${count} new` : undefined}
               className={cn("relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition", active ? "text-text" : "text-muted hover:bg-hover hover:text-text")}
             >
-              {active && <motion.span layoutId="nav-active" className="absolute inset-0 rounded-xl bg-raised" transition={{ type: "spring", stiffness: 400, damping: 34 }} />}
+              {active && <motion.span layoutId="nav-active" className="absolute inset-0 rounded-xl bg-raised shadow-[inset_3px_0_0_var(--accent)]" transition={{ type: "spring", stiffness: 400, damping: 34 }} />}
               <n.icon className="relative size-[18px]" />
               <span className="relative">{n.label}</span>
               <Count n={count} className="relative ml-auto" />

@@ -71,34 +71,33 @@ function applyTheme(c: Choice) {
   } catch {}
 }
 
-// Accent colours. Mono = the ink colour (black in light mode, white in dark).
-const ACCENTS = [
-  { id: "mono", label: "Mono", swatch: "var(--text)" },
-  { id: "blue", label: "Blue", swatch: "#3b82f6" },
-  { id: "violet", label: "Violet", swatch: "#8b5cf6" },
-  { id: "emerald", label: "Emerald", swatch: "#10b981" },
-  { id: "amber", label: "Amber", swatch: "#f59e0b" },
-  { id: "rose", label: "Rose", swatch: "#f43f5e" },
+// App-wide themes (html[data-skin], saved as localStorage "forge-skin"). Mono = no attribute.
+const SKINS = [
+  { id: "mono", label: "Mono", bg: "#0b0b0d", card: "#18181b", grad: "linear-gradient(135deg, #fafafa, #a1a1aa)" },
+  { id: "fire", label: "Forge Fire", bg: "#120a07", card: "#21150e", grad: "linear-gradient(135deg, #ffd166, #ff8a3d 45%, #ff4d4d)" },
+  { id: "blueprint", label: "Blueprint", bg: "#0a1c35", card: "#112d52", grad: "linear-gradient(135deg, #a5d8ff, #7cc4ff 50%, #5b9dff)" },
+  { id: "aurora", label: "Aurora", bg: "#0b0a1a", card: "#171433", grad: "linear-gradient(135deg, #22d3ee, #818cf8 50%, #e879f9)" },
+  { id: "emerald", label: "Emerald", bg: "#06140f", card: "#0e241b", grad: "linear-gradient(135deg, #d9f99d, #34d399 50%, #22d3ee)" },
 ] as const;
-type Accent = (typeof ACCENTS)[number]["id"];
-const readAccent = (): Accent => (ACCENTS.find((a) => a.id === document.documentElement.dataset.accent)?.id ?? "mono");
-const subAccent = (cb: () => void) => {
+type Skin = (typeof SKINS)[number]["id"];
+const readSkin = (): Skin => (SKINS.find((k) => k.id === document.documentElement.dataset.skin)?.id ?? "mono");
+const subSkin = (cb: () => void) => {
   const mo = new MutationObserver(cb);
-  mo.observe(document.documentElement, { attributes: true, attributeFilter: ["data-accent"] });
+  mo.observe(document.documentElement, { attributes: true, attributeFilter: ["data-skin"] });
   return () => mo.disconnect();
 };
-function applyAccent(a: Accent) {
+function applySkin(k: Skin) {
   const root = document.documentElement;
   try {
-    if (a === "mono") { root.removeAttribute("data-accent"); localStorage.removeItem("forge-accent"); }
-    else { root.setAttribute("data-accent", a); localStorage.setItem("forge-accent", a); }
+    if (k === "mono") { root.removeAttribute("data-skin"); localStorage.removeItem("forge-skin"); }
+    else { root.setAttribute("data-skin", k); localStorage.setItem("forge-skin", k); }
   } catch {}
 }
 
 // Same storage as the header toggle: html[data-theme] + localStorage "forge-theme"; System clears both.
 export function AppearanceSettings() {
   const choice = useSyncExternalStore(sub, read, () => "system" as Choice);
-  const accent = useSyncExternalStore(subAccent, readAccent, () => "mono" as Accent);
+  const skin = useSyncExternalStore(subSkin, readSkin, () => "mono" as Skin);
   const opts: [Choice, string, typeof Sun][] = [["light", "Light", Sun], ["dark", "Dark", Moon], ["system", "System", Monitor]];
   return (
     <div className="flex flex-col gap-6">
@@ -110,18 +109,26 @@ export function AppearanceSettings() {
         ))}
       </div>
       <div>
-        <div className="mb-3 text-sm font-medium text-text-2">Accent colour</div>
-        <div role="radiogroup" aria-label="Accent colour" className="grid grid-cols-3 gap-2 sm:grid-cols-6">
-          {ACCENTS.map((a) => (
-            <button key={a.id} role="radio" aria-checked={accent === a.id} onClick={() => applyAccent(a.id)} className="flex flex-col items-center gap-2 rounded-2xl border border-line p-3 text-xs text-muted transition hover:text-text aria-checked:border-text aria-checked:text-text">
-              <span className="grid size-7 place-items-center rounded-full ring-1 ring-line-strong" style={{ background: a.swatch }}>
-                {accent === a.id && <Check className="size-4 text-bg" />}
-              </span>
-              {a.label}
+        <div className="mb-3 text-sm font-medium text-text-2">Theme</div>
+        <div role="radiogroup" aria-label="Theme" className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+          {SKINS.map((k) => (
+            <button key={k.id} role="radio" aria-checked={skin === k.id} onClick={() => applySkin(k.id)} className="group overflow-hidden rounded-2xl border border-line text-left transition hover:-translate-y-0.5 aria-checked:border-transparent aria-checked:ring-2 aria-checked:ring-[var(--accent)]">
+              {/* A tiny preview of the theme: its background, a card and its gradient. */}
+              <div className="relative h-20 p-2.5" style={{ background: k.bg }}>
+                <div className="h-full rounded-lg p-2" style={{ background: k.card }}>
+                  <div className="h-1.5 w-1/2 rounded-full bg-white/30" />
+                  <div className="mt-1.5 h-1.5 w-3/4 rounded-full bg-white/15" />
+                  <div className="mt-2.5 h-3.5 w-12 rounded-full" style={{ background: k.grad }} />
+                </div>
+              </div>
+              <div className="flex items-center justify-between px-3 py-2 text-xs font-medium">
+                {k.label}
+                {skin === k.id && <Check className="size-3.5" />}
+              </div>
             </button>
           ))}
         </div>
-        <p className="mt-3 text-xs text-faint">Buttons, highlights and the sparks on the home page follow your accent. Saved on this device.</p>
+        <p className="mt-3 text-xs text-faint">Themes change the whole app, in light and dark. Saved on this device.</p>
       </div>
     </div>
   );

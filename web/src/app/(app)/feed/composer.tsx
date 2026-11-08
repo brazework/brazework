@@ -30,7 +30,7 @@ export function Composer({ first, last, interests, userId, mediaEnabled = false,
   const toggleTag = (t: string) => setTags((cur) => (cur.includes(t) ? cur.filter((x) => x !== t) : cur.length < 3 ? [...cur, t] : cur));
 
   return (
-    <form ref={formRef} onSubmit={submitWithoutReset(action)} className="rounded-3xl border border-line bg-surface/70 p-4 transition focus-within:border-line-strong">
+    <form ref={formRef} onSubmit={submitWithoutReset(action)} className="grad-edge rounded-3xl border p-4 shadow-[var(--shadow)] transition">
       <input type="hidden" name="kind" value={kind} />
       {tags.map((t) => <input key={t} type="hidden" name="tags" value={t} />)}
       <input type="hidden" name="media" value={JSON.stringify(att.media)} />
