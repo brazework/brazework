@@ -1,5 +1,7 @@
 # Putting Forge online with Vercel and Supabase
 
+> **Moving production to the Next.js app in `web/`?** Follow the switch-over checklist in [docs/next-migration.md](docs/next-migration.md#switch-over-checklist-production). New projects: set Vercel's Root Directory to `web` in step 1.
+
 Forge's code lives on GitHub. Vercel puts it online and redeploys automatically every time a change is pushed. Supabase holds the accounts and the database.
 
 ---

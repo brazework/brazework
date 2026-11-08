@@ -33,12 +33,23 @@ export async function proxy(request: NextRequest) {
   const redirect = (to: string) => {
     const url = request.nextUrl.clone();
     url.pathname = to;
-    url.search = to === "/login" ? `?next=${encodeURIComponent(path)}` : "";
+    url.search = to === "/login" ? `?next=${encodeURIComponent(path + request.nextUrl.search)}` : "";
     const r = NextResponse.redirect(url);
     response.cookies.getAll().forEach((c) => r.cookies.set(c));
     return r;
   };
 
+  // Emails sent by the original app link to "/?code=…" (and "?flow=reset" for password resets).
+  // Send them through the new callback so they still work after the switch-over.
+  const code = request.nextUrl.searchParams.get("code");
+  if (path === "/" && code) {
+    const url = request.nextUrl.clone();
+    url.pathname = "/auth/callback";
+    url.search = `?code=${encodeURIComponent(code)}${request.nextUrl.searchParams.get("flow") === "reset" ? "&next=/reset" : ""}`;
+    return NextResponse.redirect(url);
+  }
+  // Signed in: the home page is your feed.
+  if (signedIn && path === "/") return redirect("/feed");
   if (!signedIn && APP_PATHS.some((p) => path.startsWith(p))) return redirect("/login");
   if (signedIn && AUTH_PATHS.some((p) => path.startsWith(p))) return redirect("/feed");
   return response;

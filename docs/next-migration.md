@@ -35,3 +35,24 @@
 - [ ] Create the second Vercel project for `web/`
 - [ ] Local development database: today local dev points at production. Switching to forge-staging is safer once it exists.
 - [ ] Positioning: the club wedge (see [positioning.md](positioning.md))
+
+## Switch-over checklist (production)
+
+The Vercel project lives in Ian's account, so these are his three steps. Rolling back is one click (step 4).
+
+1. **Database:** Supabase → SQL Editor → paste all of `supabase/club-events.sql` → Run. It should say "Success. No rows returned." It only adds things: the live app keeps working before and after.
+2. **Vercel → Project → Settings → Build and Deployment:**
+   - **Root Directory:** `web`
+   - **Framework Preset:** Next.js (it detects this once the root is `web`)
+   - Leave the build and output settings on their defaults. The root `vercel.json` belongs to the old app and isn't read once the root is `web`.
+   - The Supabase variables (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`) are already on the project; nothing to add. Email links use Vercel's production domain automatically.
+3. **Deployments → Redeploy** the latest `main`. Then check on the live URL:
+   - [ ] The home page loads; logging in lands on your feed
+   - [ ] Post, like, comment; open a profile; send a message
+   - [ ] A club page → Events tab; as a club admin, host a test event, then cancel it
+   - [ ] Sign up with a new email: the confirmation link comes back signed in
+4. **If anything's wrong:** Deployments → the last deployment from before the switch → **Instant Rollback**, and set Root Directory back to empty. The database change is safe to leave in place.
+
+**Supabase redirect URLs:** if Authentication → URL Configuration already allows `https://<production domain>/**` (SETUP.md step 4), the new `/auth/callback` is covered. For local development, also add `http://localhost:3000/**`.
+
+**Old links keep working:** bookmarks like `/#/feed` and `/#/u/<id>` redirect to their new pages, and confirmation or reset emails sent by the old app are routed through the new sign-in callback.
