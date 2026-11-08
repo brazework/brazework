@@ -6,13 +6,13 @@ import { Avatar } from "@/components/ui";
 import { cn, timeAgo } from "@/lib/forge";
 import type { Conv } from "./data";
 
+// Two panes on desktop; on phones the list shows until a thread page (marked data-thread) is open.
+// Pure CSS (:has), so the layout needs no runtime URL read and still prerenders.
 export function PaneSwitch({ list, children }: { list: React.ReactNode; children: React.ReactNode }) {
-  const path = usePathname();
-  const inThread = path !== "/messages";
   return (
-    <div className="grid h-[calc(100dvh-8rem)] min-h-[480px] overflow-hidden rounded-3xl border border-line bg-surface/70 md:h-[calc(100dvh-4rem)] md:grid-cols-[320px_1fr]">
-      <aside className={cn("min-h-0 flex-col border-line md:flex md:border-r", inThread ? "hidden" : "flex")}>{list}</aside>
-      <section className={cn("min-h-0 flex-col md:flex", inThread ? "flex" : "hidden")}>{children}</section>
+    <div className="group/msg grid h-[calc(100dvh-8rem)] min-h-[480px] overflow-hidden rounded-3xl border border-line bg-surface/70 md:h-[calc(100dvh-4rem)] md:grid-cols-[320px_1fr]">
+      <aside className="flex min-h-0 flex-col border-line group-has-[[data-thread]]/msg:hidden md:flex! md:border-r">{list}</aside>
+      <section className="hidden min-h-0 flex-col group-has-[[data-thread]]/msg:flex md:flex">{children}</section>
     </div>
   );
 }

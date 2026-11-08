@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { getViewer } from "@/lib/supabase/server";
+import { TourMount } from "@/components/tour/tour-mount";
 import { MobileBar, Sidebar, SidebarSkeleton } from "./sidebar";
 
 // The chrome is prerendered; the session read streams in behind Suspense (Cache Components).
@@ -24,6 +25,7 @@ async function SignedInSidebar() {
     <>
       <Sidebar first={profile.first_name} last={profile.last_name} headline={profile.headline} />
       <div className="fixed inset-x-0 top-0 z-40 px-4 md:hidden"><MobileBar first={profile.first_name} last={profile.last_name} /></div>
+      <TourMount />
     </>
   );
 }

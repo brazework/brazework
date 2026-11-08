@@ -4,6 +4,7 @@ import { Bell, Bookmark, CalendarDays, Home, LogOut, MessageSquare, Network, Set
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { UpdatesButton } from "@/components/tour/tour-mount";
 import { Avatar, Logo } from "@/components/ui";
 import { cn } from "@/lib/forge";
 
@@ -40,17 +41,18 @@ export function Sidebar({ first, last, headline }: { first: string; last: string
         <Link href="/feed"><Logo /></Link>
         <ThemeToggle />
       </div>
-      <nav className="mt-10 flex flex-col gap-1">
+      <nav data-tour="menu" className="mt-10 flex flex-col gap-1">
         {NAV.map((n) => {
           const active = n.match.some((m) => path.startsWith(m));
           return (
-            <Link key={n.label} href={n.href} aria-current={active ? "page" : undefined} className={cn("relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition", active ? "text-text" : "text-muted hover:bg-hover hover:text-text")}>
+            <Link key={n.label} href={n.href} data-tour={n.href === "/notifications" ? "bell" : undefined} aria-current={active ? "page" : undefined} className={cn("relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition", active ? "text-text" : "text-muted hover:bg-hover hover:text-text")}>
               {active && <motion.span layoutId="nav-active" className="absolute inset-0 rounded-xl bg-raised" transition={{ type: "spring", stiffness: 400, damping: 34 }} />}
               <n.icon className="relative size-[18px]" />
               <span className="relative">{n.label}</span>
             </Link>
           );
         })}
+        <UpdatesButton />
       </nav>
       <div className="mt-auto flex items-center gap-3 rounded-2xl border border-line bg-surface/60 p-3">
         <Avatar first={first} last={last} size={36} />

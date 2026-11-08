@@ -83,7 +83,7 @@ async function ProfileView({ params }: { params: PageProps<"/u/[id]">["params"] 
           <div className="-mt-10 flex flex-wrap items-end justify-between gap-4">
             <Avatar first={p.first_name} last={p.last_name} size={84} className="border-4 border-surface text-2xl" />
             {own ? (
-              <Link href="/analytics" className="inline-flex h-9 items-center gap-1.5 rounded-full border border-line px-4 text-sm transition hover:bg-hover">
+              <Link href="/analytics" data-tour="analytics" className="inline-flex h-9 items-center gap-1.5 rounded-full border border-line px-4 text-sm transition hover:bg-hover">
                 <BarChart3 className="size-4" /> Analytics
               </Link>
             ) : (
@@ -114,7 +114,7 @@ async function ProfileView({ params }: { params: PageProps<"/u/[id]">["params"] 
         </div>
       </Panel>
 
-      <section className="mt-10">
+      <section data-tour="projects-tab" className="mt-10">
         <div className="flex items-center justify-between">
           <Kicker>Projects</Kicker>
           {own && <ProjectEditor interests={p.interests ?? []} />}

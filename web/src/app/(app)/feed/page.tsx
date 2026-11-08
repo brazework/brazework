@@ -98,7 +98,7 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
   return (
     <>
       <FeedHeader tab={tab} />
-      <div className="mt-6"><Composer first={profile.first_name} last={profile.last_name} interests={interests} /></div>
+      <div data-tour="composer" className="mt-6"><Composer first={profile.first_name} last={profile.last_name} interests={interests} /></div>
       {tag && (
         <div className="mt-4 flex items-center justify-between rounded-2xl border border-line bg-surface-2 px-4 py-2.5 text-sm">
           <span>Showing posts tagged <strong className="font-medium">#{tag}</strong></span>
@@ -115,7 +115,7 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
 
 function FeedHeader({ tab }: { tab?: TabId }) {
   return (
-    <header className="flex flex-col gap-4">
+    <header data-tour="feed-tabs" className="flex flex-col gap-4">
       <h1 className="text-3xl font-semibold tracking-tight">Feed</h1>
       <Tabs active={tab ?? ""} tabs={TABS.map((t) => ({ id: t.id, label: t.label, href: t.id === "for-you" ? "/feed" : `/feed?tab=${t.id}` }))} />
     </header>

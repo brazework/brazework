@@ -12,7 +12,7 @@ export const metadata: Metadata = { title: "Conversation" };
 
 export default function ThreadPage({ params }: PageProps<"/messages/[id]">) {
   return (
-    <Suspense fallback={<Skeleton className="m-4 h-full" />}>
+    <Suspense fallback={<div data-thread className="contents"><Skeleton className="m-4 h-full" /></div>}>
       <Thread params={params} />
     </Suspense>
   );
@@ -38,7 +38,7 @@ async function Thread({ params }: { params: PageProps<"/messages/[id]">["params"
   const iSent = msgs.some((m) => m.sender_id === me);
 
   return (
-    <>
+    <div data-thread className="contents">
       {/* Read receipts stay private: marking read never tells the sender, and requests aren't marked until accepted. */}
       {!requestToMe && <MarkRead cid={id} />}
       <header className="flex items-center gap-3 border-b border-line px-4 py-3">
@@ -60,6 +60,6 @@ async function Thread({ params }: { params: PageProps<"/messages/[id]">["params"
       ) : (
         <Composer cid={id} placeholder={requestFromMe ? `Introduce yourself to ${other.firstName || "them"}` : "Write a message"} />
       )}
-    </>
+    </div>
   );
 }

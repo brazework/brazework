@@ -30,10 +30,11 @@ export type ForgeUpdate = {
 export const WELCOME = "welcome";
 
 // Where the vanilla tour's hash routes live in the Next.js app.
+// Profiles live at /u/<id>; "/u/" matches your own once /profile has redirected there.
 export const ROUTES = {
   feed: "/feed",
-  profile: "/profile",
-  projects: "/profile?tab=projects",
+  profile: "/u/",
+  projects: "/u/",
 } as const;
 
 export const UPDATES: ForgeUpdate[] = [
