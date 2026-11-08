@@ -19,7 +19,7 @@ export function FinalCta() {
           <Button href="/signup" size="lg">
             Create your free account <ArrowRight className="size-4 transition group-hover:translate-x-0.5" />
           </Button>
-          <Button href="#organizations" variant="outline" size="lg">Bring your club</Button>
+          <Button href="#founding" variant="outline" size="lg">Bring your club</Button>
         </div>
       </Reveal>
     </section>
@@ -43,7 +43,7 @@ export function Footer() {
         <nav className="flex gap-6 text-sm text-muted">
           <Link href="/login" className="hover:text-text">Log in</Link>
           <Link href="/signup" className="hover:text-text">Sign up</Link>
-          <a href="#organizations" className="hover:text-text">Partners</a>
+          <a href="#founding" className="hover:text-text">Founding clubs</a>
           <a href="#top" className="hover:text-text">Back to top ↑</a>
         </nav>
       </div>

@@ -1,23 +1,25 @@
-import { Bento } from "@/components/landing/bento";
 import { FinalCta, Footer } from "@/components/landing/closing";
-import { Disciplines } from "@/components/landing/disciplines";
-import { Hero } from "@/components/landing/hero";
 import { LegacyLinks } from "@/components/landing/legacy-links";
+import { Audiences, FaqSection, Features, HowItWorks, MarketingHero, Mission, Problem } from "@/components/landing/marketing";
 import { Nav } from "@/components/landing/nav";
 import { Organizations } from "@/components/landing/organizations";
-import { Why } from "@/components/landing/why";
 
+// The marketing page: the promise, the problem, how it works, who it's for, the product,
+// why we're building it, the founding clubs program, and questions.
 export default function Landing() {
   return (
     <>
       <LegacyLinks />
       <Nav />
       <main className="scroll-smooth">
-        <Hero />
-        <Bento />
-        <Disciplines />
-        <Why />
+        <MarketingHero />
+        <Problem />
+        <HowItWorks />
+        <Audiences />
+        <Features />
+        <Mission />
         <Organizations />
+        <FaqSection />
         <FinalCta />
       </main>
       <Footer />

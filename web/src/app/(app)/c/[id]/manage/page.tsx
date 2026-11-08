@@ -11,6 +11,9 @@ import { RoleChip } from "../../../communities/_components/badge";
 import { loadCommunity } from "../data";
 import { dbFeatures } from "@/lib/db-features";
 import { ClubCoverUpload } from "./cover-upload";
+import { InviteLinks } from "./invites";
+import { env } from "@/lib/env";
+import type { Invite } from "../../../communities/actions";
 import { BanRow, MemberActions, RequestActions, SettingsForm } from "./manage-client";
 
 export const metadata: Metadata = { title: "Manage community" };
@@ -33,7 +36,9 @@ async function Manage({ params, searchParams }: { params: PageProps<"/c/[id]/man
   const role = me?.role ?? null;
   if (rank(role) < 2) redirect(`/c/${id}`);
 
+  const features = await dbFeatures();
   const tabs = [
+    { id: "invite", label: "Invite", show: can(role, "approve") && features.invites },
     { id: "requests", label: "Requests", show: can(role, "approve") },
     { id: "members", label: "Members", show: true },
     { id: "bans", label: "Bans", show: can(role, "removeMembers") },
@@ -42,10 +47,11 @@ async function Manage({ params, searchParams }: { params: PageProps<"/c/[id]/man
   ].filter((t) => t.show);
   const tab = tabs.find((t) => t.id === sp.tab)?.id ?? (c.privacy === "approval" && can(role, "approve") ? "requests" : "members");
 
-  const [reqs, members, bans] = await Promise.all([
+  const [reqs, members, bans, invites] = await Promise.all([
     tab === "requests" ? supabase.from("community_requests").select("*").eq("community_id", id).order("at", { ascending: true }).limit(100) : Promise.resolve({ data: [] }),
     tab === "members" ? supabase.from("community_members").select("*").eq("community_id", id).limit(500) : Promise.resolve({ data: [] }),
     tab === "bans" ? supabase.from("community_bans").select("*").eq("community_id", id) : Promise.resolve({ data: [] }),
+    tab === "invite" ? supabase.from("community_invites").select("*").eq("community_id", id).order("created_at", { ascending: false }).limit(50) : Promise.resolve({ data: [] }),
   ]);
   const memberList = ((members.data ?? []) as Member[]).sort((a, b) => rank(b.role) - rank(a.role) || a.first_name.localeCompare(b.first_name));
 
@@ -56,6 +62,7 @@ async function Manage({ params, searchParams }: { params: PageProps<"/c/[id]/man
       <p className="mt-1.5 text-sm text-muted">You&apos;re {role === "admin" ? "an" : "a"} {ROLE_LABEL[role!].toLowerCase()}. You can act on people below your own role.</p>
       <div className="mt-6"><Tabs active={tab} tabs={tabs.map((t) => ({ id: t.id, label: t.label, href: `/c/${id}/manage?tab=${t.id}` }))} /></div>
       <div className="mt-6">
+        {tab === "invite" && <Panel className="p-6"><InviteLinks cid={id} clubName={c.name} origin={env.siteUrl} invites={(invites.data ?? []) as Invite[]} /></Panel>}
         {tab === "requests" && (((reqs.data ?? []) as JoinRequest[]).length ? (
           <Panel className="divide-y divide-line p-0">
             {((reqs.data ?? []) as JoinRequest[]).map((r) => (
@@ -89,7 +96,7 @@ async function Manage({ params, searchParams }: { params: PageProps<"/c/[id]/man
           <Panel className="divide-y divide-line p-0">{((bans.data ?? []) as Ban[]).map((b) => <BanRow key={b.uid} cid={id} uid={b.uid} name={b.name} at={timeAgo(b.at)} />)}</Panel>
         ) : <EmptyState title="No one is banned" />)}
 
-        {tab === "settings" && (await dbFeatures()).media && <Panel className="mb-4 p-6"><ClubCoverUpload cid={id} path={c.cover_path} userId={user.id} /></Panel>}
+        {tab === "settings" && features.media && <Panel className="mb-4 p-6"><ClubCoverUpload cid={id} path={c.cover_path} userId={user.id} /></Panel>}
         {tab === "settings" && <Panel className="p-6"><SettingsForm cid={id} about={c.about} rules={c.rules} privacy={c.privacy} words={(c.automod?.words ?? []).join("\n")} holdNewLinks={!!c.automod?.holdNewLinks} canAutomod={can(role, "automod")} /></Panel>}
 
         {tab === "roles" && (

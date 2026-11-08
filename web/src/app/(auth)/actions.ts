@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { env } from "@/lib/env";
 import { ACADEMIC_RE, EMAIL_RE, ageFrom, friendlyError } from "@/lib/forge";
+import { rememberInvite } from "@/lib/invites";
 import { createClient } from "@/lib/supabase/server";
 
 export type AuthState = { message: string; sent?: boolean };
@@ -53,6 +54,8 @@ export async function signUp(_: AuthState, form: FormData): Promise<AuthState> {
   // Supabase doesn't say outright that an address is taken; a user with no identities means it is.
   if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0)
     return { message: friendlyError({ code: "user_already_exists" }) };
+  const invite = String(form.get("invite") ?? "");
+  if (invite) await rememberInvite(invite);
   redirect(`/verify?email=${encodeURIComponent(email)}`);
 }
 

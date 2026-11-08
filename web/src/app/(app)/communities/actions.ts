@@ -281,3 +281,29 @@ export async function setCommunityCover(cid: string, path: string): Promise<Resu
   revalidateCommunity(cid);
   return { ok: true, message: path ? "Cover updated." : "Cover removed." };
 }
+
+/* ---------- Invite links (supabase/invites.sql) ---------- */
+
+export type Invite = { code: string; created_at: string; expires_at: string | null; max_uses: number | null; uses: number; revoked: boolean };
+
+export async function createInvite(cid: string, days: number | null, maxUses: number | null): Promise<Result & { code?: string }> {
+  const { supabase, user, role } = await myRole(cid);
+  if (!user || !can(role, "approve")) return denied;
+  if (days !== null && ![1, 7, 30].includes(days)) return { ok: false, message: "Choose how long the link lasts." };
+  if (maxUses !== null && ![10, 25, 100].includes(maxUses)) return { ok: false, message: "Choose a use limit." };
+  const expires_at = days === null ? null : new Date(Date.now() + days * 86_400_000).toISOString();
+  const { data, error } = await supabase.from("community_invites").insert({ community_id: cid, expires_at, max_uses: maxUses }).select("code").single();
+  if (error) return { ok: false, message: communityError(error) };
+  revalidatePath(`/c/${cid}/manage`);
+  return { ok: true, message: "Link created.", code: data.code as string };
+}
+
+export async function revokeInvite(cid: string, code: string): Promise<Result> {
+  const { supabase, user, role } = await myRole(cid);
+  if (!user || !can(role, "approve")) return denied;
+  const { data, error } = await supabase.from("community_invites").update({ revoked: true }).eq("code", code).eq("community_id", cid).select("code");
+  if (error) return { ok: false, message: communityError(error) };
+  if (!data?.length) return denied;
+  revalidatePath(`/c/${cid}/manage`);
+  return { ok: true, message: "Link turned off." };
+}

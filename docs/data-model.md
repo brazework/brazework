@@ -49,3 +49,9 @@ The database fills in names, counts and times itself, so the app can't fake them
 
 - `events.community_id`: an event is hosted by exactly one of an organization (`org_id`) or a community (`community_id`).
 - Community admins and owners (`can_host_community_events()`, rank 4+) create and edit their club's events. Members of approval-required communities are the only ones who see that club's events; public clubs' events are visible to everyone.
+
+## Invite links (`supabase/invites.sql`)
+
+- `community_invites`: code (16 random hex characters), community, who made it, optional expiry and use limit, uses so far, revoked. Only the club's helpers and above can see, create or turn off its links.
+- `invite_preview(code)`: the club's name, field, size and description for the `/join/<code>` page; works signed out. Nothing comes back for a bad, expired, used-up or revoked code.
+- `accept_invite(code)`: joins the club directly (skipping approval), unless you're banned; joining twice doesn't use up the link.

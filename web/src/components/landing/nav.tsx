@@ -8,10 +8,10 @@ import { Button, Logo } from "@/components/ui";
 import { cn } from "@/lib/forge";
 
 const LINKS = [
-  { href: "#product", label: "Product" },
-  { href: "#disciplines", label: "Disciplines" },
-  { href: "#why", label: "Why Forge" },
-  { href: "#organizations", label: "For organizations" },
+  { href: "#how", label: "How it works" },
+  { href: "#who", label: "Who it's for" },
+  { href: "#mission", label: "Mission" },
+  { href: "#faq", label: "FAQ" },
 ];
 
 export function Nav() {
@@ -48,7 +48,7 @@ export function Nav() {
         <div className="ml-auto flex items-center gap-1">
           <ThemeToggle />
           <Button href="/login" variant="ghost" className="hidden sm:inline-flex">Log in</Button>
-          <Button href="/signup">Get started</Button>
+          <Button href="#founding">Bring your club</Button>
           <button
             type="button"
             onClick={() => setOpen((v) => !v)}

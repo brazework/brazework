@@ -72,7 +72,7 @@ export function LoginForm({ next, confirmed, resetExpired }: { next?: string; co
   );
 }
 
-export function SignupForm() {
+export function SignupForm({ invite, clubName }: { invite?: string; clubName?: string } = {}) {
   const [state, action, pending] = useActionState<AuthState, FormData>(signUp, { message: "" });
   const [type, setType] = useState<"student" | "professional" | "">("");
   const choices = [
@@ -87,6 +87,8 @@ export function SignupForm() {
         <h1 className="mt-2 text-3xl font-semibold tracking-tight">Join the STEM network</h1>
       </div>
       <input type="hidden" name="accountType" value={type} />
+      {invite && <input type="hidden" name="invite" value={invite} />}
+      {clubName && <p className="rounded-2xl border border-line bg-surface-2 px-4 py-3 text-sm">You&apos;re joining <strong className="font-medium">{clubName}</strong>. Create your account and you&apos;ll land in the club once you&apos;re set up.</p>}
       <fieldset className="grid grid-cols-2 gap-3">
         <legend className="mb-2 text-sm font-medium text-text-2">How will you use Forge?</legend>
         {choices.map((c) => (

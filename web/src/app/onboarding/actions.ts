@@ -2,6 +2,7 @@
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { ALL_TOPICS, FIELDS, friendlyError } from "@/lib/forge";
+import { joinRememberedInvite } from "@/lib/invites";
 import { getViewer } from "@/lib/supabase/server";
 
 export type OnboardState = { message: string };
@@ -19,5 +20,6 @@ export async function completeOnboarding(_: OnboardState, form: FormData): Promi
   if (!user) redirect("/login");
   const { error } = await supabase.from("profiles").update({ ...parsed.data, onboarded: true }).eq("id", user.id);
   if (error) return { message: friendlyError(error) };
-  redirect("/feed");
+  // Came in through a club invite link: land in that club.
+  redirect((await joinRememberedInvite()) ?? "/feed");
 }

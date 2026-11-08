@@ -27,7 +27,7 @@ The research, with sources, is in [docs/positioning.md](docs/positioning.md).
 |---|---|
 | **Feed** | *For you* shows only posts matching your interests, and says why. Plus Latest, Following and your clubs, with topic filters |
 | **Profiles & projects** | Headline, field, interests, and projects with a public summary and a private write-up. Share any project to the feed |
-| **Communities** | Public or approval-only clubs with five roles, held-post review, word filters, link holds for new members, bans, and **club events** |
+| **Communities** | Public or approval-only clubs with invite links, five roles, held-post review, word filters, link holds for new members, bans, and **club events** |
 | **Network** | Connections with notes, follows, invitations, and suggestions from shared interests and field |
 | **Messages** | One-to-one. Strangers land in Requests; accept, decline, or block and report. Read status is never shown |
 | **Events** | Career fairs, talks and build nights from verified organizations and clubs. RSVP, save, add to calendar |
@@ -70,7 +70,7 @@ Add `http://localhost:3000/auth/callback` to Supabase → Authentication → URL
 
 ## Database
 
-Run these in the Supabase SQL Editor, in this order: `schema.sql`, `messages.sql`, `events.sql`, `activity.sql`, `projects.sql`, `tours.sql`, `club-events.sql`, `media.sql`. CI applies all of them to a fresh database on every pull request, so a broken migration fails there and not in production. What each table holds and who can touch it: [docs/data-model.md](docs/data-model.md).
+Run these in the Supabase SQL Editor, in this order: `schema.sql`, `messages.sql`, `events.sql`, `activity.sql`, `projects.sql`, `tours.sql`, `club-events.sql`, `media.sql`, `invites.sql`. CI applies all of them to a fresh database on every pull request, so a broken migration fails there and not in production. What each table holds and who can touch it: [docs/data-model.md](docs/data-model.md).
 
 ## How we work
 

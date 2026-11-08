@@ -19,14 +19,19 @@ export function Organizations() {
   const [state, action, pending] = useActionState<OrgInterestState, FormData>(registerOrgInterest, { ok: false, message: "" });
 
   return (
-    <section id="organizations" className="relative scroll-mt-24 border-t border-line bg-surface/30 py-24 sm:py-32">
+    <section id="founding" className="relative scroll-mt-24 border-t border-line bg-surface/30 py-24 sm:py-32">
       <div className="mx-auto grid max-w-7xl gap-14 px-6 lg:grid-cols-2">
         <div>
           <Reveal>
-            <Kicker>For organizations</Kicker>
-            <h2 className="mt-4 text-[clamp(2rem,4.5vw,3.5rem)] leading-[1.02] font-semibold tracking-[-0.035em]">
-              Clubs, companies and schools <span className="text-shine">have a home here.</span>
+            <Kicker>Founding clubs program</Kicker>
+            <h2 className="mt-4 text-[clamp(2rem,4.5vw,3.25rem)] leading-[1.05] font-semibold tracking-[-0.035em]">
+              Be one of the first clubs <span className="text-shine">on Forge.</span>
             </h2>
+            <ul className="mt-6 grid gap-2 text-sm text-text-2">
+              <li>· We set your club up with you, personally.</li>
+              <li>· Your requests shape what we build next.</li>
+              <li>· Free for your club and every member.</li>
+            </ul>
           </Reveal>
           <div className="mt-10 space-y-3">
             {TYPES.map((t, i) => (
@@ -61,7 +66,7 @@ export function Organizations() {
                 </motion.div>
               ) : (
                 <motion.form key="form" onSubmit={submitWithoutReset(action)} exit={{ opacity: 0 }} className="flex flex-col gap-5">
-                  <h3 className="text-xl font-semibold">Become an early partner</h3>
+                  <h3 className="text-xl font-semibold">Apply to be a founding club</h3><p className="-mt-3 text-sm text-muted">Companies and schools: pick your type below and we&apos;ll reach out.</p>
                   <input type="hidden" name="type" value={type} />
                   <div role="group" aria-label="Organization type" className="flex flex-wrap gap-2">
                     {TYPES.map((t) => (

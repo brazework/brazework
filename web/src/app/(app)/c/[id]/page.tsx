@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Settings } from "lucide-react";
+import { Settings, UserPlus } from "lucide-react";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
@@ -46,7 +46,7 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
     supabase.from("posts").select(await postSelect()).eq("community_id", id).eq("status", "visible").order("created_at", { ascending: false }).limit(60),
     isMod ? supabase.from("posts").select(await postSelect()).eq("community_id", id).eq("status", "held").order("created_at", { ascending: false }).limit(100) : Promise.resolve({ data: [] }),
   ]);
-  const { clubEvents, media: mediaEnabled } = await dbFeatures();
+  const { clubEvents, media: mediaEnabled, invites: invitesOn } = await dbFeatures();
   const { data: evRows } = clubEvents
     ? await supabase.from("events").select(await eventWithHost()).eq("community_id", id).order("starts_at", { ascending: true }).limit(100)
     : { data: [] };
@@ -88,6 +88,9 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
             <MetaLine parts={[membersLabel(c.member_count), PRIVACY_LABEL[c.privacy], c.field, TYPE_LABEL[c.type]]} />
           </div>
           <div className="flex items-center gap-2">
+            {rank(role) >= 2 && invitesOn && (
+              <Link href={`/c/${c.id}/manage?tab=invite`} className="inline-flex h-10 items-center gap-1.5 rounded-full bg-accent px-4 text-sm font-medium text-on-accent transition hover:opacity-90"><UserPlus className="size-4" /> Invite</Link>
+            )}
             {rank(role) >= 2 && (
               <Link href={`/c/${c.id}/manage`} className="inline-flex h-10 items-center gap-1.5 rounded-full border border-line px-4 text-sm transition hover:bg-hover"><Settings className="size-4" /> Manage</Link>
             )}
@@ -95,6 +98,7 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
           </div>
         </div>
         <p className="mt-4 text-[15px] leading-relaxed text-text-2">{c.about}</p>
+        {sp.joined === "1" && <p className="mt-4 rounded-2xl border border-line bg-surface-2 px-4 py-3 text-sm">Welcome to {c.name}. Say hello in the club feed below.</p>}
         {sp.created === "1" && <p className="mt-4 rounded-2xl border border-line bg-surface-2 px-4 py-3 text-sm">Your community is live. Invite your club: share this page&apos;s link.</p>}
         </div>
       </Panel>

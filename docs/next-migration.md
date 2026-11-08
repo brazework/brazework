@@ -40,7 +40,7 @@
 
 The Vercel project lives in Ian's account, so these are his three steps. Rolling back is one click (step 4).
 
-1. **Database:** Supabase → SQL Editor → run `supabase/club-events.sql`, then `supabase/media.sql` (photos, video, profile and club covers; it also creates the `media` Storage bucket). It should say "Success. No rows returned." It only adds things: the live app keeps working before and after.
+1. **Database:** Supabase → SQL Editor → run `supabase/club-events.sql`, then `supabase/media.sql` (photos, video, profile and club covers; it also creates the `media` Storage bucket), then `supabase/invites.sql` (club invite links). It should say "Success. No rows returned." It only adds things: the live app keeps working before and after.
 2. **Vercel → Project → Settings → Build and Deployment:**
    - **Root Directory:** `web`
    - **Framework Preset:** Next.js (it detects this once the root is `web`)
