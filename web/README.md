@@ -51,10 +51,22 @@ Conventions:
 - **Cache Components is on.** Anything that reads cookies or `searchParams` sits inside `<Suspense>` with a skeleton, so the chrome prerenders and the per-user parts stream in.
 - **Three layers of auth:** `proxy.ts` redirects, then server components call `getViewer()` again, and Postgres RLS is the real boundary.
 - **Mutations are server actions** validated with Zod, using the same rules as the vanilla app.
-- **Colour tokens only** (`globals.css` → `bg-surface`, `text-muted`, `text-accent`…), matching `public/css/tokens.css`.
+- **Monochrome design, light and dark.** Colour tokens only (`globals.css` → `bg-surface`, `text-muted`, `bg-accent`…); every token is defined for both themes. The theme follows the system unless someone picks one (header toggle or Settings), saved in `localStorage` and applied before first paint.
 - **Motion:** entrance and scroll reveals are pure CSS (`.rise-in`, `.reveal` with `animation-timeline: view()`), so content never waits on JavaScript. [Motion](https://motion.dev) is used only for interaction. Everything respects `prefers-reduced-motion`.
 
 ## Migration status
 
-Done: landing, sign up, verify, log in, onboarding, feed (post, like, realtime).
-Next: profile, communities (+ club events), network, messages, events, notifications, saved, settings, analytics.
+Every screen of the vanilla app is ported:
+
+| Area | Routes |
+|---|---|
+| Landing, auth | `/`, `/signup`, `/verify`, `/login`, `/forgot`, `/reset`, `/onboarding` |
+| Feed and posts | `/feed` (For you, Latest, Following, Communities, `?tag=`), `/post/[id]`, `/saved` |
+| Profiles and projects | `/profile` → `/u/[id]`, `/analytics` |
+| Network | `/network` (invitations, connections, sent, following, followers, suggestions), `/notifications` |
+| Messages | `/messages`, `/messages/[id]`, `/messages/new?to=` |
+| Communities | `/communities`, `/c/[id]`, `/c/[id]/manage` |
+| Events | `/events`, `/events/[id]`, `/events/[id]/ics`, `/org` |
+| Settings | `/settings` (profile, appearance, messaging, blocked, help, account), guided tour, What's new |
+
+Verified with `tsc`, `eslint`, `next build` (31 routes), signed-out redirects for every app route, and Lighthouse 100/100/100/100 on the landing page. Signed-in screens still need a click-through with real accounts on a preview before the switch-over.

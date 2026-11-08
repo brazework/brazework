@@ -15,10 +15,11 @@
 2. **A second Vercel project** (root directory `web/`, same Supabase env vars) gives every PR a preview of the new app. Add its preview and production URLs to Supabase Auth's redirect allow-list.
 3. **Move screens one PR at a time**, in this order (wedge-first):
    1. ✅ Landing, sign up, verify, log in, onboarding, feed
-   2. Communities + **club events** (the wedge: communities can't host events yet)
-   3. Profile + project build logs
-   4. Messages, network, notifications
-   5. Events/orgs, saved, settings, analytics
+   2. ✅ Communities (browse, create, moderated feed, manage)
+   3. ✅ Profiles + projects, analytics
+   4. ✅ Messages, network, notifications
+   5. ✅ Events/orgs, saved, settings, guided tour, What's new
+   6. Next: **club events** (communities hosting events — the wedge feature)
 4. **Cut-over:** when the new app has parity, point the production domain at the `web/` project. Then delete `public/`.
 5. **Until then,** any feature added to the vanilla app also goes on the migration checklist, so nothing is lost.
 
