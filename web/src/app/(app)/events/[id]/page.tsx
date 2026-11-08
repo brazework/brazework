@@ -46,7 +46,9 @@ async function EventView({ params }: { params: PageProps<"/events/[id]">["params
       <dl className="mt-5 space-y-2 text-sm">
         <div className="flex gap-2"><dt className="sr-only">When</dt><dd><LocalTime kind="full" value={e.starts_at} /> · <LocalTime kind="range" value={e} /></dd></div>
         <div className="flex items-center gap-1.5 text-muted"><MapPin className="size-4" /> {whereLabel(e)}</div>
-        {e.host && <div className="flex items-center gap-1.5 text-muted"><BadgeCheck className="size-4" /> {e.host} · {ORG_LABEL[e.host_type as keyof typeof ORG_LABEL] ?? "Verified"}</div>}
+        {e.host && (e.community_id
+          ? <Link href={`/c/${e.community_id}`} className="flex items-center gap-1.5 text-muted hover:text-text hover:underline"><BadgeCheck className="size-4" /> Hosted by {e.host} · Club event</Link>
+          : <div className="flex items-center gap-1.5 text-muted"><BadgeCheck className="size-4" /> {e.host} · {ORG_LABEL[e.host_type as keyof typeof ORG_LABEL] ?? "Verified"}</div>)}
         <div className="flex items-center gap-1.5 text-muted"><Users className="size-4" /> {pluralize(e.rsvp_count, "person", "people")} going</div>
       </dl>
       {e.description && <p className="mt-6 text-[15px] leading-relaxed whitespace-pre-wrap text-text-2">{e.description}</p>}

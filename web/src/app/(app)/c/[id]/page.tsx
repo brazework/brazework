@@ -9,6 +9,10 @@ import { Kicker } from "@/components/ui";
 import { POST_COLS, PRIVACY_LABEL, TYPE_LABEL, can, membersLabel, rank, type CommunityPost } from "@/lib/communities";
 import { PostCard } from "../../feed/post-card";
 import { CommunityBadge, MetaLine, RoleChip } from "../../communities/_components/badge";
+import { EVENT_WITH_HOST, inLog, withHost, type HostedEvent } from "@/lib/events";
+import { requestTime } from "@/lib/forge";
+import { EventCard } from "../../events/event-card";
+import { EventEditor, EventRow } from "../../org/org-client";
 import { CommunityComposer, HeldActions, JoinButton, ModRemove } from "./community-client";
 import { loadCommunity } from "./data";
 
@@ -17,7 +21,7 @@ export const metadata: Metadata = { title: "Community" };
 export default function CommunityPage({ params, searchParams }: PageProps<"/c/[id]">) {
   return (
     <div className="mx-auto max-w-3xl">
-      <LiveRefresh tables={["posts", "community_members", "community_requests"]} />
+      <LiveRefresh tables={["posts", "community_members", "community_requests", "events"]} />
       <Suspense fallback={<><Skeleton className="h-56" /><Skeleton className="mt-6 h-72" /></>}>
         <Community params={params} searchParams={searchParams} />
       </Suspense>
@@ -32,12 +36,24 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
   if (!c) notFound();
   const role = me?.role ?? null;
   const isMod = can(role, "review");
-  const tab = sp.tab === "held" && isMod ? "held" : sp.tab === "about" ? "about" : "posts";
+  const canHost = can(role, "hostEvents");
+  const tab = sp.tab === "held" && isMod ? "held" : sp.tab === "about" ? "about" : sp.tab === "events" ? "events" : "posts";
 
   const [visible, held] = await Promise.all([
     supabase.from("posts").select(POST_COLS).eq("community_id", id).eq("status", "visible").order("created_at", { ascending: false }).limit(60),
     isMod ? supabase.from("posts").select(POST_COLS).eq("community_id", id).eq("status", "held").order("created_at", { ascending: false }).limit(100) : Promise.resolve({ data: [] }),
   ]);
+  const { data: evRows } = await supabase.from("events").select(EVENT_WITH_HOST).eq("community_id", id).order("starts_at", { ascending: true }).limit(100);
+  const now = requestTime();
+  const events = ((evRows ?? []) as Parameters<typeof withHost>[0][]).map(withHost) as HostedEvent[];
+  const upcomingEvents = events.filter((e) => !inLog(e, now));
+  const pastEvents = events.filter((e) => inLog(e, now)).reverse();
+  const evIds = upcomingEvents.map((e) => e.id);
+  const [myRsvps, mySaves] = evIds.length
+    ? await Promise.all([supabase.from("event_rsvps").select("event_id").eq("user_id", user.id).in("event_id", evIds), supabase.from("event_saves").select("event_id").eq("user_id", user.id).in("event_id", evIds)])
+    : [{ data: [] }, { data: [] }];
+  const goingSet = new Set((myRsvps.data ?? []).map((r: { event_id: string }) => r.event_id));
+  const savedSet = new Set((mySaves.data ?? []).map((r: { event_id: string }) => r.event_id));
   const posts = (visible.data ?? []) as CommunityPost[];
   const heldPosts = (held.data ?? []) as CommunityPost[];
   const ids = posts.map((p) => p.id);
@@ -73,6 +89,7 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
       <div className="mt-6">
         <Tabs active={tab} tabs={[
           { id: "posts", label: "Posts", href: `/c/${c.id}` },
+          { id: "events", label: "Events", href: `/c/${c.id}?tab=events`, count: upcomingEvents.length },
           ...(isMod ? [{ id: "held", label: "Held for review", href: `/c/${c.id}?tab=held`, count: heldPosts.length }] : []),
           { id: "about", label: "About & rules", href: `/c/${c.id}?tab=about` },
         ]} />
@@ -100,6 +117,30 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
               <HeldActions cid={c.id} postId={p.id} />
             </div>
           )) : <EmptyState title="Nothing waiting for review" body="Posts caught by auto-moderation wait here until a moderator publishes or removes them." />)}
+        {tab === "events" && (
+          <>
+            {canHost && (
+              <div className="flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-line bg-surface-2 p-4">
+                <p className="text-sm text-text-2">Club events show up here and in everyone&apos;s Events page{c.privacy === "approval" ? " (members only, since this club approves who joins)" : ""}.</p>
+                <EventEditor communityId={c.id} />
+              </div>
+            )}
+            {upcomingEvents.map((e) => <EventCard key={e.id} event={e} going={goingSet.has(e.id)} saved={savedSet.has(e.id)} now={now} />)}
+            {!upcomingEvents.length && <EmptyState title="No upcoming events" body={canHost ? "Host a build night, demo day or info session." : "When the club's admins host something, it shows up here."} />}
+            {canHost && pastEvents.length > 0 && (
+              <section className="mt-4">
+                <Kicker>Past events</Kicker>
+                <div className="mt-3 flex flex-col gap-3">{pastEvents.map((e) => <EventRow key={e.id} event={e} editable={false} />)}</div>
+              </section>
+            )}
+            {canHost && upcomingEvents.length > 0 && (
+              <section className="mt-4">
+                <Kicker>Manage upcoming</Kicker>
+                <div className="mt-3 flex flex-col gap-3">{upcomingEvents.map((e) => <EventRow key={e.id} event={e} editable />)}</div>
+              </section>
+            )}
+          </>
+        )}
         {tab === "about" && (
           <Panel className="p-6">
             <Kicker>About</Kicker>

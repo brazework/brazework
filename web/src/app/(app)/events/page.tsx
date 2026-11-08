@@ -51,7 +51,7 @@ async function Events({ searchParams }: { searchParams: PageProps<"/events">["se
     <>
       <PageHeader
         title="Events"
-        subtitle="Career fairs, talks, workshops and hackathons from verified organizations."
+        subtitle="Career fairs, talks, build nights and hackathons from verified organizations and clubs."
         actions={<Link href="/org" className="inline-flex h-10 items-center rounded-full border border-line px-4 text-sm transition hover:bg-hover">{isAdmin ? "Your organization" : "Host an event"}</Link>}
       />
       <div className="mt-6">
@@ -77,7 +77,7 @@ async function Events({ searchParams }: { searchParams: PageProps<"/events">["se
           <EmptyState
             icon={<CalendarDays className="size-5" />}
             title={tab === "going" ? "You haven't RSVP'd to anything yet" : tab === "saved" ? "No saved events" : topic ? `No upcoming ${topic} events` : "No upcoming events yet"}
-            body={tab === "upcoming" ? "Verified companies and schools post events here. Clubs can host soon." : undefined}
+            body={tab === "upcoming" ? "Verified companies, schools and clubs post events here. Club admins can host from their club's Events tab." : undefined}
           />
         )}
       </div>

@@ -1,16 +1,16 @@
 "use client";
 import { motion } from "motion/react";
-import { Bookmark, Heart, MessageSquare, Trash2 } from "lucide-react";
+import { Bookmark, FolderGit2, Heart, Lock, MessageSquare, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useOptimistic, useState, useTransition } from "react";
 import { Avatar } from "@/components/ui";
-import { POST_KINDS, cn, timeAgo, type Post } from "@/lib/forge";
+import { POST_KINDS, cn, timeAgo, type Post, type PostProject } from "@/lib/forge";
 import { deletePost, toggleSave } from "@/lib/posts";
 import { toggleLike } from "./actions";
 
 type Opt = { liked: boolean; count: number; saved: boolean };
 
-export function PostCard({ post, liked, saved = false, own = false, index }: { post: Post & { community_name?: string | null }; liked: boolean; saved?: boolean; own?: boolean; index: number }) {
+export function PostCard({ post, liked, saved = false, own = false, index, project = null, reason = "" }: { post: Post & { community_name?: string | null }; liked: boolean; saved?: boolean; own?: boolean; index: number; project?: PostProject | null; reason?: string }) {
   const [, start] = useTransition();
   const [error, setError] = useState("");
   const [gone, setGone] = useState(false);
@@ -46,7 +46,21 @@ export function PostCard({ post, liked, saved = false, own = false, index }: { p
         </div>
         <span className="ml-auto rounded-full border border-line px-2.5 py-0.5 font-mono text-[10px] tracking-wide text-muted uppercase">{kind}</span>
       </header>
+      {reason && <p className="mt-3 font-mono text-[11px] text-faint">{reason}</p>}
       <p className="mt-4 text-[15px] leading-relaxed whitespace-pre-wrap text-text-2">{post.body}</p>
+      {project && (
+        <Link href={`/u/${post.author_id}#projects`} className="mt-4 flex items-center gap-3 rounded-2xl border border-line bg-surface-2 p-4 transition hover:border-line-strong">
+          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-raised text-muted"><FolderGit2 className="size-5" /></span>
+          <span className="min-w-0 flex-1">
+            <span className="flex items-center gap-2 font-medium">
+              <span className="truncate">{project.title}</span>
+              {project.private && <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-line px-2 py-0.5 text-[10px] text-muted"><Lock className="size-3" /> Private</span>}
+            </span>
+            <span className="block text-xs text-faint">{project.status === "completed" ? `Completed${project.year ? ` ${project.year}` : ""}` : `In progress · updated ${timeAgo(project.updated_at)}`}</span>
+          </span>
+          <span className="shrink-0 text-sm text-muted">View project →</span>
+        </Link>
+      )}
       {post.tags.length > 0 && (
         <div className="mt-4 flex flex-wrap gap-1.5">
           {post.tags.map((t) => <Link key={t} href={`/feed?tag=${encodeURIComponent(t)}`} className="rounded-md border border-line px-2 py-0.5 font-mono text-[11px] text-muted transition hover:border-line-strong hover:text-text">#{t}</Link>)}

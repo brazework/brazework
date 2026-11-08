@@ -66,22 +66,24 @@ export function EventRow({ event: e, editable }: { event: ForgeEvent; editable: 
           <button disabled={pending} onClick={() => confirm("Cancel this event? Everyone who RSVP'd sees it's cancelled.") && start(async () => setMsg((await cancelEvent(e.id)).message))} className="inline-flex h-9 items-center rounded-full px-3 text-sm text-danger hover:bg-hover">Cancel</button>
         </div>
       )}
-      {editing && <EventDialog event={e} orgId={e.org_id} onClose={() => setEditing(false)} />}
+      {editing && <EventDialog event={e} host={{ orgId: e.org_id, communityId: e.community_id }} onClose={() => setEditing(false)} />}
     </div>
   );
 }
 
-export function EventEditor({ orgId }: { orgId: string }) {
+type Host = { orgId?: string | null; communityId?: string | null };
+
+export function EventEditor({ orgId, communityId }: Host) {
   const [open, setOpen] = useState(false);
   return (
     <>
-      <Button onClick={() => setOpen(true)}><Plus className="size-4" /> New event</Button>
-      {open && <EventDialog orgId={orgId} onClose={() => setOpen(false)} />}
+      <Button onClick={() => setOpen(true)}><Plus className="size-4" /> {communityId ? "Host an event" : "New event"}</Button>
+      {open && <EventDialog host={{ orgId, communityId }} onClose={() => setOpen(false)} />}
     </>
   );
 }
 
-function EventDialog({ event, orgId, onClose }: { event?: ForgeEvent; orgId: string; onClose: () => void }) {
+function EventDialog({ event, host, onClose }: { event?: ForgeEvent; host: Host; onClose: () => void }) {
   const ref = useRef<HTMLDialogElement>(null);
   const [state, action, pending] = useActionState(saveEvent, init);
   const [format, setFormat] = useState<string>(event?.format ?? "In person");
@@ -107,7 +109,8 @@ function EventDialog({ event, orgId, onClose }: { event?: ForgeEvent; orgId: str
           <button type="button" onClick={onClose} aria-label="Close" className="grid size-8 place-items-center rounded-full text-faint hover:bg-hover hover:text-text"><X className="size-4" /></button>
         </div>
         <input type="hidden" name="id" value={event?.id ?? ""} />
-        <input type="hidden" name="org_id" value={orgId} />
+        <input type="hidden" name="org_id" value={host.orgId ?? ""} />
+        <input type="hidden" name="community_id" value={host.communityId ?? ""} />
         <Field label="Title"><input name="title" defaultValue={event?.title} maxLength={120} className={inputCls} required /></Field>
         <div className="grid gap-4 sm:grid-cols-3">
           <Field label="Type"><select name="type" defaultValue={event?.type ?? "Talk"} className={inputCls}>{EVENT_TYPES.map((t) => <option key={t}>{t}</option>)}</select></Field>

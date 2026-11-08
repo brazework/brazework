@@ -45,7 +45,7 @@ async function ProfileView({ params }: { params: PageProps<"/u/[id]">["params"] 
     getNetworkCounts(id),
     supabase
       .from("posts")
-      .select("id, author_id, author_first, author_last, author_headline, body, kind, tags, like_count, comment_count, created_at")
+      .select("id, author_id, author_first, author_last, author_headline, body, kind, tags, like_count, comment_count, created_at, project_id")
       .eq("author_id", id)
       .is("community_id", null)
       .order("created_at", { ascending: false })
@@ -62,6 +62,8 @@ async function ProfileView({ params }: { params: PageProps<"/u/[id]">["params"] 
   ]);
   const liked = new Set(((likesRes.data ?? []) as { post_id: string }[]).map((l) => l.post_id));
   const details = new Map(((detailsRes.data ?? []) as { project_id: string; details: string; link: string }[]).map((d) => [d.project_id, d]));
+  // This profile's own projects double as the boxes on its project posts.
+  const byId = Object.fromEntries(projectRows.map((r) => [r.id, r]));
   const projects: ProjectView[] = projectRows.map((r) => ({ ...r, details: details.get(r.id)?.details ?? null, link: details.get(r.id)?.link ?? null }));
 
   const name = `${p.first_name} ${p.last_name}`.trim();
@@ -114,7 +116,7 @@ async function ProfileView({ params }: { params: PageProps<"/u/[id]">["params"] 
         </div>
       </Panel>
 
-      <section data-tour="projects-tab" className="mt-10">
+      <section id="projects" data-tour="projects-tab" className="mt-10 scroll-mt-24">
         <div className="flex items-center justify-between">
           <Kicker>Projects</Kicker>
           {own && <ProjectEditor interests={p.interests ?? []} />}
@@ -137,7 +139,7 @@ async function ProfileView({ params }: { params: PageProps<"/u/[id]">["params"] 
       <section className="mt-10">
         <Kicker>Posts</Kicker>
         <div className="mt-4 flex flex-col gap-4">
-          {posts.map((post, i) => <PostCard key={post.id} post={post} liked={liked.has(post.id)} own={own} index={i} />)}
+          {posts.map((post, i) => <PostCard key={post.id} post={post} liked={liked.has(post.id)} own={own} index={i} project={post.project_id ? byId[post.project_id] ?? null : null} />)}
           {!posts.length && <EmptyState title={own ? "You haven't posted yet" : "No posts yet"} body={own ? "Share an update, a question or a result from the feed." : undefined} />}
         </div>
       </section>

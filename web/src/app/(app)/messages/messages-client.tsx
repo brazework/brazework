@@ -10,7 +10,7 @@ import type { Conv } from "./data";
 // Pure CSS (:has), so the layout needs no runtime URL read and still prerenders.
 export function PaneSwitch({ list, children }: { list: React.ReactNode; children: React.ReactNode }) {
   return (
-    <div className="group/msg grid h-[calc(100dvh-8rem)] min-h-[480px] overflow-hidden rounded-3xl border border-line bg-surface/70 md:h-[calc(100dvh-4rem)] md:grid-cols-[320px_1fr]">
+    <div className="group/msg grid h-[calc(100dvh-12rem)] min-h-[420px] overflow-hidden rounded-3xl border border-line bg-surface/70 md:h-[calc(100dvh-4rem)] md:grid-cols-[320px_1fr]">
       <aside className="flex min-h-0 flex-col border-line group-has-[[data-thread]]/msg:hidden md:flex! md:border-r">{list}</aside>
       <section className="hidden min-h-0 flex-col group-has-[[data-thread]]/msg:flex md:flex">{children}</section>
     </div>

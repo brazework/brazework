@@ -64,6 +64,7 @@ export const PERMS = [
   ["removeMembers", "Remove and ban members below them", 3],
   ["roles", "Assign roles below their own", 4],
   ["editInfo", "Edit community info and rules", 4],
+  ["hostEvents", "Host club events", 4],
   ["automod", "Set up auto-moderation", 4],
 ] as const;
 export type Perm = (typeof PERMS)[number][0];

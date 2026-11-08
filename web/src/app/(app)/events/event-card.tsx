@@ -1,5 +1,5 @@
 "use client";
-import { BadgeCheck, MapPin, Users } from "lucide-react";
+import { BadgeCheck, MapPin, Users, UsersRound } from "lucide-react";
 import Link from "next/link";
 import { ORG_LABEL, dateParts, isOver, pluralize, whereLabel, type HostedEvent } from "@/lib/events";
 import { RsvpButton, SaveButton, useEventMarks } from "./event-controls";
@@ -27,7 +27,9 @@ export function EventCard({ event: e, going, saved, now }: { event: HostedEvent;
           <span className="inline-flex items-center gap-1"><MapPin className="size-3.5" /> {whereLabel(e)}</span>
         </div>
         <div className="mt-1 flex flex-wrap items-center gap-x-3 text-xs text-faint">
-          {e.host && <span className="inline-flex items-center gap-1"><BadgeCheck className="size-3.5" /> {e.host} · {ORG_LABEL[e.host_type as keyof typeof ORG_LABEL] ?? "Verified"}</span>}
+          {e.host && (e.community_id
+            ? <Link href={`/c/${e.community_id}`} className="inline-flex items-center gap-1 hover:text-text hover:underline"><UsersRound className="size-3.5" /> {e.host} · Club event</Link>
+            : <span className="inline-flex items-center gap-1"><BadgeCheck className="size-3.5" /> {e.host} · {ORG_LABEL[e.host_type as keyof typeof ORG_LABEL] ?? "Verified"}</span>)}
           <span className="inline-flex items-center gap-1"><Users className="size-3.5" /> {pluralize(marks.count, "going", "going")}</span>
         </div>
         {error && <p role="alert" className="mt-2 text-xs text-danger">{error}</p>}

@@ -19,7 +19,7 @@
    3. ✅ Profiles + projects, analytics
    4. ✅ Messages, network, notifications
    5. ✅ Events/orgs, saved, settings, guided tour, What's new
-   6. Next: **club events** (communities hosting events — the wedge feature)
+   6. ✅ **Club events**: communities host events (needs `supabase/club-events.sql` applied first)
 4. **Cut-over:** when the new app has parity, point the production domain at the `web/` project. Then delete `public/`.
 5. **Until then,** any feature added to the vanilla app also goes on the migration checklist, so nothing is lost.
 

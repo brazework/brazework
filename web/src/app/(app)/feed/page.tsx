@@ -4,10 +4,12 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { EmptyState, Tabs } from "@/components/app/page-ui";
 import { type Post } from "@/lib/forge";
+import { projectsForPosts } from "@/lib/project-posts";
 import { getViewer } from "@/lib/supabase/server";
 import { Composer } from "./composer";
 import { LiveRefresh } from "@/components/app/live-refresh";
 import { PostCard } from "./post-card";
+import { FeedRail } from "./rail";
 
 export const metadata: Metadata = { title: "Feed" };
 
@@ -18,15 +20,22 @@ const TABS = [
   { id: "communities", label: "Communities" },
 ] as const;
 type TabId = (typeof TABS)[number]["id"];
-const POST_COLS = "id, author_id, author_first, author_last, author_headline, body, kind, tags, like_count, comment_count, created_at, community_name";
+const POST_COLS = "id, author_id, author_first, author_last, author_headline, body, kind, tags, like_count, comment_count, created_at, community_name, project_id";
 
 export default function FeedPage({ searchParams }: PageProps<"/feed">) {
   return (
-    <div className="mx-auto max-w-2xl">
+    <div className="mx-auto grid max-w-2xl gap-8 xl:max-w-5xl xl:grid-cols-[minmax(0,1fr)_280px]">
       <LiveRefresh tables={["posts"]} />
-      <Suspense fallback={<FeedSkeleton />}>
-        <Feed searchParams={searchParams} />
-      </Suspense>
+      <div className="min-w-0">
+        <Suspense fallback={<FeedSkeleton />}>
+          <Feed searchParams={searchParams} />
+        </Suspense>
+      </div>
+      <aside aria-label="Your clubs and upcoming events" className="hidden xl:block">
+        <Suspense fallback={<div className="h-96 animate-pulse rounded-3xl bg-surface/60" />}>
+          <FeedRail />
+        </Suspense>
+      </aside>
     </div>
   );
 }
@@ -86,6 +95,14 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
   }
 
   const ids = list.map((p) => p.id);
+  const projects = await projectsForPosts(supabase, list);
+  // For you explains itself: the first of your interests each post matches (Ian's reasonFor()).
+  const mineSet = new Set(interests);
+  const reasonFor = (p: Post) => {
+    if (tab !== "for-you" || p.author_id === user.id) return "";
+    const m = p.tags.find((t) => mineSet.has(t));
+    return m ? `${p.project_id ? "Project · " : ""}Matches your interest: ${m}` : "";
+  };
   const [likes, saves] = ids.length
     ? await Promise.all([
         supabase.from("likes").select("post_id").eq("user_id", user.id).in("post_id", ids),
@@ -98,6 +115,21 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
   return (
     <>
       <FeedHeader tab={tab} />
+      {interests.length > 0 && (
+        <section data-tour="interests" aria-label="Your focus areas" className="mt-6 rounded-3xl border border-line bg-surface/70 p-4">
+          <div className="flex items-baseline justify-between">
+            <h2 className="text-sm font-medium">Your focus areas</h2>
+            <Link href="/settings#profile" className="text-xs text-muted hover:text-text">Edit in Settings</Link>
+          </div>
+          <div className="no-scrollbar mt-3 flex gap-1.5 overflow-x-auto sm:flex-wrap">
+            {interests.map((t) => (
+              <Link key={t} href={tag === t ? `/feed${tab === "for-you" ? "" : `?tab=${tab}`}` : `/feed?${tab === "for-you" ? "" : `tab=${tab}&`}tag=${encodeURIComponent(t)}`} aria-current={tag === t ? "true" : undefined} className={`shrink-0 rounded-md border px-2 py-0.5 font-mono text-[11px] whitespace-nowrap transition ${tag === t ? "border-text text-text" : "border-line text-muted hover:text-text"}`}>
+                #{t}
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
       <div data-tour="composer" className="mt-6"><Composer first={profile.first_name} last={profile.last_name} interests={interests} /></div>
       {tag && (
         <div className="mt-4 flex items-center justify-between rounded-2xl border border-line bg-surface-2 px-4 py-2.5 text-sm">
@@ -107,7 +139,7 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
       )}
       <div className="mt-6 flex flex-col gap-4">
         {list.length === 0 && <EmptyState title={emptyTitle} body={emptyBody} action={emptyAction} />}
-        {list.map((p, i) => <PostCard key={p.id} post={p} liked={liked.has(p.id)} saved={saved.has(p.id)} own={p.author_id === user.id} index={i} />)}
+        {list.map((p, i) => <PostCard key={p.id} post={p} liked={liked.has(p.id)} saved={saved.has(p.id)} own={p.author_id === user.id} index={i} project={p.project_id ? projects[p.project_id] : null} reason={reasonFor(p)} />)}
       </div>
     </>
   );

@@ -49,14 +49,19 @@ export async function saveEvent(_: OrgState, form: FormData): Promise<OrgState> 
   if (!parsed.success) return { ok: false, message: parsed.error.issues[0]?.message ?? "Check the form." };
   const id = str(form.get("id"));
   const orgId = str(form.get("org_id"));
+  const communityId = str(form.get("community_id"));
+  // Exactly one host: a verified organization or a club (supabase/club-events.sql).
+  const host = communityId ? { community_id: communityId } : orgId ? { org_id: orgId } : null;
+  if (!id && !host) return { ok: false, message: "Choose who's hosting this event." };
   const { supabase, user } = await getViewer();
   if (!user) return { ok: false, message: "Log in again." };
   const { data, error } = id
     ? await supabase.from("events").update(parsed.data).eq("id", id).select("id")
-    : await supabase.from("events").insert({ ...parsed.data, org_id: orgId }).select("id");
-  if (error) return { ok: false, message: friendlyError(error) };
+    : await supabase.from("events").insert({ ...parsed.data, ...host }).select("id");
+  if (error) return { ok: false, message: error.code === "42501" ? "Only a club's admins and owner can host its events." : friendlyError(error) };
   if (!data?.length) return { ok: false, message: "Ended events can't be edited." };
   revalidatePath("/org");
+  if (communityId) revalidatePath(`/c/${communityId}`);
   revalidatePath("/events", "layout");
   return { ok: true, message: id ? "Event updated." : "Event published." };
 }
@@ -69,5 +74,6 @@ export async function cancelEvent(id: string): Promise<OrgState> {
   if (!data?.length) return { ok: false, message: "You don't have permission to do that." };
   revalidatePath("/org");
   revalidatePath("/events", "layout");
+  revalidatePath("/c/[id]", "page");
   return { ok: true, message: "Event cancelled." };
 }

@@ -7,6 +7,7 @@ import { LiveRefresh } from "@/components/app/live-refresh";
 import { EmptyState, Skeleton } from "@/components/app/page-ui";
 import { Avatar } from "@/components/ui";
 import { timeAgo, type Post } from "@/lib/forge";
+import { projectsForPosts } from "@/lib/project-posts";
 import { getViewer } from "@/lib/supabase/server";
 import { PostCard } from "../../feed/post-card";
 import { CommentForm, DeleteComment } from "./comments-client";
@@ -34,7 +35,7 @@ async function PostView({ params }: { params: PageProps<"/post/[id]">["params"] 
   if (!user) redirect("/login");
   const { data } = await supabase
     .from("posts")
-    .select("id, author_id, author_first, author_last, author_headline, body, kind, tags, like_count, comment_count, created_at, community_name")
+    .select("id, author_id, author_first, author_last, author_headline, body, kind, tags, like_count, comment_count, created_at, community_name, project_id")
     .eq("id", id)
     .maybeSingle();
   if (!data)
@@ -47,10 +48,11 @@ async function PostView({ params }: { params: PageProps<"/post/[id]">["params"] 
     supabase.from("comments").select("id, author_id, author_first, author_last, body, created_at").eq("post_id", id).order("created_at", { ascending: true }).limit(100),
   ]);
   const list = (comments.data ?? []) as Comment[];
+  const projects = await projectsForPosts(supabase, [post]);
 
   return (
     <>
-      <PostCard post={post} liked={!!likes.data?.length} saved={!!saves.data?.length} own={post.author_id === user.id} index={0} />
+      <PostCard post={post} liked={!!likes.data?.length} saved={!!saves.data?.length} own={post.author_id === user.id} index={0} project={post.project_id ? projects[post.project_id] ?? null : null} />
       <section aria-label="Comments" className="mt-4 rounded-3xl border border-line bg-surface/70 p-5">
         <h2 className="text-sm font-medium">{list.length ? `${list.length} comment${list.length === 1 ? "" : "s"}` : "Comments"}</h2>
         <ul className="mt-4 flex flex-col gap-4">

@@ -22,10 +22,12 @@ export const DAY_MS = 86400000;
 export type EventType = (typeof EVENT_TYPES)[number];
 export type EventFormat = (typeof EVENT_FORMATS)[number];
 export type OrgType = "company" | "school" | "forge";
+export type HostType = OrgType | "community";
 
 export type ForgeEvent = {
   id: string;
-  org_id: string;
+  org_id: string | null;
+  community_id: string | null;
   title: string;
   description: string;
   type: EventType;
@@ -39,7 +41,7 @@ export type ForgeEvent = {
   rsvp_count: number;
   created_at: string;
 };
-export type HostedEvent = ForgeEvent & { host: string; host_type: OrgType | "" };
+export type HostedEvent = ForgeEvent & { host: string; host_type: HostType | "" };
 
 export type Organization = {
   id: string;
@@ -53,17 +55,22 @@ export type Organization = {
   created_at: string;
 };
 
-export const EVENT_COLS = "id, org_id, title, description, type, format, location, link, topic, starts_at, ends_at, status, rsvp_count, created_at";
-export const EVENT_WITH_HOST = `${EVENT_COLS}, organizations(name, type)`;
+export const EVENT_COLS = "id, org_id, community_id, title, description, type, format, location, link, topic, starts_at, ends_at, status, rsvp_count, created_at";
+export const EVENT_WITH_HOST = `${EVENT_COLS}, organizations(name, type), communities(name)`;
 
-type WithOrg = ForgeEvent & { organizations?: { name: string; type: OrgType } | { name: string; type: OrgType }[] | null };
+type One<T> = T | T[] | null;
+type WithOrg = ForgeEvent & { organizations?: One<{ name: string; type: OrgType }>; communities?: One<{ name: string }> };
+const first = <T,>(v: One<T> | undefined) => (Array.isArray(v) ? v[0] : v) ?? null;
+
+// The host shown on an event: its verified organization, or the club (community) running it.
 export function withHost(r: WithOrg): HostedEvent {
-  const { organizations, ...rest } = r;
-  const o = Array.isArray(organizations) ? organizations[0] : organizations;
-  return { ...rest, host: o?.name ?? "", host_type: o?.type ?? "" };
+  const { organizations, communities, ...rest } = r;
+  const o = first(organizations);
+  const c = first(communities);
+  return o ? { ...rest, host: o.name, host_type: o.type } : { ...rest, host: c?.name ?? "", host_type: c ? "community" : "" };
 }
 
-export const ORG_LABEL: Record<OrgType, string> = { company: "Verified company", school: "Verified school", forge: "Forge" };
+export const ORG_LABEL: Record<HostType, string> = { company: "Verified company", school: "Verified school", forge: "Forge", community: "Club event" };
 
 export const isOver = (e: Pick<ForgeEvent, "ends_at">, now: number) => Date.parse(e.ends_at) <= now;
 // Past or cancelled events go in the host's log; the rest are still coming up.

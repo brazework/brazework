@@ -70,7 +70,11 @@ export type Post = {
   like_count: number;
   comment_count: number;
   created_at: string;
+  project_id?: string | null;
 };
+
+// The project card shown inside a project post (Ian's projectBlock() in public/js/projects.js).
+export type PostProject = { id: string; title: string; status: "in_progress" | "completed"; year: number | null; private: boolean; updated_at: string };
 
 export const POST_KINDS = [
   { id: "update", label: "Update" },
