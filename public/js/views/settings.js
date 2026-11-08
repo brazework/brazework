@@ -90,6 +90,18 @@ export function render({ view, state, params, navigate, refreshProfile }) {
           </section>
 
           <section class="card stack">
+            <h2 style="font-size:18px">Help</h2>
+            <div class="row" style="justify-content:space-between;gap:12px">
+              <span><strong style="font-weight:500">Guided tour</strong><br><span class="small muted">A one-minute look at the essentials. Close it at any time.</span></span>
+              <button class="btn primary" id="st-tour">Replay the tour</button>
+            </div>
+            <div class="row" style="justify-content:space-between;gap:12px;border-top:1px solid var(--border);padding-top:12px">
+              <span><strong style="font-weight:500">What's new</strong><br><span class="small muted">Every update is listed on your feed under Forge updates. Click one to read what changed.</span></span>
+              <a class="btn" href="#/feed">Go to the feed</a>
+            </div>
+          </section>
+
+          <section class="card stack">
             <h2 style="font-size:18px">Account</h2>
             <div class="row" style="justify-content:space-between"><span class="muted">Name</span><span>${esc(p.firstName)} ${esc(p.lastName)}</span></div>
             <div class="row" style="justify-content:space-between"><span class="muted">Email</span><span>${esc(state.user.email)} · verified</span></div>
@@ -118,6 +130,7 @@ export function render({ view, state, params, navigate, refreshProfile }) {
       try { await run(sb.from("profiles").update({ interests: [...picked] }).eq("id", state.user.uid)); await refreshProfile(); toast("Interests saved."); }
       catch (e) { toast(esc(friendlyError(e))); }
     };
+    view.querySelector("#st-tour").onclick = () => { try { sessionStorage.setItem("forge.tour", "replay"); } catch (e) {} navigate("feed"); };
     view.querySelector("#st-out").onclick = () => sb.auth.signOut().then(() => navigate("login"));
     drawMessaging();
   };

@@ -111,7 +111,7 @@ textarea.input { padding: 12px 14px; min-height: 90px; resize: vertical; }
 .link-btn:hover { color: var(--warn); }
 .brief-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
 .brief-list li { display: flex; gap: 10px; align-items: baseline; }
-.brief-k { font-family: var(--mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); min-width: 34px; }
+.brief-k { font-family: var(--mono); font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); min-width: 58px; flex: 0 0 auto; }
 
 /* Toast */
 .toast { position: fixed; top: 84px; left: 50%; transform: translateX(-50%); z-index: 60; display: flex; align-items: center; gap: 14px; padding: 12px 12px 12px 18px; border-radius: 10px; border: 1px solid var(--border-strong); background: var(--raised); box-shadow: 0 12px 32px #00000055; max-width: calc(100vw - 48px); animation: rise .35s ease-out both; }
@@ -297,3 +297,33 @@ a.pf-count:hover { color: var(--accent); }
 .pj-more summary { cursor: pointer; color: var(--accent); font-size: 14px; }
 .pj-focus { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent); }
 .pj-card h3, .post-project strong { overflow-wrap: anywhere; }
+
+/* Guided tour */
+.tour-block { position: fixed; inset: 0; z-index: 95; background: transparent; transition: background .2s; }
+.tour-block.dim { background: var(--scrim); }
+.tour-hole { position: fixed; z-index: 96; border-radius: 12px; box-shadow: 0 0 0 9999px var(--scrim), 0 0 0 2px var(--accent); pointer-events: none; transition: left .25s ease, top .25s ease, width .25s ease, height .25s ease; }
+.tour-pop { position: fixed; z-index: 97; width: min(380px, calc(100vw - 24px)); max-height: calc(100vh - 24px); overflow-y: auto; background: var(--surface); border: 1px solid var(--border-strong); border-radius: 14px; padding: 18px 20px; box-shadow: 0 24px 64px #00000066; display: flex; flex-direction: column; gap: 10px; transition: left .25s ease, top .25s ease; }
+.tour-pop:focus { outline: none; }
+.tour-pop.center { left: 50% !important; top: 50% !important; transform: translate(-50%, -50%); width: min(440px, calc(100vw - 24px)); }
+.tour-pop.sheet { left: 12px !important; right: 12px; top: auto !important; bottom: 12px; transform: none; width: auto; max-height: 45vh; }
+.tour-pop.busy .tour-foot button { pointer-events: none; }
+.tour-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+.tour-kicker { font-family: var(--mono); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
+.tour-x { width: 36px; height: 36px; border: none; border-radius: 8px; background: transparent; color: var(--muted); font-size: 22px; cursor: pointer; margin: -6px -8px -6px 0; }
+.tour-x:hover { background: var(--raised); color: var(--text); }
+.tour-title { font-size: 19px; }
+.tour-body { color: var(--text-2, var(--muted)); font-size: 15px; line-height: 1.5; }
+.tour-list { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
+.tour-list li { display: flex; flex-direction: column; gap: 2px; padding-left: 12px; border-left: 2px solid var(--accent); }
+.tour-foot { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; margin-top: 4px; }
+.tour-dots { display: flex; gap: 5px; }
+.tour-dots span { width: 6px; height: 6px; border-radius: 3px; background: var(--border-strong); }
+.tour-dots span.on { width: 16px; background: var(--accent); }
+.tour-foot .btn { min-height: 40px; }
+
+/* Forge updates */
+.brief-item { display: flex; gap: 10px; align-items: baseline; width: 100%; padding: 6px 8px; margin: 0 -8px; border: none; border-radius: 6px; background: transparent; color: var(--text); text-align: left; cursor: pointer; font: inherit; }
+.brief-item:hover { background: var(--raised); }
+.brief-item .brief-title { font-size: 14px; }
+.brief-item:hover .brief-title { color: var(--accent); }
+.upd-points { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 8px; color: var(--text-2, var(--muted)); }

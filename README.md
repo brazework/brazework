@@ -14,7 +14,8 @@ supabase/schema.sql      Tables, row-level security (who can do what), triggers 
 supabase/messages.sql    Conversations and messages (run after schema.sql)
 supabase/events.sql      Organizations and events (run after schema.sql)
 supabase/activity.sql    Notifications and profile views for analytics
-supabase/projects.sql    Projects on profiles and project posts in the feed (run last)
+supabase/projects.sql    Projects on profiles and project posts in the feed
+supabase/tours.sql       Which guided tours and update notes each member has seen (run last)
 public/
   index.html             Applies saved theme before first paint
   css/tokens.css         Dark and light color tokens (use these, never fixed colors)
@@ -29,6 +30,8 @@ public/
   js/messages.js         Conversations: list, thread, send, accept, decline, block and report, unread count, settings
   js/events.js           Events, RSVPs, saved events, organizations, calendar files
   js/activity.js         Notifications, profile views, analytics
+  js/tour.js             Guided tours: first-time tour, What's new walkthroughs, replay
+  js/updates.js          Forge updates: the notes in the feed's briefing and their walkthroughs
   js/projects.js         Projects: load, save, privacy, share to the feed, the project box on posts
   js/util.js             Helpers, icons, error messages, starter topic list
   js/views/*.js          One file per page (reset.js: choose a new password from a reset link)
@@ -40,6 +43,7 @@ The database fills in names, counts and times itself, so the app can't fake them
 
 - `profiles`: one per account (id = the Supabase user). first_name, last_name, birthday (private), account_type, headline, bio, field, interests[], onboarded. Made automatically at sign-up.
 - `posts`: author, body, kind (update, question, result, project), tags[] (up to 3), like_count, comment_count. `community_id` is empty for the main feed; community posts also have status (visible, held). `project_id` marks a post about one of the author's projects.
+- `seen_tours`: user_id, key ("welcome" or an update's id). Private to each member.
 - `projects`: owner, title, summary, status (in progress, completed), year, tags[] (up to 3), private. `project_details`: the write-up and link, readable by others only while the project is public.
 - `likes`, `comments`, `saved`: one like per member per post; comments up to 1000 characters; saves are private. Deleting a post removes all three.
 - `connections`: from_id, to_id, status (pending, accepted), note, people (name and headline of both). Only one per pair of people.
@@ -70,6 +74,8 @@ The database fills in names, counts and times itself, so the app can't fake them
 - Read status is never shown to anyone, even after a request is accepted.
 - Organizations have one admin (the person who registered) and no public page yet; adding colleagues as admins and the company page come later. Their name isn't checked, only their email domain, and unlisted schools aren't reviewed yet: a school needs an academic domain.
 - Events have one topic each and no reminders. Communities can't host events yet.
+- The first-time tour runs once per account, the first time the feed opens; closing it counts as done. Replay it from Settings → Help.
+- To announce a feature: add an entry at the top of `public/js/updates.js` with a new id, a summary and points, and optionally `tour` steps that point at `data-tour="…"` names on the page. Members who joined before it get a short What's new walkthrough on their next visit; everyone can read the note by clicking it under Forge updates.
 - Notifications appear in the app only; there are no emails or phone push notifications yet, and no settings to turn kinds off.
 - Analytics counts profile views and engagement on your posts. Project views, search appearances and access requests from the prototype wait on those features. Career progression only shows when you joined until profiles have experience and education, and the career benchmark waits on deciding how skill levels are measured. Company analytics wait on the company page.
 - Supabase's built-in email sender only sends a few emails an hour; set up your own email sender before launch (SETUP.md, step 4).

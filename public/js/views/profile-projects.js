@@ -78,7 +78,7 @@ export function renderProjects(box, { state, uid, isMe, ownerFirst, focusId, onC
     if (!list) { box.innerHTML = `<div class="skeleton" style="height:160px;border-radius:14px"></div>`; return; }
     const head = isMe ? `<div class="card row" style="justify-content:space-between;gap:12px">
         <p class="small muted" style="flex:1 1 260px">Show what you've built. Private projects show only a summary; requests to see the rest are coming soon.</p>
-        <button class="btn primary" data-act="new" ${editing === "new" ? "disabled" : ""}>New project</button>
+        <button class="btn primary" data-act="new" data-tour="projects-new" ${editing === "new" ? "disabled" : ""}>New project</button>
       </div>${editing === "new" ? formHTML(null, null) : ""}` : "";
     const empty = !list.length && editing !== "new"
       ? `<div class="card" style="text-align:center;border-style:dashed"><p class="muted">${isMe ? "No projects yet. Add one and share it with people in your field." : `${esc(ownerFirst)} hasn't added any projects yet.`}</p></div>` : "";

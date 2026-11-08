@@ -6,19 +6,11 @@ import { myCommunities, badge, fmtCount, membersLabel, runJoinAction, PRIVACY_LA
 import { openCreate } from "./communities.js";
 import { following as followingOf, peopleWithInterests } from "../network.js";
 import { tabEvents, isOver, dateParts, timeRange } from "../events.js";
+import { UPDATES } from "../updates.js";
+import { startToursFor, startUpdateTour } from "../tour.js";
 
 const DAY = 86400000;
 
-// What's new on Forge. Add a line here whenever an update ships.
-const UPDATES = [
-  ["New", "Projects: add what you've built to your profile, keep it private or public, and share updates to the feed."],
-  ["New", "For you now shows only posts that match your interests. Latest has everything."],
-  ["New", "Events: career fairs, workshops and talks picked for your interests. Companies and schools can host their own."],
-  ["New", "Messages: talk one-to-one with your connections. Messages from anyone else arrive as requests."],
-  ["New", "Network: connect with people, follow them, and see their posts in your Following feed."],
-  ["New", "Communities: join groups in your field, start your own, and pick moderators."],
-  ["Next", "Project access requests, build logs and critiques."]
-];
 
 export function render({ view, state, navigate }) {
   const p = state.profile, uid = state.user.uid;
@@ -43,7 +35,7 @@ export function render({ view, state, navigate }) {
           <div class="row" style="justify-content:space-between"><h2 style="font-size:15px">Your communities</h2><a href="#/communities" class="small muted">See all</a></div>
           <div class="skeleton" style="height:36px"></div>
         </section>
-        <section class="card stack">
+        <section class="card stack" data-tour="interests">
           <h2 style="font-size:15px">Your focus areas</h2>
           <div class="row" style="gap:6px">${interests.map(t => `<button class="tag tag-btn" data-filter="${esc(t)}">${esc(t)}</button>`).join("")}</div>
           <a href="#/settings" class="small muted">Edit interests in Settings</a>
@@ -51,7 +43,7 @@ export function render({ view, state, navigate }) {
       </aside>
 
       <section class="col-main">
-        <div class="tabs" role="tablist" aria-label="Feed">
+        <div class="tabs" role="tablist" aria-label="Feed" data-tour="feed-tabs">
           <button class="tab" role="tab" aria-selected="true" data-tab="foryou">For you</button>
           <button class="tab" role="tab" aria-selected="false" data-tab="latest">Latest</button>
           <button class="tab" role="tab" aria-selected="false" data-tab="following">Following</button>
@@ -63,10 +55,10 @@ export function render({ view, state, navigate }) {
       </section>
 
       <aside class="col-right">
-        <section class="card stack">
+        <section class="card stack" data-tour="updates">
           <div class="kicker">Your briefing</div>
           <h2 style="font-size:16px">Forge updates</h2>
-          <ul class="brief-list">${UPDATES.map(([k, t]) => `<li><span class="brief-k">${k}</span><span class="small">${esc(t)}</span></li>`).join("")}</ul>
+          <ul class="brief-list" style="gap:2px">${UPDATES.map((u, i) => `<li><button class="brief-item" data-update="${i}" aria-haspopup="dialog"><span class="brief-k">${esc(u.kind)}</span><span class="brief-title">${esc(u.title)}</span></button></li>`).join("")}</ul>
         </section>
         <section class="card stack">
           <h2 style="font-size:16px">Trending topics</h2>
@@ -89,6 +81,9 @@ export function render({ view, state, navigate }) {
   }
 
   bindComposer(view.querySelector("[data-composer]"), state);
+  view.querySelector("[data-composer]").dataset.tour = "composer";
+  view.querySelectorAll("[data-update]").forEach(b => b.onclick = () => openUpdate(UPDATES[Number(b.dataset.update)], b));
+  const tourTimer = setTimeout(() => startToursFor(state), 700);
 
   let tab = "foryou", filter = "", posts = [], cPosts = null, joined = null, fyPosts = null;
   let cUnsub = null;
@@ -258,7 +253,35 @@ export function render({ view, state, navigate }) {
       err => { fPosts = []; if (tab === "following") listEl.innerHTML = `<div class="card"><p class="error">${esc(friendlyError(err))}</p></div>`; });
   }
 
-  return () => { unsub(); fyUnsub(); if (cUnsub) cUnsub(); if (fUnsub) fUnsub(); list.destroy(); };
+  return () => { clearTimeout(tourTimer); unsub(); fyUnsub(); if (cUnsub) cUnsub(); if (fUnsub) fUnsub(); list.destroy(); };
+}
+
+// An update's note: what changed, and a walkthrough if it has one.
+function openUpdate(u, from) {
+  const host = document.getElementById("overlay");
+  const wrap = document.createElement("div");
+  const date = u.date ? new Date(u.date + "T00:00:00").toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }) : "Coming soon";
+  wrap.innerHTML = `
+    <div class="scrim" data-x></div>
+    <div class="modal stack" role="dialog" aria-modal="true" aria-labelledby="upd-title" style="width:min(520px,calc(100vw - 32px));gap:14px">
+      <div class="row" style="justify-content:space-between"><span class="kicker">${esc(u.kind)} · ${esc(date)}</span>
+        <button class="btn ghost" data-x aria-label="Close" style="min-height:36px;padding:0 10px;font-size:20px">×</button></div>
+      <h2 id="upd-title" style="font-size:22px">${esc(u.title)}</h2>
+      <p>${esc(u.summary)}</p>
+      ${(u.points || []).length ? `<ul class="upd-points">${u.points.map(x => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}
+      <div class="row" style="justify-content:flex-end;gap:8px">
+        <button class="btn" data-x>Close</button>
+        ${u.tour ? `<button class="btn primary" data-show>Show me around</button>` : ""}
+      </div>
+    </div>`;
+  host.appendChild(wrap);
+  const done = () => { wrap.remove(); document.removeEventListener("keydown", onKey); if (from && from.isConnected) from.focus(); };
+  const onKey = e => { if (e.key === "Escape") done(); };
+  document.addEventListener("keydown", onKey);
+  wrap.querySelectorAll("[data-x]").forEach(el => el.onclick = done);
+  const show = wrap.querySelector("[data-show]");
+  if (show) show.onclick = () => { done(); startUpdateTour(u); };
+  (show || wrap.querySelector(".modal [data-x]")).focus();
 }
 
 // The next few events, matched to your interests first.

@@ -39,7 +39,7 @@ export async function render({ view, state, params, name, refreshProfile, naviga
             <span class="small faint">${esc(p.field || "")}</span>
             <div class="row small" id="pf-counts" style="gap:16px;margin-top:6px"><span class="skeleton" style="width:220px;height:14px"></span></div>
           </div>
-          ${isMe ? `<div class="row" style="gap:8px"><a class="btn" href="#/analytics">${icon("chart", 16)}Analytics</a><button class="btn" id="pf-edit">Edit profile</button></div>` : `<div class="row" style="gap:8px" id="pf-actions"><span class="skeleton" style="width:180px;height:44px"></span></div>`}
+          ${isMe ? `<div class="row" style="gap:8px"><a class="btn" href="#/analytics" data-tour="analytics">${icon("chart", 16)}Analytics</a><button class="btn" id="pf-edit">Edit profile</button></div>` : `<div class="row" style="gap:8px" id="pf-actions"><span class="skeleton" style="width:180px;height:44px"></span></div>`}
         </div>
       </section>
       <div class="cols">
@@ -56,7 +56,7 @@ export async function render({ view, state, params, name, refreshProfile, naviga
         <section class="col-main">
           <div class="tabs" role="tablist" aria-label="Profile">
             <button class="tab" role="tab" data-ptab="posts" aria-selected="${startTab === "posts"}">Posts</button>
-            <button class="tab" role="tab" data-ptab="projects" aria-selected="${startTab === "projects"}">Projects<span class="tab-count" id="pf-pcount"></span></button>
+            <button class="tab" role="tab" data-tour="projects-tab" data-ptab="projects" aria-selected="${startTab === "projects"}">Projects<span class="tab-count" id="pf-pcount"></span></button>
           </div>
           <div id="pf-tab-posts" class="stack" style="gap:16px" ${startTab === "posts" ? "" : "hidden"}>
             ${isMe ? composerHTML(p, { placeholder: "Share an update on your profile" }) : ""}
