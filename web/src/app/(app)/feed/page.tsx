@@ -2,7 +2,8 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
-import { cn, type Post } from "@/lib/forge";
+import { EmptyState, Tabs } from "@/components/app/page-ui";
+import { type Post } from "@/lib/forge";
 import { getViewer } from "@/lib/supabase/server";
 import { Composer } from "./composer";
 import { LiveRefresh } from "@/components/app/live-refresh";
@@ -13,7 +14,11 @@ export const metadata: Metadata = { title: "Feed" };
 const TABS = [
   { id: "for-you", label: "For you" },
   { id: "latest", label: "Latest" },
+  { id: "following", label: "Following" },
+  { id: "communities", label: "Communities" },
 ] as const;
+type TabId = (typeof TABS)[number]["id"];
+const POST_COLS = "id, author_id, author_first, author_last, author_headline, body, kind, tags, like_count, comment_count, created_at, community_name";
 
 export default function FeedPage({ searchParams }: PageProps<"/feed">) {
   return (
@@ -27,52 +32,92 @@ export default function FeedPage({ searchParams }: PageProps<"/feed">) {
 }
 
 async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["searchParams"] }) {
-  const tab = (await searchParams).tab === "latest" ? "latest" : "for-you";
+  const sp = await searchParams;
+  const tab: TabId = TABS.find((t) => t.id === sp.tab)?.id ?? "for-you";
+  const tag = typeof sp.tag === "string" ? sp.tag : "";
   const { supabase, user, profile } = await getViewer();
   if (!user || !profile) redirect("/login");
+  const interests: string[] = profile.interests ?? [];
 
-  const { data: posts } = await supabase
-    .from("posts")
-    .select("id, author_id, author_first, author_last, author_headline, body, kind, tags, like_count, comment_count, created_at")
-    .is("community_id", null)
-    .order("created_at", { ascending: false })
-    .limit(60);
-  const list = (posts ?? []) as Post[];
+  let list: Post[] = [];
+  let emptyTitle = "No posts yet";
+  let emptyBody: React.ReactNode = "Be the first to share what you're building.";
+  let emptyAction: React.ReactNode = null;
+  const base = () => supabase.from("posts").select(POST_COLS).order("created_at", { ascending: false });
 
-  const { data: likes } = list.length
-    ? await supabase.from("likes").select("post_id").eq("user_id", user.id).in("post_id", list.map((p) => p.id))
-    : { data: [] };
-  const liked = new Set((likes ?? []).map((l: { post_id: string }) => l.post_id));
+  if (tab === "for-you") {
+    // Ian's rule: only posts tagged with at least one of your interests, plus your own.
+    const [matching, mine] = await Promise.all([
+      interests.length ? base().is("community_id", null).overlaps("tags", interests).limit(60) : Promise.resolve({ data: [] }),
+      base().is("community_id", null).eq("author_id", user.id).limit(20),
+    ]);
+    const byId = new Map<string, Post>();
+    for (const p of [...((matching.data ?? []) as Post[]), ...((mine.data ?? []) as Post[])]) byId.set(p.id, p);
+    const mineSet = new Set(interests);
+    list = [...byId.values()].sort((a, b) => score(b, mineSet) - score(a, mineSet));
+    emptyTitle = "Nothing matching your interests yet";
+    emptyBody = interests.length ? "For you only shows posts tagged with topics you follow, so it stays focused." : "For you shows posts that match your interests. Add some to get started.";
+    emptyAction = <Link href="/feed?tab=latest" className="text-sm underline underline-offset-4">See all posts in Latest</Link>;
+  } else if (tab === "latest") {
+    list = ((await base().is("community_id", null).limit(60)).data ?? []) as Post[];
+  } else if (tab === "following") {
+    const [fg, cn] = await Promise.all([
+      supabase.from("follows").select("target").eq("follower", user.id).limit(500),
+      supabase.from("connections").select("users").contains("users", [user.id]).eq("status", "accepted").limit(500),
+    ]);
+    const ids = new Set<string>([...(fg.data ?? []).map((f) => f.target as string), ...(cn.data ?? []).flatMap((c) => (c.users as string[]).filter((u) => u !== user.id))]);
+    list = ids.size ? (((await base().is("community_id", null).in("author_id", [...ids]).limit(50)).data ?? []) as Post[]) : [];
+    emptyTitle = ids.size ? "Nothing new from people you follow" : "Your Following feed is empty";
+    emptyBody = ids.size ? "The people you follow haven't posted recently." : "Follow people or connect with them, and their posts show up here.";
+    emptyAction = <Link href="/network?tab=suggested" className="text-sm underline underline-offset-4">Find people</Link>;
+  } else {
+    const { data: joined } = await supabase.from("community_members").select("community_id").eq("uid", user.id).limit(200);
+    const cids = (joined ?? []).map((j) => j.community_id as string);
+    list = cids.length ? (((await base().in("community_id", cids).eq("status", "visible").limit(60)).data ?? []) as Post[]) : [];
+    emptyTitle = cids.length ? "No posts in your communities yet" : "You haven't joined any communities";
+    emptyBody = cids.length ? "Open one and start a conversation." : "Join communities and their latest posts show up here.";
+    emptyAction = <Link href="/communities" className="text-sm underline underline-offset-4">Discover communities</Link>;
+  }
+  if (tag) {
+    list = list.filter((p) => p.tags.includes(tag));
+    emptyTitle = `No recent posts tagged ${tag}`;
+    emptyBody = "Be the first.";
+    emptyAction = null;
+  }
 
-  // "For you": recency with a boost for your interests, same as the vanilla feed.
-  const interests = new Set<string>(profile.interests ?? []);
-  const ranked = tab === "latest" ? list : [...list].sort((a, b) => score(b, interests) - score(a, interests));
+  const ids = list.map((p) => p.id);
+  const [likes, saves] = ids.length
+    ? await Promise.all([
+        supabase.from("likes").select("post_id").eq("user_id", user.id).in("post_id", ids),
+        supabase.from("saved").select("post_id").eq("user_id", user.id).in("post_id", ids),
+      ])
+    : [{ data: [] }, { data: [] }];
+  const liked = new Set((likes.data ?? []).map((l: { post_id: string }) => l.post_id));
+  const saved = new Set((saves.data ?? []).map((l: { post_id: string }) => l.post_id));
 
   return (
     <>
       <FeedHeader tab={tab} />
-      <div className="mt-6"><Composer first={profile.first_name} last={profile.last_name} interests={profile.interests} /></div>
+      <div className="mt-6"><Composer first={profile.first_name} last={profile.last_name} interests={interests} /></div>
+      {tag && (
+        <div className="mt-4 flex items-center justify-between rounded-2xl border border-line bg-surface-2 px-4 py-2.5 text-sm">
+          <span>Showing posts tagged <strong className="font-medium">#{tag}</strong></span>
+          <Link href={`/feed${tab === "for-you" ? "" : `?tab=${tab}`}`} className="text-muted hover:text-text">Clear</Link>
+        </div>
+      )}
       <div className="mt-6 flex flex-col gap-4">
-        {ranked.length === 0 && (
-          <div className="rounded-3xl border border-dashed border-line p-12 text-center text-muted">Nothing here yet. Be the first to post what you&apos;re building.</div>
-        )}
-        {ranked.map((p, i) => <PostCard key={p.id} post={p} liked={liked.has(p.id)} index={i} />)}
+        {list.length === 0 && <EmptyState title={emptyTitle} body={emptyBody} action={emptyAction} />}
+        {list.map((p, i) => <PostCard key={p.id} post={p} liked={liked.has(p.id)} saved={saved.has(p.id)} own={p.author_id === user.id} index={i} />)}
       </div>
     </>
   );
 }
 
-function FeedHeader({ tab }: { tab?: string }) {
+function FeedHeader({ tab }: { tab?: TabId }) {
   return (
-    <header className="flex items-end justify-between">
+    <header className="flex flex-col gap-4">
       <h1 className="text-3xl font-semibold tracking-tight">Feed</h1>
-      <nav className="glass flex rounded-full p-1 text-sm">
-        {TABS.map((t) => (
-          <Link key={t.id} href={t.id === "latest" ? "/feed?tab=latest" : "/feed"} className={cn("rounded-full px-4 py-1.5 transition", tab === t.id ? "bg-raised text-text" : "text-muted hover:text-text")}>
-            {t.label}
-          </Link>
-        ))}
-      </nav>
+      <Tabs active={tab ?? ""} tabs={TABS.map((t) => ({ id: t.id, label: t.label, href: t.id === "for-you" ? "/feed" : `/feed?tab=${t.id}` }))} />
     </header>
   );
 }

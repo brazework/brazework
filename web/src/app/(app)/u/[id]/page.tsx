@@ -137,7 +137,7 @@ async function ProfileView({ params }: { params: PageProps<"/u/[id]">["params"] 
       <section className="mt-10">
         <Kicker>Posts</Kicker>
         <div className="mt-4 flex flex-col gap-4">
-          {posts.map((post, i) => <PostCard key={post.id} post={post} liked={liked.has(post.id)} index={i} />)}
+          {posts.map((post, i) => <PostCard key={post.id} post={post} liked={liked.has(post.id)} own={own} index={i} />)}
           {!posts.length && <EmptyState title={own ? "You haven't posted yet" : "No posts yet"} body={own ? "Share an update, a question or a result from the feed." : undefined} />}
         </div>
       </section>
