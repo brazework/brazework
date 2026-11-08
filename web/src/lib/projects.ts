@@ -104,3 +104,18 @@ export async function updateProfileBasics(_: ProjectState, form: FormData): Prom
   revalidatePath("/feed");
   return { ok: true, message: "Saved." };
 }
+
+// Profile photo or cover banner (supabase/media.sql). The path must be in your own folder; the
+// database checks it again. The old file is removed so replaced photos don't pile up.
+export async function setProfileMedia(kind: "avatar" | "cover", path: string): Promise<ProjectState> {
+  const { supabase, user, profile } = await getViewer();
+  if (!user) return { ok: false, message: "Log in again." };
+  if (path && !new RegExp(`^${user.id}/[A-Za-z0-9._-]+$`).test(path)) return { ok: false, message: "That file couldn't be used." };
+  const column = kind === "avatar" ? "avatar_path" : "cover_path";
+  const old = (kind === "avatar" ? profile?.avatar_path : profile?.cover_path) ?? "";
+  const { error } = await supabase.from("profiles").update({ [column]: path }).eq("id", user.id);
+  if (error) return { ok: false, message: error.code === "42703" ? "Photos aren't turned on yet." : friendlyError(error) };
+  if (old && old !== path) await supabase.storage.from("media").remove([old]).catch(() => {});
+  revalidatePath("/", "layout");
+  return { ok: true, message: "" };
+}

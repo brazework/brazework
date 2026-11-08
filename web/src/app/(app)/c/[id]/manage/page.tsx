@@ -9,6 +9,8 @@ import { PERMS, ROLE_LABEL, ROLES, can, rank, type Ban, type JoinRequest, type M
 import { timeAgo } from "@/lib/forge";
 import { RoleChip } from "../../../communities/_components/badge";
 import { loadCommunity } from "../data";
+import { dbFeatures } from "@/lib/db-features";
+import { ClubCoverUpload } from "./cover-upload";
 import { BanRow, MemberActions, RequestActions, SettingsForm } from "./manage-client";
 
 export const metadata: Metadata = { title: "Manage community" };
@@ -87,6 +89,7 @@ async function Manage({ params, searchParams }: { params: PageProps<"/c/[id]/man
           <Panel className="divide-y divide-line p-0">{((bans.data ?? []) as Ban[]).map((b) => <BanRow key={b.uid} cid={id} uid={b.uid} name={b.name} at={timeAgo(b.at)} />)}</Panel>
         ) : <EmptyState title="No one is banned" />)}
 
+        {tab === "settings" && (await dbFeatures()).media && <Panel className="mb-4 p-6"><ClubCoverUpload cid={id} path={c.cover_path} userId={user.id} /></Panel>}
         {tab === "settings" && <Panel className="p-6"><SettingsForm cid={id} about={c.about} rules={c.rules} privacy={c.privacy} words={(c.automod?.words ?? []).join("\n")} holdNewLinks={!!c.automod?.holdNewLinks} canAutomod={can(role, "automod")} /></Panel>}
 
         {tab === "roles" && (

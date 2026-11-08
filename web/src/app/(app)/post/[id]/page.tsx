@@ -8,6 +8,7 @@ import { EmptyState, Skeleton } from "@/components/app/page-ui";
 import { Avatar } from "@/components/ui";
 import { timeAgo, type Post } from "@/lib/forge";
 import { projectsForPosts } from "@/lib/project-posts";
+import { postSelect } from "@/lib/db-features";
 import { getViewer } from "@/lib/supabase/server";
 import { PostCard } from "../../feed/post-card";
 import { CommentForm, DeleteComment } from "./comments-client";
@@ -35,12 +36,12 @@ async function PostView({ params }: { params: PageProps<"/post/[id]">["params"] 
   if (!user) redirect("/login");
   const { data } = await supabase
     .from("posts")
-    .select("id, author_id, author_first, author_last, author_headline, body, kind, tags, like_count, comment_count, created_at, community_name, project_id")
+    .select(await postSelect())
     .eq("id", id)
     .maybeSingle();
   if (!data)
     return <EmptyState title="This post isn't available" body="It was deleted, or it's in a community you can't see." action={<Link href="/feed" className="text-sm underline underline-offset-4">Go to your feed</Link>} />;
-  const post = data as Post & { community_name: string | null };
+  const post = data as unknown as Post & { community_name: string | null };
 
   const [likes, saves, comments] = await Promise.all([
     supabase.from("likes").select("post_id").eq("post_id", id).eq("user_id", user.id),

@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useOptimistic, useState, useTransition } from "react";
 import { Avatar } from "@/components/ui";
 import { POST_KINDS, cn, timeAgo, type Post, type PostProject } from "@/lib/forge";
+import { MediaGrid } from "@/components/media/media-grid";
+import { avatarSrc } from "@/lib/media";
 import { deletePost, toggleSave } from "@/lib/posts";
 import { toggleLike } from "./actions";
 
@@ -35,7 +37,7 @@ export function PostCard({ post, liked, saved = false, own = false, index, proje
       className="rounded-3xl border border-line bg-surface/70 p-5 transition hover:border-line-strong"
     >
       <header className="flex items-center gap-3">
-        <Link href={`/u/${post.author_id}`} aria-hidden="true" tabIndex={-1}><Avatar first={post.author_first} last={post.author_last} size={40} /></Link>
+        <Link href={`/u/${post.author_id}`} aria-hidden="true" tabIndex={-1}><Avatar first={post.author_first} last={post.author_last} size={40} src={avatarSrc(post.author)} /></Link>
         <div className="min-w-0">
           <Link href={`/u/${post.author_id}`} className="text-[15px] font-medium hover:underline">{post.author_first} {post.author_last}</Link>
           <div className="truncate text-xs text-faint">
@@ -48,6 +50,7 @@ export function PostCard({ post, liked, saved = false, own = false, index, proje
       </header>
       {reason && <p className="mt-3 font-mono text-[11px] text-faint">{reason}</p>}
       <p className="mt-4 text-[15px] leading-relaxed whitespace-pre-wrap text-text-2">{post.body}</p>
+      {post.media && post.media.length > 0 && <MediaGrid media={post.media} alt={`Shared by ${post.author_first} ${post.author_last}`} />}
       {project && (
         <Link href={`/u/${post.author_id}#projects`} className="mt-4 flex items-center gap-3 rounded-2xl border border-line bg-surface-2 p-4 transition hover:border-line-strong">
           <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-raised text-muted"><FolderGit2 className="size-5" /></span>

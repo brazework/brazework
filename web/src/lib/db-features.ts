@@ -23,3 +23,8 @@ export async function eventCols(): Promise<string> {
 export async function eventWithHost(): Promise<string> {
   return (await dbFeatures()).clubEvents ? EVENT_WITH_HOST : EVENT_WITH_HOST_BASE;
 }
+
+// Posts: every column ("*" includes media once media.sql has run), plus the author's photo then.
+export async function postSelect(): Promise<string> {
+  return (await dbFeatures()).media ? "*, author:profiles!posts_author_id_fkey(avatar_path)" : "*";
+}

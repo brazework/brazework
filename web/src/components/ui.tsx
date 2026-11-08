@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/lib/forge";
 
@@ -32,7 +33,18 @@ export function Kicker({ children, className }: { children: React.ReactNode; cla
   return <div className={cn("font-mono text-[11px] uppercase tracking-[0.18em] text-faint", className)}>{children}</div>;
 }
 
-export function Avatar({ first, last, size = 40, className }: { first: string; last: string; size?: number; className?: string }) {
+export function Avatar({ first, last, size = 40, className, src }: { first: string; last: string; size?: number; className?: string; src?: string | null }) {
+  if (src)
+    return (
+      <Image
+        src={src}
+        alt=""
+        width={size}
+        height={size}
+        className={cn("shrink-0 rounded-full border border-line-strong bg-raised object-cover", className)}
+        style={{ width: size, height: size }}
+      />
+    );
   return (
     <span
       className={cn("inline-grid shrink-0 place-items-center rounded-full border border-line-strong bg-raised font-semibold text-text", className)}

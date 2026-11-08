@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 import { env } from "@/lib/env";
+import type { Profile } from "@/lib/forge";
 
 // Supabase client for Server Components, Server Actions and Route Handlers.
 // Row-level security in supabase/*.sql is still what protects the data.
@@ -28,11 +29,11 @@ export async function getViewer() {
   const { data } = await supabase.auth.getClaims();
   const claims = data?.claims;
   if (!claims?.sub) return { supabase, user: null, profile: null } as const;
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("id, first_name, last_name, account_type, headline, bio, field, interests, onboarded, created_at")
-    .eq("id", claims.sub)
-    .maybeSingle();
+  // Photo and cover paths exist once supabase/media.sql has run; before that, ask without them.
+  const base = "id, first_name, last_name, account_type, headline, bio, field, interests, onboarded, created_at";
+  let res = await supabase.from("profiles").select(`${base}, avatar_path, cover_path`).eq("id", claims.sub).maybeSingle();
+  if (res.error?.code === "42703") res = await supabase.from("profiles").select(base).eq("id", claims.sub).maybeSingle();
+  const profile = res.data as Profile | null;
   // "Confirm email" is on in Supabase, so a session only exists once the email is confirmed.
   const user = { id: claims.sub, email: (claims.email as string | undefined) ?? "" };
   return { supabase, user, profile } as const;

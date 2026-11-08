@@ -6,14 +6,16 @@ import { Avatar, Button } from "@/components/ui";
 import { POST_KINDS, cn } from "@/lib/forge";
 import { createPost, type ComposeState } from "./actions";
 import { submitWithoutReset } from "@/lib/submit";
+import { AttachButtons, AttachmentTray, useAttachments } from "@/components/media/attach";
 
-export function Composer({ first, last, interests }: { first: string; last: string; interests: string[] }) {
+export function Composer({ first, last, interests, userId, mediaEnabled = false, avatarSrc }: { first: string; last: string; interests: string[]; userId: string; mediaEnabled?: boolean; avatarSrc?: string | null }) {
   const [state, action, pending] = useActionState<ComposeState, FormData>(createPost, { ok: false, message: "", nonce: 0 });
   const [kind, setKind] = useState<string>("update");
   const [tags, setTags] = useState<string[]>([]);
   const [body, setBody] = useState("");
   const [open, setOpen] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
+  const att = useAttachments(userId);
 
   // Clear after a successful post (adjusting state during render, not in an effect).
   const [seenNonce, setSeenNonce] = useState(0);
@@ -22,6 +24,7 @@ export function Composer({ first, last, interests }: { first: string; last: stri
     setBody("");
     setTags([]);
     setOpen(false);
+    att.clear();
   }
 
   const toggleTag = (t: string) => setTags((cur) => (cur.includes(t) ? cur.filter((x) => x !== t) : cur.length < 3 ? [...cur, t] : cur));
@@ -30,8 +33,9 @@ export function Composer({ first, last, interests }: { first: string; last: stri
     <form ref={formRef} onSubmit={submitWithoutReset(action)} className="rounded-3xl border border-line bg-surface/70 p-4 transition focus-within:border-line-strong">
       <input type="hidden" name="kind" value={kind} />
       {tags.map((t) => <input key={t} type="hidden" name="tags" value={t} />)}
+      <input type="hidden" name="media" value={JSON.stringify(att.media)} />
       <div className="flex gap-3">
-        <Avatar first={first} last={last} size={40} />
+        <Avatar first={first} last={last} size={40} src={avatarSrc} />
         <textarea
           name="body"
           value={body}
@@ -47,6 +51,7 @@ export function Composer({ first, last, interests }: { first: string; last: stri
       <AnimatePresence initial={false}>
         {open && (
           <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
+            {mediaEnabled && <AttachmentTray slots={att.slots} onRemove={att.remove} />}
             <div className="mt-3 flex flex-wrap gap-1.5 border-t border-line pt-3">
               {POST_KINDS.map((k) => (
                 <button key={k.id} type="button" aria-pressed={kind === k.id} onClick={() => setKind(k.id)} className="rounded-full border border-line px-3 py-1 text-xs text-muted transition aria-pressed:border-accent aria-pressed:bg-accent/10 aria-pressed:text-accent">
@@ -65,10 +70,11 @@ export function Composer({ first, last, interests }: { first: string; last: stri
                 );
               })}
             </div>
-            <div className="mt-4 flex items-center gap-3">
-              {state.message && <p role="alert" className="text-sm text-danger">{state.message}</p>}
+            <div className="mt-4 flex flex-wrap items-center gap-3">
+              {mediaEnabled && <AttachButtons onPick={att.add} disabled={att.full} />}
+              {(att.error || state.message) && <p role="alert" className="text-sm text-danger">{att.error || state.message}</p>}
               <span className={cn("ml-auto font-mono text-[11px] tabular-nums", body.length > 2800 ? "text-danger" : "text-faint")}>{body.length}/3000</span>
-              <Button type="submit" disabled={pending || !body.trim()}>
+              <Button type="submit" disabled={pending || att.busy || !body.trim()}>
                 {pending && <Loader2 className="size-4 animate-spin" />} Post
               </Button>
             </div>

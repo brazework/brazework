@@ -6,15 +6,17 @@ import { Suspense } from "react";
 import { LiveRefresh } from "@/components/app/live-refresh";
 import { EmptyState, Panel, Skeleton, Tabs, chipCls } from "@/components/app/page-ui";
 import { Kicker } from "@/components/ui";
-import { POST_COLS, PRIVACY_LABEL, TYPE_LABEL, can, membersLabel, rank, type CommunityPost } from "@/lib/communities";
+import { PRIVACY_LABEL, TYPE_LABEL, can, membersLabel, rank, type CommunityPost } from "@/lib/communities";
 import { PostCard } from "../../feed/post-card";
 import { CommunityBadge, MetaLine, RoleChip } from "../../communities/_components/badge";
-import { dbFeatures, eventWithHost } from "@/lib/db-features";
 import { inLog, withHost, type HostedEvent } from "@/lib/events";
 import { requestTime } from "@/lib/forge";
 import { EventCard } from "../../events/event-card";
 import { EventEditor, EventRow } from "../../org/org-client";
 import { CommunityComposer, HeldActions, JoinButton, ModRemove } from "./community-client";
+import { dbFeatures, eventWithHost, postSelect } from "@/lib/db-features";
+import Image from "next/image";
+import { avatarSrc, mediaUrl } from "@/lib/media";
 import { loadCommunity } from "./data";
 
 export const metadata: Metadata = { title: "Community" };
@@ -41,10 +43,10 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
   const tab = sp.tab === "held" && isMod ? "held" : sp.tab === "about" ? "about" : sp.tab === "events" ? "events" : "posts";
 
   const [visible, held] = await Promise.all([
-    supabase.from("posts").select(POST_COLS).eq("community_id", id).eq("status", "visible").order("created_at", { ascending: false }).limit(60),
-    isMod ? supabase.from("posts").select(POST_COLS).eq("community_id", id).eq("status", "held").order("created_at", { ascending: false }).limit(100) : Promise.resolve({ data: [] }),
+    supabase.from("posts").select(await postSelect()).eq("community_id", id).eq("status", "visible").order("created_at", { ascending: false }).limit(60),
+    isMod ? supabase.from("posts").select(await postSelect()).eq("community_id", id).eq("status", "held").order("created_at", { ascending: false }).limit(100) : Promise.resolve({ data: [] }),
   ]);
-  const { clubEvents } = await dbFeatures();
+  const { clubEvents, media: mediaEnabled } = await dbFeatures();
   const { data: evRows } = clubEvents
     ? await supabase.from("events").select(await eventWithHost()).eq("community_id", id).order("starts_at", { ascending: true }).limit(100)
     : { data: [] };
@@ -58,8 +60,8 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
     : [{ data: [] }, { data: [] }];
   const goingSet = new Set((myRsvps.data ?? []).map((r: { event_id: string }) => r.event_id));
   const savedSet = new Set((mySaves.data ?? []).map((r: { event_id: string }) => r.event_id));
-  const posts = (visible.data ?? []) as CommunityPost[];
-  const heldPosts = (held.data ?? []) as CommunityPost[];
+  const posts = (visible.data ?? []) as unknown as CommunityPost[];
+  const heldPosts = (held.data ?? []) as unknown as CommunityPost[];
   const ids = posts.map((p) => p.id);
   const [likes, saves] = ids.length
     ? await Promise.all([supabase.from("likes").select("post_id").eq("user_id", user.id).in("post_id", ids), supabase.from("saved").select("post_id").eq("user_id", user.id).in("post_id", ids)])
@@ -69,7 +71,13 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
 
   return (
     <>
-      <Panel className="p-6">
+      <Panel className="overflow-hidden p-0">
+        {c.cover_path && (
+          <div className="relative h-36 border-b border-line sm:h-44">
+            <Image src={mediaUrl(c.cover_path)} alt="" fill sizes="(min-width: 768px) 768px, 100vw" className="object-cover" priority />
+          </div>
+        )}
+        <div className="p-6">
         <div className="flex flex-wrap items-start gap-4">
           <CommunityBadge id={c.id} name={c.name} size={64} />
           <div className="min-w-0 flex-1">
@@ -88,6 +96,7 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
         </div>
         <p className="mt-4 text-[15px] leading-relaxed text-text-2">{c.about}</p>
         {sp.created === "1" && <p className="mt-4 rounded-2xl border border-line bg-surface-2 px-4 py-3 text-sm">Your community is live. Invite your club: share this page&apos;s link.</p>}
+        </div>
       </Panel>
 
       <div className="mt-6">
@@ -102,7 +111,7 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
       <div className="mt-6 flex flex-col gap-4">
         {tab === "posts" && (
           <>
-            {me ? <CommunityComposer cid={c.id} first={profile.first_name} last={profile.last_name} interests={profile.interests ?? []} topics={c.topics ?? []} /> : (
+            {me ? <CommunityComposer cid={c.id} first={profile.first_name} last={profile.last_name} interests={profile.interests ?? []} topics={c.topics ?? []} userId={user.id} mediaEnabled={mediaEnabled} avatarSrc={avatarSrc(profile)} /> : (
               <p className="rounded-2xl border border-dashed border-line px-4 py-3 text-sm text-muted">{c.privacy === "public" ? "Join to post and comment." : "Members can post here. Ask to join to take part."}</p>
             )}
             {posts.map((p, i) => (

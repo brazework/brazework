@@ -2,6 +2,8 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { ALL_TOPICS, friendlyError } from "@/lib/forge";
+import { dbFeatures } from "@/lib/db-features";
+import { validMedia } from "@/lib/media";
 import { getViewer } from "@/lib/supabase/server";
 
 export type ComposeState = { ok: boolean; message: string; nonce: number };
@@ -18,7 +20,17 @@ export async function createPost(prev: ComposeState, form: FormData): Promise<Co
   if (!parsed.success) return { ok: false, message: parsed.error.issues[0]?.message ?? "Check your post.", nonce: prev.nonce };
   const { supabase, user } = await getViewer();
   if (!user) return { ok: false, message: "Log in again to post.", nonce: prev.nonce };
-  const { error } = await supabase.from("posts").insert(parsed.data);
+  // Photos/video (supabase/media.sql): only when the database has them, and only your own files.
+  let media: ReturnType<typeof validMedia> = [];
+  const rawMedia = String(form.get("media") ?? "[]");
+  if (rawMedia !== "[]") {
+    if (!(await dbFeatures()).media) return { ok: false, message: "Photos and video aren't turned on yet.", nonce: prev.nonce };
+    try { media = validMedia(JSON.parse(rawMedia), user.id); } catch { media = null; }
+    if (!media) return { ok: false, message: "Something's wrong with those attachments. Remove them and try again.", nonce: prev.nonce };
+  }
+  const row: Record<string, unknown> = { ...parsed.data };
+  if (media && media.length) row.media = media;
+  const { error } = await supabase.from("posts").insert(row);
   if (error) return { ok: false, message: friendlyError(error), nonce: prev.nonce };
   revalidatePath("/feed");
   return { ok: true, message: "", nonce: prev.nonce + 1 };

@@ -5,6 +5,8 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { EmptyState, PageHeader, Panel, Skeleton, Tabs } from "@/components/app/page-ui";
 import { COMMUNITY_COLS, PRIVACY_LABEL, TYPE_LABEL, membersLabel, type Community, type Role } from "@/lib/communities";
+import Image from "next/image";
+import { mediaUrl } from "@/lib/media";
 import { getViewer } from "@/lib/supabase/server";
 import { CommunityBadge, MetaLine, RoleChip } from "./_components/badge";
 import { CreateCommunity } from "./create-form";
@@ -42,7 +44,9 @@ async function Communities({ searchParams }: { searchParams: PageProps<"/communi
   discover.sort((a, b) => fit(b) - fit(a) || b.member_count - a.member_count);
 
   const card = (c: Community, role?: Role) => (
-    <Link key={c.id} href={`/c/${c.id}`} className="group flex gap-4 rounded-3xl border border-line bg-surface/70 p-5 transition hover:-translate-y-0.5 hover:border-line-strong">
+    <Link key={c.id} href={`/c/${c.id}`} className="group flex flex-col overflow-hidden rounded-3xl border border-line bg-surface/70 transition hover:-translate-y-0.5 hover:border-line-strong">
+      {c.cover_path && <div className="relative h-24 border-b border-line"><Image src={mediaUrl(c.cover_path)} alt="" fill sizes="(min-width: 640px) 440px, 100vw" className="object-cover" /></div>}
+      <div className="flex gap-4 p-5">
       <CommunityBadge id={c.id} name={c.name} />
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
@@ -51,6 +55,7 @@ async function Communities({ searchParams }: { searchParams: PageProps<"/communi
         </div>
         <MetaLine parts={[membersLabel(c.member_count), PRIVACY_LABEL[c.privacy], c.field, TYPE_LABEL[c.type]]} />
         <p className="mt-2 line-clamp-2 text-sm text-text-2">{c.about}</p>
+      </div>
       </div>
     </Link>
   );

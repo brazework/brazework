@@ -4,6 +4,8 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { ALL_TOPICS } from "@/lib/forge";
 import { COMMUNITY_FIELDS, LIMITS, autoModVerdict, can, cleanName, communityError, normalizeAutomod, parseWords, rank, type Role } from "@/lib/communities";
+import { dbFeatures } from "@/lib/db-features";
+import { validMedia } from "@/lib/media";
 import { getViewer } from "@/lib/supabase/server";
 
 export type Result = { ok: boolean; message: string };
@@ -132,7 +134,7 @@ export async function leaveCommunity(cidRaw: string): Promise<JoinResult> {
 /* ---------- Posting (with auto-moderation) ---------- */
 
 
-export async function postInCommunity(cidRaw: string, body: string, kind: string, tags: string[]): Promise<Result & { held?: boolean }> {
+export async function postInCommunity(cidRaw: string, body: string, kind: string, tags: string[], mediaRaw: unknown = []): Promise<Result & { held?: boolean }> {
   const cid = cidSchema.safeParse(cidRaw);
   const text = body.trim();
   if (!cid.success) return { ok: false, message: "That community doesn't exist." };
@@ -149,7 +151,13 @@ export async function postInCommunity(cidRaw: string, body: string, kind: string
   if (!me) return { ok: false, message: "Join this community to post." };
   // Same rules as the vanilla app: matching posts wait for a moderator.
   const verdict = autoModVerdict(c?.automod, me, text, Date.now());
-  const { error } = await supabase.from("posts").insert({ body: text, kind, tags: cleanTags, community_id: cid.data, status: verdict.status });
+  const row: Record<string, unknown> = { body: text, kind, tags: cleanTags, community_id: cid.data, status: verdict.status };
+  if (Array.isArray(mediaRaw) && mediaRaw.length) {
+    const media = validMedia(mediaRaw, user.id);
+    if (!media || !(await dbFeatures()).media) return { ok: false, message: "Something's wrong with those attachments. Remove them and try again." };
+    row.media = media;
+  }
+  const { error } = await supabase.from("posts").insert(row);
   if (error) return { ok: false, message: communityError(error) };
   revalidateCommunity(cid.data);
   revalidatePath("/feed");
@@ -260,4 +268,16 @@ export async function updateCommunitySettings(_prev: CreateState, form: FormData
   if (!data?.length) return denied;
   revalidateCommunity(cid);
   return { ok: true, message: "Saved." };
+}
+
+// Club cover (supabase/media.sql): uploaded by an admin into their own folder.
+export async function setCommunityCover(cid: string, path: string): Promise<Result> {
+  const { supabase, user, role } = await myRole(cid);
+  if (!user || !can(role, "editInfo")) return denied;
+  if (path && !new RegExp(`^${user.id}/[A-Za-z0-9._-]+$`).test(path)) return { ok: false, message: "That file couldn't be used." };
+  const { data, error } = await supabase.from("communities").update({ cover_path: path }).eq("id", cid).select("id");
+  if (error) return { ok: false, message: error.code === "42703" ? "Photos aren't turned on yet." : communityError(error) };
+  if (!data?.length) return denied;
+  revalidateCommunity(cid);
+  return { ok: true, message: path ? "Cover updated." : "Cover removed." };
 }

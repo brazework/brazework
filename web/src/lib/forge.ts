@@ -56,6 +56,8 @@ export type Profile = {
   interests: string[];
   onboarded: boolean;
   created_at: string;
+  avatar_path?: string;
+  cover_path?: string;
 };
 
 export type Post = {
@@ -71,6 +73,8 @@ export type Post = {
   comment_count: number;
   created_at: string;
   project_id?: string | null;
+  media?: { type: "image" | "video"; path: string; w?: number; h?: number }[];
+  author?: { avatar_path?: string } | null;
 };
 
 // The project card shown inside a project post (Ian's projectBlock() in public/js/projects.js).

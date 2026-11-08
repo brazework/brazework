@@ -48,7 +48,7 @@ export function SidebarSkeleton() {
   );
 }
 
-export function Sidebar({ first, last, headline, badges }: { first: string; last: string; headline: string; badges: Badges }) {
+export function Sidebar({ first, last, headline, badges, avatar }: { first: string; last: string; headline: string; badges: Badges; avatar?: string | null }) {
   const path = usePathname();
   return (
     <aside className="sticky top-0 hidden h-dvh w-60 shrink-0 flex-col py-8 md:flex">
@@ -79,7 +79,7 @@ export function Sidebar({ first, last, headline, badges }: { first: string; last
         <UpdatesButton />
       </nav>
       <div className="mt-auto flex items-center gap-3 rounded-2xl border border-line bg-surface/60 p-3">
-        <Link href="/profile" aria-label="Your profile"><Avatar first={first} last={last} size={36} /></Link>
+        <Link href="/profile" aria-label="Your profile"><Avatar first={first} last={last} size={36} src={avatar} /></Link>
         <div className="min-w-0 flex-1">
           <div className="truncate text-sm font-medium">{first} {last}</div>
           <div className="truncate text-xs text-faint">{headline}</div>
@@ -101,7 +101,7 @@ const TABS: { href: string; label: string; icon: typeof Home; match: string[]; b
   { href: "/notifications", label: "Alerts", icon: Bell, match: ["/notifications"], badge: "notifications" },
 ];
 
-export function MobileBar({ first, last, badges }: { first: string; last: string; badges: Badges }) {
+export function MobileBar({ first, last, badges, avatar }: { first: string; last: string; badges: Badges; avatar?: string | null }) {
   const path = usePathname();
   const [more, setMore] = useState(false);
   // Close the sheet when the page changes or Escape is pressed.
@@ -125,7 +125,7 @@ export function MobileBar({ first, last, badges }: { first: string; last: string
         <Link href="/feed" aria-label="Forge feed"><Logo /></Link>
         <div className="ml-auto flex items-center gap-1">
           <ThemeToggle />
-          <Link href="/profile" aria-label="Your profile" className="ml-1"><Avatar first={first} last={last} size={30} /></Link>
+          <Link href="/profile" aria-label="Your profile" className="ml-1"><Avatar first={first} last={last} size={30} src={avatar} /></Link>
         </div>
       </header>
 

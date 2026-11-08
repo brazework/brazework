@@ -22,6 +22,7 @@ export type Community = {
   member_count: number;
   automod: AutoMod | null;
   created_at: string;
+  cover_path?: string;
 };
 
 export type Member = {
@@ -47,7 +48,8 @@ export type Ban = { community_id: string; uid: string; name: string; banned_by: 
 
 export type CommunityPost = Post & { community_id: string | null; status: "visible" | "held" };
 
-export const COMMUNITY_COLS = "id, name, about, field, type, privacy, topics, rules, owner_id, owner_name, member_count, automod, created_at";
+// "*" so cover_path comes along once supabase/media.sql has run (communities are readable in full).
+export const COMMUNITY_COLS = "*";
 export const POST_COLS = "id, author_id, author_first, author_last, author_headline, body, kind, tags, like_count, comment_count, created_at, community_id, status";
 
 export const ROLES: Role[] = ["owner", "admin", "moderator", "helper", "member"];

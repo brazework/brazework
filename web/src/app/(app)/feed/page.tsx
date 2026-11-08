@@ -5,6 +5,8 @@ import { Suspense } from "react";
 import { EmptyState, Tabs } from "@/components/app/page-ui";
 import { type Post } from "@/lib/forge";
 import { projectsForPosts } from "@/lib/project-posts";
+import { dbFeatures, postSelect } from "@/lib/db-features";
+import { avatarSrc } from "@/lib/media";
 import { getViewer } from "@/lib/supabase/server";
 import { Composer } from "./composer";
 import { LiveRefresh } from "@/components/app/live-refresh";
@@ -20,7 +22,6 @@ const TABS = [
   { id: "communities", label: "Communities" },
 ] as const;
 type TabId = (typeof TABS)[number]["id"];
-const POST_COLS = "id, author_id, author_first, author_last, author_headline, body, kind, tags, like_count, comment_count, created_at, community_name, project_id";
 
 export default function FeedPage({ searchParams }: PageProps<"/feed">) {
   return (
@@ -52,7 +53,9 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
   let emptyTitle = "No posts yet";
   let emptyBody: React.ReactNode = "Be the first to share what you're building.";
   let emptyAction: React.ReactNode = null;
-  const base = () => supabase.from("posts").select(POST_COLS).order("created_at", { ascending: false });
+  const { media: mediaEnabled } = await dbFeatures();
+  const cols = await postSelect();
+  const base = () => supabase.from("posts").select(cols).order("created_at", { ascending: false });
 
   if (tab === "for-you") {
     // Ian's rule: only posts tagged with at least one of your interests, plus your own.
@@ -61,28 +64,28 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
       base().is("community_id", null).eq("author_id", user.id).limit(20),
     ]);
     const byId = new Map<string, Post>();
-    for (const p of [...((matching.data ?? []) as Post[]), ...((mine.data ?? []) as Post[])]) byId.set(p.id, p);
+    for (const p of [...((matching.data ?? []) as unknown as Post[]), ...((mine.data ?? []) as unknown as Post[])]) byId.set(p.id, p);
     const mineSet = new Set(interests);
     list = [...byId.values()].sort((a, b) => score(b, mineSet) - score(a, mineSet));
     emptyTitle = "Nothing matching your interests yet";
     emptyBody = interests.length ? "For you only shows posts tagged with topics you follow, so it stays focused." : "For you shows posts that match your interests. Add some to get started.";
     emptyAction = <Link href="/feed?tab=latest" className="text-sm underline underline-offset-4">See all posts in Latest</Link>;
   } else if (tab === "latest") {
-    list = ((await base().is("community_id", null).limit(60)).data ?? []) as Post[];
+    list = ((await base().is("community_id", null).limit(60)).data ?? []) as unknown as Post[];
   } else if (tab === "following") {
     const [fg, cn] = await Promise.all([
       supabase.from("follows").select("target").eq("follower", user.id).limit(500),
       supabase.from("connections").select("users").contains("users", [user.id]).eq("status", "accepted").limit(500),
     ]);
     const ids = new Set<string>([...(fg.data ?? []).map((f) => f.target as string), ...(cn.data ?? []).flatMap((c) => (c.users as string[]).filter((u) => u !== user.id))]);
-    list = ids.size ? (((await base().is("community_id", null).in("author_id", [...ids]).limit(50)).data ?? []) as Post[]) : [];
+    list = ids.size ? (((await base().is("community_id", null).in("author_id", [...ids]).limit(50)).data ?? []) as unknown as Post[]) : [];
     emptyTitle = ids.size ? "Nothing new from people you follow" : "Your Following feed is empty";
     emptyBody = ids.size ? "The people you follow haven't posted recently." : "Follow people or connect with them, and their posts show up here.";
     emptyAction = <Link href="/network?tab=suggested" className="text-sm underline underline-offset-4">Find people</Link>;
   } else {
     const { data: joined } = await supabase.from("community_members").select("community_id").eq("uid", user.id).limit(200);
     const cids = (joined ?? []).map((j) => j.community_id as string);
-    list = cids.length ? (((await base().in("community_id", cids).eq("status", "visible").limit(60)).data ?? []) as Post[]) : [];
+    list = cids.length ? (((await base().in("community_id", cids).eq("status", "visible").limit(60)).data ?? []) as unknown as Post[]) : [];
     emptyTitle = cids.length ? "No posts in your communities yet" : "You haven't joined any communities";
     emptyBody = cids.length ? "Open one and start a conversation." : "Join communities and their latest posts show up here.";
     emptyAction = <Link href="/communities" className="text-sm underline underline-offset-4">Discover communities</Link>;
@@ -130,7 +133,7 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
           </div>
         </section>
       )}
-      <div data-tour="composer" className="mt-6"><Composer first={profile.first_name} last={profile.last_name} interests={interests} /></div>
+      <div data-tour="composer" className="mt-6"><Composer first={profile.first_name} last={profile.last_name} interests={interests} userId={user.id} mediaEnabled={mediaEnabled} avatarSrc={avatarSrc(profile)} /></div>
       {tag && (
         <div className="mt-4 flex items-center justify-between rounded-2xl border border-line bg-surface-2 px-4 py-2.5 text-sm">
           <span>Showing posts tagged <strong className="font-medium">#{tag}</strong></span>

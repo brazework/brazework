@@ -6,11 +6,13 @@ import { Suspense } from "react";
 import { EmptyState, Panel, Skeleton, chipCls } from "@/components/app/page-ui";
 import { ConnectButtons } from "@/components/network/connect-buttons";
 import { getNetworkCounts, getRelationship } from "@/components/network/queries";
-import { Avatar, Kicker } from "@/components/ui";
+import { Kicker } from "@/components/ui";
 import { type Post, type Profile } from "@/lib/forge";
 import { recordProfileView } from "@/lib/network";
+import { postSelect } from "@/lib/db-features";
 import { getViewer } from "@/lib/supabase/server";
 import { PostCard } from "../../feed/post-card";
+import { CoverBanner, ProfilePhoto } from "@/components/media/profile-media";
 import { EditBasics, ProjectCard, ProjectEditor, type ProjectView } from "./profile-client";
 
 export const metadata: Metadata = { title: "Profile" };
@@ -32,20 +34,21 @@ async function ProfileView({ params }: { params: PageProps<"/u/[id]">["params"] 
   if (!user) redirect("/login");
   const own = user.id === id;
 
-  const { data: profileRow } = await supabase
-    .from("profiles")
-    .select("id, first_name, last_name, account_type, headline, bio, field, interests, onboarded, created_at")
-    .eq("id", id)
-    .maybeSingle();
+  // Photo and cover paths exist once supabase/media.sql has run.
+  const base = "id, first_name, last_name, account_type, headline, bio, field, interests, onboarded, created_at";
+  let pr = await supabase.from("profiles").select(`${base}, avatar_path, cover_path`).eq("id", id).maybeSingle();
+  if (pr.error?.code === "42703") pr = await supabase.from("profiles").select(base).eq("id", id).maybeSingle();
+  const profileRow = pr.data;
+  const mediaOn = !pr.error && pr.data ? "avatar_path" in pr.data : false;
   if (!profileRow) notFound();
-  const p = profileRow as Profile;
+  const p = profileRow as unknown as Profile;
 
   const [rel, counts, postsRes, projectsRes] = await Promise.all([
     own ? Promise.resolve(null) : getRelationship(id),
     getNetworkCounts(id),
     supabase
       .from("posts")
-      .select("id, author_id, author_first, author_last, author_headline, body, kind, tags, like_count, comment_count, created_at, project_id")
+      .select(await postSelect())
       .eq("author_id", id)
       .is("community_id", null)
       .order("created_at", { ascending: false })
@@ -54,7 +57,7 @@ async function ProfileView({ params }: { params: PageProps<"/u/[id]">["params"] 
   ]);
   if (!own) await recordProfileView(id);
 
-  const posts = (postsRes.data ?? []) as Post[];
+  const posts = (postsRes.data ?? []) as unknown as Post[];
   const projectRows = (projectsRes.data ?? []) as Omit<ProjectView, "details" | "link">[];
   const [likesRes, detailsRes] = await Promise.all([
     posts.length ? supabase.from("likes").select("post_id").eq("user_id", user.id).in("post_id", posts.map((x) => x.id)) : Promise.resolve({ data: [] }),
@@ -80,10 +83,10 @@ async function ProfileView({ params }: { params: PageProps<"/u/[id]">["params"] 
   return (
     <>
       <Panel className="relative overflow-hidden p-0">
-        <div className="bg-blueprint h-28 border-b border-line" />
+        <CoverBanner path={p.cover_path} editable={own && mediaOn} userId={user.id} />
         <div className="px-6 pb-6">
-          <div className="-mt-10 flex flex-wrap items-end justify-between gap-4">
-            <Avatar first={p.first_name} last={p.last_name} size={84} className="border-4 border-surface text-2xl" />
+          <div className="-mt-10 flex flex-wrap items-end relative z-10 justify-between gap-4">
+            <ProfilePhoto path={p.avatar_path} first={p.first_name} last={p.last_name} editable={own && mediaOn} userId={user.id} />
             {own ? (
               <Link href="/analytics" data-tour="analytics" className="inline-flex h-9 items-center gap-1.5 rounded-full border border-line px-4 text-sm transition hover:bg-hover">
                 <BarChart3 className="size-4" /> Analytics

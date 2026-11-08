@@ -3,6 +3,7 @@ import { Check, Hash, Loader2, Trash2, X } from "lucide-react";
 import { useState, useTransition } from "react";
 import { Avatar, Button } from "@/components/ui";
 import { POST_KINDS, cn } from "@/lib/forge";
+import { AttachButtons, AttachmentTray, useAttachments } from "@/components/media/attach";
 import { approvePost, joinCommunity, leaveCommunity, postInCommunity, removeCommunityPost, withdrawRequest } from "../../communities/actions";
 
 export function JoinButton({ cid, privacy, state, isOwner }: { cid: string; privacy: "public" | "approval"; state: "member" | "requested" | "none"; isOwner: boolean }) {
@@ -24,7 +25,8 @@ export function JoinButton({ cid, privacy, state, isOwner }: { cid: string; priv
   );
 }
 
-export function CommunityComposer({ cid, first, last, interests, topics }: { cid: string; first: string; last: string; interests: string[]; topics: string[] }) {
+export function CommunityComposer({ cid, first, last, interests, topics, userId, mediaEnabled = false, avatarSrc }: { cid: string; first: string; last: string; interests: string[]; topics: string[]; userId: string; mediaEnabled?: boolean; avatarSrc?: string | null }) {
+  const att = useAttachments(userId);
   const [body, setBody] = useState("");
   const [kind, setKind] = useState("update");
   const [tags, setTags] = useState<string[]>([]);
@@ -37,18 +39,19 @@ export function CommunityComposer({ cid, first, last, interests, topics }: { cid
       onSubmit={(e) => {
         e.preventDefault();
         start(async () => {
-          const r = await postInCommunity(cid, body, kind, tags);
-          if (r.ok) { setBody(""); setTags([]); setNote(r.message ? { text: r.message, error: false } : null); }
+          const r = await postInCommunity(cid, body, kind, tags, att.media);
+          if (r.ok) { setBody(""); setTags([]); att.clear(); setNote(r.message ? { text: r.message, error: false } : null); }
           else setNote({ text: r.message, error: true });
         });
       }}
       className="rounded-3xl border border-line bg-surface/70 p-4"
     >
       <div className="flex gap-3">
-        <Avatar first={first} last={last} size={40} />
+        <Avatar first={first} last={last} size={40} src={avatarSrc} />
         <label htmlFor="c-body" className="sr-only">Post to this community</label>
         <textarea id="c-body" value={body} onChange={(e) => setBody(e.target.value)} maxLength={3000} rows={body ? 4 : 2} placeholder="Share with the community" className="flex-1 resize-none bg-transparent py-2 text-[15px] leading-relaxed outline-none placeholder:text-faint" />
       </div>
+      {mediaEnabled && <AttachmentTray slots={att.slots} onRemove={att.remove} />}
       <div className="mt-3 flex flex-wrap gap-1.5 border-t border-line pt-3">
         {POST_KINDS.map((k) => <button key={k.id} type="button" aria-pressed={kind === k.id} onClick={() => setKind(k.id)} className="rounded-full border border-line px-3 py-1 text-xs text-muted transition aria-pressed:border-accent aria-pressed:bg-accent aria-pressed:text-on-accent">{k.label}</button>)}
       </div>
@@ -58,9 +61,10 @@ export function CommunityComposer({ cid, first, last, interests, topics }: { cid
           {options.slice(0, 12).map((t) => <button key={t} type="button" aria-pressed={tags.includes(t)} disabled={!tags.includes(t) && tags.length >= 3} onClick={() => toggle(t)} className={cn("inline-flex items-center gap-1 rounded-md border px-2 py-0.5 font-mono text-[11px] transition disabled:opacity-40", tags.includes(t) ? "border-text text-text" : "border-line text-muted")}>{t}{tags.includes(t) && <X className="size-3" />}</button>)}
         </div>
       )}
-      <div className="mt-4 flex items-center gap-3">
-        {note && <p role={note.error ? "alert" : "status"} className={cn("text-sm", note.error ? "text-danger" : "text-muted")}>{note.text}</p>}
-        <Button type="submit" className="ml-auto" disabled={pending || !body.trim()}>{pending && <Loader2 className="size-4 animate-spin" />} Post</Button>
+      <div className="mt-4 flex flex-wrap items-center gap-3">
+        {mediaEnabled && <AttachButtons onPick={att.add} disabled={att.full} />}
+        {(att.error || note) && <p role={att.error || note?.error ? "alert" : "status"} className={cn("text-sm", att.error || note?.error ? "text-danger" : "text-muted")}>{att.error || note?.text}</p>}
+        <Button type="submit" className="ml-auto" disabled={pending || att.busy || !body.trim()}>{pending && <Loader2 className="size-4 animate-spin" />} Post</Button>
       </div>
     </form>
   );

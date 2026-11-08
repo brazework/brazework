@@ -6,6 +6,7 @@ import { Suspense } from "react";
 import { EmptyState, PageHeader, Skeleton } from "@/components/app/page-ui";
 import { type Post } from "@/lib/forge";
 import { projectsForPosts } from "@/lib/project-posts";
+import { postSelect } from "@/lib/db-features";
 import { getViewer } from "@/lib/supabase/server";
 import { PostCard } from "../feed/post-card";
 
@@ -26,7 +27,7 @@ async function Saved() {
   if (!user) redirect("/login");
   const { data } = await supabase
     .from("saved")
-    .select("saved_at, posts(id, author_id, author_first, author_last, author_headline, body, kind, tags, like_count, comment_count, created_at, community_name, project_id)")
+    .select(`saved_at, posts(${await postSelect()})`)
     .eq("user_id", user.id)
     .order("saved_at", { ascending: false })
     .limit(100);
