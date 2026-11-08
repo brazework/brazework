@@ -195,3 +195,21 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .dark-only { display: block; } :root:not([data-theme="light"]) .light-only { display: none; } }
 :root[data-theme="dark"] .dark-only { display: block; }
 :root[data-theme="dark"] .light-only { display: none; }
+
+/* Accent themes (Settings → Appearance). Mono is the default: the accent is the ink colour.
+   Each accent has its own light and dark values, picked for contrast on that theme's surfaces. */
+:root[data-accent="blue"] { --accent: #2563eb; --on-accent: #ffffff; --glow: rgba(37, 99, 235, 0.12); --spark: 37, 99, 235; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"])[data-accent="blue"] { --accent: #60a5fa; --on-accent: #09090b; --glow: rgba(96, 165, 250, 0.14); --spark: 96, 165, 250; } }
+:root[data-theme="dark"][data-accent="blue"] { --accent: #60a5fa; --on-accent: #09090b; --glow: rgba(96, 165, 250, 0.14); --spark: 96, 165, 250; }
+:root[data-accent="violet"] { --accent: #7c3aed; --on-accent: #ffffff; --glow: rgba(124, 58, 237, 0.12); --spark: 124, 58, 237; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"])[data-accent="violet"] { --accent: #a78bfa; --on-accent: #09090b; --glow: rgba(167, 139, 250, 0.14); --spark: 167, 139, 250; } }
+:root[data-theme="dark"][data-accent="violet"] { --accent: #a78bfa; --on-accent: #09090b; --glow: rgba(167, 139, 250, 0.14); --spark: 167, 139, 250; }
+:root[data-accent="emerald"] { --accent: #047857; --on-accent: #ffffff; --glow: rgba(4, 120, 87, 0.12); --spark: 4, 120, 87; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"])[data-accent="emerald"] { --accent: #34d399; --on-accent: #09090b; --glow: rgba(52, 211, 153, 0.14); --spark: 52, 211, 153; } }
+:root[data-theme="dark"][data-accent="emerald"] { --accent: #34d399; --on-accent: #09090b; --glow: rgba(52, 211, 153, 0.14); --spark: 52, 211, 153; }
+:root[data-accent="amber"] { --accent: #b45309; --on-accent: #ffffff; --glow: rgba(180, 83, 9, 0.12); --spark: 180, 83, 9; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"])[data-accent="amber"] { --accent: #fbbf24; --on-accent: #09090b; --glow: rgba(251, 191, 36, 0.14); --spark: 251, 191, 36; } }
+:root[data-theme="dark"][data-accent="amber"] { --accent: #fbbf24; --on-accent: #09090b; --glow: rgba(251, 191, 36, 0.14); --spark: 251, 191, 36; }
+:root[data-accent="rose"] { --accent: #e11d48; --on-accent: #ffffff; --glow: rgba(225, 29, 72, 0.12); --spark: 225, 29, 72; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"])[data-accent="rose"] { --accent: #fb7185; --on-accent: #09090b; --glow: rgba(251, 113, 133, 0.14); --spark: 251, 113, 133; } }
+:root[data-theme="dark"][data-accent="rose"] { --accent: #fb7185; --on-accent: #09090b; --glow: rgba(251, 113, 133, 0.14); --spark: 251, 113, 133; }

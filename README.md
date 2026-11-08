@@ -33,7 +33,7 @@ The research, with sources, is in [docs/positioning.md](docs/positioning.md).
 | **Events** | Career fairs, talks and build nights from verified organizations and clubs. RSVP, save, add to calendar |
 | **Organizations** | Companies and schools verified by the domain of the email they signed up with |
 | **Notifications & analytics** | Likes, comments, follows and requests, plus private profile analytics. Viewer breakdowns only appear once 3 or more different people have viewed you |
-| **Everywhere** | Light and dark mode, a guided tour for new members, What's new notes, and full use on a phone |
+| **Everywhere** | Light and dark mode with six accent colours, a guided tour for new members, What's new notes, and full use on a phone |
 
 Students verify with a university email. Members must be 18 or older. Everything that matters is enforced by the database's row-level security, not just the app.
 
@@ -54,7 +54,7 @@ docs/positioning.md   Market research and positioning, with sources
 docs/next-migration.md  Moving production to web/
 docs/data-model.md    Every table, who can do what, and known limits
 SETUP.md              Putting Forge online with Vercel and Supabase
-.github/workflows/    CI: the web app builds and passes checks, and every SQL file applies in order
+.github/workflows/    CI: the web app builds and passes checks, every SQL file applies in order, and main redeploys the preview
 ```
 
 ## Run it locally
@@ -70,7 +70,7 @@ Add `http://localhost:3000/auth/callback` to Supabase → Authentication → URL
 
 ## Database
 
-Run these in the Supabase SQL Editor, in this order: `schema.sql`, `messages.sql`, `events.sql`, `activity.sql`, `projects.sql`, `tours.sql`, `club-events.sql`. CI applies all of them to a fresh database on every pull request, so a broken migration fails there and not in production. What each table holds and who can touch it: [docs/data-model.md](docs/data-model.md).
+Run these in the Supabase SQL Editor, in this order: `schema.sql`, `messages.sql`, `events.sql`, `activity.sql`, `projects.sql`, `tours.sql`, `club-events.sql`, `media.sql`. CI applies all of them to a fresh database on every pull request, so a broken migration fails there and not in production. What each table holds and who can touch it: [docs/data-model.md](docs/data-model.md).
 
 ## How we work
 

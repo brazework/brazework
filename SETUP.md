@@ -21,7 +21,7 @@ Forge's code lives on GitHub. Vercel puts it online and redeploys automatically 
 
 1. Open your Supabase project (Vercel's Storage tab has an **Open in Supabase** button).
 2. Go to **SQL Editor**, click **New query**, paste everything from `supabase/schema.sql`, and click **Run**. It should say "Success. No rows returned."
-3. Do the same with `supabase/messages.sql`, then `supabase/events.sql`, then `supabase/activity.sql`, then `supabase/projects.sql`, then `supabase/tours.sql`, then `supabase/club-events.sql`.
+3. Do the same with `supabase/messages.sql`, then `supabase/events.sql`, then `supabase/activity.sql`, then `supabase/projects.sql`, then `supabase/tours.sql`, then `supabase/club-events.sql`, then `supabase/media.sql`.
 4. To post Forge's own events, open **Table Editor → organization_admins** and add a row with the `Forge` organization's id and your user id.
 
 > The anon key is safe to have in a website. What protects your data is row-level security in `supabase/schema.sql`.

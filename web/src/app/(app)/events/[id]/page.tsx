@@ -1,10 +1,11 @@
+import { eventWithHost } from "@/lib/db-features";
 import type { Metadata } from "next";
 import { ArrowLeft, BadgeCheck, ExternalLink, MapPin, Users } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { EmptyState, Panel, Skeleton } from "@/components/app/page-ui";
-import { EVENT_WITH_HOST, ORG_LABEL, pluralize, whereLabel, withHost, type HostedEvent } from "@/lib/events";
+import { ORG_LABEL, pluralize, whereLabel, withHost, type HostedEvent } from "@/lib/events";
 import { requestTime } from "@/lib/forge";
 import { getViewer } from "@/lib/supabase/server";
 import { CalendarButton } from "../event-controls";
@@ -28,9 +29,9 @@ async function EventView({ params }: { params: PageProps<"/events/[id]">["params
   const { id } = await params;
   const { supabase, user } = await getViewer();
   if (!user) redirect("/login");
-  const { data } = await supabase.from("events").select(EVENT_WITH_HOST).eq("id", id).maybeSingle();
+  const { data } = await supabase.from("events").select(await eventWithHost()).eq("id", id).maybeSingle();
   if (!data) return <EmptyState title="This event isn't available" body="It may have ended more than a day ago, or been removed." />;
-  const e = withHost(data as Parameters<typeof withHost>[0]) as HostedEvent;
+  const e = withHost(data as unknown as Parameters<typeof withHost>[0]) as HostedEvent;
   const [g, s] = await Promise.all([
     supabase.from("event_rsvps").select("event_id").eq("event_id", id).eq("user_id", user.id),
     supabase.from("event_saves").select("event_id").eq("event_id", id).eq("user_id", user.id),

@@ -27,7 +27,7 @@ export const viewport: Viewport = {
 };
 
 // Runs before first paint so a saved theme never flashes the other one.
-const themeScript = `try{var t=localStorage.getItem("forge-theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}`;
+const themeScript = `try{var d=document.documentElement,t=localStorage.getItem("forge-theme"),a=localStorage.getItem("forge-accent");if(t==="light"||t==="dark")d.dataset.theme=t;if(a&&/^(blue|violet|emerald|amber|rose)$/.test(a))d.dataset.accent=a}catch(e){}`;
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (

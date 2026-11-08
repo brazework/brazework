@@ -9,7 +9,8 @@ import { Kicker } from "@/components/ui";
 import { POST_COLS, PRIVACY_LABEL, TYPE_LABEL, can, membersLabel, rank, type CommunityPost } from "@/lib/communities";
 import { PostCard } from "../../feed/post-card";
 import { CommunityBadge, MetaLine, RoleChip } from "../../communities/_components/badge";
-import { EVENT_WITH_HOST, inLog, withHost, type HostedEvent } from "@/lib/events";
+import { dbFeatures, eventWithHost } from "@/lib/db-features";
+import { inLog, withHost, type HostedEvent } from "@/lib/events";
 import { requestTime } from "@/lib/forge";
 import { EventCard } from "../../events/event-card";
 import { EventEditor, EventRow } from "../../org/org-client";
@@ -43,9 +44,12 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
     supabase.from("posts").select(POST_COLS).eq("community_id", id).eq("status", "visible").order("created_at", { ascending: false }).limit(60),
     isMod ? supabase.from("posts").select(POST_COLS).eq("community_id", id).eq("status", "held").order("created_at", { ascending: false }).limit(100) : Promise.resolve({ data: [] }),
   ]);
-  const { data: evRows } = await supabase.from("events").select(EVENT_WITH_HOST).eq("community_id", id).order("starts_at", { ascending: true }).limit(100);
+  const { clubEvents } = await dbFeatures();
+  const { data: evRows } = clubEvents
+    ? await supabase.from("events").select(await eventWithHost()).eq("community_id", id).order("starts_at", { ascending: true }).limit(100)
+    : { data: [] };
   const now = requestTime();
-  const events = ((evRows ?? []) as Parameters<typeof withHost>[0][]).map(withHost) as HostedEvent[];
+  const events = ((evRows ?? []) as unknown as Parameters<typeof withHost>[0][]).map(withHost) as HostedEvent[];
   const upcomingEvents = events.filter((e) => !inLog(e, now));
   const pastEvents = events.filter((e) => inLog(e, now)).reverse();
   const evIds = upcomingEvents.map((e) => e.id);
@@ -119,7 +123,10 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
           )) : <EmptyState title="Nothing waiting for review" body="Posts caught by auto-moderation wait here until a moderator publishes or removes them." />)}
         {tab === "events" && (
           <>
-            {canHost && (
+            {!clubEvents && (
+              <p className="rounded-3xl border border-dashed border-line p-4 text-sm text-muted">Club events turn on once the database update in <code className="font-mono text-xs">supabase/club-events.sql</code> is applied.</p>
+            )}
+            {canHost && clubEvents && (
               <div className="flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-line bg-surface-2 p-4">
                 <p className="text-sm text-text-2">Club events show up here and in everyone&apos;s Events page{c.privacy === "approval" ? " (members only, since this club approves who joins)" : ""}.</p>
                 <EventEditor communityId={c.id} />

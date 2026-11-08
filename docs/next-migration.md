@@ -40,7 +40,7 @@
 
 The Vercel project lives in Ian's account, so these are his three steps. Rolling back is one click (step 4).
 
-1. **Database:** Supabase → SQL Editor → paste all of `supabase/club-events.sql` → Run. It should say "Success. No rows returned." It only adds things: the live app keeps working before and after.
+1. **Database:** Supabase → SQL Editor → run `supabase/club-events.sql`, then `supabase/media.sql` (photos, video, profile and club covers; it also creates the `media` Storage bucket). It should say "Success. No rows returned." It only adds things: the live app keeps working before and after.
 2. **Vercel → Project → Settings → Build and Deployment:**
    - **Root Directory:** `web`
    - **Framework Preset:** Next.js (it detects this once the root is `web`)
@@ -56,3 +56,9 @@ The Vercel project lives in Ian's account, so these are his three steps. Rolling
 **Supabase redirect URLs:** if Authentication → URL Configuration already allows `https://<production domain>/**` (SETUP.md step 4), the new `/auth/callback` is covered. For local development, also add `http://localhost:3000/**`.
 
 **Old links keep working:** bookmarks like `/#/feed` and `/#/u/<id>` redirect to their new pages, and confirmation or reset emails sent by the old app are routed through the new sign-in callback.
+
+**The app adapts to the database.** Until `club-events.sql` and `media.sql` are run, the new app hides club events and photo/video features instead of failing (`web/src/lib/db-features.ts`). They switch on by themselves once the SQL runs; no redeploy needed.
+
+## Preview link (until production runs web/)
+
+`.github/workflows/preview-deploy.yml` redeploys https://forge-preview-eight.vercel.app on every push to `main` that touches `web/`. It needs three repo secrets (a repo admin adds them under Settings → Secrets and variables → Actions): `VERCEL_TOKEN` (from the preview project owner's Vercel account), `VERCEL_ORG_ID` and `VERCEL_PROJECT_ID` (both in `web/.vercel/project.json` on the owner's machine). Without them the workflow skips.

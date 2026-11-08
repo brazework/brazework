@@ -1,7 +1,8 @@
+import { eventWithHost } from "@/lib/db-features";
 import { CalendarDays, Plus, Users } from "lucide-react";
 import Link from "next/link";
 import { Kicker } from "@/components/ui";
-import { DROP_AFTER_MS, EVENT_WITH_HOST, dateParts, withHost, type HostedEvent } from "@/lib/events";
+import { DROP_AFTER_MS, dateParts, withHost, type HostedEvent } from "@/lib/events";
 import { requestTime } from "@/lib/forge";
 import { getViewer } from "@/lib/supabase/server";
 import { CommunityBadge } from "../communities/_components/badge";
@@ -14,14 +15,14 @@ export async function FeedRail() {
   const cutoff = new Date(requestTime() - DROP_AFTER_MS).toISOString();
   const [mine, ev, going] = await Promise.all([
     supabase.from("community_members").select("role, communities(id, name, member_count)").eq("uid", user.id).limit(6),
-    supabase.from("events").select(EVENT_WITH_HOST).eq("status", "published").gt("ends_at", cutoff).order("starts_at", { ascending: true }).limit(4),
+    supabase.from("events").select(await eventWithHost()).eq("status", "published").gt("ends_at", cutoff).order("starts_at", { ascending: true }).limit(4),
     supabase.from("event_rsvps").select("event_id").eq("user_id", user.id).limit(500),
   ]);
   type C = { id: string; name: string; member_count: number };
   const clubs = ((mine.data ?? []) as unknown as { communities: C | C[] | null }[])
     .flatMap((r) => (Array.isArray(r.communities) ? r.communities : r.communities ? [r.communities] : []))
     .slice(0, 5);
-  const events = ((ev.data ?? []) as Parameters<typeof withHost>[0][]).map(withHost) as HostedEvent[];
+  const events = ((ev.data ?? []) as unknown as Parameters<typeof withHost>[0][]).map(withHost) as HostedEvent[];
   const goingSet = new Set((going.data ?? []).map((g) => g.event_id as string));
 
   return (

@@ -71,17 +71,58 @@ function applyTheme(c: Choice) {
   } catch {}
 }
 
+// Accent colours. Mono = the ink colour (black in light mode, white in dark).
+const ACCENTS = [
+  { id: "mono", label: "Mono", swatch: "var(--text)" },
+  { id: "blue", label: "Blue", swatch: "#3b82f6" },
+  { id: "violet", label: "Violet", swatch: "#8b5cf6" },
+  { id: "emerald", label: "Emerald", swatch: "#10b981" },
+  { id: "amber", label: "Amber", swatch: "#f59e0b" },
+  { id: "rose", label: "Rose", swatch: "#f43f5e" },
+] as const;
+type Accent = (typeof ACCENTS)[number]["id"];
+const readAccent = (): Accent => (ACCENTS.find((a) => a.id === document.documentElement.dataset.accent)?.id ?? "mono");
+const subAccent = (cb: () => void) => {
+  const mo = new MutationObserver(cb);
+  mo.observe(document.documentElement, { attributes: true, attributeFilter: ["data-accent"] });
+  return () => mo.disconnect();
+};
+function applyAccent(a: Accent) {
+  const root = document.documentElement;
+  try {
+    if (a === "mono") { root.removeAttribute("data-accent"); localStorage.removeItem("forge-accent"); }
+    else { root.setAttribute("data-accent", a); localStorage.setItem("forge-accent", a); }
+  } catch {}
+}
+
 // Same storage as the header toggle: html[data-theme] + localStorage "forge-theme"; System clears both.
 export function AppearanceSettings() {
   const choice = useSyncExternalStore(sub, read, () => "system" as Choice);
+  const accent = useSyncExternalStore(subAccent, readAccent, () => "mono" as Accent);
   const opts: [Choice, string, typeof Sun][] = [["light", "Light", Sun], ["dark", "Dark", Moon], ["system", "System", Monitor]];
   return (
-    <div role="radiogroup" aria-label="Theme" className="grid grid-cols-3 gap-2">
-      {opts.map(([id, label, Icon]) => (
-        <button key={id} role="radio" aria-checked={choice === id} onClick={() => applyTheme(id)} className="flex flex-col items-center gap-2 rounded-2xl border border-line p-4 text-sm text-muted transition hover:text-text aria-checked:border-text aria-checked:text-text">
-          <Icon className="size-5" /> {label}
-        </button>
-      ))}
+    <div className="flex flex-col gap-6">
+      <div role="radiogroup" aria-label="Theme" className="grid grid-cols-3 gap-2">
+        {opts.map(([id, label, Icon]) => (
+          <button key={id} role="radio" aria-checked={choice === id} onClick={() => applyTheme(id)} className="flex flex-col items-center gap-2 rounded-2xl border border-line p-4 text-sm text-muted transition hover:text-text aria-checked:border-text aria-checked:text-text">
+            <Icon className="size-5" /> {label}
+          </button>
+        ))}
+      </div>
+      <div>
+        <div className="mb-3 text-sm font-medium text-text-2">Accent colour</div>
+        <div role="radiogroup" aria-label="Accent colour" className="grid grid-cols-3 gap-2 sm:grid-cols-6">
+          {ACCENTS.map((a) => (
+            <button key={a.id} role="radio" aria-checked={accent === a.id} onClick={() => applyAccent(a.id)} className="flex flex-col items-center gap-2 rounded-2xl border border-line p-3 text-xs text-muted transition hover:text-text aria-checked:border-text aria-checked:text-text">
+              <span className="grid size-7 place-items-center rounded-full ring-1 ring-line-strong" style={{ background: a.swatch }}>
+                {accent === a.id && <Check className="size-4 text-bg" />}
+              </span>
+              {a.label}
+            </button>
+          ))}
+        </div>
+        <p className="mt-3 text-xs text-faint">Buttons, highlights and the sparks on the home page follow your accent. Saved on this device.</p>
+      </div>
     </div>
   );
 }

@@ -56,7 +56,10 @@ export type Organization = {
 };
 
 export const EVENT_COLS = "id, org_id, community_id, title, description, type, format, location, link, topic, starts_at, ends_at, status, rsvp_count, created_at";
+export const EVENT_COLS_BASE = "id, org_id, title, description, type, format, location, link, topic, starts_at, ends_at, status, rsvp_count, created_at";
 export const EVENT_WITH_HOST = `${EVENT_COLS}, organizations(name, type), communities(name)`;
+// Before supabase/club-events.sql runs, events have no community_id (see lib/db-features.ts).
+export const EVENT_WITH_HOST_BASE = `${EVENT_COLS_BASE}, organizations(name, type)`;
 
 type One<T> = T | T[] | null;
 type WithOrg = ForgeEvent & { organizations?: One<{ name: string; type: OrgType }>; communities?: One<{ name: string }> };

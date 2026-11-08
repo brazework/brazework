@@ -1,3 +1,4 @@
+import { eventWithHost } from "@/lib/db-features";
 import type { Metadata } from "next";
 import { CalendarDays } from "lucide-react";
 import Link from "next/link";
@@ -5,7 +6,7 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { LiveRefresh } from "@/components/app/live-refresh";
 import { EmptyState, PageHeader, Skeleton, Tabs } from "@/components/app/page-ui";
-import { DROP_AFTER_MS, EVENT_WITH_HOST, withHost, type HostedEvent } from "@/lib/events";
+import { DROP_AFTER_MS, withHost, type HostedEvent } from "@/lib/events";
 import { requestTime } from "@/lib/forge";
 import { getViewer } from "@/lib/supabase/server";
 import { EventCard } from "./event-card";
@@ -32,12 +33,12 @@ async function Events({ searchParams }: { searchParams: PageProps<"/events">["se
   const cutoff = new Date(requestTime() - DROP_AFTER_MS).toISOString();
 
   const [ev, mine, saves, admin] = await Promise.all([
-    supabase.from("events").select(EVENT_WITH_HOST).eq("status", "published").gt("ends_at", cutoff).order("starts_at", { ascending: true }).limit(200),
+    supabase.from("events").select(await eventWithHost()).eq("status", "published").gt("ends_at", cutoff).order("starts_at", { ascending: true }).limit(200),
     supabase.from("event_rsvps").select("event_id").eq("user_id", user.id).limit(500),
     supabase.from("event_saves").select("event_id").eq("user_id", user.id).limit(500),
     supabase.from("organization_admins").select("org_id").eq("uid", user.id).limit(1),
   ]);
-  const all = ((ev.data ?? []) as Parameters<typeof withHost>[0][]).map(withHost) as HostedEvent[];
+  const all = ((ev.data ?? []) as unknown as Parameters<typeof withHost>[0][]).map(withHost) as HostedEvent[];
   const going = new Set((mine.data ?? []).map((r) => r.event_id as string));
   const saved = new Set((saves.data ?? []).map((r) => r.event_id as string));
   let list = tab === "going" ? all.filter((e) => going.has(e.id)) : tab === "saved" ? all.filter((e) => saved.has(e.id)) : all;

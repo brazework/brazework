@@ -38,7 +38,7 @@ export function SparkField({ className }: { className?: string }) {
     let sprites: HTMLCanvasElement[] = [];
     const paintSprites = () => {
       rgb = getComputedStyle(document.documentElement).getPropertyValue("--spark").trim() || "255, 255, 255";
-      dark = !rgb.startsWith("9,");
+      dark = getComputedStyle(document.documentElement).colorScheme.includes("dark");
       sprites = Array.from({ length: HEAT_STEPS }, (_, i) => {
         const heat = i / (HEAT_STEPS - 1);
         const c = document.createElement("canvas");
@@ -55,7 +55,7 @@ export function SparkField({ className }: { className?: string }) {
     };
     paintSprites();
     const themeObserver = new MutationObserver(() => { paintSprites(); if (reduce) frame(0); });
-    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
+    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme", "data-accent"] });
     const schemeQuery = window.matchMedia("(prefers-color-scheme: dark)");
     const onScheme = () => { paintSprites(); if (reduce) frame(0); };
     schemeQuery.addEventListener("change", onScheme);

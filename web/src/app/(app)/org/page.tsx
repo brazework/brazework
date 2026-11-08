@@ -1,10 +1,11 @@
+import { eventCols } from "@/lib/db-features";
 import type { Metadata } from "next";
 import { BadgeCheck } from "lucide-react";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { EmptyState, PageHeader, Panel, Skeleton } from "@/components/app/page-ui";
 import { Kicker } from "@/components/ui";
-import { EVENT_COLS, ORG_LABEL, inLog, type ForgeEvent, type Organization } from "@/lib/events";
+import { ORG_LABEL, inLog, type ForgeEvent, type Organization } from "@/lib/events";
 import { requestTime } from "@/lib/forge";
 import { getViewer } from "@/lib/supabase/server";
 import { EventEditor, EventRow, RegisterOrg } from "./org-client";
@@ -36,8 +37,8 @@ async function Org() {
       </>
     );
 
-  const { data } = await supabase.from("events").select(EVENT_COLS).eq("org_id", org.id).order("starts_at", { ascending: false }).limit(200);
-  const events = (data ?? []) as ForgeEvent[];
+  const { data } = await supabase.from("events").select(await eventCols()).eq("org_id", org.id).order("starts_at", { ascending: false }).limit(200);
+  const events = (data ?? []) as unknown as ForgeEvent[];
   const now = requestTime();
   const upcoming = events.filter((e) => !inLog(e, now)).reverse();
   const log = events.filter((e) => inLog(e, now));
