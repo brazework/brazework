@@ -94,3 +94,7 @@ export const TOPICS = [
 
 export const FIELDS: string[] = TOPICS.map((t) => t.name);
 export const ALL_TOPICS: string[] = TOPICS.flatMap((t) => [...t.topics]);
+
+// The time of the current server request. Server Components render once per request, so reading the
+// clock there is intended (the React Compiler lint can't tell a server render from a client re-render).
+export const requestTime = () => Date.now();
