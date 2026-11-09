@@ -9,6 +9,8 @@ import { dbFeatures, postSelect } from "@/lib/db-features";
 import { avatarSrc } from "@/lib/media";
 import { getViewer } from "@/lib/supabase/server";
 import { copilotEnabled } from "@/lib/copilot";
+import { loadGuide } from "@/lib/guide";
+import { FeedCopilot } from "@/components/copilot/feed-copilot";
 import { Composer } from "./composer";
 import { LiveRefresh } from "@/components/app/live-refresh";
 import { FeedHeader, TABS, type TabId } from "./header";
@@ -22,7 +24,7 @@ export const metadata: Metadata = { title: "Feed" };
 
 export default function FeedPage({ searchParams }: PageProps<"/feed">) {
   return (
-    <div className="mx-auto grid max-w-2xl gap-8 xl:max-w-6xl xl:grid-cols-[minmax(0,1fr)_300px] 2xl:max-w-7xl 2xl:grid-cols-[minmax(0,1fr)_340px]">
+    <div className="mx-auto grid max-w-2xl gap-8 xl:max-w-6xl xl:grid-cols-[minmax(0,1fr)_300px] 2xl:max-w-7xl 2xl:grid-cols-[minmax(0,1fr)_340px] min-[112.5rem]:max-w-[1520px] min-[112.5rem]:grid-cols-[minmax(0,1fr)_380px] min-[137.5rem]:max-w-[1840px] min-[137.5rem]:grid-cols-[minmax(0,1fr)_740px]">
       <LiveRefresh tables={["posts"]} />
       <div className="min-w-0">
         <Suspense fallback={<FeedSkeleton />}>
@@ -104,6 +106,10 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
     return m ? `${p.project_id ? "Project · " : ""}Matches your interest: ${m}` : "";
   };
   const discover = (tab === "for-you" || tab === "latest") && !tag;
+  // The Copilot hero: whether it's on, your next guide step, and a club you run (for its weekly update).
+  const [copilotOn, guide] = await Promise.all([copilotEnabled(), loadGuide()]);
+  const nextStep = guide?.member.find((s) => !s.done) ?? null;
+  const ledClub = guide?.clubs[0] ? { id: guide.clubs[0].id, name: guide.clubs[0].name } : null;
   const spotlight = <div className="py-2"><Suspense fallback={<StripSkeleton w={280} h={250} />}><SpotlightStrip /></Suspense></div>;
   const people = <div className="py-2"><Suspense fallback={<StripSkeleton w={200} h={250} />}><PeopleStrip field={profile.field} interests={interests} /></Suspense></div>;
   const [likes, saves] = ids.length
@@ -117,7 +123,7 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
 
   return (
     <>
-      <FeedHeader tab={tab} first={profile.first_name} />
+      <FeedHeader tab={tab} first={profile.first_name} hero={<FeedCopilot first={profile.first_name} copilot={copilotOn} next={nextStep} club={ledClub} />} />
       {interests.length > 0 && (
         <section data-tour="interests" aria-label="Your focus areas" className="mt-5">
           <div className="no-scrollbar -mx-1 flex items-center gap-1.5 overflow-x-auto px-1 pb-1">
@@ -130,7 +136,7 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
           </div>
         </section>
       )}
-      <div data-tour="composer" className="mt-6"><Composer first={profile.first_name} last={profile.last_name} interests={interests} userId={user.id} mediaEnabled={mediaEnabled} avatarSrc={avatarSrc(profile)} copilot={await copilotEnabled()} /></div>
+      <div id="composer" data-tour="composer" className="mt-6 scroll-mt-24"><Composer first={profile.first_name} last={profile.last_name} interests={interests} userId={user.id} mediaEnabled={mediaEnabled} avatarSrc={avatarSrc(profile)} copilot={copilotOn} /></div>
       {tag && (
         <div className="mt-4 flex items-center justify-between rounded-2xl border border-line bg-surface-2 px-4 py-2.5 text-sm">
           <span>Showing posts tagged <strong className="font-medium">#{tag}</strong></span>

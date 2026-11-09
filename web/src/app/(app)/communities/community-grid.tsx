@@ -50,7 +50,7 @@ export function CommunityGrid({ items, discover = false, initialQuery = "", empt
           )}
         </div>
       )}
-      <motion.div layout className="grid gap-4 sm:grid-cols-2">
+      <motion.div layout className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-3">
         <AnimatePresence mode="popLayout" initial={false}>
           {shown.map(({ c, role }, i) => (
             <motion.div key={c.id} layout initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }} transition={{ duration: 0.3, delay: Math.min(i, 8) * 0.03 }}>

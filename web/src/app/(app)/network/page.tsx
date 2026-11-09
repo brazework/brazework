@@ -18,7 +18,7 @@ type Tab = (typeof TAB_IDS)[number];
 
 export default function NetworkPage({ searchParams }: PageProps<"/network">) {
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className="mx-auto max-w-3xl xl:max-w-4xl">
       <LiveRefresh tables={["connections", "follows"]} />
       <Suspense fallback={<NetworkSkeleton />}>
         <Network searchParams={searchParams} />

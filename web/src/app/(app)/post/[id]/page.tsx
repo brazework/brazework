@@ -20,7 +20,7 @@ type Comment = { id: string; author_id: string; author_first: string; author_las
 // One post with its comments: /post/<id>. Notifications link here.
 export default function PostPage({ params }: PageProps<"/post/[id]">) {
   return (
-    <div className="mx-auto max-w-2xl">
+    <div className="mx-auto max-w-2xl xl:max-w-3xl">
       <LiveRefresh tables={["posts", "comments"]} />
       <Link href="/feed" className="mb-5 inline-flex items-center gap-1.5 text-sm text-muted hover:text-text"><ArrowLeft className="size-4" /> Feed</Link>
       <Suspense fallback={<><Skeleton className="h-56" /><Skeleton className="mt-4 h-40" /></>}>

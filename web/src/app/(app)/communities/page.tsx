@@ -14,7 +14,7 @@ export const metadata: Metadata = { title: "Communities" };
 
 export default function CommunitiesPage({ searchParams }: PageProps<"/communities">) {
   return (
-    <div className="mx-auto max-w-4xl">
+    <div className="mx-auto max-w-4xl 2xl:max-w-6xl">
       <Suspense fallback={<><PageHeader title="Communities" /><Skeleton className="mt-6 h-96" /></>}>
         <Communities searchParams={searchParams} />
       </Suspense>

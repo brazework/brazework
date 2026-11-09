@@ -76,7 +76,7 @@ export function Lookups({ tools, live }: { tools?: string[]; live: boolean }) {
   );
 }
 
-export function CopilotChat({ first, field }: { first: string; field: string }) {
+export function CopilotChat({ first, field, initial = "" }: { first: string; field: string; initial?: string }) {
   const { run, stop, busy, error, remaining } = useCopilot();
   const [msgs, setMsgs] = useState<Msg[]>([]);
   const [input, setInput] = useState("");
@@ -101,6 +101,15 @@ export function CopilotChat({ first, field }: { first: string; field: string }) 
     const out = await run({ task: "ask", input: q, history: history.map(({ role, content }) => ({ role, content })) }, (full, tools, proposals) => setMsgs((m) => [...m.slice(0, -1), { role: "assistant", content: full, tools, proposals }]));
     if (out === null) setMsgs((m) => (m.at(-1)?.content === "" ? m.slice(0, -2) : m));
   };
+  // Arrived from search with a question (/copilot?q=…): ask it once.
+  const asked = useRef(false);
+  useEffect(() => {
+    if (!initial || asked.current) return;
+    asked.current = true;
+    const t = setTimeout(() => void send(initial), 0);
+    return () => clearTimeout(t);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initial]);
 
   return (
     <div className="flex min-h-[calc(100dvh-10rem)] flex-col">

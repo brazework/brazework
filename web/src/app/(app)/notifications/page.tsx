@@ -19,7 +19,7 @@ type N = {
 
 export default function NotificationsPage() {
   return (
-    <div className="mx-auto max-w-2xl">
+    <div className="mx-auto max-w-2xl xl:max-w-3xl">
       <LiveRefresh tables={["notifications"]} />
       <Suspense fallback={<><PageHeader title="Notifications" /><Skeleton className="mt-6 h-96" /></>}>
         <Notifications />

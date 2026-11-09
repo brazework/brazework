@@ -14,13 +14,13 @@ import { MobileBar, SIDEBAR_COOKIE, Sidebar, SidebarSkeleton, type Badges } from
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="app-backdrop min-h-dvh">
-    <div className="mx-auto flex min-h-dvh max-w-[1600px] gap-6 px-4 sm:px-6 lg:gap-8">
+    <div className="flex min-h-dvh">
       <Suspense fallback={<SidebarSkeleton />}>
         <SignedInShell />
       </Suspense>
-      <main className="min-w-0 flex-1 pt-20 pb-28 md:py-8">
+      <main className="min-w-0 flex-1 px-4 pt-20 pb-28 sm:px-6 md:py-6 lg:px-8 2xl:px-12">
         {/* One search for people and communities, above every page. */}
-        <div className="mx-auto mb-6 max-w-3xl"><Suspense fallback={<div className="h-12 rounded-2xl border border-line bg-surface/60" aria-hidden="true" />}><GlobalSearch /></Suspense></div>
+        <div className="mx-auto mb-6 max-w-3xl xl:max-w-4xl"><Suspense fallback={<div className="h-12 rounded-2xl border border-line bg-surface/60" aria-hidden="true" />}><GlobalSearch /></Suspense></div>
         {children}
       </main>
       {/* The guide: next steps for you and your clubs, plus Copilot, from any page. */}

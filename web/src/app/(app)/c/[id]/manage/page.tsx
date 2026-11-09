@@ -26,7 +26,7 @@ export const metadata: Metadata = { title: "Manage community" };
 
 export default function ManagePage({ params, searchParams }: PageProps<"/c/[id]/manage">) {
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className="mx-auto max-w-3xl xl:max-w-5xl">
       <Suspense fallback={<Skeleton className="h-96" />}>
         <Manage params={params} searchParams={searchParams} />
       </Suspense>

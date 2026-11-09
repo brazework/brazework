@@ -14,7 +14,7 @@ export const metadata: Metadata = { title: "Your organization" };
 
 export default function OrgPage() {
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className="mx-auto max-w-3xl xl:max-w-5xl">
       <Suspense fallback={<><PageHeader title="Your organization" /><Skeleton className="mt-6 h-96" /></>}>
         <Org />
       </Suspense>

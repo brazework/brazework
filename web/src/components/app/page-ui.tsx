@@ -5,10 +5,10 @@ import { cn } from "@/lib/forge";
 
 export function PageHeader({ title, subtitle, actions }: { title: string; subtitle?: React.ReactNode; actions?: React.ReactNode }) {
   return (
-    <header className="relative flex flex-wrap items-end justify-between gap-4 overflow-hidden rounded-3xl border border-line bg-surface p-6 shadow-[var(--shadow)]">
+    <header className="relative flex flex-wrap items-end justify-between gap-4 overflow-hidden rounded-3xl border border-line bg-surface px-5 py-4 shadow-[var(--shadow)] sm:px-6 sm:py-5">
       <div className="bg-accent-grad pointer-events-none absolute -top-24 -right-16 size-64 rounded-full banner-glow blur-3xl" aria-hidden="true" />
       <div className="relative min-w-0">
-        <h1 className="text-grad text-3xl font-semibold tracking-tight">{title}</h1>
+        <h1 className="text-grad text-2xl font-semibold tracking-tight sm:text-[1.7rem]">{title}</h1>
         {subtitle && <p className="mt-1.5 max-w-xl text-sm text-muted">{subtitle}</p>}
       </div>
       {actions && <div className="relative flex items-center gap-2">{actions}</div>}

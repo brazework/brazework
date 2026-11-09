@@ -15,7 +15,7 @@ export const metadata: Metadata = { title: "Events" };
 
 export default function EventsPage({ searchParams }: PageProps<"/events">) {
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className="mx-auto max-w-3xl xl:max-w-5xl">
       <LiveRefresh tables={["events", "event_rsvps"]} />
       <Suspense fallback={<><PageHeader title="Events" /><Skeleton className="mt-6 h-96" /></>}>
         <Events searchParams={searchParams} />

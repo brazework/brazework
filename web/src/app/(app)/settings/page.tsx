@@ -10,7 +10,7 @@ export const metadata: Metadata = { title: "Settings" };
 
 export default function SettingsPage() {
   return (
-    <div className="mx-auto max-w-2xl">
+    <div className="mx-auto max-w-2xl xl:max-w-3xl">
       <PageHeader title="Settings" />
       <Suspense fallback={<Skeleton className="mt-6 h-[600px]" />}>
         <Settings />

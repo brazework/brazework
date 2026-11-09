@@ -39,12 +39,14 @@ function Count({ n, className }: { n: number; className?: string }) {
 
 export function SidebarSkeleton() {
   return (
-    <aside className="sticky top-0 hidden h-dvh w-60 shrink-0 flex-col py-8 md:flex" aria-busy="true">
-      <div className="px-3"><Logo /></div>
+    <aside className="sticky top-0 hidden h-dvh w-[264px] shrink-0 p-3 md:block" aria-busy="true">
+      <div className="glass-panel flex h-full flex-col rounded-3xl p-3">
+      <div className="px-2 pt-2"><Logo /></div>
       <div className="mt-10 flex flex-col gap-2">
         {NAV.map((n) => <div key={n.label} className="h-10 animate-pulse rounded-xl bg-surface/60" />)}
       </div>
       <div className="mt-auto h-16 animate-pulse rounded-2xl bg-surface/60" />
+      </div>
     </aside>
   );
 }
@@ -61,8 +63,9 @@ export function Sidebar({ first, last, headline, badges, avatar, initialCollapse
     document.cookie = `${SIDEBAR_COOKIE}=${next ? "collapsed" : "open"}; path=/; max-age=31536000; samesite=lax`;
   };
   return (
-    <aside aria-label="Sidebar" className={cn("sticky top-0 hidden h-dvh shrink-0 flex-col py-8 transition-[width] duration-300 ease-out motion-reduce:transition-none md:flex", collapsed ? "w-[60px]" : "w-60")}>
-      <div className={cn("flex items-center gap-1", collapsed ? "flex-col" : "justify-between pr-1 pl-3")}>
+    <aside aria-label="Sidebar" className={cn("sticky top-0 hidden h-dvh shrink-0 p-3 transition-[width] duration-300 ease-out motion-reduce:transition-none md:block", collapsed ? "w-[88px]" : "w-[264px]")}>
+      <div className="glass-panel flex h-full flex-col rounded-3xl px-2 py-4">
+      <div className={cn("flex items-center gap-1", collapsed ? "flex-col" : "justify-between pr-1 pl-2")}>
         <Link href="/feed" aria-label="Forge feed" className={cn(collapsed && "mb-2")}><Logo withWord={!collapsed} /></Link>
         <div className={cn("flex items-center gap-1", collapsed && "flex-col")}>
           <ThemeToggle />
@@ -91,10 +94,10 @@ export function Sidebar({ first, last, headline, badges, avatar, initialCollapse
               aria-current={active ? "page" : undefined}
               aria-label={count ? `${n.label}, ${count} new` : collapsed ? n.label : undefined}
               title={collapsed ? n.label : undefined}
-              className={cn("relative flex items-center gap-3 rounded-xl py-2.5 text-sm transition", collapsed ? "justify-center px-0" : "px-3", active ? "text-text" : "text-muted hover:bg-hover hover:text-text")}
+              className={cn("relative flex items-center gap-3 rounded-2xl py-2.5 text-sm transition", collapsed ? "justify-center px-0" : "px-3", active ? "font-medium text-text" : "text-muted hover:bg-hover/70 hover:text-text")}
             >
-              {active && <motion.span layoutId="nav-active" className="absolute inset-0 rounded-xl bg-raised shadow-[inset_3px_0_0_var(--accent)]" transition={{ type: "spring", stiffness: 400, damping: 34 }} />}
-              <n.icon className="relative size-[18px] shrink-0" />
+              {active && <motion.span layoutId="nav-active" className="nav-pill absolute inset-0 rounded-2xl" transition={{ type: "spring", stiffness: 400, damping: 34 }} />}
+              <n.icon className={cn("relative size-[18px] shrink-0 transition-colors", active && "text-accent")} />
               {!collapsed && <span className="relative">{n.label}</span>}
               <Count n={count} className={collapsed ? "absolute -top-0.5 right-1" : "relative ml-auto"} />
             </Link>
@@ -102,7 +105,7 @@ export function Sidebar({ first, last, headline, badges, avatar, initialCollapse
         })}
         <UpdatesButton collapsed={collapsed} />
       </nav>
-      <div className={cn("mt-auto flex items-center gap-3 rounded-2xl border border-line bg-surface/60", collapsed ? "flex-col p-1.5" : "p-3")}>
+      <div className={cn("mt-auto flex items-center gap-3 rounded-2xl bg-surface/50", collapsed ? "flex-col p-1.5" : "p-2.5")}>
         <Link href="/profile" aria-label="Your profile" title={collapsed ? `${first} ${last}` : undefined}><Avatar first={first} last={last} size={collapsed ? 32 : 36} src={avatar} /></Link>
         {!collapsed && (
           <div className="min-w-0 flex-1">
@@ -113,6 +116,7 @@ export function Sidebar({ first, last, headline, badges, avatar, initialCollapse
         <form action="/auth/signout" method="post">
           <button aria-label="Log out" className="grid size-8 place-items-center rounded-lg text-faint transition hover:bg-hover hover:text-text"><LogOut className="size-4" /></button>
         </form>
+      </div>
       </div>
     </aside>
   );

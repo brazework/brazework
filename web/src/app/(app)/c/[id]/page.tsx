@@ -26,7 +26,7 @@ export const metadata: Metadata = { title: "Community" };
 
 export default function CommunityPage({ params, searchParams }: PageProps<"/c/[id]">) {
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className="mx-auto max-w-3xl xl:max-w-4xl">
       <LiveRefresh tables={["posts", "community_members", "community_requests", "events"]} />
       <Suspense fallback={<><Skeleton className="h-56" /><Skeleton className="mt-6 h-72" /></>}>
         <Community params={params} searchParams={searchParams} />

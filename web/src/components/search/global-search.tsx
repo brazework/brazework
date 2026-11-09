@@ -1,6 +1,6 @@
 "use client";
 import { AnimatePresence, motion } from "motion/react";
-import { Check, Loader2, Search, UserPlus, Users, X } from "lucide-react";
+import { CalendarDays, Check, FolderGit2, Hash, Loader2, MessageSquare, Search, Sparkles, UserPlus, Users, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useId, useRef, useState, useTransition } from "react";
@@ -13,8 +13,8 @@ import { cn } from "@/lib/forge";
 import { respondToRequest, sendConnectionRequest } from "@/lib/network";
 import { searchForge, type CommunityHit, type PersonHit, type SearchResults } from "@/lib/search";
 
-// The search bar at the top of every signed-in page: people and communities as you type, with
-// Connect and Join right in the results. Enter (or "See all results") opens /search.
+// The search bar at the top of every signed-in page: people, communities, projects, events and posts
+// as you type, with Connect and Join right in the results, and a hand-off to Copilot for questions. Enter (or "See all results") opens /search.
 // Press "/" anywhere to jump to it.
 export function GlobalSearch() {
   const router = useRouter();
@@ -74,7 +74,13 @@ export function GlobalSearch() {
   const showPanel = open && query.length >= 2;
   // Only show answers for what is typed now; anything older reads as still searching.
   const cur = res && res.query === query ? res : null;
-  const nothing = cur && !cur.people.length && !cur.communities.length;
+  const nothing = cur && !cur.people.length && !cur.communities.length && !cur.projects.length && !cur.events.length && !cur.posts.length;
+  const askRow = cur && (
+    <Link data-result href={`/copilot?q=${encodeURIComponent(query)}`} className="flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm transition hover:bg-hover focus:bg-hover focus:outline-none">
+      <span className="bg-accent-grad grid size-9 shrink-0 place-items-center rounded-xl text-on-accent"><Sparkles className="size-4" /></span>
+      <span className="min-w-0"><span className="block truncate font-medium">Ask Copilot: &ldquo;{query}&rdquo;</span><span className="block text-xs text-faint">Answers with clubs, events and people from Forge</span></span>
+    </Link>
+  );
 
   return (
     <div ref={box} className="relative" onKeyDown={onKeyDown}>
@@ -85,7 +91,7 @@ export function GlobalSearch() {
         className="glass flex h-12 items-center gap-3 rounded-2xl border border-line px-4 shadow-[var(--shadow)] transition focus-within:border-line-strong"
       >
         {loading ? <Loader2 className="size-[18px] shrink-0 animate-spin text-faint" /> : <Search className="size-[18px] shrink-0 text-faint" />}
-        <label htmlFor="forge-search" className="sr-only">Search people and communities</label>
+        <label htmlFor="forge-search" className="sr-only">Search Forge</label>
         <input
           ref={input}
           id="forge-search"
@@ -94,7 +100,7 @@ export function GlobalSearch() {
           value={q}
           onChange={(e) => { setQ(e.target.value); setOpen(true); }}
           onFocus={() => setOpen(true)}
-          placeholder="Search people and communities"
+          placeholder="Search people, clubs, projects, events…"
           autoComplete="off"
           aria-controls={listId}
           className="min-w-0 flex-1 bg-transparent text-[15px] outline-none placeholder:text-faint [&::-webkit-search-cancel-button]:hidden"
@@ -117,10 +123,16 @@ export function GlobalSearch() {
             className="absolute inset-x-0 top-[calc(100%+8px)] z-50 max-h-[70dvh] overflow-y-auto rounded-3xl border border-line bg-surface p-2 shadow-[var(--shadow)]"
           >
             <p className="sr-only" aria-live="polite">
-              {cur ? `${cur.people.length} people and ${cur.communities.length} communities` : "Searching"}
+              {cur ? `${cur.people.length} people, ${cur.communities.length} communities, ${cur.projects.length} projects, ${cur.events.length} events, ${cur.posts.length} posts` : "Searching"}
             </p>
             {!cur && <div className="flex items-center gap-2 px-3 py-4 text-sm text-muted"><Loader2 className="size-4 animate-spin" /> Searching…</div>}
-            {nothing && <p className="px-3 py-4 text-sm text-muted">No people or communities match &ldquo;{query}&rdquo;. Try a name, a field or a club.</p>}
+            {cur?.question && askRow}
+            {cur && cur.topics.length > 0 && (
+              <div className="flex flex-wrap items-center gap-1.5 px-3 pt-2 pb-1">
+                {cur.topics.map((t) => <Link key={t} data-result href={`/feed?tab=latest&tag=${encodeURIComponent(t)}`} className="inline-flex items-center gap-1 rounded-full bg-surface-2 px-2.5 py-1 text-xs text-text-2 transition hover:bg-hover"><Hash className="size-3" /> {t}</Link>)}
+              </div>
+            )}
+            {nothing && <p className="px-3 py-4 text-sm text-muted">Nothing on Forge matches &ldquo;{query}&rdquo; yet. Try a name, a field, a club or a topic.</p>}
             {cur && cur.people.length > 0 && (
               <section aria-label="People">
                 <h3 className="px-3 pt-2 pb-1 font-mono text-[10px] tracking-wide text-faint uppercase">People</h3>
@@ -133,6 +145,40 @@ export function GlobalSearch() {
                 <ul>{cur.communities.map((c) => <CommunityResult key={c.community.id} hit={c} />)}</ul>
               </section>
             )}
+            {cur && cur.projects.length > 0 && (
+              <section aria-label="Projects">
+                <h3 className="px-3 pt-3 pb-1 font-mono text-[10px] tracking-wide text-faint uppercase">Projects</h3>
+                <ul>{cur.projects.map((x) => (
+                  <li key={x.id}><Link data-result href={`/u/${x.ownerId}#projects`} className="flex items-center gap-3 rounded-2xl px-3 py-2 transition hover:bg-hover focus:bg-hover focus:outline-none">
+                    <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-surface-2 text-muted"><FolderGit2 className="size-4" /></span>
+                    <span className="min-w-0"><span className="block truncate text-sm font-medium">{x.title}</span><span className="block truncate text-xs text-faint">{x.owner}{x.status === "completed" ? " · Completed" : " · In progress"}</span></span>
+                  </Link></li>
+                ))}</ul>
+              </section>
+            )}
+            {cur && cur.events.length > 0 && (
+              <section aria-label="Events">
+                <h3 className="px-3 pt-3 pb-1 font-mono text-[10px] tracking-wide text-faint uppercase">Events</h3>
+                <ul>{cur.events.map((x) => (
+                  <li key={x.id}><Link data-result href={`/events/${x.id}`} className="flex items-center gap-3 rounded-2xl px-3 py-2 transition hover:bg-hover focus:bg-hover focus:outline-none">
+                    <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-surface-2 text-muted"><CalendarDays className="size-4" /></span>
+                    <span className="min-w-0"><span className="block truncate text-sm font-medium">{x.title}</span><span className="block truncate text-xs text-faint">{new Date(x.starts_at).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })} · {x.type} · {x.format}</span></span>
+                  </Link></li>
+                ))}</ul>
+              </section>
+            )}
+            {cur && cur.posts.length > 0 && (
+              <section aria-label="Posts">
+                <h3 className="px-3 pt-3 pb-1 font-mono text-[10px] tracking-wide text-faint uppercase">Posts</h3>
+                <ul>{cur.posts.map((x) => (
+                  <li key={x.id}><Link data-result href={`/post/${x.id}`} className="flex items-center gap-3 rounded-2xl px-3 py-2 transition hover:bg-hover focus:bg-hover focus:outline-none">
+                    <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-surface-2 text-muted"><MessageSquare className="size-4" /></span>
+                    <span className="min-w-0"><span className="block truncate text-sm">{x.body}</span><span className="block truncate text-xs text-faint">{x.author}</span></span>
+                  </Link></li>
+                ))}</ul>
+              </section>
+            )}
+            {cur && !cur.question && askRow}
             {cur && !nothing && (
               <Link data-result href={`/search?q=${encodeURIComponent(query)}`} className="mt-1 flex items-center justify-center gap-2 rounded-2xl px-3 py-2.5 text-sm text-muted transition hover:bg-hover hover:text-text focus:bg-hover focus:outline-none">
                 <Search className="size-4" /> See all results for &ldquo;{query}&rdquo;

@@ -77,7 +77,7 @@ export function RailView({ steps, trending, news = [], hasInterests = false, clu
   const c = 2 * Math.PI * r;
 
   return (
-    <div className="sticky top-8 flex flex-col gap-4">
+    <div className="sticky top-8 flex flex-col gap-4 min-[137.5rem]:grid min-[137.5rem]:grid-cols-2 min-[137.5rem]:items-start">
       <UpdatesPanel />
       <section className={cn(box, "relative overflow-hidden")}>
         <div className="bg-accent-grad pointer-events-none absolute -top-16 -right-10 size-40 rounded-full banner-glow blur-2xl" aria-hidden="true" />

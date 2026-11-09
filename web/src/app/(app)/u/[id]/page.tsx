@@ -25,7 +25,7 @@ export const metadata: Metadata = { title: "Profile" };
 
 export default function ProfilePage({ params }: PageProps<"/u/[id]">) {
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className="mx-auto max-w-3xl xl:max-w-5xl">
       <Suspense fallback={<ProfileSkeleton />}>
         <ProfileView params={params} />
       </Suspense>

@@ -14,7 +14,7 @@ export const metadata: Metadata = { title: "Saved" };
 
 export default function SavedPage() {
   return (
-    <div className="mx-auto max-w-2xl">
+    <div className="mx-auto max-w-2xl xl:max-w-3xl">
       <Suspense fallback={<><PageHeader title="Saved" /><Skeleton className="mt-6 h-64" /></>}>
         <Saved />
       </Suspense>

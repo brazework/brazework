@@ -16,7 +16,7 @@ export const metadata: Metadata = { title: "Event" };
 
 export default function EventPage({ params }: PageProps<"/events/[id]">) {
   return (
-    <div className="mx-auto max-w-2xl">
+    <div className="mx-auto max-w-2xl xl:max-w-3xl">
       <Link href="/events" className="mb-5 inline-flex items-center gap-1.5 text-sm text-muted hover:text-text"><ArrowLeft className="size-4" /> Events</Link>
       <Suspense fallback={<Skeleton className="h-96" />}>
         <EventView params={params} />

@@ -150,7 +150,7 @@ export function ProjectGrid({ projects, own, interests, copilot = false, clubs }
           ))}
         </div>
       )}
-      <motion.div layout className="grid gap-4 sm:grid-cols-2">
+      <motion.div layout className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         <AnimatePresence mode="popLayout" initial={false}>
           {shown.map((pr) => (
             <motion.div key={pr.id} layout initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} transition={{ duration: 0.25 }}>

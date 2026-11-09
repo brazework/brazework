@@ -26,7 +26,7 @@ type Result = {
 
 export default function AnalyticsPage({ searchParams }: PageProps<"/analytics">) {
   return (
-    <div className="mx-auto max-w-3xl">
+    <div className="mx-auto max-w-3xl xl:max-w-5xl">
       <Suspense fallback={<><PageHeader title="Analytics" /><Skeleton className="mt-6 h-[520px]" /></>}>
         <Analytics searchParams={searchParams} />
       </Suspense>
