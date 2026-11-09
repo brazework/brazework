@@ -28,19 +28,19 @@ export function CoverBanner({ path, editable, userId }: { path?: string; editabl
   };
   return (
     <div className="group relative h-40 overflow-hidden border-b border-line sm:h-56">
-      {path ? <Image src={mediaUrl(path)} alt="" fill sizes="(min-width: 768px) 768px, 100vw" className="object-cover" priority /> : <div className="bg-accent-grad absolute inset-0 opacity-80" />}
+      {path ? <Image src={mediaUrl(path)} alt="" fill sizes="(min-width: 768px) 768px, 100vw" className="object-cover" priority /> : <div className="cover-empty absolute inset-0" />}
       {editable && (
         <>
           <input ref={input} type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) void pick(f); }} />
-          <div className="absolute right-3 bottom-3 flex gap-2 opacity-100 transition sm:opacity-0 sm:group-hover:opacity-100 sm:focus-within:opacity-100">
-            <button type="button" onClick={() => input.current?.click()} disabled={busy} className="inline-flex h-9 items-center gap-1.5 rounded-full bg-bg/80 px-3 text-xs font-medium text-text backdrop-blur hover:bg-bg">
+          <div className="absolute top-3 right-3 z-20 flex gap-2">
+            <button type="button" onClick={() => input.current?.click()} disabled={busy} className="inline-flex h-9 items-center gap-1.5 rounded-full bg-bg/75 px-3 text-xs font-medium text-text shadow-sm backdrop-blur transition hover:bg-bg active:scale-95">
               {busy ? <Loader2 className="size-4 animate-spin" /> : <ImagePlus className="size-4" />} {path ? "Change cover" : "Add a cover"}
             </button>
             {path && !busy && (
               <button type="button" aria-label="Remove cover" onClick={() => start(async () => { await setProfileMedia("cover", ""); })} className="grid size-9 place-items-center rounded-full bg-bg/80 text-text backdrop-blur hover:bg-bg"><Trash2 className="size-4" /></button>
             )}
           </div>
-          {error && <p role="alert" className="absolute bottom-3 left-3 rounded-full bg-bg/90 px-3 py-1 text-xs text-danger">{error}</p>}
+          {error && <p role="alert" className="absolute top-3 left-3 z-20 rounded-full bg-bg/90 px-3 py-1 text-xs text-danger">{error}</p>}
         </>
       )}
     </div>
@@ -66,7 +66,7 @@ export function ProfilePhoto({ path, first, last, editable, userId, size = 84 }:
     }
   };
   return (
-    <div className="relative">
+    <div className="relative inline-flex">
       <Avatar first={first} last={last} size={size} src={path ? mediaUrl(path) : null} className="border-4 border-surface text-3xl" />
       {editable && (
         <>

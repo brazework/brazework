@@ -69,7 +69,7 @@ export function Ember({ mood = "idle", size = 48, className, label }: { mood?: E
           <circle cx="32" cy="32" r={R} fill={u("base")} />
           <g clipPath={u("clip")}>
             {/* Plasma drifting inside. */}
-            <g filter={u("plasma")}>
+            <g filter={u("plasma")} style={{ opacity: "var(--ember-plasma, 1)" }}>
               <g className="ember-swirl-1"><ellipse cx="22" cy="40" rx="13" ry="9" fill="var(--ember-c)" opacity="0.95" /></g>
               <g className="ember-swirl-2"><ellipse cx="41" cy="24" rx="12" ry="8" fill="var(--ember-a)" /></g>
               <g className="ember-swirl-3"><ellipse cx="42" cy="42" rx="9" ry="6" fill="color-mix(in oklab, var(--ember-c) 50%, var(--ember-a))" opacity="0.9" /></g>
@@ -86,7 +86,7 @@ export function Ember({ mood = "idle", size = 48, className, label }: { mood?: E
             <ellipse cx="36" cy="47" rx="10" ry="4" fill="white" opacity="0.4" filter={u("caustic")} />
           </g>
           {/* Glass: edge glow, a highlight up top, and a fine rim. */}
-          <circle cx="32" cy="32" r={R} fill={u("fresnel")} />
+          <circle cx="32" cy="32" r={R} fill={u("fresnel")} style={{ opacity: "var(--ember-fresnel, 1)" }} />
           <ellipse cx="25" cy="19.5" rx="9" ry="4.6" transform="rotate(-28 25 19.5)" fill={u("spec")} opacity="0.85" />
           {!small && <ellipse cx="41.5" cy="46" rx="3.2" ry="1.3" transform="rotate(-35 41.5 46)" fill="white" opacity="0.35" />}
           <circle cx="32" cy="32" r={R - 0.3} fill="none" stroke="white" strokeOpacity="0.3" strokeWidth="0.6" />

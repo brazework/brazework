@@ -9,7 +9,7 @@ import { UpdatesPanel } from "@/components/tour/updates-panel";
 import { newsPool, pickNews, type NewsPick } from "@/lib/news";
 import { TrendingNews } from "./trending-news";
 
-const box = "rounded-3xl border border-line bg-surface p-4 shadow-[var(--shadow)]";
+const box = "glass-card rounded-3xl p-4";
 
 function Head({ icon: Icon, title, href }: { icon: typeof Users; title: string; href?: string }) {
   return (

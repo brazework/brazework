@@ -319,6 +319,24 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity
   border: 1px solid color-mix(in oklab, var(--text) 9%, transparent);
   box-shadow: inset 0 1px 0 var(--glass-hi), inset 0 0 0 1px color-mix(in oklab, white 4%, transparent), 0 24px 60px -30px rgba(0, 0, 0, 0.5);
 }
+/* Cards in the same glass as the sidebar: translucent, a bright top edge, a slightly firmer edge on hover. */
+@utility glass-card {
+  background: linear-gradient(180deg, color-mix(in oklab, var(--surface) 82%, transparent), color-mix(in oklab, var(--surface) 64%, transparent));
+  backdrop-filter: blur(20px) saturate(170%);
+  -webkit-backdrop-filter: blur(20px) saturate(170%);
+  border: 1px solid color-mix(in oklab, var(--text) 9%, transparent);
+  box-shadow: inset 0 1px 0 var(--glass-hi), var(--shadow);
+  &:hover, &:focus-within { border-color: color-mix(in oklab, var(--text) 17%, transparent); }
+}
+/* A profile with no cover yet: a faint engineering grid under a soft light, in the theme's own colours. */
+.cover-empty {
+  background:
+    radial-gradient(520px 220px at 18% 0%, color-mix(in oklab, var(--text) 12%, transparent), transparent 70%),
+    radial-gradient(420px 200px at 95% 110%, color-mix(in oklab, var(--accent) 14%, transparent), transparent 70%),
+    linear-gradient(color-mix(in oklab, var(--text) 7%, transparent) 1px, transparent 1px) 0 0 / 24px 24px,
+    linear-gradient(90deg, color-mix(in oklab, var(--text) 7%, transparent) 1px, transparent 1px) 0 0 / 24px 24px,
+    var(--surface-2);
+}
 /* How bright a glass edge catches the light: strong on light pages, a hint on dark ones. */
 :root { --glass-hi: rgba(255, 255, 255, 0.75); }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --glass-hi: rgba(255, 255, 255, 0.1); } }
@@ -344,9 +362,10 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity
 
 /* ---------- Ember, Forge's AI (components/ember/ember.tsx) ----------
    A glowing glass orb with light swirling inside. --ember-a is its bright tone, --ember-b its deep
-   tone, --ember-c the accent that swirls through it. In Mono it keeps warm ember colours (the one
-   spot of colour on a black-and-white page); the other skins tint it. */
-:root { --ember-a: #ffc94d; --ember-b: #ff5a2c; --ember-c: #ff3d7f; }
+   tone, --ember-c the accent that swirls through it. In Mono it's black glass with white light,
+   matching the black-and-white app; the other skins tint it. */
+:root { --ember-a: #ffffff; --ember-b: #18181b; --ember-c: #71717a; --ember-plasma: 0.5; --ember-fresnel: 0.55; }
+:root[data-skin] { --ember-plasma: 1; --ember-fresnel: 1; }
 :root[data-skin="fire"] { --ember-a: #ffd166; --ember-b: #ff4d4d; --ember-c: #ff3d7f; }
 :root[data-skin="blueprint"] { --ember-a: #a5d8ff; --ember-b: #2563eb; --ember-c: #8b5cf6; }
 :root[data-skin="aurora"] { --ember-a: #67e8f9; --ember-b: #c026d3; --ember-c: #818cf8; }

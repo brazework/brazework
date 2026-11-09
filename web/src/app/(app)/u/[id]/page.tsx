@@ -102,8 +102,8 @@ async function ProfileView({ params }: { params: PageProps<"/u/[id]">["params"] 
       <Panel className="relative overflow-hidden p-0">
         <CoverBanner path={p.cover_path} editable={own && mediaOn} userId={user.id} />
         <div className="px-6 pb-6">
-          <div className="relative z-10 -mt-14 flex flex-wrap items-end justify-between gap-4">
-            <div className="rounded-full bg-accent-grad p-1 shadow-[var(--shadow)]">
+          <div className="pointer-events-none relative z-10 -mt-14 flex flex-wrap items-end justify-between gap-4 *:pointer-events-auto">
+            <div className="inline-flex rounded-full bg-accent-grad p-[3px] shadow-[var(--shadow)]">
               <WithPresence id={p.id} dot="size-5 ring-4"><ProfilePhoto path={p.avatar_path} first={p.first_name} last={p.last_name} editable={own && mediaOn} userId={user.id} size={104} /></WithPresence>
             </div>
             <div className="flex flex-wrap items-center gap-2">

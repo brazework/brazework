@@ -25,7 +25,7 @@ export function TrendingNews({ trending, news, hasInterests }: { trending: [stri
   };
 
   return (
-    <section data-tour="news" aria-label="Trending and news" className="rounded-3xl border border-line bg-surface p-4 shadow-[var(--shadow)]">
+    <section data-tour="news" aria-label="Trending and news" className="glass-card rounded-3xl p-4">
       <div className="flex items-center gap-2">
         <span className="grid size-7 place-items-center rounded-lg bg-accent-grad text-on-accent">
           {tab === "trending" ? <Flame className="size-3.5" /> : <Newspaper className="size-3.5" />}

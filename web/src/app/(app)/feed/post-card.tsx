@@ -60,7 +60,7 @@ export function PostCard({ post, liked, saved = false, own = false, index, proje
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45, delay: Math.min(index, 8) * 0.04, ease: [0.16, 1, 0.3, 1] }}
-      className="grad-edge relative rounded-3xl border p-5 shadow-[var(--shadow)] transition duration-300 hover:-translate-y-0.5"
+      className="glass-card relative rounded-3xl p-5 transition duration-300 hover:-translate-y-0.5"
       onDoubleClick={(e) => {
         if ((e.target as Element).closest("a,button,video,input,textarea")) return;
         window.getSelection()?.removeAllRanges();

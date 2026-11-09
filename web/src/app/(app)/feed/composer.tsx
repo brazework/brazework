@@ -97,7 +97,7 @@ export function Composer({ first, last, interests, userId, mediaEnabled = false,
       onDragOver={(e) => { if (mediaEnabled && e.dataTransfer.types.includes("Files")) { e.preventDefault(); setDragging(true); } }}
       onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setDragging(false); }}
       onDrop={(e) => { if (!mediaEnabled) return; e.preventDefault(); setDragging(false); pickFiles(e.dataTransfer.files); }}
-      className={cn("relative rounded-3xl p-4 shadow-[var(--shadow)] transition", asking ? "ai-border" : "grad-edge border", dragging && "scale-[1.01]")}
+      className={cn("relative rounded-3xl p-4 transition", asking ? "ai-border shadow-[var(--shadow)]" : "glass-card", dragging && "scale-[1.01]")}
     >
       {!asking && <input type="hidden" name="kind" value={kind} />}
       {!asking && tags.map((t) => <input key={t} type="hidden" name="tags" value={t} />)}
