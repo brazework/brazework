@@ -28,11 +28,12 @@ export async function shareTargets(): Promise<ShareTarget[]> {
   return [...people, ...chats];
 }
 
-export async function sharePost(postId: string, targets: { kind: "dm" | "group"; id: string }[], note: string): Promise<{ ok: boolean; message: string; sent: number }> {
-  if (!/^[A-Za-z0-9-]{1,64}$/.test(postId)) return { ok: false, message: "That post wasn't found.", sent: 0 };
+// Posts and events travel the same way: a message carrying the item's link.
+export async function shareItem(kind: "post" | "events", itemId: string, targets: { kind: "dm" | "group"; id: string }[], note: string): Promise<{ ok: boolean; message: string; sent: number }> {
+  if (!/^[A-Za-z0-9-]{1,64}$/.test(itemId)) return { ok: false, message: kind === "post" ? "That post wasn't found." : "That event wasn't found.", sent: 0 };
   const picked = targets.filter((t) => /^[A-Za-z0-9-]{1,64}$/.test(t.id)).slice(0, 20);
   if (!picked.length) return { ok: false, message: "Pick someone to send it to.", sent: 0 };
-  const text = `${note.trim().slice(0, 1500)}${note.trim() ? "\n" : ""}/post/${postId}`;
+  const text = `${note.trim().slice(0, 1500)}${note.trim() ? "\n" : ""}/${kind}/${itemId}`;
   const { supabase, user } = await getViewer();
   if (!user) return { ok: false, message: "Log in again.", sent: 0 };
   const results = await Promise.all(picked.map((t) =>
@@ -54,4 +55,14 @@ export async function postPreview(postId: string): Promise<{ id: string; author:
   if (!data) return null;
   const media = (await dbFeatures()).media ? await supabase.from("posts").select("media").eq("id", postId).maybeSingle() : { data: null };
   return { id: data.id, author: `${data.author_first} ${data.author_last}`.trim(), kind: data.kind, body: String(data.body).slice(0, 220), hasMedia: Array.isArray((media.data as { media?: unknown[] } | null)?.media) && ((media.data as { media: unknown[] }).media.length > 0) };
+}
+
+// What a shared event looks like inside a chat bubble.
+export async function eventPreview(eventId: string): Promise<{ id: string; title: string; starts_at: string; going: number; where: string } | null> {
+  if (!/^[A-Za-z0-9-]{1,64}$/.test(eventId)) return null;
+  const { supabase, user } = await getViewer();
+  if (!user) return null;
+  const { data } = await supabase.from("events").select("id, title, starts_at, rsvp_count, format, location").eq("id", eventId).maybeSingle();
+  if (!data) return null;
+  return { id: data.id, title: data.title, starts_at: data.starts_at, going: data.rsvp_count ?? 0, where: data.format === "Online" ? "Online" : data.location || data.format };
 }

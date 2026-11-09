@@ -79,6 +79,29 @@ export const isOver = (e: Pick<ForgeEvent, "ends_at">, now: number) => Date.pars
 // Past or cancelled events go in the host's log; the rest are still coming up.
 export const inLog = (e: ForgeEvent, now: number) => isOver(e, now) || e.status === "cancelled";
 
+// How soon an event is, in words, from exact moments (so it's the same in every time zone):
+// "Happening now", "Starts in 40m", "Starts in 3h", "Tomorrow", "In 5 days"; nothing further out.
+export function whenBadge(e: Pick<ForgeEvent, "starts_at" | "ends_at">, now: number) {
+  const start = Date.parse(e.starts_at), end = Date.parse(e.ends_at);
+  if (now >= start && now < end) return { text: "Happening now", live: true };
+  const mins = Math.round((start - now) / 60000);
+  if (mins <= 0) return null;
+  if (mins < 60) return { text: `Starts in ${mins}m`, live: false };
+  if (mins < 24 * 60) return { text: `Starts in ${Math.round(mins / 60)}h`, live: false };
+  if (mins < 48 * 60) return { text: "Tomorrow", live: false };
+  if (mins < 7 * 24 * 60) return { text: `In ${Math.round(mins / (24 * 60))} days`, live: false };
+  return null;
+}
+
+// Which section of the Events list an event falls in.
+export function timeBucket(e: Pick<ForgeEvent, "starts_at" | "ends_at">, now: number): "now" | "soon" | "week" | "later" {
+  const start = Date.parse(e.starts_at), end = Date.parse(e.ends_at);
+  if (now >= start && now < end) return "now";
+  if (start - now < 48 * 3600000) return "soon";
+  if (start - now < 7 * 24 * 3600000) return "week";
+  return "later";
+}
+
 // ---------- Dates ----------
 // Every formatter takes an optional IANA time zone. Undefined = the viewer's own zone (in the browser);
 // the server and the first (hydration) render pass "UTC" so their HTML matches. See events/local-time.tsx.

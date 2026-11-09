@@ -3,13 +3,13 @@ import { CalendarDays, Check, Hash, Loader2, Search, Send, Users, X } from "luci
 import { useState, useTransition } from "react";
 import { Avatar } from "@/components/ui";
 import { cn } from "@/lib/forge";
-import { sharePost, shareTargets, type ShareTarget } from "@/lib/share";
+import { shareItem, shareTargets, type ShareTarget } from "@/lib/share";
 
 const GROUP_ICON = { "Club chat": Users, "Event chat": CalendarDays } as Record<string, typeof Users>;
 
 // "Send" on a post: pick people you've talked with and group chats you're in, add a note, send.
 // Each one gets a message with the post, which shows as a preview card in the chat.
-export function SendPost({ postId }: { postId: string }) {
+export function SendPost({ postId, eventId, compact = true }: { postId?: string; eventId?: string; compact?: boolean }) {
   const [open, setOpen] = useState(false);
   const [targets, setTargets] = useState<ShareTarget[] | null>(null);
   const [picked, setPicked] = useState<string[]>([]);
@@ -28,15 +28,15 @@ export function SendPost({ postId }: { postId: string }) {
   const shown = (targets ?? []).filter((t) => `${t.title} ${t.subtitle}`.toLowerCase().includes(q.trim().toLowerCase()));
   const send = () => startSend(async () => {
     const chosen = (targets ?? []).filter((t) => picked.includes(key(t))).map((t) => ({ kind: t.kind, id: t.id }));
-    const r = await sharePost(postId, chosen, note);
+    const r = await shareItem(eventId ? "events" : "post", (eventId ?? postId)!, chosen, note);
     if (r.ok) { setMsg({ ok: true, text: r.message || `Sent to ${r.sent}` }); setPicked([]); setNote(""); setTimeout(() => setOpen(false), 1200); }
     else setMsg({ ok: false, text: r.message });
   });
 
   return (
     <div className="relative">
-      <button type="button" onClick={toggle} aria-expanded={open} aria-label="Send post to people" className="inline-flex h-9 items-center gap-1.5 rounded-full px-3 transition hover:bg-hover hover:text-text">
-        <Send className="size-[18px]" />
+      <button type="button" onClick={toggle} aria-expanded={open} aria-label={eventId ? "Send event to people" : "Send post to people"} className={compact ? "inline-flex h-9 items-center gap-1.5 rounded-full px-3 transition hover:bg-hover hover:text-text" : "inline-flex h-10 items-center gap-1.5 rounded-full border border-line px-4 text-sm font-medium transition hover:bg-hover"}>
+        <Send className={compact ? "size-[18px]" : "size-4"} />{!compact && " Send to friends"}
       </button>
       {open && (
         <div className="absolute bottom-full left-1/2 z-30 mb-2 w-80 -translate-x-1/2 rounded-2xl border border-line bg-surface p-3 text-left shadow-[0_20px_50px_-12px_rgba(0,0,0,0.35)]">

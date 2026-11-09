@@ -1,25 +1,32 @@
 "use client";
-import { BadgeCheck, MapPin, Users, UsersRound } from "lucide-react";
+import { BadgeCheck, MapPin, Sparkles, Users, UsersRound } from "lucide-react";
 import Link from "next/link";
-import { ORG_LABEL, dateParts, isOver, pluralize, whereLabel, type HostedEvent } from "@/lib/events";
+import { ORG_LABEL, dateParts, isOver, pluralize, whenBadge, whereLabel, type HostedEvent } from "@/lib/events";
+import { cn } from "@/lib/forge";
+import { SendPost } from "@/components/share/send-post";
 import { RsvpButton, SaveButton, useEventMarks } from "./event-controls";
 import { LocalTime, useTimeZone } from "./local-time";
 
-export function EventCard({ event: e, going, saved, now }: { event: HostedEvent; going: boolean; saved: boolean; now: number }) {
+// One event: date tile (filled once you're going), how soon it is, whether it fits your interests,
+// where and who's hosting, with RSVP, save and send-to-friends.
+export function EventCard({ event: e, going, saved, now, match = "" }: { event: HostedEvent; going: boolean; saved: boolean; now: number; match?: string }) {
   const tz = useTimeZone();
   const { marks, rsvp, save, error } = useEventMarks(e.id, { going, saved, count: e.rsvp_count });
   const d = dateParts(e.starts_at, tz);
   const over = isOver(e, now);
+  const badge = whenBadge(e, now);
   return (
-    <article className="flex gap-4 rounded-3xl border border-line bg-surface/70 p-4 transition hover:border-line-strong sm:p-5">
-      <div className="flex w-14 shrink-0 flex-col items-center justify-center rounded-2xl bg-raised py-2 text-center">
-        <span className="font-mono text-[10px] tracking-widest text-muted uppercase">{d.mon}</span>
+    <article className="glass-card flex gap-4 rounded-3xl p-4 transition duration-300 hover:-translate-y-0.5 sm:p-5">
+      <div className={cn("flex w-14 shrink-0 flex-col items-center justify-center rounded-2xl py-2 text-center transition-colors", marks.going ? "bg-accent-grad text-on-accent" : "bg-raised")}>
+        <span className={cn("font-mono text-[10px] tracking-widest uppercase", marks.going ? "opacity-80" : "text-muted")}>{d.mon}</span>
         <span className="text-2xl leading-none font-semibold">{d.day}</span>
-        <span className="mt-0.5 text-[10px] text-faint">{d.dow}</span>
+        <span className={cn("mt-0.5 text-[10px]", marks.going ? "opacity-80" : "text-faint")}>{marks.going ? "Going" : d.dow}</span>
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-x-2 text-xs text-faint">
           <span className="font-mono tracking-wide uppercase">{e.type}</span> · <span>{e.topic}</span>
+          {badge && <span className={cn("ml-1 inline-flex items-center gap-1 rounded-full px-2 py-px text-[11px] font-medium", badge.live ? "bg-emerald-500/12 text-emerald-500" : "bg-surface-2 text-text-2")}>{badge.live && <span className="size-1.5 animate-pulse rounded-full bg-emerald-500" />}{badge.text}</span>}
+          {match && <span className="inline-flex items-center gap-1 rounded-full bg-surface-2 px-2 py-px text-[11px] text-text-2"><Sparkles className="size-3" /> Matches {match}</span>}
         </div>
         <Link href={`/events/${e.id}`} className="mt-0.5 block truncate font-semibold hover:underline">{e.title}</Link>
         <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted">
@@ -37,6 +44,7 @@ export function EventCard({ event: e, going, saved, now }: { event: HostedEvent;
       <div className="flex shrink-0 flex-col items-end gap-2 sm:flex-row sm:items-center">
         {!over && <RsvpButton going={marks.going} onClick={rsvp} />}
         <SaveButton saved={marks.saved} onClick={save} />
+        <SendPost eventId={e.id} />
       </div>
     </article>
   );

@@ -1,12 +1,13 @@
 import { eventWithHost } from "@/lib/db-features";
 import type { Metadata } from "next";
-import { CalendarDays } from "lucide-react";
+import { ArrowRight, CalendarCheck, CalendarDays } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { LiveRefresh } from "@/components/app/live-refresh";
 import { EmptyState, PageHeader, Skeleton, Tabs } from "@/components/app/page-ui";
-import { DROP_AFTER_MS, withHost, type HostedEvent } from "@/lib/events";
+import { DROP_AFTER_MS, isOver, timeBucket, whenBadge, whereLabel, withHost, type HostedEvent } from "@/lib/events";
+import { LocalTime } from "./local-time";
 import { requestTime } from "@/lib/forge";
 import { getViewer } from "@/lib/supabase/server";
 import { EventCard } from "./event-card";
@@ -47,6 +48,14 @@ async function Events({ searchParams }: { searchParams: PageProps<"/events">["se
   const interests = new Set<string>(profile.interests ?? []);
   const isAdmin = !!admin.data?.length;
   const q = (t: string) => `/events?tab=${tab}${t ? `&topic=${encodeURIComponent(t)}` : ""}`;
+  const now = requestTime();
+  // Your next event (the soonest you're going to that hasn't ended), shown up top.
+  const next = all.filter((e) => going.has(e.id) && !isOver(e, now)).sort((a, b) => Date.parse(a.starts_at) - Date.parse(b.starts_at))[0];
+  const nextBadge = next ? whenBadge(next, now) : null;
+  // Upcoming events in time sections; Going and Saved stay one list.
+  const SECTIONS = [["now", "Happening now"], ["soon", "Today and tomorrow"], ["week", "This week"], ["later", "Later"]] as const;
+  const groups = tab === "upcoming" ? SECTIONS.map(([k, label]) => ({ k, label, items: list.filter((e) => timeBucket(e, now) === k) })).filter((g) => g.items.length) : [{ k: "all", label: "", items: list }];
+  const card = (e: HostedEvent) => <EventCard key={e.id} event={e} going={going.has(e.id)} saved={saved.has(e.id)} now={now} match={interests.has(e.topic) ? e.topic : ""} />;
 
   return (
     <>
@@ -55,6 +64,17 @@ async function Events({ searchParams }: { searchParams: PageProps<"/events">["se
         subtitle="Career fairs, talks, build nights and hackathons from verified organizations and clubs."
         actions={<Link href="/org" className="inline-flex h-10 items-center rounded-full border border-line px-4 text-sm transition hover:bg-hover">{isAdmin ? "Your organization" : "Host an event"}</Link>}
       />
+      {next && tab === "upcoming" && !topic && (
+        <Link href={`/events/${next.id}`} className="glass-card group mt-6 flex flex-wrap items-center gap-4 rounded-3xl p-5 transition hover:-translate-y-0.5">
+          <span className="bg-accent-grad grid size-12 shrink-0 place-items-center rounded-2xl text-on-accent"><CalendarCheck className="size-5" /></span>
+          <span className="min-w-0 flex-1">
+            <span className="block text-xs font-medium tracking-wide text-faint uppercase">Up next for you{nextBadge ? ` · ${nextBadge.text}` : ""}</span>
+            <span className="mt-0.5 block truncate text-lg font-semibold">{next.title}</span>
+            <span className="block truncate text-sm text-muted"><LocalTime kind="full" value={next.starts_at} /> · {whereLabel(next)}</span>
+          </span>
+          <span className="inline-flex items-center gap-1 text-sm font-medium">Details <ArrowRight className="size-4 transition group-hover:translate-x-0.5" /></span>
+        </Link>
+      )}
       <div className="mt-6">
         <Tabs active={tab} tabs={[
           { id: "upcoming", label: "Upcoming", href: "/events" },
@@ -73,7 +93,12 @@ async function Events({ searchParams }: { searchParams: PageProps<"/events">["se
         </div>
       )}
       <div className="mt-6 flex flex-col gap-3">
-        {list.map((e) => <EventCard key={e.id} event={e} going={going.has(e.id)} saved={saved.has(e.id)} now={requestTime()} />)}
+        {groups.map((g) => (
+          <section key={g.k} aria-label={g.label || undefined} className="flex flex-col gap-3">
+            {g.label && <h2 className="mt-2 flex items-center gap-2 text-xs font-medium tracking-wide text-faint uppercase">{g.k === "now" && <span className="size-1.5 animate-pulse rounded-full bg-emerald-500" />}{g.label} <span className="font-normal">· {g.items.length}</span></h2>}
+            {g.items.map(card)}
+          </section>
+        ))}
         {!list.length && (
           <EmptyState
             icon={<CalendarDays className="size-5" />}

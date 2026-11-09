@@ -44,7 +44,7 @@ jobs:
         run: |
           npx next start -p 3000 >/dev/null 2>&1 &
           for i in $(seq 1 30); do curl -fsS -o /dev/null http://localhost:3000/ && break; sleep 1; done
-          curl -fsS http://localhost:3000/ | grep -q "Proof of work"
+          curl -fsS http://localhost:3000/ | grep -q "home base for university STEM clubs"
           for p in /signup /login; do curl -fsS -o /dev/null "http://localhost:3000$p" || { echo "failed: $p"; exit 1; }; done
           code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/feed); [ "$code" = "307" ] || { echo "/feed returned $code, expected 307"; exit 1; }
 
