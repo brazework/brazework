@@ -16,6 +16,7 @@ import { FeedHeader, TABS, type TabId } from "./header";
 import { PostCard, type ReplyPreview } from "./post-card";
 import { ProofCard, type Proof } from "./proof-card";
 import { FeedList, NewPosts } from "./feed-list";
+import { MessageDock } from "@/components/messages/dock";
 import { FeedRail } from "./rail";
 import { PeopleStrip, SpotlightStrip, WeekStrip } from "./discover";
 import { StripSkeleton } from "@/components/app/discover-cards";
@@ -196,7 +197,12 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
   return (
     <>
       <NewPosts me={user.id} />
-      <FeedHeader tab={tab} hrefFor={(t) => href({ tab: t })} hero={<div id="composer" data-tour="composer" className="scroll-mt-24"><Composer first={profile.first_name} last={profile.last_name} interests={interests} userId={user.id} mediaEnabled={mediaEnabled} avatarSrc={avatarSrc(profile)} copilot={copilotOn} mentionsEnabled={mentionsEnabled} club={ledClub} next={nextStep ? { label: nextStep.label, href: nextStep.href } : null} /></div>} />
+      <MessageDock />
+      <FeedHeader tab={tab} hrefFor={(t) => href({ tab: t })} sort={/* Order: ranked, newest or oldest first. */ <span className="mr-1 hidden shrink-0 sm:inline-flex items-center gap-0.5 rounded-full border border-line bg-surface p-0.5" role="group" aria-label="Sort posts">
+          {SORTS.filter((x) => x.id !== "best" || tab === "for-you").map((x) => (
+            <Link key={x.id} href={href({ sort: x.id })} aria-current={sort === x.id ? "true" : undefined} className={cn("rounded-full px-2.5 py-0.5 text-xs whitespace-nowrap transition", sort === x.id ? "bg-text text-surface" : "text-muted hover:text-text")}>{x.label}</Link>
+          ))}
+        </span>} hero={<div id="composer" data-tour="composer" className="scroll-mt-24"><Composer first={profile.first_name} last={profile.last_name} interests={interests} userId={user.id} mediaEnabled={mediaEnabled} avatarSrc={avatarSrc(profile)} copilot={copilotOn} mentionsEnabled={mentionsEnabled} club={ledClub} next={nextStep ? { label: nextStep.label, href: nextStep.href } : null} /></div>} />
       {/* What kind of post, then your topics: one row, so filtering is one tap from anywhere in the feed. */}
       <nav data-tour="interests" aria-label="Filter the feed" className="no-scrollbar -mx-1 mt-4 flex items-center gap-1.5 overflow-x-auto px-1 pb-1">
         {KINDS.map((k) => (
@@ -211,8 +217,8 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
           </Link>
         ))}
         {interests.length > 0 && <Link href="/settings#profile" className="shrink-0 rounded-full px-2 py-1 text-xs text-faint hover:text-text">Edit</Link>}
-        {/* Order: ranked, newest or oldest first. */}
-        <span className="ml-auto inline-flex shrink-0 items-center gap-0.5 rounded-full border border-line bg-surface p-0.5" role="group" aria-label="Sort posts">
+        {/* Phones: sort lives at the end of this row (the tabs row is too narrow there). */}
+        <span className="ml-1 inline-flex shrink-0 items-center gap-0.5 rounded-full border border-line bg-surface p-0.5 sm:hidden" role="group" aria-label="Sort posts">
           {SORTS.filter((x) => x.id !== "best" || tab === "for-you").map((x) => (
             <Link key={x.id} href={href({ sort: x.id })} aria-current={sort === x.id ? "true" : undefined} className={cn("rounded-full px-2.5 py-0.5 text-xs whitespace-nowrap transition", sort === x.id ? "bg-text text-surface" : "text-muted hover:text-text")}>{x.label}</Link>
           ))}

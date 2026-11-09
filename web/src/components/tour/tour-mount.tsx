@@ -51,6 +51,13 @@ export function TourMount() {
   }, []);
 
   const step = run?.steps[i];
+  // While the card is on screen, corner widgets (the feed's message dock) step aside.
+  const showing = !!step;
+  useEffect(() => {
+    if (!showing) return;
+    document.documentElement.dataset.tour = "on";
+    return () => { delete document.documentElement.dataset.tour; };
+  }, [showing]);
 
   // Go to the step's page, then find and spotlight its target.
   useEffect(() => {

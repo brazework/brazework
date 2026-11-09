@@ -12,7 +12,7 @@ until curl -sf http://localhost:3200/login >/dev/null; do sleep 1; done
 id() { docker exec forge-e2e-db psql -U postgres -h localhost -d postgres -tAc "select id from auth.users where email='$1'"; }
 export BEN_ID="$(id ben@forge.test)" JOSH_ID="$(id josh@forge.test)"
 fail=0
-for spec in e2e/a-signup-post.cjs e2e/b-clubs-events.cjs e2e/c-messages-projects.cjs e2e/d-search-settings.cjs e2e/e-chat.cjs; do
+for spec in e2e/a-signup-post.cjs e2e/b-clubs-events.cjs e2e/c-messages-projects.cjs e2e/d-search-settings.cjs e2e/e-chat.cjs e2e/f-dock.cjs; do
   echo "== $spec"; node "$spec" | tee /tmp/forge-e2e-out.txt; grep -q "^FAIL" /tmp/forge-e2e-out.txt && fail=1
 done
 echo; [ $fail = 0 ] && echo "All end-to-end checks passed." || { echo "Some checks failed: screenshots in e2e/.results/"; exit 1; }
