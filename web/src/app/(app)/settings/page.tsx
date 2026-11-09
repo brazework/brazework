@@ -4,8 +4,10 @@ import { Suspense } from "react";
 import { PageHeader, Panel, Skeleton } from "@/components/app/page-ui";
 import { Kicker } from "@/components/ui";
 import { dbFeatures } from "@/lib/db-features";
+import { listApiTokens } from "@/lib/api-tokens";
+import { env } from "@/lib/env";
 import { getViewer } from "@/lib/supabase/server";
-import { AppearanceSettings, BlockedList, EmberSettings, HelpSettings, MessagingSettings, PasswordForm, ProfileSettings } from "./settings-client";
+import { AiToolsSettings, AppearanceSettings, BlockedList, EmberSettings, HelpSettings, MessagingSettings, PasswordForm, ProfileSettings } from "./settings-client";
 import { OnlineStatusSetting, SettingsNav } from "./settings-nav";
 
 export const metadata: Metadata = { title: "Settings" };
@@ -39,7 +41,8 @@ function Section({ id, title, desc, children }: { id: string; title: string; des
 async function Settings() {
   const { supabase, user, profile } = await getViewer();
   if (!user || !profile) redirect("/login");
-  const saving = (await dbFeatures()).copilotChats;
+  const { copilotChats: saving, mcp: mcpOn } = await dbFeatures();
+  const tokens = mcpOn ? await listApiTokens() : [];
   const [ms, blocks, chatCount] = await Promise.all([
     supabase.from("message_settings").select("requests_on, who_can_message").eq("user_id", user.id).maybeSingle(),
     supabase.from("message_blocks").select("blocked, created_at").eq("blocker", user.id).order("created_at", { ascending: false }),
@@ -59,6 +62,7 @@ async function Settings() {
       <Section id="messaging" title="Messaging and privacy" desc="Who can message you, and whether you show as online."><OnlineStatusSetting /><div className="my-6 border-t border-line" /><MessagingSettings requestsOn={ms.data ? Boolean(ms.data.requests_on) : true} who={(ms.data?.who_can_message as "everyone" | "communities" | "connections") ?? "everyone"} /></Section>
       <Section id="blocked" title="Blocked people" desc="People who can't message you or see your activity."><BlockedList people={blocked} /></Section>
       <Section id="ember" title="Ember and your data" desc="What Forge's AI teammate can see, what it can do, and your chats with it."><EmberSettings saving={saving} chats={chatCount.count ?? 0} /></Section>
+      {mcpOn && <Section id="ai-tools" title="AI tools (MCP)" desc="Use your Forge from Claude, Cursor and other AI assistants."><AiToolsSettings tokens={tokens} endpoint={`${env.siteUrl}/api/mcp`} /></Section>}
       <Section id="help" title="Help" desc="Tours, what's new, and how to reach us."><HelpSettings /></Section>
       <Section id="account" title="Account" desc="Your sign-in email, password and session.">
         <p className="text-sm text-muted">Signed in as <span className="text-text">{user.email}</span></p>

@@ -1,5 +1,15 @@
 const { BASE, step, browser, as, go, summary } = require("./lib.cjs");
 const BEN = process.env.BEN_ID, JOSH = process.env.JOSH_ID; // set by run.sh
+// A sent message shows at once; reload until the server has it, so the other person can see it.
+async function saved(page, path, text) {
+  for (let i = 0; i < 10; i++) {
+    await page.waitForTimeout(500);
+    await go(page, path);
+    if (await page.getByText(text).count()) return;
+  }
+  throw new Error(`"${text}" never reached the server`);
+}
+
 (async () => {
   const b = await browser();
   const josh = await as(b, "josh@forge.test");
@@ -14,7 +24,7 @@ const BEN = process.env.BEN_ID, JOSH = process.env.JOSH_ID; // set by run.sh
     await josh.locator("#msg").fill(hi);
     await josh.getByRole("button", { name: "Send", exact: true }).click();
     await josh.getByText(hi).first().waitFor({ timeout: 15000 });
-    await josh.waitForLoadState("networkidle"); // the send itself, not just the optimistic bubble
+    await saved(josh, dm, hi); // the server's copy, not just the instant (optimistic) bubble
   }, josh);
   await step("Ben sees it (in Inbox or Requests) and replies", async () => {
     await go(ben, dm);
@@ -24,7 +34,7 @@ const BEN = process.env.BEN_ID, JOSH = process.env.JOSH_ID; // set by run.sh
     await ben.locator("#msg").fill("Thanks Josh! Come to launch day Saturday.");
     await ben.getByRole("button", { name: "Send", exact: true }).click();
     await ben.getByText("Come to launch day Saturday.").first().waitFor({ timeout: 15000 });
-    await ben.waitForLoadState("networkidle");
+    await saved(ben, dm, "Come to launch day Saturday.");
   }, ben);
   await step("Josh sees Ben's reply", async () => {
     await go(josh, dm);
