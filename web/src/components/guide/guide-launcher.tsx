@@ -8,6 +8,8 @@ import { Lookups, Rich } from "@/app/(app)/copilot/copilot-client";
 import { useCopilot } from "@/components/copilot/use-copilot";
 import { cn } from "@/lib/forge";
 import type { Guide, GuideStep } from "@/lib/guide";
+import type { Proposal } from "@/lib/copilot-agent";
+import { ProposalCard } from "@/components/copilot/proposal-card";
 
 // A tip for the page you're on: what this page is for, and the one thing worth doing here.
 function tipFor(path: string): { page: string; tip: string; href?: string; cta?: string } {
@@ -43,7 +45,7 @@ export function GuideLauncher({ guide, copilot }: { guide: Guide; copilot: boole
   const path = usePathname();
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<"you" | string>("you");
-  const [msgs, setMsgs] = useState<{ role: "user" | "assistant"; content: string; tools?: string[] }[]>([]);
+  const [msgs, setMsgs] = useState<{ role: "user" | "assistant"; content: string; tools?: string[]; proposals?: Proposal[] }[]>([]);
   const [input, setInput] = useState("");
   const ai = useCopilot();
   const answerEnd = useRef<HTMLDivElement>(null);
@@ -70,7 +72,7 @@ export function GuideLauncher({ guide, copilot }: { guide: Guide; copilot: boole
     const history = msgs.slice(-6);
     setMsgs((m) => [...m, { role: "user", content: text }, { role: "assistant", content: "" }]);
     setInput("");
-    const out = await ai.run({ task: "ask", input: tip.page === "Forge" ? text : `(I'm on ${tip.page} in Forge.) ${text}`, history: history.map(({ role, content }) => ({ role, content })) }, (full, tools) => setMsgs((m) => [...m.slice(0, -1), { role: "assistant", content: full, tools }]));
+    const out = await ai.run({ task: "ask", input: tip.page === "Forge" ? text : `(I'm on ${tip.page} in Forge.) ${text}`, history: history.map(({ role, content }) => ({ role, content })) }, (full, tools, proposals) => setMsgs((m) => [...m.slice(0, -1), { role: "assistant", content: full, tools, proposals }]));
     if (out === null) setMsgs((m) => (m.at(-1)?.content === "" ? m.slice(0, -2) : m));
   };
 
@@ -145,7 +147,7 @@ export function GuideLauncher({ guide, copilot }: { guide: Guide; copilot: boole
                 <div className="mt-4 flex flex-col gap-2.5" aria-live="polite">
                   {msgs.map((m, i) => m.role === "user"
                     ? <p key={i} className="bg-accent-grad ml-8 self-end rounded-2xl rounded-br-md px-3 py-2 text-sm text-on-accent">{m.content}</p>
-                    : <div key={i} className="mr-4 rounded-2xl rounded-tl-md border border-line px-3 py-2 text-sm leading-relaxed whitespace-pre-wrap text-text-2"><Lookups tools={m.tools} live={ai.busy && i === msgs.length - 1} />{m.content ? <Rich text={m.content} /> : m.tools?.length ? null : <span className="text-faint">Thinking…</span>}</div>)}
+                    : <div key={i} className="mr-4 rounded-2xl rounded-tl-md border border-line px-3 py-2 text-sm leading-relaxed whitespace-pre-wrap text-text-2"><Lookups tools={m.tools} live={ai.busy && i === msgs.length - 1} />{m.content ? <Rich text={m.content} /> : m.tools?.length ? null : <span className="text-faint">Thinking…</span>}{m.proposals?.map((p) => <ProposalCard key={p.id} p={p} />)}</div>)}
                   <Link href="/copilot" onClick={() => setOpen(false)} className="self-start text-xs text-muted hover:text-text">Continue in Copilot →</Link>
                   <div ref={answerEnd} />
                 </div>

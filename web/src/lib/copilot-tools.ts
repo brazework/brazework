@@ -1,13 +1,16 @@
 import type Anthropic from "@anthropic-ai/sdk";
-import { rank } from "@/lib/communities";
+import { can, rank } from "@/lib/communities";
+import { EVENT_FORMATS, EVENT_TYPES } from "@/lib/events";
+import type { Proposal } from "@/lib/copilot-agent";
 import { dbFeatures } from "@/lib/db-features";
-import { requestTime } from "@/lib/forge";
+import { ALL_TOPICS, requestTime } from "@/lib/forge";
 import { loadGuide } from "@/lib/guide";
 import type { createClient } from "@/lib/supabase/server";
 
-// Copilot's read-only tools. They run with the member's own Supabase session, so row-level
-// security decides what they can see: Copilot never sees more than the member could.
-// Nothing here writes.
+// Copilot's tools. They run with the member's own Supabase session, so row-level security decides
+// what they can see: Copilot never sees more than the member could. Nothing here writes. The
+// propose_* tools only check a draft and hand it to the UI as a card; the member confirms it there,
+// and the app's normal server action (with its own checks) does the saving.
 
 type DB = Awaited<ReturnType<typeof createClient>>;
 
@@ -37,13 +40,43 @@ export const TOOLS: Anthropic.Tool[] = [
     description: "One of the member's own clubs: size, recent posts, upcoming events, and for its moderators and up, milestones waiting for review and setup steps left.",
     input_schema: { type: "object", properties: { club_id: { type: "string" } }, required: ["club_id"] },
   },
+  {
+    name: "propose_post",
+    description: "Prepare a feed post for the member to review and confirm. Use when they want to post something. It is NOT posted until they confirm.",
+    input_schema: { type: "object", properties: { body: { type: "string", description: "The post, at most 3000 characters" }, kind: { type: "string", enum: ["update", "question", "result", "project"] }, tags: { type: "array", items: { type: "string" }, maxItems: 3, description: "Up to 3 of the member's interests" } }, required: ["body", "kind"] },
+  },
+  {
+    name: "propose_milestone",
+    description: "Prepare a milestone on one of the member's projects for one of their clubs to verify. Get project and club ids from my_profile. It is NOT sent until they confirm.",
+    input_schema: { type: "object", properties: { project_id: { type: "string" }, club_id: { type: "string" }, title: { type: "string", description: "What happened, at most 120 characters" }, detail: { type: "string", description: "Numbers and conditions, at most 600 characters" }, achieved_on: { type: "string", description: "YYYY-MM-DD" } }, required: ["project_id", "club_id", "title"] },
+  },
+  {
+    name: "propose_join_club",
+    description: "Prepare joining a club (its id is in its link /c/<id>). It is NOT joined until the member confirms.",
+    input_schema: { type: "object", properties: { club_id: { type: "string" } }, required: ["club_id"] },
+  },
+  {
+    name: "propose_follow",
+    description: "Prepare following a person (their id is in their link /u/<id>). Not followed until the member confirms.",
+    input_schema: { type: "object", properties: { person_id: { type: "string" } }, required: ["person_id"] },
+  },
+  {
+    name: "propose_event",
+    description: `Prepare a club event, for a club where the member is an admin or owner. type is one of: ${EVENT_TYPES.join(", ")}. format is one of: ${EVENT_FORMATS.join(", ")}. Times are ISO 8601 with a timezone offset. It is NOT published until they confirm.`,
+    input_schema: { type: "object", properties: { club_id: { type: "string" }, title: { type: "string" }, description: { type: "string" }, type: { type: "string" }, format: { type: "string" }, location: { type: "string" }, topic: { type: "string" }, starts_at: { type: "string" }, ends_at: { type: "string" } }, required: ["club_id", "title", "starts_at"] },
+  },
 ];
+
+// What Copilot hears back after a proposal: it's on screen, and the member decides.
+const SHOWN = { shown_to_member: true, note: "The member sees this as a card and will confirm, edit or dismiss it. Don't say it's done; tell them to check the card." };
+const pid = () => Math.random().toString(36).slice(2, 10);
+const ID_RE = /^[A-Za-z0-9-]{1,64}$/;
 
 // Keywords go into PostgREST filters, so keep only characters that can't change the filter's meaning.
 const clean = (v: unknown, max = 60) => (typeof v === "string" ? v.replace(/[^\p{L}\p{N} '&.+#-]/gu, " ").replace(/\s+/g, " ").trim().slice(0, max) : "");
 const snip = (s: string | null | undefined, n = 140) => (s ?? "").replace(/\s+/g, " ").trim().slice(0, n);
 
-export function makeExec(db: DB, userId: string) {
+export function makeExec(db: DB, userId: string, onProposal: (p: Proposal) => void = () => {}) {
   return async (name: string, input: unknown): Promise<unknown> => {
     const a = (input ?? {}) as Record<string, unknown>;
     switch (name) {
@@ -90,8 +123,8 @@ export function makeExec(db: DB, userId: string) {
         const msRows = (ms.data ?? []) as { project_id: string; status: string }[];
         return {
           name: `${me.data?.first_name ?? ""} ${me.data?.last_name ?? ""}`.trim(), headline: me.data?.headline, field: me.data?.field, interests: me.data?.interests, bio: snip(me.data?.bio, 300),
-          clubs: ((clubs.data ?? []) as unknown as { role: string; communities: C | C[] | null }[]).flatMap((r) => (Array.isArray(r.communities) ? r.communities : r.communities ? [r.communities] : []).map((c) => ({ name: c.name, role: r.role, link: `/c/${c.id}` }))),
-          projects: (projects.data ?? []).map((p) => ({ title: p.title, status: p.status, verified_milestones: msRows.filter((m) => m.project_id === p.id && m.status === "verified").length, pending_milestones: msRows.filter((m) => m.project_id === p.id && m.status === "pending").length })),
+          clubs: ((clubs.data ?? []) as unknown as { role: string; communities: C | C[] | null }[]).flatMap((r) => (Array.isArray(r.communities) ? r.communities : r.communities ? [r.communities] : []).map((c) => ({ id: c.id, name: c.name, role: r.role, link: `/c/${c.id}` }))),
+          projects: (projects.data ?? []).map((p) => ({ id: p.id, title: p.title, status: p.status, verified_milestones: msRows.filter((m) => m.project_id === p.id && m.status === "verified").length, pending_milestones: msRows.filter((m) => m.project_id === p.id && m.status === "pending").length })),
           steps_left: (guide?.member ?? []).filter((s) => !s.done).map((s) => ({ step: s.label, where: s.href })),
         };
       }
@@ -121,6 +154,78 @@ export function makeExec(db: DB, userId: string) {
           } : {}),
           link: `/c/${id}`,
         };
+      }
+      case "propose_post": {
+        const body = typeof a.body === "string" ? a.body.trim().slice(0, 3000) : "";
+        if (!body) return { error: "The post is empty." };
+        const kind = (["update", "question", "result", "project"] as const).find((k) => k === a.kind) ?? "update";
+        const tags = (Array.isArray(a.tags) ? a.tags : []).filter((t): t is string => typeof t === "string" && ALL_TOPICS.includes(t)).slice(0, 3);
+        onProposal({ id: pid(), kind: "post", body, postKind: kind, tags });
+        return SHOWN;
+      }
+      case "propose_milestone": {
+        const projectId = String(a.project_id ?? ""), clubId = String(a.club_id ?? "");
+        if (!ID_RE.test(projectId) || !ID_RE.test(clubId)) return { error: "Use the project and club ids from my_profile." };
+        const [proj, mem] = await Promise.all([
+          db.from("projects").select("title").eq("id", projectId).eq("owner_id", userId).maybeSingle(),
+          db.from("community_members").select("communities(name)").eq("community_id", clubId).eq("uid", userId).maybeSingle(),
+        ]);
+        if (!proj.data) return { error: "That isn't one of the member's projects." };
+        const club = (mem.data as unknown as { communities: { name: string } | null } | null)?.communities;
+        if (!club) return { error: "The member isn't in that club, and only their clubs can verify their milestones." };
+        const title = typeof a.title === "string" ? a.title.trim().slice(0, 120) : "";
+        if (!title) return { error: "Say what happened." };
+        const day = typeof a.achieved_on === "string" && /^\d{4}-\d{2}-\d{2}$/.test(a.achieved_on) ? a.achieved_on : new Date(requestTime()).toISOString().slice(0, 10);
+        onProposal({ id: pid(), kind: "milestone", project_id: projectId, project_title: proj.data.title, club_id: clubId, club_name: club.name, title, detail: typeof a.detail === "string" ? a.detail.trim().slice(0, 600) : "", achieved_on: day });
+        return SHOWN;
+      }
+      case "propose_join_club": {
+        const clubId = String(a.club_id ?? "");
+        if (!ID_RE.test(clubId)) return { error: "Use the club id from its link /c/<id>." };
+        const [c, mem] = await Promise.all([
+          db.from("communities").select("name, privacy").eq("id", clubId).maybeSingle(),
+          db.from("community_members").select("role").eq("community_id", clubId).eq("uid", userId).maybeSingle(),
+        ]);
+        if (!c.data) return { error: "No club with that id." };
+        if (mem.data) return { error: "The member is already in this club." };
+        onProposal({ id: pid(), kind: "join", club_id: clubId, club_name: c.data.name, privacy: c.data.privacy === "approval" ? "approval" : "public" });
+        return SHOWN;
+      }
+      case "propose_follow": {
+        const personId = String(a.person_id ?? "");
+        if (!/^[0-9a-f-]{36}$/i.test(personId) || personId === userId) return { error: "Use a person's id from their link /u/<id> (not the member's own)." };
+        const [person, already] = await Promise.all([
+          db.from("profiles").select("first_name, last_name, headline").eq("id", personId).maybeSingle(),
+          db.from("follows").select("target").eq("follower", userId).eq("target", personId).maybeSingle(),
+        ]);
+        if (!person.data) return { error: "No member with that id." };
+        if (already.data) return { error: "The member already follows them." };
+        onProposal({ id: pid(), kind: "follow", person_id: personId, name: `${person.data.first_name} ${person.data.last_name}`.trim(), headline: person.data.headline ?? "" });
+        return SHOWN;
+      }
+      case "propose_event": {
+        const clubId = String(a.club_id ?? "");
+        if (!ID_RE.test(clubId)) return { error: "Use the club id from its link /c/<id>." };
+        const [mem, c] = await Promise.all([
+          db.from("community_members").select("role").eq("community_id", clubId).eq("uid", userId).maybeSingle(),
+          db.from("communities").select("name, topics").eq("id", clubId).maybeSingle(),
+        ]);
+        if (!mem.data || !can(mem.data.role, "hostEvents")) return { error: "Only the club's admins and owner can host its events." };
+        if (!(await dbFeatures()).clubEvents) return { error: "Club events aren't switched on yet." };
+        const start = new Date(String(a.starts_at ?? ""));
+        if (Number.isNaN(start.getTime()) || start.getTime() < requestTime()) return { error: "Give a start time in the future, ISO 8601 with an offset." };
+        const endRaw = new Date(String(a.ends_at ?? ""));
+        const end = Number.isNaN(endRaw.getTime()) || endRaw <= start ? new Date(start.getTime() + 2 * 3600e3) : endRaw;
+        const topics = ((c.data?.topics ?? []) as string[]).filter((t) => ALL_TOPICS.includes(t));
+        const topic = typeof a.topic === "string" && ALL_TOPICS.includes(a.topic) ? a.topic : topics[0] ?? "";
+        onProposal({
+          id: pid(), kind: "event", club_id: clubId, club_name: c.data?.name ?? "your club",
+          title: typeof a.title === "string" ? a.title.trim().slice(0, 120) : "", description: typeof a.description === "string" ? a.description.trim().slice(0, 2000) : "",
+          type: (EVENT_TYPES as readonly string[]).includes(String(a.type)) ? String(a.type) : "Workshop",
+          format: (EVENT_FORMATS as readonly string[]).includes(String(a.format)) ? String(a.format) : "In person",
+          location: typeof a.location === "string" ? a.location.trim().slice(0, 160) : "", topic, starts_at: start.toISOString(), ends_at: end.toISOString(),
+        });
+        return SHOWN;
       }
       default:
         return { error: `Unknown tool ${name}.` };

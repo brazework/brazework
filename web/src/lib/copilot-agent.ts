@@ -11,7 +11,22 @@ export const TOOL_LABEL: Record<string, { doing: string; done: string }> = {
   find_people: { doing: "Finding people", done: "people" },
   my_profile: { doing: "Reading your profile", done: "your profile" },
   club_overview: { doing: "Looking at your club", done: "your club" },
+  propose_post: { doing: "Drafting a post", done: "a post draft" },
+  propose_milestone: { doing: "Drafting a milestone", done: "a milestone draft" },
+  propose_join_club: { doing: "Preparing to join", done: "a club" },
+  propose_follow: { doing: "Preparing a follow", done: "a person" },
+  propose_event: { doing: "Drafting an event", done: "an event draft" },
 };
+
+// Something Copilot prepared for the member to confirm. Copilot never saves anything itself:
+// the card shows this, the member edits or confirms, and the app's normal server action runs.
+export type Proposal = { id: string } & (
+  | { kind: "post"; body: string; postKind: "update" | "question" | "result" | "project"; tags: string[] }
+  | { kind: "milestone"; project_id: string; project_title: string; club_id: string; club_name: string; title: string; detail: string; achieved_on: string }
+  | { kind: "join"; club_id: string; club_name: string; privacy: "public" | "approval" }
+  | { kind: "follow"; person_id: string; name: string; headline: string }
+  | { kind: "event"; club_id: string; club_name: string; title: string; description: string; type: string; format: string; location: string; topic: string; starts_at: string; ends_at: string }
+);
 
 export type AgentEvent = { type: "text"; text: string } | { type: "tool"; name: string };
 
@@ -57,14 +72,19 @@ export async function runAgent(opts: {
 // The text stream carries status events between record separators (\u001E), which never appear in
 // normal text: "\u001E{"tool":"search_clubs"}\u001E". parseStream splits them back out.
 export const RS = "\u001E";
-export const frame = (e: { tool: string }) => `${RS}${JSON.stringify(e)}${RS}`;
-export function parseStream(raw: string): { text: string; tools: string[] } {
+export const frame = (e: { tool: string } | { proposal: Proposal }) => `${RS}${JSON.stringify(e)}${RS}`;
+export function parseStream(raw: string): { text: string; tools: string[]; proposals: Proposal[] } {
   const parts = raw.split(RS);
   let text = "";
   const tools: string[] = [];
+  const proposals: Proposal[] = [];
   parts.forEach((p, i) => {
     if (i % 2 === 0) { text += p; return; }
-    try { const e = JSON.parse(p) as { tool?: string }; if (e.tool) tools.push(e.tool); } catch { /* a frame still arriving */ }
+    try {
+      const e = JSON.parse(p) as { tool?: string; proposal?: Proposal };
+      if (e.tool) tools.push(e.tool);
+      if (e.proposal) proposals.push(e.proposal);
+    } catch { /* a frame still arriving */ }
   });
-  return { text, tools };
+  return { text, tools, proposals };
 }

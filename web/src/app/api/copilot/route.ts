@@ -35,7 +35,7 @@ export async function POST(req: Request) {
       const out = (s: string) => controller.enqueue(enc.encode(s));
       try {
         if (r.task === "ask") {
-          await runAgent({ client, model: COPILOT_MODEL, system, messages, tools: TOOLS, exec: makeExec(ctx.supabase, ctx.userId), maxTokens, signal: abort.signal, emit: (e) => out(e.type === "text" ? e.text : frame({ tool: e.name })) });
+          await runAgent({ client, model: COPILOT_MODEL, system, messages, tools: TOOLS, exec: makeExec(ctx.supabase, ctx.userId, (proposal) => out(frame({ proposal }))), maxTokens, signal: abort.signal, emit: (e) => out(e.type === "text" ? e.text : frame({ tool: e.name })) });
         } else {
           const stream = client.messages.stream({ model: COPILOT_MODEL, max_tokens: maxTokens, system, messages }, { signal: abort.signal });
           for await (const ev of stream) if (ev.type === "content_block_delta" && ev.delta.type === "text_delta") out(ev.delta.text);

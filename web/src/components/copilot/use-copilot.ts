@@ -1,7 +1,7 @@
 "use client";
 import { useRef, useState } from "react";
 import type { CopilotRequest } from "@/lib/copilot";
-import { parseStream } from "@/lib/copilot-agent";
+import { parseStream, type Proposal } from "@/lib/copilot-agent";
 
 // Calls /api/copilot and hands back the text as it streams in, plus which lookups Copilot ran
 // (tool frames are split out of the stream by parseStream).
@@ -11,7 +11,7 @@ export function useCopilot() {
   const [remaining, setRemaining] = useState<number | null>(null);
   const abort = useRef<AbortController | null>(null);
 
-  const run = async (req: CopilotRequest, onText: (full: string, tools: string[]) => void) => {
+  const run = async (req: CopilotRequest, onText: (full: string, tools: string[], proposals: Proposal[]) => void) => {
     abort.current?.abort();
     const ctrl = new AbortController();
     abort.current = ctrl;
@@ -36,7 +36,7 @@ export function useCopilot() {
         raw += dec.decode(value, { stream: true });
         const parsed = parseStream(raw);
         full = parsed.text;
-        onText(full, parsed.tools);
+        onText(full, parsed.tools, parsed.proposals);
       }
       return full;
     } catch (e) {

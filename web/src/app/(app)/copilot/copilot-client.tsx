@@ -5,9 +5,10 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useCopilot } from "@/components/copilot/use-copilot";
 import { cn } from "@/lib/forge";
-import { TOOL_LABEL } from "@/lib/copilot-agent";
+import { TOOL_LABEL, type Proposal } from "@/lib/copilot-agent";
+import { ProposalCard } from "@/components/copilot/proposal-card";
 
-type Msg = { role: "user" | "assistant"; content: string; tools?: string[] };
+type Msg = { role: "user" | "assistant"; content: string; tools?: string[]; proposals?: Proposal[] };
 
 function Header({ sub }: { sub: string }) {
   return (
@@ -59,6 +60,7 @@ export function Rich({ text }: { text: string }) {
 export function Lookups({ tools, live }: { tools?: string[]; live: boolean }) {
   if (!tools?.length) return null;
   const last = tools[tools.length - 1];
+  const lookups = tools.filter((t) => !t.startsWith("propose_"));
   return (
     <div className="mb-2 flex flex-wrap items-center gap-1.5 text-xs whitespace-normal">
       {live ? (
@@ -67,7 +69,8 @@ export function Lookups({ tools, live }: { tools?: string[]; live: boolean }) {
           {TOOL_LABEL[last]?.doing ?? "Looking things up"}…
         </span>
       ) : (
-        <span className="text-faint">Checked: {[...new Set(tools.map((t) => TOOL_LABEL[t]?.done ?? t))].join(" · ")}</span>
+        // Drafts show as cards, so "Checked" lists only what Copilot looked up.
+        lookups.length > 0 && <span className="text-faint">Checked: {[...new Set(lookups.map((t) => TOOL_LABEL[t]?.done ?? t))].join(" · ")}</span>
       )}
     </div>
   );
@@ -95,7 +98,7 @@ export function CopilotChat({ first, field }: { first: string; field: string }) 
     const history = msgs.slice(-10);
     setMsgs((m) => [...m, { role: "user", content: q }, { role: "assistant", content: "" }]);
     setInput("");
-    const out = await run({ task: "ask", input: q, history: history.map(({ role, content }) => ({ role, content })) }, (full, tools) => setMsgs((m) => [...m.slice(0, -1), { role: "assistant", content: full, tools }]));
+    const out = await run({ task: "ask", input: q, history: history.map(({ role, content }) => ({ role, content })) }, (full, tools, proposals) => setMsgs((m) => [...m.slice(0, -1), { role: "assistant", content: full, tools, proposals }]));
     if (out === null) setMsgs((m) => (m.at(-1)?.content === "" ? m.slice(0, -2) : m));
   };
 
@@ -132,6 +135,7 @@ export function CopilotChat({ first, field }: { first: string; field: string }) 
                   <div className="rounded-3xl rounded-tl-md border border-line bg-surface px-4 py-3 text-[15px] leading-relaxed whitespace-pre-wrap text-text-2 shadow-[var(--shadow)]">
                     <Lookups tools={m.tools} live={busy && i === msgs.length - 1} />
                     {m.content ? <Rich text={m.content} /> : m.tools?.length ? null : <span className="inline-flex gap-1" aria-label="Thinking">{[0, 1, 2].map((d) => <motion.span key={d} className="size-2 rounded-full bg-accent" animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 1, repeat: Infinity, delay: d * 0.15 }} />)}</span>}
+                    {m.proposals?.map((p) => <ProposalCard key={p.id} p={p} />)}
                   </div>
                 </div>
               )}
