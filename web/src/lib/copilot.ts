@@ -1,6 +1,5 @@
 import { z } from "zod";
 import { dbFeatures } from "@/lib/db-features";
-import { requestTime } from "@/lib/forge";
 import { getViewer } from "@/lib/supabase/server";
 
 // Forge Copilot: Claude, writing and advising for members. Server-only by use (the API key is a
@@ -31,11 +30,12 @@ const RULES = `You are Forge Copilot, the writing and career assistant inside Fo
 const TASKS = {
   post: (r: CopilotRequest) => `Turn the member's rough notes into a Forge feed post${r.kind ? ` of type "${r.kind}"` : ""}, at most 900 characters. Lead with the result or the question, then the one or two details that make it credible. Reply with the post text only.`,
   writeup: (r: CopilotRequest) => `Write the private write-up for the member's project${r.title ? ` "${r.title}"` : ""}${r.summary ? ` (summary: ${r.summary})` : ""}, at most 3,500 characters, from their notes. Use four short labelled paragraphs: "What it is:", "How we built it:", "Results:", "What I'd do next:". Reply with the write-up only.`,
-  ask: () => `Answer the member's question as a mentor who knows their field. Keep it under 250 words unless they ask for more. When recommending clubs or events, recommend only ones from the lists below, and give each one's link exactly as shown (for example /c/abc or /events/xyz).`,
+  ask: () => `Answer the member's question as a mentor who knows their field. Keep it under 250 words unless they ask for more.
+Use your tools to look things up instead of guessing: search_clubs, upcoming_events and find_people for what's on Forge, my_profile for the member's own profile, projects and next steps, and club_overview for a club they belong to. Recommend only clubs, events and people your tools returned, and give each one's link exactly as the tool gave it (for example /c/abc or /events/xyz). If a lookup comes back empty, say so plainly.`,
 };
 
 // What Copilot knows about the member and what's on Forge, so its advice is specific.
-export async function memberContext(task: CopilotRequest["task"]) {
+export async function memberContext() {
   const { supabase, user, profile } = await getViewer();
   if (!user || !profile) return null;
   const [projects, clubs] = await Promise.all([
@@ -51,17 +51,7 @@ export async function memberContext(task: CopilotRequest["task"]) {
     mine.length && `Their clubs: ${mine.map((c) => c.name).join(", ")}.`,
     projects.data?.length && `Their projects: ${projects.data.map((p) => `${p.title} (${p.status === "completed" ? "completed" : "in progress"})`).join("; ")}.`,
   ].filter(Boolean);
-  if (task === "ask") {
-    const joined = new Set(mine.map((c) => c.id));
-    const [top, ev] = await Promise.all([
-      supabase.from("communities").select("id, name, field, member_count").order("member_count", { ascending: false }).limit(40),
-      supabase.from("events").select("id, title, starts_at, type").eq("status", "published").gt("starts_at", new Date(requestTime()).toISOString()).order("starts_at", { ascending: true }).limit(15),
-    ]);
-    const others = (top.data ?? []).filter((c) => !joined.has(c.id)).slice(0, 25);
-    if (others.length) lines.push(`Clubs on Forge they haven't joined:\n${others.map((c) => `- ${c.name} (${c.field || "STEM"}, ${c.member_count} members): /c/${c.id}`).join("\n")}`);
-    if (ev.data?.length) lines.push(`Upcoming events:\n${ev.data.map((e) => `- ${e.title} (${e.type}, ${e.starts_at.slice(0, 10)}): /events/${e.id}`).join("\n")}`);
-  }
-  return { supabase, system: `${RULES}\n\n${lines.join("\n")}` };
+  return { supabase, userId: user.id, system: `${RULES}\n\n${lines.join("\n")}` };
 }
 
 export function taskPrompt(r: CopilotRequest) {

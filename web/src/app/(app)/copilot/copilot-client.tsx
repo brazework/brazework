@@ -5,8 +5,9 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useCopilot } from "@/components/copilot/use-copilot";
 import { cn } from "@/lib/forge";
+import { TOOL_LABEL } from "@/lib/copilot-agent";
 
-type Msg = { role: "user" | "assistant"; content: string };
+type Msg = { role: "user" | "assistant"; content: string; tools?: string[] };
 
 function Header({ sub }: { sub: string }) {
   return (
@@ -54,6 +55,24 @@ export function Rich({ text }: { text: string }) {
   return <>{parts.map((p, i) => (/^\/(c|events|u)\//.test(p) ? <Link key={i} href={p} className="font-medium text-accent underline underline-offset-4">{p.startsWith("/c/") ? "Open club" : p.startsWith("/events/") ? "Open event" : "Open profile"} →</Link> : <span key={i}>{p}</span>))}</>;
 }
 
+// Which lookups Copilot ran for an answer: a live chip while it works, then "Checked: …".
+export function Lookups({ tools, live }: { tools?: string[]; live: boolean }) {
+  if (!tools?.length) return null;
+  const last = tools[tools.length - 1];
+  return (
+    <div className="mb-2 flex flex-wrap items-center gap-1.5 text-xs whitespace-normal">
+      {live ? (
+        <span className="inline-flex items-center gap-1.5 rounded-full bg-surface-2 px-2.5 py-1 text-muted">
+          <motion.span className="size-1.5 rounded-full bg-accent" animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 1, repeat: Infinity }} />
+          {TOOL_LABEL[last]?.doing ?? "Looking things up"}…
+        </span>
+      ) : (
+        <span className="text-faint">Checked: {[...new Set(tools.map((t) => TOOL_LABEL[t]?.done ?? t))].join(" · ")}</span>
+      )}
+    </div>
+  );
+}
+
 export function CopilotChat({ first, field }: { first: string; field: string }) {
   const { run, stop, busy, error, remaining } = useCopilot();
   const [msgs, setMsgs] = useState<Msg[]>([]);
@@ -76,7 +95,7 @@ export function CopilotChat({ first, field }: { first: string; field: string }) 
     const history = msgs.slice(-10);
     setMsgs((m) => [...m, { role: "user", content: q }, { role: "assistant", content: "" }]);
     setInput("");
-    const out = await run({ task: "ask", input: q, history }, (full) => setMsgs((m) => [...m.slice(0, -1), { role: "assistant", content: full }]));
+    const out = await run({ task: "ask", input: q, history: history.map(({ role, content }) => ({ role, content })) }, (full, tools) => setMsgs((m) => [...m.slice(0, -1), { role: "assistant", content: full, tools }]));
     if (out === null) setMsgs((m) => (m.at(-1)?.content === "" ? m.slice(0, -2) : m));
   };
 
@@ -111,7 +130,8 @@ export function CopilotChat({ first, field }: { first: string; field: string }) 
                 <div className="flex max-w-[92%] gap-3">
                   <span className="bg-accent-grad mt-1 grid size-8 shrink-0 place-items-center rounded-xl text-on-accent"><Sparkles className="size-4" /></span>
                   <div className="rounded-3xl rounded-tl-md border border-line bg-surface px-4 py-3 text-[15px] leading-relaxed whitespace-pre-wrap text-text-2 shadow-[var(--shadow)]">
-                    {m.content ? <Rich text={m.content} /> : <span className="inline-flex gap-1" aria-label="Thinking">{[0, 1, 2].map((d) => <motion.span key={d} className="size-2 rounded-full bg-accent" animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 1, repeat: Infinity, delay: d * 0.15 }} />)}</span>}
+                    <Lookups tools={m.tools} live={busy && i === msgs.length - 1} />
+                    {m.content ? <Rich text={m.content} /> : m.tools?.length ? null : <span className="inline-flex gap-1" aria-label="Thinking">{[0, 1, 2].map((d) => <motion.span key={d} className="size-2 rounded-full bg-accent" animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 1, repeat: Infinity, delay: d * 0.15 }} />)}</span>}
                   </div>
                 </div>
               )}
