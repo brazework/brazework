@@ -1,6 +1,6 @@
 "use client";
 import { Check, Loader2, ScrollText, X } from "lucide-react";
-import { useActionState, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { chipCls } from "@/components/app/page-ui";
 import { Button, Field, inputCls } from "@/components/ui";
 import { COMMUNITY_FIELDS, LIMITS, PRIVACY, TYPES } from "@/lib/communities";
@@ -20,12 +20,22 @@ export function CreateCommunity({ interests, field }: { interests: string[]; fie
   const [about, setAbout] = useState("");
   const [rules, setRules] = useState("");
   // Same minimums the server enforces (createSchema in actions.ts).
+  // Typed before the page finished loading (slow phones)? The text is in the box but not in state yet:
+  // pick it up once, so the counters, preview and Create button match what's on screen.
+  const formRef = useRef<HTMLFormElement>(null);
+  useEffect(() => {
+    const f = formRef.current;
+    if (!f) return;
+    const v = (n: string) => (f.elements.namedItem(n) as HTMLInputElement | HTMLTextAreaElement | null)?.value ?? "";
+    const raf = requestAnimationFrame(() => { if (v("name")) setName(v("name")); if (v("about")) setAbout(v("about")); if (v("rules")) setRules(v("rules")); });
+    return () => cancelAnimationFrame(raf);
+  }, []);
   const ready = name.trim().length >= 3 && about.trim().length >= 1;
   const options = [...new Set([...interests, ...ALL_TOPICS])];
   const pill = "relative rounded-2xl border border-line px-4 py-3 text-left text-sm transition hover:border-line-strong aria-pressed:border-text aria-pressed:bg-raised";
   return (
     <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_280px]">
-    <form onSubmit={submitWithoutReset(action)} className="flex flex-col gap-5">
+    <form ref={formRef} onSubmit={submitWithoutReset(action)} className="flex flex-col gap-5">
       <div>
         <h2 className="text-xl font-semibold tracking-tight">Start a community</h2>
         <p className="mt-1 text-sm text-muted">Takes about a minute. You can change everything later in Manage.</p>
