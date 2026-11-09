@@ -1,0 +1,8 @@
+// Where the app connects. Defaults to the local test stack (web/e2e/local-supabase.sh up), so
+// development never writes to production. scripts/use-local.sh writes Local.xcconfig with the
+// stack's key; put another project's URL and anon key there to point elsewhere (gitignored).
+// "//" starts a comment in xcconfig files, hence the $() in URLs.
+FORGE_SUPABASE_URL = http:/$()/localhost:54321
+FORGE_SUPABASE_ANON_KEY =
+FORGE_WEB_URL = https:/$()/forge-preview-eight.vercel.app
+#include? "Local.xcconfig"
