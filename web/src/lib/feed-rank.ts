@@ -12,6 +12,8 @@ const HOUR = 36e5;
 export function scorePost(p: RankPost, src: Set<Source>, interests: Set<string>, now: number) {
   const age = Math.max(0, (now - Date.parse(p.created_at)) / HOUR);
   const matches = p.tags.filter((t) => interests.has(t)).length;
+  // What you just posted goes first (for 3 hours), so you see it land on any screen.
+  if (src.has("mine") && age < 3) return 1e6 - age;
   let s = -age;
   s += matches * 36; // 1.5 days per matching topic (as before)
   if (src.has("club")) s += 48;

@@ -1,6 +1,6 @@
 "use client";
 import { AnimatePresence, motion } from "motion/react";
-import { ChevronLeft, ChevronRight, ChevronsLeftRight, Crosshair, Flag, Maximize, Minimize, Pause, Play, Repeat, StepBack, StepForward, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronsLeftRight, Crosshair, Flag, Gauge, Maximize, Minimize, Pause, Play, Volume2, VolumeX, X } from "lucide-react";
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/forge";
@@ -131,43 +131,67 @@ function CompareSlider({ before, after, alt }: { before: MediaItem; after: Media
 
 const SPEEDS = [1, 0.5, 0.25, 2];
 
-// The test-run player: speed for slow-mo, loop, frame-by-frame, and the poster's timeline markers.
-// Keys while it's focused: space/k play, ←/→ 5 s, , and . one frame.
+// The video player: it shows its first frame (not a black box), plays muted when it's mostly on
+// screen and pauses when you scroll past. Tap to pause or play. While playing only the scrubber
+// shows; pausing brings up speed (slow-mo for test runs) and full screen. Keys while focused:
+// space/k play, ←/→ 5 s, , and . one frame, f full screen.
 function TestRunPlayer({ v }: { v: MediaItem }) {
   const ref = useRef<HTMLVideoElement>(null);
   const box = useRef<HTMLDivElement>(null);
+  const userPaused = useRef(false);
   const [playing, setPlaying] = useState(false);
   const [t, setT] = useState(0);
   const [dur, setDur] = useState(0);
   const [speed, setSpeed] = useState(1);
-  const [loop, setLoop] = useState(false);
-  // Full screen: the player box fills the screen (video letterboxed to fit, controls on top). The
-  // same button exits, plus a close button and Esc; state follows the browser so all three agree.
+  const [muted, setMuted] = useState(true);
+  const [flash, setFlash] = useState<{ n: number; play: boolean } | null>(null);
+  // Speed and full screen show when *you* paused it, not on a video that just hasn't played yet.
+  const [held, setHeld] = useState(false);
   const [full, setFull] = useState(false);
+  const portrait = !!(v.w && v.h && v.h > v.w);
   useEffect(() => {
     const sync = () => setFull(document.fullscreenElement === box.current);
     document.addEventListener("fullscreenchange", sync);
     return () => document.removeEventListener("fullscreenchange", sync);
   }, []);
+  // Plays (muted, as browsers require for autoplay) when 60% is on screen; pauses when it leaves.
+  // A video you paused yourself stays paused; reduced-motion users never get autoplay.
+  useEffect(() => {
+    const node = ref.current;
+    if (!node || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    const io = new IntersectionObserver(([en]) => {
+      if (en.intersectionRatio >= 0.6) { if (!userPaused.current && node.paused) void node.play().catch(() => {}); }
+      else if (!node.paused) node.pause();
+    }, { threshold: [0, 0.6] });
+    io.observe(node);
+    return () => io.disconnect();
+  }, []);
+  useEffect(() => { if (ref.current) ref.current.muted = muted; }, [muted]);
   const toggleFull = () => {
     if (document.fullscreenElement) { void document.exitFullscreen(); return; }
-    const b = box.current, v = ref.current as (HTMLVideoElement & { webkitEnterFullscreen?: () => void }) | null;
-    if (b?.requestFullscreen) void b.requestFullscreen().catch(() => v?.webkitEnterFullscreen?.());
-    else v?.webkitEnterFullscreen?.(); // iPhone Safari: only the video itself can go full screen
+    const b = box.current, x = ref.current as (HTMLVideoElement & { webkitEnterFullscreen?: () => void }) | null;
+    if (b?.requestFullscreen) void b.requestFullscreen().catch(() => x?.webkitEnterFullscreen?.());
+    else x?.webkitEnterFullscreen?.(); // iPhone Safari: only the video itself can go full screen
   };
-  // The video is server-rendered, so its metadata can load before React attaches onLoadedMetadata;
-  // read the duration as soon as the element is attached too, or the scrubber and markers stay empty.
+  // The video is server-rendered, so its metadata can load before React attaches onLoadedMetadata.
   const attach = useCallback((node: HTMLVideoElement | null) => {
     ref.current = node;
-    if (node && node.readyState >= 1 && Number.isFinite(node.duration)) setDur(node.duration);
+    if (node) { node.muted = true; if (node.readyState >= 1 && Number.isFinite(node.duration)) setDur(node.duration); }
   }, []);
   const marks = (v.marks ?? []).filter((m) => !dur || m.s <= dur);
   const el = () => ref.current;
-  const toggle = () => { const x = el(); if (!x) return; if (x.paused) void x.play(); else x.pause(); };
+  const toggle = () => {
+    const x = el(); if (!x) return;
+    const play = x.paused;
+    userPaused.current = !play;
+    setHeld(!play);
+    if (play) void x.play(); else x.pause();
+    setFlash((f) => ({ n: (f?.n ?? 0) + 1, play }));
+  };
   const seek = (s: number) => { const x = el(); if (x) { x.currentTime = Math.max(0, Math.min(dur || s, s)); setT(x.currentTime); } };
-  const step = (frames: number) => { const x = el(); if (x) { x.pause(); seek(x.currentTime + frames / 30); } };
-  const nextSpeed = () => { const s = SPEEDS[(SPEEDS.indexOf(speed) + 1) % SPEEDS.length]; setSpeed(s); if (el()) el()!.playbackRate = s; };
-  const ctl = "grid size-9 place-items-center rounded-full text-white transition hover:bg-white/15 active:scale-90";
+  const step = (frames: number) => { const x = el(); if (x) { x.pause(); userPaused.current = true; setHeld(true); seek(x.currentTime + frames / 30); } };
+  const nextSpeed = () => { const sp = SPEEDS[(SPEEDS.indexOf(speed) + 1) % SPEEDS.length]; setSpeed(sp); if (el()) el()!.playbackRate = sp; };
+  const chip = "inline-flex h-9 items-center gap-1.5 rounded-full bg-black/55 px-3 text-xs font-medium text-white backdrop-blur transition active:scale-95";
 
   return (
     <div className="mt-4">
@@ -182,63 +206,66 @@ function TestRunPlayer({ v }: { v: MediaItem }) {
           else if (e.key === ",") step(-1);
           else if (e.key === "f") toggleFull();
         }}
-        aria-label="Video player. Space plays or pauses, arrows skip 5 seconds, comma and period step one frame."
-        className={cn("group relative overflow-hidden bg-black outline-none", full ? "flex h-dvh w-screen items-center justify-center" : "rounded-2xl border border-line focus-visible:ring-2 focus-visible:ring-accent")}
+        aria-label="Video. Tap to play or pause. Keys: space plays or pauses, arrows skip 5 seconds, comma and period step one frame, f for full screen."
+        className={cn("relative overflow-hidden bg-black outline-none", full ? "flex h-dvh w-screen items-center justify-center" : "rounded-2xl border border-line focus-visible:ring-2 focus-visible:ring-accent")}
       >
         <video
           ref={attach}
-          src={mediaUrl(v.path)}
+          // #t=0.1: iPhone Safari shows that frame as the cover instead of a black box.
+          src={`${mediaUrl(v.path)}#t=0.1`}
           playsInline
+          muted
+          loop
           preload="metadata"
-          loop={loop}
           onClick={toggle}
           onPlay={() => setPlaying(true)}
           onPause={() => setPlaying(false)}
           onTimeUpdate={(e) => setT(e.currentTarget.currentTime)}
           onLoadedMetadata={(e) => setDur(e.currentTarget.duration)}
           onDurationChange={(e) => { if (Number.isFinite(e.currentTarget.duration)) setDur(e.currentTarget.duration); }}
-          className={full ? "h-full w-full bg-black object-contain" : "max-h-[560px] w-full bg-black"}
+          className={full ? "h-full w-full bg-black object-contain" : cn("mx-auto block bg-black", portrait ? "max-h-[70svh] w-auto max-w-full" : "max-h-[560px] w-full")}
           style={!full && v.w && v.h ? { aspectRatio: `${v.w} / ${v.h}` } : undefined}
         />
+        {/* A quick play/pause pulse where you tapped. */}
         <AnimatePresence>
-          {!playing && (
-            <motion.button type="button" onClick={toggle} aria-label="Play" initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 1.2 }} className="absolute top-1/2 left-1/2 grid size-16 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-black shadow-2xl transition hover:scale-105">
-              <Play className="ml-1 size-7 fill-current" />
-            </motion.button>
+          {flash && (
+            <motion.span key={flash.n} initial={{ opacity: 0.9, scale: 0.8 }} animate={{ opacity: 0, scale: 1.3 }} transition={{ duration: 0.6 }} className="pointer-events-none absolute top-1/2 left-1/2 grid size-16 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-black/50 text-white" aria-hidden="true">
+              {flash.play ? <Play className="ml-1 size-7 fill-current" /> : <Pause className="size-7 fill-current" />}
+            </motion.span>
           )}
         </AnimatePresence>
-        {full && <button type="button" onClick={toggleFull} aria-label="Close full screen" className="absolute top-4 right-4 z-10 grid size-11 place-items-center rounded-full bg-black/55 text-white backdrop-blur transition hover:bg-black/75"><X className="size-5" /></button>}
-        {speed !== 1 && <span className="absolute top-3 left-3 rounded-full bg-black/65 px-2.5 py-1 font-mono text-[11px] text-white backdrop-blur">{speed}× slow-mo</span>}
-        <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 to-transparent px-3 pt-8 pb-2 transition-opacity duration-300 group-hover:opacity-100 group-focus-within:opacity-100 sm:opacity-0" style={playing ? undefined : { opacity: 1 }}>
-          {/* Scrubber with the poster's markers as ticks. */}
-          <div className="relative h-5">
-            <div className="absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-white/25" />
-            <div className="bg-accent-grad absolute top-1/2 left-0 h-1 -translate-y-1/2 rounded-full" style={{ width: dur ? `${(t / dur) * 100}%` : 0 }} />
-            {dur > 0 && marks.map((m) => (
-              <span key={`${m.s}${m.t}`} className="absolute top-1/2 h-3 w-1 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white shadow" style={{ left: `${(m.s / dur) * 100}%` }} title={`${fmtTime(m.s)} ${m.t}`} />
-            ))}
-            <input type="range" min={0} max={dur || 0} step={0.01} value={t} onChange={(e) => seek(Number(e.target.value))} aria-label="Seek" className="absolute inset-0 w-full cursor-pointer opacity-0" />
-          </div>
-          <div className="mt-1 flex items-center gap-1">
-            <button type="button" onClick={toggle} aria-label={playing ? "Pause" : "Play"} className={ctl}>{playing ? <Pause className="size-4 fill-current" /> : <Play className="size-4 fill-current" />}</button>
-            <button type="button" onClick={() => step(-1)} aria-label="Back one frame" title="Back one frame (,)" className={ctl}><StepBack className="size-4" /></button>
-            <button type="button" onClick={() => step(1)} aria-label="Forward one frame" title="Forward one frame (.)" className={ctl}><StepForward className="size-4" /></button>
-            <span className="ml-1 font-mono text-[11px] text-white/80 tabular-nums">{fmtTime(t)} / {fmtTime(dur)}</span>
-            <span className="ml-auto flex items-center gap-1">
-              <button type="button" onClick={nextSpeed} aria-label={`Playback speed ${speed}×`} className="h-8 rounded-full px-2.5 font-mono text-xs text-white transition hover:bg-white/15">{speed}×</button>
-              <button type="button" onClick={() => setLoop((l) => !l)} aria-pressed={loop} aria-label="Loop" className={cn(ctl, loop && "bg-white/20")}><Repeat className="size-4" /></button>
-              <button type="button" onClick={toggleFull} aria-label={full ? "Exit full screen" : "Full screen"} title={full ? "Exit full screen (Esc)" : "Full screen (f)"} className={ctl}>{full ? <Minimize className="size-4" /> : <Maximize className="size-4" />}</button>
-            </span>
-          </div>
+        {!playing && !flash && <span className="pointer-events-none absolute top-1/2 left-1/2 grid size-16 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-black shadow-2xl" aria-hidden="true"><Play className="ml-1 size-7 fill-current" /></span>}
+        {/* Sound: always reachable, small. */}
+        <button type="button" onClick={() => setMuted((m) => !m)} aria-label={muted ? "Turn sound on" : "Mute"} className="absolute right-3 bottom-4 z-10 grid size-8 place-items-center rounded-full bg-black/55 text-white backdrop-blur transition active:scale-90">
+          {muted ? <VolumeX className="size-4" /> : <Volume2 className="size-4" />}
+        </button>
+        {/* Paused: speed and full screen. */}
+        <AnimatePresence>
+          {!playing && held && (
+            <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="absolute inset-x-3 top-3 z-10 flex items-center gap-2">
+              <button type="button" onClick={nextSpeed} aria-label={`Playback speed ${speed}×`} className={chip}><Gauge className="size-3.5" /> {speed}×{speed < 1 ? " slow-mo" : ""}</button>
+              <span className="font-mono text-[11px] text-white/80 tabular-nums">{fmtTime(t)} / {fmtTime(dur)}</span>
+              <button type="button" onClick={toggleFull} aria-label={full ? "Exit full screen" : "Full screen"} className={cn(chip, "ml-auto px-2.5")}>{full ? <Minimize className="size-4" /> : <Maximize className="size-4" />}</button>
+            </motion.div>
+          )}
+        </AnimatePresence>
+        {full && playing && <button type="button" onClick={toggleFull} aria-label="Close full screen" className="absolute top-4 right-4 z-10 grid size-11 place-items-center rounded-full bg-black/55 text-white backdrop-blur"><X className="size-5" /></button>}
+        {speed !== 1 && playing && <span className="pointer-events-none absolute top-3 left-3 rounded-full bg-black/55 px-2.5 py-1 font-mono text-[11px] text-white backdrop-blur">{speed}×</span>}
+        {/* The scrubber, with the poster's markers as ticks. */}
+        <div className="absolute inset-x-0 bottom-0 h-3">
+          <div className="absolute inset-x-0 bottom-0 h-[3px] bg-white/25" />
+          <div className="bg-accent-grad absolute bottom-0 left-0 h-[3px]" style={{ width: dur ? `${(t / dur) * 100}%` : 0 }} />
+          {dur > 0 && marks.map((m) => <span key={`${m.s}${m.t}`} className="absolute bottom-0 h-2 w-1 -translate-x-1/2 rounded-full bg-white" style={{ left: `${(m.s / dur) * 100}%` }} title={`${fmtTime(m.s)} ${m.t}`} />)}
+          <input type="range" min={0} max={dur || 0} step={0.01} value={t} onChange={(e) => seek(Number(e.target.value))} aria-label="Seek" className="absolute inset-0 h-full w-full cursor-pointer opacity-0" />
         </div>
       </div>
       {marks.length > 0 && (
-        <ol className="no-scrollbar mt-3 flex gap-1.5 overflow-x-auto">
+        <ol className="no-scrollbar mt-3 flex flex-wrap gap-1.5">
           {marks.map((m) => {
             const here = t >= m.s && t < m.s + 1.5;
             return (
               <li key={`${m.s}${m.t}`} className="shrink-0">
-                <button type="button" onClick={() => { seek(m.s); void el()?.play(); }} className={cn("inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition active:scale-95", here ? "border-transparent bg-accent-grad text-on-accent" : "border-line text-text-2 hover:bg-hover")}>
+                <button type="button" onClick={() => { seek(m.s); userPaused.current = false; setHeld(false); void el()?.play(); }} className={cn("inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs transition active:scale-95", here ? "border-transparent bg-accent-grad text-on-accent" : "border-line text-text-2 hover:bg-hover")}>
                   <Flag className="size-3.5" /> <span className="font-mono">{fmtTime(m.s)}</span> {m.t}
                 </button>
               </li>

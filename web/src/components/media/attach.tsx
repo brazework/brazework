@@ -1,6 +1,6 @@
 "use client";
 import { AnimatePresence, motion } from "motion/react";
-import { Columns2, Crosshair, Flag, ImagePlus, Loader2, Play, Video, X } from "lucide-react";
+import { Columns2, Crosshair, Flag, ImagePlus, Loader2, Video, X } from "lucide-react";
 import Image from "next/image";
 import { useRef, useState } from "react";
 import { CalloutEditor, MarkerEditor } from "./annotate";
@@ -98,8 +98,8 @@ export function AttachmentTray({ slots, onRemove, onEdit, compare, onCompare }: 
             )
           ) : (
             <>
-              <video src={s.preview} muted playsInline className="size-full object-cover" />
-              <span className="absolute inset-0 grid place-items-center"><span className="grid size-12 place-items-center rounded-full bg-black/50 text-white backdrop-blur"><Play className="ml-0.5 size-5" /></span></span>
+              {/* Watch it before you post: the phone's own player, starting on a real frame. */}
+              <video src={`${s.preview}#t=0.1`} playsInline controls preload="metadata" aria-label="Preview your video" className="size-full bg-black object-contain" />
             </>
           )}
           {s.status === "uploading" && <span className="absolute inset-0 grid place-items-center bg-bg/50 backdrop-blur-[2px]"><span className="flex items-center gap-2 rounded-full bg-surface/90 px-3 py-1.5 text-xs font-medium shadow"><Loader2 className="size-4 animate-spin" /> Uploading</span></span>}

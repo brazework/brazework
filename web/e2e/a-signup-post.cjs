@@ -46,6 +46,17 @@ const { BASE, step, browser, as, go, closeTour, summary } = require("./lib.cjs")
     await page.getByRole("button", { name: "Post", exact: true }).click();
     await page.locator("article a", { hasText: "@Ben Cho" }).first().waitFor({ timeout: 15000 });
   }, page);
+  await step("your new post shows first in For you (desktop and phone)", async () => {
+    await go(page, "/feed");
+    const first = await page.locator("article").first().innerText();
+    if (!first.includes("Hello Forge! Thanks")) throw new Error("first post is: " + first.slice(0, 80));
+    const phone = await b.newContext({ viewport: { width: 393, height: 852 }, isMobile: true, hasTouch: true, storageState: await page.context().storageState() });
+    const pp = await phone.newPage();
+    await go(pp, "/feed");
+    const firstPhone = await pp.locator("article").first().innerText();
+    await phone.close();
+    if (!firstPhone.includes("Hello Forge! Thanks")) throw new Error("phone first post is: " + firstPhone.slice(0, 80));
+  }, page);
   await step("mention renders as a profile link", async () => {
     const href = await page.locator("article a", { hasText: "@Ben Cho" }).first().getAttribute("href");
     if (!/^\/u\/[0-9a-f-]{36}$/.test(href)) throw new Error(href);

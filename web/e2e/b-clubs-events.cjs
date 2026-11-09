@@ -73,9 +73,9 @@ const { BASE, step, browser, as, go, summary } = require("./lib.cjs");
     await go(josh, eventPath);
     await josh.getByRole("button", { name: "RSVP", exact: true }).first().click();
     await josh.getByRole("button", { name: /Going/ }).first().waitFor({ timeout: 10000 });
-    await josh.waitForLoadState("networkidle"); // the save itself, not just the optimistic button
-    await go(josh, eventPath);
-    await josh.getByText(/1 person going/).first().waitFor({ timeout: 10000 });
+    // The button flips at once; reload until the server's count has the RSVP.
+    for (let i = 0; i < 10 && !(await josh.getByText(/1 person going/).count()); i++) { await josh.waitForTimeout(500); await go(josh, eventPath); }
+    await josh.getByText(/1 person going/).first().waitFor({ timeout: 5000 });
   }, josh);
   await step("event chat opens for attendees", async () => {
     await josh.getByRole("button", { name: /Event chat/ }).click();

@@ -57,6 +57,8 @@ async function EventView({ params }: { params: PageProps<"/events/[id]">["params
     supabase.from("events").select("id, title, starts_at, rsvp_count").eq("topic", e.topic).eq("status", "published").gt("starts_at", now).neq("id", id).order("starts_at").limit(3),
   ]);
   const going = !!g.data?.length;
+  // Your RSVP and the count are separate reads; never show "0 going" next to your own "Going".
+  e.rsvp_count = Math.max(e.rsvp_count, going ? 1 : 0);
   const connIds = ((conn.data ?? []) as { user_id: string }[]).map((r) => r.user_id);
   const { data: faces } = connIds.length ? await supabase.from("profiles").select(`id, first_name, last_name${f.media ? ", avatar_path" : ""}`).in("id", connIds) : { data: [] };
   const people = ((faces ?? []) as unknown as { id: string; first_name: string; last_name: string; avatar_path?: string | null }[]);

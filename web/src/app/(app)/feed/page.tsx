@@ -46,7 +46,14 @@ const KINDS = [
   { id: "question", label: "Questions" },
   { id: "project", label: "Projects" },
   { id: "update", label: "Updates" },
+  { id: "video", label: "Videos" },
 ] as const;
+const SORTS = [
+  { id: "best", label: "Best" },
+  { id: "new", label: "Newest" },
+  { id: "old", label: "Oldest" },
+] as const;
+type Sort = (typeof SORTS)[number]["id"];
 type Kind = (typeof KINDS)[number]["id"];
 type Item = { type: "post"; post: Post; reason: string; at: number; score: number } | { type: "proof"; proof: Proof; reason: string; at: number; score: number };
 
@@ -55,6 +62,8 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
   const tab: TabId = TABS.find((t) => t.id === sp.tab)?.id ?? "for-you";
   const tag = typeof sp.tag === "string" ? sp.tag : "";
   const kind: Kind = KINDS.find((k) => k.id === sp.kind)?.id ?? "";
+  // For you is ranked ("Best") unless you pick a time order; the other tabs are newest first.
+  const sort: Sort = SORTS.find((x) => x.id === sp.sort && (x.id !== "best" || tab === "for-you"))?.id ?? (tab === "for-you" ? "best" : "new");
   const { supabase, user, profile } = await getViewer();
   if (!user || !profile) redirect("/login");
   const interests: string[] = profile.interests ?? [];
@@ -68,8 +77,10 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
   const { media: mediaEnabled, mentions: mentionsEnabled, milestones: proofOn } = await dbFeatures();
   const cols = await postSelect();
   const base = () => {
-    let q = supabase.from("posts").select(cols).order("created_at", { ascending: false });
-    if (kind) q = q.eq("kind", kind);
+    let q = supabase.from("posts").select(cols).order("created_at", { ascending: sort === "old" });
+    // media is JSON: .contains() would send a Postgres array literal ("{[object Object]}"), so ask for JSON containment.
+    if (kind === "video") q = mediaEnabled ? q.filter("media", "cs", JSON.stringify([{ type: "video" }])) : q.eq("id", "none");
+    else if (kind) q = q.eq("kind", kind);
     if (tag) q = q.contains("tags", [tag]);
     return q;
   };
@@ -141,6 +152,7 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
     }));
     if (proofs.length) items = [...items, ...proofs].sort((a, b) => (tab === "for-you" ? b.score - a.score : b.at - a.at));
   }
+  if (sort !== "best") items.sort((a, b) => (sort === "old" ? a.at - b.at : b.at - a.at));
   if (kind === "question") items.sort((a, b) => Number(a.type === "post" && a.post.comment_count > 0) - Number(b.type === "post" && b.post.comment_count > 0));
   items = items.slice(0, 120);
 
@@ -169,12 +181,14 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
   const viewer = { id: user.id, first: profile.first_name, last: profile.last_name };
   const liked = new Set((likes.data ?? []).map((l: { post_id: string }) => l.post_id));
   const saved = new Set((saves.data ?? []).map((l: { post_id: string }) => l.post_id));
-  const href = (patch: { tab?: string; kind?: string; tag?: string }) => {
+  const href = (patch: { tab?: string; kind?: string; tag?: string; sort?: string }) => {
     const q = new URLSearchParams();
     const t = patch.tab ?? tab, k = patch.kind ?? kind, g = patch.tag ?? tag;
+    const o = patch.sort ?? (patch.tab && patch.tab !== tab ? "" : sort);
     if (t !== "for-you") q.set("tab", t);
     if (k) q.set("kind", k);
     if (g) q.set("tag", g);
+    if (o && o !== (t === "for-you" ? "best" : "new")) q.set("sort", o);
     const s = q.toString();
     return `/feed${s ? `?${s}` : ""}`;
   };
@@ -197,11 +211,17 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
           </Link>
         ))}
         {interests.length > 0 && <Link href="/settings#profile" className="shrink-0 rounded-full px-2 py-1 text-xs text-faint hover:text-text">Edit</Link>}
+        {/* Order: ranked, newest or oldest first. */}
+        <span className="ml-auto inline-flex shrink-0 items-center gap-0.5 rounded-full border border-line bg-surface p-0.5" role="group" aria-label="Sort posts">
+          {SORTS.filter((x) => x.id !== "best" || tab === "for-you").map((x) => (
+            <Link key={x.id} href={href({ sort: x.id })} aria-current={sort === x.id ? "true" : undefined} className={cn("rounded-full px-2.5 py-0.5 text-xs whitespace-nowrap transition", sort === x.id ? "bg-text text-surface" : "text-muted hover:text-text")}>{x.label}</Link>
+          ))}
+        </span>
       </nav>
       {(tag || kind) && (
         <div className="mt-3 flex items-center justify-between rounded-2xl border border-line bg-surface-2 px-4 py-2.5 text-sm">
-          <span>Showing {kind ? <strong className="font-medium">{KINDS.find((k) => k.id === kind)?.label.toLowerCase()}</strong> : "posts"}{tag && <> tagged <strong className="font-medium">#{tag}</strong></>}{kind === "question" && " · unanswered first"}</span>
-          <Link href={href({ kind: "", tag: "" })} className="text-muted hover:text-text">Clear</Link>
+          <span>Showing {kind ? <strong className="font-medium">{KINDS.find((k) => k.id === kind)?.label.toLowerCase()}</strong> : "posts"}{tag && <> tagged <strong className="font-medium">#{tag}</strong></>}{kind === "question" && " · unanswered first"}{sort === "old" && " · oldest first"}</span>
+          <Link href={href({ kind: "", tag: "", sort: "" })} className="text-muted hover:text-text">Clear</Link>
         </div>
       )}
       {discover && <div className="mt-6"><Suspense fallback={<StripSkeleton w={250} h={96} />}><WeekStrip /></Suspense></div>}
