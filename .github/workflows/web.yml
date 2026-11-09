@@ -59,9 +59,9 @@ jobs:
           docker run -d --name db -e POSTGRES_PASSWORD=postgres public.ecr.aws/supabase/postgres:17.11.0.004
           for i in $(seq 1 60); do docker exec db pg_isready -U postgres -h localhost && break; sleep 2; done
           sleep 3
-      - name: Apply schema, messages, events, activity, projects, tours, club-events, media, invites, post-edits, copilot, milestones, feedback, feedback-review, integrations, group-chats
+      - name: Apply schema, messages, events, activity, projects, tours, club-events, media, invites, post-edits, copilot, milestones, feedback, feedback-review, integrations, group-chats, project-stack
         run: |
-          for f in schema messages events activity projects tours club-events media invites post-edits copilot milestones feedback feedback-review integrations group-chats; do
+          for f in schema messages events activity projects tours club-events media invites post-edits copilot milestones feedback feedback-review integrations group-chats project-stack; do
             echo "::group::$f.sql"
             docker exec -i db psql -U postgres -h localhost -d postgres -v ON_ERROR_STOP=1 -q < supabase/$f.sql
             echo "::endgroup::"

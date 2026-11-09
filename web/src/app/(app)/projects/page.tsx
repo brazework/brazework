@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { BadgeCheck, FolderGit2, Search } from "lucide-react";
+import { BadgeCheck, FolderGit2, Search, Wrench } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
@@ -32,10 +32,13 @@ async function Explore({ searchParams }: { searchParams: PageProps<"/projects">[
   const status = sp.status === "completed" || sp.status === "in_progress" ? sp.status : "";
   const verifiedOnly = sp.verified === "1";
   const mine = sp.mine === "1";
+  const tool = typeof sp.tool === "string" ? sp.tool.slice(0, 40) : "";
+  const { milestones: msOn, projectTools: stackOn } = await dbFeatures();
 
-  let req = supabase.from("projects").select("id, title, summary, status, year, tags, updated_at, owner_id, profiles(first_name, last_name, field)").eq("private", false).order("updated_at", { ascending: false }).limit(120);
+  let req = supabase.from("projects").select(`id, title, summary, status, year, tags, updated_at, owner_id, profiles(first_name, last_name, field)${stackOn ? ", tools" : ""}`).eq("private", false).order("updated_at", { ascending: false }).limit(120);
   if (mine) req = req.eq("owner_id", user.id);
   if (topic) req = req.contains("tags", [topic]);
+  if (tool && stackOn) req = req.contains("tools", [tool]);
   if (status) req = req.eq("status", status);
   const clean = q.replace(/[%,()*]/g, " ").trim();
   if (clean) req = req.or(`title.ilike.*${clean}*,summary.ilike.*${clean}*`);
@@ -45,7 +48,6 @@ async function Explore({ searchParams }: { searchParams: PageProps<"/projects">[
   const ids = rows.map((r) => r.id);
 
   // How much of each project a club has verified, and how many updates it has had.
-  const { milestones: msOn } = await dbFeatures();
   const [ms, ups] = ids.length
     ? await Promise.all([
         msOn ? supabase.from("milestones").select("project_id").in("project_id", ids).eq("status", "verified").limit(2000) : Promise.resolve({ data: [] }),
@@ -59,8 +61,12 @@ async function Explore({ searchParams }: { searchParams: PageProps<"/projects">[
   // Your interests first among the topic chips.
   const interests = profile.interests ?? [];
   const topics = [...new Set([...interests, ...rows.flatMap((r) => r.tags)])].slice(0, 12);
+  // The tools most used across these projects, as quick filters.
+  const toolCounts = rows.flatMap((r) => (r as unknown as { tools?: string[] }).tools ?? []).reduce((m, t) => m.set(t, (m.get(t) ?? 0) + 1), new Map<string, number>());
+  const topTools = [...toolCounts].sort((a, b) => b[1] - a[1]).slice(0, 10).map(([t]) => t);
+  if (tool && !topTools.includes(tool)) topTools.unshift(tool);
   const href = (patch: Record<string, string>) => {
-    const p = new URLSearchParams({ ...(q && { q }), ...(topic && { topic }), ...(status && { status }), ...(verifiedOnly && { verified: "1" }), ...(mine && { mine: "1" }), ...patch });
+    const p = new URLSearchParams({ ...(q && { q }), ...(topic && { topic }), ...(tool && { tool }), ...(status && { status }), ...(verifiedOnly && { verified: "1" }), ...(mine && { mine: "1" }), ...patch });
     for (const [k, v] of [...p.entries()]) if (!v) p.delete(k);
     const s = p.toString();
     return `/projects${s ? `?${s}` : ""}`;
@@ -72,6 +78,7 @@ async function Explore({ searchParams }: { searchParams: PageProps<"/projects">[
       <PageHeader title="Projects" subtitle="What people across Forge are building, and what their clubs have verified." actions={<Link href={`/u/${user.id}#projects`} className="bg-accent-grad inline-flex h-10 items-center gap-1.5 rounded-full px-4 text-sm font-medium text-on-accent"><FolderGit2 className="size-4" /> Add a project</Link>} />
       <form action="/projects" className="relative mt-6">
         {topic && <input type="hidden" name="topic" value={topic} />}
+        {tool && <input type="hidden" name="tool" value={tool} />}
         {status && <input type="hidden" name="status" value={status} />}
         {verifiedOnly && <input type="hidden" name="verified" value="1" />}
         <Search className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-faint" />
@@ -86,10 +93,16 @@ async function Explore({ searchParams }: { searchParams: PageProps<"/projects">[
         <span className="mx-1 w-px shrink-0 bg-line" aria-hidden="true" />
         {topics.map((t) => <Link key={t} href={href({ topic: topic === t ? "" : t })} className={chip(topic === t)}>#{t}</Link>)}
       </div>
+      {topTools.length > 0 && (
+        <div className="no-scrollbar -mx-1 mt-2 flex items-center gap-1.5 overflow-x-auto px-1 pb-1">
+          <span className="inline-flex shrink-0 items-center gap-1 text-xs text-faint"><Wrench className="size-3.5" /> Built with</span>
+          {topTools.map((t) => <Link key={t} href={href({ tool: tool === t ? "" : t })} className={chip(tool === t)}>{t}</Link>)}
+        </div>
+      )}
       <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {list.map((p) => <ExploreCard key={p.id} p={p} />)}
       </div>
-      {!list.length && <EmptyState icon={<FolderGit2 className="size-5" />} title={q || topic || status || verifiedOnly || mine ? "No projects match" : "No projects yet"} body={q || topic || status || verifiedOnly || mine ? <Link href="/projects" className="underline">Clear filters</Link> : "Add yours from your profile, or import one from GitHub."} />}
+      {!list.length && <EmptyState icon={<FolderGit2 className="size-5" />} title={q || topic || tool || status || verifiedOnly || mine ? "No projects match" : "No projects yet"} body={q || topic || tool || status || verifiedOnly || mine ? <Link href="/projects" className="underline">Clear filters</Link> : "Add yours from your profile, or import one from GitHub."} />}
     </>
   );
 }

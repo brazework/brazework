@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useCopilot } from "@/components/copilot/use-copilot";
 import { importFromGitHub } from "@/lib/connectors/actions";
 import type { ProjectDraft } from "@/lib/connectors/github";
+import { StackPicker } from "@/components/projects/stack-picker";
 import { AddMilestone, MilestoneTimeline, type Club, type Milestone } from "./milestones";
 import { useActionState, useEffect, useRef, useState, useTransition } from "react";
 import { chipCls } from "@/components/app/page-ui";
@@ -25,6 +26,7 @@ export type ProjectView = {
   details: string | null;
   link: string | null;
   milestones?: Milestone[];
+  tools?: string[];
 };
 
 const initial: ProjectState = { ok: false, message: "" };
@@ -63,7 +65,7 @@ export function EditBasics({ headline, bio }: { headline: string; bio: string })
 const meta = (p: ProjectView) => (p.status === "completed" ? `Completed${p.year ? ` ${p.year}` : ""}` : `In progress · updated ${timeAgo(p.updated_at)}`);
 const safeLink = (l: string | null) => (l && /^https?:\/\/\S+$/i.test(l) ? l : null);
 
-export function ProjectCard({ project, own, interests, copilot = false, clubs }: { project: ProjectView; own: boolean; interests: string[]; copilot?: boolean; clubs?: Club[] }) {
+export function ProjectCard({ project, own, interests, copilot = false, clubs, stack = false }: { project: ProjectView; own: boolean; interests: string[]; copilot?: boolean; clubs?: Club[]; stack?: boolean }) {
   const verified = (project.milestones ?? []).filter((m) => m.status === "verified").length;
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -74,8 +76,7 @@ export function ProjectCard({ project, own, interests, copilot = false, clubs }:
   const act = (fn: () => Promise<ProjectState>) => start(async () => { const r = await fn(); setMsg(r.ok ? r.message : r.message); });
 
   return (
-    <article className="grad-edge group relative flex h-full flex-col overflow-hidden rounded-3xl border p-5 pt-6 shadow-[var(--shadow)] transition duration-300 hover:-translate-y-1">
-      <span className="absolute inset-x-0 top-0 h-1.5" style={{ background: stripe(project) }} aria-hidden="true" />
+    <article className="glass-card group relative flex h-full flex-col overflow-hidden rounded-3xl p-5 transition duration-300 hover:-translate-y-1">
       <div className="flex items-start justify-between gap-3">
         <h3 className="text-lg font-semibold tracking-tight"><Link href={`/projects/${project.id}`} className="hover:underline">{project.title}</Link></h3>
         {verified > 0 && <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[color-mix(in_oklab,var(--ok)_14%,transparent)] px-2 py-0.5 text-[11px] font-medium text-ok"><BadgeCheck className="size-3.5" /> {verified} verified</span>}
@@ -87,6 +88,7 @@ export function ProjectCard({ project, own, interests, copilot = false, clubs }:
       </p>
       <p className="mt-3 text-sm leading-relaxed text-text-2">{project.summary}</p>
       {project.tags.length > 0 && <div className="mt-3 flex flex-wrap gap-1.5">{project.tags.map((t) => <span key={t} className="rounded-full bg-surface-2 px-2.5 py-0.5 text-xs text-text-2">#{t}</span>)}</div>}
+      {!!project.tools?.length && <p className="mt-2 truncate text-xs text-muted"><span className="text-faint">Built with</span> {project.tools.slice(0, 5).join(" · ")}{project.tools.length > 5 ? ` +${project.tools.length - 5}` : ""}</p>}
       {project.milestones && <MilestoneTimeline items={project.milestones} own={own} />}
       {own && clubs && <div className="mt-3"><AddMilestone projectId={project.id} projectTitle={project.title} clubs={clubs} /></div>}
       {(project.details || link) && (
@@ -115,17 +117,9 @@ export function ProjectCard({ project, own, interests, copilot = false, clubs }:
         </div>
       )}
       {sharing && <ShareBox id={project.id} title={project.title} onDone={(m) => { setSharing(false); setMsg(m); }} />}
-      {editing && <ProjectDialog project={project} interests={interests} copilot={copilot} onClose={() => setEditing(false)} />}
+      {editing && <ProjectDialog project={project} interests={interests} copilot={copilot} stack={stack} onClose={() => setEditing(false)} />}
     </article>
   );
-}
-
-// Each project gets a stable colour strip from its first topic (or title), so a grid of them reads at a glance.
-const STRIPES = ["linear-gradient(90deg,#6366f1,#38bdf8)", "linear-gradient(90deg,#8b5cf6,#ec4899)", "linear-gradient(90deg,#06b6d4,#10b981)", "linear-gradient(90deg,#f59e0b,#ef4444)", "linear-gradient(90deg,#ec4899,#f97316)", "linear-gradient(90deg,#eab308,#22c55e)"];
-function stripe(p: ProjectView) {
-  let h = 0;
-  for (const ch of p.tags[0] ?? p.title) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
-  return STRIPES[h % STRIPES.length];
 }
 
 const FILTERS = [
@@ -135,7 +129,7 @@ const FILTERS = [
 ] as const;
 
 // The project grid with All / In progress / Completed filters; cards glide into their new spots.
-export function ProjectGrid({ projects, own, interests, copilot = false, clubs }: { projects: ProjectView[]; own: boolean; interests: string[]; copilot?: boolean; clubs?: Club[] }) {
+export function ProjectGrid({ projects, own, interests, copilot = false, clubs, stack = false }: { projects: ProjectView[]; own: boolean; interests: string[]; copilot?: boolean; clubs?: Club[]; stack?: boolean }) {
   const [filter, setFilter] = useState<(typeof FILTERS)[number]["id"]>("all");
   const shown = filter === "all" ? projects : projects.filter((p) => p.status === filter);
   const count = (id: string) => (id === "all" ? projects.length : projects.filter((p) => p.status === id).length);
@@ -155,7 +149,7 @@ export function ProjectGrid({ projects, own, interests, copilot = false, clubs }
         <AnimatePresence mode="popLayout" initial={false}>
           {shown.map((pr) => (
             <motion.div key={pr.id} layout initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} transition={{ duration: 0.25 }}>
-              <ProjectCard project={pr} own={own} interests={interests} copilot={copilot} clubs={clubs} />
+              <ProjectCard project={pr} own={own} interests={interests} copilot={copilot} clubs={clubs} stack={stack} />
             </motion.div>
           ))}
         </AnimatePresence>
@@ -189,19 +183,21 @@ function ShareBox({ id, title, onDone }: { id: string; title: string; onDone: (m
   );
 }
 
-export function ProjectEditor({ interests, copilot = false }: { interests: string[]; copilot?: boolean }) {
+export function ProjectEditor({ interests, copilot = false, stack = false }: { interests: string[]; copilot?: boolean; stack?: boolean }) {
   const [open, setOpen] = useState(false);
   return (
     <>
       <Button onClick={() => setOpen(true)}><Plus className="size-4" /> Add project</Button>
-      {open && <ProjectDialog interests={interests} copilot={copilot} onClose={() => setOpen(false)} />}
+      {open && <ProjectDialog interests={interests} copilot={copilot} stack={stack} onClose={() => setOpen(false)} />}
     </>
   );
 }
 
-function ProjectDialog({ project, interests, onClose, copilot = false }: { project?: ProjectView; interests: string[]; onClose: () => void; copilot?: boolean }) {
+function ProjectDialog({ project, interests, onClose, copilot = false, stack = false }: { project?: ProjectView; interests: string[]; onClose: () => void; copilot?: boolean; stack?: boolean }) {
   const formRef = useRef<HTMLFormElement>(null);
   const [details, setDetails] = useState(project?.details ?? "");
+  const [tools, setTools] = useState<string[]>(project?.tools ?? []);
+  const [summaryText, setSummaryText] = useState(project?.summary ?? "");
   const ai = useCopilot();
   // Import from GitHub: fills the form from a public repo; the member reviews it before saving.
   const [repoUrl, setRepoUrl] = useState("");
@@ -216,7 +212,7 @@ function ProjectDialog({ project, interests, onClose, copilot = false }: { proje
     const form = formRef.current;
     const put = (name: string, value: string) => { const el = form?.elements.namedItem(name); if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) el.value = value; };
     put("title", d.title); put("summary", d.summary); put("link", d.link);
-    setDetails(d.details); setStatus(d.status); setTags(d.tags);
+    setDetails(d.details); setStatus(d.status); setTags(d.tags); setSummaryText(d.summary); if (d.tools?.length) setTools(d.tools);
     if (d.year) requestAnimationFrame(() => put("year", d.year));
     setImported(d);
   });
@@ -267,7 +263,7 @@ function ProjectDialog({ project, interests, onClose, copilot = false }: { proje
         <input type="hidden" name="status" value={status} />
         {tags.map((t) => <input key={t} type="hidden" name="tags" value={t} />)}
         <Field label="Title"><input name="title" defaultValue={project?.title} maxLength={120} className={inputCls} required /></Field>
-        <Field label="Summary" hint="Everyone sees this, even when the project is private."><textarea name="summary" defaultValue={project?.summary} maxLength={600} rows={3} className={cn(inputCls, "h-auto resize-none py-3")} required /></Field>
+        <Field label="Summary" hint="Everyone sees this, even when the project is private."><textarea name="summary" defaultValue={project?.summary} onChange={(e) => setSummaryText(e.target.value)} maxLength={600} rows={3} className={cn(inputCls, "h-auto resize-none py-3")} required /></Field>
         <div className="flex flex-wrap items-end gap-3">
           <div role="group" aria-label="Status" className="flex gap-1.5">
             {(["in_progress", "completed"] as const).map((s) => (
@@ -310,6 +306,7 @@ function ProjectDialog({ project, interests, onClose, copilot = false }: { proje
             {ai.error && <p role="alert" className="w-full text-xs text-danger">{ai.error}</p>}
           </div>
         )}
+        {stack && <StackPicker value={tools} onChange={setTools} text={`${summaryText}\n${details}`} />}
         <Field label="Link"><input name="link" type="url" defaultValue={project?.link ?? ""} placeholder="https://github.com/…" maxLength={300} className={inputCls} /></Field>
         <label className="flex items-start gap-3 rounded-2xl border border-line p-4 text-sm">
           <input type="checkbox" name="private" defaultChecked={project?.private} className="mt-0.5 size-4 accent-[var(--text)]" />

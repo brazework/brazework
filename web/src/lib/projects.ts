@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { ALL_TOPICS, friendlyError } from "@/lib/forge";
 import { getViewer } from "@/lib/supabase/server";
+import { dbFeatures } from "@/lib/db-features";
 
 // Projects on profiles (public/js/projects.js + supabase/projects.sql). Everyone sees a project's
 // card; the write-up and link stay hidden from others while it's private (row-level security).
@@ -20,6 +21,7 @@ const schema = z
     private: z.boolean(),
     details: z.string().trim().max(5000).default(""),
     link: z.string().trim().max(300).default(""),
+    tools: z.array(z.string().trim().min(1).max(40).refine((t) => !/[<>]/.test(t))).max(12, "Pick up to 12 tools.").default([]),
   })
   .refine((v) => v.link === "" || /^https?:\/\/\S+$/i.test(v.link), { message: "Links must start with http:// or https://", path: ["link"] });
 
@@ -34,13 +36,15 @@ export async function saveProject(_: ProjectState, form: FormData): Promise<Proj
     private: form.get("private") === "on",
     details: form.get("details") ?? "",
     link: form.get("link") ?? "",
+    tools: [...new Set(form.getAll("tools").map(String))],
   });
   if (!parsed.success) return { ok: false, message: parsed.error.issues[0]?.message ?? "Check the form." };
   const v = parsed.data;
   const { supabase, user } = await getViewer();
   if (!user) return { ok: false, message: "Log in again to save." };
   const year = v.status === "completed" && /^\d{4}$/.test(v.year) ? Number(v.year) : null;
-  const row = { title: v.title, summary: v.summary, status: v.status, year, tags: v.tags, private: v.private };
+  // "Built with" is saved once supabase/project-stack.sql is applied.
+  const row = { title: v.title, summary: v.summary, status: v.status, year, tags: v.tags, private: v.private, ...((await dbFeatures()).projectTools && { tools: v.tools }) };
   const q = v.id ? supabase.from("projects").update(row).eq("id", v.id).select("id") : supabase.from("projects").insert(row).select("id");
   const { data, error } = await q;
   if (error) return { ok: false, message: friendlyError(error) };
@@ -53,6 +57,7 @@ export async function saveProject(_: ProjectState, form: FormData): Promise<Proj
     if (e2) return { ok: false, message: friendlyError(e2) };
   }
   revalidatePath(`/u/${user.id}`);
+  revalidatePath(`/projects/${id}`);
   return { ok: true, message: v.id ? "Project saved." : "Project added." };
 }
 

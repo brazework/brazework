@@ -5,24 +5,31 @@ import { PageHeader, Panel, Skeleton } from "@/components/app/page-ui";
 import { Kicker } from "@/components/ui";
 import { getViewer } from "@/lib/supabase/server";
 import { AppearanceSettings, BlockedList, HelpSettings, MessagingSettings, PasswordForm, ProfileSettings } from "./settings-client";
+import { OnlineStatusSetting, SettingsNav } from "./settings-nav";
 
 export const metadata: Metadata = { title: "Settings" };
 
 export default function SettingsPage() {
   return (
-    <div className="mx-auto max-w-2xl xl:max-w-3xl">
-      <PageHeader title="Settings" />
-      <Suspense fallback={<Skeleton className="mt-6 h-[600px]" />}>
-        <Settings />
-      </Suspense>
+    <div className="mx-auto max-w-2xl lg:max-w-5xl">
+      <PageHeader title="Settings" subtitle="Your profile, how Forge looks, who can reach you, and your account." />
+      <div className="lg:grid lg:grid-cols-[230px_minmax(0,1fr)] lg:gap-8">
+        <div className="pt-6"><SettingsNav /></div>
+        <div>
+          <Suspense fallback={<Skeleton className="mt-6 h-[600px]" />}>
+            <Settings />
+          </Suspense>
+        </div>
+      </div>
     </div>
   );
 }
 
-function Section({ id, title, children }: { id: string; title: string; children: React.ReactNode }) {
+function Section({ id, title, desc, children }: { id: string; title: string; desc?: string; children: React.ReactNode }) {
   return (
     <section id={id} className="mt-6 scroll-mt-24">
       <Kicker>{title}</Kicker>
+      {desc && <p className="mt-1 text-sm text-muted">{desc}</p>}
       <Panel className="mt-3 p-6">{children}</Panel>
     </section>
   );
@@ -44,12 +51,12 @@ async function Settings() {
 
   return (
     <>
-      <Section id="profile" title="Profile"><ProfileSettings profile={profile} /></Section>
-      <Section id="appearance" title="Appearance"><AppearanceSettings /></Section>
-      <Section id="messaging" title="Messaging"><MessagingSettings requestsOn={ms.data ? Boolean(ms.data.requests_on) : true} who={(ms.data?.who_can_message as "everyone" | "communities" | "connections") ?? "everyone"} /></Section>
-      <Section id="blocked" title="Blocked people"><BlockedList people={blocked} /></Section>
-      <Section id="help" title="Help"><HelpSettings /></Section>
-      <Section id="account" title="Account">
+      <Section id="profile" title="Profile" desc="What people see on your profile and posts."><ProfileSettings profile={profile} /></Section>
+      <Section id="appearance" title="Appearance" desc="Light or dark, and the colour theme."><AppearanceSettings /></Section>
+      <Section id="messaging" title="Messaging and privacy" desc="Who can message you, and whether you show as online."><OnlineStatusSetting /><div className="my-6 border-t border-line" /><MessagingSettings requestsOn={ms.data ? Boolean(ms.data.requests_on) : true} who={(ms.data?.who_can_message as "everyone" | "communities" | "connections") ?? "everyone"} /></Section>
+      <Section id="blocked" title="Blocked people" desc="People who can't message you or see your activity."><BlockedList people={blocked} /></Section>
+      <Section id="help" title="Help" desc="Tours, what's new, and how to reach us."><HelpSettings /></Section>
+      <Section id="account" title="Account" desc="Your sign-in email, password and session.">
         <p className="text-sm text-muted">Signed in as <span className="text-text">{user.email}</span></p>
         <PasswordForm />
         <form action="/auth/signout" method="post" className="mt-6 border-t border-line pt-6">

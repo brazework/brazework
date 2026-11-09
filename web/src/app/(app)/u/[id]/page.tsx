@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { BarChart3, FolderGit2, Lock, MessageSquare } from "lucide-react";
+import { BadgeCheck, BarChart3, FolderGit2, Lock, MessageSquare } from "lucide-react";
+import { CommunityBadge } from "../../communities/_components/badge";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
@@ -60,13 +61,13 @@ async function ProfileView({ params }: { params: PageProps<"/u/[id]">["params"] 
       .is("community_id", null)
       .order("created_at", { ascending: false })
       .limit(50),
-    supabase.from("projects").select("id, title, summary, status, year, tags, private, updated_at").eq("owner_id", id).order("created_at", { ascending: false }).limit(100),
+    supabase.from("projects").select((await dbFeatures()).projectTools ? "id, title, summary, status, year, tags, private, updated_at, tools" : "id, title, summary, status, year, tags, private, updated_at").eq("owner_id", id).order("created_at", { ascending: false }).limit(100),
   ]);
   if (!own) await recordProfileView(id);
   const copilotOn = own && (await copilotEnabled());
 
   const posts = (postsRes.data ?? []) as unknown as Post[];
-  const projectRows = (projectsRes.data ?? []) as Omit<ProjectView, "details" | "link">[];
+  const projectRows = (projectsRes.data ?? []) as unknown as Omit<ProjectView, "details" | "link">[];
   const [likesRes, detailsRes] = await Promise.all([
     posts.length ? supabase.from("likes").select("post_id").eq("user_id", user.id).in("post_id", posts.map((x) => x.id)) : Promise.resolve({ data: [] }),
     projectRows.length ? supabase.from("project_details").select("project_id, details, link").in("project_id", projectRows.map((x) => x.id)) : Promise.resolve({ data: [] }),
@@ -76,7 +77,7 @@ async function ProfileView({ params }: { params: PageProps<"/u/[id]">["params"] 
   // This profile's own projects double as the boxes on its project posts.
   const byId = Object.fromEntries(projectRows.map((r) => [r.id, r]));
   // Milestones (supabase/milestones.sql): others only get verified ones back, the owner gets all of theirs.
-  const { milestones: msOn } = await dbFeatures();
+  const { milestones: msOn, projectTools: stackOn } = await dbFeatures();
   const [msRes, clubRes] = await Promise.all([
     msOn ? supabase.from("milestones").select("id, project_id, community_id, community_name, title, detail, evidence, achieved_on, status, reviewer_name, review_note").eq("owner_id", id).order("achieved_on", { ascending: false }).limit(300) : Promise.resolve({ data: [] }),
     msOn && own ? supabase.from("community_members").select("communities(id, name)").eq("uid", user.id).limit(50) : Promise.resolve({ data: [] }),
@@ -84,6 +85,10 @@ async function ProfileView({ params }: { params: PageProps<"/u/[id]">["params"] 
   const ms = (msRes.data ?? []) as Milestone[];
   const myClubs: Club[] = ((clubRes.data ?? []) as unknown as { communities: Club | Club[] | null }[]).flatMap((r) => (Array.isArray(r.communities) ? r.communities : r.communities ? [r.communities] : []));
   const verifiedCount = ms.filter((m) => m.status === "verified").length;
+  // The proof, up front: which clubs have verified this person's work, and the clubs they're in.
+  const verifiedBy = [...ms.filter((m) => m.status === "verified").reduce((acc, m) => acc.set(m.community_id, { name: m.community_name, n: (acc.get(m.community_id)?.n ?? 0) + 1 }), new Map<string, { name: string; n: number }>())].sort((a, b) => b[1].n - a[1].n);
+  const { data: clubRows } = await supabase.from("community_members").select("role, communities(id, name)").eq("uid", id).limit(12);
+  const clubs = ((clubRows ?? []) as unknown as { role: string; communities: Club | null }[]).filter((r) => r.communities).map((r) => ({ ...r.communities!, role: r.role }));
   const projects: ProjectView[] = projectRows.map((r) => ({ ...r, details: details.get(r.id)?.details ?? null, link: details.get(r.id)?.link ?? null, milestones: msOn ? ms.filter((m) => m.project_id === r.id) : undefined }));
 
   const name = `${p.first_name} ${p.last_name}`.trim();
@@ -145,6 +150,30 @@ async function ProfileView({ params }: { params: PageProps<"/u/[id]">["params"] 
             })}
           </ul>
 
+          {(verifiedBy.length > 0 || clubs.length > 0) && (
+            <div className="mt-5 flex flex-col gap-3">
+              {verifiedBy.length > 0 && (
+                <div className="flex flex-wrap gap-1.5" aria-label="Work verified by clubs">
+                  {verifiedBy.map(([cid, v]) => (
+                    <Link key={cid} href={`/c/${cid}`} className="inline-flex items-center gap-1.5 rounded-full bg-[color-mix(in_oklab,var(--ok)_12%,transparent)] px-3 py-1 text-xs font-medium text-ok transition hover:bg-[color-mix(in_oklab,var(--ok)_20%,transparent)]">
+                      <BadgeCheck className="size-3.5" /> {v.n} verified by {v.name}
+                    </Link>
+                  ))}
+                </div>
+              )}
+              {clubs.length > 0 && (
+                <div className="flex flex-wrap items-center gap-2" aria-label="Clubs">
+                  <span className="text-xs text-faint">Clubs</span>
+                  {clubs.map((c) => (
+                    <Link key={c.id} href={`/c/${c.id}`} className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface/70 py-0.5 pr-3 pl-0.5 text-xs text-text-2 transition hover:border-line-strong hover:text-text">
+                      <CommunityBadge id={c.id} name={c.name} size={22} className="rounded-full" /> {c.name}{c.role !== "member" && <span className="text-faint capitalize">· {c.role}</span>}
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+
           {own ? (
             <EditBasics headline={p.headline} bio={p.bio} />
           ) : (
@@ -166,8 +195,8 @@ async function ProfileView({ params }: { params: PageProps<"/u/[id]">["params"] 
               id: "projects", label: "Projects", count: projects.length,
               content: (
                 <>
-                  {own && <div className="mb-4 flex items-center justify-between gap-3 rounded-3xl border border-dashed border-line-strong bg-surface/60 p-4"><p className="text-sm text-muted">Show what you&apos;ve built: a summary everyone sees, and a write-up you can keep private.</p><ProjectEditor interests={p.interests ?? []} copilot={copilotOn} /></div>}
-                  <ProjectGrid projects={projects} own={own} interests={p.interests ?? []} copilot={copilotOn} clubs={msOn && own ? myClubs : undefined} />
+                  {own && <div className="mb-4 flex items-center justify-between gap-3 rounded-3xl border border-dashed border-line-strong bg-surface/60 p-4"><p className="text-sm text-muted">Show what you&apos;ve built: a summary everyone sees, and a write-up you can keep private.</p><ProjectEditor interests={p.interests ?? []} copilot={copilotOn} stack={stackOn} /></div>}
+                  <ProjectGrid projects={projects} own={own} interests={p.interests ?? []} copilot={copilotOn} clubs={msOn && own ? myClubs : undefined} stack={stackOn} />
                   {!projects.length && (
                     <EmptyState
                       icon={<FolderGit2 className="size-6" />}

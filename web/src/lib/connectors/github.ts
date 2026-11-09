@@ -1,4 +1,5 @@
 import { ALL_TOPICS } from "@/lib/forge";
+import { toolsFromGitHub } from "@/lib/stack";
 
 // GitHub connector: public repositories and profiles through GitHub's REST API. No member login
 // needed; GITHUB_TOKEN (optional, server-only) raises the rate limit from 60 to 5,000 an hour.
@@ -129,7 +130,7 @@ export async function fetchUser(username: string) {
 }
 
 // A Forge project draft from a repo: what "Import from GitHub" fills in.
-export type ProjectDraft = { title: string; summary: string; details: string; link: string; tags: string[]; status: "in_progress" | "completed"; year: string; milestones: { title: string; date: string; evidence: string }[] };
+export type ProjectDraft = { title: string; summary: string; details: string; link: string; tags: string[]; tools: string[]; status: "in_progress" | "completed"; year: string; milestones: { title: string; date: string; evidence: string }[] };
 
 export function repoToDraft(r: RepoSummary): ProjectDraft {
   const title = r.name.replace(/[-_]+/g, " ").replace(/\b\w/g, (c) => c.toUpperCase()).slice(0, 120);
@@ -146,6 +147,7 @@ export function repoToDraft(r: RepoSummary): ProjectDraft {
   return {
     title, summary, details, link: r.homepage && /^https?:\/\//.test(r.homepage) ? r.homepage : r.url,
     tags: matchTopics([...r.topics, ...r.languages]),
+    tools: toolsFromGitHub([...r.languages, ...r.topics]),
     status: completed ? "completed" : "in_progress",
     year: completed ? r.pushed_at.slice(0, 4) : "",
     milestones: r.releases.slice(0, 4).map((x) => ({ title: `Released ${x.name}`.slice(0, 120), date: x.date, evidence: x.url })),
