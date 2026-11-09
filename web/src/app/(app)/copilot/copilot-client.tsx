@@ -1,6 +1,6 @@
 "use client";
 import { AnimatePresence, motion } from "motion/react";
-import { ArrowRight, ArrowUp, BadgeCheck, CalendarDays, Check, Compass, Copy, FileText, Lightbulb, Mic, PenLine, Plus, Search, Square, Users } from "lucide-react";
+import { ArrowRight, ArrowUp, BadgeCheck, CalendarCheck, CalendarDays, Check, Compass, Copy, FileText, GitBranch, Megaphone, MessageSquare, Plus, Search, Square, Users } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useCopilot } from "@/components/copilot/use-copilot";
@@ -25,16 +25,16 @@ function Hero({ title, sub, mood = "idle" }: { title: string; sub: string; mood?
 }
 
 const CAPS = [
-  { icon: PenLine, title: "Write it up", body: "Rough notes in, a clear post or project write-up out. Missing facts become [placeholders], never inventions." },
-  { icon: Compass, title: "Find your people", body: "Clubs, events and people on Forge that fit your field and projects, with links." },
-  { icon: Mic, title: "Prep for the room", body: "Career fairs, interviews, demo days: a 30-second pitch and the questions to expect." },
+  { icon: Compass, title: "Find and join", body: "Finds the clubs, events and people that fit you, then joins, RSVPs, follows or messages for you once you tap OK." },
+  { icon: GitBranch, title: "Build your record", body: "Imports your GitHub projects, writes them up from the README, and asks your club to verify milestones." },
+  { icon: Megaphone, title: "Run your club", body: "Weekly reports, the verification queue, events and club updates, posted to Forge and Discord." },
 ];
 
 // Shown until Copilot is switched on (an API key plus supabase/copilot.sql). Shortcuts still work.
 export function CopilotSoon() {
   return (
     <>
-      <Hero title="Ember is almost here" sub="Your writing partner and STEM mentor, built into Forge. Here's what it will do:" mood="sleepy" />
+      <Hero title="Ember is almost here" sub="Your AI teammate on Forge. It looks things up, then gets things done with your OK:" mood="sleepy" />
       <div className="mt-8 grid gap-3 sm:grid-cols-3">
         {CAPS.map((c, i) => (
           <motion.div key={c.title} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 + i * 0.08 }} className="glass-card rounded-3xl p-5">
@@ -91,17 +91,17 @@ export function CopilotChat({ first, field, initial = "" }: { first: string; fie
   useEffect(() => { end.current?.scrollIntoView({ behavior: "smooth", block: "end" }); }, [msgs]);
 
   const GROUPS = [
-    { label: "Write", ideas: [
+    { label: "Get it done", ideas: [
+      { icon: GitBranch, text: "Add my GitHub repo to my profile: github.com/" },
+      { icon: CalendarCheck, text: "Find an event this week that fits me and RSVP me." },
+    ] },
+    { label: "Meet people", ideas: [
+      { icon: Users, text: "Which clubs on Forge fit me best? Help me join one." },
+      { icon: MessageSquare, text: `Find someone in ${field || "my field"} worth meeting and draft an intro message.` },
+    ] },
+    { label: "Build your record", ideas: [
+      { icon: BadgeCheck, text: "Help me get my latest milestone verified by my club." },
       { icon: FileText, text: "Turn these notes into a project post: " },
-      { icon: BadgeCheck, text: "Review my headline and suggest a sharper one." },
-    ] },
-    { label: "Discover", ideas: [
-      { icon: Users, text: "Which clubs on Forge fit me best, and why?" },
-      { icon: Compass, text: "Which upcoming events should I go to this month?" },
-    ] },
-    { label: "Grow", ideas: [
-      { icon: Lightbulb, text: `What should I build next in ${field || "my field"} to stand out?` },
-      { icon: Mic, text: "Give me a 30-second pitch of my best project for a career fair." },
     ] },
   ];
 
@@ -153,7 +153,7 @@ export function CopilotChat({ first, field, initial = "" }: { first: string; fie
     <div className="flex min-h-[calc(100dvh-10rem)] flex-col">
       {empty ? (
         <>
-          <Hero title={`Hi ${first}, what are we building?`} sub="Ask about your work, your field or what's on Forge. Ember only uses what you tell it and what's on Forge." mood={busy ? "thinking" : "idle"} />
+          <Hero title={`Hi ${first}, what are we building?`} sub="Ask for anything on Forge. Ember looks it up, then prepares the next step as a card you approve." mood={busy ? "thinking" : "idle"} />
           {composer}
           <div className="mt-6 grid gap-4 sm:grid-cols-3">
             {GROUPS.map((g, gi) => (
@@ -167,7 +167,7 @@ export function CopilotChat({ first, field, initial = "" }: { first: string; fie
                       initial={{ opacity: 0, y: 12 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: 0.1 + (gi * 2 + i) * 0.04 }}
-                      onClick={() => (idea.text.endsWith(": ") ? (setInput(idea.text), document.getElementById("copilot-input")?.focus()) : void send(idea.text))}
+                      onClick={() => (idea.text.endsWith(": ") || idea.text.endsWith("/") ? (setInput(idea.text), document.getElementById("copilot-input")?.focus()) : void send(idea.text))}
                       className="glass-card group flex items-start gap-3 rounded-2xl p-3 text-left text-sm transition duration-300 hover:-translate-y-0.5 active:scale-[0.98]"
                     >
                       <span className="nav-tile grid size-8 shrink-0 place-items-center rounded-[10px] text-text-2 transition group-hover:text-text"><idea.icon className="size-4" /></span>

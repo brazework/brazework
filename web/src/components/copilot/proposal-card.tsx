@@ -1,6 +1,6 @@
 "use client";
 import { AnimatePresence, motion } from "motion/react";
-import { ArrowRight, BadgeCheck, CalendarPlus, Check, ExternalLink, Flag, Loader2, Megaphone, Sparkles, UserPlus, Users, X } from "lucide-react";
+import { ArrowRight, BadgeCheck, CalendarCheck, CalendarPlus, Check, ExternalLink, Flag, Loader2, Megaphone, MessageSquare, Sparkles, UserPlus, Users, X } from "lucide-react";
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import { createPost } from "@/app/(app)/feed/actions";
@@ -14,6 +14,8 @@ import { addMilestone, reviewMilestone } from "@/lib/milestones";
 import { saveProject } from "@/lib/projects";
 import { shareToDiscord } from "@/lib/connectors/club-actions";
 import { toggleFollow } from "@/lib/network";
+import { toggleRsvp } from "@/app/(app)/events/actions";
+import { messagePerson } from "@/lib/messages";
 
 const field = "w-full rounded-xl border border-line bg-surface px-3 py-2 text-sm outline-none focus:border-line-strong";
 const HEAD = {
@@ -25,6 +27,8 @@ const HEAD = {
   club_post: { icon: Megaphone, title: "Post in your club", done: "Posted", href: "", go: "See it in the club" },
   review: { icon: BadgeCheck, title: "Review a milestone", done: "Reviewed", href: "", go: "Back to the queue" },
   project: { icon: Flag, title: "Add a project", done: "Added to your profile", href: "/profile#projects", go: "See your projects" },
+  rsvp: { icon: CalendarCheck, title: "RSVP to an event", done: "You're going", href: "", go: "Open the event" },
+  message: { icon: MessageSquare, title: "Send a message", done: "Sent", href: "/messages", go: "Open the conversation" },
 } as const;
 
 // ISO time <-> the value a datetime-local input wants (the member's own timezone).
@@ -38,9 +42,10 @@ export function ProposalCard({ p: initial }: { p: Proposal }) {
   const [state, setState] = useState<"open" | "done" | "dismissed">("open");
   const [msg, setMsg] = useState("");
   const [held, setHeld] = useState("");
+  const [cid, setCid] = useState("");
   const [pending, start] = useTransition();
   const h = HEAD[p.kind];
-  const href = p.kind === "join" || p.kind === "club_post" ? `/c/${p.club_id}` : p.kind === "follow" ? `/u/${p.person_id}` : p.kind === "event" ? `/c/${p.club_id}?tab=events` : p.kind === "review" ? "/communities" : h.href;
+  const href = p.kind === "join" || p.kind === "club_post" ? `/c/${p.club_id}` : p.kind === "follow" ? `/u/${p.person_id}` : p.kind === "event" ? `/c/${p.club_id}?tab=events` : p.kind === "review" ? "/communities" : p.kind === "rsvp" ? `/events/${p.event_id}` : p.kind === "message" && cid ? `/messages/${cid}` : h.href;
   const set = (patch: Partial<Proposal>) => setP((cur) => ({ ...cur, ...patch }) as Proposal);
 
   const confirm = () => start(async () => {
@@ -70,6 +75,12 @@ export function ProposalCard({ p: initial }: { p: Proposal }) {
       r = res;
     } else if (p.kind === "review") {
       r = await reviewMilestone(p.milestone_id, p.verify, p.note);
+    } else if (p.kind === "rsvp") {
+      r = await toggleRsvp(p.event_id, true);
+    } else if (p.kind === "message") {
+      const res = await messagePerson(p.person_id, p.body);
+      if (res.cid) setCid(res.cid);
+      r = res;
     } else {
       const f = new FormData();
       for (const k of ["title", "description", "type", "format", "location", "topic", "starts_at", "ends_at"] as const) f.set(k, String(p[k]));
@@ -87,7 +98,7 @@ export function ProposalCard({ p: initial }: { p: Proposal }) {
       <div className="flex items-center gap-2">
         <span className={cn("grid size-7 place-items-center rounded-lg", state === "done" ? "bg-ok text-white" : "bg-accent-grad text-on-accent")}>{state === "done" ? <Check className="size-4" /> : <h.icon className="size-4" />}</span>
         <span className="font-semibold text-text">{state === "done" ? (held ? "Sent for review" : h.done) : h.title}</span>
-        {state === "open" && <span className="ml-auto inline-flex items-center gap-1 text-[11px] text-faint"><Sparkles className="size-3" /> Drafted by Copilot · not saved yet</span>}
+        {state === "open" && <span className="ml-auto inline-flex items-center gap-1 text-[11px] text-faint"><Sparkles className="size-3" /> Drafted by Ember · not saved yet</span>}
       </div>
 
       {state === "done" ? (
@@ -144,6 +155,15 @@ export function ProposalCard({ p: initial }: { p: Proposal }) {
             </>
           )}
           {p.kind === "join" && <p className="text-text-2"><b className="font-medium">{p.club_name}</b> · {p.privacy === "public" ? "open to join" : "the club approves new members, so this sends a request"}</p>}
+          {p.kind === "rsvp" && (
+            <p className="text-text-2"><b className="font-medium">{p.title}</b><span className="block text-xs text-muted">{new Date(p.starts_at).toLocaleString("en-US", { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}{p.where && ` · ${p.where}`} · {p.going} going</span></p>
+          )}
+          {p.kind === "message" && (
+            <>
+              <p className="text-xs text-muted">To <b className="font-medium text-text-2">{p.name}</b>{p.headline && ` · ${p.headline}`}. If you aren&apos;t connected, it arrives as a message request.</p>
+              <textarea aria-label="Message" value={p.body} onChange={(e) => set({ body: e.target.value })} maxLength={2000} rows={Math.min(6, 2 + Math.ceil(p.body.length / 70))} className={cn(field, "resize-y leading-relaxed")} />
+            </>
+          )}
           {p.kind === "follow" && <p className="text-text-2"><b className="font-medium">{p.name}</b>{p.headline && <span className="text-muted"> · {p.headline}</span>}</p>}
           {p.kind === "event" && (
             <>

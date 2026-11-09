@@ -111,7 +111,6 @@ export function Sidebar({ first, last, userId, badges, avatar, initialCollapsed 
             </Link>
           );
         })}
-        <UpdatesButton collapsed={collapsed} />
       </nav>
       <div className={cn("mt-auto flex items-center gap-3 rounded-2xl bg-surface/50", collapsed ? "flex-col p-1.5" : "p-2.5")}>
         <Link href="/profile" aria-label="Your profile" title={collapsed ? `${first} ${last}` : undefined}><WithPresence id={userId} dot="size-2.5"><Avatar first={first} last={last} size={collapsed ? 32 : 36} src={avatar} /></WithPresence></Link>

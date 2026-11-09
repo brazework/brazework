@@ -1,64 +1,202 @@
 "use client";
-import { motion, useInView, useReducedMotion } from "motion/react";
-import { Compass, Mic, PenLine, Sparkles } from "lucide-react";
+import { AnimatePresence, motion, useInView, useReducedMotion } from "motion/react";
+import { BadgeCheck, CalendarCheck, CalendarPlus, Check, ClipboardList, GitBranch, Megaphone, MessageSquare, MessageSquareText, ShieldCheck, UserPlus, Users, Wrench, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Eyebrow, H2 } from "./marketing";
 import { Ember } from "@/components/ember/ember";
+import { cn } from "@/lib/forge";
 
-const ASK = "Notes: load test today, carbon upright held 3.2 g, 31% lighter than steel. Next: fatigue test. Make it a post.";
-const ANSWER = "Our carbon-fiber upright passed load testing at 3.2 g, at 31% less weight than the steel part it replaces.\n\nNext up: fatigue testing, to make sure it survives a full season. [Add the cycle count you're targeting.]";
+// Ember on the landing page, shown the way it really works (lib/copilot-agent.ts): you ask in plain
+// words, it looks things up on Forge with tools (each lookup shown as it runs), answers from what it
+// found, and prepares actions as cards you confirm. It never saves anything on its own.
 
-const CAPS = [
-  { icon: PenLine, title: "Write it up", body: "Rough notes in, a clear post or project write-up out." },
-  { icon: Compass, title: "Find your people", body: "Clubs and events on Forge that fit your field and projects." },
-  { icon: Mic, title: "Prep for the room", body: "A 30-second pitch of your work before a fair or interview." },
+type Scenario = {
+  id: string;
+  tab: string;
+  icon: typeof Users;
+  ask: string;
+  tools: string[];
+  answer: string;
+  card: { title: string; lines: string[]; confirm: string };
+};
+
+const SCENARIOS: Scenario[] = [
+  {
+    id: "club",
+    tab: "Find my club",
+    icon: Users,
+    ask: "I'm into rockets and embedded systems. Which club should I join?",
+    tools: ["Reading your profile", "Searching clubs", "Checking upcoming events"],
+    answer: "Rocketry Club fits best: they build flight computers in-house, and their build night is Thursday at 7.",
+    card: { title: "Join Rocketry Club", lines: ["42 members · Aerospace", "Next: Build night, Thu 7:00 PM"], confirm: "Join" },
+  },
+  {
+    id: "github",
+    tab: "Import a GitHub repo",
+    icon: GitBranch,
+    ask: "Add github.com/maya/rover-nav to my profile.",
+    tools: ["Reading the GitHub repo", "Reading your profile"],
+    answer: "Rover Nav: autonomous navigation in ROS 2. I wrote the summary from the README and found 2 releases you can add as milestones.",
+    card: { title: "Add project: Rover Nav", lines: ["Robotics & Autonomy · In progress", "2 milestones from releases"], confirm: "Add to profile" },
+  },
+  {
+    id: "meet",
+    tab: "Meet the right person",
+    icon: MessageSquare,
+    ask: "Who's working on flight computers? I want to learn from them.",
+    tools: ["Finding people", "Reading your profile"],
+    answer: "Leo Park built the avionics for Rocketry Club's last two launches. Here's a short intro you can send him.",
+    card: { title: "Message Leo Park", lines: ["\"Hi Leo, I saw your avionics work on the L2 launch. I'm building a flight computer too. Could I ask you a few questions?\""], confirm: "Send" },
+  },
+  {
+    id: "update",
+    tab: "Weekly club update",
+    icon: Megaphone,
+    ask: "Draft this week's update for Rocketry Club.",
+    tools: ["Reading this week's club report", "Checking the verification queue"],
+    answer: "This week: 6 new members, 14 posts (up from 9), and 2 milestones verified. Static fire is Saturday.",
+    card: { title: "Post to Rocketry Club", lines: ["Uses only the report's numbers", "Also announces in Discord, if connected"], confirm: "Post" },
+  },
 ];
 
-// Forge Copilot on the landing page: an example exchange that types itself out once in view.
+// Everything Ember can do today (each is a real tool in lib/copilot-tools.ts).
+const CAN = [
+  { icon: Users, label: "Find and join clubs" },
+  { icon: CalendarCheck, label: "RSVP to events" },
+  { icon: UserPlus, label: "Follow people" },
+  { icon: MessageSquare, label: "Message people" },
+  { icon: GitBranch, label: "Import GitHub projects" },
+  { icon: BadgeCheck, label: "Get milestones verified" },
+  { icon: CalendarPlus, label: "Host club events" },
+  { icon: ClipboardList, label: "Run weekly club reports" },
+  { icon: Megaphone, label: "Post updates to Forge and Discord" },
+];
+
+const HOW = [
+  { icon: MessageSquareText, title: "Ask in plain words", body: "Write it like you'd text a teammate. No prompts to learn." },
+  { icon: Wrench, title: "It checks real Forge data", body: "Clubs, events, your profile, GitHub and club reports, through tools. You see every lookup." },
+  { icon: ShieldCheck, title: "You approve every action", body: "Joining, posting or adding a project shows up as a card. Nothing happens until you tap." },
+];
+
 export function CopilotSection() {
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true, margin: "-120px" });
   const reduce = useReducedMotion();
-  const [n, setN] = useState(0);
-  useEffect(() => {
-    if (!inView || reduce) return;
-    const id = setInterval(() => setN((v) => (v >= ANSWER.length ? v : v + 3)), 24);
-    return () => clearInterval(id);
-  }, [inView, reduce]);
-  const shown = reduce ? ANSWER : ANSWER.slice(0, n);
+  const [pick, setPick] = useState(0);
+  const s = SCENARIOS[pick];
 
   return (
     <section id="copilot" className="relative isolate scroll-mt-24 overflow-hidden py-24 sm:py-32">
       <div className="bg-accent-grad pointer-events-none absolute top-1/3 left-1/2 -z-10 h-[420px] w-[720px] -translate-x-1/2 rounded-full opacity-[0.12] blur-3xl" aria-hidden="true" />
-      <div className="mx-auto grid max-w-7xl items-center gap-12 px-6 lg:grid-cols-[1fr_1.1fr] [&>*]:min-w-0">
-        <div>
-          <Eyebrow>Ember · Forge Copilot</Eyebrow>
-          <h2 className={`mt-5 ${H2}`}>An AI teammate that <span className="text-grad">never makes things up.</span></h2>
-          <p className="mt-5 text-lg leading-relaxed text-muted">Copilot turns your rough notes into posts and write-ups, points you to the clubs and events that fit, and preps you for the room. It only uses what you give it, and anything missing becomes a [placeholder] for you to fill.</p>
-          <ul className="mt-8 grid gap-3 sm:grid-cols-3 lg:grid-cols-1 xl:grid-cols-3">
-            {CAPS.map((c) => (
-              <li key={c.title} className="spotlight rounded-2xl border border-line bg-surface p-4">
-                <span className="bg-accent-grad grid size-9 place-items-center rounded-xl text-on-accent"><c.icon className="size-4" /></span>
-                <div className="mt-3 text-sm font-semibold">{c.title}</div>
-                <p className="mt-1 text-xs leading-relaxed text-muted">{c.body}</p>
-              </li>
-            ))}
+      <div className="mx-auto max-w-7xl px-6">
+        <div className="mx-auto max-w-3xl text-center">
+          <div className="flex justify-center"><Ember size={72} mood="happy" /></div>
+          <Eyebrow className="mt-4">Ember · Forge Copilot</Eyebrow>
+          <h2 className={`mt-5 ${H2}`}>An AI teammate that <span className="text-grad">gets things done.</span></h2>
+          <p className="mt-5 text-lg leading-relaxed text-muted">Ember works inside Forge. Ask it to find your club, meet the right person, add your project or run your club&apos;s week. It checks real data first, then does the work as a card you approve. It never invents results.</p>
+          <ul className="mt-8 flex flex-wrap justify-center gap-2" aria-label="What Ember can do">
+            {CAN.map((c) => <li key={c.label} className="glass-card inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm text-text-2"><c.icon className="size-4 text-text" /> {c.label}</li>)}
           </ul>
         </div>
-        <div ref={ref} className="rounded-[2rem] border border-line bg-surface-2/60 p-4 shadow-[var(--shadow)] sm:p-6" aria-label="Example Copilot conversation">
-          <div className="mb-4 flex items-center gap-2 text-xs text-faint"><Sparkles className="size-3.5" /> Example conversation</div>
-          <div className="flex justify-end">
-            <p className="bg-accent-grad max-w-[85%] rounded-3xl rounded-br-md px-4 py-2.5 text-sm text-on-accent">{ASK}</p>
+
+        <ol className="mx-auto mt-12 grid max-w-5xl gap-3 sm:grid-cols-3">
+          {HOW.map((h, i) => (
+            <li key={h.title} className="glass-card relative rounded-3xl p-5">
+              <span className="absolute top-5 right-5 font-mono text-xs text-faint">0{i + 1}</span>
+              <span className="nav-tile grid size-10 place-items-center rounded-xl text-text-2"><h.icon className="size-5" /></span>
+              <h3 className="mt-4 font-semibold">{h.title}</h3>
+              <p className="mt-1.5 text-sm leading-relaxed text-muted">{h.body}</p>
+            </li>
+          ))}
+        </ol>
+
+        <div ref={ref} className="mx-auto mt-10 max-w-3xl">
+          <div role="tablist" aria-label="Example tasks" className="mx-auto flex w-fit max-w-full flex-wrap justify-center gap-1 rounded-3xl bg-surface-2 p-1">
+            {SCENARIOS.map((sc, i) => (
+              <button key={sc.id} type="button" role="tab" aria-selected={pick === i} onClick={() => setPick(i)} className={cn("relative inline-flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-medium whitespace-nowrap transition", pick === i ? "text-on-accent" : "text-muted hover:text-text")}>
+                {pick === i && <motion.span layoutId="ember-demo-tab" className="bg-accent-grad absolute inset-0 rounded-full" transition={{ type: "spring", stiffness: 420, damping: 34 }} />}
+                <sc.icon className="relative size-4" /> <span className="relative">{sc.tab}</span>
+              </button>
+            ))}
           </div>
-          <div className="mt-4 flex gap-3">
-            <Ember size={36} mood={shown.length < ANSWER.length ? "thinking" : "happy"} />
-            <div className="min-h-[150px] flex-1 rounded-3xl rounded-tl-md border border-line bg-surface px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap text-text-2">
-              <span className="sr-only">{ANSWER}</span>
-              <span aria-hidden="true">{shown}{shown.length < ANSWER.length && <motion.span className="ml-0.5 inline-block h-4 w-1.5 translate-y-0.5 bg-accent" animate={{ opacity: [1, 0] }} transition={{ duration: 0.6, repeat: Infinity }} />}</span>
-            </div>
+          <div className="glass-card mt-4 rounded-[2rem] p-4 sm:p-6" aria-label={`Example: ${s.tab}`}>
+            {/* Restart the run whenever the scenario changes (or it first scrolls into view). */}
+            <Run key={`${s.id}-${inView}`} s={s} play={inView} reduce={!!reduce} />
           </div>
         </div>
       </div>
     </section>
+  );
+}
+
+// One example run: question → lookups appear and tick off → the answer types → the action card.
+function Run({ s, play, reduce }: { s: Scenario; play: boolean; reduce: boolean }) {
+  const total = s.tools.length;
+  const [step, setStep] = useState(reduce ? total + 1 : 0); // 0..total: tools done; total+1: answer
+  const [n, setN] = useState(reduce ? s.answer.length : 0);
+  const [choice, setChoice] = useState<"none" | "done" | "dismissed">("none");
+  useEffect(() => {
+    if (!play || reduce || step > total) return;
+    const t = setTimeout(() => setStep((v) => v + 1), step === 0 ? 700 : 650);
+    return () => clearTimeout(t);
+  }, [play, reduce, step, total]);
+  useEffect(() => {
+    if (reduce || step <= total || n >= s.answer.length) return;
+    const t = setTimeout(() => setN((v) => Math.min(s.answer.length, v + 3)), 22);
+    return () => clearTimeout(t);
+  }, [reduce, step, total, n, s.answer.length]);
+  const answering = step > total;
+  const typed = answering && n >= s.answer.length;
+
+  return (
+    <div className="min-h-[360px]">
+      <div className="flex justify-end">
+        <p className="bg-accent-grad max-w-[85%] rounded-3xl rounded-br-md px-4 py-2.5 text-sm text-on-accent">{s.ask}</p>
+      </div>
+      <div className="mt-4 flex gap-3">
+        <Ember size={36} mood={!typed ? "thinking" : choice === "done" ? "happy" : "idle"} className="mt-0.5" />
+        <div className="min-w-0 flex-1">
+          {/* The lookups, as they run: the same steps the app shows. */}
+          <ul className="flex flex-wrap gap-1.5" aria-label="What Ember checked">
+            {s.tools.map((t, i) => {
+              const state = step > i + 1 || answering ? "done" : step === i + 1 || (step === 0 && i === 0 && play) ? "live" : "wait";
+              if (state === "wait") return null;
+              return (
+                <motion.li key={t} initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} className={cn("inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs", state === "done" ? "border-line text-muted" : "border-line-strong text-text")}>
+                  {state === "done" ? <Check className="size-3 text-emerald-500" /> : <span className="size-1.5 animate-pulse rounded-full bg-text" />}
+                  {t}
+                </motion.li>
+              );
+            })}
+          </ul>
+          {answering && (
+            <div className="glass-card mt-3 rounded-3xl rounded-tl-md px-4 py-3 text-sm leading-relaxed text-text-2">
+              <span className="sr-only">{s.answer}</span>
+              <span aria-hidden="true">{s.answer.slice(0, n)}{!typed && <motion.span className="ml-0.5 inline-block h-4 w-1.5 translate-y-0.5 bg-accent" animate={{ opacity: [1, 0] }} transition={{ duration: 0.6, repeat: Infinity }} />}</span>
+            </div>
+          )}
+          {/* The action, prepared but not taken: the member decides. */}
+          <AnimatePresence>
+            {typed && (
+              <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className="mt-3 rounded-2xl border border-dashed border-line-strong p-4">
+                <div className="text-[11px] font-medium tracking-wide text-faint uppercase">Ember prepared this · waiting for you</div>
+                <div className="mt-1.5 font-semibold">{s.card.title}</div>
+                {s.card.lines.map((l) => <div key={l} className="text-sm text-muted">{l}</div>)}
+                <div className="mt-3 flex items-center gap-2">
+                  {choice === "none" ? (
+                    <>
+                      <button type="button" onClick={() => setChoice("done")} className="bg-accent-grad inline-flex h-9 items-center gap-1.5 rounded-full px-4 text-sm font-medium text-on-accent transition active:scale-95"><Check className="size-4" /> {s.card.confirm}</button>
+                      <button type="button" onClick={() => setChoice("dismissed")} className="inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-sm text-muted transition hover:bg-hover hover:text-text"><X className="size-4" /> Dismiss</button>
+                    </>
+                  ) : (
+                    <span role="status" className="text-sm text-muted">{choice === "done" ? "Done. In the app, this runs the same action as doing it yourself." : "Dismissed. Nothing changed."}</span>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </div>
+    </div>
   );
 }

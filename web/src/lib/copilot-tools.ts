@@ -58,6 +58,16 @@ export const TOOLS: Anthropic.Tool[] = [
     input_schema: { type: "object", properties: { club_id: { type: "string" } }, required: ["club_id"] },
   },
   {
+    name: "propose_rsvp",
+    description: "Prepare RSVPing the member to an upcoming event (its id is in its link /events/<id>, from upcoming_events). They are NOT going until they confirm.",
+    input_schema: { type: "object", properties: { event_id: { type: "string" } }, required: ["event_id"] },
+  },
+  {
+    name: "propose_message",
+    description: "Prepare a direct message to a person (their id is in their link /u/<id>, from find_people). Write a short, specific, friendly first message in the member's voice; mention why they're reaching out. If they aren't connected it arrives as a message request. NOT sent until the member confirms.",
+    input_schema: { type: "object", properties: { person_id: { type: "string" }, body: { type: "string" } }, required: ["person_id", "body"] },
+  },
+  {
     name: "propose_follow",
     description: "Prepare following a person (their id is in their link /u/<id>). Not followed until the member confirms.",
     input_schema: { type: "object", properties: { person_id: { type: "string" } }, required: ["person_id"] },
@@ -226,6 +236,29 @@ export function makeExec(db: DB, userId: string, onProposal: (p: Proposal) => vo
         if (!c.data) return { error: "No club with that id." };
         if (mem.data) return { error: "The member is already in this club." };
         onProposal({ id: pid(), kind: "join", club_id: clubId, club_name: c.data.name, privacy: c.data.privacy === "approval" ? "approval" : "public" });
+        return SHOWN;
+      }
+      case "propose_rsvp": {
+        const eventId = String(a.event_id ?? "");
+        if (!ID_RE.test(eventId)) return { error: "Use the event id from its link /events/<id>." };
+        const [ev, mine] = await Promise.all([
+          db.from("events").select("title, starts_at, format, location, rsvp_count, status").eq("id", eventId).maybeSingle(),
+          db.from("event_rsvps").select("event_id").eq("event_id", eventId).eq("user_id", userId).maybeSingle(),
+        ]);
+        if (!ev.data || ev.data.status !== "published") return { error: "No upcoming event with that id." };
+        if (Date.parse(ev.data.starts_at) < requestTime()) return { error: "That event has already started." };
+        if (mine.data) return { error: "The member is already going." };
+        onProposal({ id: pid(), kind: "rsvp", event_id: eventId, title: ev.data.title, starts_at: ev.data.starts_at, where: ev.data.format === "Online" ? "Online" : ev.data.location ?? "", going: ev.data.rsvp_count ?? 0 });
+        return SHOWN;
+      }
+      case "propose_message": {
+        const personId = String(a.person_id ?? "");
+        const body = String(a.body ?? "").trim().slice(0, 2000);
+        if (!/^[0-9a-f-]{36}$/i.test(personId) || personId === userId) return { error: "Use a person's id from their link /u/<id> (not the member's own)." };
+        if (!body) return { error: "Write the message to propose." };
+        const person = await db.from("profiles").select("first_name, last_name, headline").eq("id", personId).maybeSingle();
+        if (!person.data) return { error: "No member with that id." };
+        onProposal({ id: pid(), kind: "message", person_id: personId, name: `${person.data.first_name} ${person.data.last_name}`.trim(), headline: person.data.headline ?? "", body });
         return SHOWN;
       }
       case "propose_follow": {

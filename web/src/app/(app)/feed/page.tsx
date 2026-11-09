@@ -23,7 +23,7 @@ export const metadata: Metadata = { title: "Feed" };
 
 export default function FeedPage({ searchParams }: PageProps<"/feed">) {
   return (
-    <div className="mx-auto grid max-w-2xl gap-8 xl:max-w-6xl xl:grid-cols-[minmax(0,1fr)_300px] 2xl:max-w-7xl 2xl:grid-cols-[minmax(0,1fr)_340px] min-[112.5rem]:max-w-[1520px] min-[112.5rem]:grid-cols-[minmax(0,1fr)_380px] min-[137.5rem]:max-w-[1840px] min-[137.5rem]:grid-cols-[minmax(0,1fr)_740px]">
+    <div className="feed-frame">
       <LiveRefresh tables={["posts"]} />
       <div className="min-w-0">
         <Suspense fallback={<FeedSkeleton />}>

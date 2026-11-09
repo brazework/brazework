@@ -28,6 +28,19 @@ export async function sendMessage(cid: string, body: string): Promise<R> {
   return { ok: true, message: "" };
 }
 
+// Messages someone directly (from a Copilot card): opens or starts the conversation with them, then
+// sends. start_conversation() keeps every rule: requests for strangers, blocks, and who allows DMs.
+export async function messagePerson(otherId: string, body: string): Promise<R & { cid?: string }> {
+  if (!/^[0-9a-f-]{36}$/i.test(otherId)) return { ok: false, message: "That member couldn't be found." };
+  const { supabase, user } = await getViewer();
+  if (!user) return { ok: false, message: "Log in again." };
+  const { data, error } = await supabase.rpc("start_conversation", { p_other: otherId });
+  if (error || !data) return { ok: false, message: friendlyError(error) };
+  const cid = String(data);
+  const r = await sendMessage(cid, body);
+  return { ...r, cid };
+}
+
 export async function acceptConversation(cid: string): Promise<R> {
   const { supabase, user } = await getViewer();
   if (!user) return { ok: false, message: "Log in again." };
