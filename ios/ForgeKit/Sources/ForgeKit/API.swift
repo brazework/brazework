@@ -4,8 +4,18 @@ import Supabase
 // Every read and write the app makes, in one place: the views call these, and ForgeKitTests run
 // them against the local test stack. Same tables and rules as the web app (row-level security
 // decides what each member can see and do).
+enum MediaError: LocalizedError {
+  case tooBig, unreadable
+  var errorDescription: String? {
+    switch self {
+    case .tooBig: "Videos can be up to 50 MB. Trim it and try again."
+    case .unreadable: "Couldn't read that file. Try another."
+    }
+  }
+}
+
 enum API {
-  private struct PostRow: Encodable { let body: String; let kind: String; let tags: [String] }
+  private struct PostRow: Encodable { let body: String; let kind: String; let tags: [String]; let media: [MediaItem]? }
   private struct CommentRow: Encodable { let postId: String; let body: String }
   private struct PostRef: Encodable { let postId: String }
   private struct MessageRow: Encodable { let conversationId: String; let body: String }
@@ -17,9 +27,21 @@ enum API {
   private struct Membership: Decodable { let communities: Club? }
 
   // MARK: Posts
-  static func createPost(body: String, kind: String) async throws {
-    try await supabase.from("posts").insert(PostRow(body: body, kind: kind, tags: [])).execute()
+  static func createPost(body: String, kind: String, media: [MediaItem] = []) async throws {
+    try await supabase.from("posts").insert(PostRow(body: body, kind: kind, tags: [], media: media.isEmpty ? nil : media)).execute()
   }
+
+  // MARK: Media
+  // Same bucket, folder rule and limits as the web (supabase/media.sql): your own folder only,
+  // photos and video up to 50 MB, a fresh name per file.
+  static let maxUploadBytes = 50 * 1024 * 1024
+  static func upload(_ data: Data, contentType: String, ext: String, me: UUID) async throws -> String {
+    guard data.count <= maxUploadBytes else { throw MediaError.tooBig }
+    let path = "\(me.uuidString.lowercased())/\(UUID().uuidString.lowercased()).\(ext)"
+    try await supabase.storage.from("media").upload(path, data: data, options: FileOptions(cacheControl: "31536000", contentType: contentType, upsert: false))
+    return path
+  }
+  static func removeUpload(_ path: String) async { _ = try? await supabase.storage.from("media").remove(paths: [path]) }
   static func setLike(_ postId: String, _ on: Bool, me: UUID) async throws {
     do {
       if on { try await supabase.from("likes").insert(PostRef(postId: postId)).execute() }

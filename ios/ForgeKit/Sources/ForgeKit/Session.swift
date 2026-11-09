@@ -21,7 +21,15 @@ final class Session {
         if let session, !session.isExpired {
           if userId != session.user.id || state != .signedIn {
             userId = session.user.id
-            await loadProfile()
+            // An account that no longer exists (deleted, or a reset test database) signs out.
+            if case .missing = await loadProfile() {
+              await signOut()
+              #if DEBUG
+              if await debugSignIn() { continue }
+              #endif
+              state = .signedOut
+              continue
+            }
             state = .signedIn
             await refreshBadges()
           }
@@ -43,11 +51,20 @@ final class Session {
     try await supabase.auth.signIn(email: email.trimmingCharacters(in: .whitespaces), password: password)
   }
 
-  func signOut() async { try? await supabase.auth.signOut() }
+  // Signs out here even when the server can't be told (offline, or the account is gone).
+  func signOut() async {
+    do { try await supabase.auth.signOut() } catch { try? await supabase.auth.signOut(scope: .local) }
+  }
 
-  func loadProfile() async {
-    guard let userId else { return }
-    profile = try? await supabase.from("profiles").select(Self.profileColumns).eq("id", value: userId).single().execute().value
+  enum ProfileLoad { case loaded, missing, failed }
+  @discardableResult
+  func loadProfile() async -> ProfileLoad {
+    guard let userId else { return .failed }
+    do {
+      let rows: [Profile] = try await supabase.from("profiles").select(Self.profileColumns).eq("id", value: userId).limit(1).execute().value
+      profile = rows.first
+      return rows.isEmpty ? .missing : .loaded
+    } catch { return .failed }
   }
 
   // Unread messages (conversations with something newer than your last read) and alerts.

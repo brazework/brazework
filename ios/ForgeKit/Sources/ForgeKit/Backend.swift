@@ -27,13 +27,17 @@ let supabase = SupabaseClient(
 
 // A public file in the media bucket (same URL the web app builds).
 func mediaURL(_ path: String) -> URL? {
+  guard !path.isEmpty else { return nil }
   let encoded = path.split(separator: "/").map { $0.addingPercentEncoding(withAllowedCharacters: .urlPathAllowed.subtracting(["/"])) ?? String($0) }.joined(separator: "/")
   return URL(string: "\(Env.supabaseURL.absoluteString)/storage/v1/object/public/media/\(encoded)")
 }
 
 // Database errors in words a member understands.
 func friendly(_ error: Error) -> String {
+  if let e = error as? MediaError { return e.errorDescription ?? "" }
   let text = "\(error)"
+  if text.contains("posts_media") { return "Something's wrong with those attachments. Remove them and try again." }
+  if text.contains("column \"media\"") || text.contains("'media' column") { return "Photos and video aren't turned on yet." }
   if text.contains("row-level security") || text.contains("42501") { return "You don't have permission to do that." }
   if text.contains("NSURLErrorDomain") || text.contains("offline") || text.contains("Could not connect") { return "Can't reach Forge. Check your connection." }
   if text.contains("Invalid login credentials") { return "That email and password don't match." }

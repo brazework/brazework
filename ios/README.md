@@ -8,14 +8,14 @@ Native SwiftUI app on the same Supabase backend as `web/`: same tables, same row
 
 | Tab | |
 |---|---|
-| **Feed** | For you (ranked, with why each post is there; your new post first), Latest, Following. Like, save, share, reply/answer, post updates, questions and results. Videos play as you scroll with sound (following the ringer switch), one at a time; tap to pause, then speed and fullscreen; a thin scrubber |
+| **Feed** | For you (ranked, with why each post is there; your new post first), Latest, Following. Like, save, share, reply/answer, post updates, questions and results with up to 4 photos or a video (preview before posting; photos shrink to 2000 px with location data stripped, videos convert to H.264 MP4 so they play everywhere). Videos play as you scroll with sound (following the ringer switch), one at a time; tap to pause, then speed and fullscreen; a thin scrubber |
 | **Clubs** | Your clubs and discover, search, a club's page with its posts, join or ask to join. **Events**: upcoming club and organization events, a map of the place with directions, I'm going, join online |
 | **Profiles** | Anyone's profile from a post, reply, alert or thread: headline, field, interests, posts; follow and message them |
 | **Messages** | Inbox and requests, accept or decline, threads that update live (Realtime, with polling as a fallback) |
 | **Alerts** | Likes, replies, mentions, follows, club and milestone news; marked read once seen; tap to open the post or person |
 | **You** | Profile, light/dark and the web's five themes, links to settings and Ember on the web, sign out |
 
-Sign-up, onboarding, photo/video posting and Ember open on the web for now.
+Sign-up, onboarding and Ember open on the web for now.
 
 ## Build and run
 
@@ -35,7 +35,7 @@ The app connects to whatever `Config/Local.xcconfig` names (gitignored). It defa
 
 ```sh
 scripts/test-kit.sh   # on the Mac, no simulator: ranking and dates, plus the app's real reads and writes against the
-                      # local stack (post → first in feed → like, save → reply; message from a profile → they see it
+                      # local stack (photo upload → post with it, and the folder rule; post → first in feed → like, save → reply; message from a profile → they see it
                       # unread → accept → reply; follow; join a club; RSVP; alerts)
 scripts/test.sh       # the same, then UI journeys on a simulator (XCUITest; macOS asks once to allow UI automation)
 ```
@@ -43,6 +43,5 @@ scripts/test.sh       # the same, then UI journeys on a simulator (XCUITest; mac
 ## Next
 
 1. Push notifications (APNs + a Supabase webhook on `notifications` and `messages`).
-2. Photo and video posting (PhotosPicker → the `media` bucket, same paths and limits as the web).
-3. Club chat and group chats; reactions and replies in messages.
-4. Native sign-up and onboarding; TestFlight.
+2. Club chat and group chats; reactions and replies in messages.
+3. Native sign-up and onboarding; TestFlight.

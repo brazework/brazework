@@ -28,7 +28,7 @@ FILES=$(grep -o 'for f in [^;]*' ../.github/workflows/web.yml | head -1 | sed 's
 for f in $FILES; do docker exec -i forge-e2e-db psql -U postgres -h localhost -d postgres -v ON_ERROR_STOP=1 -q < "../supabase/$f.sql" >/dev/null; done
 docker run -d --name forge-e2e-rest --network forge-e2e -p 53000:3000 -e PGRST_DB_URI=postgres://authenticator:postgres@forge-e2e-db:5432/postgres \
   -e PGRST_DB_SCHEMAS=public -e PGRST_DB_ANON_ROLE=anon -e PGRST_JWT_SECRET=$SECRET "$REST" >/dev/null
-nohup node e2e/gateway.cjs > /tmp/forge-e2e-gateway.log 2>&1 &
+GW_JWT_SECRET=$SECRET nohup node e2e/gateway.cjs > /tmp/forge-e2e-gateway.log 2>&1 &
 until curl -sf http://localhost:54321/rest/v1/ >/dev/null; do sleep 1; done
 ANON=$(node -e 'const c=require("crypto");const b=o=>Buffer.from(JSON.stringify(o)).toString("base64url");const h=b({alg:"HS256",typ:"JWT"}),p=b({role:"anon",iss:"supabase",exp:2000000000});console.log(h+"."+p+"."+c.createHmac("sha256",process.argv[1]).update(h+"."+p).digest("base64url"))' "$SECRET")
 echo "$ANON" > e2e/.anon-key

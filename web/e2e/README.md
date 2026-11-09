@@ -20,5 +20,6 @@ Needs Docker and Google Chrome. Takes a few minutes (most of it is `next build`)
 - `local-supabase.sh up|down`: Postgres + GoTrue + PostgREST in Docker, every `supabase/*.sql` file in CI order,
   four test members (`josh|maya|ben|cara@forge.test`, password `forge-test-pass-1`) and `seed.sql`.
 - Failure screenshots land in `e2e/.results/`.
-- Not covered locally: photo/video uploads and live updates (no Storage or Realtime service), and Ember
+- `gateway.cjs` also stands in for Storage: uploads to the `media` bucket follow `media.sql`'s rules (a valid token, your own folder, the bucket's file types, up to 50 MB, no overwrites) and are served back from `e2e/.media/`.
+- Not covered locally: live updates (no Realtime service), and Ember
   answers (no Anthropic key).

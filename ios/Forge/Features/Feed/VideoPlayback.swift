@@ -11,6 +11,8 @@ import SwiftUI
 final class VideoCoordinator {
   static let shared = VideoCoordinator()
   private(set) var active: String?
+  // Set while something covers the feed (the composer): nothing plays.
+  var suspended = false
   private var visible: [String] = []
   var soundOn: Bool = UserDefaults.standard.object(forKey: "forge-video-sound") as? Bool ?? true {
     didSet { UserDefaults.standard.set(soundOn, forKey: "forge-video-sound") }
@@ -103,6 +105,8 @@ struct FeedVideo: View {
       sync()
     }
     .onChange(of: coordinator.active) { sync() }
+    .onChange(of: coordinator.suspended) { sync() }
+    .onAppear { sync() }
     .onChange(of: coordinator.soundOn) { sync() }
     .onChange(of: phase) { sync() }
     .onDisappear { model?.player.pause() }
@@ -158,7 +162,7 @@ struct FeedVideo: View {
   private func sync() {
     guard let model else { return }
     model.player.isMuted = !coordinator.soundOn
-    let shouldPlay = !held && !fullscreen && coordinator.active == playerId && phase == .active
+    let shouldPlay = !held && !fullscreen && !coordinator.suspended && coordinator.active == playerId && phase == .active
     if shouldPlay { model.player.playImmediately(atRate: rate) } else { model.player.pause() }
   }
 }

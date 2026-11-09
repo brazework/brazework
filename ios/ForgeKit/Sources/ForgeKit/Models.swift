@@ -1,6 +1,7 @@
 import Foundation
 
 struct MediaItem: Codable, Hashable, Sendable {
+  init(type: String, path: String, w: Double? = nil, h: Double? = nil, alt: String? = nil) { self.type = type; self.path = path; self.w = w; self.h = h; self.alt = alt }
   var type: String
   var path: String
   var w: Double?

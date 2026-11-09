@@ -12,7 +12,7 @@ struct Avatar: View {
     ZStack {
       Circle().fill(p.surface2)
       Text(initials.isEmpty ? "?" : initials).font(.system(size: size * 0.38, weight: .semibold)).foregroundStyle(p.text2)
-      if let path, let url = mediaURL(path) {
+      if let path, !path.isEmpty, let url = mediaURL(path) {
         AsyncImage(url: url) { img in img.resizable().scaledToFill() } placeholder: { Color.clear }
       }
     }

@@ -48,6 +48,32 @@ final class JourneyTests: XCTestCase {
     XCTAssertTrue(comments.contains { $0.body == "Range test next week \(Self.stamp)" })
   }
 
+  func testPhotoPostAndFolderRule() async throws {
+    let me = try await signIn("cara")
+    // A real PNG (1×1), uploaded the way the composer does it.
+    let png = Data(base64Encoded: "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGNgYGD4DwABBAEAwS2OUAAAAABJRU5ErkJggg==")!
+    let path = try await API.upload(png, contentType: "image/png", ext: "png", me: me)
+    XCTAssertTrue(path.hasPrefix(me.uuidString.lowercased() + "/"))
+    let (bytes, resp) = try await URLSession.shared.data(from: XCTUnwrap(mediaURL(path)))
+    XCTAssertEqual((resp as? HTTPURLResponse)?.statusCode, 200)
+    XCTAssertEqual(bytes, png)
+
+    let body = "First light on the spectrometer \(Self.stamp)"
+    try await API.createPost(body: body, kind: "result", media: [MediaItem(type: "image", path: path, w: 1, h: 1, alt: "Spectrometer")])
+    let mine = try await API.posts(by: me)
+    let post = try XCTUnwrap(mine.first { $0.body == body })
+    XCTAssertEqual(post.media?.first?.path, path)
+    XCTAssertEqual(post.media?.first?.alt, "Spectrometer")
+
+    // Someone else's file can't go in your post (the database checks the folder).
+    do {
+      try await API.createPost(body: "Not mine \(Self.stamp)", kind: "update", media: [MediaItem(type: "image", path: "00000000-0000-0000-0000-000000000000/x.png")])
+      XCTFail("a post with someone else's file should be refused")
+    } catch {
+      XCTAssertEqual(friendly(error), "Something's wrong with those attachments. Remove them and try again.")
+    }
+  }
+
   func testMessageSomeoneFromTheirProfile() async throws {
     let maya = try await signIn("maya")
     let found: [Profile] = try await supabase.from("profiles").select(Session.profileColumns).eq("first_name", value: "Josh").limit(1).execute().value

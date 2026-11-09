@@ -52,9 +52,11 @@ struct FeedView: View {
       .task(id: store.tab) { await reload() }
       #if DEBUG
       .task {
+        if ProcessInfo.processInfo.environment["FORGE_TEST_COMPOSE"] != nil { composing = true }
         if let id = ProcessInfo.processInfo.environment["FORGE_TEST_PROFILE"].flatMap(UUID.init(uuidString:)), path.isEmpty { path.append(PersonRoute(id: id)) }
       }
       #endif
+      .onChange(of: composing) { VideoCoordinator.shared.suspended = composing }
       .sheet(isPresented: $composing) {
         ComposerView { Task { store.tab = .forYou; await reload() } }
           .presentationDetents([.medium, .large])
