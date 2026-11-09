@@ -49,7 +49,7 @@ export function CopilotSoon() {
 }
 
 // Links Copilot gives (/c/…, /events/…, /u/…) become real links; everything else stays text.
-function Rich({ text }: { text: string }) {
+export function Rich({ text }: { text: string }) {
   const parts = text.split(/(\/(?:c|events|u)\/[A-Za-z0-9-]+)/g);
   return <>{parts.map((p, i) => (/^\/(c|events|u)\//.test(p) ? <Link key={i} href={p} className="font-medium text-accent underline underline-offset-4">{p.startsWith("/c/") ? "Open club" : p.startsWith("/events/") ? "Open event" : "Open profile"} →</Link> : <span key={i}>{p}</span>))}</>;
 }

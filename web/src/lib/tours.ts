@@ -39,6 +39,17 @@ export const ROUTES = {
 
 export const UPDATES: ForgeUpdate[] = [
   {
+    id: "2026-11-09-milestones", date: "2026-11-09", kind: "New",
+    title: "Club-verified milestones and your guide",
+    summary: "Ask your club to vouch for what you built, and follow a short guide to a profile and club that get noticed.",
+    points: [
+      "On any of your projects, add a milestone (what happened, when, a link to the evidence) and ask one of your clubs to verify it.",
+      "Club moderators, admins and owners review requests in the club's Manage → Verify tab, and can decline with a note.",
+      "Verified milestones show on your project with your club's name, and count toward the Verified number on your profile.",
+      "The guide button at the bottom right shows your next steps, a tip for the page you're on, and club setup steps for clubs you run.",
+    ],
+  },
+  {
     id: "2026-11-08-search", date: "2026-11-08", kind: "New",
     title: "Search, a roomier layout and editable posts",
     summary: "Find people and communities from the search bar on every page, give the feed more room, and fix a post after you share it.",

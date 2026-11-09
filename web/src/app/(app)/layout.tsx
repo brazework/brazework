@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { LiveRefresh } from "@/components/app/live-refresh";
 import { GlobalSearch } from "@/components/search/global-search";
 import { TourMount } from "@/components/tour/tour-mount";
+import { GuideMount } from "@/components/guide/guide-mount";
 import { avatarSrc } from "@/lib/media";
 import { getViewer } from "@/lib/supabase/server";
 import { MobileBar, SIDEBAR_COOKIE, Sidebar, SidebarSkeleton, type Badges } from "./sidebar";
@@ -22,6 +23,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <div className="mx-auto mb-6 max-w-3xl"><Suspense fallback={<div className="h-12 rounded-2xl border border-line bg-surface/60" aria-hidden="true" />}><GlobalSearch /></Suspense></div>
         {children}
       </main>
+      {/* The guide: next steps for you and your clubs, plus Copilot, from any page. */}
+      <Suspense fallback={null}><GuideMount /></Suspense>
     </div>
     </div>
   );
