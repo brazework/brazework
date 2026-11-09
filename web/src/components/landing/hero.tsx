@@ -27,7 +27,7 @@ export function Hero() {
   const pick = (n: number) => { setAuto(false); setI(n); };
 
   return (
-    <section id="top" className="relative isolate overflow-hidden pt-32 pb-20 sm:pt-40">
+    <section id="top" data-story="Forge" className="story-sec relative isolate overflow-hidden pt-32 pb-20 sm:pt-40">
       <div className="pointer-events-none absolute inset-0 -z-10" aria-hidden="true">
         <div className="absolute -top-40 left-1/2 h-[560px] w-[900px] -translate-x-1/2 rounded-full opacity-[0.16] blur-3xl transition-[background] duration-700" style={{ background: p.grad }} />
       </div>

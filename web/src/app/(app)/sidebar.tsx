@@ -1,6 +1,6 @@
 "use client";
 import { AnimatePresence, motion } from "motion/react";
-import { Bell, Bookmark, CalendarDays, FolderGit2, Home, LayoutDashboard, LogOut, Menu, MessageSquare, Network, PanelLeftClose, PanelLeftOpen, Settings, Sparkles, Users, X } from "lucide-react";
+import { Bell, Bookmark, CalendarDays, FolderGit2, Home, LayoutDashboard, LogOut, MessageSquare, Network, PanelLeftClose, PanelLeftOpen, PenLine, Plus, Settings, Sparkles, Users, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -143,90 +143,138 @@ const TABS: { href: string; label: string; icon: typeof Home; match: string[]; b
 
 export function MobileBar({ first, last, badges, avatar }: { first: string; last: string; badges: Badges; avatar?: string | null }) {
   const path = usePathname();
-  const [more, setMore] = useState(false);
+  const [sheet, setSheet] = useState<"more" | "create" | null>(null);
   // Close the sheet when the page changes or Escape is pressed.
   const [lastPath, setLastPath] = useState(path);
   if (path !== lastPath) {
     setLastPath(path);
-    setMore(false);
+    setSheet(null);
   }
   useEffect(() => {
-    if (!more) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setMore(false);
+    if (!sheet) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setSheet(null);
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [more]);
+  }, [sheet]);
   const rest = NAV.filter((n) => !TABS.some((t) => t.href === n.href));
   const restCount = rest.reduce((sum, n) => sum + (n.badge ? badges[n.badge] : 0), 0);
+  const tab = (t: (typeof TABS)[number]) => {
+    const active = isActive(path, t.match);
+    const count = t.badge ? badges[t.badge] : 0;
+    return (
+      <Link key={t.href} href={t.href} aria-current={active ? "page" : undefined} aria-label={count ? `${t.label}, ${count} new` : t.label} className={cn("relative flex h-14 flex-col items-center justify-center gap-0.5 rounded-[20px] text-[10px] font-medium transition active:scale-90", active ? "text-text" : "text-faint")}>
+        {active && <motion.span layoutId="tab-pill" className="absolute inset-0.5 rounded-[18px] bg-hover" transition={{ type: "spring", stiffness: 500, damping: 38 }} />}
+        <span className="relative">
+          <t.icon className="size-[22px]" strokeWidth={active ? 2.2 : 1.8} />
+          <Count n={count} className="absolute -top-1.5 -right-2.5" />
+        </span>
+        <span className="relative">{t.label}</span>
+      </Link>
+    );
+  };
 
   return (
     <>
-      <header className="glass fixed inset-x-0 top-0 z-40 flex items-center gap-3 px-4 py-3 md:hidden">
+      {/* Top bar: under the notch / Dynamic Island, padded by the safe area. */}
+      <header className="glass fixed inset-x-0 top-0 z-40 flex items-center gap-3 px-4 pt-[calc(env(safe-area-inset-top)+0.625rem)] pb-2.5 md:hidden">
         <Link href="/feed" aria-label="Forge feed"><Logo /></Link>
         <div className="ml-auto flex items-center gap-1">
           <ThemeToggle />
-          <Link href="/profile" aria-label="Your profile" className="ml-1"><Avatar first={first} last={last} size={30} src={avatar} /></Link>
+          <button type="button" onClick={() => setSheet("more")} aria-expanded={sheet === "more"} aria-label={restCount ? `Menu and your profile, ${restCount} new` : "Menu and your profile"} className="relative ml-1 rounded-full active:scale-90">
+            <Avatar first={first} last={last} size={32} src={avatar} />
+            <Count n={restCount} className="absolute -top-1 -right-1" />
+          </button>
         </div>
       </header>
 
-      <nav aria-label="Main" className="glass fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-line pb-[env(safe-area-inset-bottom)] md:hidden">
-        {TABS.map((t) => {
-          const active = isActive(path, t.match);
-          const count = t.badge ? badges[t.badge] : 0;
-          return (
-            <Link key={t.href} href={t.href} aria-current={active ? "page" : undefined} aria-label={count ? `${t.label}, ${count} new` : t.label} className={cn("relative flex flex-col items-center gap-0.5 py-2.5 text-[10px] transition", active ? "text-text" : "text-faint")}>
-              <span className="relative">
-                <t.icon className="size-[22px]" strokeWidth={active ? 2.2 : 1.8} />
-                <Count n={count} className="absolute -top-1.5 -right-2.5" />
-              </span>
-              {t.label}
-            </Link>
-          );
-        })}
-        <button onClick={() => setMore(true)} aria-expanded={more} aria-label={restCount ? `More, ${restCount} new` : "More"} className="relative flex flex-col items-center gap-0.5 py-2.5 text-[10px] text-faint">
-          <span className="relative"><Menu className="size-[22px]" strokeWidth={1.8} /><Count n={restCount} className="absolute -top-1.5 -right-2.5" /></span>
-          More
-        </button>
+      {/* Floating tab bar above the home indicator, with Create in the middle. */}
+      <nav aria-label="Main" className="fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+0.5rem)] z-40 md:hidden">
+        <div className="glass grid grid-cols-5 items-center rounded-[26px] border border-line p-1 shadow-[0_18px_40px_-18px_rgb(0_0_0/0.45)]">
+          {TABS.slice(0, 2).map(tab)}
+          <div className="flex justify-center">
+            <button type="button" onClick={() => setSheet("create")} aria-expanded={sheet === "create"} aria-label="Create" className="bg-accent-grad grid size-12 place-items-center rounded-full text-on-accent shadow-[0_10px_24px_-10px_var(--accent)] transition active:scale-90">
+              <Plus className="size-6" strokeWidth={2.4} />
+            </button>
+          </div>
+          {TABS.slice(2).map(tab)}
+        </div>
       </nav>
 
-      <AnimatePresence>
-        {more && (
-          <motion.div className="fixed inset-0 z-50 bg-bg/60 backdrop-blur-sm md:hidden" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setMore(false)}>
-            <motion.div
-              role="dialog"
-              aria-modal="true"
-              aria-label="More"
-              onClick={(e) => e.stopPropagation()}
-              initial={{ y: "100%" }}
-              animate={{ y: 0 }}
-              exit={{ y: "100%" }}
-              transition={{ type: "spring", stiffness: 380, damping: 36 }}
-              className="absolute inset-x-0 bottom-0 rounded-t-3xl border-t border-line bg-surface p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]"
-            >
-              <div className="mb-2 flex items-center justify-between px-2">
-                <span className="text-sm font-medium">More</span>
-                <button onClick={() => setMore(false)} aria-label="Close" className="grid size-9 place-items-center rounded-full text-faint hover:bg-hover hover:text-text"><X className="size-4" /></button>
-              </div>
-              <div className="grid grid-cols-3 gap-2">
-                {rest.map((n) => {
-                  const count = n.badge ? badges[n.badge] : 0;
-                  return (
-                    <Link key={n.href} href={n.href} className="relative flex flex-col items-center gap-2 rounded-2xl border border-line py-4 text-xs text-text-2 transition hover:bg-hover">
-                      <n.icon className="size-5" />
-                      {n.label}
-                      <Count n={count} className="absolute top-2 right-2" />
-                    </Link>
-                  );
-                })}
-              </div>
-              <div className="mt-2"><UpdatesButton /></div>
-              <form action="/auth/signout" method="post" className="mt-1">
-                <button className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-muted transition hover:bg-hover hover:text-text"><LogOut className="size-[18px]" /> Log out</button>
-              </form>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <Sheet open={sheet === "create"} title="Create" onClose={() => setSheet(null)}>
+        <div className="grid grid-cols-2 gap-2">
+          {CREATE.map((c) => (
+            <Link key={c.label} href={c.href} onClick={(e) => { if (c.href === "/feed#composer" && path === "/feed") { e.preventDefault(); setSheet(null); window.dispatchEvent(new Event("forge:compose")); } }} className="flex flex-col gap-2 rounded-2xl border border-line p-4 text-left transition active:scale-[0.97]">
+              <span className="nav-tile grid size-10 place-items-center rounded-xl text-text"><c.icon className="size-5" /></span>
+              <span className="text-sm font-medium">{c.label}</span>
+              <span className="text-xs leading-snug text-muted">{c.body}</span>
+            </Link>
+          ))}
+        </div>
+      </Sheet>
+
+      <Sheet open={sheet === "more"} title="Menu" onClose={() => setSheet(null)}>
+        <Link href="/profile" className="mb-3 flex items-center gap-3 rounded-2xl border border-line p-3 transition active:scale-[0.98]">
+          <Avatar first={first} last={last} size={44} src={avatar} />
+          <span className="min-w-0 flex-1"><span className="block truncate font-medium">{`${first} ${last}`.trim()}</span><span className="block text-xs text-muted">View your profile</span></span>
+        </Link>
+        <div className="grid grid-cols-3 gap-2">
+          {rest.map((n) => {
+            const count = n.badge ? badges[n.badge] : 0;
+            return (
+              <Link key={n.href} href={n.href} className="relative flex flex-col items-center gap-2 rounded-2xl border border-line py-4 text-xs text-text-2 transition active:scale-95">
+                <n.icon className="size-5" />
+                {n.label}
+                <Count n={count} className="absolute top-2 right-2" />
+              </Link>
+            );
+          })}
+        </div>
+        <div className="mt-2"><UpdatesButton /></div>
+        <form action="/auth/signout" method="post" className="mt-1">
+          <button className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm text-muted transition hover:bg-hover hover:text-text"><LogOut className="size-[18px]" /> Log out</button>
+        </form>
+      </Sheet>
     </>
+  );
+}
+
+const CREATE = [
+  { href: "/feed#composer", label: "Post", body: "An update, result or question", icon: PenLine },
+  { href: "/copilot", label: "Ask Ember", body: "Your AI teammate does the busywork", icon: Sparkles },
+  { href: "/profile#projects", label: "Add a project", body: "Show what you built", icon: FolderGit2 },
+  { href: "/events", label: "Events", body: "Find one, or host for your club", icon: CalendarDays },
+];
+
+// A bottom sheet that slides up over the page, clear of the home indicator.
+function Sheet({ open, title, onClose, children }: { open: boolean; title: string; onClose: () => void; children: React.ReactNode }) {
+  return (
+    <AnimatePresence>
+      {open && (
+        <motion.div className="fixed inset-0 z-50 bg-bg/60 backdrop-blur-sm md:hidden" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={onClose}>
+          <motion.div
+            role="dialog"
+            aria-modal="true"
+            aria-label={title}
+            onClick={(e) => e.stopPropagation()}
+            initial={{ y: "100%" }}
+            animate={{ y: 0 }}
+            exit={{ y: "100%" }}
+            drag="y"
+            dragConstraints={{ top: 0, bottom: 0 }}
+            dragElastic={{ top: 0, bottom: 0.6 }}
+            onDragEnd={(_, i) => { if (i.offset.y > 90 || i.velocity.y > 500) onClose(); }}
+            transition={{ type: "spring", stiffness: 380, damping: 36 }}
+            className="absolute inset-x-0 bottom-0 max-h-[85dvh] overflow-y-auto rounded-t-[28px] border-t border-line bg-surface p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]"
+          >
+            <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-line-strong" aria-hidden />
+            <div className="mb-3 flex items-center justify-between px-1">
+              <span className="text-base font-semibold">{title}</span>
+              <button onClick={onClose} aria-label="Close" className="grid size-10 place-items-center rounded-full text-faint hover:bg-hover hover:text-text"><X className="size-4" /></button>
+            </div>
+            {children}
+          </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }

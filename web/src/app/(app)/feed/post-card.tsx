@@ -130,21 +130,21 @@ export function PostCard({ post, liked, saved = false, own = false, index, proje
         </div>
       )}
       <footer className="mt-4 flex items-center gap-1 text-sm text-faint">
-        <button onClick={() => like(!opt.liked)} aria-pressed={opt.liked} aria-label={opt.liked ? "Unlike" : "Like"} className="inline-flex h-9 items-center gap-1.5 rounded-full px-3 transition hover:bg-hover hover:text-text active:scale-90">
+        <button onClick={() => like(!opt.liked)} aria-pressed={opt.liked} aria-label={opt.liked ? "Unlike" : "Like"} className="tap inline-flex h-9 items-center gap-1.5 rounded-full px-3 transition hover:bg-hover hover:text-text active:scale-90">
           <motion.span className="relative" animate={opt.liked ? { scale: [1, 1.35, 1] } : {}} transition={{ duration: 0.35 }}>
             {burst > 0 && <HeartBurst key={burst} />}
             <Heart className={cn("size-[18px] transition", opt.liked && "fill-[var(--accent)] text-accent")} />
           </motion.span>
           <span className={cn("tabular-nums", opt.liked && "text-accent")}>{opt.count}</span>
         </button>
-        <Link href={`/post/${post.id}`} aria-label={`${post.comment_count} comments`} className="inline-flex h-9 items-center gap-1.5 rounded-full px-3 transition hover:bg-hover hover:text-text">
+        <Link href={`/post/${post.id}`} aria-label={`${post.comment_count} comments`} className="tap inline-flex h-9 items-center gap-1.5 rounded-full px-3 transition hover:bg-hover hover:text-text">
           <MessageSquare className="size-[18px]" /> <span className="tabular-nums">{post.comment_count}</span>
         </Link>
-        <button onClick={() => act({ saved: !opt.saved }, () => toggleSave(post.id, !opt.saved))} aria-pressed={opt.saved} aria-label={opt.saved ? "Unsave" : "Save"} className="inline-flex h-9 items-center gap-1.5 rounded-full px-3 transition hover:bg-hover hover:text-text">
+        <button onClick={() => act({ saved: !opt.saved }, () => toggleSave(post.id, !opt.saved))} aria-pressed={opt.saved} aria-label={opt.saved ? "Unsave" : "Save"} className="tap inline-flex h-9 items-center gap-1.5 rounded-full px-3 transition hover:bg-hover hover:text-text">
           <Bookmark className={cn("size-[18px]", opt.saved && "fill-[var(--accent)] text-accent")} />
         </button>
         <SendPost postId={post.id} />
-        <button onClick={share} aria-label={copied ? "Link copied" : "Copy link to post"} className="inline-flex h-9 items-center gap-1.5 rounded-full px-3 transition hover:bg-hover hover:text-text">
+        <button onClick={share} aria-label={copied ? "Link copied" : "Copy link to post"} className="tap inline-flex h-9 items-center gap-1.5 rounded-full px-3 transition hover:bg-hover hover:text-text">
           <AnimatePresence mode="wait" initial={false}>
             <motion.span key={copied ? "y" : "n"} initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.5, opacity: 0 }} transition={{ duration: 0.15 }} className="inline-flex items-center gap-1.5">
               {copied ? <><Check className="size-[18px] text-ok" /><span className="text-xs text-ok">Copied</span></> : <Link2 className="size-[18px]" />}
@@ -152,7 +152,7 @@ export function PostCard({ post, liked, saved = false, own = false, index, proje
           </AnimatePresence>
         </button>
         {own && !editing && (
-          <button onClick={() => setEditing(true)} aria-label="Edit post" title="Edit post" className="inline-flex h-9 items-center rounded-full px-3 transition hover:bg-hover hover:text-text">
+          <button onClick={() => setEditing(true)} aria-label="Edit post" title="Edit post" className="tap inline-flex h-9 items-center rounded-full px-3 transition hover:bg-hover hover:text-text">
             <Pencil className="size-[18px]" />
           </button>
         )}

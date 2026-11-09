@@ -144,7 +144,7 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
         </div>
       </Panel>
 
-      <div className="glass sticky top-16 z-20 -mx-1 mt-6 rounded-2xl p-1 md:top-3">
+      <div className="glass sticky top-[var(--m-top)] z-20 -mx-1 mt-6 rounded-2xl p-1 md:top-3">
         <Tabs active={tab} tabs={[
           { id: "posts", label: "Posts", href: `/c/${c.id}` },
           { id: "events", label: "Events", href: `/c/${c.id}?tab=events`, count: upcomingEvents.length },

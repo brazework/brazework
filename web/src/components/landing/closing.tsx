@@ -5,7 +5,7 @@ import { Reveal } from "./reveal";
 
 export function FinalCta() {
   return (
-    <section className="relative isolate overflow-hidden py-28 sm:py-36">
+    <section id="join" data-story="Join Forge" className="story-sec relative isolate overflow-hidden py-28 sm:py-36">
       <div className="bg-accent-grad pointer-events-none absolute top-1/2 left-1/2 -z-10 h-[420px] w-[760px] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-[0.14] blur-3xl" aria-hidden="true" />
       <Reveal className="mx-auto flex max-w-3xl flex-col items-center px-6 text-center">
         <h2 className="text-[clamp(2.5rem,6vw,4.75rem)] leading-[0.98] font-semibold tracking-[-0.04em]">

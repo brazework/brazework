@@ -2,7 +2,7 @@
 import { AnimatePresence, motion } from "motion/react";
 import { ArrowRight, ArrowUp, FlaskConical, HelpCircle, ImagePlus, Loader2, Megaphone, PenLine, Rocket, Square, Undo2, Upload, Video, Wand2, X } from "lucide-react";
 import Link from "next/link";
-import { useActionState, useRef, useState } from "react";
+import { useActionState, useEffect, useRef, useState } from "react";
 import { Avatar, Button } from "@/components/ui";
 import { POST_KINDS, cn } from "@/lib/forge";
 import { createPost, type ComposeState } from "./actions";
@@ -64,6 +64,16 @@ export function Composer({ first, last, interests, userId, mediaEnabled = false,
     const out = await ai.run({ task: "post", input: original, kind: kind as "update" | "question" | "result" | "project" }, (full) => setBody(full.slice(0, MAX)));
     if (out === null) { setBody(original); setBefore(null); }
   };
+
+  // Arriving from Create → Post (/feed#composer): open the box, ready to type.
+  // Also when you're already here: Next changes the hash with pushState, which fires no event, so
+  // the Create sheet sends "forge:compose" instead.
+  useEffect(() => {
+    const start = () => requestAnimationFrame(() => { setMode("post"); setOpen(true); textRef.current?.focus(); textRef.current?.scrollIntoView({ block: "center", behavior: "smooth" }); });
+    const raf = location.hash === "#composer" ? start() : 0;
+    window.addEventListener("forge:compose", start);
+    return () => { cancelAnimationFrame(raf); window.removeEventListener("forge:compose", start); };
+  }, []);
 
   // Clear after a successful post (adjusting state during render, not in an effect).
   const [seenNonce, setSeenNonce] = useState(0);

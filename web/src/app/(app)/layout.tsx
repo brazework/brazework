@@ -19,7 +19,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <Suspense fallback={<SidebarSkeleton />}>
         <SignedInShell />
       </Suspense>
-      <main className="min-w-0 flex-1 px-4 pt-20 pb-28 sm:px-6 md:py-6 lg:px-8 2xl:px-12">
+      <main className="min-w-0 flex-1 px-4 pt-[var(--m-top)] pb-[calc(var(--m-bottom)+1rem)] sm:px-6 md:py-6 lg:px-8 2xl:px-12">
         {/* One search for people and communities, above every page. On the feed it lines up with the posts column (globals.css). */}
         <div className="search-row mx-auto mb-6 max-w-3xl xl:max-w-4xl"><Suspense fallback={<div className="h-12 rounded-2xl border border-line bg-surface/60" aria-hidden="true" />}><GlobalSearch /></Suspense></div>
         {children}

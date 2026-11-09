@@ -184,7 +184,7 @@ export function CopilotChat({ first, field, initial = "", chats = [], chat = nul
   const lastAnswer = msgs.at(-1);
 
   const composer = (
-    <div className={cn(empty ? "mt-8" : "sticky bottom-24 mt-4 md:bottom-4")}>
+    <div className={cn(empty ? "mt-8" : "sticky bottom-[var(--m-bottom)] mt-4 md:bottom-4")}>
       <form onSubmit={(e) => { e.preventDefault(); void send(input); }} className={cn("flex items-end gap-2 rounded-3xl p-2", empty ? "glass-card" : "glass")}>
         <label htmlFor="copilot-input" className="sr-only">Ask Ember</label>
         <textarea
@@ -256,7 +256,7 @@ export function CopilotChat({ first, field, initial = "", chats = [], chat = nul
             </div>
           </>
         ) : (
-          <div className="glass sticky top-16 z-20 flex items-center gap-3 rounded-2xl px-3 py-2 md:top-3">
+          <div className="glass sticky top-[var(--m-top)] z-20 flex items-center gap-3 rounded-2xl px-3 py-2 md:top-3">
             <Ember size={30} mood={busy ? "thinking" : "happy"} />
             <span className="min-w-0 truncate text-sm font-medium">{list.find((c) => c.id === chatId)?.title ?? "Ember"}</span>
             <button type="button" onClick={newChat} className="ml-auto inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium text-muted transition hover:bg-hover hover:text-text"><Plus className="size-3.5" /> New chat</button>

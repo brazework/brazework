@@ -3,6 +3,10 @@
 /* Forge design tokens: monochrome, light and dark. Use these, never fixed colours.
    Theme = the visitor's system setting, unless they pick one (html[data-theme], set before paint in layout.tsx). */
 :root {
+  /* Phone chrome: the top bar and the floating tab bar, plus the notch and home indicator. */
+  --m-top: calc(env(safe-area-inset-top, 0px) + 4rem);
+  --m-bottom: calc(env(safe-area-inset-bottom, 0px) + 5.5rem);
+
   color-scheme: light;
   --bg: #ffffff;
   --surface: #fafafa;
@@ -418,3 +422,60 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity
 .ember-sleepy [class^="ember-swirl"], .ember-sleepy [class^="ember-band"] { animation-duration: 30s; }
 .ember-sleepy .ember-glow-out { opacity: 0.3; }
 .ember-surprised .ember-glow { animation: ember-flare 2.4s ease-out infinite; }
+
+/* Touch screens: iOS Safari zooms into any field under 16px when it's tapped, and fingers need
+   about 44px to hit a target. (Unlayered, so these win over the utility classes.) */
+@media (pointer: coarse) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]), textarea, select { font-size: 16px; }
+  .tap { min-height: 44px; min-width: 44px; justify-content: center; }
+}
+/* Installed to the Home Screen (standalone): no rubber-band behind the app, no tap flash. */
+@media (display-mode: standalone) {
+  html, body { overscroll-behavior-y: none; }
+}
+html { -webkit-tap-highlight-color: transparent; }
+
+/* Landing page on phones: one idea per screen. Sections snap into place as you flick (proximity,
+   so a tall section never traps you), their content rises in as it arrives, and card grids turn
+   into sideways swipe rows with the next card peeking. Desktop is unchanged. */
+@media (max-width: 767px) {
+  html:has(main.story) { scroll-snap-type: y proximity; }
+  .story-sec {
+    min-height: 100svh;
+    scroll-snap-align: start;
+    display: flex; flex-direction: column; justify-content: center;
+    padding-top: calc(env(safe-area-inset-top, 0px) + 5.5rem);
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 3.5rem);
+  }
+  /* Flex items with auto margins shrink to their content; a swipe row's content is wide on purpose. */
+  .story-sec > :not(.absolute) { width: 100%; }
+  .m-swipe {
+    display: flex !important;
+    overflow-x: auto;
+    scroll-snap-type: x mandatory;
+    gap: 12px;
+    margin-inline: -24px;
+    padding-inline: 24px;
+    scroll-padding-inline: 24px;
+    scrollbar-width: none;
+    overscroll-behavior-x: contain;
+  }
+  .m-swipe::-webkit-scrollbar { display: none; }
+  /* Tall sections get a second stop, so the demo or form below the pitch lands as its own screen. */
+  #hero-profile, #how [aria-live="polite"], #founding form { scroll-snap-align: start; scroll-margin-top: calc(env(safe-area-inset-top, 0px) + 5.5rem); }
+  /* Ember's capabilities: one row to swipe instead of a stack of pills. */
+  #copilot ul[aria-label="What Ember can do"] { flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; margin-inline: -24px; padding-inline: 24px; scrollbar-width: none; }
+  #copilot ul[aria-label="What Ember can do"] > li { flex: none; }
+  .m-swipe > * { flex: 0 0 84%; scroll-snap-align: start; min-width: 0; }
+  @supports (animation-timeline: view()) {
+    .story-sec > * { animation: story-in linear both; animation-timeline: view(); animation-range: entry 5% cover 35%; }
+  }
+}
+@keyframes story-in {
+  from { opacity: 0.15; transform: translateY(28px) scale(0.97); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .story-sec > * { animation: none !important; }
+  html:has(main.story) { scroll-snap-type: none; }
+}

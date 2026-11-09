@@ -12,6 +12,10 @@ export const metadata: Metadata = {
   title: { default: "Forge: where STEM clubs build, prove it and get hired", template: "%s · Forge" },
   description:
     "Forge is home base for university STEM clubs. Talk, plan and build together, and every result your club verifies becomes proof that gets you hired. Ember, your AI teammate, handles the busywork.",
+  applicationName: "Forge",
+  // Installed from Safari's Share menu: full screen, content under a see-through status bar.
+  appleWebApp: { capable: true, title: "Forge", statusBarStyle: "black-translucent" },
+  icons: { apple: [{ url: "/app-icon/180", sizes: "180x180" }] },
   openGraph: {
     title: "Forge: where STEM clubs build, prove it and get hired",
     description: "Your club's home base. Your verified work. Proof that beats a résumé.",
@@ -20,6 +24,8 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
+  // Draw under the notch and the home indicator; the app pads itself with the safe-area insets.
+  viewportFit: "cover",
   themeColor: [
     { media: "(prefers-color-scheme: light)", color: "#ffffff" },
     { media: "(prefers-color-scheme: dark)", color: "#09090b" },

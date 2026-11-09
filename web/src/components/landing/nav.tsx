@@ -30,7 +30,7 @@ export function Nav() {
   }, [open]);
 
   return (
-    <header className="rise-in fixed inset-x-0 top-0 z-50 flex justify-center px-4 pt-4">
+    <header className="rise-in fixed inset-x-0 top-0 z-50 flex justify-center px-4 pt-[calc(env(safe-area-inset-top)+1rem)]">
       <nav
         aria-label="Main"
         className={cn(

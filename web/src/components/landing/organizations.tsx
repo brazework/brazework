@@ -20,7 +20,7 @@ export function Organizations() {
   const [state, action, pending] = useActionState<OrgInterestState, FormData>(registerOrgInterest, { ok: false, message: "" });
 
   return (
-    <section id="founding" className="relative isolate scroll-mt-24 overflow-hidden py-24 sm:py-32">
+    <section id="founding" data-story="Founding clubs" className="story-sec relative isolate scroll-mt-24 overflow-hidden py-24 sm:py-32">
       <div className="mx-auto grid max-w-7xl gap-14 px-6 lg:grid-cols-2">
         <div>
           <Reveal>

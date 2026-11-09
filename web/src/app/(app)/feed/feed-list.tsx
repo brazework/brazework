@@ -53,7 +53,7 @@ export function NewPosts({ me }: { me: string }) {
   }, [me, router]);
   if (!count) return null;
   return (
-    <div className="pointer-events-none sticky top-32 z-30 flex justify-center md:top-20">
+    <div className="pointer-events-none sticky top-[calc(var(--m-top)+3.5rem)] z-30 flex justify-center md:top-20">
       <button
         type="button"
         onClick={() => { setCount(0); router.refresh(); window.scrollTo({ top: 0, behavior: "smooth" }); }}

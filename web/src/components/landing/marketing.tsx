@@ -46,7 +46,7 @@ export function ClubStrip() {
 
 export function Builders() {
   return (
-    <section id="builders" className="scroll-mt-24 py-24 sm:py-32">
+    <section id="builders" data-story="Every field" className="story-sec scroll-mt-24 py-24 sm:py-32">
       <div className="mx-auto max-w-7xl px-6">
         <Head eyebrow="Every field in STEM" title="Engineering, science, math or code," accent="there's a place for what you build." body="Hover a field to watch its schematic draw. Tap to see what you'd post, which clubs it fits and who's looking." />
         <div className="mt-12"><ProfessionGrid /></div>
@@ -63,10 +63,10 @@ const FACTS = [
 
 export function Problem() {
   return (
-    <section className="bg-surface-2/50 py-24 sm:py-32">
+    <section id="why" data-story="Why now" className="story-sec bg-surface-2/50 py-24 sm:py-32">
       <div className="mx-auto max-w-7xl px-6">
         <Head eyebrow="Why now" title="Hiring stopped trusting résumés." accent="Builders are paying for it." body="Anyone can generate a perfect résumé now. What still cuts through is real work that someone saw happen, and today that work is buried in Discord threads and group chats." />
-        <div className="mt-12 grid gap-4 md:grid-cols-3">
+        <div className="m-swipe mt-12 grid gap-4 md:grid-cols-3">
           {FACTS.map((f, i) => (
             <Reveal key={f.src} delay={i * 0.08} className="spotlight flex flex-col rounded-3xl border border-line bg-surface p-7">
               <div className="text-5xl font-semibold tracking-tight">{f.n}</div>
@@ -82,7 +82,7 @@ export function Problem() {
 
 export function How() {
   return (
-    <section id="how" className="scroll-mt-24 py-24 sm:py-32">
+    <section id="how" data-story="How it works" className="story-sec scroll-mt-24 py-24 sm:py-32">
       <div className="mx-auto max-w-7xl px-6">
         <Head eyebrow="How it works" title="One club is enough" accent="to start the loop." />
         <div className="mt-12"><HowItWorks /></div>
@@ -93,7 +93,7 @@ export function How() {
 
 export function Audiences() {
   return (
-    <section id="who" className="scroll-mt-24 bg-surface-2/50 py-24 sm:py-32">
+    <section id="who" data-story="Who it's for" className="story-sec scroll-mt-24 bg-surface-2/50 py-24 sm:py-32">
       <div className="mx-auto max-w-7xl px-6">
         <Head eyebrow="Who it's for" title="Built for the people" accent="who build." />
         <div className="mt-10"><AudienceTabs /></div>
@@ -114,10 +114,10 @@ const FEATURES = [
 
 export function Features() {
   return (
-    <section id="product" className="scroll-mt-24 py-24 sm:py-32">
+    <section id="product" data-story="The product" className="story-sec scroll-mt-24 py-24 sm:py-32">
       <div className="mx-auto max-w-7xl px-6">
         <Head eyebrow="The product" title="Everything a club runs on." accent="Everything a member needs to get noticed." />
-        <div className="mt-12 grid gap-4 md:grid-cols-3">
+        <div className="m-swipe mt-12 grid gap-4 md:grid-cols-3">
           {FEATURES.map((f, i) => (
             <Reveal key={f.title} delay={(i % 3) * 0.06} className={cn("spotlight group rounded-3xl border border-line bg-surface p-7 transition hover:-translate-y-1 hover:shadow-[var(--shadow)]", f.span)}>
               <span className="grid size-11 place-items-center rounded-2xl bg-accent-grad text-on-accent transition duration-300 group-hover:scale-110"><f.icon className="size-5" /></span>
@@ -140,7 +140,7 @@ const GOALS = [
 
 export function Mission() {
   return (
-    <section id="mission" className="scroll-mt-24 bg-surface-2/50 py-24 sm:py-32">
+    <section id="mission" data-story="Mission" className="story-sec scroll-mt-24 bg-surface-2/50 py-24 sm:py-32">
       <div className="mx-auto grid max-w-7xl gap-12 px-6 lg:grid-cols-[1fr_1.2fr] lg:items-start">
         <Reveal>
           <Eyebrow>Our mission</Eyebrow>
@@ -148,7 +148,7 @@ export function Mission() {
           {/* Draft copy: the founders should rewrite this in their own words. */}
           <p className="mt-6 text-lg leading-relaxed text-muted">Some of the most capable engineers and scientists get overlooked because their best work lives in club Discords and lab notebooks, while hiring runs on keywords. We&apos;re starting with clubs because that&apos;s where the building already happens.</p>
         </Reveal>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="m-swipe grid gap-4 sm:grid-cols-2">
           {GOALS.map(([t, b], i) => (
             <Reveal key={t} delay={i * 0.06} className="spotlight rounded-3xl border border-line bg-surface p-6">
               <div className="text-grad text-sm font-semibold">0{i + 1}</div>
@@ -164,7 +164,7 @@ export function Mission() {
 
 export function FaqSection() {
   return (
-    <section id="faq" className="mx-auto max-w-3xl scroll-mt-24 px-6 py-24 sm:py-32">
+    <section id="faq" data-story="Questions" className="story-sec mx-auto max-w-3xl scroll-mt-24 px-6 py-24 sm:py-32">
       <Head eyebrow="FAQ" title="Questions, answered." center />
       <div className="mt-10"><Faq /></div>
     </section>

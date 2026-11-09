@@ -86,7 +86,7 @@ export function CopilotSection() {
   const s = SCENARIOS[pick];
 
   return (
-    <section id="copilot" className="relative isolate scroll-mt-24 overflow-hidden py-24 sm:py-32">
+    <section id="copilot" data-story="Ember, your AI teammate" className="story-sec relative isolate scroll-mt-24 overflow-hidden py-24 sm:py-32">
       <div className="bg-accent-grad pointer-events-none absolute top-1/3 left-1/2 -z-10 h-[420px] w-[720px] -translate-x-1/2 rounded-full opacity-[0.12] blur-3xl" aria-hidden="true" />
       <div className="mx-auto max-w-7xl px-6">
         <div className="mx-auto max-w-3xl text-center">
@@ -99,7 +99,7 @@ export function CopilotSection() {
           </ul>
         </div>
 
-        <ol className="mx-auto mt-12 grid max-w-5xl gap-3 sm:grid-cols-3">
+        <ol className="m-swipe mx-auto mt-12 grid max-w-5xl gap-3 sm:grid-cols-3">
           {HOW.map((h, i) => (
             <li key={h.title} className="glass-card relative rounded-3xl p-5">
               <span className="absolute top-5 right-5 font-mono text-xs text-faint">0{i + 1}</span>

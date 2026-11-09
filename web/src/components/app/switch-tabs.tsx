@@ -19,7 +19,7 @@ export function SwitchTabs({ items, name, className }: { items: Item[]; name: st
 
   return (
     <div className={className}>
-      <div role="tablist" aria-label={name} className="glass sticky top-16 z-20 -mx-1 flex gap-1 overflow-x-auto rounded-2xl p-1 no-scrollbar md:top-3">
+      <div role="tablist" aria-label={name} className="glass sticky top-[var(--m-top)] z-20 -mx-1 flex gap-1 overflow-x-auto rounded-2xl p-1 no-scrollbar md:top-3">
         {items.map((i) => (
           <button
             key={i.id}

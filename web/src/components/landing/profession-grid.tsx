@@ -11,7 +11,7 @@ import { Schematic } from "./schematics";
 // and who's looking. Both faces share one grid cell, so every card is the same size.
 export function ProfessionGrid() {
   return (
-    <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+    <div className="m-swipe grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
       {PROFESSIONS.map((p, n) => (
         <motion.div
           key={p.id}
