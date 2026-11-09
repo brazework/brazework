@@ -9,6 +9,7 @@ import { UpdatesButton } from "@/components/tour/tour-mount";
 import { Avatar, Logo } from "@/components/ui";
 import { MyStatus, WithPresence } from "@/components/presence/presence";
 import { cn } from "@/lib/forge";
+import { NavTile } from "@/components/app/nav-tile";
 
 export type Badges = { notifications: number; messages: number; invites: number };
 type BadgeKey = keyof Badges;
@@ -64,7 +65,13 @@ export function Sidebar({ first, last, userId, badges, avatar, initialCollapsed 
     document.cookie = `${SIDEBAR_COOKIE}=${next ? "collapsed" : "open"}; path=/; max-age=31536000; samesite=lax`;
   };
   return (
-    <aside aria-label="Sidebar" className={cn("sticky top-0 hidden h-dvh shrink-0 p-3 transition-[width] duration-300 ease-out motion-reduce:transition-none md:block", collapsed ? "w-[88px]" : "w-[264px]")}>
+    <aside aria-label="Sidebar" className={cn("sticky top-0 isolate hidden h-dvh shrink-0 p-3 transition-[width] duration-300 ease-out motion-reduce:transition-none md:block", collapsed ? "w-[88px]" : "w-[264px]")}>
+      {/* Soft light behind the glass, in Ember's colours, so the frosting has something to catch. */}
+      <div aria-hidden="true" className="pointer-events-none absolute inset-3 -z-10 overflow-hidden rounded-3xl">
+        <div className="absolute -top-16 -left-20 size-56 rounded-full bg-[var(--ember-a)] opacity-30 blur-3xl" />
+        <div className="absolute top-1/2 -right-28 size-48 rounded-full bg-[var(--ember-c)] opacity-20 blur-3xl" />
+        <div className="absolute -bottom-16 -left-16 size-52 rounded-full bg-[var(--ember-b)] opacity-20 blur-3xl" />
+      </div>
       <div className="glass-panel flex h-full flex-col rounded-3xl px-2 py-4">
       <div className={cn("flex items-center gap-1", collapsed ? "flex-col" : "justify-between pr-1 pl-2")}>
         <Link href="/feed" aria-label="Forge feed" className={cn(collapsed && "mb-2")}><Logo withWord={!collapsed} /></Link>
@@ -83,7 +90,7 @@ export function Sidebar({ first, last, userId, badges, avatar, initialCollapsed 
           </button>
         </div>
       </div>
-      <nav data-tour="menu" aria-label="Main" className={cn("flex flex-col gap-1", collapsed ? "mt-6" : "mt-10")}>
+      <nav data-tour="menu" aria-label="Main" className={cn("flex min-h-0 flex-col gap-0.5 overflow-y-auto", collapsed ? "mt-5" : "mt-8")}>
         {NAV.map((n) => {
           const active = isActive(path, n.match);
           const count = n.badge ? badges[n.badge] : 0;
@@ -95,12 +102,12 @@ export function Sidebar({ first, last, userId, badges, avatar, initialCollapsed 
               aria-current={active ? "page" : undefined}
               aria-label={count ? `${n.label}, ${count} new` : collapsed ? n.label : undefined}
               title={collapsed ? n.label : undefined}
-              className={cn("relative flex items-center gap-3 rounded-2xl py-2.5 text-sm transition", collapsed ? "justify-center px-0" : "px-3", active ? "font-medium text-text" : "text-muted hover:bg-hover/70 hover:text-text")}
+              className={cn("group relative flex items-center gap-3 rounded-2xl py-1.5 text-sm transition", collapsed ? "justify-center px-0" : "px-2", active ? "font-medium text-text" : "text-text-2 hover:bg-hover/60 hover:text-text")}
             >
               {active && <motion.span layoutId="nav-active" className="nav-pill absolute inset-0 rounded-2xl" transition={{ type: "spring", stiffness: 400, damping: 34 }} />}
-              <n.icon className={cn("relative size-[18px] shrink-0 transition-colors", active && "text-accent")} />
+              <NavTile icon={n.icon} active={active} ember={n.href === "/copilot"} />
               {!collapsed && <span className="relative">{n.label}</span>}
-              <Count n={count} className={collapsed ? "absolute -top-0.5 right-1" : "relative ml-auto"} />
+              <Count n={count} className={collapsed ? "absolute top-0 right-2.5" : "relative ml-auto"} />
             </Link>
           );
         })}

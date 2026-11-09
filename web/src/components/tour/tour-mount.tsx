@@ -5,6 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui";
 import { cn } from "@/lib/forge";
+import { NavTile } from "@/components/app/nav-tile";
 import { UPDATES, WELCOME, freshUpdates, onRoute, updateDate, welcomeSteps, whatsNewSteps, type TourStep } from "@/lib/tours";
 import { loadTourState, markToursSeen } from "./actions";
 import { FeedbackForm } from "./feedback-form";
@@ -142,9 +143,9 @@ export function UpdatesButton({ collapsed = false }: { collapsed?: boolean }) {
         onClick={() => setOpen(true)}
         aria-label={collapsed ? "What's new" : undefined}
         title={collapsed ? "What's new" : undefined}
-        className={cn("flex w-full items-center gap-3 rounded-xl py-2.5 text-sm text-muted transition hover:bg-hover hover:text-text", collapsed ? "justify-center" : "px-3")}
+        className={cn("group flex w-full items-center gap-3 rounded-2xl py-1.5 text-sm text-text-2 transition hover:bg-hover/60 hover:text-text", collapsed ? "justify-center" : "px-2")}
       >
-        <Sparkles className="size-[18px] shrink-0" /> {!collapsed && <>What&apos;s new</>}
+        <NavTile icon={Sparkles} /> {!collapsed && <>What&apos;s new</>}
       </button>
       <UpdatesDialog open={open} onClose={() => setOpen(false)} />
     </>

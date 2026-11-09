@@ -313,16 +313,33 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity
 
 /* The sidebar: a floating frosted-glass panel over the page's glow. */
 @utility glass-panel {
-  background: color-mix(in oklab, var(--surface) 58%, transparent);
-  backdrop-filter: blur(22px) saturate(160%);
-  -webkit-backdrop-filter: blur(22px) saturate(160%);
+  background: linear-gradient(180deg, color-mix(in oklab, var(--surface) 62%, transparent), color-mix(in oklab, var(--surface) 38%, transparent));
+  backdrop-filter: blur(28px) saturate(180%);
+  -webkit-backdrop-filter: blur(28px) saturate(180%);
   border: 1px solid color-mix(in oklab, var(--text) 9%, transparent);
-  box-shadow: inset 0 1px 0 color-mix(in oklab, white 10%, transparent), 0 20px 50px -28px rgba(0, 0, 0, 0.45);
+  box-shadow: inset 0 1px 0 var(--glass-hi), inset 0 0 0 1px color-mix(in oklab, white 4%, transparent), 0 24px 60px -30px rgba(0, 0, 0, 0.5);
+}
+/* How bright a glass edge catches the light: strong on light pages, a hint on dark ones. */
+:root { --glass-hi: rgba(255, 255, 255, 0.75); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --glass-hi: rgba(255, 255, 255, 0.1); } }
+:root[data-theme="dark"] { --glass-hi: rgba(255, 255, 255, 0.1); }
+
+/* Sidebar icons sit on small glass tiles; the current page's tile fills with the accent and glows. */
+.nav-tile {
+  background: linear-gradient(180deg, color-mix(in oklab, var(--surface) 92%, transparent), color-mix(in oklab, var(--surface-2) 70%, transparent));
+  border: 1px solid color-mix(in oklab, var(--text) 8%, transparent);
+  box-shadow: inset 0 1px 0 var(--glass-hi), 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+.nav-tile-on {
+  background: var(--accent-grad);
+  color: var(--on-accent);
+  border: 1px solid transparent;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 6px 18px -6px var(--accent);
 }
 /* The selected sidebar tab: a soft tint in the theme's colour (no edge bar). */
+/* The current page's row: a faint wash (its glowing icon tile carries the emphasis). */
 .nav-pill {
-  background: color-mix(in oklab, var(--accent) 13%, transparent);
-  box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--accent) 22%, transparent);
+  background: color-mix(in oklab, var(--text) 5%, transparent);
 }
 
 /* ---------- Ember, Forge's AI (components/ember/ember.tsx) ----------
@@ -343,8 +360,11 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity
 @keyframes ember-bob { 50% { transform: translateY(-2px); } }
 @keyframes ember-bounce { 0%, 100% { transform: translateY(0) scale(1); } 35% { transform: translateY(-4px) scale(1.03); } 60% { transform: translateY(0) scale(0.98, 1.02); } }
 @keyframes ember-flare { 0%, 100% { transform: scale(1); opacity: 0.8; } 15% { transform: scale(1.22); opacity: 1; } 40% { transform: scale(1.05); } }
-.ember .ember-glow, .ember .ember-core, .ember .ember-body, .ember [class^="ember-swirl"] { transform-box: view-box; transform-origin: 32px 32px; }
+.ember .ember-glow, .ember .ember-glow-out, .ember .ember-core, .ember .ember-body, .ember [class^="ember-swirl"], .ember [class^="ember-band"] { transform-box: view-box; transform-origin: 32px 32px; }
 .ember .ember-glow { animation: ember-breathe 3.6s ease-in-out infinite; }
+.ember .ember-glow-out { animation: ember-breathe 3.6s ease-in-out 1.8s infinite; }
+.ember .ember-band-1 { animation: ember-spin 6s linear infinite; }
+.ember .ember-band-2 { animation: ember-spin 8.5s linear infinite reverse; }
 .ember .ember-core { animation: ember-pulse 3.6s ease-in-out infinite; }
 .ember .ember-body { animation: ember-bob 3.6s ease-in-out infinite; }
 .ember .ember-swirl-1 { animation: ember-spin 9s linear infinite; }
@@ -353,11 +373,14 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity
 .ember-thinking .ember-swirl-1 { animation-duration: 1.8s; }
 .ember-thinking .ember-swirl-2 { animation-duration: 2.6s; }
 .ember-thinking .ember-swirl-3 { animation-duration: 3.4s; }
-.ember-thinking .ember-glow, .ember-thinking .ember-core { animation-duration: 1.1s; }
+.ember-thinking .ember-glow, .ember-thinking .ember-glow-out, .ember-thinking .ember-core { animation-duration: 1.1s; }
+.ember-thinking .ember-band-1 { animation-duration: 1.2s; }
+.ember-thinking .ember-band-2 { animation-duration: 1.6s; }
 .ember-happy .ember-body { animation: ember-bounce 1.2s ease-in-out infinite; }
 .ember-happy .ember-glow { opacity: 1; }
 .ember-sleepy { filter: saturate(0.75); }
 .ember-sleepy .ember-glow { opacity: 0.4; animation-duration: 6s; }
 .ember-sleepy .ember-core { animation-duration: 6s; }
-.ember-sleepy [class^="ember-swirl"] { animation-duration: 30s; }
+.ember-sleepy [class^="ember-swirl"], .ember-sleepy [class^="ember-band"] { animation-duration: 30s; }
+.ember-sleepy .ember-glow-out { opacity: 0.3; }
 .ember-surprised .ember-glow { animation: ember-flare 2.4s ease-out infinite; }
