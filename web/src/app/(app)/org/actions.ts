@@ -1,4 +1,6 @@
 "use server";
+import { after } from "next/server";
+import { announceEvent } from "@/lib/connectors/announce";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { EVENT_FORMATS, EVENT_TYPES, INDUSTRIES, ORG_SIZES } from "@/lib/events";
@@ -62,6 +64,9 @@ export async function saveEvent(_: OrgState, form: FormData): Promise<OrgState> 
   if (!data?.length) return { ok: false, message: "Ended events can't be edited." };
   revalidatePath("/org");
   if (communityId) revalidatePath(`/c/${communityId}`);
+  // A new club event is announced in the club's Discord, if connected, after the response.
+  const newId = data[0]?.id as string | undefined;
+  if (!id && communityId && newId) after(() => announceEvent(supabase, communityId, newId, parsed.data));
   revalidatePath("/events", "layout");
   return { ok: true, message: id ? "Event updated." : "Event published." };
 }

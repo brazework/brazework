@@ -39,6 +39,16 @@ export const ROUTES = {
 
 export const UPDATES: ForgeUpdate[] = [
   {
+    id: "2026-11-09-connectors", date: "2026-11-09", kind: "New",
+    title: "Connect GitHub and Discord",
+    summary: "Import projects from GitHub, and let your club's Discord hear about new events and verified milestones.",
+    points: [
+      "Adding a project? Paste a public GitHub repo link and Forge fills in the title, summary, write-up, link and topics. Releases become milestones your club can verify.",
+      "Club admins connect a Discord channel under Manage → Integrations. New club events, verified milestones and weekly updates are announced there, and Forge never pings @everyone.",
+      "Copilot can read public GitHub repos and draft a project from one, for you to confirm.",
+    ],
+  },
+  {
     id: "2026-11-09-feedback", date: "2026-11-09", kind: "New",
     title: "Tell us what to build",
     summary: "Send ideas, problems and praise straight to the Forge team from Forge updates.",

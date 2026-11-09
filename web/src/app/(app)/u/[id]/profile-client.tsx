@@ -1,7 +1,9 @@
 "use client";
 import { AnimatePresence, motion } from "motion/react";
-import { BadgeCheck, CheckCircle2, ExternalLink, Loader2, Lock, Pencil, Plus, Share2, Sparkles, Trash2, X } from "lucide-react";
+import { BadgeCheck, CheckCircle2, ExternalLink, GitBranch, Loader2, Lock, Pencil, Plus, Share2, Sparkles, Trash2, X } from "lucide-react";
 import { useCopilot } from "@/components/copilot/use-copilot";
+import { importFromGitHub } from "@/lib/connectors/actions";
+import type { ProjectDraft } from "@/lib/connectors/github";
 import { AddMilestone, MilestoneTimeline, type Club, type Milestone } from "./milestones";
 import { useActionState, useEffect, useRef, useState, useTransition } from "react";
 import { chipCls } from "@/components/app/page-ui";
@@ -200,6 +202,23 @@ function ProjectDialog({ project, interests, onClose, copilot = false }: { proje
   const formRef = useRef<HTMLFormElement>(null);
   const [details, setDetails] = useState(project?.details ?? "");
   const ai = useCopilot();
+  // Import from GitHub: fills the form from a public repo; the member reviews it before saving.
+  const [repoUrl, setRepoUrl] = useState("");
+  const [importing, startImport] = useTransition();
+  const [importMsg, setImportMsg] = useState("");
+  const [imported, setImported] = useState<ProjectDraft | null>(null);
+  const runImport = () => startImport(async () => {
+    setImportMsg("");
+    const r = await importFromGitHub(repoUrl);
+    if (!r.ok) { setImportMsg(r.message); return; }
+    const d = r.draft;
+    const form = formRef.current;
+    const put = (name: string, value: string) => { const el = form?.elements.namedItem(name); if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) el.value = value; };
+    put("title", d.title); put("summary", d.summary); put("link", d.link);
+    setDetails(d.details); setStatus(d.status); setTags(d.tags);
+    if (d.year) requestAnimationFrame(() => put("year", d.year));
+    setImported(d);
+  });
   // Copilot drafts the write-up from the title, summary and whatever notes are already in the box.
   const writeUp = () => {
     const f = new FormData(formRef.current ?? undefined);
@@ -227,6 +246,22 @@ function ProjectDialog({ project, interests, onClose, copilot = false }: { proje
           <h2 className="text-xl font-semibold tracking-tight">{project ? "Edit project" : "Add a project"}</h2>
           <button type="button" onClick={onClose} aria-label="Close" className="grid size-8 place-items-center rounded-full text-faint hover:bg-hover hover:text-text"><X className="size-4" /></button>
         </div>
+        {!project && (
+          <div className="rounded-2xl border border-dashed border-line-strong bg-surface-2/50 p-3">
+            <label htmlFor="gh-url" className="flex items-center gap-1.5 text-xs font-medium text-muted"><GitBranch className="size-3.5" /> Import from GitHub (optional)</label>
+            <div className="mt-2 flex gap-2">
+              <input id="gh-url" value={repoUrl} onChange={(e) => setRepoUrl(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); runImport(); } }} placeholder="github.com/owner/repo" className={cn(inputCls, "h-10 flex-1")} />
+              <Button type="button" variant="outline" onClick={runImport} disabled={importing || !repoUrl.trim()}>{importing ? <Loader2 className="size-4 animate-spin" /> : "Import"}</Button>
+            </div>
+            {importMsg && <p role="alert" className="mt-2 text-xs text-danger">{importMsg}</p>}
+            {imported && (
+              <div className="mt-2 text-xs text-muted">
+                <p className="text-ok">Filled in from GitHub. Check everything, then save.</p>
+                {imported.milestones.length > 0 && <p className="mt-1">After saving, add these as milestones for your club to verify: {imported.milestones.map((m) => `${m.title} (${m.date})`).join(", ")}.</p>}
+              </div>
+            )}
+          </div>
+        )}
         <input type="hidden" name="id" value={project?.id ?? ""} />
         <input type="hidden" name="status" value={status} />
         {tags.map((t) => <input key={t} type="hidden" name="tags" value={t} />)}

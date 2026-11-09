@@ -11,6 +11,8 @@ import type { Proposal } from "@/lib/copilot-agent";
 import { EVENT_FORMATS, EVENT_TYPES } from "@/lib/events";
 import { cn } from "@/lib/forge";
 import { addMilestone, reviewMilestone } from "@/lib/milestones";
+import { saveProject } from "@/lib/projects";
+import { shareToDiscord } from "@/lib/connectors/club-actions";
 import { toggleFollow } from "@/lib/network";
 
 const field = "w-full rounded-xl border border-line bg-surface px-3 py-2 text-sm outline-none focus:border-line-strong";
@@ -22,6 +24,7 @@ const HEAD = {
   event: { icon: CalendarPlus, title: "Host a club event", done: "Published", href: "", go: "See the club's events" },
   club_post: { icon: Megaphone, title: "Post in your club", done: "Posted", href: "", go: "See it in the club" },
   review: { icon: BadgeCheck, title: "Review a milestone", done: "Reviewed", href: "", go: "Back to the queue" },
+  project: { icon: Flag, title: "Add a project", done: "Added to your profile", href: "/profile#projects", go: "See your projects" },
 } as const;
 
 // ISO time <-> the value a datetime-local input wants (the member's own timezone).
@@ -55,6 +58,11 @@ export function ProposalCard({ p: initial }: { p: Proposal }) {
       r = await joinCommunity(p.club_id);
     } else if (p.kind === "follow") {
       r = await toggleFollow(p.person_id, true);
+    } else if (p.kind === "project") {
+      const f = new FormData();
+      f.set("title", p.title); f.set("summary", p.summary); f.set("details", p.details); f.set("link", p.link); f.set("status", p.status); f.set("year", p.year);
+      p.tags.forEach((t) => f.append("tags", t));
+      r = await saveProject({ ok: false, message: "" }, f);
     } else if (p.kind === "club_post") {
       const res = await postInCommunity(p.club_id, p.body, p.postKind, []);
       // Auto-moderation can hold a post for review; say so instead of "Posted".
@@ -85,6 +93,7 @@ export function ProposalCard({ p: initial }: { p: Proposal }) {
       {state === "done" ? (
         <>
           {held && <p className="mt-2 text-xs text-muted">{held}</p>}
+          {p.kind === "club_post" && !held && <DiscordShare clubId={p.club_id} text={p.body} />}
           <Link href={href} className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-text hover:underline">{h.go} <ArrowRight className="size-4" /></Link>
         </>
       ) : (
@@ -101,6 +110,15 @@ export function ProposalCard({ p: initial }: { p: Proposal }) {
               <input aria-label="Milestone" value={p.title} onChange={(e) => set({ title: e.target.value })} maxLength={120} className={field} />
               <textarea aria-label="Details" value={p.detail} onChange={(e) => set({ detail: e.target.value })} maxLength={600} rows={2} placeholder="Details (optional)" className={cn(field, "resize-none")} />
               <input aria-label="Date" type="date" value={p.achieved_on} onChange={(e) => set({ achieved_on: e.target.value })} className={cn(field, "w-auto")} />
+            </>
+          )}
+          {p.kind === "project" && (
+            <>
+              {p.source && <p className="text-xs text-muted">From {p.source}: <a href={p.link} target="_blank" rel="noopener noreferrer nofollow" className="underline underline-offset-2">{p.link.replace(/^https?:\/\//, "")}</a></p>}
+              <input aria-label="Project title" value={p.title} onChange={(e) => set({ title: e.target.value })} maxLength={120} className={field} />
+              <textarea aria-label="Summary" value={p.summary} onChange={(e) => set({ summary: e.target.value })} maxLength={600} rows={2} className={cn(field, "resize-none")} />
+              <details className="text-xs text-muted"><summary className="cursor-pointer">Write-up ({p.details.length} characters)</summary><textarea aria-label="Write-up" value={p.details} onChange={(e) => set({ details: e.target.value })} maxLength={5000} rows={6} className={cn(field, "mt-2 resize-y")} /></details>
+              <div className="flex flex-wrap gap-1.5 text-xs text-muted"><span className="rounded-full bg-surface-2 px-2 py-0.5">{p.status === "completed" ? `Completed${p.year ? ` ${p.year}` : ""}` : "In progress"}</span>{p.tags.map((t) => <span key={t} className="rounded-full bg-surface-2 px-2 py-0.5">#{t}</span>)}</div>
             </>
           )}
           {p.kind === "club_post" && (
@@ -151,5 +169,17 @@ export function ProposalCard({ p: initial }: { p: Proposal }) {
         </div>
       )}
     </motion.div>
+  );
+}
+
+// After a club post goes up, officers can send it to the club's Discord too.
+function DiscordShare({ clubId, text }: { clubId: string; text: string }) {
+  const [res, setRes] = useState<{ ok: boolean; message: string } | null>(null);
+  const [pending, start] = useTransition();
+  return (
+    <div className="mt-2 flex flex-wrap items-center gap-2">
+      {!res?.ok && <button type="button" disabled={pending} onClick={() => start(async () => setRes(await shareToDiscord(clubId, text)))} className="inline-flex h-8 items-center gap-1.5 rounded-full border border-line px-3 text-xs font-medium text-text-2 hover:bg-hover disabled:opacity-50">{pending ? <Loader2 className="size-3.5 animate-spin" /> : <Sparkles className="size-3.5" />} Also post in Discord</button>}
+      {res && <span role={res.ok ? "status" : "alert"} className={cn("text-xs", res.ok ? "text-ok" : "text-muted")}>{res.message}</span>}
+    </div>
   );
 }

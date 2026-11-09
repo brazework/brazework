@@ -17,6 +17,7 @@ import type { Invite } from "../../../communities/actions";
 import { BanRow, MemberActions, RequestActions, SettingsForm } from "./manage-client";
 import { RecentReviews, VerifyQueue, type QueueItem } from "./verify";
 import { ReportView } from "./report";
+import { Integrations } from "./integrations";
 import { loadClubReport } from "@/lib/club-report";
 import { copilotEnabled } from "@/lib/copilot";
 import { BadgeCheck } from "lucide-react";
@@ -47,6 +48,7 @@ async function Manage({ params, searchParams }: { params: PageProps<"/c/[id]/man
   const waiting = canVerify ? (await supabase.from("milestones").select("id", { count: "exact", head: true }).eq("community_id", id).eq("status", "pending")).count ?? 0 : 0;
   const tabs = [
     { id: "report", label: "This week", show: rank(role) >= 3 },
+    { id: "integrations", label: "Integrations", show: rank(role) >= 4 },
     { id: "verify", label: "Verify", show: canVerify, count: waiting },
     { id: "invite", label: "Invite", show: can(role, "approve") && features.invites },
     { id: "requests", label: "Requests", show: can(role, "approve") },
@@ -56,6 +58,9 @@ async function Manage({ params, searchParams }: { params: PageProps<"/c/[id]/man
     { id: "roles", label: "Roles", show: true },
   ].filter((t) => t.show);
   const tab = tabs.find((t) => t.id === sp.tab)?.id ?? (rank(role) >= 3 ? "report" : c.privacy === "approval" && can(role, "approve") ? "requests" : "members");
+  // The webhook is a secret: only a masked tail goes to the browser.
+  const intg = tab === "integrations" && features.integrations ? (await supabase.from("club_integrations").select("discord_webhook, discord_events, discord_milestones, discord_updates").eq("community_id", id).maybeSingle()).data : null;
+  const discord = { connected: !!intg?.discord_webhook, masked: intg?.discord_webhook ? `••••${intg.discord_webhook.slice(-6)}` : "", events: intg?.discord_events ?? true, milestones: intg?.discord_milestones ?? true, updates: intg?.discord_updates ?? true };
   const [report, copilotOn] = tab === "report" ? await Promise.all([loadClubReport(supabase, id, features), copilotEnabled()]) : [null, false];
 
   const MS_COLS = "id, owner_id, title, detail, evidence, achieved_on, created_at, status, reviewer_name, review_note, project:projects(title, summary), owner:profiles!milestones_owner_id_fkey(first_name, last_name, headline)";
@@ -76,6 +81,7 @@ async function Manage({ params, searchParams }: { params: PageProps<"/c/[id]/man
       <p className="mt-1.5 text-sm text-muted">You&apos;re {role === "admin" ? "an" : "a"} {ROLE_LABEL[role!].toLowerCase()}. You can act on people below your own role.</p>
       <div className="mt-6"><Tabs active={tab} tabs={tabs.map((t) => ({ id: t.id, label: t.label, href: `/c/${id}/manage?tab=${t.id}`, count: "count" in t ? (t.count as number) : undefined }))} /></div>
       <div className="mt-6">
+        {tab === "integrations" && <Integrations cid={id} discord={discord} available={features.integrations} />}
         {tab === "report" && report && <ReportView r={report} clubId={id} copilot={copilotOn} />}
         {tab === "verify" && (((queue.data ?? []) as unknown as QueueItem[]).length ? <VerifyQueue items={(queue.data ?? []) as unknown as QueueItem[]} /> : (
           <EmptyState icon={<BadgeCheck className="size-6" />} title="Nothing to verify" body="When members ask the club to vouch for a milestone (a test, a build, a result), it shows up here." />

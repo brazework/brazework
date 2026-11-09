@@ -5,6 +5,7 @@ import type { Proposal } from "@/lib/copilot-agent";
 import { dbFeatures } from "@/lib/db-features";
 import { ALL_TOPICS, requestTime } from "@/lib/forge";
 import { loadClubReport } from "@/lib/club-report";
+import { GitHubError, fetchRepo, fetchUser, matchTopics, parseRepo, parseUser } from "@/lib/connectors/github";
 import { loadGuide } from "@/lib/guide";
 import type { createClient } from "@/lib/supabase/server";
 
@@ -85,6 +86,21 @@ export const TOOLS: Anthropic.Tool[] = [
     name: "propose_review",
     description: "Prepare a verify-or-decline decision on a pending milestone from verify_queue, with a short note for the member (required when declining). The officer confirms or changes it; nothing is decided until then. Only recommend verifying when the details or evidence support it.",
     input_schema: { type: "object", properties: { milestone_id: { type: "string" }, verify: { type: "boolean" }, note: { type: "string", description: "At most 300 characters" } }, required: ["milestone_id", "verify"] },
+  },
+  {
+    name: "github_repo",
+    description: "Read a public GitHub repository: description, languages, topics, stars, README text, releases and recent commits (with links). Accepts owner/repo or a github.com URL.",
+    input_schema: { type: "object", properties: { repo: { type: "string" } }, required: ["repo"] },
+  },
+  {
+    name: "github_user",
+    description: "A public GitHub profile and their most recently pushed repositories (not forks).",
+    input_schema: { type: "object", properties: { username: { type: "string" } }, required: ["username"] },
+  },
+  {
+    name: "propose_project",
+    description: "Prepare a new project on the member's Forge profile, usually from github_repo. title <= 120 chars, summary <= 600, details (the write-up) <= 5000, link to the repo or demo, up to 3 tags. It is NOT added until they confirm.",
+    input_schema: { type: "object", properties: { title: { type: "string" }, summary: { type: "string" }, details: { type: "string" }, link: { type: "string" }, tags: { type: "array", items: { type: "string" } }, status: { type: "string", enum: ["in_progress", "completed"] }, year: { type: "string" } }, required: ["title", "summary"] },
   },
 ];
 
@@ -290,6 +306,30 @@ export function makeExec(db: DB, userId: string, onProposal: (p: Proposal) => vo
         const verify = a.verify === true;
         const note = typeof a.note === "string" ? a.note.trim().slice(0, 300) : "";
         onProposal({ id: pid(), kind: "review", milestone_id: id, club_name: q.community_name, member: q.owner ? `${q.owner.first_name} ${q.owner.last_name}`.trim() : "A member", title: q.title, detail: q.detail, evidence: q.evidence, verify, note });
+        return SHOWN;
+      }
+      case "github_repo": {
+        const r = parseRepo(String(a.repo ?? ""));
+        if (!r) return { error: "Give a repository as owner/repo or a github.com link." };
+        try {
+          const repo = await fetchRepo(r.owner, r.repo);
+          return { ...repo, readme: repo.readme.slice(0, 2000), suggested_topics: matchTopics([...repo.topics, ...repo.languages]) };
+        } catch (e) { return { error: e instanceof GitHubError ? e.message : "GitHub lookup failed." }; }
+      }
+      case "github_user": {
+        const u = parseUser(String(a.username ?? ""));
+        if (!u) return { error: "Give a GitHub username." };
+        try { return await fetchUser(u); } catch (e) { return { error: e instanceof GitHubError ? e.message : "GitHub lookup failed." }; }
+      }
+      case "propose_project": {
+        const title = typeof a.title === "string" ? a.title.trim().slice(0, 120) : "";
+        const summary = typeof a.summary === "string" ? a.summary.trim().slice(0, 600) : "";
+        if (!title || !summary) return { error: "A project needs a title and a summary." };
+        const link = typeof a.link === "string" && /^https?:\/\/\S+$/i.test(a.link.trim()) ? a.link.trim().slice(0, 300) : "";
+        const status = a.status === "completed" ? "completed" : "in_progress";
+        const year = status === "completed" && typeof a.year === "string" && /^\d{4}$/.test(a.year) ? a.year : "";
+        const tags = (Array.isArray(a.tags) ? a.tags : []).filter((t): t is string => typeof t === "string" && ALL_TOPICS.includes(t)).slice(0, 3);
+        onProposal({ id: pid(), kind: "project", title, summary, details: typeof a.details === "string" ? a.details.trim().slice(0, 5000) : "", link, tags, status, year, source: link.includes("github.com") ? "GitHub" : "" });
         return SHOWN;
       }
       default:

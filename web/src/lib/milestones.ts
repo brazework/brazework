@@ -1,5 +1,7 @@
 "use server";
 import { revalidatePath } from "next/cache";
+import { after } from "next/server";
+import { announceMilestone } from "@/lib/connectors/announce";
 import { z } from "zod";
 import { friendlyError } from "@/lib/forge";
 import { getViewer } from "@/lib/supabase/server";
@@ -53,5 +55,7 @@ export async function reviewMilestone(id: string, verify: boolean, note = ""): P
   const { data, error } = await supabase.rpc("review_milestone", { p_id: id, p_verify: verify, p_note: n.data });
   if (error) return { ok: false, message: reason(error) };
   revalidatePath("/c/[id]/manage", "page");
+  // Verified milestones are announced in the club's Discord, if connected, after the response.
+  if (data === "verified") after(() => announceMilestone(supabase, id));
   return { ok: true, message: data === "verified" ? "Verified. They've been notified." : "Declined. They've been told why." };
 }
