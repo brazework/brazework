@@ -48,6 +48,11 @@ export function useOnline(id: string | null | undefined) {
   return useSyncExternalStore(subscribe, () => !!id && online.has(id), () => false);
 }
 
+// How many of these people are on Forge right now (club cards, club pages, group chats).
+export function useOnlineCount(ids: string[]) {
+  return useSyncExternalStore(subscribe, () => ids.reduce((n, id) => n + (online.has(id) ? 1 : 0), 0), () => 0);
+}
+
 export function useAppearOffline() {
   const value = useSyncExternalStore(subscribe, () => hidden, () => false);
   const set = (v: boolean) => {

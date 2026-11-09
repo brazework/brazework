@@ -1,6 +1,6 @@
 "use client";
 import { AnimatePresence, motion } from "motion/react";
-import { Check, Loader2, Search, X } from "lucide-react";
+import { Check, Flame, Loader2, Search, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState, useTransition } from "react";
@@ -10,8 +10,11 @@ import { cn } from "@/lib/forge";
 import { mediaUrl } from "@/lib/media";
 import { CommunityBadge, MetaLine, RoleChip } from "./_components/badge";
 import { joinCommunity } from "./actions";
+import { MemberFaces, type Face } from "@/components/network/member-faces";
 
-type Item = { c: Community; role?: Role };
+// A club's pulse: a few faces, member ids for the live online count, and posts this week.
+export type Pulse = { faces: Face[]; ids: string[]; week: number };
+type Item = { c: Community; role?: Role; pulse?: Pulse };
 
 // Communities as a live grid: search and field filters apply as you type, cards glide into
 // place, and Discover cards can be joined right from the grid.
@@ -35,7 +38,7 @@ export function CommunityGrid({ items, discover = false, initialQuery = "", empt
           <div className="relative">
             <Search className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-faint" />
             <label htmlFor="cq" className="sr-only">Search communities</label>
-            <input id="cq" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search by name, field or topic" className="h-12 w-full rounded-full border border-line bg-surface pr-11 pl-11 text-[15px] shadow-[var(--shadow)] outline-none transition placeholder:text-faint focus:border-line-strong" />
+            <input id="cq" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search by name, field or topic" className="glass-card h-12 w-full rounded-full pr-11 pl-11 text-[15px] outline-none transition placeholder:text-faint" />
             {q && <button type="button" onClick={() => setQ("")} aria-label="Clear search" className="absolute top-1/2 right-3 grid size-7 -translate-y-1/2 place-items-center rounded-full text-faint hover:bg-hover hover:text-text"><X className="size-4" /></button>}
           </div>
           {fields.length > 1 && (
@@ -52,9 +55,9 @@ export function CommunityGrid({ items, discover = false, initialQuery = "", empt
       )}
       <motion.div layout className="grid gap-4 sm:grid-cols-2 2xl:grid-cols-3">
         <AnimatePresence mode="popLayout" initial={false}>
-          {shown.map(({ c, role }, i) => (
+          {shown.map(({ c, role, pulse }, i) => (
             <motion.div key={c.id} layout initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }} transition={{ duration: 0.3, delay: Math.min(i, 8) * 0.03 }}>
-              <CommunityCard c={c} role={role} joinable={discover} />
+              <CommunityCard c={c} role={role} joinable={discover} pulse={pulse} />
             </motion.div>
           ))}
         </AnimatePresence>
@@ -64,11 +67,12 @@ export function CommunityGrid({ items, discover = false, initialQuery = "", empt
   );
 }
 
-export function CommunityCard({ c, role, joinable }: { c: Community; role?: Role; joinable: boolean }) {
+export function CommunityCard({ c, role, joinable, pulse }: { c: Community; role?: Role; joinable: boolean; pulse?: Pulse }) {
   return (
-    <article className="grad-edge group relative flex h-full flex-col overflow-hidden rounded-3xl border shadow-[var(--shadow)] transition duration-300 hover:-translate-y-1">
+    <article className="glass-card group relative flex h-full flex-col overflow-hidden rounded-3xl transition duration-300 hover:-translate-y-1">
       <div className="relative h-24 overflow-hidden border-b border-line">
-        {c.cover_path ? <Image src={mediaUrl(c.cover_path)} alt="" fill sizes="(min-width: 640px) 440px, 100vw" className="object-cover transition duration-500 group-hover:scale-105" /> : <div className="bg-accent-grad absolute inset-0 opacity-80 transition duration-500 group-hover:scale-110 group-hover:opacity-100" />}
+        {c.cover_path ? <Image src={mediaUrl(c.cover_path)} alt="" fill sizes="(min-width: 640px) 440px, 100vw" className="object-cover transition duration-500 group-hover:scale-105" /> : <div className="cover-empty absolute inset-0 transition duration-500 group-hover:scale-110" />}
+        {pulse && pulse.week > 0 && <span className="absolute top-2.5 right-2.5 inline-flex items-center gap-1 rounded-full bg-bg/75 px-2 py-0.5 text-[11px] font-medium text-text backdrop-blur"><Flame className="size-3 text-accent" /> {pulse.week} this week</span>}
       </div>
       <div className="flex flex-1 gap-4 p-5">
         <CommunityBadge id={c.id} name={c.name} className="relative z-10 -mt-11 border-4 border-surface shadow-[var(--shadow)] transition duration-300 group-hover:-rotate-6" />
@@ -85,6 +89,7 @@ export function CommunityCard({ c, role, joinable }: { c: Community; role?: Role
               {c.topics.slice(0, 3).map((t) => <span key={t} className="rounded-full bg-surface-2 px-2 py-0.5 text-[11px] text-muted">#{t}</span>)}
             </div>
           )}
+          {pulse && <MemberFaces faces={pulse.faces} ids={pulse.ids} total={c.member_count} size={28} className="mt-3" />}
           {joinable && <div className="relative z-10 mt-4"><QuickJoin c={c} /></div>}
         </div>
       </div>

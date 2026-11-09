@@ -18,7 +18,7 @@ export function PageHeader({ title, subtitle, actions }: { title: string; subtit
 }
 
 export function Panel({ className, children }: { className?: string; children: React.ReactNode }) {
-  return <section className={cn("rounded-3xl border border-line bg-surface/80 p-5 shadow-[var(--shadow)] backdrop-blur-sm", className)}>{children}</section>;
+  return <section className={cn("glass-card rounded-3xl p-5", className)}>{children}</section>;
 }
 
 export function EmptyState({ icon, title, body, action, mood = "idle" }: { icon?: React.ReactNode; title: string; body?: React.ReactNode; action?: React.ReactNode; mood?: EmberMood }) {

@@ -21,6 +21,7 @@ import { dbFeatures, eventWithHost, postSelect } from "@/lib/db-features";
 import Image from "next/image";
 import { avatarSrc, mediaUrl } from "@/lib/media";
 import { loadCommunity } from "./data";
+import { MemberFaces, type Face } from "@/components/network/member-faces";
 
 export const metadata: Metadata = { title: "Community" };
 
@@ -64,6 +65,11 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
   const goingSet = new Set((myRsvps.data ?? []).map((r: { event_id: string }) => r.event_id));
   const savedSet = new Set((mySaves.data ?? []).map((r: { event_id: string }) => r.event_id));
   const posts = (visible.data ?? []) as unknown as CommunityPost[];
+  // Who's here: newest members' faces, and ids for the live "online now" count.
+  const { data: memberRows } = await supabase.from("community_members").select("uid, first_name, last_name").eq("community_id", id).order("joined_at", { ascending: false }).limit(500);
+  const members = (memberRows ?? []) as { uid: string; first_name: string; last_name: string }[];
+  const faces: Face[] = members.slice(0, 6).map((m) => ({ uid: m.uid, first: m.first_name, last: m.last_name }));
+  const thisWeek = posts.filter((p) => Date.parse(p.created_at) > now - 7 * 864e5).length;
   const heldPosts = (held.data ?? []) as unknown as CommunityPost[];
   const ids = posts.map((p) => p.id);
   const [likes, saves] = ids.length
@@ -79,7 +85,7 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
           {c.cover_path ? (
             <Image src={mediaUrl(c.cover_path)} alt="" fill sizes="(min-width: 768px) 768px, 100vw" className="object-cover" priority />
           ) : (
-            <div className="bg-accent-grad absolute inset-0 opacity-90" />
+            <div className="cover-empty absolute inset-0" />
           )}
           <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/25 to-transparent" aria-hidden="true" />
         </div>
@@ -92,6 +98,7 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
               {role && role !== "member" && <RoleChip role={role} />}
             </div>
             <MetaLine parts={[membersLabel(c.member_count), PRIVACY_LABEL[c.privacy], c.field, TYPE_LABEL[c.type]]} />
+            <MemberFaces faces={faces} ids={members.map((m) => m.uid)} total={c.member_count} className="mt-3" />
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <CopyLink path={`/c/${c.id}`} label="Share" />
@@ -105,13 +112,14 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
           </div>
         </div>
         <p className="mt-4 text-[15px] leading-relaxed text-text-2">{c.about}</p>
-        <ul className="mt-5 grid grid-cols-3 gap-2">
+        <ul className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
           {[
             { n: c.member_count, label: c.member_count === 1 ? "Member" : "Members" },
+            { n: thisWeek, label: "Posts this week" },
             { n: posts.length, label: posts.length === 1 ? "Post" : "Posts" },
             { n: upcomingEvents.length, label: "Upcoming" },
           ].map((st) => (
-            <li key={st.label} className="rounded-2xl border border-line bg-surface-2/60 px-3 py-3 text-center">
+            <li key={st.label} className="glass-card rounded-2xl px-3 py-3 text-center">
               <span className="block text-2xl font-semibold tracking-tight"><CountUp to={st.n} /></span>
               <span className="block text-xs text-muted">{st.label}</span>
             </li>
