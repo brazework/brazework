@@ -20,6 +20,14 @@ export function Nav() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   useMotionValueEvent(scrollY, "change", (v) => setScrolled(v > 24));
+  // On phones the landing page scrolls inside .story-root (so Safari's toolbar stays put).
+  useEffect(() => {
+    const root = document.querySelector(".story-root");
+    if (!root) return;
+    const on = () => setScrolled(root.scrollTop > 24 || window.scrollY > 24);
+    root.addEventListener("scroll", on, { passive: true });
+    return () => root.removeEventListener("scroll", on);
+  }, []);
 
   // Close the mobile menu with Escape.
   useEffect(() => {

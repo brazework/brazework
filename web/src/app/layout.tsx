@@ -13,8 +13,8 @@ export const metadata: Metadata = {
   description:
     "Forge is home base for university STEM clubs. Talk, plan and build together, and every result your club verifies becomes proof that gets you hired. Ember, your AI teammate, handles the busywork.",
   applicationName: "Forge",
-  // Installed from Safari's Share menu: full screen, content under a see-through status bar.
-  appleWebApp: { capable: true, title: "Forge", statusBarStyle: "black-translucent" },
+  // Installed from Safari's Share menu: full screen; the status bar takes the theme-color (ThemeChrome).
+  appleWebApp: { capable: true, title: "Forge", statusBarStyle: "default" },
   icons: { apple: [{ url: "/app-icon/180", sizes: "180x180" }] },
   openGraph: {
     title: "Forge: where STEM clubs build, prove it and get hired",
@@ -33,7 +33,7 @@ export const viewport: Viewport = {
 };
 
 // Runs before first paint so a saved theme never flashes the other one.
-const themeScript = `try{var d=document.documentElement,t=localStorage.getItem("forge-theme"),k=localStorage.getItem("forge-skin");if(t==="light"||t==="dark")d.dataset.theme=t;if(k&&/^(blueprint|fire|aurora|emerald)$/.test(k))d.dataset.skin=k}catch(e){}`;
+const themeScript = `try{var d=document.documentElement,t=localStorage.getItem("forge-theme"),k=localStorage.getItem("forge-skin");if(t==="light"||t==="dark")d.dataset.theme=t;if(k&&/^(blueprint|fire|aurora|emerald)$/.test(k)&&location.pathname!=="/")d.dataset.skin=k}catch(e){}`;
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (

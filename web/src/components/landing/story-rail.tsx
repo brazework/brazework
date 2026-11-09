@@ -16,7 +16,7 @@ export function StoryRail() {
         (e.target as HTMLElement).dataset.in = "";
         setAt(pages.indexOf(e.target as HTMLElement));
       }
-    }, { threshold: 0.55 });
+    }, { rootMargin: "-35% 0px -35% 0px" }); // a page counts once it crosses the middle of the screen
     pages.forEach((p) => io.observe(p));
     const t = setTimeout(() => setCount(pages.length), 0);
     return () => { io.disconnect(); clearTimeout(t); document.documentElement.classList.remove("js-story"); };
