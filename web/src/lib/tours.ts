@@ -60,6 +60,7 @@ export const UPDATES: ForgeUpdate[] = [
       "Club moderators, admins and owners review requests in the club's Manage → Verify tab, and can decline with a note.",
       "Verified milestones show on your project with your club's name, and count toward the Verified number on your profile.",
       "The guide button at the bottom right shows your next steps, a tip for the page you're on, and club setup steps for clubs you run.",
+      "Club moderators and up get a This week tab under Manage: members, posts, events and milestones at a glance, and a weekly update you can post in one click.",
     ],
   },
   {

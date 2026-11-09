@@ -16,6 +16,10 @@ export const TOOL_LABEL: Record<string, { doing: string; done: string }> = {
   propose_join_club: { doing: "Preparing to join", done: "a club" },
   propose_follow: { doing: "Preparing a follow", done: "a person" },
   propose_event: { doing: "Drafting an event", done: "an event draft" },
+  club_report: { doing: "Reading this week's club report", done: "the club report" },
+  verify_queue: { doing: "Checking the verification queue", done: "the verify queue" },
+  propose_club_post: { doing: "Drafting a club post", done: "a club post draft" },
+  propose_review: { doing: "Preparing a review", done: "a review draft" },
 };
 
 // Something Copilot prepared for the member to confirm. Copilot never saves anything itself:
@@ -26,6 +30,8 @@ export type Proposal = { id: string } & (
   | { kind: "join"; club_id: string; club_name: string; privacy: "public" | "approval" }
   | { kind: "follow"; person_id: string; name: string; headline: string }
   | { kind: "event"; club_id: string; club_name: string; title: string; description: string; type: string; format: string; location: string; topic: string; starts_at: string; ends_at: string }
+  | { kind: "club_post"; club_id: string; club_name: string; body: string; postKind: "update" | "question" | "result" | "project" }
+  | { kind: "review"; milestone_id: string; club_name: string; member: string; title: string; detail: string; evidence: string; verify: boolean; note: string }
 );
 
 export type AgentEvent = { type: "text"; text: string } | { type: "tool"; name: string };

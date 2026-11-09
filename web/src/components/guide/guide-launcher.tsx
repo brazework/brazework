@@ -15,7 +15,7 @@ import { ProposalCard } from "@/components/copilot/proposal-card";
 function tipFor(path: string): { page: string; tip: string; href?: string; cta?: string } {
   if (path.startsWith("/feed")) return { page: "the feed", tip: "Share what you're building, or what you're stuck on. Rough notes? Copilot in the composer turns them into a post." };
   if (path.startsWith("/u/") || path.startsWith("/profile")) return { page: "a profile", tip: "On your projects, add a milestone and ask your club to verify it. Verified milestones show with your club's name.", href: "/profile#projects", cta: "Your projects" };
-  if (path.startsWith("/c/") && path.includes("/manage")) return { page: "club management", tip: "The Verify tab lists milestones members asked the club to vouch for. Verify only what the club saw happen." };
+  if (path.startsWith("/c/") && path.includes("/manage")) return { page: "club management", tip: "This week shows the club's numbers and drafts a weekly update to post. Verify lists milestones members asked the club to vouch for: verify only what the club saw happen." };
   if (path.startsWith("/c/")) return { page: "a club page", tip: "Post here to reach just this club. Club events and verified milestones are what bring members back." };
   if (path.startsWith("/communities")) return { page: "communities", tip: "Search by field or topic, join with one tap, or start the club your field is missing.", href: "/communities?tab=create", cta: "Start a club" };
   if (path.startsWith("/events")) return { page: "events", tip: "RSVP to save your spot and add it to your calendar. Club events show up next to company ones." };

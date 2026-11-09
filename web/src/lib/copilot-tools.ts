@@ -4,6 +4,7 @@ import { EVENT_FORMATS, EVENT_TYPES } from "@/lib/events";
 import type { Proposal } from "@/lib/copilot-agent";
 import { dbFeatures } from "@/lib/db-features";
 import { ALL_TOPICS, requestTime } from "@/lib/forge";
+import { loadClubReport } from "@/lib/club-report";
 import { loadGuide } from "@/lib/guide";
 import type { createClient } from "@/lib/supabase/server";
 
@@ -64,6 +65,26 @@ export const TOOLS: Anthropic.Tool[] = [
     name: "propose_event",
     description: `Prepare a club event, for a club where the member is an admin or owner. type is one of: ${EVENT_TYPES.join(", ")}. format is one of: ${EVENT_FORMATS.join(", ")}. Times are ISO 8601 with a timezone offset. It is NOT published until they confirm.`,
     input_schema: { type: "object", properties: { club_id: { type: "string" }, title: { type: "string" }, description: { type: "string" }, type: { type: "string" }, format: { type: "string" }, location: { type: "string" }, topic: { type: "string" }, starts_at: { type: "string" }, ends_at: { type: "string" } }, required: ["club_id", "title", "starts_at"] },
+  },
+  {
+    name: "club_report",
+    description: "This week in one of the member's clubs (they must be a moderator, admin or owner): members and new joiners, posts this week vs last, the top post and most active members, upcoming events with RSVPs, milestones verified and waiting, join requests.",
+    input_schema: { type: "object", properties: { club_id: { type: "string" } }, required: ["club_id"] },
+  },
+  {
+    name: "verify_queue",
+    description: "Milestones members asked the club to verify, oldest first, with their details and evidence links (for the club's moderators and up). Use with propose_review.",
+    input_schema: { type: "object", properties: { club_id: { type: "string" } }, required: ["club_id"] },
+  },
+  {
+    name: "propose_club_post",
+    description: "Prepare a post in one of the member's clubs (for example the weekly update, an announcement or a welcome). It is NOT posted until they confirm.",
+    input_schema: { type: "object", properties: { club_id: { type: "string" }, body: { type: "string", description: "At most 3000 characters" }, kind: { type: "string", enum: ["update", "question", "result", "project"] } }, required: ["club_id", "body"] },
+  },
+  {
+    name: "propose_review",
+    description: "Prepare a verify-or-decline decision on a pending milestone from verify_queue, with a short note for the member (required when declining). The officer confirms or changes it; nothing is decided until then. Only recommend verifying when the details or evidence support it.",
+    input_schema: { type: "object", properties: { milestone_id: { type: "string" }, verify: { type: "boolean" }, note: { type: "string", description: "At most 300 characters" } }, required: ["milestone_id", "verify"] },
   },
 ];
 
@@ -225,6 +246,50 @@ export function makeExec(db: DB, userId: string, onProposal: (p: Proposal) => vo
           format: (EVENT_FORMATS as readonly string[]).includes(String(a.format)) ? String(a.format) : "In person",
           location: typeof a.location === "string" ? a.location.trim().slice(0, 160) : "", topic, starts_at: start.toISOString(), ends_at: end.toISOString(),
         });
+        return SHOWN;
+      }
+      case "club_report":
+      case "verify_queue": {
+        const clubId = String(a.club_id ?? "");
+        if (!ID_RE.test(clubId)) return { error: "Use the club id from its link /c/<id>." };
+        const { data: m } = await db.from("community_members").select("role").eq("community_id", clubId).eq("uid", userId).maybeSingle();
+        if (!m || rank(m.role) < 3) return { error: "Only the club's moderators, admins and owner can see this." };
+        if (name === "club_report") {
+          const r = await loadClubReport(db, clubId);
+          return r ? { ...r, report_link: `/c/${clubId}/manage?tab=report` } : { error: "No club with that id." };
+        }
+        if (!(await dbFeatures()).milestones) return { error: "Milestones aren't switched on yet." };
+        const { data, error } = await db.from("milestones").select("id, owner_id, title, detail, evidence, achieved_on, created_at, project:projects(title), owner:profiles!milestones_owner_id_fkey(first_name, last_name)").eq("community_id", clubId).eq("status", "pending").order("created_at", { ascending: true }).limit(15);
+        if (error) return { error: "Couldn't load the queue." };
+        type Q = { id: string; owner_id: string; title: string; detail: string; evidence: string; achieved_on: string; created_at: string; project: { title: string } | null; owner: { first_name: string; last_name: string } | null };
+        return ((data ?? []) as unknown as Q[]).map((q) => ({ milestone_id: q.id, member: q.owner ? `${q.owner.first_name} ${q.owner.last_name}`.trim() : "A member", is_you: q.owner_id === userId, project: q.project?.title, title: q.title, detail: snip(q.detail, 300), evidence: q.evidence || null, happened: q.achieved_on, waiting_days: Math.floor((requestTime() - Date.parse(q.created_at)) / 864e5) }));
+      }
+      case "propose_club_post": {
+        const clubId = String(a.club_id ?? "");
+        if (!ID_RE.test(clubId)) return { error: "Use the club id from its link /c/<id>." };
+        const body = typeof a.body === "string" ? a.body.trim().slice(0, 3000) : "";
+        if (!body) return { error: "The post is empty." };
+        const { data: m } = await db.from("community_members").select("communities(name)").eq("community_id", clubId).eq("uid", userId).maybeSingle();
+        const club = (m as unknown as { communities: { name: string } | null } | null)?.communities;
+        if (!club) return { error: "The member isn't in that club, so they can't post there." };
+        const kind = (["update", "question", "result", "project"] as const).find((k) => k === a.kind) ?? "update";
+        onProposal({ id: pid(), kind: "club_post", club_id: clubId, club_name: club.name, body, postKind: kind });
+        return SHOWN;
+      }
+      case "propose_review": {
+        const id = String(a.milestone_id ?? "");
+        if (!ID_RE.test(id)) return { error: "Use a milestone_id from verify_queue." };
+        if (!(await dbFeatures()).milestones) return { error: "Milestones aren't switched on yet." };
+        const { data: ms } = await db.from("milestones").select("id, owner_id, community_id, community_name, title, detail, evidence, status, owner:profiles!milestones_owner_id_fkey(first_name, last_name)").eq("id", id).maybeSingle();
+        const q = ms as unknown as { owner_id: string; community_id: string; community_name: string; title: string; detail: string; evidence: string; status: string; owner: { first_name: string; last_name: string } | null } | null;
+        if (!q) return { error: "No milestone with that id that the member can see." };
+        if (q.status !== "pending") return { error: "That milestone has already been reviewed." };
+        if (q.owner_id === userId) return { error: "Members can't review their own milestones." };
+        const { data: m } = await db.from("community_members").select("role").eq("community_id", q.community_id).eq("uid", userId).maybeSingle();
+        if (!m || rank(m.role) < 3) return { error: "Only the club's moderators, admins and owner can review milestones." };
+        const verify = a.verify === true;
+        const note = typeof a.note === "string" ? a.note.trim().slice(0, 300) : "";
+        onProposal({ id: pid(), kind: "review", milestone_id: id, club_name: q.community_name, member: q.owner ? `${q.owner.first_name} ${q.owner.last_name}`.trim() : "A member", title: q.title, detail: q.detail, evidence: q.evidence, verify, note });
         return SHOWN;
       }
       default:

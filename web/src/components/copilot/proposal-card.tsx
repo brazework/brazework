@@ -1,16 +1,16 @@
 "use client";
 import { AnimatePresence, motion } from "motion/react";
-import { ArrowRight, CalendarPlus, Check, Flag, Loader2, Megaphone, Sparkles, UserPlus, Users, X } from "lucide-react";
+import { ArrowRight, BadgeCheck, CalendarPlus, Check, ExternalLink, Flag, Loader2, Megaphone, Sparkles, UserPlus, Users, X } from "lucide-react";
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import { createPost } from "@/app/(app)/feed/actions";
-import { joinCommunity } from "@/app/(app)/communities/actions";
+import { joinCommunity, postInCommunity } from "@/app/(app)/communities/actions";
 import { saveEvent } from "@/app/(app)/org/actions";
 import { Celebrate } from "@/components/app/celebrate";
 import type { Proposal } from "@/lib/copilot-agent";
 import { EVENT_FORMATS, EVENT_TYPES } from "@/lib/events";
 import { cn } from "@/lib/forge";
-import { addMilestone } from "@/lib/milestones";
+import { addMilestone, reviewMilestone } from "@/lib/milestones";
 import { toggleFollow } from "@/lib/network";
 
 const field = "w-full rounded-xl border border-line bg-surface px-3 py-2 text-sm outline-none focus:border-line-strong";
@@ -20,6 +20,8 @@ const HEAD = {
   join: { icon: Users, title: "Join a club", done: "Done", href: "", go: "Open the club" },
   follow: { icon: UserPlus, title: "Follow", done: "Following", href: "", go: "Open their profile" },
   event: { icon: CalendarPlus, title: "Host a club event", done: "Published", href: "", go: "See the club's events" },
+  club_post: { icon: Megaphone, title: "Post in your club", done: "Posted", href: "", go: "See it in the club" },
+  review: { icon: BadgeCheck, title: "Review a milestone", done: "Reviewed", href: "", go: "Back to the queue" },
 } as const;
 
 // ISO time <-> the value a datetime-local input wants (the member's own timezone).
@@ -32,9 +34,10 @@ export function ProposalCard({ p: initial }: { p: Proposal }) {
   const [p, setP] = useState(initial);
   const [state, setState] = useState<"open" | "done" | "dismissed">("open");
   const [msg, setMsg] = useState("");
+  const [held, setHeld] = useState("");
   const [pending, start] = useTransition();
   const h = HEAD[p.kind];
-  const href = p.kind === "join" ? `/c/${p.club_id}` : p.kind === "follow" ? `/u/${p.person_id}` : p.kind === "event" ? `/c/${p.club_id}?tab=events` : h.href;
+  const href = p.kind === "join" || p.kind === "club_post" ? `/c/${p.club_id}` : p.kind === "follow" ? `/u/${p.person_id}` : p.kind === "event" ? `/c/${p.club_id}?tab=events` : p.kind === "review" ? "/communities" : h.href;
   const set = (patch: Partial<Proposal>) => setP((cur) => ({ ...cur, ...patch }) as Proposal);
 
   const confirm = () => start(async () => {
@@ -52,6 +55,13 @@ export function ProposalCard({ p: initial }: { p: Proposal }) {
       r = await joinCommunity(p.club_id);
     } else if (p.kind === "follow") {
       r = await toggleFollow(p.person_id, true);
+    } else if (p.kind === "club_post") {
+      const res = await postInCommunity(p.club_id, p.body, p.postKind, []);
+      // Auto-moderation can hold a post for review; say so instead of "Posted".
+      if (res.ok && res.held) { setHeld(res.message || "Held for a moderator to review before it shows."); }
+      r = res;
+    } else if (p.kind === "review") {
+      r = await reviewMilestone(p.milestone_id, p.verify, p.note);
     } else {
       const f = new FormData();
       for (const k of ["title", "description", "type", "format", "location", "topic", "starts_at", "ends_at"] as const) f.set(k, String(p[k]));
@@ -68,12 +78,15 @@ export function ProposalCard({ p: initial }: { p: Proposal }) {
       {state === "done" && <Celebrate />}
       <div className="flex items-center gap-2">
         <span className={cn("grid size-7 place-items-center rounded-lg", state === "done" ? "bg-ok text-white" : "bg-accent-grad text-on-accent")}>{state === "done" ? <Check className="size-4" /> : <h.icon className="size-4" />}</span>
-        <span className="font-semibold text-text">{state === "done" ? h.done : h.title}</span>
+        <span className="font-semibold text-text">{state === "done" ? (held ? "Sent for review" : h.done) : h.title}</span>
         {state === "open" && <span className="ml-auto inline-flex items-center gap-1 text-[11px] text-faint"><Sparkles className="size-3" /> Drafted by Copilot · not saved yet</span>}
       </div>
 
       {state === "done" ? (
-        <Link href={href} className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-text hover:underline">{h.go} <ArrowRight className="size-4" /></Link>
+        <>
+          {held && <p className="mt-2 text-xs text-muted">{held}</p>}
+          <Link href={href} className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-text hover:underline">{h.go} <ArrowRight className="size-4" /></Link>
+        </>
       ) : (
         <div className="mt-3 flex flex-col gap-2.5">
           {p.kind === "post" && (
@@ -88,6 +101,28 @@ export function ProposalCard({ p: initial }: { p: Proposal }) {
               <input aria-label="Milestone" value={p.title} onChange={(e) => set({ title: e.target.value })} maxLength={120} className={field} />
               <textarea aria-label="Details" value={p.detail} onChange={(e) => set({ detail: e.target.value })} maxLength={600} rows={2} placeholder="Details (optional)" className={cn(field, "resize-none")} />
               <input aria-label="Date" type="date" value={p.achieved_on} onChange={(e) => set({ achieved_on: e.target.value })} className={cn(field, "w-auto")} />
+            </>
+          )}
+          {p.kind === "club_post" && (
+            <>
+              <p className="text-xs text-muted">In <b className="font-medium text-text-2">{p.club_name}</b>. Only the club sees it.</p>
+              <textarea aria-label="Club post text" value={p.body} onChange={(e) => set({ body: e.target.value })} maxLength={3000} rows={Math.min(10, 3 + Math.ceil(p.body.length / 70))} className={cn(field, "resize-y leading-relaxed")} />
+            </>
+          )}
+          {p.kind === "review" && (
+            <>
+              <div className="rounded-xl border border-line bg-surface-2/60 p-3">
+                <div className="text-xs text-muted">{p.member} asked {p.club_name} to verify</div>
+                <div className="mt-0.5 font-medium text-text">{p.title}</div>
+                {p.detail && <p className="mt-1 text-xs text-text-2">{p.detail}</p>}
+                {p.evidence ? <a href={p.evidence} target="_blank" rel="noopener noreferrer nofollow" className="mt-1.5 inline-flex items-center gap-1 text-xs font-medium text-text underline underline-offset-4"><ExternalLink className="size-3" /> Open the evidence</a> : <p className="mt-1.5 text-xs text-faint">No evidence link.</p>}
+              </div>
+              <div role="radiogroup" aria-label="Decision" className="inline-flex gap-1 self-start rounded-full bg-surface-2 p-1">
+                {[true, false].map((v) => (
+                  <button key={String(v)} type="button" role="radio" aria-checked={p.verify === v} onClick={() => set({ verify: v })} className={cn("rounded-full px-3 py-1 text-xs font-medium transition", p.verify === v ? (v ? "bg-ok text-white" : "bg-danger text-white") : "text-muted")}>{v ? "Verify" : "Decline"}</button>
+                ))}
+              </div>
+              <input aria-label="Note to the member" value={p.note} onChange={(e) => set({ note: e.target.value })} maxLength={300} placeholder={p.verify ? "Note (optional)" : "Why? They'll see this."} className={field} />
             </>
           )}
           {p.kind === "join" && <p className="text-text-2"><b className="font-medium">{p.club_name}</b> · {p.privacy === "public" ? "open to join" : "the club approves new members, so this sends a request"}</p>}
