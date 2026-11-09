@@ -59,6 +59,8 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
   if (!user || !profile) redirect("/login");
   const interests: string[] = profile.interests ?? [];
   const now = requestTime();
+  // Started now, used at the end: none of it depends on the posts (one less round trip to wait on).
+  const extrasP = Promise.all([copilotEnabled(), loadGuide()]);
 
   let emptyTitle = "No posts yet";
   let emptyBody: React.ReactNode = "Be the first to share what you're building.";
@@ -81,6 +83,19 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
   ]);
   const cids = (joined.data ?? []).map((j) => j.community_id as string);
   const people = [...new Set([...(fg.data ?? []).map((f) => f.target as string), ...(conn.data ?? []).flatMap((c) => (c.users as string[]).filter((u) => u !== user.id))])];
+
+  // Proof: club-verified milestones (supabase/milestones.sql), in every tab but Latest. Milestones
+  // on private projects stay out of the feed (the owner chose not to broadcast that project).
+  // Fetched alongside the posts, not after them.
+  type M = { id: string; title: string; detail: string; reviewed_at: string | null; community_id: string; community_name: string; reviewer_name: string; owner_id: string; project: { id: string; title: string; private: boolean } | null; owner: { id: string; first_name: string; last_name: string; avatar_path?: string | null } | null };
+  const proofP: Promise<M[]> = (async () => {
+    if (!proofOn || tag || (kind !== "" && kind !== "result") || tab === "latest") return [];
+    let q = supabase.from("milestones").select(`id, title, detail, reviewed_at, community_id, community_name, reviewer_name, owner_id, project:projects(id, title, private), owner:profiles!milestones_owner_id_fkey(id, first_name, last_name${mediaEnabled ? ", avatar_path" : ""})`).eq("status", "verified").order("reviewed_at", { ascending: false }).limit(12);
+    if (tab === "communities") q = cids.length ? q.in("community_id", cids) : q.eq("community_id", "none");
+    if (tab === "following") q = people.length ? q.in("owner_id", people.slice(0, 300)) : q.eq("owner_id", user.id);
+    const { data } = await q;
+    return (data ?? []) as unknown as M[];
+  })();
 
   let items: Item[] = [];
   const asPost = (p: Post, reason = "", score = 0): Item => ({ type: "post", post: p, reason, at: Date.parse(p.created_at), score });
@@ -115,43 +130,35 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
     emptyAction = <Link href="/communities" className="text-sm underline underline-offset-4">Discover clubs</Link>;
   }
 
-  // Proof: club-verified milestones (supabase/milestones.sql), in every tab but Latest. Milestones
-  // on private projects stay out of the feed (the owner chose not to broadcast that project).
-  if (proofOn && !tag && (kind === "" || kind === "result") && tab !== "latest") {
-    let q = supabase.from("milestones").select(`id, title, detail, reviewed_at, community_id, community_name, reviewer_name, owner_id, project:projects(id, title, private), owner:profiles!milestones_owner_id_fkey(id, first_name, last_name${mediaEnabled ? ", avatar_path" : ""})`).eq("status", "verified").order("reviewed_at", { ascending: false }).limit(12);
-    if (tab === "communities") q = cids.length ? q.in("community_id", cids) : q.eq("community_id", "none");
-    if (tab === "following") q = people.length ? q.in("owner_id", people.slice(0, 300)) : q.eq("owner_id", user.id);
-    const { data } = await q;
-    type M = { id: string; title: string; detail: string; reviewed_at: string | null; community_id: string; community_name: string; reviewer_name: string; owner_id: string; project: { id: string; title: string; private: boolean } | null; owner: { id: string; first_name: string; last_name: string; avatar_path?: string | null } | null };
+  {
     const mineClubs = new Set(cids);
-    const proofs: Item[] = ((data ?? []) as unknown as M[]).filter((m) => m.project && !m.project.private && m.owner && m.reviewed_at).map((m) => ({
+    const proofs: Item[] = (await proofP).filter((m) => m.project && !m.project.private && m.owner && m.reviewed_at).map((m) => ({
       type: "proof",
       proof: { id: m.id, title: m.title, detail: m.detail, reviewed_at: m.reviewed_at!, community_id: m.community_id, community_name: m.community_name, reviewer_name: m.reviewer_name, project: { id: m.project!.id, title: m.project!.title }, owner: { id: m.owner!.id, first: m.owner!.first_name, last: m.owner!.last_name, avatar: avatarSrc(m.owner) } },
       reason: tab === "for-you" ? (mineClubs.has(m.community_id) ? `From your club ${m.community_name}` : "Club-verified work") : "",
       at: Date.parse(m.reviewed_at!),
       score: scoreProof(m.reviewed_at!, mineClubs.has(m.community_id), now),
     }));
-    items = [...items, ...proofs].sort((a, b) => (tab === "for-you" ? b.score - a.score : b.at - a.at));
+    if (proofs.length) items = [...items, ...proofs].sort((a, b) => (tab === "for-you" ? b.score - a.score : b.at - a.at));
   }
   if (kind === "question") items.sort((a, b) => Number(a.type === "post" && a.post.comment_count > 0) - Number(b.type === "post" && b.post.comment_count > 0));
   items = items.slice(0, 120);
 
   const posts = items.flatMap((it) => (it.type === "post" ? [it.post] : []));
   const ids = posts.map((p) => p.id);
-  const projects = await projectsForPosts(supabase, posts);
   const discover = (tab === "for-you" || tab === "latest") && !tag && !kind;
   // The create box: whether Ember is on, your next guide step, and a club you run (for its weekly update).
-  const [copilotOn, guide] = await Promise.all([copilotEnabled(), loadGuide()]);
+  const [copilotOn, guide] = await extrasP;
   const nextStep = guide?.member.find((s) => !s.done) ?? null;
   const ledClub = guide?.clubs[0] ? { id: guide.clubs[0].id, name: guide.clubs[0].name } : null;
   const spotlight = <div className="py-2"><Suspense fallback={<StripSkeleton w={280} h={250} />}><SpotlightStrip /></Suspense></div>;
   const peopleStrip = <div className="py-2"><Suspense fallback={<StripSkeleton w={200} h={250} />}><PeopleStrip field={profile.field} interests={interests} /></Suspense></div>;
-  const [likes, saves] = ids.length
-    ? await Promise.all([
-        supabase.from("likes").select("post_id").eq("user_id", user.id).in("post_id", ids),
-        supabase.from("saved").select("post_id").eq("user_id", user.id).in("post_id", ids),
-      ])
-    : [{ data: [] }, { data: [] }];
+  // The last round: project boxes, and which of these you've liked or saved, together.
+  const [projects, likes, saves] = await Promise.all([
+    projectsForPosts(supabase, posts),
+    ids.length ? supabase.from("likes").select("post_id").eq("user_id", user.id).in("post_id", ids) : Promise.resolve({ data: [] }),
+    ids.length ? supabase.from("saved").select("post_id").eq("user_id", user.id).in("post_id", ids) : Promise.resolve({ data: [] }),
+  ]);
   const liked = new Set((likes.data ?? []).map((l: { post_id: string }) => l.post_id));
   const saved = new Set((saves.data ?? []).map((l: { post_id: string }) => l.post_id));
   const href = (patch: { tab?: string; kind?: string; tag?: string }) => {

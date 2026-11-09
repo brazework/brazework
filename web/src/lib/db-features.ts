@@ -9,7 +9,23 @@ import { createClient } from "@/lib/supabase/server";
 // 42883/PGRST202: no such function.
 const missing = (e: { code?: string } | null) => ["42703", "42P01", "42883", "PGRST200", "PGRST202", "PGRST204", "PGRST205"].includes(e?.code ?? "");
 
-export const dbFeatures = cache(async () => {
+// Remembered across requests too: a feature that exists stays on (SQL files only add things), and a
+// missing one is asked about again after a minute, so applying a file turns it on without a deploy.
+type Features = Awaited<ReturnType<typeof probe>>;
+let known: { at: number; f: Features } | null = null;
+const RECHECK_MS = 60_000;
+
+export const dbFeatures = cache(async (): Promise<Features> => {
+  const allOn = known && Object.values(known.f).every(Boolean);
+  if (known && (allOn || Date.now() - known.at < RECHECK_MS)) return known.f;
+  const f = await probe();
+  // Never forget a feature we've seen (a failed probe mid-outage shouldn't switch it off).
+  const merged = known ? (Object.fromEntries(Object.entries(f).map(([k, v]) => [k, v || known!.f[k as keyof Features]])) as Features) : f;
+  known = { at: Date.now(), f: merged };
+  return merged;
+});
+
+async function probe() {
   const supabase = await createClient();
   const [ev, po, inv, cop, ms, intg, gc, st, cp, mn, cc, px] = await Promise.all([
     supabase.from("events").select("community_id").limit(1),
@@ -26,7 +42,7 @@ export const dbFeatures = cache(async () => {
     supabase.from("profiles").select("open_to").limit(1),
   ]);
   return { clubEvents: !missing(ev.error), media: !missing(po.error), invites: !missing(inv.error), copilot: !missing(cop.error), milestones: !missing(ms.error), integrations: !missing(intg.error), groupChats: !missing(gc.error), projectTools: !missing(st.error), clubProfile: !missing(cp.error), mentions: !missing(mn.error), copilotChats: !missing(cc.error), profileExtras: !missing(px.error) };
-});
+}
 
 export async function eventCols(): Promise<string> {
   return (await dbFeatures()).clubEvents ? EVENT_COLS : EVENT_COLS_BASE;

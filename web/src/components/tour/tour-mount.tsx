@@ -22,11 +22,11 @@ export function TourMount() {
   const [run, setRun] = useState<Run | null>(null);
   const [i, setI] = useState(0);
   const [box, setBox] = useState<Box | null>(null);
-  const [name, setName] = useState("");
   // A tour that starts on its own waits until you're on its first page (never pulls you off a
   // link you opened), and it only changes pages when you press Next or Back.
   const [pending, setPending] = useState<Run | null>(null);
   const navFor = useRef<number | null>(null);
+  const nameRef = useRef("");
   if (pending && !run && (!pending.steps[0]?.route || onRoute(pending.steps[0].route, pathname, search))) {
     setRun(pending);
     setPending(null);
@@ -37,7 +37,7 @@ export function TourMount() {
     let alive = true;
     loadTourState().then((s) => {
       if (!alive || !s) return;
-      setName(s.firstName);
+      nameRef.current = s.firstName;
       const seen = new Set(s.seen);
       if (!seen.has(WELCOME)) setTimeout(() => setPending({ steps: welcomeSteps(s.firstName), keys: [WELCOME, ...UPDATES.map((u) => u.id)] }), 700);
       else {
@@ -45,10 +45,10 @@ export function TourMount() {
         if (fresh.length) setTimeout(() => setPending({ steps: whatsNewSteps(fresh), keys: fresh.map((u) => u.id) }), 700);
       }
     });
-    const replay = () => { navFor.current = null; setI(0); setRun({ steps: welcomeSteps(name), keys: [WELCOME] }); };
+    const replay = () => { navFor.current = null; setI(0); setRun({ steps: welcomeSteps(nameRef.current), keys: [WELCOME] }); };
     window.addEventListener("forge:tour", replay);
     return () => { alive = false; window.removeEventListener("forge:tour", replay); };
-  }, [name]);
+  }, []);
 
   const step = run?.steps[i];
 

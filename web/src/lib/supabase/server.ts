@@ -1,11 +1,16 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
+import { connection } from "next/server";
+import { cache } from "react";
 import { env } from "@/lib/env";
 import type { Profile } from "@/lib/forge";
 
 // Supabase client for Server Components, Server Actions and Route Handlers.
 // Row-level security in supabase/*.sql is still what protects the data.
 export async function createClient() {
+  // Data is per request: a background prefetch stops here (so prefetches don't run the page's
+  // queries), and auth-js may read the clock once it's created, which prerendering doesn't allow.
+  await connection();
   const cookieStore = await cookies();
   return createServerClient(env.supabaseUrl, env.supabaseAnonKey, {
     cookies: {
@@ -24,7 +29,11 @@ export async function createClient() {
 }
 
 // The signed-in person and their profile, or nulls. Uses getClaims(), which verifies the JWT.
-export async function getViewer() {
+// Remembered for one render (React cache): the layout, the page and its parts all ask, and each
+// ask used to cost a session check plus a profile read. Server actions aren't renders, so a save
+// always sees the latest.
+export const getViewer = cache(viewer);
+async function viewer() {
   const supabase = await createClient();
   const { data } = await supabase.auth.getClaims();
   const claims = data?.claims;
