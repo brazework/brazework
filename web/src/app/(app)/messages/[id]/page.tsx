@@ -53,7 +53,7 @@ async function Thread({ params }: { params: PageProps<"/messages/[id]">["params"
         </Link>
       </header>
       {requestToMe && <RequestBar cid={id} firstName={other.firstName ?? ""} />}
-      <ThreadScroll msgs={msgs} me={me} />
+      <ThreadScroll msgs={msgs} me={me} cid={id} otherName={other.firstName ?? ""} />
       {requestToMe ? (
         <p className="border-t border-line px-4 py-3 text-center text-xs text-muted">Accept to reply. They won&apos;t know you&apos;ve read it until you do.</p>
       ) : requestFromMe && iSent ? (

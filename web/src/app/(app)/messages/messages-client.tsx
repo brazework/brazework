@@ -1,6 +1,7 @@
 "use client";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { Search, X } from "lucide-react";
 import { useState } from "react";
 import { Avatar } from "@/components/ui";
 import { WithPresence } from "@/components/presence/presence";
@@ -11,7 +12,7 @@ import type { Conv } from "./data";
 // Pure CSS (:has), so the layout needs no runtime URL read and still prerenders.
 export function PaneSwitch({ list, children }: { list: React.ReactNode; children: React.ReactNode }) {
   return (
-    <div className="group/msg grid h-[calc(100dvh-12rem)] min-h-[420px] overflow-hidden rounded-3xl border border-line bg-surface/70 md:h-[calc(100dvh-4rem)] md:grid-cols-[320px_1fr]">
+    <div className="glass-card group/msg grid h-[calc(100dvh-12rem)] min-h-[420px] overflow-hidden rounded-3xl md:h-[calc(100dvh-4rem)] md:grid-cols-[320px_1fr]">
       <aside className="flex min-h-0 flex-col border-line group-has-[[data-thread]]/msg:hidden md:flex! md:border-r">{list}</aside>
       <section className="hidden min-h-0 flex-col group-has-[[data-thread]]/msg:flex md:flex">{children}</section>
     </div>
@@ -29,7 +30,9 @@ export function ConvList({ convs, requestsOn }: { convs: Conv[]; requestsOn: boo
   const unread = inbox.filter((c) => c.unread);
   const startTab = activeId && requestsOn && requests.some((c) => c.id === activeId) ? "requests" : "inbox";
   const [tab, setTab] = useState<"inbox" | "unread" | "requests">(startTab);
-  const shown = tab === "requests" ? requests : tab === "unread" ? unread : inbox;
+  const [q, setQ] = useState("");
+  const needle = q.trim().toLowerCase();
+  const shown = (tab === "requests" ? requests : tab === "unread" ? unread : inbox).filter((c) => !needle || `${c.other.firstName} ${c.other.lastName} ${c.lastBody}`.toLowerCase().includes(needle));
   const tabs = [
     ["inbox", "Inbox", unread.length],
     ["unread", "Unread", 0],
@@ -48,12 +51,18 @@ export function ConvList({ convs, requestsOn }: { convs: Conv[]; requestsOn: boo
             </button>
           ))}
         </div>
+        <div className="relative mt-3">
+          <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-faint" />
+          <label htmlFor="conv-q" className="sr-only">Search messages</label>
+          <input id="conv-q" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search people and messages" style={{ outline: "none" }} className="h-9 w-full rounded-full bg-surface-2/70 pr-8 pl-9 text-sm placeholder:text-faint focus:bg-surface-2" />
+          {q && <button type="button" onClick={() => setQ("")} aria-label="Clear search" className="absolute top-1/2 right-2 grid size-6 -translate-y-1/2 place-items-center rounded-full text-faint hover:text-text"><X className="size-3.5" /></button>}
+        </div>
       </div>
       {tab === "requests" && <p className="border-b border-line px-4 py-3 text-xs text-muted">People you&apos;re not connected with land here first. They can&apos;t see that you&apos;ve read their message until you accept.</p>}
-      <ul className="min-h-0 flex-1 overflow-y-auto">
+      <ul className="min-h-0 flex-1 overflow-y-auto p-2">
         {shown.map((c) => (
           <li key={c.id}>
-            <Link href={`/messages/${c.id}`} aria-current={c.id === activeId ? "page" : undefined} className={cn("flex gap-3 border-b border-line px-4 py-3.5 transition hover:bg-hover", c.id === activeId && "bg-raised")}>
+            <Link href={`/messages/${c.id}`} aria-current={c.id === activeId ? "page" : undefined} className={cn("flex gap-3 rounded-2xl px-3 py-3 transition hover:bg-hover/70", c.id === activeId && "nav-pill")}>
               <WithPresence id={c.other.id} className="self-start"><Avatar first={c.other.firstName} last={c.other.lastName} size={40} /></WithPresence>
               <div className="min-w-0 flex-1">
                 <div className="flex items-baseline justify-between gap-2">
@@ -73,7 +82,7 @@ export function ConvList({ convs, requestsOn }: { convs: Conv[]; requestsOn: boo
         ))}
         {!shown.length && (
           <li className="p-6 text-sm text-muted">
-            {tab === "requests" ? "No message requests. You're all caught up." : tab === "unread" ? "No unread messages." : "No conversations yet. Message someone from their profile or your network."}
+            {needle ? <>Nothing matches &ldquo;{q}&rdquo;.</> : tab === "requests" ? "No message requests. You're all caught up." : tab === "unread" ? "No unread messages." : "No conversations yet. Message someone from their profile or your network."}
           </li>
         )}
       </ul>
