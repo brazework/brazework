@@ -109,8 +109,8 @@ async function ProfileView({ params }: { params: PageProps<"/u/[id]">["params"] 
             <div className="flex flex-wrap items-center gap-2">
               <CopyLink path={`/u/${p.id}`} label="Share" />
               {own ? (
-                <Link href="/analytics" data-tour="analytics" className="inline-flex h-10 items-center gap-1.5 rounded-full border border-line bg-surface px-4 text-sm transition hover:bg-hover active:scale-95">
-                  <BarChart3 className="size-4" /> Analytics
+                <Link href="/dashboard" data-tour="analytics" className="inline-flex h-10 items-center gap-1.5 rounded-full border border-line bg-surface px-4 text-sm transition hover:bg-hover active:scale-95">
+                  <BarChart3 className="size-4" /> Dashboard
                 </Link>
               ) : (
                 rel && <ConnectButtons personId={p.id} firstName={p.first_name} relationship={rel} />

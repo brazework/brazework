@@ -27,7 +27,7 @@ function tipFor(path: string): { page: string; tip: string; href?: string; cta?:
   if (path.startsWith("/saved")) return { page: "your saved posts", tip: "Saved posts are private to you. Save the build logs and write-ups you want to come back to." };
   if (path.startsWith("/notifications")) return { page: "notifications", tip: "Milestone requests from your club members show here. Review them under the club's Manage → Verify." };
   if (path.startsWith("/search")) return { page: "search", tip: "People and clubs that share your interests come first. Press / anywhere to search." };
-  if (path.startsWith("/analytics")) return { page: "your analytics", tip: "Only you can see these. Verified milestones and a clear headline are what lift profile views." };
+  if (path.startsWith("/dashboard") || path.startsWith("/analytics")) return { page: "your dashboard", tip: "Only you can see these. Verified milestones and a clear headline are what lift profile views." };
   return { page: "Forge", tip: "Every step below makes your profile easier to find and your work easier to trust." };
 }
 

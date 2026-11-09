@@ -182,11 +182,11 @@ export const UPDATES: ForgeUpdate[] = [
     points: [
       "The bell in the top bar shows how many notifications are new. Each one links to what it's about.",
       "Analytics, from your profile, shows profile views over 7, 30 and 90 days or 12 months, plus likes, comments, followers and connections.",
-      "Only you can see your analytics, and nobody can see who viewed a profile.",
+      "Only you can see your dashboard, and nobody can see who viewed a profile.",
     ],
     tour: [
       { route: ROUTES.feed, target: "bell", title: "Notifications", body: "Likes, comments, follows and requests show up here. The number shows what's new." },
-      { route: ROUTES.profile, target: "analytics", title: "Your analytics", body: "Profile views and engagement on your posts. Only you can see this." },
+      { route: ROUTES.profile, target: "analytics", title: "Your dashboard", body: "Profile views, likes, comments and followers over time. Only you can see this." },
     ],
   },
   {
@@ -258,7 +258,7 @@ export function welcomeSteps(firstName: string): TourStep[] {
     { route: ROUTES.feed, target: "menu", title: "Everything else", body: "The menu has every page: Network, Communities, Messages, Events, Saved and Settings." },
     { route: ROUTES.feed, target: "bell", title: "Notifications", body: "Likes, comments, new followers and connection requests show up here." },
     { route: ROUTES.projects, target: "projects-tab", title: "Your profile and projects", body: "Show what you've built. Projects can be public or private, and you can share them to the feed." },
-    { route: ROUTES.profile, target: "analytics", title: "Your analytics", body: "See how people find your profile and how your posts are doing. Only you can see it." },
+    { route: ROUTES.profile, target: "analytics", title: "Your dashboard", body: "See how people find your profile and how your posts are doing over time. Only you can see it." },
     { route: ROUTES.feed, target: "updates-panel", title: "Forge updates", body: "Recent changes and what's coming next. Click any update to read what changed. When a new feature ships, we'll show you around it." },
     { route: ROUTES.feed, title: "You're all set", body: "You can replay this tour any time from Settings, under Help." },
   ];

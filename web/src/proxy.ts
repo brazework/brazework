@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { env } from "@/lib/env";
 
-const APP_PATHS = ["/feed", "/search", "/onboarding", "/post/", "/communities", "/c/", "/network", "/messages", "/events", "/org", "/notifications", "/saved", "/profile", "/u/", "/analytics", "/settings", "/copilot"];
+const APP_PATHS = ["/feed", "/search", "/onboarding", "/post/", "/communities", "/c/", "/network", "/messages", "/events", "/org", "/notifications", "/saved", "/profile", "/u/", "/analytics", "/dashboard", "/settings", "/copilot"];
 const AUTH_PATHS = ["/login", "/signup", "/forgot"];
 
 // Refreshes the Supabase session cookie on every request and does optimistic redirects.

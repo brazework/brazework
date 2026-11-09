@@ -1,6 +1,6 @@
 "use client";
 import { AnimatePresence, motion } from "motion/react";
-import { Bell, Bookmark, CalendarDays, Home, LogOut, Menu, MessageSquare, Network, PanelLeftClose, PanelLeftOpen, Settings, Sparkles, UserRound, Users, X } from "lucide-react";
+import { Bell, Bookmark, CalendarDays, Home, LayoutDashboard, LogOut, Menu, MessageSquare, Network, PanelLeftClose, PanelLeftOpen, Settings, Sparkles, UserRound, Users, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -17,6 +17,7 @@ type BadgeKey = keyof Badges;
 // Every screen of the signed-in app. `match` = path prefixes that light the item up; `badge` = which count it shows.
 const NAV: { href: string; label: string; icon: typeof Home; match: string[]; badge?: BadgeKey }[] = [
   { href: "/feed", label: "Feed", icon: Home, match: ["/feed", "/post/"] },
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, match: ["/dashboard", "/analytics"] },
   { href: "/communities", label: "Communities", icon: Users, match: ["/communities", "/c/"] },
   { href: "/copilot", label: "Copilot", icon: Sparkles, match: ["/copilot"] },
   { href: "/network", label: "Network", icon: Network, match: ["/network"], badge: "invites" },
@@ -24,7 +25,7 @@ const NAV: { href: string; label: string; icon: typeof Home; match: string[]; ba
   { href: "/events", label: "Events", icon: CalendarDays, match: ["/events", "/org"] },
   { href: "/notifications", label: "Notifications", icon: Bell, match: ["/notifications"], badge: "notifications" },
   { href: "/saved", label: "Saved", icon: Bookmark, match: ["/saved"] },
-  { href: "/profile", label: "Profile", icon: UserRound, match: ["/profile", "/u/", "/analytics"] },
+  { href: "/profile", label: "Profile", icon: UserRound, match: ["/profile", "/u/"] },
   { href: "/settings", label: "Settings", icon: Settings, match: ["/settings"] },
 ];
 
