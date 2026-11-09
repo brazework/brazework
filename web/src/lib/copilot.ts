@@ -52,7 +52,7 @@ export async function memberContext() {
     mine.length && `Their clubs: ${mine.map((c) => c.name).join(", ")}.`,
     projects.data?.length && `Their projects: ${projects.data.map((p) => `${p.title} (${p.status === "completed" ? "completed" : "in progress"})`).join("; ")}.`,
   ].filter(Boolean);
-  return { supabase, userId: user.id, system: `${RULES}\n\n${lines.join("\n")}` };
+  return { supabase, userId: user.id, name: profile.first_name || "the member", system: `${RULES}\n\n${lines.join("\n")}` };
 }
 
 export function taskPrompt(r: CopilotRequest) {

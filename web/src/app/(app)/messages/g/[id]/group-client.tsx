@@ -7,13 +7,16 @@ import { cn } from "@/lib/forge";
 import { getBrowserClient } from "@/lib/supabase/client";
 import { createTeamChat, markChatRead, sendChatMessage } from "@/lib/chats";
 import { MessageBody } from "@/components/share/message-body";
+import { Ember } from "@/components/ember/ember";
+import { askEmberInChat } from "@/lib/chat-ember";
 
-export type GroupMsg = { id: string; sender_id: string; sender_first: string; sender_last: string; body: string; announcement: boolean; created_at: string };
+export type GroupMsg = { id: string; sender_id: string; sender_first: string; sender_last: string; body: string; announcement: boolean; ember?: boolean; created_at: string };
 export type Seen = Record<string, { seen: number; total: number }>;
 
 const SENT = "forge-chat-sent";
 const FAILED = "forge-chat-failed";
 const TYPING = "forge-chat-typing";
+const EMBER = "forge-chat-ember"; // detail: { id, on }
 const GROUP_MS = 5 * 60_000;
 const day = (ts: string) => new Date(ts).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
 const time = (ts: string) => new Date(ts).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
@@ -30,14 +33,17 @@ export function GroupThread({ msgs, me, myName, chatId, seen = {} }: { msgs: Gro
   const end = useRef<HTMLDivElement>(null);
   const [pending, setPending] = useState<GroupMsg[]>([]);
   const [typing, setTyping] = useState<Record<string, number>>({});
+  const [emberBusy, setEmberBusy] = useState(false);
   const mine = new Set(msgs.filter((m) => m.sender_id === me).slice(-20).map((m) => m.body));
   const all = [...msgs, ...pending.filter((p) => !mine.has(p.body))];
 
   useEffect(() => {
     const onSent = (e: Event) => { const d = (e as CustomEvent<{ id: string; body: string; announcement: boolean }>).detail; if (d.id === chatId) setPending((p) => [...p, { id: `pending-${Date.now()}`, sender_id: me, sender_first: myName, sender_last: "", body: d.body, announcement: d.announcement, created_at: new Date().toISOString() }]); };
     const onFailed = (e: Event) => { const d = (e as CustomEvent<{ id: string; body: string }>).detail; if (d.id === chatId) setPending((p) => p.filter((m) => m.body !== d.body)); };
+    const onEmber = (e: Event) => { const d = (e as CustomEvent<{ id: string; on: boolean }>).detail; if (d.id === chatId) setEmberBusy(d.on); };
     window.addEventListener(SENT, onSent);
     window.addEventListener(FAILED, onFailed);
+    window.addEventListener(EMBER, onEmber);
     // "Maya is typing…": a broadcast on this chat's channel, nothing stored; each name clears after 3.5s.
     const sb = getBrowserClient();
     const ch = sb.channel(`typing:g:${chatId}`);
@@ -55,23 +61,24 @@ export function GroupThread({ msgs, me, myName, chatId, seen = {} }: { msgs: Gro
       void ch.send({ type: "broadcast", event: "typing", payload: { uid: me, name: myName } });
     };
     window.addEventListener(TYPING, onTyping);
-    return () => { window.removeEventListener(SENT, onSent); window.removeEventListener(FAILED, onFailed); window.removeEventListener(TYPING, onTyping); sb.removeChannel(ch); };
+    return () => { window.removeEventListener(EMBER, onEmber); window.removeEventListener(SENT, onSent); window.removeEventListener(FAILED, onFailed); window.removeEventListener(TYPING, onTyping); sb.removeChannel(ch); };
   }, [chatId, me, myName]);
   const typers = Object.keys(typing);
-  useEffect(() => { end.current?.scrollIntoView({ block: "end", behavior: "smooth" }); }, [all.length, typers.length]);
+  useEffect(() => { end.current?.scrollIntoView({ block: "end", behavior: "smooth" }); }, [all.length, typers.length, emberBusy]);
 
   return (
     <div className="min-h-0 flex-1 overflow-y-auto px-4 py-5" aria-live="polite">
       {!all.length && <p className="py-12 text-center text-sm text-muted">No messages yet. Start the conversation.</p>}
       <ol className="flex flex-col">
         {all.map((m, i) => {
-          const isMine = m.sender_id === me;
+          const isEmber = !!m.ember;
+          const isMine = m.sender_id === me && !isEmber;
           const prev = all[i - 1];
           const next = all[i + 1];
           const d = day(m.created_at);
           const showDay = !prev || d !== day(prev.created_at);
-          const joinsPrev = !showDay && !m.announcement && prev && !prev.announcement && prev.sender_id === m.sender_id && Date.parse(m.created_at) - Date.parse(prev.created_at) < GROUP_MS;
-          const joinsNext = !m.announcement && next && !next.announcement && next.sender_id === m.sender_id && day(next.created_at) === d && Date.parse(next.created_at) - Date.parse(m.created_at) < GROUP_MS;
+          const joinsPrev = !showDay && !m.announcement && prev && !prev.announcement && prev.sender_id === m.sender_id && !!prev.ember === isEmber && Date.parse(m.created_at) - Date.parse(prev.created_at) < GROUP_MS;
+          const joinsNext = !m.announcement && next && !next.announcement && next.sender_id === m.sender_id && !!next.ember === isEmber && day(next.created_at) === d && Date.parse(next.created_at) - Date.parse(m.created_at) < GROUP_MS;
           const isPending = m.id.startsWith("pending-");
           const s = seen[m.id];
           return (
@@ -87,9 +94,9 @@ export function GroupThread({ msgs, me, myName, chatId, seen = {} }: { msgs: Gro
                 </div>
               ) : (
                 <div className={cn("flex items-end gap-2", isMine ? "flex-row-reverse" : "flex-row")}>
-                  {!isMine && <span className="w-7 shrink-0">{!joinsNext && <Avatar first={m.sender_first} last={m.sender_last} size={28} className="text-[10px]" />}</span>}
+                  {!isMine && <span className="w-7 shrink-0">{!joinsNext && (isEmber ? <Ember size={28} /> : <Avatar first={m.sender_first} last={m.sender_last} size={28} className="text-[10px]" />)}</span>}
                   <div className={cn("flex max-w-[78%] flex-col", isMine ? "items-end" : "items-start")}>
-                    {!isMine && !joinsPrev && <span className="mb-0.5 px-2 text-[11px] font-medium text-muted">{m.sender_first} {m.sender_last}</span>}
+                    {!isMine && !joinsPrev && <span className="mb-0.5 px-2 text-[11px] font-medium text-muted">{isEmber ? <>Ember <span className="font-normal text-faint">· asked by {m.sender_first}</span></> : <>{m.sender_first} {m.sender_last}</>}</span>}
                     <div className={cn("px-3.5 py-2 text-[15px] leading-relaxed whitespace-pre-wrap", isMine ? "bg-accent-grad text-on-accent" : "glass-card text-text",
                       isMine ? cn("rounded-3xl", joinsPrev && "rounded-tr-md", joinsNext && "rounded-br-md") : cn("rounded-3xl", joinsPrev && "rounded-tl-md", joinsNext && "rounded-bl-md"),
                       isPending && "opacity-60")}><MessageBody body={m.body} mine={isMine} /></div>
@@ -101,6 +108,9 @@ export function GroupThread({ msgs, me, myName, chatId, seen = {} }: { msgs: Gro
           );
         })}
       </ol>
+      {emberBusy && (
+        <div className="mt-3 flex items-center gap-2 text-xs text-muted"><Ember size={28} mood="thinking" /> Ember is thinking…</div>
+      )}
       {typers.length > 0 && (
         <div className="mt-3 flex items-center gap-2 text-xs text-muted">
           <span className="glass-card inline-flex gap-1 rounded-full px-3 py-2.5" aria-hidden="true">{[0, 1, 2].map((k) => <span key={k} className="size-1.5 animate-bounce rounded-full bg-muted" style={{ animationDelay: `${k * 120}ms` }} />)}</span>
@@ -112,7 +122,8 @@ export function GroupThread({ msgs, me, myName, chatId, seen = {} }: { msgs: Gro
   );
 }
 
-export function GroupComposer({ chatId, canAnnounce = false, placeholder = "Write a message" }: { chatId: string; canAnnounce?: boolean; placeholder?: string }) {
+export function GroupComposer({ chatId, canAnnounce = false, placeholder = "Write a message", ember = false }: { chatId: string; canAnnounce?: boolean; placeholder?: string; ember?: boolean }) {
+  const ref = useRef<HTMLTextAreaElement>(null);
   const [body, setBody] = useState("");
   const [announce, setAnnounce] = useState(false);
   const [error, setError] = useState("");
@@ -129,15 +140,30 @@ export function GroupComposer({ chatId, canAnnounce = false, placeholder = "Writ
       const fail = (message: string) => { setError(message); setBody(text); window.dispatchEvent(new CustomEvent(FAILED, { detail: { id: chatId, body: text } })); };
       try {
         const r = await sendChatMessage(chatId, text, asAnnouncement);
-        if (!r.ok) fail(r.message);
+        if (!r.ok) return fail(r.message);
       } catch {
-        fail("Couldn't send. Check your connection and try again.");
+        return fail("Couldn't send. Check your connection and try again.");
+      }
+      // "@Ember …": once the question is in the chat, Ember answers the group.
+      if (ember && /^@ember\b/i.test(text)) {
+        window.dispatchEvent(new CustomEvent(EMBER, { detail: { id: chatId, on: true } }));
+        try {
+          const a = await askEmberInChat(chatId, text);
+          if (!a.ok) setError(a.message);
+        } catch {
+          setError("Ember couldn't answer. Try again.");
+        } finally {
+          window.dispatchEvent(new CustomEvent(EMBER, { detail: { id: chatId, on: false } }));
+        }
       }
     });
   };
   return (
     <form onSubmit={(e) => { e.preventDefault(); send(); }} className="border-t border-line p-3">
       {error && <p role="alert" className="mb-2 px-1 text-xs text-danger">{error}</p>}
+      {ember && !body && (
+        <button type="button" onClick={() => { setBody("@Ember "); ref.current?.focus(); }} className="mb-2 mr-3 inline-flex items-center gap-1.5 rounded-full border border-line px-2.5 py-1 text-xs text-text-2 transition hover:bg-hover"><Ember size={16} /> Ask Ember</button>
+      )}
       {canAnnounce && (
         <label className="mb-2 inline-flex cursor-pointer items-center gap-2 px-1 text-xs text-muted">
           <input type="checkbox" checked={announce} onChange={(e) => setAnnounce(e.target.checked)} className="size-3.5 accent-[var(--text)]" />
@@ -147,6 +173,7 @@ export function GroupComposer({ chatId, canAnnounce = false, placeholder = "Writ
       <div className="glass-card flex items-end gap-2 rounded-3xl p-1.5">
         <label htmlFor="gmsg" className="sr-only">Message</label>
         <textarea
+          ref={ref}
           id="gmsg"
           value={body}
           onChange={(e) => { setBody(e.target.value); window.dispatchEvent(new CustomEvent(TYPING, { detail: { id: chatId } })); }}

@@ -60,7 +60,7 @@ export function Hero() {
             get found.
           </h1>
           <p className="focus-in mt-6 max-w-xl text-lg leading-relaxed text-muted" style={{ ["--delay" as string]: "0.1s" }}>
-            Forge is the network for STEM clubs: engineering, the sciences, math and computing. Run your club here, post what you build, and let your club vouch for it, so you get hired for the work, not the résumé.
+            Forge is home base for university STEM clubs. Talk, plan and build together in one place, and every result your club verifies becomes proof that gets you hired. Ember, your AI teammate, handles the busywork.
           </p>
 
           <div className="rise-in mt-8" style={{ ["--delay" as string]: "0.2s" }}>

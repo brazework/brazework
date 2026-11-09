@@ -9,7 +9,7 @@ import { createClient, getViewer } from "@/lib/supabase/server";
 import { CommunityBadge } from "../../(app)/communities/_components/badge";
 import { JoinButton } from "./join-button";
 
-export const metadata: Metadata = { title: "You're invited", description: "You've been invited to a club on Forge, the professional network for STEM." };
+export const metadata: Metadata = { title: "You're invited", description: "You've been invited to a club on Forge, home base for university STEM clubs." };
 
 type Preview = { community_id: string; name: string; about: string; field: string; privacy: string; member_count: number };
 
@@ -65,7 +65,7 @@ async function Invite({ params }: { params: PageProps<"/join/[code]">["params"] 
           </>
         )}
       </div>
-      <p className="mt-6 text-xs text-faint">Forge is the professional network for STEM: show your projects, run your club, and get noticed for what you build.{c.privacy === "approval" ? " This invite skips the club's usual approval." : ""}</p>
+      <p className="mt-6 text-xs text-faint">Forge is home base for university STEM clubs: talk and plan with your club, show what you build, and let your club verify it so it gets you noticed.{c.privacy === "approval" ? " This invite skips the club's usual approval." : ""}</p>
     </div>
   );
 }

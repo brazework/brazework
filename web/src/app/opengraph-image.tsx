@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 
-export const alt = "Forge: proof of work beats a résumé. The professional network for STEM.";
+export const alt = "Forge: where STEM clubs build, prove it and get hired.";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -21,7 +21,7 @@ export default function OpengraphImage() {
           <div style={{ fontSize: 96, fontWeight: 700, letterSpacing: -4, lineHeight: 1 }}>Proof of work</div>
           <div style={{ fontSize: 96, fontWeight: 700, letterSpacing: -4, lineHeight: 1.1, color: "#8b8b94" }}>beats a résumé.</div>
         </div>
-        <div style={{ display: "flex", fontSize: 30, color: "#a1a1aa" }}>The professional network for STEM · built for university clubs</div>
+        <div style={{ display: "flex", fontSize: 30, color: "#a1a1aa" }}>Home base for university STEM clubs · verified work that gets you hired</div>
       </div>
     ),
     size,

@@ -9,12 +9,12 @@ const mono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 export const metadata: Metadata = {
   metadataBase: new URL(env.siteUrl),
-  title: { default: "Forge: the professional network for STEM", template: "%s · Forge" },
+  title: { default: "Forge: where STEM clubs build, prove it and get hired", template: "%s · Forge" },
   description:
-    "Show what you build. Forge is where engineers, scientists and the students on their way prove their work, find their people and get discovered for what they can actually do.",
+    "Forge is home base for university STEM clubs. Talk, plan and build together, and every result your club verifies becomes proof that gets you hired. Ember, your AI teammate, handles the busywork.",
   openGraph: {
-    title: "Forge: the professional network for STEM",
-    description: "Proof of work beats a résumé. Show what you build on Forge.",
+    title: "Forge: where STEM clubs build, prove it and get hired",
+    description: "Your club's home base. Your verified work. Proof that beats a résumé.",
     type: "website",
   },
 };

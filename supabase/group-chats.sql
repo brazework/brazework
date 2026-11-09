@@ -3,6 +3,8 @@
 --   club  — one per club; every member is in it, and officers (moderator and up) can post announcements
 --   event — one per event; everyone going is in it, plus the people hosting it
 --   team  — small chats inside a club (a sub-team, a project), with members picked by the person who starts it
+-- Ember (Forge's AI teammate) answers in any of them when someone asks it with @Ember; its replies are
+-- marked as Ember's and keep the name of the person who asked.
 -- Run after messages.sql, events.sql and club-events.sql. Additive only.
 --
 -- Who's in a chat follows Forge itself: join a club and you're in its chat; leave and you're out;
@@ -48,6 +50,7 @@ create table public.chat_messages (
   sender_last text not null default '',
   body text not null check (char_length(btrim(body)) between 1 and 2000),
   announcement boolean not null default false,
+  ember boolean not null default false,
   created_at timestamptz not null default now()
 );
 create index chat_messages_chat_idx on public.chat_messages (chat_id, created_at);
@@ -226,6 +229,21 @@ $$;
 
 -- ---------- Messages ----------
 
+-- Ember's reply in a chat, posted by the app for the person who asked it (shown as "Ember · asked by <name>").
+create function public.post_ember_reply(p_chat text, p_body text) returns text
+language plpgsql security definer set search_path = public as $$
+declare mid text; b text := btrim(coalesce(p_body, ''));
+begin
+  if not public.can_read_chat(p_chat) then
+    raise exception 'You''re not in this chat.' using errcode = 'P0001';
+  end if;
+  if char_length(b) < 1 then raise exception 'Ember had nothing to say.' using errcode = 'P0001'; end if;
+  insert into public.chat_messages (chat_id, sender_id, body, ember) values (p_chat, auth.uid(), left(b, 2000), true)
+  returning id into mid;
+  return mid;
+end $$;
+
+
 -- The sender, their name and the time come from the database. Only club officers announce, and only in club chats.
 create function public.chat_messages_before_insert() returns trigger
 language plpgsql security definer set search_path = public as $$
@@ -235,6 +253,7 @@ begin
   select * into p from public.profiles where id = new.sender_id;
   new.sender_first := coalesce(p.first_name, ''); new.sender_last := coalesce(p.last_name, '');
   new.body := btrim(new.body);
+  if new.ember then new.announcement := false; end if;
   if new.announcement then
     select * into c from public.chats where id = new.chat_id;
     if c.kind <> 'club' or public.my_rank(c.community_id) < 3 then
@@ -305,9 +324,11 @@ revoke execute on function public.chat_messages_before_insert(), public.chat_mes
   public.communities_open_chat() from anon, authenticated, public;
 revoke execute on function public.can_read_chat(text), public.open_club_chat(text), public.open_event_chat(text),
   public.create_team_chat(text, text, uuid[]), public.add_chat_member(text, uuid), public.leave_chat(text),
-  public.mark_chat_read(text), public.my_chats(), public.unread_chats(), public.announcement_seen(text) from anon, public;
+  public.mark_chat_read(text), public.my_chats(), public.unread_chats(), public.announcement_seen(text),
+  public.post_ember_reply(text, text) from anon, public;
 grant execute on function public.can_read_chat(text), public.open_club_chat(text), public.open_event_chat(text),
   public.create_team_chat(text, text, uuid[]), public.add_chat_member(text, uuid), public.leave_chat(text),
-  public.mark_chat_read(text), public.my_chats(), public.unread_chats(), public.announcement_seen(text) to authenticated;
+  public.mark_chat_read(text), public.my_chats(), public.unread_chats(), public.announcement_seen(text),
+  public.post_ember_reply(text, text) to authenticated;
 
 alter publication supabase_realtime add table public.chats, public.chat_messages;

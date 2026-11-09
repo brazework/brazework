@@ -7,7 +7,7 @@ import { ConvList, PaneSwitch } from "./messages-client";
 // Two panes on desktop (list + thread); one at a time on phones.
 export default function MessagesLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="mx-auto max-w-5xl">
+    <div className="mx-auto max-w-[1680px]">
       <LiveRefresh tables={["conversations", "messages", "chats", "chat_messages"]} delay={250} />
       <PaneSwitch
         list={
