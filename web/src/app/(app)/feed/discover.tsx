@@ -1,7 +1,8 @@
 import { CalendarDays, Sparkles, UserPlus } from "lucide-react";
 import { Carousel } from "@/components/app/carousel";
 import { EventMiniCard, SpotlightCard } from "@/components/app/discover-cards";
-import { PersonCard, type PersonCardData } from "@/components/network/person-card";
+import { PersonCard, PersonRow, type PersonCardData } from "@/components/network/person-card";
+import Link from "next/link";
 import { eventWithHost, postSelect } from "@/lib/db-features";
 import { DAY_MS, withHost, type HostedEvent } from "@/lib/events";
 import { requestTime, type Post } from "@/lib/forge";
@@ -46,7 +47,7 @@ export async function SpotlightStrip() {
 type Row = { id: string; first_name: string; last_name: string; headline: string; field: string; interests: string[]; avatar_path?: string };
 
 // People to follow: same field or shared interests, not you, not people you already follow.
-export async function PeopleStrip({ field, interests, exclude = [], title = "Builders to follow" }: { field?: string; interests: string[]; exclude?: string[]; title?: string }) {
+export async function PeopleStrip({ field, interests, exclude = [], title = "Builders to follow", rows = false }: { field?: string; interests: string[]; exclude?: string[]; title?: string; rows?: boolean }) {
   const { supabase, user } = await getViewer();
   if (!user) return null;
   const base = "id, first_name, last_name, headline, field, interests";
@@ -72,6 +73,17 @@ export async function PeopleStrip({ field, interests, exclude = [], title = "Bui
     people.push({ id: r.id, first_name: r.first_name, last_name: r.last_name, headline: r.headline, field: r.field, avatar: avatarSrc(r), shared: shared.length ? `#${shared[0]}${shared.length > 1 ? ` +${shared.length - 1}` : ""}` : r.field === field ? r.field : undefined });
   }
   if (!people.length) return null;
+  // In the feed: one compact card of rows, so a single suggestion doesn't take a whole screen.
+  if (rows)
+    return (
+      <section className="glass-card rounded-3xl p-4">
+        <div className="mb-1 flex items-center justify-between px-2">
+          <h2 className="flex items-center gap-2 text-sm font-semibold"><UserPlus className="size-4" /> {title}</h2>
+          <Link href="/network?tab=suggested" className="text-xs text-muted hover:text-text">See all</Link>
+        </div>
+        <ul>{people.slice(0, 4).map((p) => <PersonRow key={p.id} p={p} />)}</ul>
+      </section>
+    );
   return (
     <Carousel title={title} icon={<UserPlus className="size-3.5" />} href="/network?tab=suggested">
       {people.slice(0, 12).map((p) => <PersonCard key={p.id} p={p} />)}

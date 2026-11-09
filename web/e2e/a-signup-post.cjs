@@ -60,6 +60,18 @@ const { BASE, step, browser, as, go, closeTour, summary } = require("./lib.cjs")
     await ben.waitForURL(/\/post\//, { timeout: 10000 });
     await ben.getByText("Hello Forge! Thanks").first().waitFor();
   }, ben);
+  await step("Ben answers Maya's question right in his feed", async () => {
+    await go(ben, "/feed");
+    const q = ben.locator("article").filter({ hasText: "Kalman filtering" }).first();
+    await q.getByRole("button", { name: /^Answer/ }).click();
+    await q.getByPlaceholder("Write an answer…").fill("Start with a complementary filter.");
+    await q.getByPlaceholder("Write an answer…").press("Enter");
+    await q.getByText("Start with a complementary filter.").waitFor({ timeout: 10000 });
+    await ben.waitForLoadState("networkidle");
+    await go(ben, "/feed");
+    const again = ben.locator("article").filter({ hasText: "Kalman filtering" }).first();
+    if ((await again.getByText("Start with a complementary filter.").count()) !== 1) throw new Error("answer missing or duplicated after reload");
+  }, ben);
   console.log("page errors:", [...page.errs, ...ben.errs].slice(0, 5));
   summary();
   await b.close();

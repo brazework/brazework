@@ -1,4 +1,4 @@
-import { BadgeCheck } from "lucide-react";
+import { BadgeCheck, Sparkles } from "lucide-react";
 import Link from "next/link";
 import { Avatar } from "@/components/ui";
 import { timeAgo } from "@/lib/forge";
@@ -13,12 +13,13 @@ export type Proof = {
 export function ProofCard({ p, reason = "" }: { p: Proof; reason?: string }) {
   return (
     <article className="glass-card rounded-3xl p-5">
+      {reason && <p className="mb-3 flex items-center gap-1.5 text-xs text-faint"><Sparkles className="size-3.5 shrink-0" /> {reason}</p>}
       <div className="flex items-center gap-2 text-xs font-medium text-text">
         <span className="grid size-6 place-items-center rounded-full bg-accent-grad text-on-accent"><BadgeCheck className="size-3.5" /></span>
         Verified by <Link href={`/c/${p.community_id}`} className="hover:underline">{p.community_name}</Link>
         <span className="font-normal text-faint">· {timeAgo(p.reviewed_at)}</span>
       </div>
-      {reason && <p className="mt-2 font-mono text-[11px] text-faint">{reason}</p>}
+
       <div className="mt-4 flex items-start gap-3">
         <Link href={`/u/${p.owner.id}`} className="shrink-0"><Avatar first={p.owner.first} last={p.owner.last} size={40} src={p.owner.avatar} /></Link>
         <div className="min-w-0">

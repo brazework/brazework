@@ -13,7 +13,7 @@ import { copilotEnabled } from "@/lib/copilot";
 import { loadGuide } from "@/lib/guide";
 import { Composer } from "./composer";
 import { FeedHeader, TABS, type TabId } from "./header";
-import { PostCard } from "./post-card";
+import { PostCard, type ReplyPreview } from "./post-card";
 import { ProofCard, type Proof } from "./proof-card";
 import { FeedList, NewPosts } from "./feed-list";
 import { FeedRail } from "./rail";
@@ -151,14 +151,22 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
   const [copilotOn, guide] = await extrasP;
   const nextStep = guide?.member.find((s) => !s.done) ?? null;
   const ledClub = guide?.clubs[0] ? { id: guide.clubs[0].id, name: guide.clubs[0].name } : null;
-  const spotlight = <div className="py-2"><Suspense fallback={<StripSkeleton w={280} h={250} />}><SpotlightStrip /></Suspense></div>;
-  const peopleStrip = <div className="py-2"><Suspense fallback={<StripSkeleton w={200} h={250} />}><PeopleStrip field={profile.field} interests={interests} /></Suspense></div>;
+  const spotlight = <div className="py-2 empty:hidden"><Suspense fallback={<StripSkeleton w={280} h={250} />}><SpotlightStrip /></Suspense></div>;
+  const peopleStrip = <div className="py-2 empty:hidden"><Suspense fallback={<StripSkeleton w={200} h={250} />}><PeopleStrip field={profile.field} interests={interests} rows /></Suspense></div>;
   // The last round: project boxes, and which of these you've liked or saved, together.
-  const [projects, likes, saves] = await Promise.all([
+  const [projects, likes, saves, replyRows] = await Promise.all([
     projectsForPosts(supabase, posts),
     ids.length ? supabase.from("likes").select("post_id").eq("user_id", user.id).in("post_id", ids) : Promise.resolve({ data: [] }),
     ids.length ? supabase.from("saved").select("post_id").eq("user_id", user.id).in("post_id", ids) : Promise.resolve({ data: [] }),
+    // The latest replies, so conversations show (and continue) right in the feed.
+    ids.length ? supabase.from("comments").select("id, post_id, author_id, author_first, author_last, body, created_at").in("post_id", ids).order("created_at", { ascending: false }).limit(400) : Promise.resolve({ data: [] }),
   ]);
+  const replies = new Map<string, ReplyPreview[]>();
+  for (const c of (replyRows.data ?? []) as (ReplyPreview & { post_id: string })[]) {
+    const list = replies.get(c.post_id) ?? [];
+    if (list.length < 2) replies.set(c.post_id, [c, ...list]);
+  }
+  const viewer = { id: user.id, first: profile.first_name, last: profile.last_name };
   const liked = new Set((likes.data ?? []).map((l: { post_id: string }) => l.post_id));
   const saved = new Set((saves.data ?? []).map((l: { post_id: string }) => l.post_id));
   const href = (patch: { tab?: string; kind?: string; tag?: string }) => {
@@ -203,7 +211,7 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
           items={items.map((it, i) => ({
             key: `${it.type}:${it.type === "post" ? it.post.id : it.proof.id}`,
             node: it.type === "post"
-              ? <PostCard post={it.post} liked={liked.has(it.post.id)} saved={saved.has(it.post.id)} own={it.post.author_id === user.id} index={i} project={it.post.project_id ? projects[it.post.project_id] : null} reason={it.post.author_id === user.id ? "" : it.reason} />
+              ? <PostCard post={it.post} liked={liked.has(it.post.id)} saved={saved.has(it.post.id)} own={it.post.author_id === user.id} index={i} project={it.post.project_id ? projects[it.post.project_id] : null} reason={it.post.author_id === user.id ? "" : it.reason} replies={replies.get(it.post.id)} viewer={viewer} />
               : <ProofCard p={it.proof} reason={it.reason} />,
           }))}
           slots={discover ? { 1: spotlight, 4: peopleStrip } : {}}

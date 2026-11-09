@@ -43,3 +43,33 @@ export function PersonCard({ p }: { p: PersonCardData }) {
     </article>
   );
 }
+
+// A compact row for lists in the feed: photo, name, why they're suggested, one-tap Follow.
+export function PersonRow({ p }: { p: PersonCardData }) {
+  const [following, setFollowing] = useState(false);
+  const [pending, start] = useTransition();
+  return (
+    <li className="relative flex items-center gap-3 rounded-2xl px-2 py-2 transition hover:bg-hover">
+      <WithPresence id={p.id} dot="size-3"><Avatar first={p.first_name} last={p.last_name} size={40} src={p.avatar} /></WithPresence>
+      <span className="min-w-0 flex-1">
+        <Link href={`/u/${p.id}`} className="block truncate text-sm font-medium after:absolute after:inset-0 after:content-[''] hover:underline">{p.first_name} {p.last_name}</Link>
+        <span className="block truncate text-xs text-muted">{p.headline || p.field || "Forge member"}{p.shared && <span className="text-faint"> · {p.shared}</span>}</span>
+      </span>
+      <button
+        type="button"
+        disabled={pending}
+        aria-pressed={following}
+        onClick={() => start(async () => {
+          const next = !following;
+          setFollowing(next);
+          const r = await toggleFollow(p.id, next);
+          if (!r.ok) setFollowing(!next);
+        })}
+        className={cn("relative z-10 inline-flex h-8 shrink-0 items-center gap-1 rounded-full px-3.5 text-xs font-medium transition active:scale-95", following ? "border border-line text-text-2" : "bg-text text-bg")}
+      >
+        {pending ? <Loader2 className="size-3.5 animate-spin" /> : following ? <Check className="size-3.5" /> : <UserPlus className="size-3.5" />}
+        {following ? "Following" : "Follow"}
+      </button>
+    </li>
+  );
+}
