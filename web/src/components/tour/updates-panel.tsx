@@ -3,15 +3,19 @@ import { ArrowRight, Rocket, Sparkles } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/forge";
 import { UPDATES, updateDate } from "@/lib/tours";
+import { FeedbackForm } from "./feedback-form";
 import { UpdatesDialog } from "./tour-mount";
 
 const RECENT = UPDATES.filter((u) => u.kind !== "Next").slice(0, 4);
 const UPCOMING = UPDATES.filter((u) => u.kind === "Next").slice(0, 4);
 
-// Forge updates at the top right of the feed: what changed recently and what's coming next.
-// Each item opens the full note.
+const TABS = [["recent", "Recent"], ["upcoming", "Next"], ["feedback", "Feedback"]] as const;
+type Tab = (typeof TABS)[number][0];
+
+// Forge updates at the top right of the feed: what changed recently, what's coming next, and a
+// place to tell us what to build. Each update opens its full note.
 export function UpdatesPanel() {
-  const [tab, setTab] = useState<"recent" | "upcoming">("recent");
+  const [tab, setTab] = useState<Tab>("recent");
   const [open, setOpen] = useState<string | null>(null);
   const list = tab === "recent" ? RECENT : UPCOMING;
 
@@ -24,21 +28,25 @@ export function UpdatesPanel() {
         <button type="button" onClick={() => setOpen("")} className="ml-auto text-xs text-muted hover:text-text">See all</button>
       </div>
 
-      <div role="tablist" aria-label="Updates" className="relative mt-3 grid grid-cols-2 gap-1 rounded-xl bg-surface-2 p-1">
-        {(["recent", "upcoming"] as const).map((t) => (
+      <div role="tablist" aria-label="Updates" className="relative mt-3 grid grid-cols-3 gap-1 rounded-xl bg-surface-2 p-1">
+        {TABS.map(([t, label]) => (
           <button
             key={t}
             type="button"
             role="tab"
+            data-tour={t === "feedback" ? "feedback-tab" : undefined}
             aria-selected={tab === t}
             onClick={() => setTab(t)}
             className={cn("rounded-lg py-1.5 text-xs font-medium transition", tab === t ? "bg-surface text-text shadow-[var(--shadow)]" : "text-muted hover:text-text")}
           >
-            {t === "recent" ? "Recent" : "Coming next"}
+            {label}
           </button>
         ))}
       </div>
 
+      {tab === "feedback" ? (
+        <div role="tabpanel" aria-label="Send feedback" className="relative mt-3"><FeedbackForm compact /></div>
+      ) : (
       <ul role="tabpanel" aria-label={tab === "recent" ? "Recent changes" : "Coming next"} className="relative mt-2 flex flex-col">
         {list.map((u) => (
           <li key={u.id}>
@@ -58,6 +66,7 @@ export function UpdatesPanel() {
           </li>
         ))}
       </ul>
+      )}
 
       <UpdatesDialog open={open !== null} onClose={() => setOpen(null)} focusId={open || undefined} />
     </section>

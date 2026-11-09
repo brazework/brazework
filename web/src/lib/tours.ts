@@ -39,6 +39,19 @@ export const ROUTES = {
 
 export const UPDATES: ForgeUpdate[] = [
   {
+    id: "2026-11-09-feedback", date: "2026-11-09", kind: "New",
+    title: "Tell us what to build",
+    summary: "Send ideas, problems and praise straight to the Forge team from Forge updates.",
+    points: [
+      "Open the Feedback tab in Forge updates, or the bottom of the full updates list.",
+      "Similar ideas from different members are grouped together, so the most-requested ones rise to the top.",
+      "Your name is only shared with the team if you say they can contact you.",
+    ],
+    tour: [
+      { route: ROUTES.feed, target: "feedback-tab", title: "Tell us what to build", body: "Ideas, problems and praise go straight to the Forge team. Similar ideas are grouped, so popular ones rise to the top." },
+    ],
+  },
+  {
     id: "2026-11-09-milestones", date: "2026-11-09", kind: "New",
     title: "Club-verified milestones and your guide",
     summary: "Ask your club to vouch for what you built, and follow a short guide to a profile and club that get noticed.",

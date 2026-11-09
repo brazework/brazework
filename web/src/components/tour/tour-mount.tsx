@@ -7,6 +7,7 @@ import { Button } from "@/components/ui";
 import { cn } from "@/lib/forge";
 import { UPDATES, WELCOME, freshUpdates, onRoute, updateDate, welcomeSteps, whatsNewSteps, type TourStep } from "@/lib/tours";
 import { loadTourState, markToursSeen } from "./actions";
+import { FeedbackForm } from "./feedback-form";
 
 type Run = { steps: TourStep[]; keys: string[] };
 type Box = { top: number; left: number; width: number; height: number };
@@ -190,6 +191,10 @@ export function UpdatesDialog({ open, onClose, focusId }: { open: boolean; onClo
             <ol className="mt-2 space-y-3">{upcoming.map(item)}</ol>
           </>
         )}
+        <section aria-labelledby="updates-feedback" className="mt-6 border-t border-line pt-5">
+          <h3 id="updates-feedback" className="font-semibold">Tell us what to build</h3>
+          <div className="mt-2"><FeedbackForm /></div>
+        </section>
       </div>
     </div>
   );

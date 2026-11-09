@@ -71,7 +71,7 @@ Add `http://localhost:3000/auth/callback` to Supabase → Authentication → URL
 
 ## Database
 
-Run these in the Supabase SQL Editor, in this order: `schema.sql`, `messages.sql`, `events.sql`, `activity.sql`, `projects.sql`, `tours.sql`, `club-events.sql`, `media.sql`, `invites.sql`, `post-edits.sql`. (`copilot.sql` is optional and can run any time after `invites.sql`.) CI applies all of them to a fresh database on every pull request, so a broken migration fails there and not in production. What each table holds and who can touch it: [docs/data-model.md](docs/data-model.md).
+Run these in the Supabase SQL Editor, in this order: `schema.sql`, `messages.sql`, `events.sql`, `activity.sql`, `projects.sql`, `tours.sql`, `club-events.sql`, `media.sql`, `invites.sql`, `post-edits.sql`, `milestones.sql`, `feedback.sql`. (`copilot.sql` is optional and can run any time after `invites.sql`.) CI applies all of them to a fresh database on every pull request, so a broken migration fails there and not in production. What each table holds and who can touch it: [docs/data-model.md](docs/data-model.md).
 
 ## How we work
 

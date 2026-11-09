@@ -50,6 +50,17 @@ The database fills in names, counts and times itself, so the app can't fake them
 - `events.community_id`: an event is hosted by exactly one of an organization (`org_id`) or a community (`community_id`).
 - Community admins and owners (`can_host_community_events()`, rank 4+) create and edit their club's events. Members of approval-required communities are the only ones who see that club's events; public clubs' events are visible to everyone.
 
+## Member feedback (`supabase/feedback.sql`)
+
+Members send ideas, problems, improvements and praise from Forge updates (`submit_feedback()`, at most 10 a day).
+
+- `feedback`: kind, area of Forge, the text, whether the team may contact them, and which idea it belongs to. A member can read only their own.
+- `feedback_themes`: ideas. New feedback joins the closest existing idea in the same area (similar wording or at least half its meaningful words shared; a few synonyms like "laggy" and "slow" count as the same word), otherwise it starts a new idea with a plain-English name. Members can't see this table.
+- Grade (out of 9): demand (members who asked, up to 5) + pain (2 for a problem, 1 for a request) + momentum (1 if mentioned in the last 2 weeks) + breadth (1 if students and professionals both asked). A 7+, B 5-6, C 3-4, D 0-2.
+- Linear: `feedback_sync()` (after each submission and every 2 minutes via pg_cron) creates one task per idea in team Forge, project Forge v1, in Backlog, labelled Feedback plus Feature, Bug or Improvement. The task id is the idea's id, so new feedback updates the same task's description and adds a comment. Praise goes only to the log. It also keeps the "Forge feedback log" document in the project current. Founders approve (Todo, due date, owner) or deny (Canceled) in Linear. Titles, status, labels and dates are never overwritten.
+- Needs `linear_api_key` in Supabase Vault. Without it, feedback is stored and grouped and syncs once the key is added. Where it goes in Linear lives in `feedback_settings`.
+- `select public.feedback_log_markdown();` in the SQL Editor prints the same log as Markdown at any time.
+
 ## Post edits (`supabase/post-edits.sql`)
 
 `posts.edited_at`: set by the database when the author changes a post's text, type or topics, never by the app, so an edit can't be faked or hidden. Likes and comments don't touch it.
