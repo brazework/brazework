@@ -60,6 +60,7 @@ Members send ideas, problems, improvements and praise from Forge updates (`submi
 - Linear: `feedback_sync()` (after each submission and every 2 minutes via pg_cron) creates one task per idea in team Forge, project Forge v1, in Backlog, labelled Feedback plus Feature, Bug or Improvement. The task id is the idea's id, so new feedback updates the same task's description and adds a comment. Praise goes only to the log. It also keeps the "Forge feedback log" document in the project current. Founders approve (Todo, due date, owner) or deny (Canceled) in Linear. Titles, status, labels and dates are never overwritten.
 - Needs `linear_api_key` in Supabase Vault. Without it, feedback is stored and grouped and syncs once the key is added. Where it goes in Linear lives in `feedback_settings`.
 - `select public.feedback_log_markdown();` in the SQL Editor prints the same log as Markdown at any time.
+- Weekly review (`supabase/feedback-review.sql`): every Monday at 13:00 UTC (pg_cron job `forge-feedback-weekly-review`) the database creates one "Feedback review · week of …" task in Linear (Forge v1, Todo, label Feedback, due two days later) listing new ideas by grade, ideas more members asked for, and praise, with quotes. Weeks without feedback are skipped. Run it by hand with `select public.feedback_weekly_review();`, or preview the text with `select public.feedback_weekly_markdown();`.
 
 ## Post edits (`supabase/post-edits.sql`)
 
