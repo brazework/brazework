@@ -27,7 +27,7 @@ export function CoverBanner({ path, editable, userId }: { path?: string; editabl
     }
   };
   return (
-    <div className="group relative h-36 overflow-hidden border-b border-line sm:h-48">
+    <div className="group relative h-40 overflow-hidden border-b border-line sm:h-56">
       {path ? <Image src={mediaUrl(path)} alt="" fill sizes="(min-width: 768px) 768px, 100vw" className="object-cover" priority /> : <div className="bg-accent-grad absolute inset-0 opacity-80" />}
       {editable && (
         <>
@@ -67,11 +67,11 @@ export function ProfilePhoto({ path, first, last, editable, userId, size = 84 }:
   };
   return (
     <div className="relative">
-      <Avatar first={first} last={last} size={size} src={path ? mediaUrl(path) : null} className="border-4 border-surface text-2xl" />
+      <Avatar first={first} last={last} size={size} src={path ? mediaUrl(path) : null} className="border-4 border-surface text-3xl" />
       {editable && (
         <>
           <input ref={input} type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) void pick(f); }} />
-          <button type="button" onClick={() => input.current?.click()} disabled={busy} aria-label={path ? "Change profile photo" : "Add a profile photo"} className={cn("absolute right-0 bottom-0 grid size-8 place-items-center rounded-full border-2 border-surface bg-accent text-on-accent transition hover:opacity-90")}>
+          <button type="button" onClick={() => input.current?.click()} disabled={busy} aria-label={path ? "Change profile photo" : "Add a profile photo"} className={cn("absolute right-0 bottom-0 grid size-9 place-items-center rounded-full border-2 border-surface bg-accent-grad text-on-accent shadow-lg transition hover:scale-110 active:scale-95")}>
             {busy ? <Loader2 className="size-4 animate-spin" /> : <Camera className="size-4" />}
           </button>
           {error && <p role="alert" className="absolute top-full left-0 mt-2 w-56 text-xs text-danger">{error}</p>}

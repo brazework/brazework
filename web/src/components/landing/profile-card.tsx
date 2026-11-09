@@ -1,6 +1,7 @@
 import { BadgeCheck, Heart, MessageSquare } from "lucide-react";
 import { cn } from "@/lib/forge";
 import type { Profession } from "./professions";
+import { Schematic } from "./schematics";
 
 // A Forge profile as a visitor would see it, filled with a profession's example data.
 // No hooks, so it renders on the server (auth pages) and inside client components (hero).
@@ -8,8 +9,9 @@ export function ProfileCard({ p, className }: { p: Profession; className?: strin
   const Icon = p.icon;
   return (
     <article className={cn("w-full overflow-hidden rounded-3xl border border-line bg-surface text-left shadow-[0_30px_80px_-30px_rgba(0,0,0,0.35)]", className)}>
-      <div className="relative h-20" style={{ background: p.grad }}>
-        <span className="absolute top-3 right-3 rounded-full bg-black/25 px-2.5 py-1 font-mono text-[10px] tracking-wide text-white uppercase backdrop-blur">Example</span>
+      <div className="relative h-24 overflow-hidden" style={{ background: p.grad }}>
+        <Schematic id={p.id} className="sch-draw absolute top-1.5 right-3 h-[86px] w-auto text-white/90 drop-shadow-sm" />
+        <span className="absolute top-3 left-3 rounded-full bg-black/25 px-2.5 py-1 font-mono text-[10px] tracking-wide text-white uppercase backdrop-blur">Example</span>
       </div>
       <div className="px-5 pb-5">
         <div className="relative -mt-8 flex items-end gap-3">

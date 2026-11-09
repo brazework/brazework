@@ -95,7 +95,7 @@ export function Composer({ first, last, interests, userId, mediaEnabled = false,
       <AnimatePresence initial={false}>
         {open && (
           <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25 }} className="overflow-hidden">
-            {mediaEnabled && <AttachmentTray slots={att.slots} onRemove={att.remove} />}
+            {mediaEnabled && <AttachmentTray slots={att.slots} onRemove={att.remove} onEdit={att.edit} compare={att.compare} onCompare={att.setCompare} />}
 
             <div role="radiogroup" aria-label="Post type" className="mt-4 inline-flex flex-wrap gap-1 rounded-full bg-surface-2 p-1">
               {POST_KINDS.map((k) => {

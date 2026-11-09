@@ -1,13 +1,14 @@
 "use client";
 import { motion } from "motion/react";
-import { Building2, Quote, RotateCw, Users } from "lucide-react";
+import { Building2, Quote, RotateCw, Undo2, Users } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/forge";
 import { PROFESSIONS, type Profession } from "./professions";
+import { Schematic } from "./schematics";
 
-// One flip card per tech profession: the front says what the field is, the back shows what
-// you'd post, which clubs it fits and who's looking. Hover flips it with a mouse; tap or
-// Enter flips it everywhere. Both faces share one grid cell, so every card is the same size.
+// One flip card per STEM field. The front is the field's schematic, which draws itself as it
+// scrolls in and redraws on hover; tapping flips the card to what you'd post, which clubs it fits
+// and who's looking. Both faces share one grid cell, so every card is the same size.
 export function ProfessionGrid() {
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -27,26 +28,25 @@ export function ProfessionGrid() {
 }
 
 function FlipCard({ p }: { p: Profession }) {
-  const [pinned, setPinned] = useState(false);
-  const [hover, setHover] = useState(false);
-  const flipped = pinned || hover;
+  const [flipped, setFlipped] = useState(false);
   const face = "rounded-3xl border border-line bg-surface p-6 [grid-area:1/1] [backface-visibility:hidden]";
   return (
     <button
       type="button"
-      aria-pressed={pinned}
+      aria-pressed={flipped}
       aria-label={`${p.title}: ${flipped ? "showing details" : "show details"}`}
-      onClick={() => setPinned((v) => !v)}
-      onPointerEnter={(e) => e.pointerType === "mouse" && setHover(true)}
-      onPointerLeave={() => setHover(false)}
+      onClick={() => setFlipped((v) => !v)}
       className="group block h-full w-full text-left [perspective:1400px]"
     >
       <div className={cn("grid h-full transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] [transform-style:preserve-3d]", flipped && "[transform:rotateY(180deg)]")}>
-        <div className={cn(face, "spotlight flex flex-col transition-shadow group-hover:shadow-[var(--shadow)]")}>
-          <span className="grid size-12 place-items-center rounded-2xl text-white shadow-lg" style={{ background: p.grad }}>
-            <p.icon className="size-6" />
-          </span>
-          <h3 className="mt-5 text-lg font-semibold tracking-tight">{p.title}</h3>
+        <div className={cn(face, "spotlight flex flex-col transition duration-300 group-hover:-translate-y-0.5 group-hover:shadow-[var(--shadow)]")}>
+          <div className="relative -mx-2 -mt-1 h-28 text-text/75 transition-colors duration-300 group-hover:text-text">
+            <Schematic id={p.id} className="sch-scroll sch-hover h-full w-full" />
+          </div>
+          <h3 className="mt-4 flex items-center gap-2 text-lg font-semibold tracking-tight">
+            <span className="grid size-7 shrink-0 place-items-center rounded-lg text-white" style={{ background: p.grad }}><p.icon className="size-4" /></span>
+            {p.title}
+          </h3>
           <p className="mt-1.5 flex-1 text-sm leading-relaxed text-muted">{p.blurb}</p>
           <span className="mt-5 inline-flex items-center gap-1.5 text-xs font-medium text-faint transition group-hover:text-text">
             <RotateCw className="size-3.5" /> See what you&apos;d post
@@ -67,6 +67,7 @@ function FlipCard({ p }: { p: Profession }) {
           <div className="mt-auto">
             <div className="flex items-center gap-1.5 text-xs font-medium text-faint"><Building2 className="size-3.5" /> Who&apos;s looking</div>
             <p className="mt-1.5 text-sm text-text-2">{p.lookingFor}</p>
+            <span className="mt-3 inline-flex items-center gap-1 text-xs text-faint"><Undo2 className="size-3.5" /> Tap to flip back</span>
           </div>
         </div>
       </div>

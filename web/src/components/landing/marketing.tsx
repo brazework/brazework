@@ -29,7 +29,7 @@ function Head({ eyebrow, title, accent, body, center }: { eyebrow: string; title
   );
 }
 
-const CLUB_TYPES = ["Robotics teams", "ACM chapters", "IEEE branches", "Hackathon clubs", "AI societies", "Cyber defense teams", "Rocketry", "Formula SAE", "Data science clubs", "Design clubs", "Women in Tech", "Game dev clubs", "Cloud clubs", "Maker spaces"];
+const CLUB_TYPES = ["Formula SAE", "Rocketry clubs", "ASCE chapters", "IEEE branches", "AIChE chapters", "BMES chapters", "iGEM teams", "SPS chapters", "ACS chapters", "Math clubs", "Robotics teams", "Engineers Without Borders", "SWE · NSBE · SHPE", "ACM chapters", "Solar car teams", "Concrete canoe", "CubeSat teams", "Hackathon clubs"];
 
 // A slow strip of the kinds of clubs Forge is built for (types, not partners).
 export function ClubStrip() {
@@ -48,7 +48,7 @@ export function Builders() {
   return (
     <section id="builders" className="scroll-mt-24 py-24 sm:py-32">
       <div className="mx-auto max-w-7xl px-6">
-        <Head eyebrow="Every kind of builder" title="Whatever you build in tech," accent="there's a place for it here." body="Flip a card to see what you'd post, which clubs it fits and who's looking for it." />
+        <Head eyebrow="Every field in STEM" title="Engineering, science, math or code," accent="there's a place for what you build." body="Hover a field to watch its schematic draw. Tap to see what you'd post, which clubs it fits and who's looking." />
         <div className="mt-12"><ProfessionGrid /></div>
       </div>
     </section>

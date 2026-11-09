@@ -30,19 +30,59 @@ language sql immutable as $$
   select p = '' or (char_length(p) <= 300 and p ~ ('^' || owner::text || '/[A-Za-z0-9._-]+$'))
 $$;
 
--- Post media: [{ "type": "image" | "video", "path": "<uid>/<file>", "w": 1600, "h": 900 }],
--- up to 4 images, or exactly 1 video.
+-- Post media: up to 4 photos, or exactly 1 video. Each item:
+--   { "type": "image" | "video", "path": "<uid>/<file>", "w": 1600, "h": 900,
+--     "alt":   "what the photo shows" (photos, <= 200 chars),
+--     "notes": [{ "x": 0.42, "y": 0.31, "t": "Servo mount" }]   callouts pinned on a photo (<= 6, x/y in 0..1),
+--     "marks": [{ "s": 3.2, "t": "Ignition" }]                   moments on a video's timeline (<= 8, 0..3600 s),
+--     "cmp":   true                                               both photos of a 2-photo before/after post }
+-- Unknown keys are rejected. Types are checked before values are read, so bad input returns false
+-- instead of raising a cast error.
 create function public.post_media_ok(m jsonb, owner uuid) returns boolean
-language sql immutable as $$
-  select jsonb_typeof(m) = 'array'
-    and jsonb_array_length(m) <= 4
-    and not exists (
-      select 1 from jsonb_array_elements(m) e
-      where jsonb_typeof(e) <> 'object'
-         or coalesce(e->>'type', '') not in ('image', 'video')
-         or not public.media_path_ok(coalesce(e->>'path', ''), owner)
-         or coalesce(e->>'path', '') = '')
-    and (not exists (select 1 from jsonb_array_elements(m) e where e->>'type' = 'video') or jsonb_array_length(m) = 1)
+language plpgsql immutable as $$
+declare
+  e jsonb;
+  n jsonb;
+  images int := 0;
+  videos int := 0;
+  cmps int := 0;
+begin
+  if m is null or jsonb_typeof(m) <> 'array' or jsonb_array_length(m) > 4 then return false; end if;
+  for e in select value from jsonb_array_elements(m) loop
+    if jsonb_typeof(e) <> 'object' then return false; end if;
+    if exists (select 1 from jsonb_object_keys(e) k where k not in ('type', 'path', 'w', 'h', 'alt', 'notes', 'marks', 'cmp')) then return false; end if;
+    if coalesce(e->>'type', '') not in ('image', 'video') then return false; end if;
+    if jsonb_typeof(e->'path') is distinct from 'string' or e->>'path' = '' or not public.media_path_ok(e->>'path', owner) then return false; end if;
+    if (e ? 'w' and jsonb_typeof(e->'w') <> 'number') or (e ? 'h' and jsonb_typeof(e->'h') <> 'number') then return false; end if;
+    if e ? 'alt' then
+      if jsonb_typeof(e->'alt') <> 'string' or char_length(e->>'alt') > 200 then return false; end if;
+    end if;
+    if e ? 'notes' then
+      if e->>'type' <> 'image' or jsonb_typeof(e->'notes') <> 'array' or jsonb_array_length(e->'notes') > 6 then return false; end if;
+      for n in select value from jsonb_array_elements(e->'notes') loop
+        if jsonb_typeof(n) <> 'object' then return false; end if;
+        if jsonb_typeof(n->'x') is distinct from 'number' or jsonb_typeof(n->'y') is distinct from 'number' or jsonb_typeof(n->'t') is distinct from 'string' then return false; end if;
+        if (n->>'x')::numeric not between 0 and 1 or (n->>'y')::numeric not between 0 and 1 or char_length(btrim(n->>'t')) not between 1 and 80 then return false; end if;
+      end loop;
+    end if;
+    if e ? 'marks' then
+      if e->>'type' <> 'video' or jsonb_typeof(e->'marks') <> 'array' or jsonb_array_length(e->'marks') > 8 then return false; end if;
+      for n in select value from jsonb_array_elements(e->'marks') loop
+        if jsonb_typeof(n) <> 'object' then return false; end if;
+        if jsonb_typeof(n->'s') is distinct from 'number' or jsonb_typeof(n->'t') is distinct from 'string' then return false; end if;
+        if (n->>'s')::numeric not between 0 and 3600 or char_length(btrim(n->>'t')) not between 1 and 60 then return false; end if;
+      end loop;
+    end if;
+    if e ? 'cmp' then
+      if jsonb_typeof(e->'cmp') <> 'boolean' then return false; end if;
+      if (e->'cmp')::boolean then cmps := cmps + 1; end if;
+    end if;
+    if e->>'type' = 'image' then images := images + 1; else videos := videos + 1; end if;
+  end loop;
+  if videos > 0 and jsonb_array_length(m) <> 1 then return false; end if;
+  if cmps > 0 and not (cmps = 2 and images = 2 and jsonb_array_length(m) = 2) then return false; end if;
+  return true;
+end
 $$;
 
 -- ---------- Profiles: photo and cover ----------

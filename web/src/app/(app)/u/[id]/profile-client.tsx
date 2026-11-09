@@ -1,5 +1,6 @@
 "use client";
-import { ExternalLink, Loader2, Lock, Pencil, Plus, Share2, Trash2, X } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
+import { CheckCircle2, ExternalLink, Loader2, Lock, Pencil, Plus, Share2, Trash2, X } from "lucide-react";
 import { useActionState, useEffect, useRef, useState, useTransition } from "react";
 import { chipCls } from "@/components/app/page-ui";
 import { Button, Field, inputCls } from "@/components/ui";
@@ -66,25 +67,34 @@ export function ProjectCard({ project, own, interests }: { project: ProjectView;
   const act = (fn: () => Promise<ProjectState>) => start(async () => { const r = await fn(); setMsg(r.ok ? r.message : r.message); });
 
   return (
-    <article className="flex flex-col rounded-3xl border border-line bg-surface/70 p-5 transition hover:border-line-strong">
+    <article className="grad-edge group relative flex h-full flex-col overflow-hidden rounded-3xl border p-5 pt-6 shadow-[var(--shadow)] transition duration-300 hover:-translate-y-1">
+      <span className="absolute inset-x-0 top-0 h-1.5" style={{ background: stripe(project) }} aria-hidden="true" />
       <div className="flex items-start justify-between gap-3">
-        <h3 className="font-semibold">{project.title}</h3>
+        <h3 className="text-lg font-semibold tracking-tight">{project.title}</h3>
         {project.private && <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-line px-2 py-0.5 text-[11px] text-muted"><Lock className="size-3" /> Private</span>}
       </div>
-      <p className="mt-1 text-xs text-faint">{meta(project)}</p>
+      <p className="mt-1.5 flex items-center gap-1.5 text-xs text-muted">
+        {project.status === "completed" ? <CheckCircle2 className="size-3.5 text-ok" /> : <span className="relative flex size-2"><span className="absolute inset-0 animate-ping rounded-full bg-accent opacity-50" /><span className="relative size-2 rounded-full bg-accent" /></span>}
+        {meta(project)}
+      </p>
       <p className="mt-3 text-sm leading-relaxed text-text-2">{project.summary}</p>
-      {project.tags.length > 0 && <div className="mt-3 flex flex-wrap gap-1.5">{project.tags.map((t) => <span key={t} className={chipCls}>#{t}</span>)}</div>}
+      {project.tags.length > 0 && <div className="mt-3 flex flex-wrap gap-1.5">{project.tags.map((t) => <span key={t} className="rounded-full bg-surface-2 px-2.5 py-0.5 text-xs text-text-2">#{t}</span>)}</div>}
       {(project.details || link) && (
-        <button onClick={() => setOpen((v) => !v)} aria-expanded={open} className="mt-4 self-start text-sm text-muted underline-offset-4 hover:text-text hover:underline">
+        <button onClick={() => setOpen((v) => !v)} aria-expanded={open} className="mt-4 inline-flex items-center gap-1.5 self-start rounded-full bg-surface-2 px-3 py-1.5 text-xs font-medium text-text-2 transition hover:bg-hover hover:text-text">
           {open ? "Hide write-up" : "Read the write-up"}
+          <motion.span animate={{ rotate: open ? 45 : 0 }} className="inline-flex"><Plus className="size-3.5" /></motion.span>
         </button>
       )}
-      {open && (
-        <div className="mt-3 rounded-2xl border border-line bg-surface-2 p-4 text-sm leading-relaxed whitespace-pre-wrap text-text-2">
-          {project.details}
-          {link && <a href={link} target="_blank" rel="noopener noreferrer nofollow" className="mt-3 flex items-center gap-1.5 text-text underline underline-offset-4"><ExternalLink className="size-3.5" /> {new URL(link).hostname}</a>}
-        </div>
-      )}
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25 }} className="overflow-hidden">
+            <div className="mt-3 rounded-2xl border border-line bg-surface-2 p-4 text-sm leading-relaxed whitespace-pre-wrap text-text-2">
+              {project.details}
+              {link && <a href={link} target="_blank" rel="noopener noreferrer nofollow" className="mt-3 flex items-center gap-1.5 text-text underline underline-offset-4"><ExternalLink className="size-3.5" /> {new URL(link).hostname}</a>}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       {own && (
         <div className="mt-auto flex flex-wrap items-center gap-1 pt-4">
           <IconBtn label="Edit" onClick={() => setEditing(true)}><Pencil className="size-4" /></IconBtn>
@@ -97,6 +107,51 @@ export function ProjectCard({ project, own, interests }: { project: ProjectView;
       {sharing && <ShareBox id={project.id} title={project.title} onDone={(m) => { setSharing(false); setMsg(m); }} />}
       {editing && <ProjectDialog project={project} interests={interests} onClose={() => setEditing(false)} />}
     </article>
+  );
+}
+
+// Each project gets a stable colour strip from its first topic (or title), so a grid of them reads at a glance.
+const STRIPES = ["linear-gradient(90deg,#6366f1,#38bdf8)", "linear-gradient(90deg,#8b5cf6,#ec4899)", "linear-gradient(90deg,#06b6d4,#10b981)", "linear-gradient(90deg,#f59e0b,#ef4444)", "linear-gradient(90deg,#ec4899,#f97316)", "linear-gradient(90deg,#eab308,#22c55e)"];
+function stripe(p: ProjectView) {
+  let h = 0;
+  for (const ch of p.tags[0] ?? p.title) h = (h * 31 + ch.charCodeAt(0)) >>> 0;
+  return STRIPES[h % STRIPES.length];
+}
+
+const FILTERS = [
+  { id: "all", label: "All" },
+  { id: "in_progress", label: "In progress" },
+  { id: "completed", label: "Completed" },
+] as const;
+
+// The project grid with All / In progress / Completed filters; cards glide into their new spots.
+export function ProjectGrid({ projects, own, interests }: { projects: ProjectView[]; own: boolean; interests: string[] }) {
+  const [filter, setFilter] = useState<(typeof FILTERS)[number]["id"]>("all");
+  const shown = filter === "all" ? projects : projects.filter((p) => p.status === filter);
+  const count = (id: string) => (id === "all" ? projects.length : projects.filter((p) => p.status === id).length);
+  return (
+    <>
+      {projects.length > 1 && (
+        <div role="radiogroup" aria-label="Filter projects" className="mb-4 inline-flex gap-1 rounded-full bg-surface-2 p-1">
+          {FILTERS.map((f) => (
+            <button key={f.id} type="button" role="radio" aria-checked={filter === f.id} onClick={() => setFilter(f.id)} className={cn("relative rounded-full px-3.5 py-1.5 text-xs font-medium transition", filter === f.id ? "text-on-accent" : "text-muted hover:text-text")}>
+              {filter === f.id && <motion.span layoutId="project-filter" className="bg-accent-grad absolute inset-0 rounded-full" transition={{ type: "spring", stiffness: 420, damping: 34 }} />}
+              <span className="relative">{f.label} · {count(f.id)}</span>
+            </button>
+          ))}
+        </div>
+      )}
+      <motion.div layout className="grid gap-4 sm:grid-cols-2">
+        <AnimatePresence mode="popLayout" initial={false}>
+          {shown.map((pr) => (
+            <motion.div key={pr.id} layout initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} transition={{ duration: 0.25 }}>
+              <ProjectCard project={pr} own={own} interests={interests} />
+            </motion.div>
+          ))}
+        </AnimatePresence>
+      </motion.div>
+      {projects.length > 0 && !shown.length && <p className="text-sm text-muted">No {filter === "completed" ? "completed" : "in-progress"} projects yet.</p>}
+    </>
   );
 }
 
@@ -164,7 +219,7 @@ function ProjectDialog({ project, interests, onClose }: { project?: ProjectView;
         <div className="flex flex-wrap items-end gap-3">
           <div role="group" aria-label="Status" className="flex gap-1.5">
             {(["in_progress", "completed"] as const).map((s) => (
-              <button key={s} type="button" aria-pressed={status === s} onClick={() => setStatus(s)} className="rounded-full border border-line px-3.5 py-1.5 text-sm text-muted transition aria-pressed:border-accent aria-pressed:bg-accent aria-pressed:text-on-accent">
+              <button key={s} type="button" aria-pressed={status === s} onClick={() => setStatus(s)} className="rounded-full border border-line px-3.5 py-1.5 text-sm text-muted transition aria-pressed:border-transparent aria-pressed:bg-accent-grad aria-pressed:text-on-accent">
                 {s === "completed" ? "Completed" : "In progress"}
               </button>
             ))}

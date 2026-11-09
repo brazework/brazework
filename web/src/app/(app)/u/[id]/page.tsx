@@ -1,19 +1,21 @@
 import type { Metadata } from "next";
-import { BarChart3, FolderGit2, Lock } from "lucide-react";
+import { BarChart3, FolderGit2, Lock, MessageSquare } from "lucide-react";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
-import { EmptyState, Panel, Skeleton, chipCls } from "@/components/app/page-ui";
+import { CopyLink } from "@/components/app/copy-link";
+import { CountUp } from "@/components/app/count-up";
+import { EmptyState, Panel, Skeleton } from "@/components/app/page-ui";
+import { SwitchTabs } from "@/components/app/switch-tabs";
 import { ConnectButtons } from "@/components/network/connect-buttons";
 import { getNetworkCounts, getRelationship } from "@/components/network/queries";
-import { Kicker } from "@/components/ui";
 import { type Post, type Profile } from "@/lib/forge";
 import { recordProfileView } from "@/lib/network";
 import { postSelect } from "@/lib/db-features";
 import { getViewer } from "@/lib/supabase/server";
 import { PostCard } from "../../feed/post-card";
 import { CoverBanner, ProfilePhoto } from "@/components/media/profile-media";
-import { EditBasics, ProjectCard, ProjectEditor, type ProjectView } from "./profile-client";
+import { EditBasics, ProjectEditor, ProjectGrid, type ProjectView } from "./profile-client";
 
 export const metadata: Metadata = { title: "Profile" };
 
@@ -71,41 +73,62 @@ async function ProfileView({ params }: { params: PageProps<"/u/[id]">["params"] 
 
   const name = `${p.first_name} ${p.last_name}`.trim();
   const joined = new Date(p.created_at).toLocaleDateString("en-US", { month: "long", year: "numeric" });
-  const stat = (n: number | null, label: string, href?: string) => {
-    const body = (
-      <>
-        <span className="font-semibold tabular-nums text-text">{n ?? "—"}</span> <span className="text-muted">{label}</span>
-      </>
-    );
-    return href ? <Link href={href} className="hover:underline">{body}</Link> : <span>{body}</span>;
-  };
+  const stats: { n: number | null; label: string; href?: string }[] = [
+    { n: projects.length, label: projects.length === 1 ? "Project" : "Projects", href: "#projects" },
+    { n: posts.length, label: posts.length === 1 ? "Post" : "Posts", href: "#posts" },
+    { n: counts.connections, label: "Connections", href: own ? "/network?tab=connections" : undefined },
+    { n: counts.followers, label: "Followers", href: own ? "/network?tab=followers" : undefined },
+    { n: counts.following, label: "Following", href: own ? "/network?tab=following" : undefined },
+  ];
 
   return (
     <>
       <Panel className="relative overflow-hidden p-0">
         <CoverBanner path={p.cover_path} editable={own && mediaOn} userId={user.id} />
         <div className="px-6 pb-6">
-          <div className="-mt-10 flex flex-wrap items-end relative z-10 justify-between gap-4">
-            <ProfilePhoto path={p.avatar_path} first={p.first_name} last={p.last_name} editable={own && mediaOn} userId={user.id} />
-            {own ? (
-              <Link href="/analytics" data-tour="analytics" className="inline-flex h-9 items-center gap-1.5 rounded-full border border-line px-4 text-sm transition hover:bg-hover">
-                <BarChart3 className="size-4" /> Analytics
-              </Link>
-            ) : (
-              rel && <ConnectButtons personId={p.id} firstName={p.first_name} relationship={rel} />
-            )}
+          <div className="relative z-10 -mt-14 flex flex-wrap items-end justify-between gap-4">
+            <div className="rounded-full bg-accent-grad p-1 shadow-[var(--shadow)]">
+              <ProfilePhoto path={p.avatar_path} first={p.first_name} last={p.last_name} editable={own && mediaOn} userId={user.id} size={104} />
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <CopyLink path={`/u/${p.id}`} label="Share" />
+              {own ? (
+                <Link href="/analytics" data-tour="analytics" className="inline-flex h-10 items-center gap-1.5 rounded-full border border-line bg-surface px-4 text-sm transition hover:bg-hover active:scale-95">
+                  <BarChart3 className="size-4" /> Analytics
+                </Link>
+              ) : (
+                rel && <ConnectButtons personId={p.id} firstName={p.first_name} relationship={rel} />
+              )}
+            </div>
           </div>
-          <h1 className="mt-4 text-2xl font-semibold tracking-tight">{name || "Forge member"}</h1>
-          {p.headline && <p className="mt-1 text-text-2">{p.headline}</p>}
-          <p className="mt-2 text-sm text-faint">
+          <h1 className="mt-4 text-3xl font-semibold tracking-tight">{name || "Forge member"}</h1>
+          {p.headline && <p className="mt-1 text-lg text-text-2">{p.headline}</p>}
+          <p className="mt-2 text-sm text-muted">
             {p.account_type === "student" ? "Student" : "Professional"}
             {p.field && ` · ${p.field}`} · Joined {joined}
           </p>
-          <div className="mt-4 flex flex-wrap gap-x-5 gap-y-1 text-sm">
-            {stat(counts.connections, "connections", own ? "/network?tab=connections" : undefined)}
-            {stat(counts.followers, "followers", own ? "/network?tab=followers" : undefined)}
-            {stat(counts.following, "following", own ? "/network?tab=following" : undefined)}
-          </div>
+
+          <ul className="mt-5 grid grid-cols-3 gap-2 sm:grid-cols-5">
+            {stats.map((st) => {
+              const inner = (
+                <>
+                  <span className="block text-2xl font-semibold tracking-tight">{st.n === null ? "—" : <CountUp to={st.n} />}</span>
+                  <span className="block text-xs text-muted">{st.label}</span>
+                </>
+              );
+              const cls = "block rounded-2xl border border-line bg-surface-2/60 px-3 py-3 text-center transition";
+              const lift = "hover:-translate-y-0.5 hover:border-line-strong hover:bg-surface hover:shadow-[var(--shadow)] active:scale-95";
+              return (
+                <li key={st.label}>
+                  {st.href ? (
+                    // In-page tabs (#projects) need a plain anchor so the hashchange reaches the tabs.
+                    st.href.startsWith("#") ? <a href={st.href} className={`${cls} ${lift}`}>{inner}</a> : <Link href={st.href} className={`${cls} ${lift}`}>{inner}</Link>
+                  ) : <div className={cls}>{inner}</div>}
+                </li>
+              );
+            })}
+          </ul>
+
           {own ? (
             <EditBasics headline={p.headline} bio={p.bio} />
           ) : (
@@ -113,38 +136,60 @@ async function ProfileView({ params }: { params: PageProps<"/u/[id]">["params"] 
           )}
           {p.interests?.length > 0 && (
             <div className="mt-5 flex flex-wrap gap-1.5">
-              {p.interests.map((t) => <span key={t} className={chipCls}>#{t}</span>)}
+              {p.interests.map((t) => <Link key={t} href={`/feed?tab=latest&tag=${encodeURIComponent(t)}`} className="rounded-full border border-line bg-surface px-3 py-1 text-xs text-text-2 transition hover:border-transparent hover:bg-accent-grad hover:text-on-accent active:scale-95">#{t}</Link>)}
             </div>
           )}
         </div>
       </Panel>
 
-      <section id="projects" data-tour="projects-tab" className="mt-10 scroll-mt-24">
-        <div className="flex items-center justify-between">
-          <Kicker>Projects</Kicker>
-          {own && <ProjectEditor interests={p.interests ?? []} />}
-        </div>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">
-          {projects.map((pr) => <ProjectCard key={pr.id} project={pr} own={own} interests={p.interests ?? []} />)}
-        </div>
-        {!projects.length && (
-          <EmptyState
-            icon={<FolderGit2 className="size-5" />}
-            title={own ? "Show what you've built" : "No projects yet"}
-            body={own ? "Add a project with a summary, what you did and a link. Keep the write-up private and share only the card if you like." : undefined}
-          />
-        )}
-        {projects.some((x) => x.private) && !own && (
-          <p className="mt-3 flex items-center gap-1.5 text-xs text-faint"><Lock className="size-3" /> Private projects show their card only.</p>
-        )}
-      </section>
-
-      <section className="mt-10">
-        <Kicker>Posts</Kicker>
-        <div className="mt-4 flex flex-col gap-4">
-          {posts.map((post, i) => <PostCard key={post.id} post={post} liked={liked.has(post.id)} own={own} index={i} project={post.project_id ? byId[post.project_id] ?? null : null} />)}
-          {!posts.length && <EmptyState title={own ? "You haven't posted yet" : "No posts yet"} body={own ? "Share an update, a question or a result from the feed." : undefined} />}
-        </div>
+      <section id="projects" data-tour="projects-tab" className="mt-8 scroll-mt-24">
+        <SwitchTabs
+          name="Profile"
+          items={[
+            {
+              id: "projects", label: "Projects", count: projects.length,
+              content: (
+                <>
+                  {own && <div className="mb-4 flex items-center justify-between gap-3 rounded-3xl border border-dashed border-line-strong bg-surface/60 p-4"><p className="text-sm text-muted">Show what you&apos;ve built: a summary everyone sees, and a write-up you can keep private.</p><ProjectEditor interests={p.interests ?? []} /></div>}
+                  <ProjectGrid projects={projects} own={own} interests={p.interests ?? []} />
+                  {!projects.length && (
+                    <EmptyState
+                      icon={<FolderGit2 className="size-6" />}
+                      title={own ? "Show what you've built" : "No projects yet"}
+                      body={own ? "Add a project with a summary, what you did and a link. Keep the write-up private and share only the card if you like." : undefined}
+                    />
+                  )}
+                  {projects.some((x) => x.private) && !own && (
+                    <p className="mt-3 flex items-center gap-1.5 text-xs text-faint"><Lock className="size-3" /> Private projects show their card only.</p>
+                  )}
+                </>
+              ),
+            },
+            {
+              id: "posts", label: "Posts", count: posts.length,
+              content: (
+                <div className="flex flex-col gap-4">
+                  {posts.map((post, i) => <PostCard key={post.id} post={post} liked={liked.has(post.id)} own={own} index={i} project={post.project_id ? byId[post.project_id] ?? null : null} />)}
+                  {!posts.length && <EmptyState icon={<MessageSquare className="size-6" />} title={own ? "You haven't posted yet" : "No posts yet"} body={own ? "Share an update, a question or a result from the feed." : undefined} action={own ? <Link href="/feed" className="text-sm underline underline-offset-4">Go to the feed</Link> : undefined} />}
+                </div>
+              ),
+            },
+            {
+              id: "about", label: "About",
+              content: (
+                <Panel className="p-6">
+                  <dl className="grid gap-5 sm:grid-cols-2">
+                    <div><dt className="text-xs font-medium text-faint">Role</dt><dd className="mt-1">{p.account_type === "student" ? "Student" : "Professional"}</dd></div>
+                    <div><dt className="text-xs font-medium text-faint">Field</dt><dd className="mt-1">{p.field || "—"}</dd></div>
+                    <div><dt className="text-xs font-medium text-faint">On Forge since</dt><dd className="mt-1">{joined}</dd></div>
+                    <div><dt className="text-xs font-medium text-faint">Interests</dt><dd className="mt-1">{p.interests?.length ? p.interests.map((t) => `#${t}`).join("  ") : "—"}</dd></div>
+                  </dl>
+                  {p.bio && <><div className="mt-6 text-xs font-medium text-faint">Bio</div><p className="mt-1 text-[15px] leading-relaxed whitespace-pre-wrap text-text-2">{p.bio}</p></>}
+                </Panel>
+              ),
+            },
+          ]}
+        />
       </section>
     </>
   );
@@ -153,9 +198,9 @@ async function ProfileView({ params }: { params: PageProps<"/u/[id]">["params"] 
 function ProfileSkeleton() {
   return (
     <div aria-busy="true">
-      <Skeleton className="h-80" />
-      <Skeleton className="mt-10 h-40" />
-      <Skeleton className="mt-10 h-56" />
+      <Skeleton className="h-[440px]" />
+      <Skeleton className="mt-8 h-12" />
+      <div className="mt-6 grid gap-4 sm:grid-cols-2"><Skeleton className="h-48" /><Skeleton className="h-48" /></div>
     </div>
   );
 }

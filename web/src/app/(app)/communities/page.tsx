@@ -4,11 +4,9 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { EmptyState, PageHeader, Panel, Skeleton, Tabs } from "@/components/app/page-ui";
-import { COMMUNITY_COLS, PRIVACY_LABEL, TYPE_LABEL, membersLabel, type Community, type Role } from "@/lib/communities";
-import Image from "next/image";
-import { mediaUrl } from "@/lib/media";
+import { COMMUNITY_COLS, type Community, type Role } from "@/lib/communities";
 import { getViewer } from "@/lib/supabase/server";
-import { CommunityBadge, MetaLine, RoleChip } from "./_components/badge";
+import { CommunityGrid } from "./community-grid";
 import { CreateCommunity } from "./create-form";
 
 export const metadata: Metadata = { title: "Communities" };
@@ -37,30 +35,11 @@ async function Communities({ searchParams }: { searchParams: PageProps<"/communi
   const tab = sp.tab === "discover" || sp.tab === "create" ? sp.tab : joined.length ? "mine" : "discover";
   const joinedIds = new Set(joined.map((j) => j.c.id));
   const interests = new Set<string>(profile.interests ?? []);
-  let discover = ((top.data ?? []) as Community[]).filter((c) => !joinedIds.has(c.id));
-  if (q) discover = discover.filter((c) => `${c.name} ${c.about} ${c.field} ${(c.topics ?? []).join(" ")}`.toLowerCase().includes(q.toLowerCase()));
+  // Search runs in the grid as you type; ?q= just pre-fills it.
+  const discover = ((top.data ?? []) as Community[]).filter((c) => !joinedIds.has(c.id));
   // Communities in your field or topics first, then the biggest.
   const fit = (c: Community) => (c.topics ?? []).filter((t) => interests.has(t)).length * 2 + (c.field === profile.field ? 1 : 0);
   discover.sort((a, b) => fit(b) - fit(a) || b.member_count - a.member_count);
-
-  const card = (c: Community, role?: Role) => (
-    <Link key={c.id} href={`/c/${c.id}`} className="grad-edge group flex flex-col overflow-hidden rounded-3xl border shadow-[var(--shadow)] transition duration-300 hover:-translate-y-1">
-      <div className="relative h-24 overflow-hidden border-b border-line">
-        {c.cover_path ? <Image src={mediaUrl(c.cover_path)} alt="" fill sizes="(min-width: 640px) 440px, 100vw" className="object-cover transition duration-500 group-hover:scale-105" /> : <div className="bg-accent-grad absolute inset-0 opacity-80 transition duration-500 group-hover:opacity-100" />}
-      </div>
-      <div className="flex gap-4 p-5">
-      <CommunityBadge id={c.id} name={c.name} className="relative z-10 -mt-11 border-4 border-surface shadow-[var(--shadow)]" />
-      <div className="min-w-0 flex-1">
-        <div className="flex items-center gap-2">
-          <span className="truncate font-semibold group-hover:underline">{c.name}</span>
-          {role && role !== "member" && <RoleChip role={role} />}
-        </div>
-        <MetaLine parts={[membersLabel(c.member_count), PRIVACY_LABEL[c.privacy], c.field, TYPE_LABEL[c.type]]} />
-        <p className="mt-2 line-clamp-2 text-sm text-text-2">{c.about}</p>
-      </div>
-      </div>
-    </Link>
-  );
 
   return (
     <>
@@ -73,21 +52,19 @@ async function Communities({ searchParams }: { searchParams: PageProps<"/communi
         ]} />
       </div>
       <div className="mt-6">
-        {tab === "mine" &&
-          (joined.length ? <div className="grid gap-3 sm:grid-cols-2">{joined.map((j) => card(j.c, j.role))}</div> : (
-            <EmptyState icon={<Users className="size-5" />} title="You haven't joined a community yet" action={<Link href="/communities?tab=discover" className="text-sm underline underline-offset-4">Discover communities</Link>} />
-          ))}
+        {tab === "mine" && (
+          <CommunityGrid
+            items={joined.map((j) => ({ c: j.c, role: j.role }))}
+            empty={<EmptyState icon={<Users className="size-6" />} title="You haven't joined a community yet" body="Find your club, or start the one your field is missing." action={<Link href="/communities?tab=discover" className="text-sm underline underline-offset-4">Discover communities</Link>} />}
+          />
+        )}
         {tab === "discover" && (
-          <>
-            <form action="/communities" className="mb-4">
-              <input type="hidden" name="tab" value="discover" />
-              <label htmlFor="cq" className="sr-only">Search communities</label>
-              <input id="cq" name="q" defaultValue={q} placeholder="Search by name, field or topic" className="h-11 w-full rounded-full border border-line bg-surface-2 px-5 text-[15px] outline-none placeholder:text-faint focus:border-text" />
-            </form>
-            {discover.length ? <div className="grid gap-3 sm:grid-cols-2">{discover.map((c) => card(c))}</div> : (
-              <EmptyState title={q ? `Nothing matches “${q}”` : "No other communities yet"} body="Start the one your field is missing." action={<Link href="/communities?tab=create" className="text-sm underline underline-offset-4">Create a community</Link>} />
-            )}
-          </>
+          <CommunityGrid
+            discover
+            initialQuery={q}
+            items={discover.map((c) => ({ c }))}
+            empty={<EmptyState icon={<Users className="size-6" />} title="No other communities yet" body="Start the one your field is missing." action={<Link href="/communities?tab=create" className="text-sm underline underline-offset-4">Create a community</Link>} />}
+          />
         )}
         {tab === "create" && <Panel className="p-6"><CreateCommunity interests={profile.interests ?? []} field={profile.field} /></Panel>}
       </div>

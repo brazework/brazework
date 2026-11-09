@@ -39,9 +39,8 @@ export function Hero() {
             <ArrowRight className="size-3.5 shrink-0" />
           </a>
           <h1 className="focus-in mt-7 text-[clamp(2.6rem,6vw,4.75rem)] leading-[1] font-semibold tracking-[-0.045em]">
-            Where builders
+            Where
             <br />
-            in{" "}
             <span className="relative inline-grid align-bottom">
               <AnimatePresence mode="popLayout" initial={false}>
                 <motion.span
@@ -50,10 +49,10 @@ export function Hero() {
                   animate={{ y: 0, opacity: 1, filter: "blur(0px)" }}
                   exit={{ y: "-60%", opacity: 0, filter: "blur(6px)" }}
                   transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                  className="bg-clip-text whitespace-nowrap text-transparent"
+                  className="bg-clip-text pb-1 text-transparent"
                   style={{ backgroundImage: p.grad }}
                 >
-                  {p.short.toLowerCase()}
+                  {p.who}
                 </motion.span>
               </AnimatePresence>
             </span>
@@ -61,7 +60,7 @@ export function Hero() {
             get found.
           </h1>
           <p className="focus-in mt-6 max-w-xl text-lg leading-relaxed text-muted" style={{ ["--delay" as string]: "0.1s" }}>
-            Forge is the network for tech and STEM clubs. Run your club here, post what you build, and let your club vouch for it, so companies hire you for the work, not the résumé.
+            Forge is the network for STEM clubs: engineering, the sciences, math and computing. Run your club here, post what you build, and let your club vouch for it, so you get hired for the work, not the résumé.
           </p>
 
           <div className="rise-in mt-8" style={{ ["--delay" as string]: "0.2s" }}>
@@ -126,7 +125,7 @@ export function Hero() {
                   className="absolute inset-x-6 top-0 h-full rounded-3xl border border-line bg-surface shadow-lg transition-all duration-500"
                   style={{ transform: `translateY(${-k * 18}px) scale(${1 - k * 0.06})`, opacity: 1 - k * 0.2 }}
                 >
-                  <span className="block h-20 rounded-t-3xl" style={{ background: q.grad }} />
+                  <span className="block h-24 rounded-t-3xl" style={{ background: q.grad }} />
                 </button>
               );
             })}
