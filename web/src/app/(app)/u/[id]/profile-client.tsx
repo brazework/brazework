@@ -1,6 +1,7 @@
 "use client";
 import { AnimatePresence, motion } from "motion/react";
 import { BadgeCheck, CheckCircle2, ExternalLink, GitBranch, Loader2, Lock, Pencil, Plus, Share2, Sparkles, Trash2, X } from "lucide-react";
+import Link from "next/link";
 import { useCopilot } from "@/components/copilot/use-copilot";
 import { importFromGitHub } from "@/lib/connectors/actions";
 import type { ProjectDraft } from "@/lib/connectors/github";
@@ -76,7 +77,7 @@ export function ProjectCard({ project, own, interests, copilot = false, clubs }:
     <article className="grad-edge group relative flex h-full flex-col overflow-hidden rounded-3xl border p-5 pt-6 shadow-[var(--shadow)] transition duration-300 hover:-translate-y-1">
       <span className="absolute inset-x-0 top-0 h-1.5" style={{ background: stripe(project) }} aria-hidden="true" />
       <div className="flex items-start justify-between gap-3">
-        <h3 className="text-lg font-semibold tracking-tight">{project.title}</h3>
+        <h3 className="text-lg font-semibold tracking-tight"><Link href={`/projects/${project.id}`} className="hover:underline">{project.title}</Link></h3>
         {verified > 0 && <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[color-mix(in_oklab,var(--ok)_14%,transparent)] px-2 py-0.5 text-[11px] font-medium text-ok"><BadgeCheck className="size-3.5" /> {verified} verified</span>}
         {project.private && <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-line px-2 py-0.5 text-[11px] text-muted"><Lock className="size-3" /> Private</span>}
       </div>

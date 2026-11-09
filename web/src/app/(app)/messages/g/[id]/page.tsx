@@ -65,7 +65,7 @@ async function Group({ params }: { params: PageProps<"/messages/g/[id]">["params
     ? await supabase.from("events").select("id, title, starts_at, rsvp_count").eq("id", c.event_id).limit(1)
     : c.community_id ? await supabase.from("events").select("id, title, starts_at, rsvp_count").eq("community_id", c.community_id).eq("status", "published").gt("starts_at", now).order("starts_at").limit(3) : { data: [] };
   const upcoming = (evRows ?? []) as { id: string; title: string; starts_at: string; rsvp_count: number }[];
-  const shared = [...new Set(msgs.flatMap((m) => [...m.body.matchAll(/\/(post|events)\/([A-Za-z0-9-]{1,64})/g)].map((x) => `/${x[1]}/${x[2]}`)))].slice(-4).reverse();
+  const shared = [...new Set(msgs.flatMap((m) => [...m.body.matchAll(/\/(post|events|projects)\/([A-Za-z0-9-]{1,64})/g)].map((x) => `/${x[1]}/${x[2]}`)))].slice(-4).reverse();
 
   return (
     <div data-thread className="flex min-h-0 flex-1">

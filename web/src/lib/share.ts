@@ -29,8 +29,8 @@ export async function shareTargets(): Promise<ShareTarget[]> {
 }
 
 // Posts and events travel the same way: a message carrying the item's link.
-export async function shareItem(kind: "post" | "events", itemId: string, targets: { kind: "dm" | "group"; id: string }[], note: string): Promise<{ ok: boolean; message: string; sent: number }> {
-  if (!/^[A-Za-z0-9-]{1,64}$/.test(itemId)) return { ok: false, message: kind === "post" ? "That post wasn't found." : "That event wasn't found.", sent: 0 };
+export async function shareItem(kind: "post" | "events" | "projects", itemId: string, targets: { kind: "dm" | "group"; id: string }[], note: string): Promise<{ ok: boolean; message: string; sent: number }> {
+  if (!/^[A-Za-z0-9-]{1,64}$/.test(itemId)) return { ok: false, message: `That ${kind === "post" ? "post" : kind === "events" ? "event" : "project"} wasn't found.`, sent: 0 };
   const picked = targets.filter((t) => /^[A-Za-z0-9-]{1,64}$/.test(t.id)).slice(0, 20);
   if (!picked.length) return { ok: false, message: "Pick someone to send it to.", sent: 0 };
   const text = `${note.trim().slice(0, 1500)}${note.trim() ? "\n" : ""}/${kind}/${itemId}`;
@@ -65,4 +65,15 @@ export async function eventPreview(eventId: string): Promise<{ id: string; title
   const { data } = await supabase.from("events").select("id, title, starts_at, rsvp_count, format, location").eq("id", eventId).maybeSingle();
   if (!data) return null;
   return { id: data.id, title: data.title, starts_at: data.starts_at, going: data.rsvp_count ?? 0, where: data.format === "Online" ? "Online" : data.location || data.format };
+}
+
+// What a shared project looks like inside a chat bubble.
+export async function projectPreview(projectId: string): Promise<{ id: string; title: string; summary: string; owner: string; status: string } | null> {
+  if (!/^[A-Za-z0-9-]{1,64}$/.test(projectId)) return null;
+  const { supabase, user } = await getViewer();
+  if (!user) return null;
+  const { data } = await supabase.from("projects").select("id, title, summary, status, profiles(first_name, last_name)").eq("id", projectId).maybeSingle();
+  if (!data) return null;
+  const o = (data as unknown as { profiles: { first_name: string; last_name: string } | null }).profiles;
+  return { id: data.id, title: data.title, summary: String(data.summary).slice(0, 180), owner: `${o?.first_name ?? ""} ${o?.last_name ?? ""}`.trim(), status: data.status === "completed" ? "Completed" : "In progress" };
 }

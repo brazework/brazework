@@ -9,7 +9,7 @@ const GROUP_ICON = { "Club chat": Users, "Event chat": CalendarDays } as Record<
 
 // "Send" on a post: pick people you've talked with and group chats you're in, add a note, send.
 // Each one gets a message with the post, which shows as a preview card in the chat.
-export function SendPost({ postId, eventId, compact = true }: { postId?: string; eventId?: string; compact?: boolean }) {
+export function SendPost({ postId, eventId, projectId, compact = true }: { postId?: string; eventId?: string; projectId?: string; compact?: boolean }) {
   const [open, setOpen] = useState(false);
   const [targets, setTargets] = useState<ShareTarget[] | null>(null);
   const [picked, setPicked] = useState<string[]>([]);
@@ -28,14 +28,14 @@ export function SendPost({ postId, eventId, compact = true }: { postId?: string;
   const shown = (targets ?? []).filter((t) => `${t.title} ${t.subtitle}`.toLowerCase().includes(q.trim().toLowerCase()));
   const send = () => startSend(async () => {
     const chosen = (targets ?? []).filter((t) => picked.includes(key(t))).map((t) => ({ kind: t.kind, id: t.id }));
-    const r = await shareItem(eventId ? "events" : "post", (eventId ?? postId)!, chosen, note);
+    const r = await shareItem(eventId ? "events" : projectId ? "projects" : "post", (eventId ?? projectId ?? postId)!, chosen, note);
     if (r.ok) { setMsg({ ok: true, text: r.message || `Sent to ${r.sent}` }); setPicked([]); setNote(""); setTimeout(() => setOpen(false), 1200); }
     else setMsg({ ok: false, text: r.message });
   });
 
   return (
     <div className="relative">
-      <button type="button" onClick={toggle} aria-expanded={open} aria-label={eventId ? "Send event to people" : "Send post to people"} className={compact ? "inline-flex h-9 items-center gap-1.5 rounded-full px-3 transition hover:bg-hover hover:text-text" : "inline-flex h-10 items-center gap-1.5 rounded-full border border-line px-4 text-sm font-medium transition hover:bg-hover"}>
+      <button type="button" onClick={toggle} aria-expanded={open} aria-label={eventId ? "Send event to people" : projectId ? "Send project to people" : "Send post to people"} className={compact ? "inline-flex h-9 items-center gap-1.5 rounded-full px-3 transition hover:bg-hover hover:text-text" : "inline-flex h-10 items-center gap-1.5 rounded-full border border-line px-4 text-sm font-medium transition hover:bg-hover"}>
         <Send className={compact ? "size-[18px]" : "size-4"} />{!compact && " Send to friends"}
       </button>
       {open && (

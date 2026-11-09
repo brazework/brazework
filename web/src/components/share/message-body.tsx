@@ -1,18 +1,20 @@
 "use client";
-import { CalendarDays, ImageIcon, Users } from "lucide-react";
+import { CalendarDays, FolderGit2, ImageIcon, Users } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/forge";
-import { eventPreview, postPreview } from "@/lib/share";
+import { eventPreview, postPreview, projectPreview } from "@/lib/share";
 
 type PostP = Awaited<ReturnType<typeof postPreview>>;
 type EventP = Awaited<ReturnType<typeof eventPreview>>;
-const SHARED = /(?:^|\s)\/(post|events)\/([A-Za-z0-9-]{1,64})(?=\s|$)/;
+type ProjectP = Awaited<ReturnType<typeof projectPreview>>;
+type Kind = "post" | "events" | "projects";
+const SHARED = /(?:^|\s)\/(post|events|projects)\/([A-Za-z0-9-]{1,64})(?=\s|$)/;
 // One lookup per item per page, shared by every bubble that shows it.
-const cache = new Map<string, Promise<PostP | EventP>>();
-const load = (kind: "post" | "events", id: string) => {
+const cache = new Map<string, Promise<PostP | EventP | ProjectP>>();
+const load = (kind: Kind, id: string) => {
   const key = `${kind}:${id}`;
-  if (!cache.has(key)) cache.set(key, (kind === "post" ? postPreview(id) : eventPreview(id)).catch(() => null));
+  if (!cache.has(key)) cache.set(key, (kind === "post" ? postPreview(id) : kind === "events" ? eventPreview(id) : projectPreview(id)).catch(() => null));
   return cache.get(key)!;
 };
 
@@ -24,13 +26,13 @@ export function MessageBody({ body, mine = false }: { body: string; mine?: boole
   return (
     <>
       {text && <span className="block">{text}</span>}
-      <Shared kind={m[1] as "post" | "events"} id={m[2]} mine={mine} spaced={!!text} />
+      <Shared kind={m[1] as Kind} id={m[2]} mine={mine} spaced={!!text} />
     </>
   );
 }
 
-function Shared({ kind, id, mine, spaced }: { kind: "post" | "events"; id: string; mine: boolean; spaced: boolean }) {
-  const [p, setP] = useState<PostP | EventP | undefined>(undefined);
+function Shared({ kind, id, mine, spaced }: { kind: Kind; id: string; mine: boolean; spaced: boolean }) {
+  const [p, setP] = useState<PostP | EventP | ProjectP | undefined>(undefined);
   useEffect(() => {
     let live = true;
     void load(kind, id).then((r) => { if (live) setP(r); });
@@ -41,11 +43,17 @@ function Shared({ kind, id, mine, spaced }: { kind: "post" | "events"; id: strin
     <Link href={`/${kind}/${id}`} className={cn("block w-64 max-w-full rounded-2xl border p-3 text-left transition hover:-translate-y-px", spaced && "mt-2", mine ? "border-on-accent/25 bg-on-accent/10" : "border-line bg-surface/80")}>
       {p === undefined ? (
         <span className={cn("block h-10 animate-pulse rounded-lg", mine ? "bg-on-accent/15" : "bg-raised")} />
-      ) : p && kind === "events" && "title" in p ? (
+      ) : p && kind === "events" && "starts_at" in p ? (
         <>
           <span className={cn("flex items-center gap-1.5 text-[11px]", faint)}><CalendarDays className="size-3.5" /> Event · {new Date(p.starts_at).toLocaleString("en-US", { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</span>
           <span className="mt-1 line-clamp-2 block text-sm font-medium leading-snug">{p.title}</span>
           <span className={cn("mt-1 flex items-center gap-1 text-[11px]", faint)}><Users className="size-3" /> {p.going} going · {p.where}</span>
+        </>
+      ) : p && kind === "projects" && "summary" in p ? (
+        <>
+          <span className={cn("flex items-center gap-1.5 text-[11px]", faint)}><FolderGit2 className="size-3.5" /> Project · {p.owner} · {p.status}</span>
+          <span className="mt-1 block text-sm font-medium leading-snug">{p.title}</span>
+          <span className="mt-0.5 line-clamp-2 block text-xs leading-snug opacity-80">{p.summary}</span>
         </>
       ) : p && "body" in p ? (
         <>
@@ -55,7 +63,7 @@ function Shared({ kind, id, mine, spaced }: { kind: "post" | "events"; id: strin
           <span className="mt-1 line-clamp-3 block text-sm leading-snug">{p.body}</span>
         </>
       ) : (
-        <span className={cn("text-xs", mine ? "text-on-accent/70" : "text-muted")}>{kind === "events" ? "This event isn't available." : "This post isn't available."}</span>
+        <span className={cn("text-xs", mine ? "text-on-accent/70" : "text-muted")}>{kind === "events" ? "This event isn't available." : kind === "projects" ? "This project isn't available." : "This post isn't available."}</span>
       )}
     </Link>
   );

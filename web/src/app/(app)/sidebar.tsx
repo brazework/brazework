@@ -1,6 +1,6 @@
 "use client";
 import { AnimatePresence, motion } from "motion/react";
-import { Bell, Bookmark, CalendarDays, Home, LayoutDashboard, LogOut, Menu, MessageSquare, Network, PanelLeftClose, PanelLeftOpen, Settings, Sparkles, Users, X } from "lucide-react";
+import { Bell, Bookmark, CalendarDays, FolderGit2, Home, LayoutDashboard, LogOut, Menu, MessageSquare, Network, PanelLeftClose, PanelLeftOpen, Settings, Sparkles, Users, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -19,6 +19,7 @@ const NAV: { href: string; label: string; icon: typeof Home; match: string[]; ba
   { href: "/feed", label: "Feed", icon: Home, match: ["/feed", "/post/"] },
   { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, match: ["/dashboard", "/analytics"] },
   { href: "/communities", label: "Communities", icon: Users, match: ["/communities", "/c/"] },
+  { href: "/projects", label: "Projects", icon: FolderGit2, match: ["/projects"] },
   { href: "/copilot", label: "Copilot", icon: Sparkles, match: ["/copilot"] },
   { href: "/network", label: "Network", icon: Network, match: ["/network"], badge: "invites" },
   { href: "/messages", label: "Messages", icon: MessageSquare, match: ["/messages"], badge: "messages" },
