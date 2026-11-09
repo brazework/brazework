@@ -24,6 +24,7 @@ enum API {
   private struct EventRef: Encodable { let eventId: String }
   private struct FollowRow: Encodable { let target: UUID }
   private struct Role: Decodable { let role: String }
+  private struct ChatRow: Encodable { let chatId: String; let body: String; let announcement: Bool }
   private struct Membership: Decodable { let communities: Club? }
 
   // MARK: Posts
@@ -109,6 +110,40 @@ enum API {
   static func decline(_ conversationId: String) async throws {
     try await supabase.from("conversations").delete().eq("id", value: conversationId).execute()
   }
+
+  // MARK: Group chats
+  // Your chats, newest first (this also opens the chat of any club you're in that doesn't have one yet).
+  static func myChats() async throws -> [GroupChat] {
+    try await supabase.rpc("my_chats").execute().value
+  }
+  static func openClubChat(_ clubId: String) async throws -> String {
+    try await supabase.rpc("open_club_chat", params: ["p_community": clubId]).execute().value
+  }
+  static func openEventChat(_ eventId: String) async throws -> String {
+    try await supabase.rpc("open_event_chat", params: ["p_event": eventId]).execute().value
+  }
+  static func chat(_ id: String) async throws -> GroupChat? {
+    try await myChats().first { $0.id == id }
+  }
+  static func chatMessages(_ chatId: String) async throws -> [ChatMessage] {
+    let list: [ChatMessage] = try await supabase.from("chat_messages").select("id, chat_id, sender_id, sender_first, sender_last, body, announcement, ember, created_at")
+      .eq("chat_id", value: chatId).order("created_at", ascending: false).limit(200).execute().value
+    return list.reversed()
+  }
+  // Officers (moderator and up) can post an announcement in their club's chat; the database checks.
+  static func sendChat(_ chatId: String, body: String, announcement: Bool = false) async throws {
+    try await supabase.from("chat_messages").insert(ChatRow(chatId: chatId, body: body, announcement: announcement)).execute()
+  }
+  static func deleteChatMessage(_ id: String) async throws {
+    try await supabase.from("chat_messages").delete().eq("id", value: id).execute()
+  }
+  static func markChatRead(_ chatId: String) async {
+    _ = try? await supabase.rpc("mark_chat_read", params: ["p_chat": chatId]).execute()
+  }
+  static func unreadChats() async -> Int {
+    (try? await supabase.rpc("unread_chats").execute().value as Int) ?? 0
+  }
+  static func isOfficer(_ role: String?) -> Bool { ["owner", "admin", "moderator"].contains(role ?? "") }
 
   // MARK: Clubs
   static func myClubs(me: UUID) async throws -> [Club] {

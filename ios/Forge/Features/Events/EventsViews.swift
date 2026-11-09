@@ -79,6 +79,7 @@ struct EventDetailView: View {
   @State private var count: Int
   @State private var place: MKMapItem?
   @State private var error: String?
+  @State private var chat: ChatRoute?
 
   init(event: ForgeEvent) { self.event = event; _count = State(initialValue: event.rsvpCount) }
 
@@ -102,6 +103,10 @@ struct EventDetailView: View {
         Button { Task { await toggle() } } label: { Label(going ? "You're going" : "I'm going", systemImage: going ? "checkmark.circle.fill" : "plus.circle") }
           .buttonStyle(PrimaryButtonStyle())
           .sensoryFeedback(.success, trigger: going)
+        if going {
+          Button { Task { await openChat() } } label: { Label("Event chat", systemImage: "bubble.left.and.bubble.right").frame(maxWidth: .infinity, minHeight: 44) }
+            .buttonStyle(.bordered)
+        }
         if let error { Text(error).font(.footnote).foregroundStyle(p.danger) }
 
         if event.inPerson {
@@ -120,6 +125,7 @@ struct EventDetailView: View {
     .background(p.bg)
     .navigationBarTitleDisplayMode(.inline)
     .toolbar { ToolbarItem(placement: .primaryAction) { ShareLink(item: Env.web("events/\(event.id)")) } }
+    .navigationDestination(item: $chat) { GroupThreadView(route: $0) }
     .task {
       if let me = session.userId { going = await API.goingTo(me: me).contains(event.id) }
       if event.inPerson { place = await Self.find(event.location) }
@@ -151,6 +157,11 @@ struct EventDetailView: View {
     let req = MKLocalSearch.Request()
     req.naturalLanguageQuery = query
     return try? await MKLocalSearch(request: req).start().mapItems.first
+  }
+
+  private func openChat() async {
+    do { chat = ChatRoute(id: try await API.openEventChat(event.id), title: event.title, kind: "event", communityId: nil) }
+    catch { self.error = friendly(error) }
   }
 
   private func toggle() async {

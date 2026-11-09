@@ -5,26 +5,39 @@ struct MessagesView: View {
   @Environment(Session.self) private var session
   @Environment(\.palette) private var p
   @State private var store = InboxStore()
+  @State private var chats: [GroupChat] = []
+  @State private var path = NavigationPath()
 
   var body: some View {
-    NavigationStack {
+    NavigationStack(path: $path) {
       List {
         let requests = (store.items ?? []).filter(\.isRequestToMe)
         if !requests.isEmpty { Section("Requests") { ForEach(requests) { row($0) } } }
-        Section { ForEach((store.items ?? []).filter { !$0.isRequestToMe }) { row($0) } }
+        if !chats.isEmpty { Section("Clubs & events") { ForEach(chats) { chatRow($0) } } }
+        let direct = (store.items ?? []).filter { !$0.isRequestToMe }
+        if !direct.isEmpty { Section(chats.isEmpty ? "" : "Direct") { ForEach(direct) { row($0) } } }
       }
       .listStyle(.plain)
       .scrollContentBackground(.hidden)
       .background(p.bg)
       .overlay {
         if store.items == nil { ProgressView() }
-        else if store.items?.isEmpty == true { EmptyState(icon: "bubble.left.and.bubble.right", title: "No messages yet", message: "Message someone from their profile. People you don't know land in Requests.") }
+        else if store.items?.isEmpty == true && chats.isEmpty { EmptyState(icon: "bubble.left.and.bubble.right", title: "No messages yet", message: "Message someone from their profile. People you don't know land in Requests.") }
       }
       .navigationTitle("Messages")
       .navigationDestination(for: InboxItem.self) { ThreadView(item: $0) }
+      .navigationDestination(for: ChatRoute.self) { GroupThreadView(route: $0) }
       .navigationDestination(for: PersonRoute.self) { ProfileView(id: $0.id) }
       .refreshable { await reload() }
-      .task { await reload() }
+      .task {
+        await reload()
+        #if DEBUG
+        // For screenshots: FORGE_TEST_CHAT=<club id> opens that club's chat.
+        if let club = ProcessInfo.processInfo.environment["FORGE_TEST_CHAT"], path.isEmpty, let c = chats.first(where: { $0.kind == "club" && $0.communityId == club }) {
+          path.append(ChatRoute(id: c.id, title: c.title, kind: c.kind, communityId: c.communityId))
+        }
+        #endif
+      }
       // Fallback while open: Realtime handles it where it's set up.
       .task { while !Task.isCancelled { try? await Task.sleep(for: .seconds(15)); await reload() } }
     }
@@ -32,8 +45,34 @@ struct MessagesView: View {
 
   private func reload() async {
     guard let me = session.userId else { return }
-    await store.load(me: me)
+    async let dms: Void = store.load(me: me)
+    chats = (try? await API.myChats()) ?? chats
+    await dms
     await session.refreshBadges()
+  }
+
+  private func chatRow(_ c: GroupChat) -> some View {
+    NavigationLink(value: ChatRoute(id: c.id, title: c.title, kind: c.kind, communityId: c.communityId)) {
+      HStack(spacing: 12) {
+        ZStack {
+          RoundedRectangle(cornerRadius: 14, style: .continuous).fill(p.gradient)
+          Image(systemName: c.kind == "event" ? "calendar" : c.kind == "team" ? "person.2.fill" : "person.3.fill").font(.system(size: 17, weight: .semibold)).foregroundStyle(p.onAccent)
+        }
+        .frame(width: 48, height: 48)
+        .accessibilityHidden(true)
+        VStack(alignment: .leading, spacing: 3) {
+          HStack {
+            Text(c.title).font(.body.weight(c.unread ? .bold : .semibold)).foregroundStyle(p.text).lineLimit(1)
+            Spacer()
+            if let at = c.lastAt { Text(timeAgo(at)).font(.caption).foregroundStyle(p.faint) }
+          }
+          Text(c.preview).font(.subheadline).foregroundStyle(c.unread ? p.text2 : p.muted).lineLimit(2)
+        }
+        if c.unread { Circle().fill(p.accent).frame(width: 9, height: 9).accessibilityLabel("Unread") }
+      }
+      .padding(.vertical, 4)
+    }
+    .listRowBackground(Color.clear)
   }
 
   private func row(_ i: InboxItem) -> some View {

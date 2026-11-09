@@ -174,6 +174,52 @@ struct InboxItem: Identifiable, Hashable, Sendable {
   let startedByMe: Bool
 }
 
+// A group chat (supabase/group-chats.sql): a club's chat, an event's attendees, or a team. As
+// my_chats() returns it, with whether there's something you haven't read.
+struct GroupChat: Codable, Identifiable, Hashable, Sendable {
+  let id: String
+  var kind: String
+  var communityId: String?
+  var eventId: String?
+  var title: String
+  var subtitle: String
+  var lastAt: Date?
+  var lastBody: String
+  var lastSenderName: String
+  var lastFromMe: Bool
+  var unread: Bool
+  // A chat with no messages yet has null flags (NULL = uuid is NULL in SQL): read them as false.
+  init(from decoder: Decoder) throws {
+    let c = try decoder.container(keyedBy: CodingKeys.self)
+    id = try c.decode(String.self, forKey: .id)
+    kind = try c.decode(String.self, forKey: .kind)
+    communityId = try c.decodeIfPresent(String.self, forKey: .communityId)
+    eventId = try c.decodeIfPresent(String.self, forKey: .eventId)
+    title = try c.decodeIfPresent(String.self, forKey: .title) ?? ""
+    subtitle = try c.decodeIfPresent(String.self, forKey: .subtitle) ?? ""
+    lastAt = try c.decodeIfPresent(Date.self, forKey: .lastAt)
+    lastBody = try c.decodeIfPresent(String.self, forKey: .lastBody) ?? ""
+    lastSenderName = try c.decodeIfPresent(String.self, forKey: .lastSenderName) ?? ""
+    lastFromMe = try c.decodeIfPresent(Bool.self, forKey: .lastFromMe) ?? false
+    unread = try c.decodeIfPresent(Bool.self, forKey: .unread) ?? false
+  }
+
+  var preview: String { lastBody.isEmpty ? "No messages yet" : "\(lastFromMe ? "You" : lastSenderName.isEmpty ? "Someone" : lastSenderName): \(lastBody)" }
+}
+
+struct ChatMessage: Codable, Identifiable, Hashable, Sendable {
+  let id: String
+  let chatId: String
+  let senderId: UUID
+  var senderFirst: String
+  var senderLast: String
+  var body: String
+  var announcement: Bool
+  var ember: Bool
+  var createdAt: Date
+  var senderName: String { "\(senderFirst) \(senderLast)".trimmingCharacters(in: .whitespaces) }
+}
+
 // Navigation targets shared by every tab.
 struct PersonRoute: Hashable, Sendable { let id: UUID }
 struct PostRoute: Hashable, Sendable { let id: String }

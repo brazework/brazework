@@ -103,6 +103,7 @@ struct ClubView: View {
   @State private var requested = false
   @State private var working = false
   @State private var error: String?
+  @State private var chat: ChatRoute?
 
   var body: some View {
     ScrollView {
@@ -130,13 +131,24 @@ struct ClubView: View {
     .background(p.bg)
     .navigationBarTitleDisplayMode(.inline)
     .navigationDestination(for: Post.self) { PostDetailView(post: $0, feed: feed) }
+    .navigationDestination(item: $chat) { GroupThreadView(route: $0) }
     .task { await load() }
+  }
+
+  private func openChat() async {
+    working = true; error = nil
+    defer { working = false }
+    do { chat = ChatRoute(id: try await API.openClubChat(club.id), title: club.name, kind: "club", communityId: club.id) }
+    catch { self.error = friendly(error) }
   }
 
   @ViewBuilder private var joinButton: some View {
     if let role {
       Label(role == "member" ? "You're a member" : "You're \(role == "admin" ? "an" : "a") \(role)", systemImage: "checkmark.circle.fill")
         .font(.subheadline.weight(.medium)).foregroundStyle(p.muted)
+      Button { Task { await openChat() } } label: { Label("Club chat", systemImage: "bubble.left.and.bubble.right.fill") }
+        .buttonStyle(PrimaryButtonStyle())
+        .disabled(working)
     } else if requested {
       Label("Request sent", systemImage: "clock").font(.subheadline.weight(.medium)).foregroundStyle(p.muted)
     } else {

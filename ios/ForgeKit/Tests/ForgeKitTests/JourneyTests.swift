@@ -100,6 +100,59 @@ final class JourneyTests: XCTestCase {
     XCTAssertEqual(inbox.items?.first { $0.id == cid }?.unread, false)
   }
 
+  func testClubChatAndAnnouncements() async throws {
+    // Josh (a member) talks in Rocketry Club's chat.
+    _ = try await signIn("josh")
+    let chatId = try await API.openClubChat("rkt")
+    try await API.sendChat(chatId, body: "Who has the launch controller? \(Self.stamp)")
+    // Members can't post announcements.
+    do { try await API.sendChat(chatId, body: "Not allowed \(Self.stamp)", announcement: true); XCTFail("members can't announce") }
+    catch { XCTAssertTrue("\(error)".contains("Only club officers"), "\(error)") }
+
+    // Ben (the owner) sees it unread, reads it, and announces.
+    _ = try await signIn("ben")
+    let bensChats = try await API.myChats()
+    let row = try XCTUnwrap(bensChats.first { $0.id == chatId })
+    XCTAssertEqual(row.kind, "club")
+    XCTAssertEqual(row.title, "Rocketry Club")
+    XCTAssertTrue(row.unread)
+    XCTAssertTrue(row.preview.hasPrefix("Josh: Who has the launch controller?"))
+    let before = await API.unreadChats()
+    XCTAssertGreaterThanOrEqual(before, 1)
+    await API.markChatRead(chatId)
+    let after = await API.unreadChats()
+    XCTAssertEqual(after, before - 1)
+    try await API.sendChat(chatId, body: "Launch moved to Sunday \(Self.stamp)", announcement: true)
+    let thread = try await API.chatMessages(chatId)
+    let last = try XCTUnwrap(thread.last)
+    XCTAssertTrue(last.announcement)
+    XCTAssertEqual(last.senderFirst, "Ben")
+    let ben = try await supabase.auth.session.user.id
+    let role = await API.role(in: "rkt", me: ben)
+    XCTAssertTrue(API.isOfficer(role))
+
+    // Josh sees the announcement; Cara (not a member) can't open the chat or read it.
+    _ = try await signIn("josh")
+    let joshSees = try await API.chatMessages(chatId)
+    XCTAssertEqual(joshSees.last?.body, "Launch moved to Sunday \(Self.stamp)")
+    _ = try await signIn("cara")
+    do { _ = try await API.openClubChat("rkt"); XCTFail("non-members can't open a club's chat") } catch {}
+    let peek = try await API.chatMessages(chatId)
+    XCTAssertTrue(peek.isEmpty, "row-level security hides the chat")
+  }
+
+  func testEventChatForPeopleGoing() async throws {
+    let me = try await signIn("maya")
+    guard let e = try await API.upcomingEvents().first else { throw XCTSkip("no upcoming events") }
+    try await API.setGoing(e.id, true, me: me)
+    let chatId = try await API.openEventChat(e.id)
+    try await API.sendChat(chatId, body: "Carpool from campus? \(Self.stamp)")
+    let mayasChats = try await API.myChats()
+    let row = try XCTUnwrap(mayasChats.first { $0.id == chatId })
+    XCTAssertEqual(row.kind, "event")
+    XCTAssertEqual(row.title, e.title)
+  }
+
   func testFollowAndClubs() async throws {
     let me = try await signIn("maya")
     let found: [Profile] = try await supabase.from("profiles").select(Session.profileColumns).eq("first_name", value: "Cara").limit(1).execute().value

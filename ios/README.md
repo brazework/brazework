@@ -11,7 +11,7 @@ Native SwiftUI app on the same Supabase backend as `web/`: same tables, same row
 | **Feed** | For you (ranked, with why each post is there; your new post first), Latest, Following. Like, save, share, reply/answer, post updates, questions and results with up to 4 photos or a video (preview before posting; photos shrink to 2000 px with location data stripped, videos convert to H.264 MP4 so they play everywhere). Videos play as you scroll with sound (following the ringer switch), one at a time; tap to pause, then speed and fullscreen; a thin scrubber |
 | **Clubs** | Your clubs and discover, search, a club's page with its posts, join or ask to join. **Events**: upcoming club and organization events, a map of the place with directions, I'm going, join online |
 | **Profiles** | Anyone's profile from a post, reply, alert or thread: headline, field, interests, posts; follow and message them |
-| **Messages** | Inbox and requests, accept or decline, threads that update live (Realtime, with polling as a fallback) |
+| **Messages** | Club, event and team chats (officers post announcements; Ember's answers show as Ember's), plus direct messages with requests, accept or decline. Threads update live (Realtime, with polling as a fallback). Open a club's chat from its page, an event's from its page once you're going |
 | **Alerts** | Likes, replies, mentions, follows, club and milestone news; marked read once seen; tap to open the post or person |
 | **You** | Profile, light/dark and the web's five themes, links to settings and Ember on the web, sign out |
 
@@ -36,12 +36,13 @@ The app connects to whatever `Config/Local.xcconfig` names (gitignored). It defa
 ```sh
 scripts/test-kit.sh   # on the Mac, no simulator: ranking and dates, plus the app's real reads and writes against the
                       # local stack (photo upload → post with it, and the folder rule; post → first in feed → like, save → reply; message from a profile → they see it
-                      # unread → accept → reply; follow; join a club; RSVP; alerts)
+                      # unread → accept → reply; club chat and announcements (officers only, members can't,
+                      # non-members can't read); event chat for people going; follow; join a club; RSVP; alerts)
 scripts/test.sh       # the same, then UI journeys on a simulator (XCUITest; macOS asks once to allow UI automation)
 ```
 
 ## Next
 
 1. Push notifications (APNs + a Supabase webhook on `notifications` and `messages`).
-2. Club chat and group chats; reactions and replies in messages.
+2. Reactions and replies in messages and chats (chat-extras.sql); team chats.
 3. Native sign-up and onboarding; TestFlight.
