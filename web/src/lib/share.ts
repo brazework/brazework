@@ -2,6 +2,7 @@
 import { revalidatePath } from "next/cache";
 import { dbFeatures } from "@/lib/db-features";
 import { friendlyError } from "@/lib/forge";
+import { mediaUrl } from "@/lib/media";
 import { getViewer } from "@/lib/supabase/server";
 
 // Sending a post to people: into your direct conversations and group chats, as a message carrying
@@ -76,4 +77,28 @@ export async function projectPreview(projectId: string): Promise<{ id: string; t
   if (!data) return null;
   const o = (data as unknown as { profiles: { first_name: string; last_name: string } | null }).profiles;
   return { id: data.id, title: data.title, summary: String(data.summary).slice(0, 180), owner: `${o?.first_name ?? ""} ${o?.last_name ?? ""}`.trim(), status: data.status === "completed" ? "Completed" : "In progress" };
+}
+
+// What a club looks like as a card (in Ember's answers).
+export async function clubPreview(clubId: string): Promise<{ id: string; name: string; about: string; members: number; privacy: string; logo: string | null; accent: string | null } | null> {
+  if (!/^[A-Za-z0-9-]{1,64}$/.test(clubId)) return null;
+  const { supabase, user } = await getViewer();
+  if (!user) return null;
+  const look = (await dbFeatures()).clubProfile;
+  const { data } = await supabase.from("communities").select(`id, name, about, member_count, privacy${look ? ", logo_path, tagline, accent" : ""}`).eq("id", clubId).maybeSingle();
+  if (!data) return null;
+  const c = data as unknown as { id: string; name: string; about: string; member_count: number; privacy: string; logo_path?: string; tagline?: string; accent?: string };
+  return { id: c.id, name: c.name, about: (c.tagline || c.about || "").slice(0, 160), members: c.member_count ?? 0, privacy: c.privacy, logo: c.logo_path || null, accent: c.accent || null };
+}
+
+// What a person looks like as a card (in Ember's answers).
+export async function personPreview(personId: string): Promise<{ id: string; first: string; last: string; headline: string; avatar: string | null } | null> {
+  if (!/^[0-9a-f-]{36}$/i.test(personId)) return null;
+  const { supabase, user } = await getViewer();
+  if (!user) return null;
+  const { media } = await dbFeatures();
+  const { data } = await supabase.from("profiles").select(`id, first_name, last_name, headline${media ? ", avatar_path" : ""}`).eq("id", personId).maybeSingle();
+  if (!data) return null;
+  const p = data as unknown as { id: string; first_name: string; last_name: string; headline: string; avatar_path?: string | null };
+  return { id: p.id, first: p.first_name, last: p.last_name, headline: p.headline, avatar: p.avatar_path ? mediaUrl(p.avatar_path) : null };
 }

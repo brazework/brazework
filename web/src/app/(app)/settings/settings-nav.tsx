@@ -1,5 +1,5 @@
 "use client";
-import { Ban, CircleUser, HelpCircle, KeyRound, MessageSquare, Palette } from "lucide-react";
+import { Ban, CircleUser, HelpCircle, KeyRound, MessageSquare, Palette, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 import { NavTile } from "@/components/app/nav-tile";
 import { useAppearOffline } from "@/components/presence/presence";
@@ -10,6 +10,7 @@ export const SECTIONS = [
   { id: "appearance", label: "Appearance", icon: Palette },
   { id: "messaging", label: "Messaging and privacy", icon: MessageSquare },
   { id: "blocked", label: "Blocked people", icon: Ban },
+  { id: "ember", label: "Ember and your data", icon: Sparkles },
   { id: "help", label: "Help", icon: HelpCircle },
   { id: "account", label: "Account", icon: KeyRound },
 ] as const;

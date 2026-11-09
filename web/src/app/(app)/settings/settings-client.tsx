@@ -3,6 +3,7 @@ import { Check, Loader2, Monitor, Moon, Sun } from "lucide-react";
 import { useActionState, useState, useSyncExternalStore, useTransition } from "react";
 import { Button, Field, inputCls } from "@/components/ui";
 import { FIELDS, TOPICS, cn, type Profile } from "@/lib/forge";
+import { deleteAllChats } from "@/lib/copilot-chats";
 import { changePassword, saveMessageSettings, saveProfileSettings, unblockPerson, type SettingsState } from "@/lib/settings";
 import { submitWithoutReset } from "@/lib/submit";
 
@@ -199,5 +200,31 @@ export function PasswordForm() {
       <Status state={state} />
       <Button type="submit" variant="outline" disabled={pending} className="self-start">{pending && <Loader2 className="size-4 animate-spin" />} Change password</Button>
     </form>
+  );
+}
+
+// What Ember can and can't see, and deleting your chats with it (supabase/copilot-chats.sql).
+export function EmberSettings({ saving, chats }: { saving: boolean; chats: number }) {
+  const [left, setLeft] = useState(chats);
+  const [msg, setMsg] = useState("");
+  const [pending, start] = useTransition();
+  return (
+    <div className="space-y-4 text-sm leading-relaxed text-text-2">
+      <ul className="space-y-2">
+        <li><strong className="font-medium text-text">What Ember reads:</strong> your profile, clubs and projects, and what any member can see on Forge (clubs, events, people, posts), plus public GitHub when you ask about a repo.</li>
+        <li><strong className="font-medium text-text">What it never reads:</strong> your direct messages. In a group chat it reads recent messages only when someone there asks @Ember or taps Catch me up.</li>
+        <li><strong className="font-medium text-text">What it does on its own:</strong> nothing. It prepares cards; posting, joining, RSVPing or messaging happens only when you confirm.</li>
+        <li><strong className="font-medium text-text">Your chats:</strong> {saving ? "private to you, and deleted 180 days after you last use them. A thumbs up or down sends only that question and answer to the Forge team." : "not kept after you leave the page."}</li>
+      </ul>
+      {saving && (
+        <div className="flex flex-wrap items-center gap-3 border-t border-line pt-4">
+          <span className="text-muted">{left ? `${left} saved ${left === 1 ? "chat" : "chats"}` : "No saved chats"}</span>
+          <button type="button" disabled={!left || pending} onClick={() => { if (!confirm("Delete all your Ember chats? This can't be undone.")) return; start(async () => { const r = await deleteAllChats(); setMsg(r.ok ? "All your Ember chats are deleted." : r.message); if (r.ok) setLeft(0); }); }} className="inline-flex h-9 items-center gap-1.5 rounded-full border border-line px-4 font-medium text-text transition hover:border-danger hover:text-danger disabled:opacity-40">
+            {pending && <Loader2 className="size-4 animate-spin" />} Delete all Ember chats
+          </button>
+          {msg && <p role="status" className="w-full text-xs text-muted">{msg}</p>}
+        </div>
+      )}
+    </div>
   );
 }
