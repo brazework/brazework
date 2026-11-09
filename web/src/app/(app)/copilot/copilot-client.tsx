@@ -1,21 +1,22 @@
 "use client";
 import { AnimatePresence, motion } from "motion/react";
-import { ArrowUp, BadgeCheck, Compass, FileText, Lightbulb, Mic, PenLine, Sparkles, Square, Users } from "lucide-react";
+import { ArrowUp, BadgeCheck, Compass, FileText, Lightbulb, Mic, PenLine, Square, Users } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useCopilot } from "@/components/copilot/use-copilot";
 import { cn } from "@/lib/forge";
 import { TOOL_LABEL, type Proposal } from "@/lib/copilot-agent";
+import { Ember } from "@/components/ember/ember";
 import { ProposalCard } from "@/components/copilot/proposal-card";
 
 type Msg = { role: "user" | "assistant"; content: string; tools?: string[]; proposals?: Proposal[] };
 
-function Header({ sub }: { sub: string }) {
+function Header({ sub, mood = "idle" }: { sub: string; mood?: "idle" | "thinking" | "happy" | "sleepy" }) {
   return (
     <header className="relative overflow-hidden rounded-3xl border border-line bg-surface p-6 shadow-[var(--shadow)]">
       <div className="bg-accent-grad pointer-events-none absolute -top-24 -right-16 size-64 rounded-full blur-3xl banner-glow" aria-hidden="true" />
       <div className="relative flex items-center gap-3">
-        <span className="bg-accent-grad grid size-11 place-items-center rounded-2xl text-on-accent shadow-[0_10px_24px_-10px_var(--accent)]"><Sparkles className="size-5" /></span>
+        <Ember size={52} mood={mood} label="Ember, your Forge Copilot" />
         <div>
           <h1 className="text-grad text-3xl font-semibold tracking-tight">Copilot</h1>
           <p className="text-sm text-muted">{sub}</p>
@@ -35,7 +36,7 @@ const CAPS = [
 export function CopilotSoon() {
   return (
     <>
-      <Header sub="Your writing partner and STEM mentor, built into Forge." />
+      <Header sub="Ember is your writing partner and STEM mentor, built into Forge. It's waking up soon." mood="sleepy" />
       <div className="mt-6 grid gap-4 sm:grid-cols-3">
         {CAPS.map((c, i) => (
           <motion.div key={c.title} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.08 }} className="grad-edge rounded-3xl border p-5 shadow-[var(--shadow)]">
@@ -113,7 +114,7 @@ export function CopilotChat({ first, field, initial = "" }: { first: string; fie
 
   return (
     <div className="flex min-h-[calc(100dvh-10rem)] flex-col">
-      <Header sub={`Hi ${first}. Ask about your work, your field or what's on Forge. It only uses what you tell it.`} />
+      <Header sub={`Hi ${first}, I'm Ember. Ask about your work, your field or what's on Forge. I only use what you tell me.`} mood={busy ? "thinking" : msgs.length ? "happy" : "idle"} />
       {!msgs.length && (
         <div className="mt-6 grid gap-3 sm:grid-cols-2">
           {IDEAS.map((idea, i) => (
@@ -140,7 +141,7 @@ export function CopilotChat({ first, field, initial = "" }: { first: string; fie
                 <p className="bg-accent-grad max-w-[85%] rounded-3xl rounded-br-md px-4 py-2.5 text-[15px] whitespace-pre-wrap text-on-accent">{m.content}</p>
               ) : (
                 <div className="flex max-w-[92%] gap-3">
-                  <span className="bg-accent-grad mt-1 grid size-8 shrink-0 place-items-center rounded-xl text-on-accent"><Sparkles className="size-4" /></span>
+                  <Ember size={34} mood={busy && i === msgs.length - 1 ? "thinking" : "idle"} className="mt-0.5" />
                   <div className="rounded-3xl rounded-tl-md border border-line bg-surface px-4 py-3 text-[15px] leading-relaxed whitespace-pre-wrap text-text-2 shadow-[var(--shadow)]">
                     <Lookups tools={m.tools} live={busy && i === msgs.length - 1} />
                     {m.content ? <Rich text={m.content} /> : m.tools?.length ? null : <span className="inline-flex gap-1" aria-label="Thinking">{[0, 1, 2].map((d) => <motion.span key={d} className="size-2 rounded-full bg-accent" animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 1, repeat: Infinity, delay: d * 0.15 }} />)}</span>}

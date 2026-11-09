@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import { Lookups, Rich } from "@/app/(app)/copilot/copilot-client";
 import { useCopilot } from "@/components/copilot/use-copilot";
 import { cn } from "@/lib/forge";
+import { Ember } from "@/components/ember/ember";
 import type { Guide, GuideStep } from "@/lib/guide";
 import type { Proposal } from "@/lib/copilot-agent";
 import { ProposalCard } from "@/components/copilot/proposal-card";
@@ -35,8 +36,8 @@ function Ring({ done, total, size = 56 }: { done: number; total: number; size?: 
   const c = 2 * Math.PI * r;
   return (
     <svg viewBox={`0 0 ${size} ${size}`} className="pointer-events-none absolute inset-0 -rotate-90" aria-hidden="true">
-      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="rgba(255,255,255,0.35)" strokeWidth="3" />
-      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="white" strokeWidth="3" strokeLinecap="round" strokeDasharray={c} strokeDashoffset={c * (1 - (total ? done / total : 1))} className="transition-[stroke-dashoffset] duration-700" />
+      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--border)" strokeWidth="3" />
+      <circle cx={size / 2} cy={size / 2} r={r} fill="none" stroke="var(--accent)" strokeWidth="3" strokeLinecap="round" strokeDasharray={c} strokeDashoffset={c * (1 - (total ? done / total : 1))} className="transition-[stroke-dashoffset] duration-700" />
     </svg>
   );
 }
@@ -88,10 +89,10 @@ export function GuideLauncher({ guide, copilot }: { guide: Guide; copilot: boole
         animate={{ scale: 1, opacity: 1 }}
         whileHover={{ scale: 1.06 }}
         whileTap={{ scale: 0.94 }}
-        className="bg-accent-grad fixed right-4 bottom-24 z-40 grid size-14 place-items-center rounded-full text-on-accent shadow-[0_14px_34px_-10px_var(--accent)] md:right-6 md:bottom-6"
+        className="glass-panel fixed right-4 bottom-24 z-40 grid size-16 place-items-center rounded-full shadow-[0_14px_34px_-12px_var(--accent)] md:right-6 md:bottom-6"
       >
-        <Ring done={memberDone} total={guide.member.length} />
-        {open ? <X className="size-6" /> : <Sparkles className="size-6" />}
+        <Ring done={memberDone} total={guide.member.length} size={64} />
+        {open ? <X className="size-6 text-text" /> : <Ember size={40} mood={ai.busy ? "thinking" : left ? "idle" : "happy"} />}
         {!open && left > 0 && <span className="absolute -top-1 -right-1 grid h-5 min-w-5 place-items-center rounded-full border-2 border-bg bg-text px-1 text-[10px] font-bold text-bg tabular-nums">{left}</span>}
       </motion.button>
 
@@ -108,9 +109,9 @@ export function GuideLauncher({ guide, copilot }: { guide: Guide; copilot: boole
             className="fixed inset-x-3 bottom-40 z-40 flex max-h-[68dvh] flex-col overflow-hidden rounded-3xl border border-line bg-surface shadow-[0_30px_80px_-24px_rgba(0,0,0,0.45)] md:inset-x-auto md:right-6 md:bottom-24 md:w-[400px] md:max-h-[78dvh]"
           >
             <header className="flex items-center gap-3 border-b border-line px-5 py-4">
-              <span className="bg-accent-grad grid size-9 place-items-center rounded-xl text-on-accent"><Sparkles className="size-4" /></span>
+              <Ember size={40} mood={ai.busy ? "thinking" : left ? "idle" : "happy"} />
               <div className="min-w-0 flex-1">
-                <h2 className="font-semibold">Your guide</h2>
+                <h2 className="font-semibold">Your guide <span className="font-normal text-muted">· Ember</span></h2>
                 <p className="text-xs text-muted">{left ? `${left} step${left === 1 ? "" : "s"} to a profile and club that get noticed` : "All set. Nice work."}</p>
               </div>
               <button type="button" onClick={() => setOpen(false)} aria-label="Close guide" className="grid size-8 place-items-center rounded-full text-faint hover:bg-hover hover:text-text"><X className="size-4" /></button>

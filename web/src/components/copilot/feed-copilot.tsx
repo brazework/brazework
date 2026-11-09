@@ -8,6 +8,7 @@ import { ProposalCard } from "@/components/copilot/proposal-card";
 import { useCopilot } from "@/components/copilot/use-copilot";
 import type { Proposal } from "@/lib/copilot-agent";
 import { cn } from "@/lib/forge";
+import { Ember } from "@/components/ember/ember";
 
 type Action = { icon: typeof Sparkles; label: string; ask?: string; prefill?: string; href: string };
 
@@ -81,8 +82,8 @@ export function FeedCopilot({ first, copilot, next, club }: { first: string; cop
       <div className="bg-accent-grad ai-aurora-2 pointer-events-none absolute -bottom-32 -left-24 -z-10 size-72 rounded-full blur-3xl" aria-hidden="true" />
 
       <div className="flex items-center gap-2 text-xs font-medium text-muted">
-        <span className="bg-accent-grad grid size-6 place-items-center rounded-lg text-on-accent"><Sparkles className="size-3.5" /></span>
-        Forge Copilot
+        <Ember size={30} mood={ai.busy ? "thinking" : answer.text ? "happy" : "idle"} />
+        <span><span className="text-text">Ember</span> · Forge Copilot</span>
         {next && <Link href={next.href} className="ml-auto inline-flex items-center gap-1 rounded-full border border-line bg-surface/80 px-2.5 py-1 text-[11px] text-text-2 transition hover:border-line-strong">Next: {next.label} <ArrowRight className="size-3" /></Link>}
       </div>
       <h1 className="mt-2.5 text-[clamp(1.3rem,2.4vw,1.75rem)] leading-tight font-semibold tracking-tight">

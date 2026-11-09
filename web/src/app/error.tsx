@@ -3,6 +3,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { RotateCcw } from "lucide-react";
 import { useEffect } from "react";
 import { Button, Logo } from "@/components/ui";
+import { Ember } from "@/components/ember/ember";
 
 // Any unexpected error below the root layout lands here instead of a blank page.
 export default function ErrorPage({ error, reset }: { error: Error & { digest?: string }; reset: () => void }) {
@@ -13,7 +14,8 @@ export default function ErrorPage({ error, reset }: { error: Error & { digest?: 
       <ThemeToggle className="absolute top-5 right-5" />
       <div className="flex flex-col items-center">
         <Logo />
-        <h1 className="mt-12 text-4xl font-semibold tracking-tight">Something overheated.</h1>
+        <Ember size={112} mood="sleepy" className="mt-10" label="Ember, tired" />
+        <h1 className="mt-4 text-4xl font-semibold tracking-tight">Something overheated.</h1>
         <p className="mt-4 max-w-md text-muted">That didn&apos;t work, and it&apos;s on us. Try again, and if it keeps happening, tell us what you were doing.</p>
         {error.digest && <p className="mt-2 font-mono text-xs text-faint">Ref {error.digest}</p>}
         <div className="mt-8 flex gap-3">

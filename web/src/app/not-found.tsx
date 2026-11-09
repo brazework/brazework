@@ -1,5 +1,6 @@
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button, Logo } from "@/components/ui";
+import { Ember } from "@/components/ember/ember";
 
 export default function NotFound() {
   return (
@@ -8,7 +9,8 @@ export default function NotFound() {
       <ThemeToggle className="absolute top-5 right-5" />
       <div className="flex flex-col items-center">
         <Logo />
-        <p className="mt-12 font-mono text-sm tracking-[0.2em] text-accent">404</p>
+        <Ember size={112} mood="surprised" className="mt-10" label="Ember looking surprised" />
+        <p className="mt-4 font-mono text-sm tracking-[0.2em] text-accent">404</p>
         <h1 className="mt-3 text-5xl font-semibold tracking-tight">
           Nothing forged <span className="text-shine">here yet.</span>
         </h1>

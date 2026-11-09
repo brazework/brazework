@@ -324,3 +324,32 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity
   background: color-mix(in oklab, var(--accent) 13%, transparent);
   box-shadow: inset 0 0 0 1px color-mix(in oklab, var(--accent) 22%, transparent);
 }
+
+/* ---------- Ember, Forge's character (components/ember/ember.tsx) ----------
+   Coloured by the theme: --ember-a/--ember-b are its gradient, --ember-eye its face. */
+:root { --ember-a: #52525b; --ember-b: #18181b; --ember-eye: #ffffff; --ember-glint: #18181b; --ember-glow: 0.18; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --ember-a: #ffffff; --ember-b: #a1a1aa; --ember-eye: #09090b; --ember-glint: #ffffff; --ember-glow: 0.55; } }
+:root[data-theme="dark"] { --ember-a: #ffffff; --ember-b: #a1a1aa; --ember-eye: #09090b; --ember-glint: #ffffff; --ember-glow: 0.55; }
+:root[data-skin="fire"] { --ember-glint: #ffffff; --ember-glow: 0.55; --ember-a: #ffd166; --ember-b: #ff4d4d; --ember-eye: #2a1208; }
+:root[data-skin="blueprint"] { --ember-glint: #ffffff; --ember-glow: 0.55; --ember-a: #a5d8ff; --ember-b: #2563eb; --ember-eye: #0a1c35; }
+:root[data-skin="aurora"] { --ember-glint: #ffffff; --ember-glow: 0.55; --ember-a: #67e8f9; --ember-b: #c026d3; --ember-eye: #1b1442; }
+:root[data-skin="emerald"] { --ember-glint: #ffffff; --ember-glow: 0.55; --ember-a: #d9f99d; --ember-b: #10b981; --ember-eye: #06291c; }
+
+@keyframes ember-float { 50% { transform: translateY(-3px); } }
+@keyframes ember-shadow { 50% { transform: scaleX(0.82); opacity: 0.14; } }
+@keyframes ember-blink { 0%, 92%, 100% { transform: scaleY(1); } 95% { transform: scaleY(0.1); } }
+@keyframes ember-orbit { to { transform: rotate(360deg); } }
+@keyframes ember-hop { 0%, 100% { transform: translateY(0) scale(1, 1); } 30% { transform: translateY(-6px) scale(0.96, 1.04); } 55% { transform: translateY(0) scale(1.05, 0.95); } }
+@keyframes ember-breathe { 50% { transform: scale(1.03, 0.97); } }
+@keyframes ember-zz { 0% { opacity: 0; transform: translate(0, 4px); } 40% { opacity: 1; } 100% { opacity: 0; transform: translate(4px, -6px); } }
+.ember .ember-float { transform-origin: 32px 56px; animation: ember-float 3.2s ease-in-out infinite; }
+.ember .ember-shadow { transform-origin: 32px 61px; transform-box: view-box; animation: ember-shadow 3.2s ease-in-out infinite; }
+.ember .ember-eyes { transform-origin: 32px 40px; transform-box: view-box; animation: ember-blink 4.5s ease-in-out infinite; }
+.ember .ember-sparks { transform-origin: 32px 32px; transform-box: view-box; animation: ember-orbit 14s linear infinite; }
+.ember-thinking .ember-sparks { animation-duration: 2.4s; }
+.ember-thinking .ember-float { animation-duration: 1.6s; }
+.ember-happy .ember-float { animation: ember-hop 1.1s ease-in-out infinite; }
+.ember-sleepy .ember-float { animation: ember-breathe 4s ease-in-out infinite; }
+.ember-sleepy .ember-sparks { opacity: 0.4; }
+.ember-zz text:nth-child(1) { animation: ember-zz 2.6s ease-in-out infinite; }
+.ember-zz text:nth-child(2) { animation: ember-zz 2.6s ease-in-out 1.3s infinite; }

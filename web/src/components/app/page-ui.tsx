@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { cn } from "@/lib/forge";
+import { Ember, type EmberMood } from "@/components/ember/ember";
 
 // Shared building blocks for signed-in pages, so every screen looks like one product.
 
@@ -20,11 +21,14 @@ export function Panel({ className, children }: { className?: string; children: R
   return <section className={cn("rounded-3xl border border-line bg-surface/80 p-5 shadow-[var(--shadow)] backdrop-blur-sm", className)}>{children}</section>;
 }
 
-export function EmptyState({ icon, title, body, action }: { icon?: React.ReactNode; title: string; body?: React.ReactNode; action?: React.ReactNode }) {
+export function EmptyState({ icon, title, body, action, mood = "idle" }: { icon?: React.ReactNode; title: string; body?: React.ReactNode; action?: React.ReactNode; mood?: EmberMood }) {
   return (
     <div className="relative flex flex-col items-center overflow-hidden rounded-3xl border border-dashed border-line-strong bg-surface/60 px-6 py-14 text-center">
       <div className="bg-accent-grad pointer-events-none absolute top-6 left-1/2 size-40 -translate-x-1/2 rounded-full banner-glow blur-3xl" aria-hidden="true" />
-      {icon && <div className="float-y relative mb-4 grid size-14 place-items-center rounded-2xl bg-accent-grad text-on-accent shadow-[0_12px_30px_-10px_var(--accent)]">{icon}</div>}
+      <div className="relative mb-3">
+        <Ember size={68} mood={mood} />
+        {icon && <span className="absolute -right-2 -bottom-1 grid size-7 place-items-center rounded-full border-2 border-surface bg-accent-grad text-on-accent shadow-md [&_svg]:size-3.5">{icon}</span>}
+      </div>
       <div className="relative font-semibold">{title}</div>
       {body && <p className="relative mt-1.5 max-w-sm text-sm text-muted">{body}</p>}
       {action && <div className="relative mt-5">{action}</div>}
