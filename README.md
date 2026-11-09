@@ -25,7 +25,7 @@ The research, with sources, is in [docs/positioning.md](docs/positioning.md).
 
 | | |
 |---|---|
-| **Feed** | *For you* shows only posts matching your interests, and says why. Plus Latest, Following and your clubs, with topic filters. Forge updates (recent changes and what's coming next) at the top right. Edit your own posts any time; edited posts say so |
+| **Feed** | *For you* shows only posts matching your interests, and says why. Plus Latest, Following and your clubs, with topic filters. Forge updates (recent changes and what's coming next) at the top right, and a Trending / News box: STEM headlines from IEEE Spectrum, ScienceDaily, Nature, NASA and others, matched to your interests (headlines and links only, fetched at most hourly). Edit your own posts any time; edited posts say so |
 | **Search** | One search bar above every page finds people and communities by name, field, headline or club, with people and clubs that share your interests first. Connect or join from the results; `/search` shows everything |
 | **Profiles & projects** | Headline, field, interests, and projects with a public summary and a private write-up. Share any project to the feed |
 | **Communities** | Public or approval-only clubs with invite links, five roles, held-post review, word filters, link holds for new members, bans, and **club events** |

@@ -1,11 +1,13 @@
 import { eventWithHost } from "@/lib/db-features";
-import { ArrowRight, CalendarDays, Check, Flame, Plus, Sparkles, Users } from "lucide-react";
+import { ArrowRight, CalendarDays, Check, Plus, Sparkles, Users } from "lucide-react";
 import Link from "next/link";
 import { DROP_AFTER_MS, dateParts, withHost, type HostedEvent } from "@/lib/events";
 import { cn, requestTime } from "@/lib/forge";
 import { getViewer } from "@/lib/supabase/server";
 import { CommunityBadge } from "../communities/_components/badge";
 import { UpdatesPanel } from "@/components/tour/updates-panel";
+import { newsPool, pickNews, type NewsPick } from "@/lib/news";
+import { TrendingNews } from "./trending-news";
 
 const box = "rounded-3xl border border-line bg-surface p-4 shadow-[var(--shadow)]";
 
@@ -27,14 +29,17 @@ export async function FeedRail() {
   const now = requestTime();
   const cutoff = new Date(now - DROP_AFTER_MS).toISOString();
   const since = new Date(now - 14 * 864e5).toISOString();
-  const [mine, ev, going, projects, posts, recent] = await Promise.all([
+  const [mine, ev, going, projects, posts, recent, pool] = await Promise.all([
     supabase.from("community_members").select("role, communities(id, name, member_count)").eq("uid", user.id).limit(6),
     supabase.from("events").select(await eventWithHost()).eq("status", "published").gt("ends_at", cutoff).order("starts_at", { ascending: true }).limit(4),
     supabase.from("event_rsvps").select("event_id").eq("user_id", user.id).limit(500),
     supabase.from("projects").select("id", { count: "exact", head: true }).eq("owner_id", user.id),
     supabase.from("posts").select("id", { count: "exact", head: true }).eq("author_id", user.id),
     supabase.from("posts").select("tags").is("community_id", null).gt("created_at", since).limit(300),
+    newsPool().catch(() => []),
   ]);
+  // STEM news from around the web, on your interests first.
+  const news = pickNews(pool, profile.interests ?? [], profile.field ?? "", 6, now);
   type C = { id: string; name: string; member_count: number };
   const clubs = ((mine.data ?? []) as unknown as { communities: C | C[] | null }[])
     .flatMap((r) => (Array.isArray(r.communities) ? r.communities : r.communities ? [r.communities] : []))
@@ -57,14 +62,14 @@ export async function FeedRail() {
     { done: (projects.count ?? 0) > 0, label: "Add a project", href: "/profile#projects" },
     { done: (posts.count ?? 0) > 0, label: "Share your first post", href: "/feed" },
   ];
-  return <RailView steps={steps} trending={trending} clubs={clubs} events={events} going={goingSet} />;
+  return <RailView steps={steps} trending={trending} news={news} hasInterests={(p.interests ?? []).length > 0} clubs={clubs} events={events} going={goingSet} />;
 }
 
 type Step = { done: boolean; label: string; href: string };
 type Club = { id: string; name: string; member_count: number };
 
 // The rail's markup, separate from its queries so it can be previewed with sample data.
-export function RailView({ steps, trending, clubs, events, going: goingSet }: { steps: Step[]; trending: [string, number][]; clubs: Club[]; events: HostedEvent[]; going: Set<string> }) {
+export function RailView({ steps, trending, news = [], hasInterests = false, clubs, events, going: goingSet }: { steps: Step[]; trending: [string, number][]; news?: NewsPick[]; hasInterests?: boolean; clubs: Club[]; events: HostedEvent[]; going: Set<string> }) {
   const done = steps.filter((s) => s.done).length;
   const next = steps.find((s) => !s.done);
   const pct = Math.round((done / steps.length) * 100);
@@ -101,22 +106,7 @@ export function RailView({ steps, trending, clubs, events, going: goingSet }: { 
         </ul>
       </section>
 
-      {trending.length > 0 && (
-        <section className={box}>
-          <Head icon={Flame} title="Trending" />
-          <ol className="mt-3 flex flex-col">
-            {trending.map(([t, n], i) => (
-              <li key={t}>
-                <Link href={`/feed?tab=latest&tag=${encodeURIComponent(t)}`} className="group flex items-center gap-3 rounded-xl px-1.5 py-2 transition hover:bg-hover">
-                  <span className="w-4 text-xs font-semibold text-faint tabular-nums">{i + 1}</span>
-                  <span className="min-w-0 flex-1 truncate text-sm font-medium group-hover:text-text">#{t}</span>
-                  <span className="text-xs text-faint tabular-nums">{n} {n === 1 ? "post" : "posts"}</span>
-                </Link>
-              </li>
-            ))}
-          </ol>
-        </section>
-      )}
+      <TrendingNews trending={trending} news={news} hasInterests={hasInterests} />
 
       <section className={box}>
         <Head icon={Users} title="Your clubs" href="/communities" />

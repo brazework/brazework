@@ -39,6 +39,19 @@ export const ROUTES = {
 
 export const UPDATES: ForgeUpdate[] = [
   {
+    id: "2026-11-09-news", date: "2026-11-09", kind: "New",
+    title: "STEM news on your feed",
+    summary: "Headlines from IEEE Spectrum, ScienceDaily, Nature, NASA and more, picked for your interests.",
+    points: [
+      "The Trending box on your feed now has a News tab. Flip between them any time; Forge remembers the one you used last.",
+      "Stories on your interests come first and say which interest they match, then stories in your field.",
+      "Each headline opens the full story on the publisher's site.",
+    ],
+    tour: [
+      { route: ROUTES.feed, target: "news", title: "STEM news for you", body: "Switch to News to see headlines from around the web on the topics you follow." },
+    ],
+  },
+  {
     id: "2026-11-09-connectors", date: "2026-11-09", kind: "New",
     title: "Connect GitHub and Discord",
     summary: "Import projects from GitHub, and let your club's Discord hear about new events and verified milestones.",
