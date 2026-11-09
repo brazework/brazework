@@ -78,7 +78,6 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
           ) : (
             <>
               <div className="bg-accent-grad absolute inset-0 opacity-90" />
-              <div className="bg-blueprint absolute inset-0 opacity-60 mix-blend-overlay" />
             </>
           )}
         </div>

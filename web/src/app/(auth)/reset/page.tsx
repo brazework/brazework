@@ -8,7 +8,7 @@ export const metadata: Metadata = { title: "Choose a new password" };
 // Reached from the reset email via /auth/callback?next=/reset, which signs the person in first.
 export default function ResetPage() {
   return (
-    <Suspense fallback={<div className="h-72 animate-pulse rounded-3xl bg-surface/60" aria-busy="true" />}>
+    <Suspense fallback={<div className="h-72 shimmer rounded-3xl" aria-busy="true" />}>
       <Reset />
     </Suspense>
   );

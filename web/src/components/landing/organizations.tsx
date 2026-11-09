@@ -5,7 +5,7 @@ import { useActionState, useState } from "react";
 import { registerOrgInterest, type OrgInterestState } from "@/app/actions/org-interest";
 import { Button, Field, inputCls } from "@/components/ui";
 import { cn } from "@/lib/forge";
-import { CornerMarks, FigLabel } from "./blueprint";
+import { Eyebrow, H2 } from "./marketing";
 import { Reveal } from "./reveal";
 import { submitWithoutReset } from "@/lib/submit";
 
@@ -20,13 +20,13 @@ export function Organizations() {
   const [state, action, pending] = useActionState<OrgInterestState, FormData>(registerOrgInterest, { ok: false, message: "" });
 
   return (
-    <section id="founding" className="bp-grid relative scroll-mt-24 border-b border-line py-24 sm:py-32">
+    <section id="founding" className="relative isolate scroll-mt-24 overflow-hidden py-24 sm:py-32">
       <div className="mx-auto grid max-w-7xl gap-14 px-6 lg:grid-cols-2">
         <div>
           <Reveal>
-            <FigLabel n="07">Founding clubs program</FigLabel>
-            <h2 className="mt-4 text-[clamp(2rem,4.5vw,3.25rem)] leading-[1.05] font-semibold tracking-[-0.035em]">
-              Be one of the first clubs <span className="text-shine">on Forge.</span>
+            <Eyebrow>Founding clubs program</Eyebrow>
+            <h2 className={`mt-5 ${H2}`}>
+              Be one of the first clubs <span className="text-grad">on Forge.</span>
             </h2>
             <ul className="mt-6 grid gap-2 text-sm text-text-2">
               <li>· We set your club up with you, personally.</li>
@@ -41,11 +41,11 @@ export function Organizations() {
                   type="button"
                   onClick={() => setType(t.id)}
                   className={cn(
-                    "flex w-full items-start gap-4 border p-5 text-left transition",
-                    type === t.id ? "border-accent bg-surface" : "border-line bg-surface/60 hover:border-line-strong",
+                    "flex w-full items-start gap-4 rounded-3xl border p-5 text-left transition",
+                    type === t.id ? "border-line-strong bg-surface shadow-[var(--shadow)]" : "border-line bg-surface/60 hover:border-line-strong",
                   )}
                 >
-                  <t.icon className={cn("mt-0.5 size-6 shrink-0", type === t.id ? "text-accent" : "text-faint")} />
+                  <span className={cn("grid size-10 shrink-0 place-items-center rounded-xl transition", type === t.id ? "bg-accent-grad text-on-accent" : "bg-surface-2 text-faint")}><t.icon className="size-5" /></span>
                   <div>
                     <div className="font-semibold">{t.title}</div>
                     <p className="mt-1 text-sm text-muted">{t.body}</p>
@@ -57,8 +57,7 @@ export function Organizations() {
         </div>
 
         <Reveal delay={0.1}>
-          <div className="relative overflow-hidden border border-line-strong bg-surface p-6 shadow-[var(--shadow)] sm:p-8">
-            <CornerMarks />
+          <div className="relative overflow-hidden rounded-[2rem] border border-line bg-surface p-6 shadow-[var(--shadow)] sm:p-8">
             <AnimatePresence mode="wait">
               {state.ok ? (
                 <motion.div key="done" initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} className="flex min-h-[420px] flex-col items-center justify-center text-center">
@@ -72,7 +71,7 @@ export function Organizations() {
                   <input type="hidden" name="type" value={type} />
                   <div role="group" aria-label="Organization type" className="flex flex-wrap gap-2">
                     {TYPES.map((t) => (
-                      <button key={t.id} type="button" aria-pressed={type === t.id} onClick={() => setType(t.id)} className="rounded-md border border-line px-4 py-1.5 font-mono text-xs tracking-wide text-muted uppercase transition aria-pressed:border-accent aria-pressed:bg-accent aria-pressed:text-on-accent">
+                      <button key={t.id} type="button" aria-pressed={type === t.id} onClick={() => setType(t.id)} className="rounded-full border border-line px-4 py-1.5 text-sm text-muted transition aria-pressed:border-transparent aria-pressed:bg-accent-grad aria-pressed:text-on-accent">
                         {t.label}
                       </button>
                     ))}
@@ -84,7 +83,7 @@ export function Organizations() {
                     <Field label="Your role"><input name="role" maxLength={60} placeholder={type === "club" ? "e.g. President" : "e.g. University recruiter"} className={inputCls} /></Field>
                   </div>
                   <p role="status" className="min-h-5 text-sm text-danger">{state.message}</p>
-                  <Button type="submit" size="lg" disabled={pending} className="self-start rounded-md">
+                  <Button type="submit" size="lg" disabled={pending} className="self-start">
                     {pending && <Loader2 className="size-4 animate-spin" />} {pending ? "Sending…" : "Register interest"}
                   </Button>
                 </motion.form>

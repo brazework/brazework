@@ -28,7 +28,7 @@ export function CoverBanner({ path, editable, userId }: { path?: string; editabl
   };
   return (
     <div className="group relative h-36 overflow-hidden border-b border-line sm:h-48">
-      {path ? <Image src={mediaUrl(path)} alt="" fill sizes="(min-width: 768px) 768px, 100vw" className="object-cover" priority /> : <div className="bg-blueprint absolute inset-0" />}
+      {path ? <Image src={mediaUrl(path)} alt="" fill sizes="(min-width: 768px) 768px, 100vw" className="object-cover" priority /> : <div className="bg-accent-grad absolute inset-0 opacity-80" />}
       {editable && (
         <>
           <input ref={input} type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) void pick(f); }} />

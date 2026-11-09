@@ -11,12 +11,12 @@ export const metadata: Metadata = { title: "Set up your profile" };
 export default function OnboardingPage() {
   return (
     <div className="relative isolate min-h-dvh">
-      <div className="bg-blueprint absolute inset-0 -z-10" />
+      <div className="app-backdrop absolute inset-0 -z-10" />
       <ThemeToggle className="absolute top-5 right-5" />
       <div className="mx-auto max-w-3xl px-6 py-14">
         <Logo />
         <div className="mt-14">
-          <Suspense fallback={<div className="h-96 animate-pulse rounded-3xl bg-surface/60" aria-busy="true" />}>
+          <Suspense fallback={<div className="h-96 shimmer rounded-3xl" aria-busy="true" />}>
             <Onboarding />
           </Suspense>
         </div>

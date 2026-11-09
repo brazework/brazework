@@ -136,15 +136,6 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity
   color: transparent;
 }
 
-/* Engineering-paper grid, faded out toward the edges. */
-@utility bg-blueprint {
-  background-image:
-    linear-gradient(to right, color-mix(in oklab, var(--text) 5%, transparent) 1px, transparent 1px),
-    linear-gradient(to bottom, color-mix(in oklab, var(--text) 5%, transparent) 1px, transparent 1px);
-  background-size: 56px 56px;
-  mask-image: radial-gradient(ellipse 70% 60% at 50% 40%, #000 30%, transparent 100%);
-}
-
 @utility glass {
   background: color-mix(in oklab, var(--surface) 80%, transparent);
   backdrop-filter: blur(14px) saturate(140%);
@@ -196,62 +187,6 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity
 :root[data-theme="dark"] .dark-only { display: block; }
 :root[data-theme="dark"] .light-only { display: none; }
 
-/* ---------- Blueprint: the marketing pages' drafting-sheet look ----------
-   Scoped to .bp (landing + auth). Paper and blue ink in light mode, a deep blueprint sheet in dark.
-   Same token names, so every component inside just works. */
-.bp {
-  --bg: #f4f7fb; --surface: #ffffff; --surface-2: #eef3fa; --raised: #e2eaf6; --hover: #e9f0f9;
-  --border: #c9d7ea; --border-strong: #a7bedc;
-  --text: #0e2a52; --text-2: #1e3d6b; --muted: #3c5c8a; --faint: #4b6a95;
-  --accent: #1f5fbf; --on-accent: #ffffff; --glow: rgba(31, 95, 191, 0.10); --spark: 31, 95, 191;
-  --accent-grad: linear-gradient(135deg, #2563eb, #1f5fbf 55%, #1e40af); --text-grad: linear-gradient(90deg, #1f5fbf, #1e40af);
-  --ink: #1f5fbf; --grid-minor: rgba(31, 95, 191, 0.06); --grid-major: rgba(31, 95, 191, 0.12);
-  --shadow: 0 1px 0 rgba(14, 42, 82, 0.04), 0 18px 40px -24px rgba(14, 42, 82, 0.35);
-  background: var(--bg);
-  color: var(--text);
-}
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .bp {
-    --bg: #0a1c35; --surface: #0e2645; --surface-2: #112d52; --raised: #15365f; --hover: #13325a;
-    --border: #23477a; --border-strong: #3a649f;
-    --text: #eaf2ff; --text-2: #c8daf4; --muted: #9db9df; --faint: #8aa8d2;
-    --accent: #7cc4ff; --on-accent: #0a1c35; --glow: rgba(124, 196, 255, 0.10); --spark: 124, 196, 255;
-    --accent-grad: linear-gradient(135deg, #a5d8ff, #7cc4ff 50%, #5b9dff); --text-grad: linear-gradient(90deg, #a5d8ff, #6aa8ff);
-    --ink: #8fcbff; --grid-minor: rgba(143, 203, 255, 0.06); --grid-major: rgba(143, 203, 255, 0.12);
-    --shadow: 0 1px 0 rgba(0, 0, 0, 0.3), 0 24px 48px -24px rgba(0, 0, 0, 0.7);
-  }
-}
-:root[data-theme="dark"] .bp {
-  --bg: #0a1c35; --surface: #0e2645; --surface-2: #112d52; --raised: #15365f; --hover: #13325a;
-  --border: #23477a; --border-strong: #3a649f;
-  --text: #eaf2ff; --text-2: #c8daf4; --muted: #9db9df; --faint: #8aa8d2;
-  --accent: #7cc4ff; --on-accent: #0a1c35; --glow: rgba(124, 196, 255, 0.10); --spark: 124, 196, 255;
-  --accent-grad: linear-gradient(135deg, #a5d8ff, #7cc4ff 50%, #5b9dff); --text-grad: linear-gradient(90deg, #a5d8ff, #6aa8ff);
-  --ink: #8fcbff; --grid-minor: rgba(143, 203, 255, 0.06); --grid-major: rgba(143, 203, 255, 0.12);
-  --shadow: 0 1px 0 rgba(0, 0, 0, 0.3), 0 24px 48px -24px rgba(0, 0, 0, 0.7);
-}
-
-/* Drafting paper: a fine 24px grid with a heavier line every 120px. */
-@utility bp-grid {
-  background-image:
-    linear-gradient(var(--grid-major) 1px, transparent 1px),
-    linear-gradient(90deg, var(--grid-major) 1px, transparent 1px),
-    linear-gradient(var(--grid-minor) 1px, transparent 1px),
-    linear-gradient(90deg, var(--grid-minor) 1px, transparent 1px);
-  background-size: 120px 120px, 120px 120px, 24px 24px, 24px 24px;
-  background-position: -1px -1px;
-}
-
-/* Line art that draws itself in (CSS only, so it shows before and without JavaScript).
-   Paths use pathLength="1"; reduced motion shows the finished drawing. */
-@keyframes bp-draw { to { stroke-dashoffset: 0; } }
-.bp-draw { stroke-dasharray: 1; stroke-dashoffset: 1; animation: bp-draw 1.8s cubic-bezier(0.65, 0, 0.35, 1) forwards; animation-delay: var(--d, 0s); }
-@keyframes bp-fade { from { opacity: 0; } }
-.bp-label { animation: bp-fade 0.6s ease both; animation-delay: var(--d, 0s); }
-@media (prefers-reduced-motion: reduce) {
-  .bp-draw { stroke-dashoffset: 0; animation: none !important; }
-}
-
 /* ---------- Themes ("skins"): the whole app, light and dark ----------
    Settings → Appearance sets html[data-skin]. Mono (no attribute) is the default. Each skin swaps the
    surfaces, text, accent and a signature gradient (--accent-grad), tuned so button text stays readable. */
@@ -284,3 +219,40 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity
   background-image: radial-gradient(900px 520px at 85% -8%, var(--glow), transparent 65%), radial-gradient(700px 420px at -5% 5%, var(--glow), transparent 60%);
   background-attachment: fixed;
 }
+
+/* A soft light that follows the cursor across a card (position set by SpotlightTracker). */
+@utility spotlight {
+  position: relative;
+  isolation: isolate;
+  &::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    background: radial-gradient(380px circle at var(--mx, 50%) var(--my, 50%), color-mix(in oklab, var(--accent) 13%, transparent), transparent 60%);
+  }
+  &:hover::before { opacity: 1; }
+}
+
+/* Progress bars that drive auto-advancing pickers (the hero's fields, the how-it-works steps):
+   when the bar finishes, onAnimationEnd moves to the next item. */
+@keyframes progress-fill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+.hero-progress { animation: progress-fill 4.2s linear forwards; }
+.step-progress { animation: progress-fill 6s linear forwards; }
+
+/* A gentle bob for empty-state icons, and a shimmer for loading placeholders. */
+@keyframes float-y { 50% { transform: translateY(-6px); } }
+.float-y { animation: float-y 3.2s ease-in-out infinite; }
+.shimmer {
+  background: linear-gradient(90deg, var(--surface) 0%, var(--raised) 50%, var(--surface) 100%);
+  background-size: 200% 100%;
+  animation: shimmer-x 1.6s linear infinite;
+}
+@keyframes shimmer-x { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+/* Corner glows on banners: faint in Mono (black or white would read as a smudge), vivid in colour themes. */
+.banner-glow { opacity: 0.07; }
+:root[data-skin] .banner-glow { opacity: 0.28; }

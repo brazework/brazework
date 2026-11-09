@@ -1,5 +1,6 @@
 "use client";
-import { ImagePlus, Loader2, Video, X } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
+import { ImagePlus, Loader2, Play, Video, X } from "lucide-react";
 import Image from "next/image";
 import { useRef, useState } from "react";
 import { cn } from "@/lib/forge";
@@ -67,26 +68,31 @@ export function AttachButtons({ onPick, disabled }: { onPick: (files: FileList) 
 export function AttachmentTray({ slots, onRemove }: { slots: Slot[]; onRemove: (id: string) => void }) {
   if (!slots.length) return null;
   return (
-    <div className="mt-3 flex flex-wrap gap-2">
+    <div className={cn("mt-4 grid gap-2", slots.length === 1 ? "grid-cols-1" : "grid-cols-2 sm:grid-cols-4")}>
+      <AnimatePresence initial={false}>
       {slots.map((s) => (
-        <div key={s.id} className="relative size-24 overflow-hidden rounded-xl border border-line bg-raised">
+        <motion.div key={s.id} layout initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.9 }} transition={{ duration: 0.2 }} className={cn("group relative overflow-hidden rounded-2xl border border-line bg-raised", slots.length === 1 ? "aspect-video max-h-80" : "aspect-square")}>
           {s.kind === "image" ? (
             s.item ? (
-              <Image src={mediaUrl(s.item.path)} alt="" fill sizes="96px" className="object-cover" />
+              <Image src={mediaUrl(s.item.path)} alt="" fill sizes="(min-width: 640px) 600px, 100vw" className="object-cover" />
             ) : (
               // A local blob: preview while uploading; next/image can't optimise those.
               // eslint-disable-next-line @next/next/no-img-element
               <img src={s.preview} alt="" className="size-full object-cover" />
             )
           ) : (
-            <video src={s.preview} muted playsInline className="size-full object-cover" />
+            <>
+              <video src={s.preview} muted playsInline className="size-full object-cover" />
+              <span className="absolute inset-0 grid place-items-center"><span className="grid size-12 place-items-center rounded-full bg-black/50 text-white backdrop-blur"><Play className="ml-0.5 size-5" /></span></span>
+            </>
           )}
-          {s.status === "uploading" && <span className="absolute inset-0 grid place-items-center bg-bg/60"><Loader2 className="size-5 animate-spin" /><span className="sr-only">Uploading</span></span>}
-          <button type="button" onClick={() => onRemove(s.id)} aria-label="Remove attachment" className={cn("absolute top-1 right-1 grid size-6 place-items-center rounded-full bg-bg/80 text-text transition hover:bg-bg")}>
+          {s.status === "uploading" && <span className="absolute inset-0 grid place-items-center bg-bg/50 backdrop-blur-[2px]"><span className="flex items-center gap-2 rounded-full bg-surface/90 px-3 py-1.5 text-xs font-medium shadow"><Loader2 className="size-4 animate-spin" /> Uploading</span></span>}
+          <button type="button" onClick={() => onRemove(s.id)} aria-label="Remove attachment" className="absolute top-2 right-2 grid size-7 place-items-center rounded-full bg-black/60 text-white backdrop-blur transition hover:scale-110 hover:bg-black/80">
             <X className="size-3.5" />
           </button>
-        </div>
+        </motion.div>
       ))}
+      </AnimatePresence>
     </div>
   );
 }

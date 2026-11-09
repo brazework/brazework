@@ -28,7 +28,7 @@ export function ClubCoverUpload({ cid, path, userId }: { cid: string; path?: str
     <div className="flex flex-col gap-3">
       <div className="text-sm font-medium text-text-2">Cover photo</div>
       <div className="relative h-32 overflow-hidden rounded-2xl border border-line">
-        {path ? <Image src={mediaUrl(path)} alt="" fill sizes="640px" className="object-cover" /> : <div className="bg-blueprint absolute inset-0" />}
+        {path ? <Image src={mediaUrl(path)} alt="" fill sizes="640px" className="object-cover" /> : <div className="bg-accent-grad absolute inset-0 opacity-80" />}
       </div>
       <input ref={input} type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) void pick(f); }} />
       <div className="flex flex-wrap items-center gap-2">

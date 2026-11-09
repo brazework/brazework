@@ -17,11 +17,11 @@ type Preview = { community_id: string; name: string; about: string; field: strin
 export default function JoinPage({ params }: PageProps<"/join/[code]">) {
   return (
     <main className="relative isolate grid min-h-dvh place-items-center px-6 py-16">
-      <div className="bg-blueprint absolute inset-0 -z-10" />
+      <div className="app-backdrop absolute inset-0 -z-10" />
       <ThemeToggle className="absolute top-5 right-5" />
       <div className="w-full max-w-md">
         <Link href="/" aria-label="Forge home" className="mb-10 inline-block"><Logo /></Link>
-        <Suspense fallback={<div className="h-80 animate-pulse rounded-3xl bg-surface/60" />}>
+        <Suspense fallback={<div className="h-80 shimmer rounded-3xl" />}>
           <Invite params={params} />
         </Suspense>
       </div>

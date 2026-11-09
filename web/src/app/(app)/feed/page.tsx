@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
-import { EmptyState, Tabs } from "@/components/app/page-ui";
+import { EmptyState } from "@/components/app/page-ui";
 import { type Post } from "@/lib/forge";
 import { projectsForPosts } from "@/lib/project-posts";
 import { dbFeatures, postSelect } from "@/lib/db-features";
@@ -10,18 +10,12 @@ import { avatarSrc } from "@/lib/media";
 import { getViewer } from "@/lib/supabase/server";
 import { Composer } from "./composer";
 import { LiveRefresh } from "@/components/app/live-refresh";
+import { FeedHeader, TABS, type TabId } from "./header";
 import { PostCard } from "./post-card";
 import { FeedRail } from "./rail";
 
 export const metadata: Metadata = { title: "Feed" };
 
-const TABS = [
-  { id: "for-you", label: "For you" },
-  { id: "latest", label: "Latest" },
-  { id: "following", label: "Following" },
-  { id: "communities", label: "Communities" },
-] as const;
-type TabId = (typeof TABS)[number]["id"];
 
 export default function FeedPage({ searchParams }: PageProps<"/feed">) {
   return (
@@ -33,7 +27,7 @@ export default function FeedPage({ searchParams }: PageProps<"/feed">) {
         </Suspense>
       </div>
       <aside aria-label="Your clubs and upcoming events" className="hidden xl:block">
-        <Suspense fallback={<div className="h-96 animate-pulse rounded-3xl bg-surface/60" />}>
+        <Suspense fallback={<div className="h-96 shimmer rounded-3xl" />}>
           <FeedRail />
         </Suspense>
       </aside>
@@ -117,19 +111,16 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
 
   return (
     <>
-      <FeedHeader tab={tab} />
+      <FeedHeader tab={tab} first={profile.first_name} />
       {interests.length > 0 && (
-        <section data-tour="interests" aria-label="Your focus areas" className="mt-6 rounded-3xl border border-line bg-surface/70 p-4">
-          <div className="flex items-baseline justify-between">
-            <h2 className="text-sm font-medium">Your focus areas</h2>
-            <Link href="/settings#profile" className="text-xs text-muted hover:text-text">Edit in Settings</Link>
-          </div>
-          <div className="no-scrollbar mt-3 flex gap-1.5 overflow-x-auto sm:flex-wrap">
+        <section data-tour="interests" aria-label="Your focus areas" className="mt-5">
+          <div className="no-scrollbar -mx-1 flex items-center gap-1.5 overflow-x-auto px-1 pb-1">
             {interests.map((t) => (
-              <Link key={t} href={tag === t ? `/feed${tab === "for-you" ? "" : `?tab=${tab}`}` : `/feed?${tab === "for-you" ? "" : `tab=${tab}&`}tag=${encodeURIComponent(t)}`} aria-current={tag === t ? "true" : undefined} className={`shrink-0 rounded-md border px-2 py-0.5 font-mono text-[11px] whitespace-nowrap transition ${tag === t ? "border-text text-text" : "border-line text-muted hover:text-text"}`}>
+              <Link key={t} href={tag === t ? `/feed${tab === "for-you" ? "" : `?tab=${tab}`}` : `/feed?${tab === "for-you" ? "" : `tab=${tab}&`}tag=${encodeURIComponent(t)}`} aria-current={tag === t ? "true" : undefined} className={`shrink-0 rounded-full border px-3 py-1 text-xs whitespace-nowrap transition active:scale-95 ${tag === t ? "bg-accent-grad border-transparent text-on-accent shadow-[0_6px_18px_-8px_var(--accent)]" : "border-line bg-surface text-muted hover:border-line-strong hover:text-text"}`}>
                 #{t}
               </Link>
             ))}
+            <Link href="/settings#profile" className="shrink-0 rounded-full px-2 py-1 text-xs text-faint hover:text-text">Edit</Link>
           </div>
         </section>
       )}
@@ -148,22 +139,13 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
   );
 }
 
-function FeedHeader({ tab }: { tab?: TabId }) {
-  return (
-    <header data-tour="feed-tabs" className="flex flex-col gap-4">
-      <h1 className="text-grad text-3xl font-semibold tracking-tight">Feed</h1>
-      <Tabs active={tab ?? ""} tabs={TABS.map((t) => ({ id: t.id, label: t.label, href: t.id === "for-you" ? "/feed" : `/feed?tab=${t.id}` }))} />
-    </header>
-  );
-}
-
 function FeedSkeleton() {
   return (
     <div aria-busy="true">
       <FeedHeader />
-      <div className="mt-6 h-[74px] animate-pulse rounded-3xl bg-surface/60" />
+      <div className="mt-6 h-[110px] shimmer rounded-3xl" />
       <div className="mt-6 flex flex-col gap-4">
-        {[0, 1, 2].map((i) => <div key={i} className="h-48 animate-pulse rounded-3xl bg-surface/60" />)}
+        {[0, 1, 2].map((i) => <div key={i} className="h-48 shimmer rounded-3xl" />)}
       </div>
     </div>
   );

@@ -5,19 +5,20 @@ import { Reveal } from "./reveal";
 
 export function FinalCta() {
   return (
-    <section className="bp-grid relative isolate overflow-hidden border-b border-line py-28 sm:py-36">
+    <section className="relative isolate overflow-hidden py-28 sm:py-36">
+      <div className="bg-accent-grad pointer-events-none absolute top-1/2 left-1/2 -z-10 h-[420px] w-[760px] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-[0.14] blur-3xl" aria-hidden="true" />
       <Reveal className="mx-auto flex max-w-3xl flex-col items-center px-6 text-center">
         <h2 className="text-[clamp(2.5rem,6vw,4.75rem)] leading-[0.98] font-semibold tracking-[-0.04em]">
           Stop describing it.
           <br />
-          <span className="text-accent">Build it on Forge.</span>
+          <span className="text-grad">Build it on Forge.</span>
         </h2>
         <p className="mt-6 max-w-xl text-lg text-muted">Sign up with your university or work email, pick the fields you care about, and post the first thing you&apos;re building.</p>
         <div className="mt-10 flex flex-col items-stretch gap-3 sm:flex-row sm:justify-center">
-          <Button href="/signup" size="lg" className="rounded-md">
+          <Button href="/signup" size="lg">
             Create your free account <ArrowRight className="size-4 transition group-hover:translate-x-0.5" />
           </Button>
-          <Button href="#founding" variant="outline" size="lg" className="rounded-md">Bring your club</Button>
+          <Button href="#founding" variant="outline" size="lg">Bring your club</Button>
         </div>
       </Reveal>
     </section>

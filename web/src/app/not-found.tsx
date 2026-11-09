@@ -4,7 +4,7 @@ import { Button, Logo } from "@/components/ui";
 export default function NotFound() {
   return (
     <main className="relative isolate grid min-h-dvh place-items-center px-6 text-center">
-      <div className="bg-blueprint absolute inset-0 -z-10" />
+      <div className="app-backdrop absolute inset-0 -z-10" />
       <ThemeToggle className="absolute top-5 right-5" />
       <div className="flex flex-col items-center">
         <Logo />

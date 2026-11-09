@@ -1,6 +1,6 @@
 "use client";
-import { motion } from "motion/react";
-import { Bookmark, FolderGit2, Heart, Lock, MessageSquare, Trash2 } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
+import { Bookmark, Check, FolderGit2, Heart, Link2, Lock, MessageSquare, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useOptimistic, useState, useTransition } from "react";
 import { Avatar } from "@/components/ui";
@@ -28,14 +28,54 @@ export function PostCard({ post, liked, saved = false, own = false, index, proje
       if (!res.ok) setError(res.message);
     });
 
+  // Likes celebrate: a burst around the heart, and a big heart when you double-click the post.
+  const [burst, setBurst] = useState(0);
+  const [bigHeart, setBigHeart] = useState(0);
+  const [copied, setCopied] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  const long = post.body.length > 420 || post.body.split("\n").length > 7;
+  const like = (next: boolean) => {
+    if (next) setBurst((n) => n + 1);
+    act({ liked: next, count: opt.count + (next ? 1 : -1) }, () => toggleLike(post.id, next));
+  };
+  const share = async () => {
+    try {
+      await navigator.clipboard.writeText(`${location.origin}/post/${post.id}`);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1600);
+    } catch {
+      setError("Couldn't copy the link.");
+    }
+  };
+
   if (gone) return null;
   return (
     <motion.article
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45, delay: Math.min(index, 8) * 0.04, ease: [0.16, 1, 0.3, 1] }}
-      className="grad-edge rounded-3xl border p-5 shadow-[var(--shadow)] transition duration-300 hover:-translate-y-0.5"
+      className="grad-edge relative rounded-3xl border p-5 shadow-[var(--shadow)] transition duration-300 hover:-translate-y-0.5"
+      onDoubleClick={(e) => {
+        if ((e.target as Element).closest("a,button,video,input,textarea")) return;
+        window.getSelection()?.removeAllRanges();
+        setBigHeart((n) => n + 1);
+        if (!opt.liked) like(true);
+      }}
     >
+      <AnimatePresence>
+        {bigHeart > 0 && (
+          <motion.span
+            key={bigHeart}
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: [0, 1.25, 1, 1.1], opacity: [0, 1, 1, 0] }}
+            transition={{ duration: 0.9, times: [0, 0.3, 0.6, 1] }}
+            className="pointer-events-none absolute inset-0 z-10 grid place-items-center"
+            aria-hidden="true"
+          >
+            <Heart className="size-24 fill-[var(--accent)] text-accent drop-shadow-xl" />
+          </motion.span>
+        )}
+      </AnimatePresence>
       <header className="flex items-center gap-3">
         <Link href={`/u/${post.author_id}`} aria-hidden="true" tabIndex={-1} className="rounded-full bg-accent-grad p-[2px]"><Avatar first={post.author_first} last={post.author_last} size={38} src={avatarSrc(post.author)} className="border-2 border-surface" /></Link>
         <div className="min-w-0">
@@ -49,7 +89,8 @@ export function PostCard({ post, liked, saved = false, own = false, index, proje
         <span className="ml-auto rounded-full bg-accent-grad px-2.5 py-0.5 font-mono text-[10px] font-medium tracking-wide text-on-accent uppercase">{kind}</span>
       </header>
       {reason && <p className="mt-3 font-mono text-[11px] text-faint">{reason}</p>}
-      <p className="mt-4 text-[15px] leading-relaxed whitespace-pre-wrap text-text-2">{post.body}</p>
+      <p className={cn("mt-4 text-[15px] leading-relaxed whitespace-pre-wrap text-text-2", long && !expanded && "line-clamp-6")}>{post.body}</p>
+      {long && <button type="button" onClick={() => setExpanded((v) => !v)} className="mt-1 text-sm font-medium text-text hover:underline">{expanded ? "Show less" : "Show more"}</button>}
       {post.media && post.media.length > 0 && <MediaGrid media={post.media} alt={`Shared by ${post.author_first} ${post.author_last}`} />}
       {project && (
         <Link href={`/u/${post.author_id}#projects`} className="mt-4 flex items-center gap-3 rounded-2xl border border-line bg-surface-2 p-4 transition hover:border-line-strong">
@@ -70,8 +111,9 @@ export function PostCard({ post, liked, saved = false, own = false, index, proje
         </div>
       )}
       <footer className="mt-4 flex items-center gap-1 text-sm text-faint">
-        <button onClick={() => act({ liked: !opt.liked, count: opt.count + (opt.liked ? -1 : 1) }, () => toggleLike(post.id, !opt.liked))} aria-pressed={opt.liked} aria-label={opt.liked ? "Unlike" : "Like"} className="inline-flex h-9 items-center gap-1.5 rounded-full px-3 transition hover:bg-hover hover:text-text">
-          <motion.span animate={opt.liked ? { scale: [1, 1.3, 1] } : {}} transition={{ duration: 0.3 }}>
+        <button onClick={() => like(!opt.liked)} aria-pressed={opt.liked} aria-label={opt.liked ? "Unlike" : "Like"} className="inline-flex h-9 items-center gap-1.5 rounded-full px-3 transition hover:bg-hover hover:text-text active:scale-90">
+          <motion.span className="relative" animate={opt.liked ? { scale: [1, 1.35, 1] } : {}} transition={{ duration: 0.35 }}>
+            {burst > 0 && <HeartBurst key={burst} />}
             <Heart className={cn("size-[18px] transition", opt.liked && "fill-[var(--accent)] text-accent")} />
           </motion.span>
           <span className={cn("tabular-nums", opt.liked && "text-accent")}>{opt.count}</span>
@@ -81,6 +123,13 @@ export function PostCard({ post, liked, saved = false, own = false, index, proje
         </Link>
         <button onClick={() => act({ saved: !opt.saved }, () => toggleSave(post.id, !opt.saved))} aria-pressed={opt.saved} aria-label={opt.saved ? "Unsave" : "Save"} className="inline-flex h-9 items-center gap-1.5 rounded-full px-3 transition hover:bg-hover hover:text-text">
           <Bookmark className={cn("size-[18px]", opt.saved && "fill-[var(--accent)] text-accent")} />
+        </button>
+        <button onClick={share} aria-label={copied ? "Link copied" : "Copy link to post"} className="inline-flex h-9 items-center gap-1.5 rounded-full px-3 transition hover:bg-hover hover:text-text">
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.span key={copied ? "y" : "n"} initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.5, opacity: 0 }} transition={{ duration: 0.15 }} className="inline-flex items-center gap-1.5">
+              {copied ? <><Check className="size-[18px] text-ok" /><span className="text-xs text-ok">Copied</span></> : <Link2 className="size-[18px]" />}
+            </motion.span>
+          </AnimatePresence>
         </button>
         {own && (
           <button
@@ -94,5 +143,25 @@ export function PostCard({ post, liked, saved = false, own = false, index, proje
         {error && <span role="alert" className="ml-auto text-xs text-danger">{error}</span>}
       </footer>
     </motion.article>
+  );
+}
+
+// Six sparks that fly out of the heart when you like something.
+function HeartBurst() {
+  return (
+    <span className="pointer-events-none absolute inset-0" aria-hidden="true">
+      {Array.from({ length: 6 }, (_, i) => {
+        const a = (i / 6) * Math.PI * 2;
+        return (
+          <motion.span
+            key={i}
+            initial={{ x: 0, y: 0, scale: 1, opacity: 1 }}
+            animate={{ x: Math.cos(a) * 18, y: Math.sin(a) * 18, scale: 0, opacity: 0 }}
+            transition={{ duration: 0.55, ease: "easeOut" }}
+            className="bg-accent-grad absolute top-1/2 left-1/2 -mt-[3px] -ml-[3px] size-1.5 rounded-full"
+          />
+        );
+      })}
+    </span>
   );
 }
