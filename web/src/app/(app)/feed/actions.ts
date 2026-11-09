@@ -4,9 +4,12 @@ import { z } from "zod";
 import { ALL_TOPICS, friendlyError } from "@/lib/forge";
 import { dbFeatures } from "@/lib/db-features";
 import { validMedia } from "@/lib/media";
+import { keepMentioned, type Mention } from "@/lib/mention-text";
 import { getViewer } from "@/lib/supabase/server";
 
 export type ComposeState = { ok: boolean; message: string; nonce: number };
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const postSchema = z.object({
   body: z.string().trim().min(1, "Write something first.").max(3000, "Posts can be up to 3,000 characters."),
@@ -30,6 +33,17 @@ export async function createPost(prev: ComposeState, form: FormData): Promise<Co
   }
   const row: Record<string, unknown> = { ...parsed.data };
   if (media && media.length) row.media = media;
+  // @mentions (supabase/mentions.sql): the database re-checks each one and notifies them.
+  const rawMentions = String(form.get("mentions") ?? "[]");
+  if (rawMentions !== "[]" && (await dbFeatures()).mentions) {
+    let picked: Mention[] = [];
+    try {
+      const list: unknown = JSON.parse(rawMentions);
+      if (Array.isArray(list)) picked = list.filter((m): m is Mention => typeof m?.id === "string" && UUID.test(m.id) && typeof m?.name === "string" && m.name.length <= 170);
+    } catch {}
+    const kept = keepMentioned(parsed.data.body, picked);
+    if (kept.length) row.mentions = kept;
+  }
   const { error } = await supabase.from("posts").insert(row);
   if (error) return { ok: false, message: friendlyError(error), nonce: prev.nonce };
   revalidatePath("/feed");

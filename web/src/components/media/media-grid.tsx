@@ -1,6 +1,6 @@
 "use client";
 import { AnimatePresence, motion } from "motion/react";
-import { ChevronLeft, ChevronRight, ChevronsLeftRight, Crosshair, Flag, Maximize, Pause, Play, Repeat, StepBack, StepForward, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronsLeftRight, Crosshair, Flag, Maximize, Minimize, Pause, Play, Repeat, StepBack, StepForward, X } from "lucide-react";
 import Image from "next/image";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/forge";
@@ -141,6 +141,20 @@ function TestRunPlayer({ v }: { v: MediaItem }) {
   const [dur, setDur] = useState(0);
   const [speed, setSpeed] = useState(1);
   const [loop, setLoop] = useState(false);
+  // Full screen: the player box fills the screen (video letterboxed to fit, controls on top). The
+  // same button exits, plus a close button and Esc; state follows the browser so all three agree.
+  const [full, setFull] = useState(false);
+  useEffect(() => {
+    const sync = () => setFull(document.fullscreenElement === box.current);
+    document.addEventListener("fullscreenchange", sync);
+    return () => document.removeEventListener("fullscreenchange", sync);
+  }, []);
+  const toggleFull = () => {
+    if (document.fullscreenElement) { void document.exitFullscreen(); return; }
+    const b = box.current, v = ref.current as (HTMLVideoElement & { webkitEnterFullscreen?: () => void }) | null;
+    if (b?.requestFullscreen) void b.requestFullscreen().catch(() => v?.webkitEnterFullscreen?.());
+    else v?.webkitEnterFullscreen?.(); // iPhone Safari: only the video itself can go full screen
+  };
   // The video is server-rendered, so its metadata can load before React attaches onLoadedMetadata;
   // read the duration as soon as the element is attached too, or the scrubber and markers stay empty.
   const attach = useCallback((node: HTMLVideoElement | null) => {
@@ -166,9 +180,10 @@ function TestRunPlayer({ v }: { v: MediaItem }) {
           else if (e.key === "ArrowLeft") seek(t - 5);
           else if (e.key === ".") step(1);
           else if (e.key === ",") step(-1);
+          else if (e.key === "f") toggleFull();
         }}
         aria-label="Video player. Space plays or pauses, arrows skip 5 seconds, comma and period step one frame."
-        className="group relative overflow-hidden rounded-2xl border border-line bg-black outline-none focus-visible:ring-2 focus-visible:ring-accent"
+        className={cn("group relative overflow-hidden bg-black outline-none", full ? "flex h-dvh w-screen items-center justify-center" : "rounded-2xl border border-line focus-visible:ring-2 focus-visible:ring-accent")}
       >
         <video
           ref={attach}
@@ -182,8 +197,8 @@ function TestRunPlayer({ v }: { v: MediaItem }) {
           onTimeUpdate={(e) => setT(e.currentTarget.currentTime)}
           onLoadedMetadata={(e) => setDur(e.currentTarget.duration)}
           onDurationChange={(e) => { if (Number.isFinite(e.currentTarget.duration)) setDur(e.currentTarget.duration); }}
-          className="max-h-[560px] w-full bg-black"
-          style={v.w && v.h ? { aspectRatio: `${v.w} / ${v.h}` } : undefined}
+          className={full ? "h-full w-full bg-black object-contain" : "max-h-[560px] w-full bg-black"}
+          style={!full && v.w && v.h ? { aspectRatio: `${v.w} / ${v.h}` } : undefined}
         />
         <AnimatePresence>
           {!playing && (
@@ -192,6 +207,7 @@ function TestRunPlayer({ v }: { v: MediaItem }) {
             </motion.button>
           )}
         </AnimatePresence>
+        {full && <button type="button" onClick={toggleFull} aria-label="Close full screen" className="absolute top-4 right-4 z-10 grid size-11 place-items-center rounded-full bg-black/55 text-white backdrop-blur transition hover:bg-black/75"><X className="size-5" /></button>}
         {speed !== 1 && <span className="absolute top-3 left-3 rounded-full bg-black/65 px-2.5 py-1 font-mono text-[11px] text-white backdrop-blur">{speed}× slow-mo</span>}
         <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/85 to-transparent px-3 pt-8 pb-2 transition-opacity duration-300 group-hover:opacity-100 group-focus-within:opacity-100 sm:opacity-0" style={playing ? undefined : { opacity: 1 }}>
           {/* Scrubber with the poster's markers as ticks. */}
@@ -211,7 +227,7 @@ function TestRunPlayer({ v }: { v: MediaItem }) {
             <span className="ml-auto flex items-center gap-1">
               <button type="button" onClick={nextSpeed} aria-label={`Playback speed ${speed}×`} className="h-8 rounded-full px-2.5 font-mono text-xs text-white transition hover:bg-white/15">{speed}×</button>
               <button type="button" onClick={() => setLoop((l) => !l)} aria-pressed={loop} aria-label="Loop" className={cn(ctl, loop && "bg-white/20")}><Repeat className="size-4" /></button>
-              <button type="button" onClick={() => void box.current?.requestFullscreen?.()} aria-label="Full screen" className={ctl}><Maximize className="size-4" /></button>
+              <button type="button" onClick={toggleFull} aria-label={full ? "Exit full screen" : "Full screen"} title={full ? "Exit full screen (Esc)" : "Full screen (f)"} className={ctl}>{full ? <Minimize className="size-4" /> : <Maximize className="size-4" />}</button>
             </span>
           </div>
         </div>

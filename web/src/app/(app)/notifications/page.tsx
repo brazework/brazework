@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { BadgeCheck, Bell, Heart, MessageSquare, UserPlus, Users } from "lucide-react";
+import { AtSign, BadgeCheck, Bell, Heart, MessageSquare, UserPlus, Users } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
@@ -13,7 +13,7 @@ export const metadata: Metadata = { title: "Notifications" };
 
 type N = {
   id: number; actor_id: string | null; actor_first: string; actor_last: string;
-  kind: "like" | "comment" | "follow" | "connect_request" | "connect_accepted" | "community_request" | "community_approved" | "milestone_request" | "milestone_verified" | "milestone_declined";
+  kind: "like" | "comment" | "follow" | "connect_request" | "connect_accepted" | "community_request" | "community_approved" | "milestone_request" | "milestone_verified" | "milestone_declined" | "mention";
   post_id: string | null; community_id: string | null; community_name: string; snippet: string; read: boolean; created_at: string;
 };
 
@@ -51,6 +51,7 @@ function describe(items: N[]) {
   const where = n.community_name ? <> in <strong className="font-medium text-text">{n.community_name}</strong></> : null;
   switch (n.kind) {
     case "like": return { icon: Heart, href: `/post/${n.post_id}`, text: <>{lead} liked your post{where}</>, quote: n.snippet };
+    case "mention": return { icon: AtSign, href: `/post/${n.post_id}`, text: <>{who} mentioned you in a post{where}</>, quote: n.snippet, cta: "Reply" };
     case "comment": return { icon: MessageSquare, href: `/post/${n.post_id}`, text: <>{who} commented on your post{where}</>, quote: n.snippet };
     case "follow": return { icon: UserPlus, href: rest ? "/network?tab=followers" : `/u/${n.actor_id}`, text: <>{lead} started following you</> };
     case "connect_request": return { icon: Users, href: "/network?tab=invitations", text: <>{who} wants to connect</>, cta: "Respond" };

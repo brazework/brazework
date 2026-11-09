@@ -76,6 +76,8 @@ export type Post = {
   edited_at?: string | null;
   project_id?: string | null;
   media?: MediaItem[];
+  // [{ id, name }] once supabase/mentions.sql has run.
+  mentions?: { id: string; name: string }[];
   author?: { avatar_path?: string } | null;
 };
 

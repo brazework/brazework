@@ -11,6 +11,7 @@ import { AttachmentTray, useAttachments } from "@/components/media/attach";
 import { useCopilot } from "@/components/copilot/use-copilot";
 import { EmberAnswer, emberActions, useTypedPlaceholder, type EmberAction, type EmberAnswerState } from "@/components/copilot/feed-copilot";
 import { Ember } from "@/components/ember/ember";
+import { useMentions } from "@/components/mentions/mention-menu";
 
 const KIND_ICON = { update: Megaphone, question: HelpCircle, result: FlaskConical, project: Rocket } as const;
 const MAX = 3000;
@@ -19,7 +20,7 @@ const NO_ANSWER: EmberAnswerState = { q: "", text: "", tools: [], proposals: [] 
 // The top of the feed: one box to create and to ask. "Post" is the composer (photos and video by
 // pick, drop or paste; Ember can polish the draft in place). "Ask Ember" sends the same box to
 // Copilot, with answers and confirm cards right underneath.
-export function Composer({ first, last, interests, userId, mediaEnabled = false, avatarSrc, copilot = false, club = null, next = null }: { first: string; last: string; interests: string[]; userId: string; mediaEnabled?: boolean; avatarSrc?: string | null; copilot?: boolean; club?: { id: string; name: string } | null; next?: { label: string; href: string } | null }) {
+export function Composer({ first, last, interests, userId, mediaEnabled = false, avatarSrc, copilot = false, club = null, next = null, mentionsEnabled = false }: { first: string; last: string; interests: string[]; userId: string; mediaEnabled?: boolean; avatarSrc?: string | null; copilot?: boolean; club?: { id: string; name: string } | null; next?: { label: string; href: string } | null; mentionsEnabled?: boolean }) {
   const [mode, setMode] = useState<"post" | "ask">("post");
   const [state, action, pending] = useActionState<ComposeState, FormData>(createPost, { ok: false, message: "", nonce: 0 });
   const [kind, setKind] = useState<string>("update");
@@ -33,6 +34,7 @@ export function Composer({ first, last, interests, userId, mediaEnabled = false,
   const videoRef = useRef<HTMLInputElement>(null);
   const att = useAttachments(userId);
   const ai = useCopilot();
+  const at = useMentions({ text: body, setText: (v) => { setBody(v.slice(0, MAX)); setBefore(null); }, ref: textRef, enabled: mentionsEnabled });
 
   // Ask Ember.
   const [question, setQuestion] = useState("");
@@ -73,6 +75,7 @@ export function Composer({ first, last, interests, userId, mediaEnabled = false,
     setOpen(false);
     setBefore(null);
     att.clear();
+    at.reset();
   }
 
   const toggleTag = (t: string) => setTags((cur) => (cur.includes(t) ? cur.filter((x) => x !== t) : cur.length < 3 ? [...cur, t] : cur));
@@ -102,6 +105,7 @@ export function Composer({ first, last, interests, userId, mediaEnabled = false,
       {!asking && <input type="hidden" name="kind" value={kind} />}
       {!asking && tags.map((t) => <input key={t} type="hidden" name="tags" value={t} />)}
       {!asking && <input type="hidden" name="media" value={JSON.stringify(att.media)} />}
+      {!asking && at.mentions.length > 0 && <input type="hidden" name="mentions" value={JSON.stringify(at.mentions)} />}
       <input ref={photoRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple hidden onChange={(e) => { if (e.target.files) pickFiles(e.target.files); e.target.value = ""; }} />
       <input ref={videoRef} type="file" accept="video/mp4,video/webm,video/quicktime" hidden onChange={(e) => { if (e.target.files) pickFiles(e.target.files); e.target.value = ""; }} />
 
@@ -124,26 +128,32 @@ export function Composer({ first, last, interests, userId, mediaEnabled = false,
           ? <Ember size={42} mood={ai.busy ? "thinking" : answer.text ? "happy" : "idle"} className="mt-0.5" />
           : <span className="h-fit rounded-full bg-accent-grad p-[2px]"><Avatar first={first} last={last} size={40} src={avatarSrc} className="border-2 border-surface" /></span>}
         <label htmlFor="create-box" className="sr-only">{asking ? "Ask Ember" : `What are you building, ${first}?`}</label>
+        <div className="relative flex min-w-0 flex-1">
         <textarea
           id="create-box"
           ref={textRef}
           name={asking ? undefined : "body"}
           value={asking ? question : body}
-          onChange={(e) => { if (asking) { setQuestion(e.target.value); setSoon(false); } else { setBody(e.target.value); setBefore(null); } }}
+          onChange={(e) => { if (asking) { setQuestion(e.target.value); setSoon(false); } else { setBody(e.target.value); setBefore(null); at.track(e.target); } }}
+          onSelect={(e) => { if (!asking) at.track(e.currentTarget); }}
+          {...(asking ? {} : at.inputProps)}
           onFocus={() => { setFocused(true); if (!asking) setOpen(true); }}
-          onBlur={() => setFocused(false)}
+          onBlur={() => { setFocused(false); at.close(); }}
           onPaste={(e) => { const files = [...e.clipboardData.files]; if (files.length && mediaEnabled) { e.preventDefault(); pickFiles(files); } }}
           onKeyDown={(e) => {
+            if (!asking && at.onKeyDown(e)) return;
             if (asking && e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void ask(question); }
             if (!asking && (e.metaKey || e.ctrlKey) && e.key === "Enter") formRef.current?.requestSubmit();
           }}
           maxLength={asking ? 4000 : MAX}
           rows={!asking && open ? 4 : 1}
-          placeholder={asking ? typed || "Ask Ember anything" : `What are you building, ${first}?`}
+          placeholder={asking ? typed || "Ask Ember anything" : mentionsEnabled && open ? "Share what you built. Type @ to mention someone." : `What are you building, ${first}?`}
           // A hairline ring instead of the global focus outline (which out-ranks Tailwind's outline-none).
           style={{ outline: "none" }}
           className="min-h-11 flex-1 resize-none rounded-2xl bg-surface-2/60 px-4 py-2.5 text-[15px] leading-relaxed text-text transition placeholder:text-faint focus:bg-transparent focus:ring-1 focus:ring-line-strong"
         />
+        {!asking && at.menu}
+        </div>
         {asking && (ai.busy
           ? <button type="button" onClick={ai.stop} aria-label="Stop" className="grid size-11 shrink-0 place-items-center rounded-xl border border-line"><Square className="size-4 fill-current" /></button>
           : <button type="submit" disabled={!question.trim()} aria-label="Ask Ember" className="bg-accent-grad grid size-11 shrink-0 place-items-center rounded-xl text-on-accent transition active:scale-90 disabled:opacity-40"><ArrowUp className="size-5" /></button>)}

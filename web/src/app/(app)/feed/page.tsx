@@ -51,7 +51,7 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
   let emptyTitle = "No posts yet";
   let emptyBody: React.ReactNode = "Be the first to share what you're building.";
   let emptyAction: React.ReactNode = null;
-  const { media: mediaEnabled } = await dbFeatures();
+  const { media: mediaEnabled, mentions: mentionsEnabled } = await dbFeatures();
   const cols = await postSelect();
   const base = () => supabase.from("posts").select(cols).order("created_at", { ascending: false });
 
@@ -122,7 +122,7 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
 
   return (
     <>
-      <FeedHeader tab={tab} hero={<div id="composer" data-tour="composer" className="scroll-mt-24"><Composer first={profile.first_name} last={profile.last_name} interests={interests} userId={user.id} mediaEnabled={mediaEnabled} avatarSrc={avatarSrc(profile)} copilot={copilotOn} club={ledClub} next={nextStep ? { label: nextStep.label, href: nextStep.href } : null} /></div>} />
+      <FeedHeader tab={tab} hero={<div id="composer" data-tour="composer" className="scroll-mt-24"><Composer first={profile.first_name} last={profile.last_name} interests={interests} userId={user.id} mediaEnabled={mediaEnabled} avatarSrc={avatarSrc(profile)} copilot={copilotOn} mentionsEnabled={mentionsEnabled} club={ledClub} next={nextStep ? { label: nextStep.label, href: nextStep.href } : null} /></div>} />
       {interests.length > 0 && (
         <section data-tour="interests" aria-label="Your focus areas" className="mt-5">
           <div className="no-scrollbar -mx-1 flex items-center gap-1.5 overflow-x-auto px-1 pb-1">

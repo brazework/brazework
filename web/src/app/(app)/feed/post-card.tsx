@@ -10,6 +10,7 @@ import { avatarSrc } from "@/lib/media";
 import { deletePost, toggleSave } from "@/lib/posts";
 import { EditPost } from "./edit-post";
 import { SendPost } from "@/components/share/send-post";
+import { MentionText } from "@/components/mentions/mention-text";
 import { toggleLike } from "./actions";
 
 type Opt = { liked: boolean; count: number; saved: boolean };
@@ -106,7 +107,7 @@ export function PostCard({ post, liked, saved = false, own = false, index, proje
           onSaved={(next) => { setEdited(next); setEditing(false); }}
         />
       ) : (
-        <p className={cn("mt-4 text-[15px] leading-relaxed whitespace-pre-wrap text-text-2", long && !expanded && "line-clamp-6")}>{body}</p>
+        <p className={cn("mt-4 text-[15px] leading-relaxed whitespace-pre-wrap text-text-2", long && !expanded && "line-clamp-6")}><MentionText body={body} mentions={post.mentions} /></p>
       )}
       {!editing && long && <button type="button" onClick={() => setExpanded((v) => !v)} className="mt-1 text-sm font-medium text-text hover:underline">{expanded ? "Show less" : "Show more"}</button>}
       {post.media && post.media.length > 0 && <MediaGrid media={post.media} alt={`Shared by ${post.author_first} ${post.author_last}`} />}
