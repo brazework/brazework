@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Avatar } from "@/components/ui";
 import { cn } from "@/lib/forge";
+import { WithPresence } from "@/components/presence/presence";
 
 // One member in a network list (personRow() in public/js/network.js).
 export function PersonRow({
@@ -20,7 +21,7 @@ export function PersonRow({
   return (
     <div className={cn("flex flex-wrap items-center gap-x-4 gap-y-3 px-4 py-4 sm:px-5", className)}>
       <Link href={`/u/${person.id}`} tabIndex={-1} aria-hidden="true" className="shrink-0">
-        <Avatar first={person.firstName} last={person.lastName} size={44} />
+        <WithPresence id={person.id}><Avatar first={person.firstName} last={person.lastName} size={44} /></WithPresence>
       </Link>
       <div className="flex min-w-0 flex-[1_1_180px] flex-col gap-0.5">
         <Link href={`/u/${person.id}`} className="truncate font-medium hover:underline">{name}</Link>

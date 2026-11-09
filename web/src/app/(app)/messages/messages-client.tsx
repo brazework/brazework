@@ -3,6 +3,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { Avatar } from "@/components/ui";
+import { WithPresence } from "@/components/presence/presence";
 import { cn, timeAgo } from "@/lib/forge";
 import type { Conv } from "./data";
 
@@ -53,7 +54,7 @@ export function ConvList({ convs, requestsOn }: { convs: Conv[]; requestsOn: boo
         {shown.map((c) => (
           <li key={c.id}>
             <Link href={`/messages/${c.id}`} aria-current={c.id === activeId ? "page" : undefined} className={cn("flex gap-3 border-b border-line px-4 py-3.5 transition hover:bg-hover", c.id === activeId && "bg-raised")}>
-              <Avatar first={c.other.firstName} last={c.other.lastName} size={40} />
+              <WithPresence id={c.other.id} className="self-start"><Avatar first={c.other.firstName} last={c.other.lastName} size={40} /></WithPresence>
               <div className="min-w-0 flex-1">
                 <div className="flex items-baseline justify-between gap-2">
                   <span className={cn("truncate text-sm", c.unread ? "font-semibold" : "font-medium")}>{`${c.other.firstName} ${c.other.lastName}`.trim() || "Forge member"}</span>

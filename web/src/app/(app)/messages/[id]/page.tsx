@@ -5,6 +5,7 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { Skeleton } from "@/components/app/page-ui";
 import { Avatar } from "@/components/ui";
+import { OnlineLabel, WithPresence } from "@/components/presence/presence";
 import { getViewer } from "@/lib/supabase/server";
 import { Composer, MarkRead, RequestBar, ThreadScroll, type Msg } from "./thread-client";
 
@@ -44,9 +45,9 @@ async function Thread({ params }: { params: PageProps<"/messages/[id]">["params"
       <header className="flex items-center gap-3 border-b border-line px-4 py-3">
         <Link href="/messages" aria-label="Back to messages" className="grid size-9 place-items-center rounded-full text-muted hover:bg-hover hover:text-text md:hidden"><ArrowLeft className="size-4" /></Link>
         <Link href={`/u/${otherId}`} className="flex min-w-0 items-center gap-3">
-          <Avatar first={other.firstName ?? ""} last={other.lastName ?? ""} size={36} />
+          <WithPresence id={otherId} dot="size-2.5"><Avatar first={other.firstName ?? ""} last={other.lastName ?? ""} size={36} /></WithPresence>
           <div className="min-w-0">
-            <div className="truncate text-sm font-medium hover:underline">{name}</div>
+            <div className="flex items-center gap-2"><span className="truncate text-sm font-medium hover:underline">{name}</span><OnlineLabel id={otherId} /></div>
             {other.headline && <div className="truncate text-xs text-faint">{other.headline}</div>}
           </div>
         </Link>

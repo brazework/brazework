@@ -18,6 +18,7 @@ import { PostCard } from "../../feed/post-card";
 import { PeopleStrip } from "../../feed/discover";
 import { StripSkeleton } from "@/components/app/discover-cards";
 import { CoverBanner, ProfilePhoto } from "@/components/media/profile-media";
+import { OnlineLabel, WithPresence } from "@/components/presence/presence";
 import { EditBasics, ProjectEditor, ProjectGrid, type ProjectView } from "./profile-client";
 import type { Club, Milestone } from "./milestones";
 
@@ -103,7 +104,7 @@ async function ProfileView({ params }: { params: PageProps<"/u/[id]">["params"] 
         <div className="px-6 pb-6">
           <div className="relative z-10 -mt-14 flex flex-wrap items-end justify-between gap-4">
             <div className="rounded-full bg-accent-grad p-1 shadow-[var(--shadow)]">
-              <ProfilePhoto path={p.avatar_path} first={p.first_name} last={p.last_name} editable={own && mediaOn} userId={user.id} size={104} />
+              <WithPresence id={p.id} dot="size-5 ring-4"><ProfilePhoto path={p.avatar_path} first={p.first_name} last={p.last_name} editable={own && mediaOn} userId={user.id} size={104} /></WithPresence>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <CopyLink path={`/u/${p.id}`} label="Share" />
@@ -116,7 +117,7 @@ async function ProfileView({ params }: { params: PageProps<"/u/[id]">["params"] 
               )}
             </div>
           </div>
-          <h1 className="mt-4 text-3xl font-semibold tracking-tight">{name || "Forge member"}</h1>
+          <div className="mt-4 flex flex-wrap items-center gap-3"><h1 className="text-3xl font-semibold tracking-tight">{name || "Forge member"}</h1><OnlineLabel id={p.id} /></div>
           {p.headline && <p className="mt-1 text-lg text-text-2">{p.headline}</p>}
           <p className="mt-2 text-sm text-muted">
             {p.account_type === "student" ? "Student" : "Professional"}

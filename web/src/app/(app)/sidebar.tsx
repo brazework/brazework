@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { UpdatesButton } from "@/components/tour/tour-mount";
 import { Avatar, Logo } from "@/components/ui";
+import { MyStatus, WithPresence } from "@/components/presence/presence";
 import { cn } from "@/lib/forge";
 
 export type Badges = { notifications: number; messages: number; invites: number };
@@ -54,7 +55,7 @@ export function SidebarSkeleton() {
 // Remembered in a cookie (not localStorage) so the server draws it at the right width: no jump on load.
 export const SIDEBAR_COOKIE = "forge-sidebar";
 
-export function Sidebar({ first, last, headline, badges, avatar, initialCollapsed = false }: { first: string; last: string; headline: string; badges: Badges; avatar?: string | null; initialCollapsed?: boolean }) {
+export function Sidebar({ first, last, userId, badges, avatar, initialCollapsed = false }: { first: string; last: string; userId: string; badges: Badges; avatar?: string | null; initialCollapsed?: boolean }) {
   const path = usePathname();
   const [collapsed, setCollapsed] = useState(initialCollapsed);
   const toggle = () => {
@@ -106,11 +107,11 @@ export function Sidebar({ first, last, headline, badges, avatar, initialCollapse
         <UpdatesButton collapsed={collapsed} />
       </nav>
       <div className={cn("mt-auto flex items-center gap-3 rounded-2xl bg-surface/50", collapsed ? "flex-col p-1.5" : "p-2.5")}>
-        <Link href="/profile" aria-label="Your profile" title={collapsed ? `${first} ${last}` : undefined}><Avatar first={first} last={last} size={collapsed ? 32 : 36} src={avatar} /></Link>
+        <Link href="/profile" aria-label="Your profile" title={collapsed ? `${first} ${last}` : undefined}><WithPresence id={userId} dot="size-2.5"><Avatar first={first} last={last} size={collapsed ? 32 : 36} src={avatar} /></WithPresence></Link>
         {!collapsed && (
           <div className="min-w-0 flex-1">
             <div className="truncate text-sm font-medium">{first} {last}</div>
-            <div className="truncate text-xs text-faint">{headline}</div>
+            <MyStatus />
           </div>
         )}
         <form action="/auth/signout" method="post">

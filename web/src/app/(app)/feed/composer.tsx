@@ -1,6 +1,7 @@
 "use client";
 import { AnimatePresence, motion } from "motion/react";
-import { FlaskConical, HelpCircle, ImagePlus, Loader2, Megaphone, Rocket, Sparkles, Upload, Video, X } from "lucide-react";
+import { ArrowRight, ArrowUp, FlaskConical, HelpCircle, ImagePlus, Loader2, Megaphone, PenLine, Rocket, Square, Undo2, Upload, Video, Wand2, X } from "lucide-react";
+import Link from "next/link";
 import { useActionState, useRef, useState } from "react";
 import { Avatar, Button } from "@/components/ui";
 import { POST_KINDS, cn } from "@/lib/forge";
@@ -8,13 +9,18 @@ import { createPost, type ComposeState } from "./actions";
 import { submitWithoutReset } from "@/lib/submit";
 import { AttachmentTray, useAttachments } from "@/components/media/attach";
 import { useCopilot } from "@/components/copilot/use-copilot";
+import { EmberAnswer, emberActions, useTypedPlaceholder, type EmberAction, type EmberAnswerState } from "@/components/copilot/feed-copilot";
+import { Ember } from "@/components/ember/ember";
 
 const KIND_ICON = { update: Megaphone, question: HelpCircle, result: FlaskConical, project: Rocket } as const;
 const MAX = 3000;
+const NO_ANSWER: EmberAnswerState = { q: "", text: "", tools: [], proposals: [] };
 
-// The feed composer. Collapsed, it's a prompt plus one-tap shortcuts (photo, video, result,
-// question); open, it's the full editor. Photos and videos can also be dropped onto it or pasted.
-export function Composer({ first, last, interests, userId, mediaEnabled = false, avatarSrc, copilot = false }: { first: string; last: string; interests: string[]; userId: string; mediaEnabled?: boolean; avatarSrc?: string | null; copilot?: boolean }) {
+// The top of the feed: one box to create and to ask. "Post" is the composer (photos and video by
+// pick, drop or paste; Ember can polish the draft in place). "Ask Ember" sends the same box to
+// Copilot, with answers and confirm cards right underneath.
+export function Composer({ first, last, interests, userId, mediaEnabled = false, avatarSrc, copilot = false, club = null, next = null }: { first: string; last: string; interests: string[]; userId: string; mediaEnabled?: boolean; avatarSrc?: string | null; copilot?: boolean; club?: { id: string; name: string } | null; next?: { label: string; href: string } | null }) {
+  const [mode, setMode] = useState<"post" | "ask">("post");
   const [state, action, pending] = useActionState<ComposeState, FormData>(createPost, { ok: false, message: "", nonce: 0 });
   const [kind, setKind] = useState<string>("update");
   const [tags, setTags] = useState<string[]>([]);
@@ -27,12 +33,34 @@ export function Composer({ first, last, interests, userId, mediaEnabled = false,
   const videoRef = useRef<HTMLInputElement>(null);
   const att = useAttachments(userId);
   const ai = useCopilot();
-  const [aiOpen, setAiOpen] = useState(false);
-  const [notes, setNotes] = useState("");
-  // Copilot turns rough notes into the post, writing it into the box as it streams.
-  const draft = async () => {
-    const out = await ai.run({ task: "post", input: notes, kind: kind as "update" | "question" | "result" | "project" }, (full) => setBody(full.slice(0, MAX)));
-    if (out !== null) setAiOpen(false);
+
+  // Ask Ember.
+  const [question, setQuestion] = useState("");
+  const [answer, setAnswer] = useState<EmberAnswerState>(NO_ANSWER);
+  const [soon, setSoon] = useState(false);
+  const [focused, setFocused] = useState(false);
+  const typed = useTypedPlaceholder(mode === "ask" && !question && !focused && !answer.q);
+  const ask = async (text: string) => {
+    const t = text.trim();
+    if (!t || ai.busy) return;
+    if (!copilot) { setSoon(true); return; }
+    setQuestion("");
+    setAnswer({ ...NO_ANSWER, q: t });
+    await ai.run({ task: "ask", input: t }, (full, tools, proposals) => setAnswer({ q: t, text: full, tools, proposals }));
+  };
+  const pickAction = (a: EmberAction) => {
+    if (a.ask) void ask(a.ask);
+    else if (a.prefill) { setQuestion(a.prefill); requestAnimationFrame(() => { textRef.current?.focus(); textRef.current?.setSelectionRange(a.prefill!.length, a.prefill!.length); }); }
+  };
+
+  // Polish with Ember: rewrites the draft in place; Undo brings the original back.
+  const [before, setBefore] = useState<string | null>(null);
+  const polish = async () => {
+    if (!body.trim() || ai.busy) return;
+    const original = body;
+    setBefore(original);
+    const out = await ai.run({ task: "post", input: original, kind: kind as "update" | "question" | "result" | "project" }, (full) => setBody(full.slice(0, MAX)));
+    if (out === null) { setBody(original); setBefore(null); }
   };
 
   // Clear after a successful post (adjusting state during render, not in an effect).
@@ -43,6 +71,7 @@ export function Composer({ first, last, interests, userId, mediaEnabled = false,
     setTags([]);
     setKind("update");
     setOpen(false);
+    setBefore(null);
     att.clear();
   }
 
@@ -54,76 +83,102 @@ export function Composer({ first, last, interests, userId, mediaEnabled = false,
   };
   const pickFiles = (files: FileList | File[]) => {
     if (!mediaEnabled || !files.length) return;
+    setMode("post");
     setOpen(true);
     void att.add(files);
   };
   const remaining = MAX - body.length;
+  const asking = mode === "ask";
 
   return (
     <form
       ref={formRef}
-      onSubmit={submitWithoutReset(action)}
+      onSubmit={asking ? (e) => { e.preventDefault(); void ask(question); } : submitWithoutReset(action)}
       onDragOver={(e) => { if (mediaEnabled && e.dataTransfer.types.includes("Files")) { e.preventDefault(); setDragging(true); } }}
       onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setDragging(false); }}
       onDrop={(e) => { if (!mediaEnabled) return; e.preventDefault(); setDragging(false); pickFiles(e.dataTransfer.files); }}
-      className={cn("grad-edge relative rounded-3xl border p-4 shadow-[var(--shadow)] transition", dragging && "scale-[1.01]")}
+      className={cn("relative rounded-3xl p-4 shadow-[var(--shadow)] transition", asking ? "ai-border" : "grad-edge border", dragging && "scale-[1.01]")}
     >
-      <input type="hidden" name="kind" value={kind} />
-      {tags.map((t) => <input key={t} type="hidden" name="tags" value={t} />)}
-      <input type="hidden" name="media" value={JSON.stringify(att.media)} />
+      {!asking && <input type="hidden" name="kind" value={kind} />}
+      {!asking && tags.map((t) => <input key={t} type="hidden" name="tags" value={t} />)}
+      {!asking && <input type="hidden" name="media" value={JSON.stringify(att.media)} />}
       <input ref={photoRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple hidden onChange={(e) => { if (e.target.files) pickFiles(e.target.files); e.target.value = ""; }} />
       <input ref={videoRef} type="file" accept="video/mp4,video/webm,video/quicktime" hidden onChange={(e) => { if (e.target.files) pickFiles(e.target.files); e.target.value = ""; }} />
 
-      <div className="flex gap-3">
-        <span className="h-fit rounded-full bg-accent-grad p-[2px]"><Avatar first={first} last={last} size={40} src={avatarSrc} className="border-2 border-surface" /></span>
-        <textarea
-          ref={textRef}
-          name="body"
-          value={body}
-          onChange={(e) => setBody(e.target.value)}
-          onFocus={() => setOpen(true)}
-          onPaste={(e) => { const files = [...e.clipboardData.files]; if (files.length && mediaEnabled) { e.preventDefault(); pickFiles(files); } }}
-          onKeyDown={(e) => { if ((e.metaKey || e.ctrlKey) && e.key === "Enter") formRef.current?.requestSubmit(); }}
-          maxLength={MAX}
-          rows={open ? 4 : 1}
-          placeholder={`What are you building, ${first}?`}
-          className="min-h-11 flex-1 resize-none rounded-2xl bg-surface-2/60 px-4 py-2.5 text-[15px] leading-relaxed text-text transition placeholder:text-faint focus:bg-transparent outline-none"
-        />
+      {/* Post or Ask Ember. */}
+      <div className="mb-3 flex items-center gap-2">
+        <div role="tablist" aria-label="Create or ask" className="inline-flex rounded-full bg-surface-2 p-1">
+          {([["post", "Post", null], ["ask", "Ask Ember", "ember"]] as const).map(([id, label, icon]) => (
+            <button key={id} type="button" role="tab" aria-selected={mode === id} onClick={() => { setMode(id); requestAnimationFrame(() => textRef.current?.focus()); }} className={cn("relative inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition", mode === id ? "text-on-accent" : "text-muted hover:text-text")}>
+              {mode === id && <motion.span layoutId="compose-mode" className="bg-accent-grad absolute inset-0 rounded-full" transition={{ type: "spring", stiffness: 420, damping: 34 }} />}
+              {icon ? <Ember size={18} mood={ai.busy ? "thinking" : "idle"} className="relative" /> : <PenLine className="relative size-3.5" />}
+              <span className="relative">{label}</span>
+            </button>
+          ))}
+        </div>
+        {next && <Link href={next.href} className="ml-auto hidden items-center gap-1 rounded-full border border-line px-2.5 py-1 text-[11px] text-text-2 transition hover:border-line-strong sm:inline-flex">Next: {next.label} <ArrowRight className="size-3" /></Link>}
       </div>
 
-      {!open && (
+      <div className="flex gap-3">
+        {asking
+          ? <Ember size={42} mood={ai.busy ? "thinking" : answer.text ? "happy" : "idle"} className="mt-0.5" />
+          : <span className="h-fit rounded-full bg-accent-grad p-[2px]"><Avatar first={first} last={last} size={40} src={avatarSrc} className="border-2 border-surface" /></span>}
+        <label htmlFor="create-box" className="sr-only">{asking ? "Ask Ember" : `What are you building, ${first}?`}</label>
+        <textarea
+          id="create-box"
+          ref={textRef}
+          name={asking ? undefined : "body"}
+          value={asking ? question : body}
+          onChange={(e) => { if (asking) { setQuestion(e.target.value); setSoon(false); } else { setBody(e.target.value); setBefore(null); } }}
+          onFocus={() => { setFocused(true); if (!asking) setOpen(true); }}
+          onBlur={() => setFocused(false)}
+          onPaste={(e) => { const files = [...e.clipboardData.files]; if (files.length && mediaEnabled) { e.preventDefault(); pickFiles(files); } }}
+          onKeyDown={(e) => {
+            if (asking && e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void ask(question); }
+            if (!asking && (e.metaKey || e.ctrlKey) && e.key === "Enter") formRef.current?.requestSubmit();
+          }}
+          maxLength={asking ? 4000 : MAX}
+          rows={!asking && open ? 4 : 1}
+          placeholder={asking ? typed || "Ask Ember anything" : `What are you building, ${first}?`}
+          // A hairline ring instead of the global focus outline (which out-ranks Tailwind's outline-none).
+          style={{ outline: "none" }}
+          className="min-h-11 flex-1 resize-none rounded-2xl bg-surface-2/60 px-4 py-2.5 text-[15px] leading-relaxed text-text transition placeholder:text-faint focus:bg-transparent focus:ring-1 focus:ring-line-strong"
+        />
+        {asking && (ai.busy
+          ? <button type="button" onClick={ai.stop} aria-label="Stop" className="grid size-11 shrink-0 place-items-center rounded-xl border border-line"><Square className="size-4 fill-current" /></button>
+          : <button type="submit" disabled={!question.trim()} aria-label="Ask Ember" className="bg-accent-grad grid size-11 shrink-0 place-items-center rounded-xl text-on-accent transition active:scale-90 disabled:opacity-40"><ArrowUp className="size-5" /></button>)}
+      </div>
+
+      {/* Ask Ember: one-tap actions, then the answer. */}
+      {asking && (
+        <>
+          <div className="no-scrollbar -mx-1 mt-3 flex gap-2 overflow-x-auto px-1 pb-1 pl-[54px]">
+            {emberActions(club).map((a) => {
+              const cls = "inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-line bg-surface/80 px-3 py-1.5 text-xs font-medium text-text-2 transition hover:-translate-y-px hover:border-line-strong hover:text-text active:scale-95";
+              return copilot
+                ? <button key={a.label} type="button" onClick={() => pickAction(a)} className={cls}><a.icon className="size-3.5 text-accent" /> {a.label}</button>
+                : <Link key={a.label} href={a.href} className={cls}><a.icon className="size-3.5 text-accent" /> {a.label}</Link>;
+            })}
+          </div>
+          {soon && <p className="mt-2 pl-[54px] text-xs text-muted">Ember is waking up soon. Until then, these shortcuts take you to the right place.</p>}
+          <EmberAnswer a={answer} busy={ai.busy} error={ai.error} remaining={ai.remaining} onClear={() => { ai.stop(); setAnswer(NO_ANSWER); }} />
+        </>
+      )}
+
+      {/* Post: shortcuts while collapsed, the full editor once open. */}
+      {!asking && !open && (
         <div className="mt-3 flex flex-wrap gap-1 pl-[52px]">
           <Quick icon={ImagePlus} label="Photo" tint="text-sky-500" disabled={!mediaEnabled} onClick={() => photoRef.current?.click()} />
           <Quick icon={Video} label="Video" tint="text-rose-500" disabled={!mediaEnabled} onClick={() => videoRef.current?.click()} />
           <Quick icon={FlaskConical} label="Result" tint="text-emerald-500" onClick={() => expand("result")} />
           <Quick icon={HelpCircle} label="Question" tint="text-amber-500" onClick={() => expand("question")} />
-          {copilot && <Quick icon={Sparkles} label="Copilot" tint="text-violet-500" onClick={() => { expand(); setAiOpen(true); }} />}
           {!mediaEnabled && <span className="self-center text-[11px] text-faint">Photo and video are switching on soon</span>}
         </div>
       )}
 
       <AnimatePresence initial={false}>
-        {open && (
+        {!asking && open && (
           <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25 }} className="overflow-hidden">
-            <AnimatePresence initial={false}>
-              {copilot && aiOpen && (
-                <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
-                  <div className="mt-3 rounded-2xl border border-line bg-surface-2/60 p-3">
-                    <label htmlFor="ai-notes" className="flex items-center gap-1.5 text-xs font-medium text-muted"><Sparkles className="size-3.5 text-violet-500" /> Rough notes for Copilot (bullets are fine)</label>
-                    <textarea id="ai-notes" value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} maxLength={4000} placeholder="e.g. load test today, 3.2 g, carbon upright 31% lighter than steel, next: fatigue test" className="mt-2 w-full resize-none rounded-xl bg-surface px-3 py-2 text-sm outline-none placeholder:text-faint" />
-                    <div className="mt-2 flex items-center gap-2">
-                      {ai.error && <p role="alert" className="text-xs text-danger">{ai.error}</p>}
-                      <span className="ml-auto" />
-                      {ai.busy ? (
-                        <button type="button" onClick={ai.stop} className="h-8 rounded-full border border-line px-3 text-xs">Stop</button>
-                      ) : (
-                        <button type="button" onClick={() => void draft()} disabled={!notes.trim()} className="bg-accent-grad inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-xs font-medium text-on-accent disabled:opacity-40"><Sparkles className="size-3.5" /> Write my post</button>
-                      )}
-                    </div>
-                  </div>
-                </motion.div>
-              )}
-            </AnimatePresence>
             {mediaEnabled && <AttachmentTray slots={att.slots} onRemove={att.remove} onEdit={att.edit} compare={att.compare} onCompare={att.setCompare} />}
 
             <div role="radiogroup" aria-label="Post type" className="mt-4 inline-flex flex-wrap gap-1 rounded-full bg-surface-2 p-1">
@@ -156,13 +211,17 @@ export function Composer({ first, last, interests, userId, mediaEnabled = false,
             <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-line pt-3">
               <Quick icon={ImagePlus} label="Photo" tint="text-sky-500" disabled={!mediaEnabled || att.full} onClick={() => photoRef.current?.click()} />
               <Quick icon={Video} label="Video" tint="text-rose-500" disabled={!mediaEnabled || att.full} onClick={() => videoRef.current?.click()} />
-              {copilot && <Quick icon={Sparkles} label="Copilot" tint="text-violet-500" onClick={() => setAiOpen((v) => !v)} />}
-              {(att.error || state.message) && <p role="alert" className="text-sm text-danger">{att.error || state.message}</p>}
+              {copilot && (ai.busy
+                ? <button type="button" onClick={ai.stop} className="inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-sm text-muted"><Loader2 className="size-4 animate-spin" /> Polishing…</button>
+                : before !== null
+                  ? <button type="button" onClick={() => { setBody(before); setBefore(null); }} className="inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-sm text-muted hover:bg-hover hover:text-text"><Undo2 className="size-4" /> Undo polish</button>
+                  : <Quick icon={Wand2} label="Polish with Ember" tint="text-accent" disabled={!body.trim()} onClick={() => void polish()} />)}
+              {(att.error || state.message || ai.error) && <p role="alert" className="text-sm text-danger">{att.error || state.message || ai.error}</p>}
               <span className="ml-auto flex items-center gap-3">
                 <CharRing used={body.length} max={MAX} />
                 {remaining <= 200 && <span className={cn("text-xs tabular-nums", remaining < 0 ? "text-danger" : "text-faint")}>{remaining}</span>}
-                <button type="button" onClick={() => { setOpen(false); }} className="text-sm text-muted transition hover:text-text">Cancel</button>
-                <Button type="submit" disabled={pending || att.busy || !body.trim()}>
+                <button type="button" onClick={() => setOpen(false)} className="text-sm text-muted transition hover:text-text">Cancel</button>
+                <Button type="submit" disabled={pending || att.busy || ai.busy || !body.trim()}>
                   {pending && <Loader2 className="size-4 animate-spin" />} Post
                 </Button>
               </span>

@@ -353,3 +353,17 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity
 .ember-sleepy .ember-sparks { opacity: 0.4; }
 .ember-zz text:nth-child(1) { animation: ember-zz 2.6s ease-in-out infinite; }
 .ember-zz text:nth-child(2) { animation: ember-zz 2.6s ease-in-out 1.3s infinite; }
+/* Ember v2 layers: halo pulse, swaying side flames, rising embers. */
+@keyframes ember-halo { 50% { transform: scale(1.08); opacity: 0.75; } }
+@keyframes ember-sway-l { 0%, 100% { transform: rotate(0deg); } 50% { transform: rotate(-7deg) scaleY(1.06); } }
+@keyframes ember-sway-r { 0%, 100% { transform: rotate(0deg); } 50% { transform: rotate(7deg) scaleY(1.05); } }
+@keyframes ember-rise { 0% { transform: translateY(6px); opacity: 0; } 25% { opacity: 1; } 100% { transform: translateY(-12px); opacity: 0; } }
+.ember .ember-halo { transform-origin: 32px 38px; transform-box: view-box; animation: ember-halo 3.2s ease-in-out infinite; }
+.ember .ember-tongue-l { transform-origin: 23px 42px; transform-box: view-box; animation: ember-sway-l 2.4s ease-in-out infinite; }
+.ember .ember-tongue-r { transform-origin: 41px 42px; transform-box: view-box; animation: ember-sway-r 2.8s ease-in-out infinite; }
+.ember .ember-rise circle { animation: ember-rise 2.8s ease-out infinite; }
+.ember .ember-rise circle:nth-child(2) { animation-delay: 0.9s; }
+.ember .ember-rise circle:nth-child(3) { animation-delay: 1.8s; }
+.ember-thinking .ember-tongue-l, .ember-thinking .ember-tongue-r { animation-duration: 1.2s; }
+.ember-sleepy .ember-halo { opacity: 0.4; }
+.ember-sleepy .ember-rise { display: none; }

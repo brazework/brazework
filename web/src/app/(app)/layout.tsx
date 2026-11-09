@@ -5,6 +5,7 @@ import { LiveRefresh } from "@/components/app/live-refresh";
 import { GlobalSearch } from "@/components/search/global-search";
 import { TourMount } from "@/components/tour/tour-mount";
 import { GuideMount } from "@/components/guide/guide-mount";
+import { PresenceMount } from "@/components/presence/presence";
 import { avatarSrc } from "@/lib/media";
 import { getViewer } from "@/lib/supabase/server";
 import { MobileBar, SIDEBAR_COOKIE, Sidebar, SidebarSkeleton, type Badges } from "./sidebar";
@@ -48,7 +49,9 @@ async function SignedInShell() {
     <>
       {/* Badges stay current as things arrive; row-level security limits these to your own rows. */}
       <LiveRefresh tables={["notifications", "conversations", "connections"]} delay={800} />
-      <Sidebar first={profile.first_name} last={profile.last_name} headline={profile.headline} badges={badges} avatar={avatarSrc(profile)} initialCollapsed={collapsed} />
+      {/* Online status: who has Forge open right now. */}
+      <PresenceMount userId={user.id} />
+      <Sidebar first={profile.first_name} last={profile.last_name} userId={user.id} badges={badges} avatar={avatarSrc(profile)} initialCollapsed={collapsed} />
       <MobileBar first={profile.first_name} last={profile.last_name} badges={badges} avatar={avatarSrc(profile)} />
       <TourMount />
     </>

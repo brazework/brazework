@@ -10,7 +10,6 @@ import { avatarSrc } from "@/lib/media";
 import { getViewer } from "@/lib/supabase/server";
 import { copilotEnabled } from "@/lib/copilot";
 import { loadGuide } from "@/lib/guide";
-import { FeedCopilot } from "@/components/copilot/feed-copilot";
 import { Composer } from "./composer";
 import { LiveRefresh } from "@/components/app/live-refresh";
 import { FeedHeader, TABS, type TabId } from "./header";
@@ -106,7 +105,7 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
     return m ? `${p.project_id ? "Project · " : ""}Matches your interest: ${m}` : "";
   };
   const discover = (tab === "for-you" || tab === "latest") && !tag;
-  // The Copilot hero: whether it's on, your next guide step, and a club you run (for its weekly update).
+  // The create box: whether Ember is on, your next guide step, and a club you run (for its weekly update).
   const [copilotOn, guide] = await Promise.all([copilotEnabled(), loadGuide()]);
   const nextStep = guide?.member.find((s) => !s.done) ?? null;
   const ledClub = guide?.clubs[0] ? { id: guide.clubs[0].id, name: guide.clubs[0].name } : null;
@@ -123,7 +122,7 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
 
   return (
     <>
-      <FeedHeader tab={tab} first={profile.first_name} hero={<FeedCopilot first={profile.first_name} copilot={copilotOn} next={nextStep} club={ledClub} />} />
+      <FeedHeader tab={tab} hero={<div id="composer" data-tour="composer" className="scroll-mt-24"><Composer first={profile.first_name} last={profile.last_name} interests={interests} userId={user.id} mediaEnabled={mediaEnabled} avatarSrc={avatarSrc(profile)} copilot={copilotOn} club={ledClub} next={nextStep ? { label: nextStep.label, href: nextStep.href } : null} /></div>} />
       {interests.length > 0 && (
         <section data-tour="interests" aria-label="Your focus areas" className="mt-5">
           <div className="no-scrollbar -mx-1 flex items-center gap-1.5 overflow-x-auto px-1 pb-1">
@@ -136,7 +135,6 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
           </div>
         </section>
       )}
-      <div id="composer" data-tour="composer" className="mt-6 scroll-mt-24"><Composer first={profile.first_name} last={profile.last_name} interests={interests} userId={user.id} mediaEnabled={mediaEnabled} avatarSrc={avatarSrc(profile)} copilot={copilotOn} /></div>
       {tag && (
         <div className="mt-4 flex items-center justify-between rounded-2xl border border-line bg-surface-2 px-4 py-2.5 text-sm">
           <span>Showing posts tagged <strong className="font-medium">#{tag}</strong></span>
@@ -164,7 +162,6 @@ function FeedSkeleton() {
   return (
     <div aria-busy="true">
       <FeedHeader />
-      <div className="mt-6 h-[110px] shimmer rounded-3xl" />
       <div className="mt-6 flex flex-col gap-4">
         {[0, 1, 2].map((i) => <div key={i} className="h-48 shimmer rounded-3xl" />)}
       </div>
