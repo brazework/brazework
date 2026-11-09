@@ -1,4 +1,5 @@
 "use server";
+import { dbFeatures } from "@/lib/db-features";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { friendlyError } from "@/lib/forge";
@@ -46,14 +47,15 @@ export async function createTeamChat(communityId: string, name: string, members:
   return { ok: true, message: "", id: String(data) };
 }
 
-export async function sendChatMessage(chatId: string, body: string, announcement = false): Promise<R> {
+export async function sendChatMessage(chatId: string, body: string, announcement = false, replyTo?: string | null): Promise<R> {
   const text = body.trim();
   if (!ID_RE.test(chatId)) return { ok: false, message: "That chat couldn't be found." };
   if (!text) return { ok: false, message: "Write a message first." };
   if (text.length > 2000) return { ok: false, message: "Messages can be up to 2,000 characters." };
   const { supabase, user } = await getViewer();
   if (!user) return { ok: false, message: "Log in again." };
-  const { error } = await supabase.from("chat_messages").insert({ chat_id: chatId, body: text, announcement });
+  const reply = replyTo && ID_RE.test(replyTo) && (await dbFeatures()).chatExtras ? { reply_to: replyTo } : {};
+  const { error } = await supabase.from("chat_messages").insert({ chat_id: chatId, body: text, announcement, ...reply });
   if (error) return { ok: false, message: friendlyError(error) };
   touch(chatId);
   return { ok: true, message: "" };

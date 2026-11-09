@@ -2,7 +2,7 @@
 import { AnimatePresence, motion } from "motion/react";
 import { ChevronLeft, ChevronRight, ChevronsLeftRight, Crosshair, Flag, Gauge, Maximize, Minimize, Pause, Play, Volume2, VolumeX, X } from "lucide-react";
 import Image from "next/image";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { cn } from "@/lib/forge";
 import { mediaUrl, type MediaItem } from "@/lib/media";
 import { Pin, fmtTime } from "./annotate";
@@ -131,6 +131,15 @@ function CompareSlider({ before, after, alt }: { before: MediaItem; after: Media
 
 const SPEEDS = [1, 0.5, 0.25, 2];
 
+// Sound is on by default and the choice is shared by every video (and remembered). Browsers only
+// allow sound without a tap in some cases (Chrome after you've clicked on the site; iPhone after
+// you've tapped that video), so a refused play falls back to muted with "Tap for sound".
+const SOUND_KEY = "forge-video-sound";
+const SOUND_EVENT = "forge-video-sound";
+const PLAYING_EVENT = "forge-video-playing";
+const soundOn = () => { try { return localStorage.getItem(SOUND_KEY) !== "off"; } catch { return true; } };
+const setSoundOn = (on: boolean) => { try { localStorage.setItem(SOUND_KEY, on ? "on" : "off"); } catch {} window.dispatchEvent(new CustomEvent(SOUND_EVENT, { detail: on })); };
+
 // The video player: it shows its first frame (not a black box), plays muted when it's mostly on
 // screen and pauses when you scroll past. Tap to pause or play. While playing only the scrubber
 // shows; pausing brings up speed (slow-mo for test runs) and full screen. Keys while focused:
@@ -144,6 +153,8 @@ function TestRunPlayer({ v }: { v: MediaItem }) {
   const [dur, setDur] = useState(0);
   const [speed, setSpeed] = useState(1);
   const [muted, setMuted] = useState(true);
+  const [blocked, setBlocked] = useState(false); // the browser refused sound; we're playing muted
+  const id = useRef(useId());
   const [flash, setFlash] = useState<{ n: number; play: boolean } | null>(null);
   // Speed and full screen show when *you* paused it, not on a video that just hasn't played yet.
   const [held, setHeld] = useState(false);
@@ -155,18 +166,33 @@ function TestRunPlayer({ v }: { v: MediaItem }) {
     return () => document.removeEventListener("fullscreenchange", sync);
   }, []);
   // Plays (muted, as browsers require for autoplay) when 60% is on screen; pauses when it leaves.
-  // A video you paused yourself stays paused; reduced-motion users never get autoplay.
+  // A video you paused yourself stays paused. (iOS Low Power Mode blocks autoplay; tap still plays.)
+  // Try with sound (your setting); if the browser says no, play muted and offer "Tap for sound".
+  const start = useCallback((node: HTMLVideoElement) => {
+    node.muted = !soundOn();
+    setMuted(node.muted);
+    node.play().catch(() => {
+      if (node.muted) return; // not even muted autoplay (iOS Low Power Mode): the tap still plays
+      node.muted = true; setMuted(true); setBlocked(true);
+      void node.play().catch(() => {});
+    });
+  }, []);
   useEffect(() => {
     const node = ref.current;
-    if (!node || matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+    if (!node) return;
     const io = new IntersectionObserver(([en]) => {
-      if (en.intersectionRatio >= 0.6) { if (!userPaused.current && node.paused) void node.play().catch(() => {}); }
+      if (en.intersectionRatio >= 0.6) { if (!userPaused.current && node.paused) start(node); }
       else if (!node.paused) node.pause();
     }, { threshold: [0, 0.6] });
     io.observe(node);
-    return () => io.disconnect();
-  }, []);
-  useEffect(() => { if (ref.current) ref.current.muted = muted; }, [muted]);
+    // One video at a time: another one starting pauses this one.
+    const onOther = (e: Event) => { if ((e as CustomEvent<string>).detail !== id.current && !node.paused) node.pause(); };
+    // Muting or unmuting any video applies to all of them.
+    const onSound = (e: Event) => { const on = (e as CustomEvent<boolean>).detail; node.muted = !on; setMuted(!on); if (on) setBlocked(false); };
+    window.addEventListener(PLAYING_EVENT, onOther);
+    window.addEventListener(SOUND_EVENT, onSound);
+    return () => { io.disconnect(); window.removeEventListener(PLAYING_EVENT, onOther); window.removeEventListener(SOUND_EVENT, onSound); };
+  }, [start]);
   const toggleFull = () => {
     if (document.fullscreenElement) { void document.exitFullscreen(); return; }
     const b = box.current, x = ref.current as (HTMLVideoElement & { webkitEnterFullscreen?: () => void }) | null;
@@ -176,7 +202,7 @@ function TestRunPlayer({ v }: { v: MediaItem }) {
   // The video is server-rendered, so its metadata can load before React attaches onLoadedMetadata.
   const attach = useCallback((node: HTMLVideoElement | null) => {
     ref.current = node;
-    if (node) { node.muted = true; if (node.readyState >= 1 && Number.isFinite(node.duration)) setDur(node.duration); }
+    if (node && node.readyState >= 1 && Number.isFinite(node.duration)) setDur(node.duration);
   }, []);
   const marks = (v.marks ?? []).filter((m) => !dur || m.s <= dur);
   const el = () => ref.current;
@@ -185,7 +211,8 @@ function TestRunPlayer({ v }: { v: MediaItem }) {
     const play = x.paused;
     userPaused.current = !play;
     setHeld(!play);
-    if (play) void x.play(); else x.pause();
+    // A tap is a user gesture, so the browser allows sound now if you want it.
+    if (play) { if (soundOn()) { x.muted = false; setMuted(false); setBlocked(false); } void x.play(); } else x.pause();
     setFlash((f) => ({ n: (f?.n ?? 0) + 1, play }));
   };
   const seek = (s: number) => { const x = el(); if (x) { x.currentTime = Math.max(0, Math.min(dur || s, s)); setT(x.currentTime); } };
@@ -218,7 +245,7 @@ function TestRunPlayer({ v }: { v: MediaItem }) {
           loop
           preload="metadata"
           onClick={toggle}
-          onPlay={() => setPlaying(true)}
+          onPlay={() => { setPlaying(true); window.dispatchEvent(new CustomEvent(PLAYING_EVENT, { detail: id.current })); }}
           onPause={() => setPlaying(false)}
           onTimeUpdate={(e) => setT(e.currentTarget.currentTime)}
           onLoadedMetadata={(e) => setDur(e.currentTarget.duration)}
@@ -236,8 +263,8 @@ function TestRunPlayer({ v }: { v: MediaItem }) {
         </AnimatePresence>
         {!playing && !flash && <span className="pointer-events-none absolute top-1/2 left-1/2 grid size-16 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-black shadow-2xl" aria-hidden="true"><Play className="ml-1 size-7 fill-current" /></span>}
         {/* Sound: always reachable, small. */}
-        <button type="button" onClick={() => setMuted((m) => !m)} aria-label={muted ? "Turn sound on" : "Mute"} className="absolute right-3 bottom-4 z-10 grid size-8 place-items-center rounded-full bg-black/55 text-white backdrop-blur transition active:scale-90">
-          {muted ? <VolumeX className="size-4" /> : <Volume2 className="size-4" />}
+        <button type="button" onClick={() => { const on = muted; const x = el(); if (x) { x.muted = !on; if (on && x.paused && !userPaused.current) void x.play(); } setMuted(!on); setBlocked(false); setSoundOn(on); }} aria-label={muted ? "Turn sound on" : "Mute"} className={cn("absolute right-3 bottom-4 z-10 inline-flex h-8 items-center gap-1.5 rounded-full bg-black/55 text-white backdrop-blur transition active:scale-90", blocked && muted ? "px-3 text-xs font-medium" : "w-8 justify-center")}>
+          {muted ? <VolumeX className="size-4" /> : <Volume2 className="size-4" />}{blocked && muted && " Tap for sound"}
         </button>
         {/* Paused: speed and full screen. */}
         <AnimatePresence>

@@ -1,5 +1,6 @@
 "use server";
 import { revalidatePath } from "next/cache";
+import { dbFeatures } from "@/lib/db-features";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { friendlyError } from "@/lib/forge";
@@ -15,14 +16,16 @@ const touch = (cid?: string) => {
   if (cid) revalidatePath(`/messages/${cid}`);
 };
 
-export async function sendMessage(cid: string, body: string): Promise<R> {
+export async function sendMessage(cid: string, body: string, replyTo?: string | null): Promise<R> {
   const text = body.trim();
   if (!cidSchema.safeParse(cid).success) return { ok: false, message: "That conversation couldn't be found." };
   if (!text) return { ok: false, message: "Write a message first." };
   if (text.length > 2000) return { ok: false, message: "Messages can be up to 2,000 characters." };
   const { supabase, user } = await getViewer();
   if (!user) return { ok: false, message: "Log in again." };
-  const { error } = await supabase.from("messages").insert({ conversation_id: cid, body: text });
+  // A reply (supabase/chat-extras.sql) only when the database has replies; the database checks it's in this conversation.
+  const reply = replyTo && cidSchema.safeParse(replyTo).success && (await dbFeatures()).chatExtras ? { reply_to: replyTo } : {};
+  const { error } = await supabase.from("messages").insert({ conversation_id: cid, body: text, ...reply });
   if (error) return { ok: false, message: /request|accept/i.test(error.message) ? "You can send one message until they accept your request." : friendlyError(error) };
   touch(cid);
   return { ok: true, message: "" };
@@ -72,4 +75,30 @@ export async function markConversationRead(cid: string): Promise<void> {
   const { supabase, user } = await getViewer();
   if (!user) return;
   await supabase.rpc("mark_conversation_read", { p_cid: cid });
+}
+
+// Reactions and unsend (supabase/chat-extras.sql), for direct messages ("dm") and group chats ("group").
+const REACTIONS = ["👍", "❤️", "😂", "🎉", "🔥", "👀", "🚀", "💡"];
+
+export async function toggleReaction(kind: "dm" | "group", messageId: string, emoji: string, on: boolean): Promise<R> {
+  if (!cidSchema.safeParse(messageId).success || !REACTIONS.includes(emoji)) return { ok: false, message: "That reaction isn't available." };
+  const { supabase, user } = await getViewer();
+  if (!user) return { ok: false, message: "Log in again." };
+  const table = kind === "dm" ? "message_reactions" : "chat_message_reactions";
+  const { error } = on
+    ? await supabase.from(table).insert({ message_id: messageId, emoji })
+    : await supabase.from(table).delete().eq("message_id", messageId).eq("user_id", user.id).eq("emoji", emoji);
+  if (error && error.code !== "23505") return { ok: false, message: friendlyError(error) };
+  return { ok: true, message: "" };
+}
+
+export async function unsendMessage(kind: "dm" | "group", messageId: string): Promise<R> {
+  if (!cidSchema.safeParse(messageId).success) return { ok: false, message: "That message couldn't be found." };
+  const { supabase, user } = await getViewer();
+  if (!user) return { ok: false, message: "Log in again." };
+  const { data, error } = await supabase.from(kind === "dm" ? "messages" : "chat_messages").delete().eq("id", messageId).eq("sender_id", user.id).select("id");
+  if (error) return { ok: false, message: friendlyError(error) };
+  if (!data?.length) return { ok: false, message: "Messages can be unsent for 15 minutes after you send them." };
+  revalidatePath("/messages", "layout");
+  return { ok: true, message: "" };
 }

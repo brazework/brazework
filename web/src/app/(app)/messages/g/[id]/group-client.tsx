@@ -6,11 +6,12 @@ import { Avatar } from "@/components/ui";
 import { cn } from "@/lib/forge";
 import { getBrowserClient } from "@/lib/supabase/client";
 import { createTeamChat, markChatRead, sendChatMessage } from "@/lib/chats";
+import { MessageTools, REPLY, ReactionChips, ReplyBar, ReplyQuote, UNSEND_MS, startReply, useReactions, type Reaction, type ReplyTarget } from "@/components/chat/message-tools";
 import { MessageBody } from "@/components/share/message-body";
 import { Ember } from "@/components/ember/ember";
 import { askEmberInChat } from "@/lib/chat-ember";
 
-export type GroupMsg = { id: string; sender_id: string; sender_first: string; sender_last: string; body: string; announcement: boolean; ember?: boolean; created_at: string };
+export type GroupMsg = { id: string; sender_id: string; sender_first: string; sender_last: string; body: string; announcement: boolean; ember?: boolean; created_at: string; reply_to?: string | null };
 export type Seen = Record<string, { seen: number; total: number }>;
 
 const SENT = "forge-chat-sent";
@@ -29,13 +30,19 @@ export function MarkChatRead({ id, count }: { id: string; count: number }) {
 
 // The conversation: messages from the same person within a few minutes hug together under one name;
 // announcements stand out as cards (officers see who's seen them); what you send shows at once.
-export function GroupThread({ msgs, me, myName, chatId, seen = {} }: { msgs: GroupMsg[]; me: string; myName: string; chatId: string; seen?: Seen }) {
+export function GroupThread({ msgs, me, myName, chatId, seen = {}, reactions = [], extras = false }: { msgs: GroupMsg[]; me: string; myName: string; chatId: string; seen?: Seen; reactions?: Reaction[]; extras?: boolean }) {
   const end = useRef<HTMLDivElement>(null);
+  const rx = useReactions("group", me, reactions);
+  const [active, setActive] = useState<string | null>(null);
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => { const t = setInterval(() => setNow(Date.now()), 30_000); return () => clearInterval(t); }, []);
   const [pending, setPending] = useState<GroupMsg[]>([]);
   const [typing, setTyping] = useState<Record<string, number>>({});
   const [emberBusy, setEmberBusy] = useState(false);
   const mine = new Set(msgs.filter((m) => m.sender_id === me).slice(-20).map((m) => m.body));
-  const all = [...msgs, ...pending.filter((p) => !mine.has(p.body))];
+  const all = [...msgs, ...pending.filter((p) => !mine.has(p.body))].filter((m) => !rx.removed.has(m.id));
+  const byId = new Map(all.map((m) => [m.id, m]));
+  const nameOf = (m: GroupMsg) => (m.ember ? "Ember" : m.sender_id === me ? "You" : `${m.sender_first} ${m.sender_last}`.trim());
 
   useEffect(() => {
     const onSent = (e: Event) => { const d = (e as CustomEvent<{ id: string; body: string; announcement: boolean }>).detail; if (d.id === chatId) setPending((p) => [...p, { id: `pending-${Date.now()}`, sender_id: me, sender_first: myName, sender_last: "", body: d.body, announcement: d.announcement, created_at: new Date().toISOString() }]); };
@@ -97,9 +104,25 @@ export function GroupThread({ msgs, me, myName, chatId, seen = {} }: { msgs: Gro
                   {!isMine && <span className="w-7 shrink-0">{!joinsNext && (isEmber ? <Ember size={28} /> : <Avatar first={m.sender_first} last={m.sender_last} size={28} className="text-[10px]" />)}</span>}
                   <div className={cn("flex max-w-[78%] flex-col", isMine ? "items-end" : "items-start")}>
                     {!isMine && !joinsPrev && <span className="mb-0.5 px-2 text-[11px] font-medium text-muted">{isEmber ? <>Ember <span className="font-normal text-faint">· asked by {m.sender_first}</span></> : <>{m.sender_first} {m.sender_last}</>}</span>}
-                    <div className={cn("px-3.5 py-2 text-[15px] leading-relaxed whitespace-pre-wrap", isMine ? "bg-accent-grad text-on-accent" : "glass-card text-text",
+                    <div className="group/msg relative">
+                    {extras && !isPending && (
+                      <MessageTools
+                        mine={isMine}
+                        open={active === m.id}
+                        canUnsend={isMine && now - Date.parse(m.created_at) < UNSEND_MS}
+                        onReact={(e) => { setActive(null); void rx.toggle(m.id, e); }}
+                        onReply={() => { setActive(null); startReply(`g:${chatId}`, { id: m.id, name: nameOf(m), body: m.body.slice(0, 140) }); }}
+                        onUnsend={() => { setActive(null); void rx.unsend(m.id); }}
+                      />
+                    )}
+                    <div onClick={(e) => { if (extras && !(e.target as Element).closest("a,button")) setActive((a) => (a === m.id ? null : m.id)); }} className={cn("px-3.5 py-2 text-[15px] leading-relaxed whitespace-pre-wrap", isMine ? "bg-accent-grad text-on-accent" : "glass-card text-text",
                       isMine ? cn("rounded-3xl", joinsPrev && "rounded-tr-md", joinsNext && "rounded-br-md") : cn("rounded-3xl", joinsPrev && "rounded-tl-md", joinsNext && "rounded-bl-md"),
-                      isPending && "opacity-60")}><MessageBody body={m.body} mine={isMine} /></div>
+                      isPending && "opacity-60")}>
+                      {m.reply_to && (() => { const q = byId.get(m.reply_to!); return <ReplyQuote target={q ? { id: q.id, name: nameOf(q), body: q.body } : null} mine={isMine} />; })()}
+                      <MessageBody body={m.body} mine={isMine} />
+                    </div>
+                    <ReactionChips list={rx.reactions.filter((x) => x.message_id === m.id)} me={me} mine={isMine} onToggle={(e) => void rx.toggle(m.id, e)} />
+                    </div>
                     {!joinsNext && <span className="mt-1 px-2 text-[10px] text-faint">{isPending ? "Sending…" : time(m.created_at)}</span>}
                   </div>
                 </div>
@@ -108,6 +131,7 @@ export function GroupThread({ msgs, me, myName, chatId, seen = {} }: { msgs: Gro
           );
         })}
       </ol>
+      {rx.error && <p role="alert" className="mt-2 text-center text-xs text-danger" onClick={rx.clearError}>{rx.error}</p>}
       {emberBusy && (
         <div className="mt-3 flex items-center gap-2 text-xs text-muted"><Ember size={28} mood="thinking" /> Ember is thinking…</div>
       )}
@@ -127,6 +151,12 @@ export function GroupComposer({ chatId, canAnnounce = false, placeholder = "Writ
   const [body, setBody] = useState("");
   const [announce, setAnnounce] = useState(false);
   const [error, setError] = useState("");
+  const [reply, setReply] = useState<ReplyTarget | null>(null);
+  useEffect(() => {
+    const on = (e: Event) => { const d = (e as CustomEvent<{ scope: string; target: ReplyTarget }>).detail; if (d.scope === `g:${chatId}`) { setReply(d.target); requestAnimationFrame(() => ref.current?.focus()); } };
+    window.addEventListener(REPLY, on);
+    return () => window.removeEventListener(REPLY, on);
+  }, [chatId]);
   const [pending, start] = useTransition();
   const send = () => {
     const text = body.trim();
@@ -134,12 +164,14 @@ export function GroupComposer({ chatId, canAnnounce = false, placeholder = "Writ
     const asAnnouncement = canAnnounce && announce;
     window.dispatchEvent(new CustomEvent(SENT, { detail: { id: chatId, body: text, announcement: asAnnouncement } }));
     setBody("");
+    const replyTo = reply?.id ?? null;
+    setReply(null);
     setAnnounce(false);
     start(async () => {
       setError("");
       const fail = (message: string) => { setError(message); setBody(text); window.dispatchEvent(new CustomEvent(FAILED, { detail: { id: chatId, body: text } })); };
       try {
-        const r = await sendChatMessage(chatId, text, asAnnouncement);
+        const r = await sendChatMessage(chatId, text, asAnnouncement, replyTo);
         if (!r.ok) return fail(r.message);
       } catch {
         return fail("Couldn't send. Check your connection and try again.");
@@ -170,6 +202,7 @@ export function GroupComposer({ chatId, canAnnounce = false, placeholder = "Writ
           <Megaphone className="size-3.5" /> Post as an announcement <span className="text-faint">(stands out, and you see who&apos;s read it)</span>
         </label>
       )}
+      {reply && <ReplyBar target={reply} onCancel={() => setReply(null)} />}
       <div className="glass-card flex items-end gap-2 rounded-3xl p-1.5">
         <label htmlFor="gmsg" className="sr-only">Message</label>
         <textarea

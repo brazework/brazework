@@ -3,7 +3,7 @@ import { EVENT_COLS, EVENT_COLS_BASE, EVENT_WITH_HOST, EVENT_WITH_HOST_BASE } fr
 import { createClient } from "@/lib/supabase/server";
 
 // Which optional database updates this Supabase project has had: supabase/club-events.sql,
-// supabase/media.sql, supabase/invites.sql, supabase/copilot.sql, supabase/milestones.sql, supabase/integrations.sql, supabase/group-chats.sql, supabase/project-stack.sql, supabase/club-profile.sql, supabase/mentions.sql, supabase/copilot-chats.sql, supabase/profile-extras.sql and supabase/mcp.sql. The app runs on the same database before and after each one is applied, so
+// supabase/media.sql, supabase/invites.sql, supabase/copilot.sql, supabase/milestones.sql, supabase/integrations.sql, supabase/group-chats.sql, supabase/project-stack.sql, supabase/club-profile.sql, supabase/mentions.sql, supabase/copilot-chats.sql, supabase/profile-extras.sql, supabase/mcp.sql and supabase/chat-extras.sql. The app runs on the same database before and after each one is applied, so
 // pages ask for the new columns only when they exist, instead of failing. Probed once per request.
 // 42703/PGRST204: no such column; 42P01/PGRST205: no such table; PGRST200: no such relationship;
 // 42883/PGRST202: no such function.
@@ -27,7 +27,7 @@ export const dbFeatures = cache(async (): Promise<Features> => {
 
 async function probe() {
   const supabase = await createClient();
-  const [ev, po, inv, cop, ms, intg, gc, st, cp, mn, cc, px, mcp] = await Promise.all([
+  const [ev, po, inv, cop, ms, intg, gc, st, cp, mn, cc, px, mcp, cx] = await Promise.all([
     supabase.from("events").select("community_id").limit(1),
     supabase.from("posts").select("media").limit(1),
     supabase.from("community_invites").select("code").limit(1),
@@ -41,8 +41,9 @@ async function probe() {
     supabase.from("copilot_chats").select("id").limit(1),
     supabase.from("profiles").select("open_to").limit(1),
     supabase.from("api_tokens").select("id").limit(1),
+    supabase.from("message_reactions").select("emoji").limit(1),
   ]);
-  return { clubEvents: !missing(ev.error), media: !missing(po.error), invites: !missing(inv.error), copilot: !missing(cop.error), milestones: !missing(ms.error), integrations: !missing(intg.error), groupChats: !missing(gc.error), projectTools: !missing(st.error), clubProfile: !missing(cp.error), mentions: !missing(mn.error), copilotChats: !missing(cc.error), profileExtras: !missing(px.error), mcp: !missing(mcp.error) };
+  return { clubEvents: !missing(ev.error), media: !missing(po.error), invites: !missing(inv.error), copilot: !missing(cop.error), milestones: !missing(ms.error), integrations: !missing(intg.error), groupChats: !missing(gc.error), projectTools: !missing(st.error), clubProfile: !missing(cp.error), mentions: !missing(mn.error), copilotChats: !missing(cc.error), profileExtras: !missing(px.error), mcp: !missing(mcp.error), chatExtras: !missing(cx.error) };
 }
 
 export async function eventCols(): Promise<string> {

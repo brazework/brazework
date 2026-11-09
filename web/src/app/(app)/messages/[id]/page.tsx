@@ -1,3 +1,5 @@
+import type { Reaction } from "@/components/chat/message-tools";
+import { dbFeatures } from "@/lib/db-features";
 import type { Metadata } from "next";
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
@@ -21,7 +23,7 @@ export default function ThreadPage({ params }: PageProps<"/messages/[id]">) {
 
 async function Thread({ params }: { params: PageProps<"/messages/[id]">["params"] }) {
   const { id } = await params;
-  const { supabase, user } = await getViewer();
+  const { supabase, user, profile } = await getViewer();
   if (!user) redirect("/login");
   const me = user.id;
   const { data: conv } = await supabase.from("conversations").select("*").eq("id", id).maybeSingle();
@@ -34,8 +36,11 @@ async function Thread({ params }: { params: PageProps<"/messages/[id]">["params"
   const requestToMe = conv.status === "request" && conv.started_by !== me;
   const requestFromMe = conv.status === "request" && conv.started_by === me;
 
-  const { data } = await supabase.from("messages").select("id, sender_id, body, created_at").eq("conversation_id", id).order("created_at", { ascending: true }).limit(300);
-  const msgs = (data ?? []) as Msg[];
+  // Replies and reactions exist once supabase/chat-extras.sql has run.
+  const extras = (await dbFeatures()).chatExtras;
+  const { data } = await supabase.from("messages").select(extras ? "id, sender_id, body, created_at, reply_to" : "id, sender_id, body, created_at").eq("conversation_id", id).order("created_at", { ascending: true }).limit(300);
+  const msgs = (data ?? []) as unknown as Msg[];
+  const { data: rxRows } = extras && msgs.length ? await supabase.from("message_reactions").select("message_id, user_id, emoji").in("message_id", msgs.map((m) => m.id)) : { data: [] };
   const iSent = msgs.some((m) => m.sender_id === me);
 
   return (
@@ -53,7 +58,7 @@ async function Thread({ params }: { params: PageProps<"/messages/[id]">["params"
         </Link>
       </header>
       {requestToMe && <RequestBar cid={id} firstName={other.firstName ?? ""} />}
-      <ThreadScroll msgs={msgs} me={me} cid={id} otherName={other.firstName ?? ""} />
+      <ThreadScroll msgs={msgs} me={me} cid={id} otherName={other.firstName ?? ""} reactions={(rxRows ?? []) as Reaction[]} extras={extras && !requestToMe} myName={profile?.first_name || "You"} />
       {requestToMe ? (
         <p className="border-t border-line px-4 py-3 text-center text-xs text-muted">Accept to reply. They won&apos;t know you&apos;ve read it until you do.</p>
       ) : requestFromMe && iSent ? (

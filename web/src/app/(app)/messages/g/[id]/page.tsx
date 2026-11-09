@@ -9,6 +9,7 @@ import { getViewer } from "@/lib/supabase/server";
 import { GroupComposer, GroupThread, MarkChatRead, NewTeamChat, type GroupMsg, type Seen } from "./group-client";
 import { CatchMeUp, MemberList } from "./details";
 import { MessageBody } from "@/components/share/message-body";
+import type { Reaction } from "@/components/chat/message-tools";
 import { copilotEnabled } from "@/lib/copilot";
 import { requestTime } from "@/lib/forge";
 
@@ -27,20 +28,22 @@ async function Group({ params }: { params: PageProps<"/messages/g/[id]">["params
   const { id } = await params;
   const { supabase, user, profile } = await getViewer();
   if (!user || !profile) redirect("/login");
-  if (!(await dbFeatures()).groupChats) redirect("/messages");
+  const { groupChats, chatExtras: extras } = await dbFeatures();
+  if (!groupChats) redirect("/messages");
   const { data: chat } = await supabase.from("chats").select("id, kind, community_id, event_id, name, communities(name), events(title)").eq("id", id).maybeSingle();
   if (!chat)
     return <div data-thread className="contents"><div className="grid h-full place-items-center p-8 text-center text-sm text-muted">This chat isn&apos;t available to you.<Link href="/messages?tab=groups" className="mt-3 underline">Back to messages</Link></div></div>;
   const c = chat as unknown as Chat;
 
   const [msgRes, roleRes, memberRes] = await Promise.all([
-    supabase.from("chat_messages").select("id, sender_id, sender_first, sender_last, body, announcement, ember, created_at").eq("chat_id", id).order("created_at", { ascending: false }).limit(300),
+    supabase.from("chat_messages").select(`id, sender_id, sender_first, sender_last, body, announcement, ember, created_at${extras ? ", reply_to" : ""}`).eq("chat_id", id).order("created_at", { ascending: false }).limit(300),
     c.community_id ? supabase.from("community_members").select("role").eq("community_id", c.community_id).eq("uid", user.id).maybeSingle() : Promise.resolve({ data: null }),
     c.kind === "team"
       ? supabase.from("chat_members").select("uid, profiles(first_name, last_name)").eq("chat_id", id).limit(50)
       : c.community_id ? supabase.from("community_members").select("uid, first_name, last_name").eq("community_id", c.community_id).order("joined_at", { ascending: false }).limit(500) : Promise.resolve({ data: [] }),
   ]);
-  const msgs = ((msgRes.data ?? []) as GroupMsg[]).reverse();
+  const msgs = ((msgRes.data ?? []) as unknown as GroupMsg[]).reverse();
+  const { data: rxRows } = extras && msgs.length ? await supabase.from("chat_message_reactions").select("message_id, user_id, emoji").in("message_id", msgs.map((m) => m.id)) : { data: [] };
   const role = (roleRes.data as { role?: string } | null)?.role ?? "";
   const officer = ["owner", "admin", "moderator"].includes(role);
   const canAnnounce = c.kind === "club" && officer;
@@ -86,7 +89,7 @@ async function Group({ params }: { params: PageProps<"/messages/g/[id]">["params
           </form>
         )}
       </header>
-      <GroupThread msgs={msgs} me={user.id} myName={profile.first_name} chatId={id} seen={seen} />
+      <GroupThread msgs={msgs} me={user.id} myName={profile.first_name} chatId={id} seen={seen} reactions={(rxRows ?? []) as Reaction[]} extras={extras} />
       <GroupComposer chatId={id} canAnnounce={canAnnounce} ember={emberOn} placeholder={c.kind === "event" ? "Ask about the event, share logistics" : `Message ${title}`} />
       </div>
       <aside aria-label="Chat details" className="hidden w-80 shrink-0 flex-col gap-6 overflow-y-auto border-l border-line p-5 xl:flex">

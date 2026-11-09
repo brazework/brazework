@@ -41,23 +41,10 @@ export function Hero() {
           <h1 className="focus-in mt-7 text-[clamp(2.6rem,6vw,4.75rem)] leading-[1] font-semibold tracking-[-0.045em]">
             Where
             <br />
-            <span className="relative inline-grid align-bottom">
-              <AnimatePresence mode="popLayout" initial={false}>
-                <motion.span
-                  key={p.id}
-                  initial={{ y: "60%", opacity: 0, filter: "blur(6px)" }}
-                  animate={{ y: 0, opacity: 1, filter: "blur(0px)" }}
-                  exit={{ y: "-60%", opacity: 0, filter: "blur(6px)" }}
-                  transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
-                  className="bg-clip-text pb-1 text-transparent"
-                  style={{ backgroundImage: p.grad }}
-                >
-                  {p.who}
-                </motion.span>
-              </AnimatePresence>
-            </span>
+            {/* One line for everyone in STEM, students and professionals; the color follows the field you pick. */}
+            <span className="bg-clip-text pb-1 text-transparent transition-[background-image] duration-700" style={{ backgroundImage: p.grad }}>everyone in STEM</span>
             <br />
-            get found.
+            gets found.
           </h1>
           <p className="focus-in mt-6 max-w-xl text-lg leading-relaxed text-muted" style={{ ["--delay" as string]: "0.1s" }}>
             Forge is home base for university STEM clubs. Talk, plan and build together in one place, and every result your club verifies becomes proof that gets you hired. Ember, your AI teammate, handles the busywork.
