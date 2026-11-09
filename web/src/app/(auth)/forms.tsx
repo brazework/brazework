@@ -20,11 +20,21 @@ function ErrorLine({ message }: { message: string }) {
   );
 }
 
-function PasswordInput({ id, name, autoComplete, autoFocus }: { id?: string; name: string; autoComplete: string; autoFocus?: boolean }) {
+// How strong a new password is: 8+ characters is the rule; length and variety earn the rest.
+function strength(pw: string) {
+  if (pw.length < 8) return { score: pw ? 1 : 0, label: pw ? `${8 - pw.length} more character${8 - pw.length === 1 ? "" : "s"}` : "" };
+  const score = 1 + (pw.length >= 12 ? 1 : 0) + (/[a-z]/.test(pw) && /[A-Z]/.test(pw) ? 1 : 0) + (/[\d\W_]/.test(pw) ? 1 : 0);
+  return { score, label: ["", "Okay", "Good", "Strong", "Very strong"][score] };
+}
+
+function PasswordInput({ id, name, autoComplete, autoFocus, meter = false }: { id?: string; name: string; autoComplete: string; autoFocus?: boolean; meter?: boolean }) {
   const [show, setShow] = useState(false);
+  const [value, setValue] = useState("");
+  const s = strength(value);
   return (
+    <div>
     <div className="relative">
-      <input id={id} name={name} type={show ? "text" : "password"} autoComplete={autoComplete} autoFocus={autoFocus} className={cn(inputCls, "pr-11")} />
+      <input id={id} name={name} type={show ? "text" : "password"} autoComplete={autoComplete} autoFocus={autoFocus} value={value} onChange={(e) => setValue(e.target.value)} className={cn(inputCls, "pr-11")} />
       <button
         type="button"
         onClick={() => setShow((v) => !v)}
@@ -34,6 +44,13 @@ function PasswordInput({ id, name, autoComplete, autoFocus }: { id?: string; nam
       >
         {show ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
       </button>
+    </div>
+    {meter && value && (
+      <div className="mt-2 flex items-center gap-2" aria-live="polite">
+        <span className="flex flex-1 gap-1" aria-hidden="true">{[1, 2, 3, 4].map((i) => <span key={i} className={cn("h-1 flex-1 rounded-full transition-colors", i <= s.score ? (value.length < 8 ? "bg-danger" : s.score >= 3 ? "bg-ok" : "bg-amber-500") : "bg-raised")} />)}</span>
+        <span className={cn("w-28 text-right text-xs", value.length < 8 ? "text-danger" : "text-muted")}>{s.label}</span>
+      </div>
+    )}
     </div>
   );
 }
@@ -109,13 +126,14 @@ export function SignupForm({ invite, clubName }: { invite?: string; clubName?: s
         <Field label="First name"><input name="firstName" autoComplete="given-name" maxLength={80} className={inputCls} /></Field>
         <Field label="Last name"><input name="lastName" autoComplete="family-name" maxLength={80} className={inputCls} /></Field>
       </div>
-      <Field label="Birthday" hint="Private. Forge is for people 18 and older."><input name="birthday" type="date" autoComplete="bday" className={inputCls} /></Field>
+      <Field label="Birthday" hint="Private, never shown. Forge is for people 18 and older."><input name="birthday" type="date" autoComplete="bday" className={inputCls} /></Field>
       <Field label={type === "student" ? "University email" : "Email"} hint={type === "student" ? "The address your school gave you, e.g. ending in .edu." : "We'll send a link to confirm it."}>
         <input name="email" type="email" autoComplete="email" className={inputCls} />
       </Field>
-      <Field label="Password" hint="At least 8 characters."><PasswordInput name="password" autoComplete="new-password" /></Field>
+      <Field label="Password" hint="At least 8 characters. Longer, with a mix of letters and numbers, is stronger."><PasswordInput name="password" autoComplete="new-password" meter /></Field>
       <ErrorLine message={state.message} />
-      <Button type="submit" size="lg" disabled={pending}>{pending && <Loader2 className="size-4 animate-spin" />} {pending ? "Creating your account…" : "Create account"}</Button>
+      {!type && <p className="-mb-2 text-xs text-muted">Choose <b className="font-medium text-text-2">Student</b> or <b className="font-medium text-text-2">Professional</b> above to continue.</p>}
+      <Button type="submit" size="lg" disabled={pending || !type}>{pending && <Loader2 className="size-4 animate-spin" />} {pending ? "Creating your account…" : "Create account"}</Button>
       <p className="text-sm text-muted">Already have an account? <Link href="/login" className="text-accent hover:underline">Log in</Link></p>
     </form>
   );

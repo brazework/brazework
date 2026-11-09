@@ -11,6 +11,8 @@ export function OnboardingForm({ firstName, student }: { firstName: string; stud
   const [state, action, pending] = useActionState<OnboardState, FormData>(completeOnboarding, { message: "" });
   const [field, setField] = useState<string>(TOPICS[0].name);
   const [picked, setPicked] = useState<string[]>([]);
+  const [headline, setHeadline] = useState("");
+  const need = Math.max(0, 3 - picked.length);
   const toggle = (t: string) => setPicked((p) => (p.includes(t) ? p.filter((x) => x !== t) : [...p, t]));
   const group = TOPICS.find((t) => t.name === field) ?? TOPICS[0];
 
@@ -23,16 +25,16 @@ export function OnboardingForm({ firstName, student }: { firstName: string; stud
         </h1>
       </div>
 
-      <Field label={student ? "Your major" : "Your profession"}>
-        <input name="headline" maxLength={200} placeholder={student ? "e.g. Mechanical Engineering, junior" : "e.g. Embedded Engineer at a robotics startup"} className={inputCls} />
+      <Field label={student ? "Your major" : "Your profession"} optional count={headline.length} max={200} hint="Shown under your name. You can change it any time.">
+        <input name="headline" maxLength={200} value={headline} onChange={(e) => setHeadline(e.target.value)} placeholder={student ? "e.g. Mechanical Engineering, junior" : "e.g. Embedded Engineer at a robotics startup"} className={inputCls} />
       </Field>
 
       <div>
-        <div className="mb-3 text-sm font-medium text-text-2">Your field</div>
+        <div id="ob-field-label" className="mb-3 text-sm font-medium text-text-2">Your field <span className="font-normal text-faint">(it also shows its interests below)</span></div>
         <input type="hidden" name="field" value={field} />
-        <div className="flex flex-wrap gap-2">
+        <div role="radiogroup" aria-labelledby="ob-field-label" className="flex flex-wrap gap-2">
           {TOPICS.map((t) => (
-            <button key={t.name} type="button" aria-pressed={field === t.name} onClick={() => setField(t.name)} className="relative rounded-full border border-line px-4 py-2 text-sm text-muted transition aria-pressed:border-transparent aria-pressed:text-on-accent">
+            <button key={t.name} type="button" role="radio" aria-checked={field === t.name} onClick={() => setField(t.name)} className="relative rounded-full border border-line px-4 py-2 text-sm text-muted transition aria-checked:border-transparent aria-checked:text-on-accent">
               {field === t.name && <motion.span layoutId="ob-field" className="absolute inset-0 rounded-full bg-accent" />}
               <span className="relative">{t.name}</span>
             </button>
@@ -64,9 +66,12 @@ export function OnboardingForm({ firstName, student }: { firstName: string; stud
       </div>
 
       {state.message && <p role="alert" className="rounded-xl border border-danger/30 bg-danger/10 px-3.5 py-2.5 text-sm text-danger">{state.message}</p>}
-      <Button type="submit" size="lg" disabled={pending || picked.length < 3} className="self-start">
-        {pending && <Loader2 className="size-4 animate-spin" />} Enter Forge
-      </Button>
+      <div className="flex flex-wrap items-center gap-3">
+        <Button type="submit" size="lg" disabled={pending || need > 0}>
+          {pending && <Loader2 className="size-4 animate-spin" />} {pending ? "Setting up your feed…" : "Enter Forge"}
+        </Button>
+        <span aria-live="polite" className={cn("text-sm", need ? "text-muted" : "text-ok")}>{need ? `Pick ${need} more interest${need === 1 ? "" : "s"} to continue` : "You're all set"}</span>
+      </div>
     </form>
   );
 }

@@ -56,15 +56,22 @@ export function Avatar({ first, last, size = 40, className, src }: { first: stri
   );
 }
 
-export function Field({ label, hint, children }: { label: string; hint?: React.ReactNode; children: React.ReactNode }) {
+// A labelled form field. `optional` tags it so required fields need no asterisks; `count`/`max` show a
+// live character count that turns amber near the limit; `error` shows inline under the field (pair it
+// with aria-invalid on the input so inputCls paints it red).
+export function Field({ label, hint, optional, error, count, max, children }: { label: string; hint?: React.ReactNode; optional?: boolean; error?: string; count?: number; max?: number; children: React.ReactNode }) {
   return (
     <label className="flex flex-col gap-1.5">
-      <span className="text-sm font-medium text-text-2">{label}</span>
+      <span className="flex items-baseline gap-2 text-sm font-medium text-text-2">
+        {label}
+        {optional && <span className="rounded-full bg-surface-2 px-1.5 py-px text-[10px] font-normal tracking-wide text-faint uppercase">Optional</span>}
+        {max !== undefined && count !== undefined && <span className={cn("ml-auto font-mono text-[11px] font-normal tabular-nums", count > max * 0.9 ? "text-amber-500" : "text-faint")}>{count}/{max}</span>}
+      </span>
       {children}
-      {hint && <span className="text-xs text-faint">{hint}</span>}
+      {error ? <span role="alert" className="text-xs text-danger">{error}</span> : hint && <span className="text-xs text-faint">{hint}</span>}
     </label>
   );
 }
 
 export const inputCls =
-  "h-11 w-full rounded-xl border border-line bg-surface-2 px-3.5 text-[15px] text-text placeholder:text-faint outline-none transition focus:border-text focus:ring-4 focus:ring-text/10";
+  "h-11 w-full rounded-xl border border-line bg-surface/70 px-3.5 text-[15px] text-text shadow-[inset_0_1px_2px_rgba(0,0,0,0.04)] placeholder:text-faint outline-none transition hover:border-line-strong focus:border-text focus:bg-surface focus:ring-4 focus:ring-text/10 aria-[invalid=true]:border-danger aria-[invalid=true]:ring-danger/15 disabled:cursor-not-allowed disabled:opacity-60";
