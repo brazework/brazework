@@ -44,7 +44,7 @@ The Vercel project lives in Ian's account, so these are his three steps. Rolling
 2. **Vercel → Project → Settings → Build and Deployment:**
    - **Root Directory:** `web`
    - **Framework Preset:** Next.js (it detects this once the root is `web`)
-   - Leave the build and output settings on their defaults. The root `vercel.json` belongs to the old app and isn't read once the root is `web`.
+   - Leave the build and output settings on their defaults. The old app's root `vercel.json` was removed at the switch-over (2026-11-08): Vercel kept applying its build command even with the root set to `web`, which broke the build.
    - The Supabase variables (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`) are already on the project; nothing to add. Email links use Vercel's production domain automatically.
 3. **Deployments → Redeploy** the latest `main`. Then check on the live URL:
    - [ ] The home page loads; logging in lands on your feed
