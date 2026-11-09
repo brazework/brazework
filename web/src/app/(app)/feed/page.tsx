@@ -22,14 +22,14 @@ export const metadata: Metadata = { title: "Feed" };
 
 export default function FeedPage({ searchParams }: PageProps<"/feed">) {
   return (
-    <div className="mx-auto grid max-w-2xl gap-8 xl:max-w-5xl xl:grid-cols-[minmax(0,1fr)_280px]">
+    <div className="mx-auto grid max-w-2xl gap-8 xl:max-w-6xl xl:grid-cols-[minmax(0,1fr)_300px] 2xl:max-w-7xl 2xl:grid-cols-[minmax(0,1fr)_340px]">
       <LiveRefresh tables={["posts"]} />
       <div className="min-w-0">
         <Suspense fallback={<FeedSkeleton />}>
           <Feed searchParams={searchParams} />
         </Suspense>
       </div>
-      <aside aria-label="Your clubs and upcoming events" className="hidden xl:block">
+      <aside aria-label="Forge updates, your clubs and upcoming events" className="hidden xl:block">
         <Suspense fallback={<div className="h-96 shimmer rounded-3xl" />}>
           <FeedRail />
         </Suspense>

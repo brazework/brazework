@@ -1,6 +1,6 @@
 "use client";
 import { AnimatePresence, motion } from "motion/react";
-import { Bookmark, Check, FolderGit2, Heart, Link2, Lock, MessageSquare, Trash2 } from "lucide-react";
+import { Bookmark, Check, FolderGit2, Heart, Link2, Lock, MessageSquare, Pencil, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { useOptimistic, useState, useTransition } from "react";
 import { Avatar } from "@/components/ui";
@@ -8,6 +8,7 @@ import { POST_KINDS, cn, timeAgo, type Post, type PostProject } from "@/lib/forg
 import { MediaGrid } from "@/components/media/media-grid";
 import { avatarSrc } from "@/lib/media";
 import { deletePost, toggleSave } from "@/lib/posts";
+import { EditPost } from "./edit-post";
 import { toggleLike } from "./actions";
 
 type Opt = { liked: boolean; count: number; saved: boolean };
@@ -16,6 +17,11 @@ export function PostCard({ post, liked, saved = false, own = false, index, proje
   const [, start] = useTransition();
   const [error, setError] = useState("");
   const [gone, setGone] = useState(false);
+  const [editing, setEditing] = useState(false);
+  // Shown right after an edit, before the page's data refreshes.
+  const [edited, setEdited] = useState<{ body: string; tags: string[] } | null>(null);
+  const body = edited?.body ?? post.body;
+  const tags = edited?.tags ?? post.tags;
   const [opt, setOpt] = useOptimistic<Opt, Partial<Opt>>({ liked, count: post.like_count, saved }, (cur, next) => ({ ...cur, ...next }));
   const kind = POST_KINDS.find((k) => k.id === post.kind)?.label ?? "Update";
 
@@ -33,7 +39,7 @@ export function PostCard({ post, liked, saved = false, own = false, index, proje
   const [bigHeart, setBigHeart] = useState(0);
   const [copied, setCopied] = useState(false);
   const [expanded, setExpanded] = useState(false);
-  const long = post.body.length > 420 || post.body.split("\n").length > 7;
+  const long = body.length > 420 || body.split("\n").length > 7;
   const like = (next: boolean) => {
     if (next) setBurst((n) => n + 1);
     act({ liked: next, count: opt.count + (next ? 1 : -1) }, () => toggleLike(post.id, next));
@@ -83,14 +89,25 @@ export function PostCard({ post, liked, saved = false, own = false, index, proje
           <div className="truncate text-xs text-faint">
             {post.author_headline}{post.author_headline && " · "}
             <Link href={`/post/${post.id}`} className="hover:underline">{timeAgo(post.created_at)}</Link>
+            {(edited || post.edited_at) && <span title={post.edited_at ? `Edited ${new Date(post.edited_at).toLocaleString()}` : "Edited just now"}> · Edited</span>}
             {post.community_name && <> · {post.community_name}</>}
           </div>
         </div>
         <span className="ml-auto rounded-full bg-accent-grad px-2.5 py-0.5 font-mono text-[10px] font-medium tracking-wide text-on-accent uppercase">{kind}</span>
       </header>
       {reason && <p className="mt-3 font-mono text-[11px] text-faint">{reason}</p>}
-      <p className={cn("mt-4 text-[15px] leading-relaxed whitespace-pre-wrap text-text-2", long && !expanded && "line-clamp-6")}>{post.body}</p>
-      {long && <button type="button" onClick={() => setExpanded((v) => !v)} className="mt-1 text-sm font-medium text-text hover:underline">{expanded ? "Show less" : "Show more"}</button>}
+      {editing ? (
+        <EditPost
+          postId={post.id}
+          body={body}
+          tags={tags}
+          onCancel={() => setEditing(false)}
+          onSaved={(next) => { setEdited(next); setEditing(false); }}
+        />
+      ) : (
+        <p className={cn("mt-4 text-[15px] leading-relaxed whitespace-pre-wrap text-text-2", long && !expanded && "line-clamp-6")}>{body}</p>
+      )}
+      {!editing && long && <button type="button" onClick={() => setExpanded((v) => !v)} className="mt-1 text-sm font-medium text-text hover:underline">{expanded ? "Show less" : "Show more"}</button>}
       {post.media && post.media.length > 0 && <MediaGrid media={post.media} alt={`Shared by ${post.author_first} ${post.author_last}`} />}
       {project && (
         <Link href={`/u/${post.author_id}#projects`} className="mt-4 flex items-center gap-3 rounded-2xl border border-line bg-surface-2 p-4 transition hover:border-line-strong">
@@ -105,9 +122,9 @@ export function PostCard({ post, liked, saved = false, own = false, index, proje
           <span className="shrink-0 text-sm text-muted">View project →</span>
         </Link>
       )}
-      {post.tags.length > 0 && (
+      {!editing && tags.length > 0 && (
         <div className="mt-4 flex flex-wrap gap-1.5">
-          {post.tags.map((t) => <Link key={t} href={`/feed?tag=${encodeURIComponent(t)}`} className="rounded-md border border-line px-2 py-0.5 font-mono text-[11px] text-muted transition hover:border-line-strong hover:text-text">#{t}</Link>)}
+          {tags.map((t) => <Link key={t} href={`/feed?tag=${encodeURIComponent(t)}`} className="rounded-md border border-line px-2 py-0.5 font-mono text-[11px] text-muted transition hover:border-line-strong hover:text-text">#{t}</Link>)}
         </div>
       )}
       <footer className="mt-4 flex items-center gap-1 text-sm text-faint">
@@ -131,6 +148,11 @@ export function PostCard({ post, liked, saved = false, own = false, index, proje
             </motion.span>
           </AnimatePresence>
         </button>
+        {own && !editing && (
+          <button onClick={() => setEditing(true)} aria-label="Edit post" title="Edit post" className="inline-flex h-9 items-center rounded-full px-3 transition hover:bg-hover hover:text-text">
+            <Pencil className="size-[18px]" />
+          </button>
+        )}
         {own && (
           <button
             onClick={() => confirm("Delete this post? Its likes and comments go too.") && start(async () => { const r = await deletePost(post.id); if (r.ok) setGone(true); else setError(r.message); })}

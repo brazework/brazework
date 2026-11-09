@@ -2,8 +2,9 @@
 import { AnimatePresence, motion } from "motion/react";
 import { Sparkles, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Button } from "@/components/ui";
+import { cn } from "@/lib/forge";
 import { UPDATES, WELCOME, freshUpdates, onRoute, updateDate, welcomeSteps, whatsNewSteps, type TourStep } from "@/lib/tours";
 import { loadTourState, markToursSeen } from "./actions";
 
@@ -129,34 +130,67 @@ export function TourMount() {
   );
 }
 
-// "Forge updates": every shipped (and upcoming) change, readable any time.
-export function UpdatesButton() {
+// "Forge updates": every shipped (and upcoming) change, readable any time. In the sidebar it's a
+// button; collapsed, it's just the icon.
+export function UpdatesButton({ collapsed = false }: { collapsed?: boolean }) {
   const [open, setOpen] = useState(false);
   return (
     <>
-      <button data-tour="updates" onClick={() => setOpen(true)} className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-sm text-muted transition hover:bg-hover hover:text-text">
-        <Sparkles className="size-[18px]" /> What&apos;s new
+      <button
+        data-tour="updates"
+        onClick={() => setOpen(true)}
+        aria-label={collapsed ? "What's new" : undefined}
+        title={collapsed ? "What's new" : undefined}
+        className={cn("flex w-full items-center gap-3 rounded-xl py-2.5 text-sm text-muted transition hover:bg-hover hover:text-text", collapsed ? "justify-center" : "px-3")}
+      >
+        <Sparkles className="size-[18px] shrink-0" /> {!collapsed && <>What&apos;s new</>}
       </button>
-      {open && (
-        <div role="dialog" aria-modal="true" aria-labelledby="updates-title" className="fixed inset-0 z-[70] grid place-items-center bg-bg/70 p-4 backdrop-blur-sm" onClick={(e) => e.target === e.currentTarget && setOpen(false)}>
-          <div className="max-h-[85dvh] w-full max-w-lg overflow-y-auto rounded-3xl border border-line bg-surface p-6 shadow-[var(--shadow)]">
-            <div className="flex items-start justify-between">
-              <h2 id="updates-title" className="text-xl font-semibold tracking-tight">Forge updates</h2>
-              <button onClick={() => setOpen(false)} aria-label="Close" className="grid size-8 place-items-center rounded-full text-faint hover:bg-hover hover:text-text"><X className="size-4" /></button>
-            </div>
-            <ol className="mt-5 space-y-6">
-              {UPDATES.map((u) => (
-                <li key={u.id}>
-                  <div className="flex items-center gap-2 font-mono text-[10px] tracking-wide text-faint uppercase"><span className="rounded-full border border-line px-2 py-0.5">{u.kind}</span>{updateDate(u)}</div>
-                  <h3 className="mt-2 font-semibold">{u.title}</h3>
-                  <p className="mt-1 text-sm text-text-2">{u.summary}</p>
-                  {u.points && <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted">{u.points.map((p) => <li key={p}>{p}</li>)}</ul>}
-                </li>
-              ))}
-            </ol>
-          </div>
-        </div>
-      )}
+      <UpdatesDialog open={open} onClose={() => setOpen(false)} />
     </>
+  );
+}
+
+// The full list of updates. focusId scrolls to (and highlights) one of them.
+export function UpdatesDialog({ open, onClose, focusId }: { open: boolean; onClose: () => void; focusId?: string }) {
+  const closeBtn = useRef<HTMLButtonElement>(null);
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", onKey);
+    const t = setTimeout(() => {
+      const el = focusId ? document.getElementById(`update-${focusId}`) : null;
+      if (el) { el.scrollIntoView({ block: "start" }); el.focus({ preventScroll: true }); }
+      else closeBtn.current?.focus();
+    }, 30);
+    return () => { window.removeEventListener("keydown", onKey); clearTimeout(t); };
+  }, [open, focusId, onClose]);
+  if (!open) return null;
+  const released = UPDATES.filter((u) => u.kind !== "Next");
+  const upcoming = UPDATES.filter((u) => u.kind === "Next");
+  const item = (u: (typeof UPDATES)[number]) => (
+    <li key={u.id} id={`update-${u.id}`} tabIndex={-1} className={cn("scroll-mt-4 rounded-2xl p-3 -mx-3 outline-none", u.id === focusId && "bg-surface-2 ring-1 ring-line-strong")}>
+      <div className="flex items-center gap-2 font-mono text-[10px] tracking-wide text-faint uppercase"><span className="rounded-full border border-line px-2 py-0.5">{u.kind === "Next" ? "Coming soon" : u.kind}</span>{u.date && updateDate(u)}</div>
+      <h3 className="mt-2 font-semibold">{u.title}</h3>
+      <p className="mt-1 text-sm text-text-2">{u.summary}</p>
+      {u.points && <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted">{u.points.map((p) => <li key={p}>{p}</li>)}</ul>}
+    </li>
+  );
+  return (
+    <div role="dialog" aria-modal="true" aria-labelledby="updates-title" className="fixed inset-0 z-[70] grid place-items-center bg-bg/70 p-4 backdrop-blur-sm" onClick={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="max-h-[85dvh] w-full max-w-lg overflow-y-auto rounded-3xl border border-line bg-surface p-6 shadow-[var(--shadow)]">
+        <div className="flex items-start justify-between">
+          <h2 id="updates-title" className="text-xl font-semibold tracking-tight">Forge updates</h2>
+          <button ref={closeBtn} onClick={onClose} aria-label="Close" className="grid size-8 place-items-center rounded-full text-faint hover:bg-hover hover:text-text"><X className="size-4" /></button>
+        </div>
+        <h3 className="mt-5 font-mono text-[11px] tracking-wide text-faint uppercase">Recent changes</h3>
+        <ol className="mt-2 space-y-3">{released.map(item)}</ol>
+        {upcoming.length > 0 && (
+          <>
+            <h3 className="mt-6 font-mono text-[11px] tracking-wide text-faint uppercase">Coming next</h3>
+            <ol className="mt-2 space-y-3">{upcoming.map(item)}</ol>
+          </>
+        )}
+      </div>
+    </div>
   );
 }

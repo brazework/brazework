@@ -50,6 +50,10 @@ The database fills in names, counts and times itself, so the app can't fake them
 - `events.community_id`: an event is hosted by exactly one of an organization (`org_id`) or a community (`community_id`).
 - Community admins and owners (`can_host_community_events()`, rank 4+) create and edit their club's events. Members of approval-required communities are the only ones who see that club's events; public clubs' events are visible to everyone.
 
+## Post edits (`supabase/post-edits.sql`)
+
+`posts.edited_at`: set by the database when the author changes a post's text, type or topics, never by the app, so an edit can't be faked or hidden. Likes and comments don't touch it.
+
 ## Invite links (`supabase/invites.sql`)
 
 - `community_invites`: code (16 random hex characters), community, who made it, optional expiry and use limit, uses so far, revoked. Only the club's helpers and above can see, create or turn off its links.

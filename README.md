@@ -25,7 +25,8 @@ The research, with sources, is in [docs/positioning.md](docs/positioning.md).
 
 | | |
 |---|---|
-| **Feed** | *For you* shows only posts matching your interests, and says why. Plus Latest, Following and your clubs, with topic filters |
+| **Feed** | *For you* shows only posts matching your interests, and says why. Plus Latest, Following and your clubs, with topic filters. Forge updates (recent changes and what's coming next) at the top right. Edit your own posts any time; edited posts say so |
+| **Search** | One search bar above every page finds people and communities by name, field, headline or club, with people and clubs that share your interests first. Connect or join from the results; `/search` shows everything |
 | **Profiles & projects** | Headline, field, interests, and projects with a public summary and a private write-up. Share any project to the feed |
 | **Communities** | Public or approval-only clubs with invite links, five roles, held-post review, word filters, link holds for new members, bans, and **club events** |
 | **Network** | Connections with notes, follows, invitations, and suggestions from shared interests and field |
@@ -33,7 +34,7 @@ The research, with sources, is in [docs/positioning.md](docs/positioning.md).
 | **Events** | Career fairs, talks and build nights from verified organizations and clubs. RSVP, save, add to calendar |
 | **Organizations** | Companies and schools verified by the domain of the email they signed up with |
 | **Notifications & analytics** | Likes, comments, follows and requests, plus private profile analytics. Viewer breakdowns only appear once 3 or more different people have viewed you |
-| **Everywhere** | Light and dark mode with six accent colours, a guided tour for new members, What's new notes, and full use on a phone |
+| **Everywhere** | Light and dark mode with six accent colours, a sidebar that collapses to icons (remembered per browser), a guided tour for new members, What's new notes, and full use on a phone |
 
 Students verify with a university email. Members must be 18 or older. Everything that matters is enforced by the database's row-level security, not just the app.
 
@@ -70,7 +71,7 @@ Add `http://localhost:3000/auth/callback` to Supabase → Authentication → URL
 
 ## Database
 
-Run these in the Supabase SQL Editor, in this order: `schema.sql`, `messages.sql`, `events.sql`, `activity.sql`, `projects.sql`, `tours.sql`, `club-events.sql`, `media.sql`, `invites.sql`. CI applies all of them to a fresh database on every pull request, so a broken migration fails there and not in production. What each table holds and who can touch it: [docs/data-model.md](docs/data-model.md).
+Run these in the Supabase SQL Editor, in this order: `schema.sql`, `messages.sql`, `events.sql`, `activity.sql`, `projects.sql`, `tours.sql`, `club-events.sql`, `media.sql`, `invites.sql`, `post-edits.sql`. (`copilot.sql` is optional and can run any time after `invites.sql`.) CI applies all of them to a fresh database on every pull request, so a broken migration fails there and not in production. What each table holds and who can touch it: [docs/data-model.md](docs/data-model.md).
 
 ## How we work
 

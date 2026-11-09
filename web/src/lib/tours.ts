@@ -39,6 +39,54 @@ export const ROUTES = {
 
 export const UPDATES: ForgeUpdate[] = [
   {
+    id: "2026-11-08-search", date: "2026-11-08", kind: "New",
+    title: "Search, a roomier layout and editable posts",
+    summary: "Find people and communities from the search bar on every page, give the feed more room, and fix a post after you share it.",
+    points: [
+      "Search by name, field, headline or club from the bar at the top of every page. Press / to jump to it.",
+      "Connect with people and join communities right from the results. People and clubs that share your interests come first.",
+      "Collapse the sidebar to icons with the button next to the logo; the feed uses the extra width.",
+      "Forge updates now sit at the top right of your feed, with recent changes and what's coming next.",
+      "Edit the text and topics of your own posts at any time. Edited posts say so.",
+    ],
+    tour: [
+      { route: ROUTES.feed, target: "search", title: "Search Forge", body: "Find people and communities by name, field or club. Connect or join right from the results." },
+      { route: ROUTES.feed, target: "sidebar-toggle", title: "More room", body: "Collapse the sidebar to icons when you want more space. Forge remembers your choice." },
+      { route: ROUTES.feed, target: "updates-panel", title: "Forge updates", body: "Recent changes and what's coming next. Click any item to read more." },
+    ],
+  },
+  {
+    id: "2026-11-08-redesign", date: "2026-11-08", kind: "Changed",
+    title: "A rebuilt, faster Forge",
+    summary: "Every screen was rebuilt for speed, with new themes, a livelier feed and real links for every page.",
+    points: [
+      "Themes in Settings: Mono, Forge Fire, Blueprint, Aurora and Emerald, each in light and dark.",
+      "The feed adds events this week, project spotlights and builders to follow, plus a profile strength guide.",
+      "On phones, a bottom tab bar keeps Feed, Clubs, Messages and Alerts one tap away.",
+      "Old links and bookmarks still work.",
+    ],
+  },
+  {
+    id: "2026-11-08-media", date: "2026-11-08", kind: "New",
+    title: "Photos and video",
+    summary: "Show your work: up to 4 photos or 1 video per post, plus a profile photo, a cover banner and club covers.",
+    points: [
+      "Pin callouts on a photo, add alt text, or post two photos as a before and after slider.",
+      "Videos play with speed control, looping, frame steps and timeline markers.",
+      "Photos are resized and their location data removed before they're uploaded.",
+    ],
+  },
+  {
+    id: "2026-11-08-clubs", date: "2026-11-08", kind: "New",
+    title: "Club events and invite links",
+    summary: "Communities can host their own events and bring people in with invite links.",
+    points: [
+      "Club admins and owners host events from the club's Events tab. They also show under Events.",
+      "Members-only clubs keep their events members-only.",
+      "Invite links can expire, have a use limit and be turned off. Joining by link skips approval; bans still apply.",
+    ],
+  },
+  {
     id: "2026-11-07-tour", date: "2026-11-07", kind: "New",
     title: "Guided tour and update notes",
     summary: "New members get a short tour of Forge, and every update now opens to a quick summary like this one.",
@@ -123,9 +171,29 @@ export const UPDATES: ForgeUpdate[] = [
     ],
   },
   {
+    id: "next-copilot", kind: "Next",
+    title: "Forge Copilot",
+    summary: "An assistant that turns rough notes into a post, drafts project write-ups and answers career questions for your field.",
+  },
+  {
     id: "next-projects", kind: "Next",
     title: "Project access requests, build logs and critiques",
-    summary: "Coming next: ask to see a private project, follow a project's build log, and get structured critiques from people in your field.",
+    summary: "Ask to see a private project, follow a project's build log, and get structured critiques from people in your field.",
+  },
+  {
+    id: "next-org-pages", kind: "Next",
+    title: "Company and school pages",
+    summary: "Public pages for verified organizations, with their events, open roles and more than one admin.",
+  },
+  {
+    id: "next-notify", kind: "Next",
+    title: "Email notifications and settings",
+    summary: "Choose which notifications reach you by email, and turn off the kinds you don't want.",
+  },
+  {
+    id: "next-messages", kind: "Next",
+    title: "Group messages and attachments",
+    summary: "Talk with several people at once and share files in messages.",
   },
 ];
 
@@ -136,13 +204,14 @@ export function welcomeSteps(firstName: string): TourStep[] {
   return [
     { route: ROUTES.feed, title: `Welcome to Forge, ${firstName || "there"}`, body: "Here's a one-minute look at the essentials. Close this at any time, or use Back to see a step again." },
     { route: ROUTES.feed, target: "feed-tabs", title: "Your feed", body: "For you only shows posts that match your interests, with a note saying why. Latest has every post, Following has the people you follow, and Communities has your groups." },
+    { route: ROUTES.feed, target: "search", title: "Find people and clubs", body: "Search Forge by name, field or club from the bar at the top of every page, and connect or join from the results." },
     { route: ROUTES.feed, target: "composer", title: "Share your work", body: "Post an update, question, result or project. Add up to 3 topics so it reaches the people interested in them." },
     { route: ROUTES.feed, target: "interests", title: "Your focus areas", body: "Your interests decide what's in For you and which people and events we suggest. Click one to filter the feed, or change them in Settings." },
     { route: ROUTES.feed, target: "menu", title: "Everything else", body: "The menu has every page: Network, Communities, Messages, Events, Saved and Settings." },
     { route: ROUTES.feed, target: "bell", title: "Notifications", body: "Likes, comments, new followers and connection requests show up here." },
     { route: ROUTES.projects, target: "projects-tab", title: "Your profile and projects", body: "Show what you've built. Projects can be public or private, and you can share them to the feed." },
     { route: ROUTES.profile, target: "analytics", title: "Your analytics", body: "See how people find your profile and how your posts are doing. Only you can see it." },
-    { route: ROUTES.feed, target: "updates", title: "Forge updates", body: "Click any update to read what changed. When a new feature ships, we'll show you around it." },
+    { route: ROUTES.feed, target: "updates-panel", title: "Forge updates", body: "Recent changes and what's coming next. Click any update to read what changed. When a new feature ships, we'll show you around it." },
     { route: ROUTES.feed, title: "You're all set", body: "You can replay this tour any time from Settings, under Help." },
   ];
 }
@@ -156,7 +225,7 @@ export function whatsNewSteps(list: ForgeUpdate[]): TourStep[] {
       list: list.map((u) => [u.title, u.summary]),
     },
     ...list.flatMap((u) => u.tour ?? []),
-    { route: ROUTES.feed, target: "updates", title: "That's what's new", body: "Read any update again by clicking it in Forge updates." },
+    { route: ROUTES.feed, target: "updates-panel", title: "That's what's new", body: "Read any update again by clicking it in Forge updates, at the top right of your feed." },
   ];
 }
 

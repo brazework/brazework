@@ -5,6 +5,7 @@ import { DROP_AFTER_MS, dateParts, withHost, type HostedEvent } from "@/lib/even
 import { cn, requestTime } from "@/lib/forge";
 import { getViewer } from "@/lib/supabase/server";
 import { CommunityBadge } from "../communities/_components/badge";
+import { UpdatesPanel } from "@/components/tour/updates-panel";
 
 const box = "rounded-3xl border border-line bg-surface p-4 shadow-[var(--shadow)]";
 
@@ -18,7 +19,7 @@ function Head({ icon: Icon, title, href }: { icon: typeof Users; title: string; 
   );
 }
 
-// The feed's right rail (wide screens): how complete your profile is and what to do next,
+// The feed's right rail (wide screens): Forge updates (recent and coming next), how complete your profile is and what to do next,
 // what's trending, your clubs and what's coming up, so the rest of Forge is one glance away.
 export async function FeedRail() {
   const { supabase, user, profile } = await getViewer();
@@ -72,6 +73,7 @@ export function RailView({ steps, trending, clubs, events, going: goingSet }: { 
 
   return (
     <div className="sticky top-8 flex flex-col gap-4">
+      <UpdatesPanel />
       <section className={cn(box, "relative overflow-hidden")}>
         <div className="bg-accent-grad pointer-events-none absolute -top-16 -right-10 size-40 rounded-full banner-glow blur-2xl" aria-hidden="true" />
         <div className="flex items-center gap-4">

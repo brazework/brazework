@@ -73,6 +73,7 @@ export type Post = {
   like_count: number;
   comment_count: number;
   created_at: string;
+  edited_at?: string | null;
   project_id?: string | null;
   media?: MediaItem[];
   author?: { avatar_path?: string } | null;

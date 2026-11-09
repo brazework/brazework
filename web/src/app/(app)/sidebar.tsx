@@ -1,6 +1,6 @@
 "use client";
 import { AnimatePresence, motion } from "motion/react";
-import { Bell, Bookmark, CalendarDays, Home, LogOut, Menu, MessageSquare, Network, Settings, Sparkles, UserRound, Users, X } from "lucide-react";
+import { Bell, Bookmark, CalendarDays, Home, LogOut, Menu, MessageSquare, Network, PanelLeftClose, PanelLeftOpen, Settings, Sparkles, UserRound, Users, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -49,15 +49,37 @@ export function SidebarSkeleton() {
   );
 }
 
-export function Sidebar({ first, last, headline, badges, avatar }: { first: string; last: string; headline: string; badges: Badges; avatar?: string | null }) {
+// Remembered in a cookie (not localStorage) so the server draws it at the right width: no jump on load.
+export const SIDEBAR_COOKIE = "forge-sidebar";
+
+export function Sidebar({ first, last, headline, badges, avatar, initialCollapsed = false }: { first: string; last: string; headline: string; badges: Badges; avatar?: string | null; initialCollapsed?: boolean }) {
   const path = usePathname();
+  const [collapsed, setCollapsed] = useState(initialCollapsed);
+  const toggle = () => {
+    const next = !collapsed;
+    setCollapsed(next);
+    document.cookie = `${SIDEBAR_COOKIE}=${next ? "collapsed" : "open"}; path=/; max-age=31536000; samesite=lax`;
+  };
   return (
-    <aside className="sticky top-0 hidden h-dvh w-60 shrink-0 flex-col py-8 md:flex">
-      <div className="flex items-center justify-between pr-1 pl-3">
-        <Link href="/feed"><Logo /></Link>
-        <ThemeToggle />
+    <aside aria-label="Sidebar" className={cn("sticky top-0 hidden h-dvh shrink-0 flex-col py-8 transition-[width] duration-300 ease-out motion-reduce:transition-none md:flex", collapsed ? "w-[60px]" : "w-60")}>
+      <div className={cn("flex items-center gap-1", collapsed ? "flex-col" : "justify-between pr-1 pl-3")}>
+        <Link href="/feed" aria-label="Forge feed" className={cn(collapsed && "mb-2")}><Logo withWord={!collapsed} /></Link>
+        <div className={cn("flex items-center gap-1", collapsed && "flex-col")}>
+          <ThemeToggle />
+          <button
+            type="button"
+            data-tour="sidebar-toggle"
+            onClick={toggle}
+            aria-expanded={!collapsed}
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            className="grid size-9 place-items-center rounded-full text-faint transition hover:bg-hover hover:text-text"
+          >
+            {collapsed ? <PanelLeftOpen className="size-[18px]" /> : <PanelLeftClose className="size-[18px]" />}
+          </button>
+        </div>
       </div>
-      <nav data-tour="menu" aria-label="Main" className="mt-10 flex flex-col gap-1">
+      <nav data-tour="menu" aria-label="Main" className={cn("flex flex-col gap-1", collapsed ? "mt-6" : "mt-10")}>
         {NAV.map((n) => {
           const active = isActive(path, n.match);
           const count = n.badge ? badges[n.badge] : 0;
@@ -67,24 +89,27 @@ export function Sidebar({ first, last, headline, badges, avatar }: { first: stri
               href={n.href}
               data-tour={n.href === "/notifications" ? "bell" : undefined}
               aria-current={active ? "page" : undefined}
-              aria-label={count ? `${n.label}, ${count} new` : undefined}
-              className={cn("relative flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition", active ? "text-text" : "text-muted hover:bg-hover hover:text-text")}
+              aria-label={count ? `${n.label}, ${count} new` : collapsed ? n.label : undefined}
+              title={collapsed ? n.label : undefined}
+              className={cn("relative flex items-center gap-3 rounded-xl py-2.5 text-sm transition", collapsed ? "justify-center px-0" : "px-3", active ? "text-text" : "text-muted hover:bg-hover hover:text-text")}
             >
               {active && <motion.span layoutId="nav-active" className="absolute inset-0 rounded-xl bg-raised shadow-[inset_3px_0_0_var(--accent)]" transition={{ type: "spring", stiffness: 400, damping: 34 }} />}
-              <n.icon className="relative size-[18px]" />
-              <span className="relative">{n.label}</span>
-              <Count n={count} className="relative ml-auto" />
+              <n.icon className="relative size-[18px] shrink-0" />
+              {!collapsed && <span className="relative">{n.label}</span>}
+              <Count n={count} className={collapsed ? "absolute -top-0.5 right-1" : "relative ml-auto"} />
             </Link>
           );
         })}
-        <UpdatesButton />
+        <UpdatesButton collapsed={collapsed} />
       </nav>
-      <div className="mt-auto flex items-center gap-3 rounded-2xl border border-line bg-surface/60 p-3">
-        <Link href="/profile" aria-label="Your profile"><Avatar first={first} last={last} size={36} src={avatar} /></Link>
-        <div className="min-w-0 flex-1">
-          <div className="truncate text-sm font-medium">{first} {last}</div>
-          <div className="truncate text-xs text-faint">{headline}</div>
-        </div>
+      <div className={cn("mt-auto flex items-center gap-3 rounded-2xl border border-line bg-surface/60", collapsed ? "flex-col p-1.5" : "p-3")}>
+        <Link href="/profile" aria-label="Your profile" title={collapsed ? `${first} ${last}` : undefined}><Avatar first={first} last={last} size={collapsed ? 32 : 36} src={avatar} /></Link>
+        {!collapsed && (
+          <div className="min-w-0 flex-1">
+            <div className="truncate text-sm font-medium">{first} {last}</div>
+            <div className="truncate text-xs text-faint">{headline}</div>
+          </div>
+        )}
         <form action="/auth/signout" method="post">
           <button aria-label="Log out" className="grid size-8 place-items-center rounded-lg text-faint transition hover:bg-hover hover:text-text"><LogOut className="size-4" /></button>
         </form>
