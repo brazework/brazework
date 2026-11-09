@@ -19,18 +19,18 @@ export function useMentions({ text, setText, ref, enabled, suggest = mentionSugg
 
   const q = query?.q ?? null;
   useEffect(() => {
-    if (q === null) return;
+    if (q === null || !enabled) return;
     const mine = ++seq.current;
     const t = setTimeout(async () => {
       const found = await suggest(q).catch(() => []);
       if (mine === seq.current) { setPeople(found); setActive(0); }
     }, 120);
     return () => clearTimeout(t);
-  }, [q, suggest]);
+  }, [q, suggest, enabled]);
 
   // Call with the textarea after every change or caret move.
+  // Until the database has mentions (supabase/mentions.sql), "@" says they're coming instead of doing nothing.
   const track = (el: HTMLTextAreaElement) => {
-    if (!enabled) return;
     const found = el.selectionStart === el.selectionEnd ? mentionQuery(el.value, el.selectionStart) : null;
     setQuery(found);
     if (!found) setPeople([]);
@@ -50,9 +50,11 @@ export function useMentions({ text, setText, ref, enabled, suggest = mentionSugg
     requestAnimationFrame(() => { el.focus(); el.setSelectionRange(at, at); });
   };
 
-  const open = query !== null && people.length > 0;
+  const open = query !== null && people.length > 0 && enabled;
+  const soon = query !== null && !enabled;
   // Returns true when the key was for the menu.
   const onKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
+    if (soon && e.key === "Escape") { e.preventDefault(); close(); return true; }
     if (!open) return false;
     if (e.key === "ArrowDown" || e.key === "ArrowUp") { e.preventDefault(); setActive((i) => (i + (e.key === "ArrowDown" ? 1 : people.length - 1)) % people.length); return true; }
     if (e.key === "Enter" || e.key === "Tab") { e.preventDefault(); pick(people[active]); return true; }
@@ -67,7 +69,9 @@ export function useMentions({ text, setText, ref, enabled, suggest = mentionSugg
     onKeyDown,
     close,
     inputProps: { "aria-autocomplete": "list" as const, "aria-expanded": open, "aria-controls": open ? listId : undefined, "aria-activedescendant": open ? `${listId}-${active}` : undefined },
-    menu: open ? <MentionMenu id={listId} people={people} active={active} onHover={setActive} onPick={pick} /> : null,
+    menu: open ? <MentionMenu id={listId} people={people} active={active} onHover={setActive} onPick={pick} /> : soon ? (
+      <div role="status" className="absolute inset-x-0 top-full z-40 mt-2 flex items-center gap-1.5 rounded-2xl border border-line bg-surface px-3 py-2 text-xs text-muted shadow-[var(--shadow)]"><AtSign className="size-3.5" /> @mentions are switching on soon. For now this posts as plain text.</div>
+    ) : null,
   };
 }
 

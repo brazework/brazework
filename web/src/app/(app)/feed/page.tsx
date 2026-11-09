@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Fragment, Suspense } from "react";
+import { Suspense } from "react";
 import { EmptyState } from "@/components/app/page-ui";
-import { type Post } from "@/lib/forge";
+import { cn, requestTime, type Post } from "@/lib/forge";
+import { rankForYou, scoreProof } from "@/lib/feed-rank";
 import { projectsForPosts } from "@/lib/project-posts";
 import { dbFeatures, postSelect } from "@/lib/db-features";
 import { avatarSrc } from "@/lib/media";
@@ -11,9 +12,10 @@ import { getViewer } from "@/lib/supabase/server";
 import { copilotEnabled } from "@/lib/copilot";
 import { loadGuide } from "@/lib/guide";
 import { Composer } from "./composer";
-import { LiveRefresh } from "@/components/app/live-refresh";
 import { FeedHeader, TABS, type TabId } from "./header";
 import { PostCard } from "./post-card";
+import { ProofCard, type Proof } from "./proof-card";
+import { FeedList, NewPosts } from "./feed-list";
 import { FeedRail } from "./rail";
 import { PeopleStrip, SpotlightStrip, WeekStrip } from "./discover";
 import { StripSkeleton } from "@/components/app/discover-cards";
@@ -24,7 +26,6 @@ export const metadata: Metadata = { title: "Feed" };
 export default function FeedPage({ searchParams }: PageProps<"/feed">) {
   return (
     <div className="feed-frame">
-      <LiveRefresh tables={["posts"]} />
       <div className="min-w-0">
         <Suspense fallback={<FeedSkeleton />}>
           <Feed searchParams={searchParams} />
@@ -39,78 +40,112 @@ export default function FeedPage({ searchParams }: PageProps<"/feed">) {
   );
 }
 
+const KINDS = [
+  { id: "", label: "All" },
+  { id: "result", label: "Results" },
+  { id: "question", label: "Questions" },
+  { id: "project", label: "Projects" },
+  { id: "update", label: "Updates" },
+] as const;
+type Kind = (typeof KINDS)[number]["id"];
+type Item = { type: "post"; post: Post; reason: string; at: number; score: number } | { type: "proof"; proof: Proof; reason: string; at: number; score: number };
+
 async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["searchParams"] }) {
   const sp = await searchParams;
   const tab: TabId = TABS.find((t) => t.id === sp.tab)?.id ?? "for-you";
   const tag = typeof sp.tag === "string" ? sp.tag : "";
+  const kind: Kind = KINDS.find((k) => k.id === sp.kind)?.id ?? "";
   const { supabase, user, profile } = await getViewer();
   if (!user || !profile) redirect("/login");
   const interests: string[] = profile.interests ?? [];
+  const now = requestTime();
 
-  let list: Post[] = [];
   let emptyTitle = "No posts yet";
   let emptyBody: React.ReactNode = "Be the first to share what you're building.";
   let emptyAction: React.ReactNode = null;
-  const { media: mediaEnabled, mentions: mentionsEnabled } = await dbFeatures();
+  const { media: mediaEnabled, mentions: mentionsEnabled, milestones: proofOn } = await dbFeatures();
   const cols = await postSelect();
-  const base = () => supabase.from("posts").select(cols).order("created_at", { ascending: false });
+  const base = () => {
+    let q = supabase.from("posts").select(cols).order("created_at", { ascending: false });
+    if (kind) q = q.eq("kind", kind);
+    if (tag) q = q.contains("tags", [tag]);
+    return q;
+  };
+  const rows = (r: { data: unknown }) => (r.data ?? []) as Post[];
+
+  // Who and what you're connected to: your clubs, and the people you follow or are connected with.
+  const [joined, fg, conn] = await Promise.all([
+    supabase.from("community_members").select("community_id").eq("uid", user.id).limit(200),
+    supabase.from("follows").select("target").eq("follower", user.id).limit(500),
+    supabase.from("connections").select("users").contains("users", [user.id]).eq("status", "accepted").limit(500),
+  ]);
+  const cids = (joined.data ?? []).map((j) => j.community_id as string);
+  const people = [...new Set([...(fg.data ?? []).map((f) => f.target as string), ...(conn.data ?? []).flatMap((c) => (c.users as string[]).filter((u) => u !== user.id))])];
+
+  let items: Item[] = [];
+  const asPost = (p: Post, reason = "", score = 0): Item => ({ type: "post", post: p, reason, at: Date.parse(p.created_at), score });
 
   if (tab === "for-you") {
-    // Ian's rule: only posts tagged with at least one of your interests, plus your own.
-    const [matching, mine] = await Promise.all([
+    // Everything relevant to you, ranked, so it's never empty: your clubs, people you follow,
+    // your interests, and what's new on Forge (lib/feed-rank.ts).
+    const [club, follow, interest, recent, mine] = await Promise.all([
+      cids.length ? base().in("community_id", cids).eq("status", "visible").limit(40) : Promise.resolve({ data: [] }),
+      people.length ? base().is("community_id", null).in("author_id", people.slice(0, 300)).limit(40) : Promise.resolve({ data: [] }),
       interests.length ? base().is("community_id", null).overlaps("tags", interests).limit(60) : Promise.resolve({ data: [] }),
-      base().is("community_id", null).eq("author_id", user.id).limit(20),
+      base().is("community_id", null).limit(40),
+      base().is("community_id", null).eq("author_id", user.id).limit(10),
     ]);
-    const byId = new Map<string, Post>();
-    for (const p of [...((matching.data ?? []) as unknown as Post[]), ...((mine.data ?? []) as unknown as Post[])]) byId.set(p.id, p);
-    const mineSet = new Set(interests);
-    list = [...byId.values()].sort((a, b) => score(b, mineSet) - score(a, mineSet));
-    emptyTitle = "Nothing matching your interests yet";
-    emptyBody = interests.length ? "For you only shows posts tagged with topics you follow, so it stays focused." : "For you shows posts that match your interests. Add some to get started.";
-    emptyAction = <Link href="/feed?tab=latest" className="text-sm underline underline-offset-4">See all posts in Latest</Link>;
+    const names = new Map(rows(follow).map((p) => [p.author_id, `${p.author_first} ${p.author_last}`.trim()]));
+    items = rankForYou({ club: rows(club), follow: rows(follow), interest: rows(interest), recent: rows(recent), mine: rows(mine) }, interests, names, now)
+      .map((r) => asPost(r.item, r.reason, r.score));
+    emptyTitle = kind || tag ? "Nothing here yet" : "Your feed is waiting for its first post";
+    emptyBody = kind === "question" ? "No open questions right now. Ask one: clubs on Forge answer fast." : "Share what you're building, or join a club to fill your feed.";
+    emptyAction = <Link href="/communities?tab=discover" className="text-sm underline underline-offset-4">Find clubs to join</Link>;
   } else if (tab === "latest") {
-    list = ((await base().is("community_id", null).limit(60)).data ?? []) as unknown as Post[];
+    items = rows(await base().is("community_id", null).limit(60)).map((p) => asPost(p));
   } else if (tab === "following") {
-    const [fg, cn] = await Promise.all([
-      supabase.from("follows").select("target").eq("follower", user.id).limit(500),
-      supabase.from("connections").select("users").contains("users", [user.id]).eq("status", "accepted").limit(500),
-    ]);
-    const ids = new Set<string>([...(fg.data ?? []).map((f) => f.target as string), ...(cn.data ?? []).flatMap((c) => (c.users as string[]).filter((u) => u !== user.id))]);
-    list = ids.size ? (((await base().is("community_id", null).in("author_id", [...ids]).limit(50)).data ?? []) as unknown as Post[]) : [];
-    emptyTitle = ids.size ? "Nothing new from people you follow" : "Your Following feed is empty";
-    emptyBody = ids.size ? "The people you follow haven't posted recently." : "Follow people or connect with them, and their posts show up here.";
+    items = people.length ? rows(await base().is("community_id", null).in("author_id", people.slice(0, 300)).limit(50)).map((p) => asPost(p)) : [];
+    emptyTitle = people.length ? "Nothing new from people you follow" : "Your Following feed is empty";
+    emptyBody = people.length ? "The people you follow haven't posted recently." : "Follow people or connect with them, and their posts show up here.";
     emptyAction = <Link href="/network?tab=suggested" className="text-sm underline underline-offset-4">Find people</Link>;
   } else {
-    const { data: joined } = await supabase.from("community_members").select("community_id").eq("uid", user.id).limit(200);
-    const cids = (joined ?? []).map((j) => j.community_id as string);
-    list = cids.length ? (((await base().in("community_id", cids).eq("status", "visible").limit(60)).data ?? []) as unknown as Post[]) : [];
-    emptyTitle = cids.length ? "No posts in your communities yet" : "You haven't joined any communities";
-    emptyBody = cids.length ? "Open one and start a conversation." : "Join communities and their latest posts show up here.";
-    emptyAction = <Link href="/communities" className="text-sm underline underline-offset-4">Discover communities</Link>;
-  }
-  if (tag) {
-    list = list.filter((p) => p.tags.includes(tag));
-    emptyTitle = `No recent posts tagged ${tag}`;
-    emptyBody = "Be the first.";
-    emptyAction = null;
+    items = cids.length ? rows(await base().in("community_id", cids).eq("status", "visible").limit(60)).map((p) => asPost(p, p.community_name ? `In ${p.community_name}` : "")) : [];
+    emptyTitle = cids.length ? "No posts in your clubs yet" : "You haven't joined any clubs";
+    emptyBody = cids.length ? "Open one and start a conversation." : "Join clubs and their latest posts and verified work show up here.";
+    emptyAction = <Link href="/communities" className="text-sm underline underline-offset-4">Discover clubs</Link>;
   }
 
-  const ids = list.map((p) => p.id);
-  const projects = await projectsForPosts(supabase, list);
-  // For you explains itself: the first of your interests each post matches (Ian's reasonFor()).
-  const mineSet = new Set(interests);
-  const reasonFor = (p: Post) => {
-    if (tab !== "for-you" || p.author_id === user.id) return "";
-    const m = p.tags.find((t) => mineSet.has(t));
-    return m ? `${p.project_id ? "Project · " : ""}Matches your interest: ${m}` : "";
-  };
-  const discover = (tab === "for-you" || tab === "latest") && !tag;
+  // Proof: club-verified milestones (supabase/milestones.sql), in every tab but Latest's text-only
+  // filters. Private projects stay out (their rows don't come back to other members).
+  if (proofOn && !tag && (kind === "" || kind === "result") && tab !== "latest") {
+    let q = supabase.from("milestones").select(`id, title, detail, reviewed_at, community_id, community_name, reviewer_name, owner_id, project:projects(id, title), owner:profiles!milestones_owner_id_fkey(id, first_name, last_name${mediaEnabled ? ", avatar_path" : ""})`).eq("status", "verified").order("reviewed_at", { ascending: false }).limit(12);
+    if (tab === "communities") q = cids.length ? q.in("community_id", cids) : q.eq("community_id", "none");
+    if (tab === "following") q = people.length ? q.in("owner_id", people.slice(0, 300)) : q.eq("owner_id", user.id);
+    const { data } = await q;
+    type M = { id: string; title: string; detail: string; reviewed_at: string | null; community_id: string; community_name: string; reviewer_name: string; owner_id: string; project: { id: string; title: string } | null; owner: { id: string; first_name: string; last_name: string; avatar_path?: string | null } | null };
+    const mineClubs = new Set(cids);
+    const proofs: Item[] = ((data ?? []) as unknown as M[]).filter((m) => m.project && m.owner && m.reviewed_at).map((m) => ({
+      type: "proof",
+      proof: { id: m.id, title: m.title, detail: m.detail, reviewed_at: m.reviewed_at!, community_id: m.community_id, community_name: m.community_name, reviewer_name: m.reviewer_name, project: m.project!, owner: { id: m.owner!.id, first: m.owner!.first_name, last: m.owner!.last_name, avatar: avatarSrc(m.owner) } },
+      reason: tab === "for-you" ? (mineClubs.has(m.community_id) ? `From your club ${m.community_name}` : "Club-verified work") : "",
+      at: Date.parse(m.reviewed_at!),
+      score: scoreProof(m.reviewed_at!, mineClubs.has(m.community_id), now),
+    }));
+    items = [...items, ...proofs].sort((a, b) => (tab === "for-you" ? b.score - a.score : b.at - a.at));
+  }
+  if (kind === "question") items.sort((a, b) => Number(a.type === "post" && a.post.comment_count > 0) - Number(b.type === "post" && b.post.comment_count > 0));
+  items = items.slice(0, 120);
+
+  const posts = items.flatMap((it) => (it.type === "post" ? [it.post] : []));
+  const ids = posts.map((p) => p.id);
+  const projects = await projectsForPosts(supabase, posts);
+  const discover = (tab === "for-you" || tab === "latest") && !tag && !kind;
   // The create box: whether Ember is on, your next guide step, and a club you run (for its weekly update).
   const [copilotOn, guide] = await Promise.all([copilotEnabled(), loadGuide()]);
   const nextStep = guide?.member.find((s) => !s.done) ?? null;
   const ledClub = guide?.clubs[0] ? { id: guide.clubs[0].id, name: guide.clubs[0].name } : null;
   const spotlight = <div className="py-2"><Suspense fallback={<StripSkeleton w={280} h={250} />}><SpotlightStrip /></Suspense></div>;
-  const people = <div className="py-2"><Suspense fallback={<StripSkeleton w={200} h={250} />}><PeopleStrip field={profile.field} interests={interests} /></Suspense></div>;
+  const peopleStrip = <div className="py-2"><Suspense fallback={<StripSkeleton w={200} h={250} />}><PeopleStrip field={profile.field} interests={interests} /></Suspense></div>;
   const [likes, saves] = ids.length
     ? await Promise.all([
         supabase.from("likes").select("post_id").eq("user_id", user.id).in("post_id", ids),
@@ -119,42 +154,71 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
     : [{ data: [] }, { data: [] }];
   const liked = new Set((likes.data ?? []).map((l: { post_id: string }) => l.post_id));
   const saved = new Set((saves.data ?? []).map((l: { post_id: string }) => l.post_id));
+  const href = (patch: { tab?: string; kind?: string; tag?: string }) => {
+    const q = new URLSearchParams();
+    const t = patch.tab ?? tab, k = patch.kind ?? kind, g = patch.tag ?? tag;
+    if (t !== "for-you") q.set("tab", t);
+    if (k) q.set("kind", k);
+    if (g) q.set("tag", g);
+    const s = q.toString();
+    return `/feed${s ? `?${s}` : ""}`;
+  };
 
   return (
     <>
-      <FeedHeader tab={tab} hero={<div id="composer" data-tour="composer" className="scroll-mt-24"><Composer first={profile.first_name} last={profile.last_name} interests={interests} userId={user.id} mediaEnabled={mediaEnabled} avatarSrc={avatarSrc(profile)} copilot={copilotOn} mentionsEnabled={mentionsEnabled} club={ledClub} next={nextStep ? { label: nextStep.label, href: nextStep.href } : null} /></div>} />
-      {interests.length > 0 && (
-        <section data-tour="interests" aria-label="Your focus areas" className="mt-5">
-          <div className="no-scrollbar -mx-1 flex items-center gap-1.5 overflow-x-auto px-1 pb-1">
-            {interests.map((t) => (
-              <Link key={t} href={tag === t ? `/feed${tab === "for-you" ? "" : `?tab=${tab}`}` : `/feed?${tab === "for-you" ? "" : `tab=${tab}&`}tag=${encodeURIComponent(t)}`} aria-current={tag === t ? "true" : undefined} className={`shrink-0 rounded-full border px-3 py-1 text-xs whitespace-nowrap transition active:scale-95 ${tag === t ? "bg-accent-grad border-transparent text-on-accent shadow-[0_6px_18px_-8px_var(--accent)]" : "border-line bg-surface text-muted hover:border-line-strong hover:text-text"}`}>
-                #{t}
-              </Link>
-            ))}
-            <Link href="/settings#profile" className="shrink-0 rounded-full px-2 py-1 text-xs text-faint hover:text-text">Edit</Link>
-          </div>
-        </section>
-      )}
-      {tag && (
-        <div className="mt-4 flex items-center justify-between rounded-2xl border border-line bg-surface-2 px-4 py-2.5 text-sm">
-          <span>Showing posts tagged <strong className="font-medium">#{tag}</strong></span>
-          <Link href={`/feed${tab === "for-you" ? "" : `?tab=${tab}`}`} className="text-muted hover:text-text">Clear</Link>
+      <NewPosts me={user.id} />
+      <FeedHeader tab={tab} hrefFor={(t) => href({ tab: t })} hero={<div id="composer" data-tour="composer" className="scroll-mt-24"><Composer first={profile.first_name} last={profile.last_name} interests={interests} userId={user.id} mediaEnabled={mediaEnabled} avatarSrc={avatarSrc(profile)} copilot={copilotOn} mentionsEnabled={mentionsEnabled} club={ledClub} next={nextStep ? { label: nextStep.label, href: nextStep.href } : null} /></div>} />
+      {/* What kind of post, then your topics: one row, so filtering is one tap from anywhere in the feed. */}
+      <nav data-tour="interests" aria-label="Filter the feed" className="no-scrollbar -mx-1 mt-4 flex items-center gap-1.5 overflow-x-auto px-1 pb-1">
+        {KINDS.map((k) => (
+          <Link key={k.id || "all"} href={href({ kind: k.id })} aria-current={kind === k.id ? "true" : undefined} className={cn("shrink-0 rounded-full border px-3 py-1 text-xs font-medium whitespace-nowrap transition active:scale-95", kind === k.id ? "border-text bg-text text-surface" : "border-line bg-surface text-text-2 hover:border-line-strong hover:text-text")}>
+            {k.label}
+          </Link>
+        ))}
+        {interests.length > 0 && <span aria-hidden className="mx-1 h-4 w-px shrink-0 bg-line" />}
+        {interests.map((t) => (
+          <Link key={t} href={href({ tag: tag === t ? "" : t })} aria-current={tag === t ? "true" : undefined} className={cn("shrink-0 rounded-full border px-3 py-1 text-xs whitespace-nowrap transition active:scale-95", tag === t ? "bg-accent-grad border-transparent text-on-accent shadow-[0_6px_18px_-8px_var(--accent)]" : "border-line bg-surface text-muted hover:border-line-strong hover:text-text")}>
+            #{t}
+          </Link>
+        ))}
+        {interests.length > 0 && <Link href="/settings#profile" className="shrink-0 rounded-full px-2 py-1 text-xs text-faint hover:text-text">Edit</Link>}
+      </nav>
+      {(tag || kind) && (
+        <div className="mt-3 flex items-center justify-between rounded-2xl border border-line bg-surface-2 px-4 py-2.5 text-sm">
+          <span>Showing {kind ? <strong className="font-medium">{KINDS.find((k) => k.id === kind)?.label.toLowerCase()}</strong> : "posts"}{tag && <> tagged <strong className="font-medium">#{tag}</strong></>}{kind === "question" && " · unanswered first"}</span>
+          <Link href={href({ kind: "", tag: "" })} className="text-muted hover:text-text">Clear</Link>
         </div>
       )}
-      {discover && !tag && <div className="mt-6"><Suspense fallback={<StripSkeleton w={250} h={96} />}><WeekStrip /></Suspense></div>}
+      {discover && <div className="mt-6"><Suspense fallback={<StripSkeleton w={250} h={96} />}><WeekStrip /></Suspense></div>}
       <div className="mt-6 flex flex-col gap-4">
-        {list.length === 0 && <EmptyState title={emptyTitle} body={emptyBody} action={emptyAction} />}
-        {list.map((p, i) => (
-          <Fragment key={p.id}>
-            <PostCard post={p} liked={liked.has(p.id)} saved={saved.has(p.id)} own={p.author_id === user.id} index={i} project={p.project_id ? projects[p.project_id] : null} reason={reasonFor(p)} />
-            {/* Discovery strips sit between posts; with only a few posts they follow the last one. */}
-            {discover && (i === 1 || (i === list.length - 1 && list.length < 2)) && spotlight}
-            {discover && (i === 4 || (i === list.length - 1 && list.length < 5)) && people}
-          </Fragment>
-        ))}
-        {discover && list.length === 0 && <>{spotlight}{people}</>}
+        {items.length === 0 && <EmptyState title={emptyTitle} body={emptyBody} action={emptyAction} />}
+        <FeedList
+          items={items.map((it, i) => ({
+            key: `${it.type}:${it.type === "post" ? it.post.id : it.proof.id}`,
+            node: it.type === "post"
+              ? <PostCard post={it.post} liked={liked.has(it.post.id)} saved={saved.has(it.post.id)} own={it.post.author_id === user.id} index={i} project={it.post.project_id ? projects[it.post.project_id] : null} reason={it.post.author_id === user.id ? "" : it.reason} />
+              : <ProofCard p={it.proof} reason={it.reason} />,
+          }))}
+          slots={discover ? { 1: spotlight, 4: peopleStrip } : {}}
+          end={items.length > 0 ? <FeedEnd tab={tab} /> : null}
+        />
       </div>
     </>
+  );
+}
+
+// The bottom of the feed: somewhere useful to go next.
+function FeedEnd({ tab }: { tab: TabId }) {
+  return (
+    <div className="glass-card mt-2 rounded-3xl p-6 text-center">
+      <p className="font-medium">You&apos;re all caught up</p>
+      <p className="mt-1 text-sm text-muted">Keep the momentum: help someone, or show what you built.</p>
+      <div className="mt-4 flex flex-wrap justify-center gap-2">
+        <Link href="/feed?kind=question" className="rounded-full border border-line px-3.5 py-1.5 text-sm transition hover:border-line-strong">Answer a question</Link>
+        <Link href="/feed#composer" className="rounded-full border border-line px-3.5 py-1.5 text-sm transition hover:border-line-strong">Post your progress</Link>
+        {tab !== "latest" && <Link href="/feed?tab=latest" className="rounded-full border border-line px-3.5 py-1.5 text-sm transition hover:border-line-strong">Everything on Forge</Link>}
+      </div>
+    </div>
   );
 }
 
@@ -167,10 +231,4 @@ function FeedSkeleton() {
       </div>
     </div>
   );
-}
-
-function score(p: Post, interests: Set<string>) {
-  const ageHours = (Date.now() - Date.parse(p.created_at)) / 36e5;
-  const match = p.tags.filter((t) => interests.has(t)).length;
-  return -ageHours + match * 36; // 1.5 days per matching topic, like public/js/views/feed.js
 }
