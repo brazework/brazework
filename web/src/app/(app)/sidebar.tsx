@@ -1,6 +1,6 @@
 "use client";
 import { AnimatePresence, motion } from "motion/react";
-import { Bell, Bookmark, CalendarDays, Home, LogOut, Menu, MessageSquare, Network, Settings, UserRound, Users, X } from "lucide-react";
+import { Bell, Bookmark, CalendarDays, Home, LogOut, Menu, MessageSquare, Network, Settings, Sparkles, UserRound, Users, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -16,6 +16,7 @@ type BadgeKey = keyof Badges;
 const NAV: { href: string; label: string; icon: typeof Home; match: string[]; badge?: BadgeKey }[] = [
   { href: "/feed", label: "Feed", icon: Home, match: ["/feed", "/post/"] },
   { href: "/communities", label: "Communities", icon: Users, match: ["/communities", "/c/"] },
+  { href: "/copilot", label: "Copilot", icon: Sparkles, match: ["/copilot"] },
   { href: "/network", label: "Network", icon: Network, match: ["/network"], badge: "invites" },
   { href: "/messages", label: "Messages", icon: MessageSquare, match: ["/messages"], badge: "messages" },
   { href: "/events", label: "Events", icon: CalendarDays, match: ["/events", "/org"] },

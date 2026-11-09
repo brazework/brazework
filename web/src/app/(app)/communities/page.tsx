@@ -1,12 +1,13 @@
 import type { Metadata } from "next";
-import { Users } from "lucide-react";
+import { Flame, Users } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { EmptyState, PageHeader, Panel, Skeleton, Tabs } from "@/components/app/page-ui";
 import { COMMUNITY_COLS, type Community, type Role } from "@/lib/communities";
 import { getViewer } from "@/lib/supabase/server";
-import { CommunityGrid } from "./community-grid";
+import { CommunityCard, CommunityGrid } from "./community-grid";
+import { Carousel } from "@/components/app/carousel";
 import { CreateCommunity } from "./create-form";
 
 export const metadata: Metadata = { title: "Communities" };
@@ -52,6 +53,11 @@ async function Communities({ searchParams }: { searchParams: PageProps<"/communi
         ]} />
       </div>
       <div className="mt-6">
+        {tab === "mine" && discover.length > 0 && (
+          <Carousel className="mb-8" title={profile.field ? `Popular in ${profile.field}` : "Popular on Forge"} icon={<Flame className="size-3.5" />} href="/communities?tab=discover" hrefLabel="Discover">
+            {discover.slice(0, 10).map((c) => <div key={c.id} className="w-[300px]"><CommunityCard c={c} joinable /></div>)}
+          </Carousel>
+        )}
         {tab === "mine" && (
           <CommunityGrid
             items={joined.map((j) => ({ c: j.c, role: j.role }))}

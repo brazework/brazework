@@ -54,7 +54,7 @@ export function CommunityGrid({ items, discover = false, initialQuery = "", empt
         <AnimatePresence mode="popLayout" initial={false}>
           {shown.map(({ c, role }, i) => (
             <motion.div key={c.id} layout initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }} transition={{ duration: 0.3, delay: Math.min(i, 8) * 0.03 }}>
-              <Card c={c} role={role} joinable={discover} />
+              <CommunityCard c={c} role={role} joinable={discover} />
             </motion.div>
           ))}
         </AnimatePresence>
@@ -64,7 +64,7 @@ export function CommunityGrid({ items, discover = false, initialQuery = "", empt
   );
 }
 
-function Card({ c, role, joinable }: { c: Community; role?: Role; joinable: boolean }) {
+export function CommunityCard({ c, role, joinable }: { c: Community; role?: Role; joinable: boolean }) {
   return (
     <article className="grad-edge group relative flex h-full flex-col overflow-hidden rounded-3xl border shadow-[var(--shadow)] transition duration-300 hover:-translate-y-1">
       <div className="relative h-24 overflow-hidden border-b border-line">

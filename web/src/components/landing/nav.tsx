@@ -10,6 +10,7 @@ import { cn } from "@/lib/forge";
 const LINKS = [
   { href: "#builders", label: "Fields" },
   { href: "#how", label: "How it works" },
+  { href: "#copilot", label: "Copilot" },
   { href: "#who", label: "Who it's for" },
   { href: "#faq", label: "FAQ" },
 ];

@@ -13,7 +13,10 @@ import { type Post, type Profile } from "@/lib/forge";
 import { recordProfileView } from "@/lib/network";
 import { postSelect } from "@/lib/db-features";
 import { getViewer } from "@/lib/supabase/server";
+import { copilotEnabled } from "@/lib/copilot";
 import { PostCard } from "../../feed/post-card";
+import { PeopleStrip } from "../../feed/discover";
+import { StripSkeleton } from "@/components/app/discover-cards";
 import { CoverBanner, ProfilePhoto } from "@/components/media/profile-media";
 import { EditBasics, ProjectEditor, ProjectGrid, type ProjectView } from "./profile-client";
 
@@ -58,6 +61,7 @@ async function ProfileView({ params }: { params: PageProps<"/u/[id]">["params"] 
     supabase.from("projects").select("id, title, summary, status, year, tags, private, updated_at").eq("owner_id", id).order("created_at", { ascending: false }).limit(100),
   ]);
   if (!own) await recordProfileView(id);
+  const copilotOn = own && (await copilotEnabled());
 
   const posts = (postsRes.data ?? []) as unknown as Post[];
   const projectRows = (projectsRes.data ?? []) as Omit<ProjectView, "details" | "link">[];
@@ -150,8 +154,8 @@ async function ProfileView({ params }: { params: PageProps<"/u/[id]">["params"] 
               id: "projects", label: "Projects", count: projects.length,
               content: (
                 <>
-                  {own && <div className="mb-4 flex items-center justify-between gap-3 rounded-3xl border border-dashed border-line-strong bg-surface/60 p-4"><p className="text-sm text-muted">Show what you&apos;ve built: a summary everyone sees, and a write-up you can keep private.</p><ProjectEditor interests={p.interests ?? []} /></div>}
-                  <ProjectGrid projects={projects} own={own} interests={p.interests ?? []} />
+                  {own && <div className="mb-4 flex items-center justify-between gap-3 rounded-3xl border border-dashed border-line-strong bg-surface/60 p-4"><p className="text-sm text-muted">Show what you&apos;ve built: a summary everyone sees, and a write-up you can keep private.</p><ProjectEditor interests={p.interests ?? []} copilot={copilotOn} /></div>}
+                  <ProjectGrid projects={projects} own={own} interests={p.interests ?? []} copilot={copilotOn} />
                   {!projects.length && (
                     <EmptyState
                       icon={<FolderGit2 className="size-6" />}
@@ -191,6 +195,12 @@ async function ProfileView({ params }: { params: PageProps<"/u/[id]">["params"] 
           ]}
         />
       </section>
+
+      <div className="mt-12">
+        <Suspense fallback={<StripSkeleton w={200} h={250} />}>
+          <PeopleStrip field={p.field} interests={p.interests ?? []} exclude={[p.id]} title={p.field ? `More builders in ${p.field}` : "More builders like this"} />
+        </Suspense>
+      </div>
     </>
   );
 }

@@ -3,19 +3,21 @@ import { EVENT_COLS, EVENT_COLS_BASE, EVENT_WITH_HOST, EVENT_WITH_HOST_BASE } fr
 import { createClient } from "@/lib/supabase/server";
 
 // Which optional database updates this Supabase project has had: supabase/club-events.sql,
-// supabase/media.sql and supabase/invites.sql. The app runs on the same database before and after each one is applied, so
+// supabase/media.sql, supabase/invites.sql and supabase/copilot.sql. The app runs on the same database before and after each one is applied, so
 // pages ask for the new columns only when they exist, instead of failing. Probed once per request.
-// 42703/PGRST204: no such column; 42P01/PGRST205: no such table; PGRST200: no such relationship.
-const missing = (e: { code?: string } | null) => ["42703", "42P01", "PGRST200", "PGRST204", "PGRST205"].includes(e?.code ?? "");
+// 42703/PGRST204: no such column; 42P01/PGRST205: no such table; PGRST200: no such relationship;
+// 42883/PGRST202: no such function.
+const missing = (e: { code?: string } | null) => ["42703", "42P01", "42883", "PGRST200", "PGRST202", "PGRST204", "PGRST205"].includes(e?.code ?? "");
 
 export const dbFeatures = cache(async () => {
   const supabase = await createClient();
-  const [ev, po, inv] = await Promise.all([
+  const [ev, po, inv, cop] = await Promise.all([
     supabase.from("events").select("community_id").limit(1),
     supabase.from("posts").select("media").limit(1),
     supabase.from("community_invites").select("code").limit(1),
+    supabase.rpc("copilot_ready"),
   ]);
-  return { clubEvents: !missing(ev.error), media: !missing(po.error), invites: !missing(inv.error) };
+  return { clubEvents: !missing(ev.error), media: !missing(po.error), invites: !missing(inv.error), copilot: !missing(cop.error) };
 });
 
 export async function eventCols(): Promise<string> {

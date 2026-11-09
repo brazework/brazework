@@ -1,18 +1,21 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Suspense } from "react";
+import { Fragment, Suspense } from "react";
 import { EmptyState } from "@/components/app/page-ui";
 import { type Post } from "@/lib/forge";
 import { projectsForPosts } from "@/lib/project-posts";
 import { dbFeatures, postSelect } from "@/lib/db-features";
 import { avatarSrc } from "@/lib/media";
 import { getViewer } from "@/lib/supabase/server";
+import { copilotEnabled } from "@/lib/copilot";
 import { Composer } from "./composer";
 import { LiveRefresh } from "@/components/app/live-refresh";
 import { FeedHeader, TABS, type TabId } from "./header";
 import { PostCard } from "./post-card";
 import { FeedRail } from "./rail";
+import { PeopleStrip, SpotlightStrip, WeekStrip } from "./discover";
+import { StripSkeleton } from "@/components/app/discover-cards";
 
 export const metadata: Metadata = { title: "Feed" };
 
@@ -100,6 +103,9 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
     const m = p.tags.find((t) => mineSet.has(t));
     return m ? `${p.project_id ? "Project · " : ""}Matches your interest: ${m}` : "";
   };
+  const discover = (tab === "for-you" || tab === "latest") && !tag;
+  const spotlight = <div className="py-2"><Suspense fallback={<StripSkeleton w={280} h={250} />}><SpotlightStrip /></Suspense></div>;
+  const people = <div className="py-2"><Suspense fallback={<StripSkeleton w={200} h={250} />}><PeopleStrip field={profile.field} interests={interests} /></Suspense></div>;
   const [likes, saves] = ids.length
     ? await Promise.all([
         supabase.from("likes").select("post_id").eq("user_id", user.id).in("post_id", ids),
@@ -124,16 +130,25 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
           </div>
         </section>
       )}
-      <div data-tour="composer" className="mt-6"><Composer first={profile.first_name} last={profile.last_name} interests={interests} userId={user.id} mediaEnabled={mediaEnabled} avatarSrc={avatarSrc(profile)} /></div>
+      <div data-tour="composer" className="mt-6"><Composer first={profile.first_name} last={profile.last_name} interests={interests} userId={user.id} mediaEnabled={mediaEnabled} avatarSrc={avatarSrc(profile)} copilot={await copilotEnabled()} /></div>
       {tag && (
         <div className="mt-4 flex items-center justify-between rounded-2xl border border-line bg-surface-2 px-4 py-2.5 text-sm">
           <span>Showing posts tagged <strong className="font-medium">#{tag}</strong></span>
           <Link href={`/feed${tab === "for-you" ? "" : `?tab=${tab}`}`} className="text-muted hover:text-text">Clear</Link>
         </div>
       )}
+      {discover && !tag && <div className="mt-6"><Suspense fallback={<StripSkeleton w={250} h={96} />}><WeekStrip /></Suspense></div>}
       <div className="mt-6 flex flex-col gap-4">
         {list.length === 0 && <EmptyState title={emptyTitle} body={emptyBody} action={emptyAction} />}
-        {list.map((p, i) => <PostCard key={p.id} post={p} liked={liked.has(p.id)} saved={saved.has(p.id)} own={p.author_id === user.id} index={i} project={p.project_id ? projects[p.project_id] : null} reason={reasonFor(p)} />)}
+        {list.map((p, i) => (
+          <Fragment key={p.id}>
+            <PostCard post={p} liked={liked.has(p.id)} saved={saved.has(p.id)} own={p.author_id === user.id} index={i} project={p.project_id ? projects[p.project_id] : null} reason={reasonFor(p)} />
+            {/* Discovery strips sit between posts; with only a few posts they follow the last one. */}
+            {discover && (i === 1 || (i === list.length - 1 && list.length < 2)) && spotlight}
+            {discover && (i === 4 || (i === list.length - 1 && list.length < 5)) && people}
+          </Fragment>
+        ))}
+        {discover && list.length === 0 && <>{spotlight}{people}</>}
       </div>
     </>
   );

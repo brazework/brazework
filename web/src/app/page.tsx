@@ -1,4 +1,5 @@
 import { FinalCta, Footer } from "@/components/landing/closing";
+import { CopilotSection } from "@/components/landing/copilot-section";
 import { Hero } from "@/components/landing/hero";
 import { SpotlightTracker } from "@/components/landing/interactive";
 import { LegacyLinks } from "@/components/landing/legacy-links";
@@ -20,6 +21,7 @@ export default function Landing() {
         <Builders />
         <Problem />
         <How />
+        <CopilotSection />
         <Audiences />
         <Features />
         <Mission />

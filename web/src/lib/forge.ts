@@ -1,3 +1,4 @@
+import type { MediaItem } from "./media";
 import { clsx, type ClassValue } from "clsx";
 import { twMerge } from "tailwind-merge";
 
@@ -73,7 +74,7 @@ export type Post = {
   comment_count: number;
   created_at: string;
   project_id?: string | null;
-  media?: { type: "image" | "video"; path: string; w?: number; h?: number }[];
+  media?: MediaItem[];
   author?: { avatar_path?: string } | null;
 };
 

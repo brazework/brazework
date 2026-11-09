@@ -1,6 +1,7 @@
 "use client";
 import { AnimatePresence, motion } from "motion/react";
-import { CheckCircle2, ExternalLink, Loader2, Lock, Pencil, Plus, Share2, Trash2, X } from "lucide-react";
+import { CheckCircle2, ExternalLink, Loader2, Lock, Pencil, Plus, Share2, Sparkles, Trash2, X } from "lucide-react";
+import { useCopilot } from "@/components/copilot/use-copilot";
 import { useActionState, useEffect, useRef, useState, useTransition } from "react";
 import { chipCls } from "@/components/app/page-ui";
 import { Button, Field, inputCls } from "@/components/ui";
@@ -57,7 +58,7 @@ export function EditBasics({ headline, bio }: { headline: string; bio: string })
 const meta = (p: ProjectView) => (p.status === "completed" ? `Completed${p.year ? ` ${p.year}` : ""}` : `In progress · updated ${timeAgo(p.updated_at)}`);
 const safeLink = (l: string | null) => (l && /^https?:\/\/\S+$/i.test(l) ? l : null);
 
-export function ProjectCard({ project, own, interests }: { project: ProjectView; own: boolean; interests: string[] }) {
+export function ProjectCard({ project, own, interests, copilot = false }: { project: ProjectView; own: boolean; interests: string[]; copilot?: boolean }) {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(false);
   const [sharing, setSharing] = useState(false);
@@ -105,7 +106,7 @@ export function ProjectCard({ project, own, interests }: { project: ProjectView;
         </div>
       )}
       {sharing && <ShareBox id={project.id} title={project.title} onDone={(m) => { setSharing(false); setMsg(m); }} />}
-      {editing && <ProjectDialog project={project} interests={interests} onClose={() => setEditing(false)} />}
+      {editing && <ProjectDialog project={project} interests={interests} copilot={copilot} onClose={() => setEditing(false)} />}
     </article>
   );
 }
@@ -125,7 +126,7 @@ const FILTERS = [
 ] as const;
 
 // The project grid with All / In progress / Completed filters; cards glide into their new spots.
-export function ProjectGrid({ projects, own, interests }: { projects: ProjectView[]; own: boolean; interests: string[] }) {
+export function ProjectGrid({ projects, own, interests, copilot = false }: { projects: ProjectView[]; own: boolean; interests: string[]; copilot?: boolean }) {
   const [filter, setFilter] = useState<(typeof FILTERS)[number]["id"]>("all");
   const shown = filter === "all" ? projects : projects.filter((p) => p.status === filter);
   const count = (id: string) => (id === "all" ? projects.length : projects.filter((p) => p.status === id).length);
@@ -145,7 +146,7 @@ export function ProjectGrid({ projects, own, interests }: { projects: ProjectVie
         <AnimatePresence mode="popLayout" initial={false}>
           {shown.map((pr) => (
             <motion.div key={pr.id} layout initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} transition={{ duration: 0.25 }}>
-              <ProjectCard project={pr} own={own} interests={interests} />
+              <ProjectCard project={pr} own={own} interests={interests} copilot={copilot} />
             </motion.div>
           ))}
         </AnimatePresence>
@@ -179,17 +180,26 @@ function ShareBox({ id, title, onDone }: { id: string; title: string; onDone: (m
   );
 }
 
-export function ProjectEditor({ interests }: { interests: string[] }) {
+export function ProjectEditor({ interests, copilot = false }: { interests: string[]; copilot?: boolean }) {
   const [open, setOpen] = useState(false);
   return (
     <>
       <Button onClick={() => setOpen(true)}><Plus className="size-4" /> Add project</Button>
-      {open && <ProjectDialog interests={interests} onClose={() => setOpen(false)} />}
+      {open && <ProjectDialog interests={interests} copilot={copilot} onClose={() => setOpen(false)} />}
     </>
   );
 }
 
-function ProjectDialog({ project, interests, onClose }: { project?: ProjectView; interests: string[]; onClose: () => void }) {
+function ProjectDialog({ project, interests, onClose, copilot = false }: { project?: ProjectView; interests: string[]; onClose: () => void; copilot?: boolean }) {
+  const formRef = useRef<HTMLFormElement>(null);
+  const [details, setDetails] = useState(project?.details ?? "");
+  const ai = useCopilot();
+  // Copilot drafts the write-up from the title, summary and whatever notes are already in the box.
+  const writeUp = () => {
+    const f = new FormData(formRef.current ?? undefined);
+    const notes = details.trim() || String(f.get("summary") ?? "");
+    void ai.run({ task: "writeup", input: notes || "No notes yet.", title: String(f.get("title") ?? "").slice(0, 120), summary: String(f.get("summary") ?? "").slice(0, 600) }, (full) => setDetails(full.slice(0, 5000)));
+  };
   const ref = useRef<HTMLDialogElement>(null);
   const [state, action, pending] = useActionState(saveProject, initial);
   const [status, setStatus] = useState(project?.status ?? "in_progress");
@@ -206,7 +216,7 @@ function ProjectDialog({ project, interests, onClose }: { project?: ProjectView;
       onCancel={(e) => { e.preventDefault(); onClose(); }}
       className="m-auto max-h-[90dvh] w-[min(640px,calc(100vw-24px))] overflow-y-auto rounded-3xl border border-line bg-surface p-0 text-text shadow-[var(--shadow)] backdrop:bg-bg/70 backdrop:backdrop-blur-sm"
     >
-      <form onSubmit={submitWithoutReset(action)} className="flex flex-col gap-4 p-6">
+      <form ref={formRef} onSubmit={submitWithoutReset(action)} className="flex flex-col gap-4 p-6">
         <div className="flex items-start justify-between">
           <h2 className="text-xl font-semibold tracking-tight">{project ? "Edit project" : "Add a project"}</h2>
           <button type="button" onClick={onClose} aria-label="Close" className="grid size-8 place-items-center rounded-full text-faint hover:bg-hover hover:text-text"><X className="size-4" /></button>
@@ -246,7 +256,18 @@ function ProjectDialog({ project, interests, onClose }: { project?: ProjectView;
             ))}
           </div>
         )}
-        <Field label="Write-up" hint="What you built, how, and what you learned."><textarea name="details" defaultValue={project?.details ?? ""} maxLength={5000} rows={6} className={cn(inputCls, "h-auto resize-y py-3 leading-relaxed")} /></Field>
+        <Field label="Write-up" hint="What you built, how, and what you learned."><textarea name="details" value={details} onChange={(e) => setDetails(e.target.value)} maxLength={5000} rows={6} className={cn(inputCls, "h-auto resize-y py-3 leading-relaxed")} /></Field>
+        {copilot && (
+          <div className="-mt-2 flex flex-wrap items-center gap-2">
+            {ai.busy ? (
+              <button type="button" onClick={ai.stop} className="h-8 rounded-full border border-line px-3 text-xs">Stop</button>
+            ) : (
+              <button type="button" onClick={writeUp} className="bg-accent-grad inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-xs font-medium text-on-accent"><Sparkles className="size-3.5" /> {details.trim() ? "Polish it with Copilot" : "Write it with Copilot"}</button>
+            )}
+            <span className="text-xs text-faint">Uses your title, summary and notes. Check every fact before saving.</span>
+            {ai.error && <p role="alert" className="w-full text-xs text-danger">{ai.error}</p>}
+          </div>
+        )}
         <Field label="Link"><input name="link" type="url" defaultValue={project?.link ?? ""} placeholder="https://github.com/…" maxLength={300} className={inputCls} /></Field>
         <label className="flex items-start gap-3 rounded-2xl border border-line p-4 text-sm">
           <input type="checkbox" name="private" defaultChecked={project?.private} className="mt-0.5 size-4 accent-[var(--text)]" />

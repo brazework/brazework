@@ -1,19 +1,20 @@
 "use client";
 import { AnimatePresence, motion } from "motion/react";
-import { FlaskConical, HelpCircle, ImagePlus, Loader2, Megaphone, Rocket, Upload, Video, X } from "lucide-react";
+import { FlaskConical, HelpCircle, ImagePlus, Loader2, Megaphone, Rocket, Sparkles, Upload, Video, X } from "lucide-react";
 import { useActionState, useRef, useState } from "react";
 import { Avatar, Button } from "@/components/ui";
 import { POST_KINDS, cn } from "@/lib/forge";
 import { createPost, type ComposeState } from "./actions";
 import { submitWithoutReset } from "@/lib/submit";
 import { AttachmentTray, useAttachments } from "@/components/media/attach";
+import { useCopilot } from "@/components/copilot/use-copilot";
 
 const KIND_ICON = { update: Megaphone, question: HelpCircle, result: FlaskConical, project: Rocket } as const;
 const MAX = 3000;
 
 // The feed composer. Collapsed, it's a prompt plus one-tap shortcuts (photo, video, result,
 // question); open, it's the full editor. Photos and videos can also be dropped onto it or pasted.
-export function Composer({ first, last, interests, userId, mediaEnabled = false, avatarSrc }: { first: string; last: string; interests: string[]; userId: string; mediaEnabled?: boolean; avatarSrc?: string | null }) {
+export function Composer({ first, last, interests, userId, mediaEnabled = false, avatarSrc, copilot = false }: { first: string; last: string; interests: string[]; userId: string; mediaEnabled?: boolean; avatarSrc?: string | null; copilot?: boolean }) {
   const [state, action, pending] = useActionState<ComposeState, FormData>(createPost, { ok: false, message: "", nonce: 0 });
   const [kind, setKind] = useState<string>("update");
   const [tags, setTags] = useState<string[]>([]);
@@ -25,6 +26,14 @@ export function Composer({ first, last, interests, userId, mediaEnabled = false,
   const photoRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLInputElement>(null);
   const att = useAttachments(userId);
+  const ai = useCopilot();
+  const [aiOpen, setAiOpen] = useState(false);
+  const [notes, setNotes] = useState("");
+  // Copilot turns rough notes into the post, writing it into the box as it streams.
+  const draft = async () => {
+    const out = await ai.run({ task: "post", input: notes, kind: kind as "update" | "question" | "result" | "project" }, (full) => setBody(full.slice(0, MAX)));
+    if (out !== null) setAiOpen(false);
+  };
 
   // Clear after a successful post (adjusting state during render, not in an effect).
   const [seenNonce, setSeenNonce] = useState(0);
@@ -88,6 +97,7 @@ export function Composer({ first, last, interests, userId, mediaEnabled = false,
           <Quick icon={Video} label="Video" tint="text-rose-500" disabled={!mediaEnabled} onClick={() => videoRef.current?.click()} />
           <Quick icon={FlaskConical} label="Result" tint="text-emerald-500" onClick={() => expand("result")} />
           <Quick icon={HelpCircle} label="Question" tint="text-amber-500" onClick={() => expand("question")} />
+          {copilot && <Quick icon={Sparkles} label="Copilot" tint="text-violet-500" onClick={() => { expand(); setAiOpen(true); }} />}
           {!mediaEnabled && <span className="self-center text-[11px] text-faint">Photo and video are switching on soon</span>}
         </div>
       )}
@@ -95,6 +105,25 @@ export function Composer({ first, last, interests, userId, mediaEnabled = false,
       <AnimatePresence initial={false}>
         {open && (
           <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25 }} className="overflow-hidden">
+            <AnimatePresence initial={false}>
+              {copilot && aiOpen && (
+                <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
+                  <div className="mt-3 rounded-2xl border border-line bg-surface-2/60 p-3">
+                    <label htmlFor="ai-notes" className="flex items-center gap-1.5 text-xs font-medium text-muted"><Sparkles className="size-3.5 text-violet-500" /> Rough notes for Copilot (bullets are fine)</label>
+                    <textarea id="ai-notes" value={notes} onChange={(e) => setNotes(e.target.value)} rows={3} maxLength={4000} placeholder="e.g. load test today, 3.2 g, carbon upright 31% lighter than steel, next: fatigue test" className="mt-2 w-full resize-none rounded-xl bg-surface px-3 py-2 text-sm outline-none placeholder:text-faint" />
+                    <div className="mt-2 flex items-center gap-2">
+                      {ai.error && <p role="alert" className="text-xs text-danger">{ai.error}</p>}
+                      <span className="ml-auto" />
+                      {ai.busy ? (
+                        <button type="button" onClick={ai.stop} className="h-8 rounded-full border border-line px-3 text-xs">Stop</button>
+                      ) : (
+                        <button type="button" onClick={() => void draft()} disabled={!notes.trim()} className="bg-accent-grad inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-xs font-medium text-on-accent disabled:opacity-40"><Sparkles className="size-3.5" /> Write my post</button>
+                      )}
+                    </div>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
             {mediaEnabled && <AttachmentTray slots={att.slots} onRemove={att.remove} onEdit={att.edit} compare={att.compare} onCompare={att.setCompare} />}
 
             <div role="radiogroup" aria-label="Post type" className="mt-4 inline-flex flex-wrap gap-1 rounded-full bg-surface-2 p-1">
@@ -127,6 +156,7 @@ export function Composer({ first, last, interests, userId, mediaEnabled = false,
             <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-line pt-3">
               <Quick icon={ImagePlus} label="Photo" tint="text-sky-500" disabled={!mediaEnabled || att.full} onClick={() => photoRef.current?.click()} />
               <Quick icon={Video} label="Video" tint="text-rose-500" disabled={!mediaEnabled || att.full} onClick={() => videoRef.current?.click()} />
+              {copilot && <Quick icon={Sparkles} label="Copilot" tint="text-violet-500" onClick={() => setAiOpen((v) => !v)} />}
               {(att.error || state.message) && <p role="alert" className="text-sm text-danger">{att.error || state.message}</p>}
               <span className="ml-auto flex items-center gap-3">
                 <CharRing used={body.length} max={MAX} />
