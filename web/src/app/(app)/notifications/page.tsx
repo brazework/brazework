@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Bell, Heart, MessageSquare, UserPlus, Users } from "lucide-react";
+import { BadgeCheck, Bell, Heart, MessageSquare, UserPlus, Users } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
@@ -13,7 +13,7 @@ export const metadata: Metadata = { title: "Notifications" };
 
 type N = {
   id: number; actor_id: string | null; actor_first: string; actor_last: string;
-  kind: "like" | "comment" | "follow" | "connect_request" | "connect_accepted" | "community_request" | "community_approved";
+  kind: "like" | "comment" | "follow" | "connect_request" | "connect_accepted" | "community_request" | "community_approved" | "milestone_request" | "milestone_verified" | "milestone_declined";
   post_id: string | null; community_id: string | null; community_name: string; snippet: string; read: boolean; created_at: string;
 };
 
@@ -56,6 +56,9 @@ function describe(items: N[]) {
     case "connect_request": return { icon: Users, href: "/network?tab=invitations", text: <>{who} wants to connect</>, cta: "Respond" };
     case "connect_accepted": return { icon: Users, href: `/u/${n.actor_id}`, text: <>{who} accepted your connection request</> };
     case "community_request": return { icon: Users, href: `/c/${n.community_id}/manage`, text: <>{who} asked to join <strong className="font-medium text-text">{n.community_name}</strong></>, cta: "Review" };
+    case "milestone_request": return { icon: BadgeCheck, href: `/c/${n.community_id}/manage?tab=verify`, text: <>{who} asked <strong className="font-medium text-text">{n.community_name}</strong> to verify a milestone</>, quote: n.snippet, cta: "Review" };
+    case "milestone_verified": return { icon: BadgeCheck, href: "/profile#projects", text: <><strong className="font-medium text-text">{n.community_name}</strong> verified your milestone</>, quote: n.snippet };
+    case "milestone_declined": return { icon: BadgeCheck, href: "/profile#projects", text: <><strong className="font-medium text-text">{n.community_name}</strong> didn&apos;t verify your milestone. See why</>, quote: n.snippet };
     case "community_approved": return { icon: Users, href: `/c/${n.community_id}`, text: <>You&apos;re in: your request to join <strong className="font-medium text-text">{n.community_name}</strong> was approved</> };
   }
 }

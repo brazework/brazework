@@ -1,7 +1,8 @@
 "use client";
 import { AnimatePresence, motion } from "motion/react";
-import { CheckCircle2, ExternalLink, Loader2, Lock, Pencil, Plus, Share2, Sparkles, Trash2, X } from "lucide-react";
+import { BadgeCheck, CheckCircle2, ExternalLink, Loader2, Lock, Pencil, Plus, Share2, Sparkles, Trash2, X } from "lucide-react";
 import { useCopilot } from "@/components/copilot/use-copilot";
+import { AddMilestone, MilestoneTimeline, type Club, type Milestone } from "./milestones";
 import { useActionState, useEffect, useRef, useState, useTransition } from "react";
 import { chipCls } from "@/components/app/page-ui";
 import { Button, Field, inputCls } from "@/components/ui";
@@ -20,6 +21,7 @@ export type ProjectView = {
   updated_at: string;
   details: string | null;
   link: string | null;
+  milestones?: Milestone[];
 };
 
 const initial: ProjectState = { ok: false, message: "" };
@@ -58,7 +60,8 @@ export function EditBasics({ headline, bio }: { headline: string; bio: string })
 const meta = (p: ProjectView) => (p.status === "completed" ? `Completed${p.year ? ` ${p.year}` : ""}` : `In progress · updated ${timeAgo(p.updated_at)}`);
 const safeLink = (l: string | null) => (l && /^https?:\/\/\S+$/i.test(l) ? l : null);
 
-export function ProjectCard({ project, own, interests, copilot = false }: { project: ProjectView; own: boolean; interests: string[]; copilot?: boolean }) {
+export function ProjectCard({ project, own, interests, copilot = false, clubs }: { project: ProjectView; own: boolean; interests: string[]; copilot?: boolean; clubs?: Club[] }) {
+  const verified = (project.milestones ?? []).filter((m) => m.status === "verified").length;
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(false);
   const [sharing, setSharing] = useState(false);
@@ -72,6 +75,7 @@ export function ProjectCard({ project, own, interests, copilot = false }: { proj
       <span className="absolute inset-x-0 top-0 h-1.5" style={{ background: stripe(project) }} aria-hidden="true" />
       <div className="flex items-start justify-between gap-3">
         <h3 className="text-lg font-semibold tracking-tight">{project.title}</h3>
+        {verified > 0 && <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[color-mix(in_oklab,var(--ok)_14%,transparent)] px-2 py-0.5 text-[11px] font-medium text-ok"><BadgeCheck className="size-3.5" /> {verified} verified</span>}
         {project.private && <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-line px-2 py-0.5 text-[11px] text-muted"><Lock className="size-3" /> Private</span>}
       </div>
       <p className="mt-1.5 flex items-center gap-1.5 text-xs text-muted">
@@ -80,6 +84,8 @@ export function ProjectCard({ project, own, interests, copilot = false }: { proj
       </p>
       <p className="mt-3 text-sm leading-relaxed text-text-2">{project.summary}</p>
       {project.tags.length > 0 && <div className="mt-3 flex flex-wrap gap-1.5">{project.tags.map((t) => <span key={t} className="rounded-full bg-surface-2 px-2.5 py-0.5 text-xs text-text-2">#{t}</span>)}</div>}
+      {project.milestones && <MilestoneTimeline items={project.milestones} own={own} />}
+      {own && clubs && <div className="mt-3"><AddMilestone projectId={project.id} projectTitle={project.title} clubs={clubs} /></div>}
       {(project.details || link) && (
         <button onClick={() => setOpen((v) => !v)} aria-expanded={open} className="mt-4 inline-flex items-center gap-1.5 self-start rounded-full bg-surface-2 px-3 py-1.5 text-xs font-medium text-text-2 transition hover:bg-hover hover:text-text">
           {open ? "Hide write-up" : "Read the write-up"}
@@ -126,7 +132,7 @@ const FILTERS = [
 ] as const;
 
 // The project grid with All / In progress / Completed filters; cards glide into their new spots.
-export function ProjectGrid({ projects, own, interests, copilot = false }: { projects: ProjectView[]; own: boolean; interests: string[]; copilot?: boolean }) {
+export function ProjectGrid({ projects, own, interests, copilot = false, clubs }: { projects: ProjectView[]; own: boolean; interests: string[]; copilot?: boolean; clubs?: Club[] }) {
   const [filter, setFilter] = useState<(typeof FILTERS)[number]["id"]>("all");
   const shown = filter === "all" ? projects : projects.filter((p) => p.status === filter);
   const count = (id: string) => (id === "all" ? projects.length : projects.filter((p) => p.status === id).length);
@@ -146,7 +152,7 @@ export function ProjectGrid({ projects, own, interests, copilot = false }: { pro
         <AnimatePresence mode="popLayout" initial={false}>
           {shown.map((pr) => (
             <motion.div key={pr.id} layout initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} transition={{ duration: 0.25 }}>
-              <ProjectCard project={pr} own={own} interests={interests} copilot={copilot} />
+              <ProjectCard project={pr} own={own} interests={interests} copilot={copilot} clubs={clubs} />
             </motion.div>
           ))}
         </AnimatePresence>

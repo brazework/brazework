@@ -63,6 +63,7 @@ export const PERMS = [
   ["approve", "Approve join requests", 2],
   ["removePosts", "Remove posts and comments", 3],
   ["review", "Review held posts", 3],
+  ["verify", "Verify members' milestones", 3],
   ["removeMembers", "Remove and ban members below them", 3],
   ["roles", "Assign roles below their own", 4],
   ["editInfo", "Edit community info and rules", 4],

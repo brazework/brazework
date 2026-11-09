@@ -15,6 +15,8 @@ import { InviteLinks } from "./invites";
 import { env } from "@/lib/env";
 import type { Invite } from "../../../communities/actions";
 import { BanRow, MemberActions, RequestActions, SettingsForm } from "./manage-client";
+import { RecentReviews, VerifyQueue, type QueueItem } from "./verify";
+import { BadgeCheck } from "lucide-react";
 
 export const metadata: Metadata = { title: "Manage community" };
 
@@ -37,7 +39,11 @@ async function Manage({ params, searchParams }: { params: PageProps<"/c/[id]/man
   if (rank(role) < 2) redirect(`/c/${id}`);
 
   const features = await dbFeatures();
+  const canVerify = features.milestones && can(role, "verify");
+  // How many milestones are waiting, for the tab's count (head-only, no rows).
+  const waiting = canVerify ? (await supabase.from("milestones").select("id", { count: "exact", head: true }).eq("community_id", id).eq("status", "pending")).count ?? 0 : 0;
   const tabs = [
+    { id: "verify", label: "Verify", show: canVerify, count: waiting },
     { id: "invite", label: "Invite", show: can(role, "approve") && features.invites },
     { id: "requests", label: "Requests", show: can(role, "approve") },
     { id: "members", label: "Members", show: true },
@@ -47,11 +53,14 @@ async function Manage({ params, searchParams }: { params: PageProps<"/c/[id]/man
   ].filter((t) => t.show);
   const tab = tabs.find((t) => t.id === sp.tab)?.id ?? (c.privacy === "approval" && can(role, "approve") ? "requests" : "members");
 
-  const [reqs, members, bans, invites] = await Promise.all([
+  const MS_COLS = "id, owner_id, title, detail, evidence, achieved_on, created_at, status, reviewer_name, review_note, project:projects(title, summary), owner:profiles!milestones_owner_id_fkey(first_name, last_name, headline)";
+  const [reqs, members, bans, invites, queue, reviewed] = await Promise.all([
     tab === "requests" ? supabase.from("community_requests").select("*").eq("community_id", id).order("at", { ascending: true }).limit(100) : Promise.resolve({ data: [] }),
     tab === "members" ? supabase.from("community_members").select("*").eq("community_id", id).limit(500) : Promise.resolve({ data: [] }),
     tab === "bans" ? supabase.from("community_bans").select("*").eq("community_id", id) : Promise.resolve({ data: [] }),
     tab === "invite" ? supabase.from("community_invites").select("*").eq("community_id", id).order("created_at", { ascending: false }).limit(50) : Promise.resolve({ data: [] }),
+    tab === "verify" ? supabase.from("milestones").select(MS_COLS).eq("community_id", id).eq("status", "pending").order("created_at", { ascending: true }).limit(100) : Promise.resolve({ data: [] }),
+    tab === "verify" ? supabase.from("milestones").select(MS_COLS).eq("community_id", id).neq("status", "pending").order("reviewed_at", { ascending: false }).limit(10) : Promise.resolve({ data: [] }),
   ]);
   const memberList = ((members.data ?? []) as Member[]).sort((a, b) => rank(b.role) - rank(a.role) || a.first_name.localeCompare(b.first_name));
 
@@ -60,8 +69,12 @@ async function Manage({ params, searchParams }: { params: PageProps<"/c/[id]/man
       <Link href={`/c/${id}`} className="mb-5 inline-flex items-center gap-1.5 text-sm text-muted hover:text-text"><ArrowLeft className="size-4" /> {c.name}</Link>
       <h1 className="text-3xl font-semibold tracking-tight">Manage</h1>
       <p className="mt-1.5 text-sm text-muted">You&apos;re {role === "admin" ? "an" : "a"} {ROLE_LABEL[role!].toLowerCase()}. You can act on people below your own role.</p>
-      <div className="mt-6"><Tabs active={tab} tabs={tabs.map((t) => ({ id: t.id, label: t.label, href: `/c/${id}/manage?tab=${t.id}` }))} /></div>
+      <div className="mt-6"><Tabs active={tab} tabs={tabs.map((t) => ({ id: t.id, label: t.label, href: `/c/${id}/manage?tab=${t.id}`, count: "count" in t ? (t.count as number) : undefined }))} /></div>
       <div className="mt-6">
+        {tab === "verify" && (((queue.data ?? []) as unknown as QueueItem[]).length ? <VerifyQueue items={(queue.data ?? []) as unknown as QueueItem[]} /> : (
+          <EmptyState icon={<BadgeCheck className="size-6" />} title="Nothing to verify" body="When members ask the club to vouch for a milestone (a test, a build, a result), it shows up here." />
+        ))}
+        {tab === "verify" && <RecentReviews items={(reviewed.data ?? []) as unknown as QueueItem[]} />}
         {tab === "invite" && <Panel className="p-6"><InviteLinks cid={id} clubName={c.name} origin={env.siteUrl} invites={(invites.data ?? []) as Invite[]} /></Panel>}
         {tab === "requests" && (((reqs.data ?? []) as JoinRequest[]).length ? (
           <Panel className="divide-y divide-line p-0">

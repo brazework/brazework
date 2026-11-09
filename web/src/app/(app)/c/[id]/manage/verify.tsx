@@ -1,0 +1,113 @@
+"use client";
+import { AnimatePresence, motion } from "motion/react";
+import { BadgeCheck, ExternalLink, Loader2, X, XCircle } from "lucide-react";
+import Link from "next/link";
+import { useState, useTransition } from "react";
+import { Celebrate } from "@/components/app/celebrate";
+import { Avatar } from "@/components/ui";
+import { cn } from "@/lib/forge";
+import { reviewMilestone } from "@/lib/milestones";
+
+export type QueueItem = {
+  id: string; owner_id: string; title: string; detail: string; evidence: string; achieved_on: string; created_at: string;
+  status: "pending" | "verified" | "declined"; reviewer_name: string; review_note: string;
+  project: { title: string; summary: string } | null;
+  owner: { first_name: string; last_name: string; headline: string } | null;
+};
+
+const day = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+
+// The club's verification queue: did this happen? Verify it, or decline with a reason.
+export function VerifyQueue({ items }: { items: QueueItem[] }) {
+  const [done, setDone] = useState<Record<string, "verified" | "declined">>({});
+  const left = items.filter((m) => !done[m.id]).length;
+  return (
+    <div className="flex flex-col gap-3">
+      <p className="text-sm text-muted">{left ? `${left} waiting. Verify only what the club saw happen: a test, a build night, a competition result.` : "All caught up."}</p>
+      <AnimatePresence initial={false}>
+        {items.map((m) => <QueueCard key={m.id} m={m} result={done[m.id]} onDone={(r) => setDone((d) => ({ ...d, [m.id]: r }))} />)}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function QueueCard({ m, result, onDone }: { m: QueueItem; result?: "verified" | "declined"; onDone: (r: "verified" | "declined") => void }) {
+  const [declining, setDeclining] = useState(false);
+  const [note, setNote] = useState("");
+  const [msg, setMsg] = useState("");
+  const [pending, start] = useTransition();
+  const review = (verify: boolean) => start(async () => {
+    const r = await reviewMilestone(m.id, verify, note);
+    if (r.ok) onDone(verify ? "verified" : "declined");
+    else setMsg(r.message);
+  });
+  const name = m.owner ? `${m.owner.first_name} ${m.owner.last_name}` : "A member";
+  return (
+    <motion.article layout initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className={cn("grad-edge relative rounded-3xl border p-5 shadow-[var(--shadow)]", result && "opacity-80")}>
+      {result === "verified" && <Celebrate />}
+      <div className="flex items-start gap-3">
+        <Avatar first={m.owner?.first_name ?? "?"} last={m.owner?.last_name ?? ""} size={40} />
+        <div className="min-w-0 flex-1">
+          <div className="text-sm"><Link href={`/u/${m.owner_id}`} className="font-medium hover:underline">{name}</Link> <span className="text-muted">asks the club to verify</span></div>
+          <div className="text-xs text-faint">{m.owner?.headline}</div>
+        </div>
+        <span className="shrink-0 text-xs text-faint">{day(m.achieved_on)}</span>
+      </div>
+      <div className="mt-4 rounded-2xl border border-line bg-surface-2/60 p-4">
+        <div className="text-[11px] font-medium tracking-wide text-faint uppercase">{m.project?.title ?? "Project"}</div>
+        <div className="mt-1 font-semibold">{m.title}</div>
+        {m.detail && <p className="mt-1 text-sm leading-relaxed text-text-2">{m.detail}</p>}
+        {m.evidence && <a href={m.evidence} target="_blank" rel="noopener noreferrer nofollow" className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-text underline underline-offset-4"><ExternalLink className="size-3.5" /> Open the evidence</a>}
+      </div>
+      {result ? (
+        <p className={cn("mt-4 inline-flex items-center gap-1.5 text-sm font-medium", result === "verified" ? "text-ok" : "text-muted")}>
+          {result === "verified" ? <><BadgeCheck className="size-4" /> Verified. {m.owner?.first_name} has been notified.</> : <><XCircle className="size-4" /> Declined.</>}
+        </p>
+      ) : (
+        <>
+          <AnimatePresence initial={false}>
+            {declining && (
+              <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} className="overflow-hidden">
+                <label htmlFor={`note-${m.id}`} className="mt-4 block text-xs font-medium text-muted">Why? {m.owner?.first_name} will see this.</label>
+                <input id={`note-${m.id}`} value={note} onChange={(e) => setNote(e.target.value)} maxLength={300} placeholder="e.g. We didn't see this run. Bring the data to the next build night." className="mt-1.5 h-10 w-full rounded-xl border border-line bg-surface px-3 text-sm outline-none focus:border-line-strong" />
+              </motion.div>
+            )}
+          </AnimatePresence>
+          <div className="mt-4 flex flex-wrap items-center gap-2">
+            {declining ? (
+              <>
+                <button type="button" disabled={pending} onClick={() => review(false)} className="inline-flex h-9 items-center gap-1.5 rounded-full bg-danger px-4 text-sm font-medium text-white transition active:scale-95 disabled:opacity-50">{pending && <Loader2 className="size-4 animate-spin" />} Decline</button>
+                <button type="button" onClick={() => setDeclining(false)} className="inline-flex h-9 items-center gap-1 rounded-full px-3 text-sm text-muted hover:text-text"><X className="size-4" /> Cancel</button>
+              </>
+            ) : (
+              <>
+                <button type="button" disabled={pending} onClick={() => review(true)} className="bg-accent-grad inline-flex h-9 items-center gap-1.5 rounded-full px-4 text-sm font-medium text-on-accent shadow-[0_8px_20px_-10px_var(--accent)] transition hover:-translate-y-px active:scale-95 disabled:opacity-50">{pending ? <Loader2 className="size-4 animate-spin" /> : <BadgeCheck className="size-4" />} Verify</button>
+                <button type="button" onClick={() => setDeclining(true)} className="inline-flex h-9 items-center rounded-full border border-line px-4 text-sm text-muted transition hover:text-text">Decline</button>
+              </>
+            )}
+            {msg && <span role="alert" className="text-xs text-danger">{msg}</span>}
+          </div>
+        </>
+      )}
+    </motion.article>
+  );
+}
+
+// What the club verified or declined lately, so officers can see each other's calls.
+export function RecentReviews({ items }: { items: QueueItem[] }) {
+  if (!items.length) return null;
+  return (
+    <section className="mt-8">
+      <h2 className="text-sm font-semibold">Recently reviewed</h2>
+      <ul className="mt-3 flex flex-col divide-y divide-line rounded-3xl border border-line bg-surface">
+        {items.map((m) => (
+          <li key={m.id} className="flex items-center gap-3 px-4 py-3 text-sm">
+            {m.status === "verified" ? <BadgeCheck className="size-4 shrink-0 text-ok" /> : <XCircle className="size-4 shrink-0 text-faint" />}
+            <span className="min-w-0 flex-1 truncate"><span className="font-medium">{m.title}</span> <span className="text-muted">· {m.owner?.first_name} {m.owner?.last_name}</span></span>
+            <span className="shrink-0 text-xs text-faint">{m.reviewer_name}</span>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
+}
