@@ -326,10 +326,11 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity
 }
 
 /* ---------- Ember, Forge's character (components/ember/ember.tsx) ----------
-   Coloured by the theme: --ember-a/--ember-b are its gradient, --ember-eye its face. */
-:root { --ember-a: #52525b; --ember-b: #18181b; --ember-eye: #ffffff; --ember-glint: #18181b; --ember-glow: 0.18; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --ember-a: #ffffff; --ember-b: #a1a1aa; --ember-eye: #09090b; --ember-glint: #ffffff; --ember-glow: 0.55; } }
-:root[data-theme="dark"] { --ember-a: #ffffff; --ember-b: #a1a1aa; --ember-eye: #09090b; --ember-glint: #ffffff; --ember-glow: 0.55; }
+   --ember-a/--ember-b are its light and deep tones, --ember-eye its face. In Mono it keeps its own
+   warm flame colours (the one spot of colour on a black-and-white page); the other skins tint it. */
+:root { --ember-a: #ffc94d; --ember-b: #ff5a2c; --ember-eye: #2a1208; --ember-glint: #ffffff; --ember-glow: 0.55; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --ember-glow: 0.7; } }
+:root[data-theme="dark"] { --ember-glow: 0.7; }
 :root[data-skin="fire"] { --ember-glint: #ffffff; --ember-glow: 0.55; --ember-a: #ffd166; --ember-b: #ff4d4d; --ember-eye: #2a1208; }
 :root[data-skin="blueprint"] { --ember-glint: #ffffff; --ember-glow: 0.55; --ember-a: #a5d8ff; --ember-b: #2563eb; --ember-eye: #0a1c35; }
 :root[data-skin="aurora"] { --ember-glint: #ffffff; --ember-glow: 0.55; --ember-a: #67e8f9; --ember-b: #c026d3; --ember-eye: #1b1442; }
@@ -353,17 +354,12 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity
 .ember-sleepy .ember-sparks { opacity: 0.4; }
 .ember-zz text:nth-child(1) { animation: ember-zz 2.6s ease-in-out infinite; }
 .ember-zz text:nth-child(2) { animation: ember-zz 2.6s ease-in-out 1.3s infinite; }
-/* Ember v2 layers: halo pulse, swaying side flames, rising embers. */
+/* Halo pulse and rising embers. */
 @keyframes ember-halo { 50% { transform: scale(1.08); opacity: 0.75; } }
-@keyframes ember-sway-l { 0%, 100% { transform: rotate(0deg); } 50% { transform: rotate(-7deg) scaleY(1.06); } }
-@keyframes ember-sway-r { 0%, 100% { transform: rotate(0deg); } 50% { transform: rotate(7deg) scaleY(1.05); } }
 @keyframes ember-rise { 0% { transform: translateY(6px); opacity: 0; } 25% { opacity: 1; } 100% { transform: translateY(-12px); opacity: 0; } }
 .ember .ember-halo { transform-origin: 32px 38px; transform-box: view-box; animation: ember-halo 3.2s ease-in-out infinite; }
-.ember .ember-tongue-l { transform-origin: 23px 42px; transform-box: view-box; animation: ember-sway-l 2.4s ease-in-out infinite; }
-.ember .ember-tongue-r { transform-origin: 41px 42px; transform-box: view-box; animation: ember-sway-r 2.8s ease-in-out infinite; }
 .ember .ember-rise circle { animation: ember-rise 2.8s ease-out infinite; }
 .ember .ember-rise circle:nth-child(2) { animation-delay: 0.9s; }
 .ember .ember-rise circle:nth-child(3) { animation-delay: 1.8s; }
-.ember-thinking .ember-tongue-l, .ember-thinking .ember-tongue-r { animation-duration: 1.2s; }
 .ember-sleepy .ember-halo { opacity: 0.4; }
 .ember-sleepy .ember-rise { display: none; }
