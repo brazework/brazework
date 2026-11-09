@@ -3,7 +3,7 @@ import { rank } from "@/lib/communities";
 import { getViewer } from "@/lib/supabase/server";
 
 // The guide's "next best step" engine: plain checks against your real data, so it's instant and
-// free. Copilot only comes in when you ask it to explain or draft something (see GuideLauncher).
+// free. Copilot only comes in when you ask it to explain or draft something.
 
 export type GuideStep = {
   id: string;

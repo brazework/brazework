@@ -1,6 +1,6 @@
 "use client";
 import { AnimatePresence, motion } from "motion/react";
-import { Bell, Bookmark, CalendarDays, Home, LayoutDashboard, LogOut, Menu, MessageSquare, Network, PanelLeftClose, PanelLeftOpen, Settings, Sparkles, UserRound, Users, X } from "lucide-react";
+import { Bell, Bookmark, CalendarDays, Home, LayoutDashboard, LogOut, Menu, MessageSquare, Network, PanelLeftClose, PanelLeftOpen, Settings, Sparkles, Users, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -25,7 +25,6 @@ const NAV: { href: string; label: string; icon: typeof Home; match: string[]; ba
   { href: "/events", label: "Events", icon: CalendarDays, match: ["/events", "/org"] },
   { href: "/notifications", label: "Notifications", icon: Bell, match: ["/notifications"], badge: "notifications" },
   { href: "/saved", label: "Saved", icon: Bookmark, match: ["/saved"] },
-  { href: "/profile", label: "Profile", icon: UserRound, match: ["/profile", "/u/"] },
   { href: "/settings", label: "Settings", icon: Settings, match: ["/settings"] },
 ];
 
@@ -59,6 +58,7 @@ export const SIDEBAR_COOKIE = "forge-sidebar";
 
 export function Sidebar({ first, last, userId, badges, avatar, initialCollapsed = false }: { first: string; last: string; userId: string; badges: Badges; avatar?: string | null; initialCollapsed?: boolean }) {
   const path = usePathname();
+  const onProfile = path.startsWith("/profile") || path === `/u/${userId}`;
   const [collapsed, setCollapsed] = useState(initialCollapsed);
   const toggle = () => {
     const next = !collapsed;
@@ -113,11 +113,12 @@ export function Sidebar({ first, last, userId, badges, avatar, initialCollapsed 
           );
         })}
       </nav>
-      <div className={cn("mt-auto flex items-center gap-3 rounded-2xl bg-surface/50", collapsed ? "flex-col p-1.5" : "p-2.5")}>
-        <Link href="/profile" aria-label="Your profile" title={collapsed ? `${first} ${last}` : undefined}><WithPresence id={userId} dot="size-2.5"><Avatar first={first} last={last} size={collapsed ? 32 : 36} src={avatar} /></WithPresence></Link>
+      {/* You: your profile lives here (photo and name open it), with your online status and log out. */}
+      <div className={cn("mt-auto flex items-center gap-3 rounded-2xl transition", onProfile ? "nav-pill" : "bg-surface/50 hover:bg-hover/60", collapsed ? "flex-col p-1.5" : "p-2.5")}>
+        <Link href="/profile" aria-label="Your profile" aria-current={onProfile ? "page" : undefined} title={collapsed ? `${first} ${last} · Profile` : undefined}><WithPresence id={userId} dot="size-2.5"><Avatar first={first} last={last} size={collapsed ? 32 : 36} src={avatar} /></WithPresence></Link>
         {!collapsed && (
           <div className="min-w-0 flex-1">
-            <div className="truncate text-sm font-medium">{first} {last}</div>
+            <Link href="/profile" className="block truncate text-sm font-medium hover:underline">{first} {last}</Link>
             <MyStatus />
           </div>
         )}

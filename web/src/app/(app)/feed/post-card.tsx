@@ -9,6 +9,7 @@ import { MediaGrid } from "@/components/media/media-grid";
 import { avatarSrc } from "@/lib/media";
 import { deletePost, toggleSave } from "@/lib/posts";
 import { EditPost } from "./edit-post";
+import { SendPost } from "@/components/share/send-post";
 import { toggleLike } from "./actions";
 
 type Opt = { liked: boolean; count: number; saved: boolean };
@@ -141,6 +142,7 @@ export function PostCard({ post, liked, saved = false, own = false, index, proje
         <button onClick={() => act({ saved: !opt.saved }, () => toggleSave(post.id, !opt.saved))} aria-pressed={opt.saved} aria-label={opt.saved ? "Unsave" : "Save"} className="inline-flex h-9 items-center gap-1.5 rounded-full px-3 transition hover:bg-hover hover:text-text">
           <Bookmark className={cn("size-[18px]", opt.saved && "fill-[var(--accent)] text-accent")} />
         </button>
+        <SendPost postId={post.id} />
         <button onClick={share} aria-label={copied ? "Link copied" : "Copy link to post"} className="inline-flex h-9 items-center gap-1.5 rounded-full px-3 transition hover:bg-hover hover:text-text">
           <AnimatePresence mode="wait" initial={false}>
             <motion.span key={copied ? "y" : "n"} initial={{ scale: 0.5, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.5, opacity: 0 }} transition={{ duration: 0.15 }} className="inline-flex items-center gap-1.5">

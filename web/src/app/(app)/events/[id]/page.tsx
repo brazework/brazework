@@ -1,6 +1,8 @@
 import { eventWithHost } from "@/lib/db-features";
 import type { Metadata } from "next";
-import { ArrowLeft, BadgeCheck, ExternalLink, MapPin, Users } from "lucide-react";
+import { ArrowLeft, BadgeCheck, ExternalLink, MapPin, MessagesSquare, Users } from "lucide-react";
+import { openEventChat } from "@/lib/chats";
+import { dbFeatures } from "@/lib/db-features";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
@@ -57,6 +59,11 @@ async function EventView({ params }: { params: PageProps<"/events/[id]">["params
       <div className="mt-8 flex flex-wrap items-start gap-2">
         <DetailActions id={e.id} going={!!g.data?.length} saved={!!s.data?.length} count={e.rsvp_count} over={over || e.status === "cancelled"} />
         <CalendarButton eventId={e.id} />
+        {!!g.data?.length && (await dbFeatures()).groupChats && (
+          <form action={openEventChat.bind(null, e.id)}>
+            <button className="inline-flex h-10 items-center gap-1.5 rounded-full border border-line px-4 text-sm font-medium transition hover:bg-hover active:scale-95"><MessagesSquare className="size-4" /> Event chat</button>
+          </form>
+        )}
       </div>
     </Panel>
   );

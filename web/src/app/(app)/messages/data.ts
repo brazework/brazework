@@ -1,3 +1,4 @@
+import { dbFeatures } from "@/lib/db-features";
 import { getViewer } from "@/lib/supabase/server";
 
 export type Conv = {
@@ -41,6 +42,17 @@ export async function loadConversations() {
     })
     .filter((c) => c.lastAt || c.startedByMe);
   return { me, convs, requestsOn: settings.data ? Boolean(settings.data.requests_on) : true };
+}
+
+// Your group chats (club, event, team), newest first, once supabase/group-chats.sql is applied.
+export type GroupChat = { id: string; kind: "club" | "event" | "team"; community_id: string | null; event_id: string | null; title: string; subtitle: string; lastAt: string | null; lastBody: string; lastSenderName: string; lastFromMe: boolean; unread: boolean };
+
+export async function loadGroups(): Promise<{ on: boolean; groups: GroupChat[] }> {
+  if (!(await dbFeatures()).groupChats) return { on: false, groups: [] };
+  const { supabase, user } = await getViewer();
+  if (!user) return { on: true, groups: [] };
+  const { data } = await supabase.rpc("my_chats");
+  return { on: true, groups: (data ?? []) as GroupChat[] };
 }
 
 export const isRequestToMe = (c: Conv) => c.status === "request" && !c.startedByMe;

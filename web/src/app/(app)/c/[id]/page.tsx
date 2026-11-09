@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { PartyPopper, Settings, UserPlus } from "lucide-react";
+import { MessagesSquare, PartyPopper, Settings, UserPlus } from "lucide-react";
+import { openClubChat } from "@/lib/chats";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
@@ -50,7 +51,7 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
     supabase.from("posts").select(await postSelect()).eq("community_id", id).eq("status", "visible").order("created_at", { ascending: false }).limit(60),
     isMod ? supabase.from("posts").select(await postSelect()).eq("community_id", id).eq("status", "held").order("created_at", { ascending: false }).limit(100) : Promise.resolve({ data: [] }),
   ]);
-  const { clubEvents, media: mediaEnabled, invites: invitesOn } = await dbFeatures();
+  const { clubEvents, media: mediaEnabled, invites: invitesOn, groupChats } = await dbFeatures();
   const { data: evRows } = clubEvents
     ? await supabase.from("events").select(await eventWithHost()).eq("community_id", id).order("starts_at", { ascending: true }).limit(100)
     : { data: [] };
@@ -102,6 +103,11 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <CopyLink path={`/c/${c.id}`} label="Share" />
+            {me && groupChats && (
+              <form action={openClubChat.bind(null, c.id)}>
+                <button className="inline-flex h-10 items-center gap-1.5 rounded-full border border-line bg-surface px-4 text-sm font-medium transition hover:bg-hover active:scale-95"><MessagesSquare className="size-4" /> Club chat</button>
+              </form>
+            )}
             {rank(role) >= 2 && invitesOn && (
               <Link href={`/c/${c.id}/manage?tab=invite`} className="bg-accent-grad inline-flex h-10 items-center gap-1.5 rounded-full px-4 text-sm font-medium text-on-accent shadow-[0_8px_20px_-10px_var(--accent)] transition hover:-translate-y-px active:scale-95"><UserPlus className="size-4" /> Invite</Link>
             )}
@@ -125,6 +131,7 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
             </li>
           ))}
         </ul>
+        {typeof sp.chat_error === "string" && <p role="alert" className="mt-4 rounded-2xl border border-danger/30 bg-danger/10 px-4 py-2.5 text-sm text-danger">{sp.chat_error}</p>}
         {sp.joined === "1" && (
           <p className="relative mt-4 flex items-center gap-2 rounded-2xl border border-line bg-surface-2 px-4 py-3 text-sm">
             <Celebrate /> <PartyPopper className="size-4 text-accent" /> Welcome to {c.name}. Say hello in the club feed below.

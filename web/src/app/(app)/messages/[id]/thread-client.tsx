@@ -3,6 +3,7 @@ import { ArrowUp, Loader2 } from "lucide-react";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { cn } from "@/lib/forge";
 import { getBrowserClient } from "@/lib/supabase/client";
+import { MessageBody } from "@/components/share/message-body";
 import { acceptConversation, blockAndReport, declineConversation, markConversationRead, sendMessage } from "@/lib/messages";
 
 export type Msg = { id: string; sender_id: string; body: string; created_at: string };
@@ -90,7 +91,7 @@ export function ThreadScroll({ msgs, me, cid, otherName = "" }: { msgs: Msg[]; m
                 mine ? cn("rounded-3xl", joinsPrev && "rounded-tr-md", joinsNext && "rounded-br-md") : cn("rounded-3xl", joinsPrev && "rounded-tl-md", joinsNext && "rounded-bl-md"),
                 isPending && "opacity-60",
               )}>
-                {m.body}
+                <MessageBody body={m.body} mine={mine} />
               </div>
               {!joinsNext && <span className={cn("mt-1 px-2 text-[10px] text-faint", mine ? "self-end" : "self-start")}>{isPending ? "Sending…" : time(m.created_at)}</span>}
             </li>
