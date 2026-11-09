@@ -282,6 +282,33 @@ export async function setCommunityCover(cid: string, path: string): Promise<Resu
   return { ok: true, message: path ? "Cover updated." : "Cover removed." };
 }
 
+// Club look (supabase/club-profile.sql): logo, tagline, website and accent colour, for admins and owners.
+export async function setCommunityLogo(cid: string, path: string): Promise<Result> {
+  const { supabase, user, role } = await myRole(cid);
+  if (!user || !can(role, "editInfo")) return denied;
+  if (path && !new RegExp(`^${user.id}/[A-Za-z0-9._-]+$`).test(path)) return { ok: false, message: "That file couldn't be used." };
+  const { data, error } = await supabase.from("communities").update({ logo_path: path }).eq("id", cid).select("id");
+  if (error) return { ok: false, message: error.code === "42703" ? "Club logos aren't turned on yet." : communityError(error) };
+  if (!data?.length) return denied;
+  revalidateCommunity(cid);
+  return { ok: true, message: path ? "Logo updated." : "Logo removed." };
+}
+
+export async function saveCommunityLook(cid: string, look: { tagline: string; website: string; accent: string }): Promise<Result> {
+  const tagline = look.tagline.trim().slice(0, 120);
+  const website = look.website.trim();
+  if (/[<>]/.test(tagline)) return { ok: false, message: "Taglines can't contain < or >." };
+  if (website && !/^https?:\/\/[^\s<>]+$/i.test(website)) return { ok: false, message: "Websites must start with http:// or https://" };
+  if (!["", "ink", "blue", "violet", "emerald", "amber", "rose", "cyan"].includes(look.accent)) return { ok: false, message: "Pick a colour from the list." };
+  const { supabase, user, role } = await myRole(cid);
+  if (!user || !can(role, "editInfo")) return denied;
+  const { data, error } = await supabase.from("communities").update({ tagline, website: website.slice(0, 300), accent: look.accent }).eq("id", cid).select("id");
+  if (error) return { ok: false, message: error.code === "42703" ? "Club customization isn't turned on yet." : communityError(error) };
+  if (!data?.length) return denied;
+  revalidateCommunity(cid);
+  return { ok: true, message: "Saved." };
+}
+
 /* ---------- Invite links (supabase/invites.sql) ---------- */
 
 export type Invite = { code: string; created_at: string; expires_at: string | null; max_uses: number | null; uses: number; revoked: boolean };

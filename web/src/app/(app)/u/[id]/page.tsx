@@ -1,6 +1,10 @@
 import type { Metadata } from "next";
 import { BadgeCheck, BarChart3, FolderGit2, Lock, MessageSquare } from "lucide-react";
 import { CommunityBadge } from "../../communities/_components/badge";
+import { ActivityGrid } from "@/components/profile/activity";
+import { Avatar } from "@/components/ui";
+import { requestTime } from "@/lib/forge";
+import { ProjectIcon } from "../../projects/project-card";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
@@ -93,14 +97,18 @@ async function ProfileView({ params }: { params: PageProps<"/u/[id]">["params"] 
 
   const name = `${p.first_name} ${p.last_name}`.trim();
   const joined = new Date(p.created_at).toLocaleDateString("en-US", { month: "long", year: "numeric" });
+  // Proof (what they've built) as tiles; their network as one line with real faces below.
   const stats: { n: number | null; label: string; href?: string }[] = [
-    ...(msOn ? [{ n: verifiedCount, label: "Verified", href: "#projects" }] : []),
+    ...(msOn ? [{ n: verifiedCount, label: "Club-verified", href: "#projects" }] : []),
     { n: projects.length, label: projects.length === 1 ? "Project" : "Projects", href: "#projects" },
     { n: posts.length, label: posts.length === 1 ? "Post" : "Posts", href: "#posts" },
-    { n: counts.connections, label: "Connections", href: own ? "/network?tab=connections" : undefined },
-    { n: counts.followers, label: "Followers", href: own ? "/network?tab=followers" : undefined },
-    { n: counts.following, label: "Following", href: own ? "/network?tab=following" : undefined },
   ];
+  const { data: followRows } = await supabase.from("follows").select("follower, follower_info").eq("target", id).order("created_at", { ascending: false }).limit(3);
+  const followers = ((followRows ?? []) as { follower: string; follower_info: { firstName?: string; lastName?: string } }[]).map((f) => ({ id: f.follower, first: f.follower_info?.firstName ?? "", last: f.follower_info?.lastName ?? "" }));
+  // Now building: their most recently updated public project that's still in progress.
+  const nowBuilding = projectRows.filter((x) => x.status === "in_progress" && (own || !x.private)).sort((a, b) => Date.parse(b.updated_at) - Date.parse(a.updated_at))[0];
+  // Skills from their work: the tools across their projects, most used first.
+  const skills = [...projectRows.flatMap((x) => (x as { tools?: string[] }).tools ?? []).reduce((m, t) => m.set(t, (m.get(t) ?? 0) + 1), new Map<string, number>())].sort((a, b) => b[1] - a[1]).slice(0, 10);
 
   return (
     <>
@@ -109,7 +117,7 @@ async function ProfileView({ params }: { params: PageProps<"/u/[id]">["params"] 
         <div className="px-6 pb-6">
           <div className="pointer-events-none relative z-10 -mt-14 flex flex-wrap items-end justify-between gap-4 *:pointer-events-auto">
             <div className="inline-flex rounded-full bg-accent-grad p-[3px] shadow-[var(--shadow)]">
-              <WithPresence id={p.id} dot="size-5 ring-4"><ProfilePhoto path={p.avatar_path} first={p.first_name} last={p.last_name} editable={own && mediaOn} userId={user.id} size={104} /></WithPresence>
+              <WithPresence id={p.id} dot="size-5 ring-4 top-[4%] bottom-auto"><ProfilePhoto path={p.avatar_path} first={p.first_name} last={p.last_name} editable={own && mediaOn} userId={user.id} size={104} /></WithPresence>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <CopyLink path={`/u/${p.id}`} label="Share" />
@@ -129,7 +137,7 @@ async function ProfileView({ params }: { params: PageProps<"/u/[id]">["params"] 
             {p.field && ` · ${p.field}`} · Joined {joined}
           </p>
 
-          <ul className={`mt-5 grid grid-cols-3 gap-2 ${msOn ? "sm:grid-cols-6" : "sm:grid-cols-5"}`}>
+          <ul className="mt-5 grid grid-cols-3 gap-2 sm:max-w-md">
             {stats.map((st) => {
               const inner = (
                 <>
@@ -149,6 +157,18 @@ async function ProfileView({ params }: { params: PageProps<"/u/[id]">["params"] 
               );
             })}
           </ul>
+          <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-muted">
+            {followers.length > 0 && (
+              <span className="inline-flex items-center gap-2">
+                <span className="flex -space-x-1.5">{followers.map((f) => <Avatar key={f.id} first={f.first} last={f.last} size={24} className="border-2 border-surface text-[9px]" />)}</span>
+                <span>Followed by <span className="text-text-2">{followers.slice(0, 2).map((f) => f.first).filter(Boolean).join(", ") || "members"}</span>{(counts.followers ?? 0) > 2 ? ` and ${(counts.followers ?? 0) - 2} others` : ""}</span>
+              </span>
+            )}
+            {[["connections", counts.connections, "connection", "connections"], ["followers", counts.followers, "follower", "followers"], ["following", counts.following, "following", "following"]].map(([tab, n, one, many]) => {
+              const text = <><b className="font-semibold text-text tabular-nums">{n ?? "—"}</b> {n === 1 ? one : many}</>;
+              return own ? <Link key={tab as string} href={`/network?tab=${tab}`} className="hover:text-text hover:underline">{text}</Link> : <span key={tab as string}>{text}</span>;
+            })}
+          </div>
 
           {(verifiedBy.length > 0 || clubs.length > 0) && (
             <div className="mt-5 flex flex-col gap-3">
@@ -186,6 +206,32 @@ async function ProfileView({ params }: { params: PageProps<"/u/[id]">["params"] 
           )}
         </div>
       </Panel>
+
+      {(nowBuilding || skills.length > 0 || posts.length > 0) && (
+        <div className="mt-6 grid gap-4 lg:grid-cols-2">
+          {nowBuilding && (
+            <Link href={`/projects/${nowBuilding.id}`} className="glass-card group flex flex-col rounded-3xl p-5 transition hover:-translate-y-0.5">
+              <span className="flex items-center gap-2 text-xs font-medium tracking-wide text-faint uppercase"><span className="size-1.5 animate-pulse rounded-full bg-text" /> Now building</span>
+              <span className="mt-3 flex items-start gap-3">
+                <span className="nav-tile grid size-10 shrink-0 place-items-center rounded-xl text-text-2"><ProjectIcon tools={(nowBuilding as { tools?: string[] }).tools} className="size-5" /></span>
+                <span className="min-w-0"><span className="block text-lg font-semibold tracking-tight group-hover:underline">{nowBuilding.title}</span><span className="mt-0.5 line-clamp-2 block text-sm text-text-2">{nowBuilding.summary}</span></span>
+              </span>
+            </Link>
+          )}
+          <Panel className="flex flex-col gap-4">
+            {skills.length > 0 && (
+              <div>
+                <h2 className="text-xs font-medium tracking-wide text-faint uppercase">Skills from {own ? "your" : "their"} work</h2>
+                <div className="mt-2 flex flex-wrap gap-1.5">{skills.map(([t, n]) => <Link key={t} href={`/projects?tool=${encodeURIComponent(t)}`} className="rounded-md bg-surface-2 px-2 py-0.5 font-mono text-[11px] text-text-2 transition hover:text-text">{t}{n > 1 && <span className="text-faint"> ×{n}</span>}</Link>)}</div>
+              </div>
+            )}
+            <div>
+              <h2 className="mb-2 text-xs font-medium tracking-wide text-faint uppercase">Activity</h2>
+              <ActivityGrid dates={posts.map((x) => x.created_at)} now={requestTime()} />
+            </div>
+          </Panel>
+        </div>
+      )}
 
       <section id="projects" data-tour="projects-tab" className="mt-8 scroll-mt-24">
         <SwitchTabs

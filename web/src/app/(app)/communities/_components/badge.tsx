@@ -1,4 +1,7 @@
+import Image from "next/image";
 import { cn } from "@/lib/forge";
+import { mediaUrl } from "@/lib/media";
+import { accentOf } from "@/lib/club-look";
 import { ROLE_LABEL, cInitials, rank, type Role } from "@/lib/communities";
 
 // Monochrome stand-in for the vanilla app's tinted badges: the same community always gets the same tone.
@@ -14,12 +17,17 @@ function tone(id: string) {
   return TONES[h % TONES.length];
 }
 
-export function CommunityBadge({ id, name, size = 48, className }: { id: string; name: string; size?: number; className?: string }) {
+// A club's badge: its logo when it has one (supabase/club-profile.sql), else its initials in its accent
+// colour, else in a tone picked from its id.
+export function CommunityBadge({ id, name, size = 48, className, logo, accent }: { id: string; name: string; size?: number; className?: string; logo?: string | null; accent?: string | null }) {
+  const radius = Math.round(size * 0.3);
+  if (logo)
+    return <Image src={mediaUrl(logo)} alt="" width={size} height={size} aria-hidden="true" className={cn("shrink-0 bg-surface object-cover", className)} style={{ width: size, height: size, borderRadius: radius }} />;
   return (
     <span
       aria-hidden="true"
-      className={cn("inline-grid shrink-0 place-items-center font-semibold tracking-tight", tone(id), className)}
-      style={{ width: size, height: size, fontSize: Math.round(size / 2.8), borderRadius: Math.round(size * 0.3) }}
+      className={cn("inline-grid shrink-0 place-items-center font-semibold tracking-tight", accent ? accentOf(accent).badge : tone(id), className)}
+      style={{ width: size, height: size, fontSize: Math.round(size / 2.8), borderRadius: radius }}
     >
       {cInitials(name)}
     </span>

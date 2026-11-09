@@ -10,6 +10,7 @@ import { cn } from "@/lib/forge";
 import { mediaUrl } from "@/lib/media";
 import { CommunityBadge, MetaLine, RoleChip } from "./_components/badge";
 import { joinCommunity } from "./actions";
+import { accentTint } from "@/lib/club-look";
 import { MemberFaces, type Face } from "@/components/network/member-faces";
 
 // A club's pulse: a few faces, member ids for the live online count, and posts this week.
@@ -71,11 +72,11 @@ export function CommunityCard({ c, role, joinable, pulse }: { c: Community; role
   return (
     <article className="glass-card group relative flex h-full flex-col overflow-hidden rounded-3xl transition duration-300 hover:-translate-y-1">
       <div className="relative h-24 overflow-hidden border-b border-line">
-        {c.cover_path ? <Image src={mediaUrl(c.cover_path)} alt="" fill sizes="(min-width: 640px) 440px, 100vw" className="object-cover transition duration-500 group-hover:scale-105" /> : <div className="cover-empty absolute inset-0 transition duration-500 group-hover:scale-110" />}
+        {c.cover_path ? <Image src={mediaUrl(c.cover_path)} alt="" fill sizes="(min-width: 640px) 440px, 100vw" className="object-cover transition duration-500 group-hover:scale-105" /> : <div className="cover-empty absolute inset-0 transition duration-500 group-hover:scale-110" style={{ backgroundImage: accentTint(c.accent) }} />}
         {pulse && pulse.week > 0 && <span className="absolute top-2.5 right-2.5 inline-flex items-center gap-1 rounded-full bg-bg/75 px-2 py-0.5 text-[11px] font-medium text-text backdrop-blur"><Flame className="size-3 text-accent" /> {pulse.week} this week</span>}
       </div>
       <div className="flex flex-1 gap-4 p-5">
-        <CommunityBadge id={c.id} name={c.name} className="relative z-10 -mt-11 border-4 border-surface shadow-[var(--shadow)] transition duration-300 group-hover:-rotate-6" />
+        <CommunityBadge id={c.id} name={c.name} logo={c.logo_path} accent={c.accent} className="relative z-10 -mt-11 border-4 border-surface shadow-[var(--shadow)] transition duration-300 group-hover:-rotate-6" />
         <div className="flex min-w-0 flex-1 flex-col">
           <div className="flex items-center gap-2">
             {/* The title link stretches over the whole card; the Join button sits above it. */}
@@ -83,7 +84,7 @@ export function CommunityCard({ c, role, joinable, pulse }: { c: Community; role
             {role && role !== "member" && <RoleChip role={role} />}
           </div>
           <MetaLine parts={[membersLabel(c.member_count), PRIVACY_LABEL[c.privacy], c.field, TYPE_LABEL[c.type]]} />
-          <p className="mt-2 line-clamp-2 text-sm text-text-2">{c.about}</p>
+          <p className="mt-2 line-clamp-2 text-sm text-text-2">{c.tagline || c.about}</p>
           {(c.topics ?? []).length > 0 && (
             <div className="mt-3 flex flex-wrap gap-1">
               {c.topics.slice(0, 3).map((t) => <span key={t} className="rounded-full bg-surface-2 px-2 py-0.5 text-[11px] text-muted">#{t}</span>)}

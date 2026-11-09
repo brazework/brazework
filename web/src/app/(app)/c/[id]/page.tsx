@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { MessagesSquare, PartyPopper, Settings, UserPlus } from "lucide-react";
+import { Globe, MessagesSquare, PartyPopper, Settings, UserPlus } from "lucide-react";
+import { accentTint } from "@/lib/club-look";
 import { openClubChat } from "@/lib/chats";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -86,19 +87,21 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
           {c.cover_path ? (
             <Image src={mediaUrl(c.cover_path)} alt="" fill sizes="(min-width: 768px) 768px, 100vw" className="object-cover" priority />
           ) : (
-            <div className="cover-empty absolute inset-0" />
+            <div className="cover-empty absolute inset-0" style={{ backgroundImage: accentTint(c.accent) }} />
           )}
           <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/25 to-transparent" aria-hidden="true" />
         </div>
         <div className="p-6">
         <div className="flex flex-wrap items-start gap-4">
-          <CommunityBadge id={c.id} name={c.name} size={84} className="relative z-10 -mt-16 border-4 border-surface shadow-[var(--shadow)] transition duration-300 hover:-rotate-6 hover:scale-105" />
+          <CommunityBadge id={c.id} name={c.name} size={84} logo={c.logo_path} accent={c.accent} className="relative z-10 -mt-16 border-4 border-surface shadow-[var(--shadow)] transition duration-300 hover:-rotate-6 hover:scale-105" />
           <div className="min-w-0 flex-1">
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-3xl font-semibold tracking-tight">{c.name}</h1>
               {role && role !== "member" && <RoleChip role={role} />}
             </div>
+            {c.tagline && <p className="mt-0.5 text-[15px] text-text-2">{c.tagline}</p>}
             <MetaLine parts={[membersLabel(c.member_count), PRIVACY_LABEL[c.privacy], c.field, TYPE_LABEL[c.type]]} />
+            {c.website && /^https?:\/\/\S+$/i.test(c.website) && <a href={c.website} target="_blank" rel="noopener noreferrer nofollow" className="mt-1 inline-flex items-center gap-1 text-xs text-text-2 hover:text-text hover:underline"><Globe className="size-3.5" /> {c.website.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "")}</a>}
             <MemberFaces faces={faces} ids={members.map((m) => m.uid)} total={c.member_count} className="mt-3" />
           </div>
           <div className="flex flex-wrap items-center gap-2">

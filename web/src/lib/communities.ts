@@ -23,6 +23,11 @@ export type Community = {
   automod: AutoMod | null;
   created_at: string;
   cover_path?: string;
+  // supabase/club-profile.sql
+  logo_path?: string;
+  tagline?: string;
+  website?: string;
+  accent?: string;
 };
 
 export type Member = {
