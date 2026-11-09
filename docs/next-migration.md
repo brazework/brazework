@@ -52,6 +52,7 @@ The Vercel project lives in Ian's account, so these are his steps. It's already 
    9. `supabase/club-profile.sql`: a club's logo, tagline, website and accent colour
    10. `supabase/mentions.sql`: @mentions in posts (the people you tag get a notification)
    11. `supabase/copilot-chats.sql`: Ember chats members can come back to (private to each member, deleted after 180 days untouched) and answer ratings
+   12. `supabase/profile-extras.sql`: what members are open to (internships, research, co-founding…), their links and location
 2. **Vercel → Project → Settings → Environment Variables (Production):** these exact names must exist.
    - `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`. The old app also accepted `SUPABASE_URL` or a "publishable key", but the new app reads only these two names. If the project has them under other names, add these two with the same values, or the site loads but nobody can sign in.
    - `GITHUB_TOKEN` (optional): a GitHub token with no scopes. GitHub import works without it, but it raises GitHub's rate limit from 60 to 5,000 requests an hour.

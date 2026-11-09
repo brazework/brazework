@@ -115,18 +115,18 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
     emptyAction = <Link href="/communities" className="text-sm underline underline-offset-4">Discover clubs</Link>;
   }
 
-  // Proof: club-verified milestones (supabase/milestones.sql), in every tab but Latest's text-only
-  // filters. Private projects stay out (their rows don't come back to other members).
+  // Proof: club-verified milestones (supabase/milestones.sql), in every tab but Latest. Milestones
+  // on private projects stay out of the feed (the owner chose not to broadcast that project).
   if (proofOn && !tag && (kind === "" || kind === "result") && tab !== "latest") {
-    let q = supabase.from("milestones").select(`id, title, detail, reviewed_at, community_id, community_name, reviewer_name, owner_id, project:projects(id, title), owner:profiles!milestones_owner_id_fkey(id, first_name, last_name${mediaEnabled ? ", avatar_path" : ""})`).eq("status", "verified").order("reviewed_at", { ascending: false }).limit(12);
+    let q = supabase.from("milestones").select(`id, title, detail, reviewed_at, community_id, community_name, reviewer_name, owner_id, project:projects(id, title, private), owner:profiles!milestones_owner_id_fkey(id, first_name, last_name${mediaEnabled ? ", avatar_path" : ""})`).eq("status", "verified").order("reviewed_at", { ascending: false }).limit(12);
     if (tab === "communities") q = cids.length ? q.in("community_id", cids) : q.eq("community_id", "none");
     if (tab === "following") q = people.length ? q.in("owner_id", people.slice(0, 300)) : q.eq("owner_id", user.id);
     const { data } = await q;
-    type M = { id: string; title: string; detail: string; reviewed_at: string | null; community_id: string; community_name: string; reviewer_name: string; owner_id: string; project: { id: string; title: string } | null; owner: { id: string; first_name: string; last_name: string; avatar_path?: string | null } | null };
+    type M = { id: string; title: string; detail: string; reviewed_at: string | null; community_id: string; community_name: string; reviewer_name: string; owner_id: string; project: { id: string; title: string; private: boolean } | null; owner: { id: string; first_name: string; last_name: string; avatar_path?: string | null } | null };
     const mineClubs = new Set(cids);
-    const proofs: Item[] = ((data ?? []) as unknown as M[]).filter((m) => m.project && m.owner && m.reviewed_at).map((m) => ({
+    const proofs: Item[] = ((data ?? []) as unknown as M[]).filter((m) => m.project && !m.project.private && m.owner && m.reviewed_at).map((m) => ({
       type: "proof",
-      proof: { id: m.id, title: m.title, detail: m.detail, reviewed_at: m.reviewed_at!, community_id: m.community_id, community_name: m.community_name, reviewer_name: m.reviewer_name, project: m.project!, owner: { id: m.owner!.id, first: m.owner!.first_name, last: m.owner!.last_name, avatar: avatarSrc(m.owner) } },
+      proof: { id: m.id, title: m.title, detail: m.detail, reviewed_at: m.reviewed_at!, community_id: m.community_id, community_name: m.community_name, reviewer_name: m.reviewer_name, project: { id: m.project!.id, title: m.project!.title }, owner: { id: m.owner!.id, first: m.owner!.first_name, last: m.owner!.last_name, avatar: avatarSrc(m.owner) } },
       reason: tab === "for-you" ? (mineClubs.has(m.community_id) ? `From your club ${m.community_name}` : "Club-verified work") : "",
       at: Date.parse(m.reviewed_at!),
       score: scoreProof(m.reviewed_at!, mineClubs.has(m.community_id), now),

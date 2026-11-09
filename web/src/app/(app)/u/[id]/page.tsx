@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
-import { BadgeCheck, BarChart3, FolderGit2, Lock, MessageSquare } from "lucide-react";
+import { BadgeCheck, BarChart3, FileText, FolderGit2, Lock, MapPin, MessageSquare } from "lucide-react";
 import { CommunityBadge } from "../../communities/_components/badge";
 import { ActivityGrid } from "@/components/profile/activity";
-import { Avatar } from "@/components/ui";
 import { requestTime } from "@/lib/forge";
 import { ProjectIcon } from "../../projects/project-card";
 import Link from "next/link";
@@ -11,6 +10,10 @@ import { Suspense } from "react";
 import { CopyLink } from "@/components/app/copy-link";
 import { CountUp } from "@/components/app/count-up";
 import { EmptyState, Panel, Skeleton } from "@/components/app/page-ui";
+import { MemberFaces } from "@/components/network/member-faces";
+import { openToLabel, type ProfileLink } from "@/lib/profile-meta";
+import { ExtrasCard } from "./extras-client";
+import { ProfileStrength, ProofTimeline, SharedContext, SideCard, type ProofItem, type Step } from "./profile-parts";
 import { SwitchTabs } from "@/components/app/switch-tabs";
 import { ConnectButtons } from "@/components/network/connect-buttons";
 import { getNetworkCounts, getRelationship } from "@/components/network/queries";
@@ -31,7 +34,7 @@ export const metadata: Metadata = { title: "Profile" };
 
 export default function ProfilePage({ params }: PageProps<"/u/[id]">) {
   return (
-    <div className="mx-auto max-w-3xl xl:max-w-5xl">
+    <div className="mx-auto max-w-3xl lg:max-w-6xl">
       <Suspense fallback={<ProfileSkeleton />}>
         <ProfileView params={params} />
       </Suspense>
@@ -39,79 +42,91 @@ export default function ProfilePage({ params }: PageProps<"/u/[id]">) {
   );
 }
 
+type ClubRow = { role: string; communities: (Club & { logo_path?: string; accent?: string }) | null };
+
 async function ProfileView({ params }: { params: PageProps<"/u/[id]">["params"] }) {
   const { id } = await params;
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
   const { supabase, user } = await getViewer();
   if (!user) redirect("/login");
   const own = user.id === id;
+  const f = await dbFeatures();
+  const { milestones: msOn, projectTools: stackOn, profileExtras: extrasOn } = f;
+  const clubCols = `id, name${f.clubProfile ? ", logo_path, accent" : ""}`;
 
-  // Photo and cover paths exist once supabase/media.sql has run.
-  const base = "id, first_name, last_name, account_type, headline, bio, field, interests, onboarded, created_at";
-  let pr = await supabase.from("profiles").select(`${base}, avatar_path, cover_path`).eq("id", id).maybeSingle();
-  if (pr.error?.code === "42703") pr = await supabase.from("profiles").select(base).eq("id", id).maybeSingle();
-  const profileRow = pr.data;
-  const mediaOn = !pr.error && pr.data ? "avatar_path" in pr.data : false;
-  if (!profileRow) notFound();
-  const p = profileRow as unknown as Profile;
-
-  const [rel, counts, postsRes, projectsRes] = await Promise.all([
+  // Everything that only needs the profile's id, at once (one round of requests, not seven).
+  const [pr, rel, counts, postsRes, projectsRes, msRes, theirClubs, followRows, myClubRows, myFollows, , copilotOn] = await Promise.all([
+    supabase.from("profiles").select(`id, first_name, last_name, account_type, headline, bio, field, interests, onboarded, created_at${f.media ? ", avatar_path, cover_path" : ""}${extrasOn ? ", open_to, links, location" : ""}`).eq("id", id).maybeSingle(),
     own ? Promise.resolve(null) : getRelationship(id),
     getNetworkCounts(id),
-    supabase
-      .from("posts")
-      .select(await postSelect())
-      .eq("author_id", id)
-      .is("community_id", null)
-      .order("created_at", { ascending: false })
-      .limit(50),
-    supabase.from("projects").select((await dbFeatures()).projectTools ? "id, title, summary, status, year, tags, private, updated_at, tools" : "id, title, summary, status, year, tags, private, updated_at").eq("owner_id", id).order("created_at", { ascending: false }).limit(100),
+    supabase.from("posts").select(await postSelect()).eq("author_id", id).is("community_id", null).order("created_at", { ascending: false }).limit(50),
+    supabase.from("projects").select(stackOn ? "id, title, summary, status, year, tags, private, updated_at, tools" : "id, title, summary, status, year, tags, private, updated_at").eq("owner_id", id).order("created_at", { ascending: false }).limit(100),
+    // Milestones (supabase/milestones.sql): others only get verified ones back, the owner gets all of theirs.
+    msOn ? supabase.from("milestones").select("id, project_id, community_id, community_name, title, detail, evidence, achieved_on, status, reviewer_name, review_note").eq("owner_id", id).order("achieved_on", { ascending: false }).limit(300) : Promise.resolve({ data: [] }),
+    supabase.from("community_members").select(`role, communities(${clubCols})`).eq("uid", id).limit(12),
+    supabase.from("follows").select("follower, follower_info").eq("target", id).order("created_at", { ascending: false }).limit(5),
+    supabase.from("community_members").select("communities(id, name)").eq("uid", user.id).limit(50),
+    own ? Promise.resolve({ data: [] }) : supabase.from("follows").select("target").eq("follower", user.id).limit(500),
+    own ? Promise.resolve() : recordProfileView(id),
+    own ? copilotEnabled() : Promise.resolve(false),
   ]);
-  if (!own) await recordProfileView(id);
-  const copilotOn = own && (await copilotEnabled());
+  if (!pr.data) notFound();
+  const p = pr.data as unknown as Profile & { open_to?: string[]; links?: ProfileLink[]; location?: string };
+  const mediaOn = f.media;
 
   const posts = (postsRes.data ?? []) as unknown as Post[];
-  const projectRows = (projectsRes.data ?? []) as unknown as Omit<ProjectView, "details" | "link">[];
-  const [likesRes, detailsRes] = await Promise.all([
+  const projectRows = (projectsRes.data ?? []) as unknown as (Omit<ProjectView, "details" | "link"> & { tools?: string[] })[];
+  const following = ((myFollows.data ?? []) as { target: string }[]).map((r) => r.target).filter((t) => t !== id);
+  // Second round: what depends on the first (your likes on these posts, project write-ups, mutual follows).
+  const [likesRes, detailsRes, mutualRes] = await Promise.all([
     posts.length ? supabase.from("likes").select("post_id").eq("user_id", user.id).in("post_id", posts.map((x) => x.id)) : Promise.resolve({ data: [] }),
     projectRows.length ? supabase.from("project_details").select("project_id, details, link").in("project_id", projectRows.map((x) => x.id)) : Promise.resolve({ data: [] }),
+    following.length ? supabase.from("follows").select("follower, follower_info", { count: "exact" }).eq("target", id).in("follower", following.slice(0, 300)).limit(2) : Promise.resolve({ data: [], count: 0 }),
   ]);
   const liked = new Set(((likesRes.data ?? []) as { post_id: string }[]).map((l) => l.post_id));
   const details = new Map(((detailsRes.data ?? []) as { project_id: string; details: string; link: string }[]).map((d) => [d.project_id, d]));
-  // This profile's own projects double as the boxes on its project posts.
   const byId = Object.fromEntries(projectRows.map((r) => [r.id, r]));
-  // Milestones (supabase/milestones.sql): others only get verified ones back, the owner gets all of theirs.
-  const { milestones: msOn, projectTools: stackOn } = await dbFeatures();
-  const [msRes, clubRes] = await Promise.all([
-    msOn ? supabase.from("milestones").select("id, project_id, community_id, community_name, title, detail, evidence, achieved_on, status, reviewer_name, review_note").eq("owner_id", id).order("achieved_on", { ascending: false }).limit(300) : Promise.resolve({ data: [] }),
-    msOn && own ? supabase.from("community_members").select("communities(id, name)").eq("uid", user.id).limit(50) : Promise.resolve({ data: [] }),
-  ]);
   const ms = (msRes.data ?? []) as Milestone[];
-  const myClubs: Club[] = ((clubRes.data ?? []) as unknown as { communities: Club | Club[] | null }[]).flatMap((r) => (Array.isArray(r.communities) ? r.communities : r.communities ? [r.communities] : []));
-  const verifiedCount = ms.filter((m) => m.status === "verified").length;
-  // The proof, up front: which clubs have verified this person's work, and the clubs they're in.
-  const verifiedBy = [...ms.filter((m) => m.status === "verified").reduce((acc, m) => acc.set(m.community_id, { name: m.community_name, n: (acc.get(m.community_id)?.n ?? 0) + 1 }), new Map<string, { name: string; n: number }>())].sort((a, b) => b[1].n - a[1].n);
-  const { data: clubRows } = await supabase.from("community_members").select("role, communities(id, name)").eq("uid", id).limit(12);
-  const clubs = ((clubRows ?? []) as unknown as { role: string; communities: Club | null }[]).filter((r) => r.communities).map((r) => ({ ...r.communities!, role: r.role }));
-  const projects: ProjectView[] = projectRows.map((r) => ({ ...r, details: details.get(r.id)?.details ?? null, link: details.get(r.id)?.link ?? null, milestones: msOn ? ms.filter((m) => m.project_id === r.id) : undefined }));
+  const flat = <T,>(rows: { communities: T | T[] | null }[]) => rows.flatMap((r) => (Array.isArray(r.communities) ? r.communities : r.communities ? [r.communities] : []));
+  const myClubs: Club[] = flat((myClubRows.data ?? []) as unknown as { communities: Club | Club[] | null }[]);
+  const clubs = ((theirClubs.data ?? []) as unknown as ClubRow[]).filter((r) => r.communities).map((r) => ({ ...r.communities!, role: r.role }));
+  const projects: ProjectView[] = projectRows.map((r) => ({ ...r, details: details.get(r.id)?.details ?? null, link: details.get(r.id)?.link ?? null, milestones: msOn && (own || !r.private) ? ms.filter((m) => m.project_id === r.id) : undefined }));
+  // Proof shows work on public projects (and your own private ones, to you), like the feed and résumé.
+  const titles = new Map(projectRows.filter((r) => own || !r.private).map((r) => [r.id, r.title]));
+  const proof: ProofItem[] = ms.filter((m) => m.status === "verified" && titles.has(m.project_id)).map((m) => ({ id: m.id, title: m.title, detail: m.detail, achieved_on: m.achieved_on, community_id: m.community_id, community_name: m.community_name, reviewer_name: m.reviewer_name, project: { id: m.project_id, title: titles.get(m.project_id)! } }));
+  const verifiedBy = [...proof.reduce((acc, m) => acc.set(m.community_id, { name: m.community_name, n: (acc.get(m.community_id)?.n ?? 0) + 1 }), new Map<string, { name: string; n: number }>())].sort((a, b) => b[1].n - a[1].n);
 
   const name = `${p.first_name} ${p.last_name}`.trim();
   const joined = new Date(p.created_at).toLocaleDateString("en-US", { month: "long", year: "numeric" });
-  // Proof (what they've built) as tiles; their network as one line with real faces below.
-  const stats: { n: number | null; label: string; href?: string }[] = [
-    ...(msOn ? [{ n: verifiedCount, label: "Club-verified", href: "#projects" }] : []),
+  const openTo = p.open_to ?? [];
+  const links = p.links ?? [];
+  const stats: { n: number; label: string; href: string }[] = [
+    ...(msOn ? [{ n: proof.length, label: "Club-verified", href: "#proof" }] : []),
     { n: projects.length, label: projects.length === 1 ? "Project" : "Projects", href: "#projects" },
     { n: posts.length, label: posts.length === 1 ? "Post" : "Posts", href: "#posts" },
   ];
-  const { data: followRows } = await supabase.from("follows").select("follower, follower_info").eq("target", id).order("created_at", { ascending: false }).limit(3);
-  const followers = ((followRows ?? []) as { follower: string; follower_info: { firstName?: string; lastName?: string } }[]).map((f) => ({ id: f.follower, first: f.follower_info?.firstName ?? "", last: f.follower_info?.lastName ?? "" }));
-  // Now building: their most recently updated public project that's still in progress.
+  const followers = ((followRows.data ?? []) as { follower: string; follower_info: { firstName?: string; lastName?: string } }[]).map((x) => ({ id: x.follower, first: x.follower_info?.firstName ?? "", last: x.follower_info?.lastName ?? "" }));
+  const mutual = ((mutualRes.data ?? []) as { follower_info: { firstName?: string; lastName?: string } }[]).map((x) => `${x.follower_info?.firstName ?? ""} ${x.follower_info?.lastName ?? ""}`.trim());
+  const mutualCount = (mutualRes as { count?: number | null }).count ?? mutual.length;
+  const sharedClubs = own ? [] : clubs.filter((c) => myClubs.some((m) => m.id === c.id));
+  // Now building: their most recently updated project that's still in progress (public, unless it's you).
   const nowBuilding = projectRows.filter((x) => x.status === "in_progress" && (own || !x.private)).sort((a, b) => Date.parse(b.updated_at) - Date.parse(a.updated_at))[0];
   // Skills from their work: the tools across their projects, most used first.
-  const skills = [...projectRows.flatMap((x) => (x as { tools?: string[] }).tools ?? []).reduce((m, t) => m.set(t, (m.get(t) ?? 0) + 1), new Map<string, number>())].sort((a, b) => b[1] - a[1]).slice(0, 10);
+  const skills = [...projectRows.flatMap((x) => x.tools ?? []).reduce((m, t) => m.set(t, (m.get(t) ?? 0) + 1), new Map<string, number>())].sort((a, b) => b[1] - a[1]).slice(0, 12);
+  const steps: Step[] = [
+    ...(mediaOn ? [{ done: !!p.avatar_path, label: "Add a profile photo", href: "#top" }] : []),
+    { done: !!p.headline, label: "Write a headline", href: "#about" },
+    { done: !!p.bio, label: "Add a short bio", href: "#about" },
+    { done: projects.length > 0, label: "Add a project", href: "#projects" },
+    ...(stackOn ? [{ done: projectRows.some((x) => (x.tools ?? []).length > 0), label: "Say what you built with", href: "#projects" }] : []),
+    ...(msOn ? [{ done: proof.length > 0, label: "Get a milestone verified", href: "#proof" }] : []),
+    ...(extrasOn ? [{ done: openTo.length > 0, label: "Say what you're open to", href: "#open-to" }, { done: links.length > 0, label: "Add your GitHub or a link", href: "#open-to" }] : []),
+    { done: clubs.length > 0, label: "Join a club", href: "/communities?tab=discover" },
+    { done: posts.length > 0, label: "Share your first post", href: "/feed#composer" },
+  ];
 
   return (
-    <>
+    <div id="top" className="scroll-mt-24">
       <Panel className="relative overflow-hidden p-0">
         <CoverBanner path={p.cover_path} editable={own && mediaOn} userId={user.id} />
         <div className="px-6 pb-6">
@@ -121,6 +136,7 @@ async function ProfileView({ params }: { params: PageProps<"/u/[id]">["params"] 
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <CopyLink path={`/u/${p.id}`} label="Share" />
+              <Link href={`/u/${p.id}/resume`} className="inline-flex h-10 items-center gap-1.5 rounded-full border border-line bg-surface px-4 text-sm transition hover:bg-hover active:scale-95"><FileText className="size-4" /> Résumé</Link>
               {own ? (
                 <Link href="/dashboard" data-tour="analytics" className="inline-flex h-10 items-center gap-1.5 rounded-full border border-line bg-surface px-4 text-sm transition hover:bg-hover active:scale-95">
                   <BarChart3 className="size-4" /> Dashboard
@@ -132,163 +148,139 @@ async function ProfileView({ params }: { params: PageProps<"/u/[id]">["params"] 
           </div>
           <div className="mt-4 flex flex-wrap items-center gap-3"><h1 className="text-3xl font-semibold tracking-tight">{name || "Forge member"}</h1><OnlineLabel id={p.id} /></div>
           {p.headline && <p className="mt-1 text-lg text-text-2">{p.headline}</p>}
-          <p className="mt-2 text-sm text-muted">
+          <p className="mt-2 flex flex-wrap items-center gap-x-1.5 text-sm text-muted">
             {p.account_type === "student" ? "Student" : "Professional"}
-            {p.field && ` · ${p.field}`} · Joined {joined}
+            {p.field && <> · {p.field}</>}
+            {p.location && <> · <MapPin className="size-3.5" /> {p.location}</>}
+            <> · Joined {joined}</>
           </p>
+          {openTo.length > 0 && (
+            <p className="mt-3 inline-flex flex-wrap items-center gap-1.5 rounded-full bg-[color-mix(in_oklab,var(--ok)_12%,transparent)] px-3 py-1 text-xs font-medium text-ok">
+              <span className="size-1.5 rounded-full bg-ok" /> Open to {openTo.map(openToLabel).join(", ").toLowerCase()}
+            </p>
+          )}
 
-          <ul className="mt-5 grid grid-cols-3 gap-2 sm:max-w-md">
-            {stats.map((st) => {
-              const inner = (
-                <>
-                  <span className="block text-2xl font-semibold tracking-tight">{st.n === null ? "—" : <CountUp to={st.n} />}</span>
-                  <span className="block text-xs text-muted">{st.label}</span>
-                </>
-              );
-              const cls = "block rounded-2xl border border-line bg-surface-2/60 px-3 py-3 text-center transition";
-              const lift = "hover:-translate-y-0.5 hover:border-line-strong hover:bg-surface hover:shadow-[var(--shadow)] active:scale-95";
-              return (
+          <div className="mt-5 flex flex-wrap items-end gap-x-8 gap-y-4">
+            <ul className="grid grid-cols-3 gap-2 sm:w-96">
+              {stats.map((st) => (
                 <li key={st.label}>
-                  {st.href ? (
-                    // In-page tabs (#projects) need a plain anchor so the hashchange reaches the tabs.
-                    st.href.startsWith("#") ? <a href={st.href} className={`${cls} ${lift}`}>{inner}</a> : <Link href={st.href} className={`${cls} ${lift}`}>{inner}</Link>
-                  ) : <div className={cls}>{inner}</div>}
+                  {/* In-page tabs (#projects) need a plain anchor so the hashchange reaches the tabs. */}
+                  <a href={st.href} className="block rounded-2xl border border-line bg-surface-2/60 px-3 py-3 text-center transition hover:-translate-y-0.5 hover:border-line-strong hover:bg-surface hover:shadow-[var(--shadow)] active:scale-95">
+                    <span className="block text-2xl font-semibold tracking-tight"><CountUp to={st.n} /></span>
+                    <span className="block text-xs text-muted">{st.label}</span>
+                  </a>
                 </li>
-              );
-            })}
-          </ul>
-          <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-muted">
-            {followers.length > 0 && (
-              <span className="inline-flex items-center gap-2">
-                <span className="flex -space-x-1.5">{followers.map((f) => <Avatar key={f.id} first={f.first} last={f.last} size={24} className="border-2 border-surface text-[9px]" />)}</span>
-                <span>Followed by <span className="text-text-2">{followers.slice(0, 2).map((f) => f.first).filter(Boolean).join(", ") || "members"}</span>{(counts.followers ?? 0) > 2 ? ` and ${(counts.followers ?? 0) - 2} others` : ""}</span>
-              </span>
+              ))}
+            </ul>
+            {verifiedBy.length > 0 && (
+              <div className="flex flex-wrap gap-1.5" aria-label="Work verified by clubs">
+                {verifiedBy.slice(0, 3).map(([cid, v]) => (
+                  <Link key={cid} href={`/c/${cid}`} className="inline-flex items-center gap-1.5 rounded-full bg-[color-mix(in_oklab,var(--ok)_12%,transparent)] px-3 py-1 text-xs font-medium text-ok transition hover:bg-[color-mix(in_oklab,var(--ok)_20%,transparent)]">
+                    <BadgeCheck className="size-3.5" /> {v.n} verified by {v.name}
+                  </Link>
+                ))}
+              </div>
             )}
-            {[["connections", counts.connections, "connection", "connections"], ["followers", counts.followers, "follower", "followers"], ["following", counts.following, "following", "following"]].map(([tab, n, one, many]) => {
-              const text = <><b className="font-semibold text-text tabular-nums">{n ?? "—"}</b> {n === 1 ? one : many}</>;
-              return own ? <Link key={tab as string} href={`/network?tab=${tab}`} className="hover:text-text hover:underline">{text}</Link> : <span key={tab as string}>{text}</span>;
-            })}
           </div>
 
-          {(verifiedBy.length > 0 || clubs.length > 0) && (
-            <div className="mt-5 flex flex-col gap-3">
-              {verifiedBy.length > 0 && (
-                <div className="flex flex-wrap gap-1.5" aria-label="Work verified by clubs">
-                  {verifiedBy.map(([cid, v]) => (
-                    <Link key={cid} href={`/c/${cid}`} className="inline-flex items-center gap-1.5 rounded-full bg-[color-mix(in_oklab,var(--ok)_12%,transparent)] px-3 py-1 text-xs font-medium text-ok transition hover:bg-[color-mix(in_oklab,var(--ok)_20%,transparent)]">
-                      <BadgeCheck className="size-3.5" /> {v.n} verified by {v.name}
-                    </Link>
-                  ))}
-                </div>
-              )}
-              {clubs.length > 0 && (
-                <div className="flex flex-wrap items-center gap-2" aria-label="Clubs">
-                  <span className="text-xs text-faint">Clubs</span>
-                  {clubs.map((c) => (
-                    <Link key={c.id} href={`/c/${c.id}`} className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface/70 py-0.5 pr-3 pl-0.5 text-xs text-text-2 transition hover:border-line-strong hover:text-text">
-                      <CommunityBadge id={c.id} name={c.name} size={22} className="rounded-full" /> {c.name}{c.role !== "member" && <span className="text-faint capitalize">· {c.role}</span>}
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {own ? (
-            <EditBasics headline={p.headline} bio={p.bio} />
-          ) : (
-            p.bio && <p className="mt-5 text-[15px] leading-relaxed whitespace-pre-wrap text-text-2">{p.bio}</p>
-          )}
-          {p.interests?.length > 0 && (
-            <div className="mt-5 flex flex-wrap gap-1.5">
-              {p.interests.map((t) => <Link key={t} href={`/feed?tab=latest&tag=${encodeURIComponent(t)}`} className="rounded-full border border-line bg-surface px-3 py-1 text-xs text-text-2 transition hover:border-transparent hover:bg-accent-grad hover:text-on-accent active:scale-95">#{t}</Link>)}
-            </div>
-          )}
+          <div id="about" className="scroll-mt-24">
+            {own ? <EditBasics headline={p.headline} bio={p.bio} /> : p.bio && <p className="mt-5 max-w-2xl text-[15px] leading-relaxed whitespace-pre-wrap text-text-2">{p.bio}</p>}
+          </div>
         </div>
       </Panel>
 
-      {(nowBuilding || skills.length > 0 || posts.length > 0) && (
-        <div className="mt-6 grid gap-4 lg:grid-cols-2">
+      <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
+        <div className="flex min-w-0 flex-col gap-6">
+          {own ? <ProfileStrength steps={steps} /> : <SharedContext clubs={sharedClubs} mutual={mutual} mutualCount={mutualCount} />}
           {nowBuilding && (
             <Link href={`/projects/${nowBuilding.id}`} className="glass-card group flex flex-col rounded-3xl p-5 transition hover:-translate-y-0.5">
               <span className="flex items-center gap-2 text-xs font-medium tracking-wide text-faint uppercase"><span className="size-1.5 animate-pulse rounded-full bg-text" /> Now building</span>
               <span className="mt-3 flex items-start gap-3">
-                <span className="nav-tile grid size-10 shrink-0 place-items-center rounded-xl text-text-2"><ProjectIcon tools={(nowBuilding as { tools?: string[] }).tools} className="size-5" /></span>
+                <span className="nav-tile grid size-10 shrink-0 place-items-center rounded-xl text-text-2"><ProjectIcon tools={nowBuilding.tools} className="size-5" /></span>
                 <span className="min-w-0"><span className="block text-lg font-semibold tracking-tight group-hover:underline">{nowBuilding.title}</span><span className="mt-0.5 line-clamp-2 block text-sm text-text-2">{nowBuilding.summary}</span></span>
               </span>
             </Link>
           )}
-          <Panel className="flex flex-col gap-4">
-            {skills.length > 0 && (
-              <div>
-                <h2 className="text-xs font-medium tracking-wide text-faint uppercase">Skills from {own ? "your" : "their"} work</h2>
-                <div className="mt-2 flex flex-wrap gap-1.5">{skills.map(([t, n]) => <Link key={t} href={`/projects?tool=${encodeURIComponent(t)}`} className="rounded-md bg-surface-2 px-2 py-0.5 font-mono text-[11px] text-text-2 transition hover:text-text">{t}{n > 1 && <span className="text-faint"> ×{n}</span>}</Link>)}</div>
-              </div>
-            )}
-            <div>
-              <h2 className="mb-2 text-xs font-medium tracking-wide text-faint uppercase">Activity</h2>
-              <ActivityGrid dates={posts.map((x) => x.created_at)} now={requestTime()} />
-            </div>
-          </Panel>
-        </div>
-      )}
+          {msOn && <div id="proof" className="scroll-mt-24"><ProofTimeline items={proof} own={own} /></div>}
 
-      <section id="projects" data-tour="projects-tab" className="mt-8 scroll-mt-24">
-        <SwitchTabs
-          name="Profile"
-          items={[
-            {
-              id: "projects", label: "Projects", count: projects.length,
-              content: (
-                <>
-                  {own && <div className="mb-4 flex items-center justify-between gap-3 rounded-3xl border border-dashed border-line-strong bg-surface/60 p-4"><p className="text-sm text-muted">Show what you&apos;ve built: a summary everyone sees, and a write-up you can keep private.</p><ProjectEditor interests={p.interests ?? []} copilot={copilotOn} stack={stackOn} /></div>}
-                  <ProjectGrid projects={projects} own={own} interests={p.interests ?? []} copilot={copilotOn} clubs={msOn && own ? myClubs : undefined} stack={stackOn} />
-                  {!projects.length && (
-                    <EmptyState
-                      icon={<FolderGit2 className="size-6" />}
-                      title={own ? "Show what you've built" : "No projects yet"}
-                      body={own ? "Add a project with a summary, what you did and a link. Keep the write-up private and share only the card if you like." : undefined}
-                    />
-                  )}
-                  {projects.some((x) => x.private) && !own && (
-                    <p className="mt-3 flex items-center gap-1.5 text-xs text-faint"><Lock className="size-3" /> Private projects show their card only.</p>
-                  )}
-                </>
-              ),
-            },
-            {
-              id: "posts", label: "Posts", count: posts.length,
-              content: (
-                <div className="flex flex-col gap-4">
-                  {posts.map((post, i) => <PostCard key={post.id} post={post} liked={liked.has(post.id)} own={own} index={i} project={post.project_id ? byId[post.project_id] ?? null : null} />)}
-                  {!posts.length && <EmptyState icon={<MessageSquare className="size-6" />} title={own ? "You haven't posted yet" : "No posts yet"} body={own ? "Share an update, a question or a result from the feed." : undefined} action={own ? <Link href="/feed" className="text-sm underline underline-offset-4">Go to the feed</Link> : undefined} />}
-                </div>
-              ),
-            },
-            {
-              id: "about", label: "About",
-              content: (
-                <Panel className="p-6">
-                  <dl className="grid gap-5 sm:grid-cols-2">
-                    <div><dt className="text-xs font-medium text-faint">Role</dt><dd className="mt-1">{p.account_type === "student" ? "Student" : "Professional"}</dd></div>
-                    <div><dt className="text-xs font-medium text-faint">Field</dt><dd className="mt-1">{p.field || "—"}</dd></div>
-                    <div><dt className="text-xs font-medium text-faint">On Forge since</dt><dd className="mt-1">{joined}</dd></div>
-                    <div><dt className="text-xs font-medium text-faint">Interests</dt><dd className="mt-1">{p.interests?.length ? p.interests.map((t) => `#${t}`).join("  ") : "—"}</dd></div>
-                  </dl>
-                  {p.bio && <><div className="mt-6 text-xs font-medium text-faint">Bio</div><p className="mt-1 text-[15px] leading-relaxed whitespace-pre-wrap text-text-2">{p.bio}</p></>}
-                </Panel>
-              ),
-            },
-          ]}
-        />
-      </section>
+          <section id="projects" data-tour="projects-tab" className="scroll-mt-24">
+            <SwitchTabs
+              name="Profile"
+              items={[
+                {
+                  id: "projects", label: "Projects", count: projects.length,
+                  content: (
+                    <>
+                      {own && <div className="mb-4 flex items-center justify-between gap-3 rounded-3xl border border-dashed border-line-strong bg-surface/60 p-4"><p className="text-sm text-muted">Show what you&apos;ve built: a summary everyone sees, and a write-up you can keep private.</p><ProjectEditor interests={p.interests ?? []} copilot={copilotOn} stack={stackOn} /></div>}
+                      <ProjectGrid projects={projects} own={own} interests={p.interests ?? []} copilot={copilotOn} clubs={msOn && own ? myClubs : undefined} stack={stackOn} />
+                      {!projects.length && <EmptyState icon={<FolderGit2 className="size-6" />} title={own ? "Show what you've built" : "No projects yet"} body={own ? "Add a project with a summary, what you did and a link. Keep the write-up private and share only the card if you like." : undefined} />}
+                      {projects.some((x) => x.private) && !own && <p className="mt-3 flex items-center gap-1.5 text-xs text-faint"><Lock className="size-3" /> Private projects show their card only.</p>}
+                    </>
+                  ),
+                },
+                {
+                  id: "posts", label: "Posts", count: posts.length,
+                  content: (
+                    <div className="flex flex-col gap-4">
+                      {posts.map((post, i) => <PostCard key={post.id} post={post} liked={liked.has(post.id)} own={own} index={i} project={post.project_id ? byId[post.project_id] ?? null : null} />)}
+                      {!posts.length && <EmptyState icon={<MessageSquare className="size-6" />} title={own ? "You haven't posted yet" : "No posts yet"} body={own ? "Share an update, a question or a result from the feed." : undefined} action={own ? <Link href="/feed" className="text-sm underline underline-offset-4">Go to the feed</Link> : undefined} />}
+                    </div>
+                  ),
+                },
+              ]}
+            />
+          </section>
+        </div>
+
+        {/* The sidebar: who they are at a glance. Sticky on wide screens, after the work on phones. */}
+        <aside aria-label={`About ${p.first_name || "this member"}`} className="flex flex-col gap-4 lg:sticky lg:top-6 lg:self-start">
+          {extrasOn && <div id="open-to" className="scroll-mt-24"><ExtrasCard openTo={openTo} location={p.location ?? ""} links={links} own={own} /></div>}
+          {skills.length > 0 && (
+            <SideCard title={`Skills from ${own ? "your" : "their"} work`}>
+              <div className="flex flex-wrap gap-1.5">{skills.map(([t, n]) => <Link key={t} href={`/projects?tool=${encodeURIComponent(t)}`} className="rounded-md bg-surface-2 px-2 py-0.5 font-mono text-[11px] text-text-2 transition hover:text-text">{t}{n > 1 && <span className="text-faint"> ×{n}</span>}</Link>)}</div>
+            </SideCard>
+          )}
+          {clubs.length > 0 && (
+            <SideCard title="Clubs">
+              <ul className="space-y-1">
+                {clubs.map((c) => (
+                  <li key={c.id}>
+                    <Link href={`/c/${c.id}`} className="-mx-2 flex items-center gap-2.5 rounded-xl px-2 py-1.5 transition hover:bg-hover">
+                      <CommunityBadge id={c.id} name={c.name} size={28} logo={c.logo_path || null} accent={c.accent || null} />
+                      <span className="min-w-0 flex-1 truncate text-sm">{c.name}</span>
+                      {c.role !== "member" && <span className="text-[11px] text-faint capitalize">{c.role}</span>}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </SideCard>
+          )}
+          <SideCard title="Network">
+            {followers.length > 0 && <MemberFaces faces={followers.map((x) => ({ uid: x.id, first: x.first, last: x.last }))} ids={followers.map((x) => x.id)} total={counts.followers ?? followers.length} size={28} />}
+            <div className="mt-2 grid grid-cols-3 gap-2 text-center">
+              {([["followers", counts.followers, "Followers"], ["following", counts.following, "Following"], ["connections", counts.connections, "Connections"]] as const).map(([tab, n, label]) => {
+                const inner = <><span className="block text-lg font-semibold tabular-nums">{n ?? "—"}</span><span className="block text-[11px] text-muted">{label}</span></>;
+                return own ? <Link key={tab} href={`/network?tab=${tab}`} className="rounded-xl py-1.5 transition hover:bg-hover">{inner}</Link> : <div key={tab} className="py-1.5">{inner}</div>;
+              })}
+            </div>
+          </SideCard>
+          <SideCard title="Activity">
+            <ActivityGrid dates={posts.map((x) => x.created_at)} now={requestTime()} />
+          </SideCard>
+          {p.interests?.length > 0 && (
+            <SideCard title="Interests">
+              <div className="flex flex-wrap gap-1.5">{p.interests.map((t) => <Link key={t} href={`/feed?tab=latest&tag=${encodeURIComponent(t)}`} className="rounded-full border border-line bg-surface px-2.5 py-0.5 text-xs text-text-2 transition hover:border-transparent hover:bg-accent-grad hover:text-on-accent">#{t}</Link>)}</div>
+            </SideCard>
+          )}
+        </aside>
+      </div>
 
       <div className="mt-12">
         <Suspense fallback={<StripSkeleton w={200} h={250} />}>
           <PeopleStrip field={p.field} interests={p.interests ?? []} exclude={[p.id]} title={p.field ? `More builders in ${p.field}` : "More builders like this"} />
         </Suspense>
       </div>
-    </>
+    </div>
   );
 }
 

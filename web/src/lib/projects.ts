@@ -1,4 +1,5 @@
 "use server";
+import { OPEN_TO, cleanLinks, type ProfileLink } from "@/lib/profile-meta";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { ALL_TOPICS, friendlyError } from "@/lib/forge";
@@ -107,6 +108,22 @@ export async function updateProfileBasics(_: ProjectState, form: FormData): Prom
   if (error) return { ok: false, message: friendlyError(error) };
   revalidatePath(`/u/${user.id}`);
   revalidatePath("/feed");
+  return { ok: true, message: "Saved." };
+}
+
+// Open to, links and location (supabase/profile-extras.sql).
+export async function saveProfileExtras(_: ProjectState, form: FormData): Promise<ProjectState> {
+  if (!(await dbFeatures()).profileExtras) return { ok: false, message: "This isn't turned on yet." };
+  const openTo = form.getAll("openTo").map(String).filter((o) => OPEN_TO.some((x) => x.id === o)).slice(0, 4);
+  const location = String(form.get("location") ?? "").replace(/[<>]/g, "").trim().slice(0, 80);
+  let links: ProfileLink[] | null = null;
+  try { links = cleanLinks(JSON.parse(String(form.get("links") ?? "[]"))); } catch {}
+  if (!links) return { ok: false, message: "Links must start with https:// (up to five)." };
+  const { supabase, user } = await getViewer();
+  if (!user) return { ok: false, message: "Log in again." };
+  const { error } = await supabase.from("profiles").update({ open_to: openTo, location, links }).eq("id", user.id);
+  if (error) return { ok: false, message: friendlyError(error) };
+  revalidatePath(`/u/${user.id}`);
   return { ok: true, message: "Saved." };
 }
 

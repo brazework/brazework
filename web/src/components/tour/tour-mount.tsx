@@ -23,6 +23,14 @@ export function TourMount() {
   const [i, setI] = useState(0);
   const [box, setBox] = useState<Box | null>(null);
   const [name, setName] = useState("");
+  // A tour that starts on its own waits until you're on its first page (never pulls you off a
+  // link you opened), and it only changes pages when you press Next or Back.
+  const [pending, setPending] = useState<Run | null>(null);
+  const navFor = useRef<number | null>(null);
+  if (pending && !run && (!pending.steps[0]?.route || onRoute(pending.steps[0].route, pathname, search))) {
+    setRun(pending);
+    setPending(null);
+  }
 
   // Decide what to show once per session.
   useEffect(() => {
@@ -31,13 +39,13 @@ export function TourMount() {
       if (!alive || !s) return;
       setName(s.firstName);
       const seen = new Set(s.seen);
-      if (!seen.has(WELCOME)) setTimeout(() => setRun({ steps: welcomeSteps(s.firstName), keys: [WELCOME, ...UPDATES.map((u) => u.id)] }), 700);
+      if (!seen.has(WELCOME)) setTimeout(() => setPending({ steps: welcomeSteps(s.firstName), keys: [WELCOME, ...UPDATES.map((u) => u.id)] }), 700);
       else {
         const fresh = freshUpdates(seen, s.joinedAt);
-        if (fresh.length) setTimeout(() => setRun({ steps: whatsNewSteps(fresh), keys: fresh.map((u) => u.id) }), 700);
+        if (fresh.length) setTimeout(() => setPending({ steps: whatsNewSteps(fresh), keys: fresh.map((u) => u.id) }), 700);
       }
     });
-    const replay = () => { setI(0); setRun({ steps: welcomeSteps(name), keys: [WELCOME] }); };
+    const replay = () => { navFor.current = null; setI(0); setRun({ steps: welcomeSteps(name), keys: [WELCOME] }); };
     window.addEventListener("forge:tour", replay);
     return () => { alive = false; window.removeEventListener("forge:tour", replay); };
   }, [name]);
@@ -48,9 +56,17 @@ export function TourMount() {
   useEffect(() => {
     if (!step) return;
     if (step.route && !onRoute(step.route, pathname, search)) {
-      router.push(step.route === "/u/" ? "/profile" : step.route);
-      return;
+      if (navFor.current !== i) {
+        navFor.current = i;
+        router.push(step.route === "/u/" ? "/profile" : step.route);
+        return;
+      }
+      // You went somewhere else mid-tour: step aside (not marked seen, so it comes back next visit).
+      navFor.current = null;
+      const t = setTimeout(() => { setRun(null); setI(0); setBox(null); }, 0);
+      return () => clearTimeout(t);
     }
+    navFor.current = i;
     let tries = 0;
     let raf = 0;
     const find = () => {
@@ -66,10 +82,11 @@ export function TourMount() {
     };
     raf = requestAnimationFrame(find);
     return () => cancelAnimationFrame(raf);
-  }, [step, pathname, search, router]);
+  }, [step, i, pathname, search, router]);
 
   const close = useCallback(() => {
     if (run) void markToursSeen(run.keys);
+    navFor.current = null;
     setRun(null);
     setI(0);
     setBox(null);
