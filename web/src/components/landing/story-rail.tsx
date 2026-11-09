@@ -1,40 +1,34 @@
 "use client";
 import { useEffect, useState } from "react";
 
-// Phones: the landing page reads as a set of screens. A thin rail on the right shows where you
-// are (tap a mark to jump), and the section's name shows for a moment as each one arrives.
+// Phones: the landing page is a stack of full-screen pages. As each page lands, its content rises
+// in (data-in), and a thin segmented bar under the nav shows where you are.
 export function StoryRail() {
-  const [secs, setSecs] = useState<{ id: string; title: string }[]>([]);
+  const [count, setCount] = useState(0);
   const [at, setAt] = useState(0);
-  const [flash, setFlash] = useState(false);
   useEffect(() => {
-    const els = [...document.querySelectorAll<HTMLElement>("[data-story]")];
-    const list = els.map((e) => ({ id: e.id, title: e.dataset.story ?? "" }));
+    // Every story section is a page, except Founding clubs, whose pitch and form are a page each.
+    const pages = [...document.querySelectorAll<HTMLElement>("[data-story]")].flatMap((sec) => (sec.id === "founding" ? [...sec.querySelectorAll<HTMLElement>(":scope .grid.max-w-7xl > *")] : [sec]));
+    document.documentElement.classList.add("js-story");
     const io = new IntersectionObserver((entries) => {
-      for (const e of entries) if (e.isIntersecting) { setAt(els.indexOf(e.target as HTMLElement)); setFlash(true); }
-    }, { rootMargin: "-45% 0px -45% 0px" });
-    els.forEach((e) => io.observe(e));
-    const t = setTimeout(() => setSecs(list), 0);
-    return () => { io.disconnect(); clearTimeout(t); };
+      for (const e of entries) {
+        if (!e.isIntersecting) continue;
+        (e.target as HTMLElement).dataset.in = "";
+        setAt(pages.indexOf(e.target as HTMLElement));
+      }
+    }, { threshold: 0.55 });
+    pages.forEach((p) => io.observe(p));
+    const t = setTimeout(() => setCount(pages.length), 0);
+    return () => { io.disconnect(); clearTimeout(t); document.documentElement.classList.remove("js-story"); };
   }, []);
-  useEffect(() => {
-    if (!flash) return;
-    const t = setTimeout(() => setFlash(false), 1400);
-    return () => clearTimeout(t);
-  }, [flash, at]);
-  if (secs.length < 2) return null;
+  if (count < 2) return null;
   return (
-    <div className="md:hidden" aria-hidden="true">
-      <div className="fixed top-1/2 right-1.5 z-40 flex -translate-y-1/2 flex-col gap-1.5">
-        {secs.map((s, i) => (
-          <button key={s.id} type="button" tabIndex={-1} onClick={() => document.getElementById(s.id)?.scrollIntoView({ behavior: "smooth" })} className="grid h-5 w-4 place-items-center">
-            <span className={`block w-1 rounded-full transition-all duration-300 ${i === at ? "h-5 bg-text" : "h-1.5 bg-line-strong"}`} />
-          </button>
-        ))}
-      </div>
-      <div className={`glass pointer-events-none fixed bottom-[calc(env(safe-area-inset-bottom)+1rem)] left-1/2 z-40 -translate-x-1/2 rounded-full px-3.5 py-1.5 text-xs font-medium whitespace-nowrap transition duration-300 ${flash && at > 0 ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0"}`}>
-        <span className="text-faint tabular-nums">{at + 1}/{secs.length}</span> · {secs[at]?.title}
-      </div>
+    <div aria-hidden="true" className="pointer-events-none fixed inset-x-6 top-[calc(env(safe-area-inset-top)+4.6rem)] z-40 flex gap-1 md:hidden">
+      {Array.from({ length: count }, (_, i) => (
+        <span key={i} className="h-[3px] flex-1 overflow-hidden rounded-full bg-line">
+          <span className={`block h-full rounded-full bg-text transition-transform duration-500 ease-out ${i <= at ? "translate-x-0" : "-translate-x-full"}`} />
+        </span>
+      ))}
     </div>
   );
 }

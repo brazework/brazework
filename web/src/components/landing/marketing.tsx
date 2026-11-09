@@ -24,7 +24,7 @@ function Head({ eyebrow, title, accent, body, center }: { eyebrow: string; title
     <Reveal className={cn("max-w-3xl", center && "mx-auto text-center")}>
       <Eyebrow>{eyebrow}</Eyebrow>
       <h2 className={cn("mt-5", H2)}>{title}{accent && <> <span className="text-grad">{accent}</span></>}</h2>
-      {body && <p className="mt-5 text-lg leading-relaxed text-muted">{body}</p>}
+      {body && <p className="m-hide mt-5 text-lg leading-relaxed text-muted">{body}</p>}
     </Reveal>
   );
 }
@@ -35,7 +35,7 @@ const CLUB_TYPES = ["Formula SAE", "Rocketry clubs", "ASCE chapters", "IEEE bran
 export function ClubStrip() {
   const row = (k: string) => CLUB_TYPES.map((c) => <span key={k + c} className="mx-6 shrink-0 text-sm font-medium whitespace-nowrap text-faint">{c}</span>);
   return (
-    <div className="border-y border-line py-5">
+    <div className="m-hide border-y border-line py-5">
       <p className="sr-only">Built for clubs like: {CLUB_TYPES.join(", ")}.</p>
       <div className="relative overflow-hidden [mask-image:linear-gradient(90deg,transparent,#000_12%,#000_88%,transparent)]" aria-hidden="true">
         <div className="flex w-max animate-marquee hover:[animation-play-state:paused]">{row("a")}{row("b")}</div>

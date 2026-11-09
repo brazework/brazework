@@ -93,7 +93,7 @@ export function CopilotSection() {
           <div className="flex justify-center"><Ember size={72} mood="happy" /></div>
           <Eyebrow className="mt-4">Ember · Forge Copilot</Eyebrow>
           <h2 className={`mt-5 ${H2}`}>An AI teammate that <span className="text-grad">gets things done.</span></h2>
-          <p className="mt-5 text-lg leading-relaxed text-muted">Ember works inside Forge. Ask it to find your club, meet the right person, add your project or run your club&apos;s week. It checks real data first, then does the work as a card you approve. It never invents results.</p>
+          <p className="m-hide mt-5 text-lg leading-relaxed text-muted">Ember works inside Forge. Ask it to find your club, meet the right person, add your project or run your club&apos;s week. It checks real data first, then does the work as a card you approve. It never invents results.</p>
           <ul className="mt-8 flex flex-wrap justify-center gap-2" aria-label="What Ember can do">
             {CAN.map((c) => <li key={c.label} className="glass-card inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm text-text-2"><c.icon className="size-4 text-text" /> {c.label}</li>)}
           </ul>
