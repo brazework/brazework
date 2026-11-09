@@ -34,3 +34,19 @@ export function LocalTime(props: Props) {
   }
   return <time dateTime={iso} className={props.className}>{text}</time>;
 }
+
+// A calendar-style tile (month over day) in the viewer's time zone.
+export function DateTile({ value, className }: { value: string; className?: string }) {
+  const tz = useTimeZone();
+  const d = new Date(value);
+  const month = d.toLocaleString("en-US", { month: "short", timeZone: tz }).toUpperCase();
+  const day = d.toLocaleString("en-US", { day: "numeric", timeZone: tz });
+  const dow = d.toLocaleString("en-US", { weekday: "short", timeZone: tz });
+  return (
+    <div className={className} aria-hidden="true">
+      <span className="block bg-accent-grad py-1 text-[10px] font-semibold tracking-[0.14em] text-on-accent">{month}</span>
+      <span className="block pt-1 text-3xl leading-none font-semibold tracking-tight">{day}</span>
+      <span className="block pb-1.5 text-[11px] text-muted">{dow}</span>
+    </div>
+  );
+}

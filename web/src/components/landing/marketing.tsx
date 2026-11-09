@@ -3,6 +3,7 @@ import { cn } from "@/lib/forge";
 import { HowItWorks } from "./how-it-works";
 import { CountUp } from "./interactive";
 import { AudienceTabs, Faq } from "./marketing-client";
+import { MajorPicker } from "./major-picker";
 import { ProfessionGrid } from "./profession-grid";
 import { Reveal } from "./reveal";
 
@@ -49,7 +50,8 @@ export function Builders() {
     <section id="builders" data-story="Every field" className="story-sec scroll-mt-24 py-24 sm:py-32">
       <div className="mx-auto max-w-7xl px-6">
         <Head eyebrow="Every field in STEM" title="Engineering, science, math or code," accent="there's a place for what you build." body="Hover a field to watch its schematic draw. Tap to see what you'd post, which clubs it fits and who's looking." />
-        <div className="mt-12"><ProfessionGrid /></div>
+        <div className="mt-12 hidden md:block"><ProfessionGrid /></div>
+        <div className="mt-5 md:hidden"><MajorPicker /></div>
       </div>
     </section>
   );
@@ -66,7 +68,7 @@ export function Problem() {
     <section id="why" data-story="Why now" className="story-sec bg-surface-2/50 py-24 sm:py-32">
       <div className="mx-auto max-w-7xl px-6">
         <Head eyebrow="Why now" title="Hiring stopped trusting résumés." accent="Builders are paying for it." body="Anyone can generate a perfect résumé now. What still cuts through is real work that someone saw happen, and today that work is buried in Discord threads and group chats." />
-        <div className="m-swipe mt-12 grid gap-4 md:grid-cols-3">
+        <div className="m-cards mt-12 grid gap-4 md:grid-cols-3">
           {FACTS.map((f, i) => (
             <Reveal key={f.src} delay={i * 0.08} className="spotlight flex flex-col rounded-3xl border border-line bg-surface p-7">
               <div className="text-5xl font-semibold tracking-tight">{f.n}</div>
@@ -117,7 +119,7 @@ export function Features() {
     <section id="product" data-story="The product" className="story-sec scroll-mt-24 py-24 sm:py-32">
       <div className="mx-auto max-w-7xl px-6">
         <Head eyebrow="The product" title="Everything a club runs on." accent="Everything a member needs to get noticed." />
-        <div className="m-swipe mt-12 grid gap-4 md:grid-cols-3">
+        <div className="m-cards mt-12 grid gap-4 md:grid-cols-3">
           {FEATURES.map((f, i) => (
             <Reveal key={f.title} delay={(i % 3) * 0.06} className={cn("spotlight group rounded-3xl border border-line bg-surface p-7 transition hover:-translate-y-1 hover:shadow-[var(--shadow)]", f.span)}>
               <span className="grid size-11 place-items-center rounded-2xl bg-accent-grad text-on-accent transition duration-300 group-hover:scale-110"><f.icon className="size-5" /></span>
@@ -148,7 +150,7 @@ export function Mission() {
           {/* Draft copy: the founders should rewrite this in their own words. */}
           <p className="mt-6 text-lg leading-relaxed text-muted">Some of the most capable engineers and scientists get overlooked because their best work lives in club Discords and lab notebooks, while hiring runs on keywords. We&apos;re starting with clubs because that&apos;s where the building already happens.</p>
         </Reveal>
-        <div className="m-swipe grid gap-4 sm:grid-cols-2">
+        <div className="m-cards grid gap-4 sm:grid-cols-2">
           {GOALS.map(([t, b], i) => (
             <Reveal key={t} delay={i * 0.06} className="spotlight rounded-3xl border border-line bg-surface p-6">
               <div className="text-grad text-sm font-semibold">0{i + 1}</div>

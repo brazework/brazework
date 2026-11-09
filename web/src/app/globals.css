@@ -468,28 +468,40 @@ html { -webkit-tap-highlight-color: transparent; }
   #top .grid.max-w-7xl > :nth-child(2) { display: none; }
   #top p { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; font-size: 1.02rem; }
   #top .mt-8 { margin-top: 1.25rem; }
-  /* Swipe rows: the next card peeks, cards stay short. */
-  .m-swipe {
-    display: flex !important; overflow-x: auto; scroll-snap-type: x mandatory; gap: 12px;
-    margin-inline: -24px; padding-inline: 24px; scroll-padding-inline: 24px;
-    scrollbar-width: none; overscroll-behavior-x: contain; margin-top: 1.75rem !important;
-  }
-  .m-swipe::-webkit-scrollbar, #how ol::-webkit-scrollbar, #copilot ul::-webkit-scrollbar { display: none; }
-  .m-swipe > * { flex: 0 0 82%; scroll-snap-align: start; min-width: 0; }
-  #builders .m-swipe svg { max-height: 88px; }
-  #builders .m-swipe > * p { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
-  /* How it works: the steps become a swipe row; the animated demo is for bigger screens. */
+  /* No sideways scrolling anywhere. The hero's field picker hides (the majors page right after does it
+     better); the audience tabs wrap. */
+  #top div:has(> [role="tablist"][aria-label="Professions"]) { display: none; }
+  #who .no-scrollbar { flex-wrap: wrap; overflow: visible; margin-inline: 0; padding-inline: 0; }
+  #who .no-scrollbar [role="tab"] { padding: 6px 10px; font-size: 0.78rem; gap: 4px; }
+  #who .no-scrollbar [role="tab"] svg { display: none; }
+  /* No sideways scrolling: card grids become compact stacks or two-column tiles that fit. */
+  .m-cards { margin-top: 1.25rem !important; gap: 10px !important; }
+  #why .m-cards { grid-template-columns: 1fr; }
+  #why .m-cards > * { flex-direction: row; align-items: center; gap: 14px; padding: 14px 16px; }
+  #why .m-cards > * > div:first-child { min-width: 4.6rem; font-size: 2rem; }
+  #why .m-cards p { margin-top: 0; font-size: 0.85rem; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  #why .m-cards a { display: none; }
+  #product .m-cards { grid-template-columns: 1fr 1fr 1fr; }
+  #mission .m-cards { grid-template-columns: 1fr 1fr; }
+  #product .m-cards > * { padding: 12px !important; }
+  #product .m-cards h3 { font-size: 0.8rem !important; }
+  #product .m-cards > *, #mission .m-cards > * { padding: 14px; grid-column: auto !important; }
+  #product .m-cards p, #mission .m-cards p { display: none; }
+  #product .m-cards h3, #mission .m-cards h3 { margin-top: 0.6rem; font-size: 0.92rem; line-height: 1.25; }
+  #product .m-cards > * > span:first-child { width: 2.25rem; height: 2.25rem; }
+  /* How it works: every step listed; only the active one (it advances on its own) shows its line. */
   #how [aria-live="polite"] { display: none; }
-  #how ol { flex-direction: row !important; overflow-x: auto; scroll-snap-type: x mandatory; gap: 12px; margin-inline: -24px; padding-inline: 24px; scroll-padding-inline: 24px; scrollbar-width: none; margin-top: 1.75rem; }
-  #how ol > li { flex: 0 0 82%; scroll-snap-align: start; }
+  #how ol { margin-top: 1.25rem; gap: 6px; }
+  #how ol button { padding: 12px 14px; }
+  #how ol button:not([aria-pressed="true"]) p { display: none; }
+  #how ol h3 { font-size: 1rem; }
   /* Ember: orb, title, one row of what it does, then the steps to swipe. */
   #copilot ul[aria-label="What Ember can do"] { flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; margin-inline: -24px; padding-inline: 24px; scrollbar-width: none; margin-top: 1.25rem; }
   #copilot ul[aria-label="What Ember can do"] > li { flex: none; }
   #mission p { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
   /* Every page has to fit Safari's visible height (about 660px on a Pro with the toolbars showing):
      WebKit won't scroll inside a snap page that's taller, it snaps back to its top. */
-  .m-swipe > * p { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
-  #who li:nth-child(n+3) { display: none; }
+  #who li:nth-child(n+2) { display: none; }
   #founding .mt-10.space-y-3 { display: none; }
   #founding form { gap: 0.8rem; }
   #founding form h3 + p { display: none; }
@@ -513,7 +525,7 @@ html { -webkit-tap-highlight-color: transparent; }
   .story-sec h2.mt-5, .story-sec .mt-5 { margin-top: 0.75rem; }
   #top h1 { font-size: 2.35rem; margin-top: 1rem; }
   #top p { -webkit-line-clamp: 2; }
-  .m-swipe, #how ol { margin-top: 1rem !important; }
+  .m-cards, #how ol { margin-top: 1rem !important; }
   #who p, #faq p { font-size: 0.9rem; }
   #founding form .mt-5, #founding form .gap-4 { margin-top: 0.5rem; gap: 0.6rem; }
 }

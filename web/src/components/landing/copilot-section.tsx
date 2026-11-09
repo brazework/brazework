@@ -99,7 +99,7 @@ export function CopilotSection() {
           </ul>
         </div>
 
-        <ol className="m-swipe mx-auto mt-12 grid max-w-5xl gap-3 sm:grid-cols-3">
+        <ol className="m-cards mx-auto mt-12 grid max-w-5xl gap-3 sm:grid-cols-3">
           {HOW.map((h, i) => (
             <li key={h.title} className="glass-card relative rounded-3xl p-5">
               <span className="absolute top-5 right-5 font-mono text-xs text-faint">0{i + 1}</span>
