@@ -25,6 +25,7 @@ targets:
     platform: iOS
     sources:
       - path: Forge
+      - path: ForgeKit/Sources/ForgeKit
     info:
       path: Forge/Resources/Info.plist
       properties:
@@ -48,15 +49,6 @@ targets:
     dependencies:
       - package: Supabase
         product: Supabase
-  ForgeTests:
-    type: bundle.unit-test
-    platform: iOS
-    sources: [ForgeTests]
-    dependencies:
-      - target: Forge
-    settings:
-      base:
-        GENERATE_INFOPLIST_FILE: YES
   ForgeUITests:
     type: bundle.ui-testing
     platform: iOS
@@ -72,7 +64,6 @@ schemes:
     build:
       targets:
         Forge: all
-        ForgeTests: [test]
         ForgeUITests: [test]
     test:
-      targets: [ForgeTests, ForgeUITests]
+      targets: [ForgeUITests]

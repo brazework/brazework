@@ -24,7 +24,7 @@ struct MeView: View {
                   HStack(spacing: 6) { ForEach(me.interests.prefix(12), id: \.self) { Chip(text: $0) } }
                 }
               }
-              Button("View your profile") { openURL(Env.web("u/\(me.id.uuidString.lowercased())")) }
+              NavigationLink("View your profile", value: PersonRoute(id: me.id))
                 .font(.subheadline.weight(.semibold))
             }
             .padding(.vertical, 6)
@@ -71,6 +71,9 @@ struct MeView: View {
       .scrollContentBackground(.hidden)
       .background(p.bg)
       .navigationTitle("You")
+      .navigationDestination(for: PersonRoute.self) { ProfileView(id: $0.id) }
+      .navigationDestination(for: Post.self) { PostLoader(id: $0.id) }
+      .navigationDestination(for: InboxItem.self) { ThreadView(item: $0) }
     }
   }
 

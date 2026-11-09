@@ -1,0 +1,136 @@
+import Foundation
+import Supabase
+
+// Every read and write the app makes, in one place: the views call these, and ForgeKitTests run
+// them against the local test stack. Same tables and rules as the web app (row-level security
+// decides what each member can see and do).
+enum API {
+  private struct PostRow: Encodable { let body: String; let kind: String; let tags: [String] }
+  private struct CommentRow: Encodable { let postId: String; let body: String }
+  private struct PostRef: Encodable { let postId: String }
+  private struct MessageRow: Encodable { let conversationId: String; let body: String }
+  private struct JoinRow: Encodable { let communityId: String; let uid: UUID; let role: String }
+  private struct ClubRef: Encodable { let communityId: String }
+  private struct EventRef: Encodable { let eventId: String }
+  private struct FollowRow: Encodable { let target: UUID }
+  private struct Role: Decodable { let role: String }
+  private struct Membership: Decodable { let communities: Club? }
+
+  // MARK: Posts
+  static func createPost(body: String, kind: String) async throws {
+    try await supabase.from("posts").insert(PostRow(body: body, kind: kind, tags: [])).execute()
+  }
+  static func setLike(_ postId: String, _ on: Bool, me: UUID) async throws {
+    do {
+      if on { try await supabase.from("likes").insert(PostRef(postId: postId)).execute() }
+      else { try await supabase.from("likes").delete().eq("post_id", value: postId).eq("user_id", value: me).execute() }
+    } catch where "\(error)".contains("23505") {} // already liked (another device): fine
+  }
+  static func setSaved(_ postId: String, _ on: Bool, me: UUID) async throws {
+    do {
+      if on { try await supabase.from("saved").insert(PostRef(postId: postId)).execute() }
+      else { try await supabase.from("saved").delete().eq("post_id", value: postId).eq("user_id", value: me).execute() }
+    } catch where "\(error)".contains("23505") {}
+  }
+  static func comments(_ postId: String) async throws -> [Comment] {
+    try await supabase.from("comments").select().eq("post_id", value: postId).order("created_at").limit(200).execute().value
+  }
+  static func addComment(_ postId: String, body: String) async throws {
+    try await supabase.from("comments").insert(CommentRow(postId: postId, body: body)).execute()
+  }
+  static func post(_ id: String) async throws -> Post {
+    try await supabase.from("posts").select().eq("id", value: id).single().execute().value
+  }
+  static func posts(by author: UUID, limit: Int = 20) async throws -> [Post] {
+    try await supabase.from("posts").select().eq("author_id", value: author).order("created_at", ascending: false).limit(limit).execute().value
+  }
+  static func clubPosts(_ clubId: String) async throws -> [Post] {
+    try await supabase.from("posts").select().eq("community_id", value: clubId).eq("status", value: "visible").order("created_at", ascending: false).limit(30).execute().value
+  }
+
+  // MARK: People
+  static func profile(_ id: UUID) async throws -> Profile {
+    try await supabase.from("profiles").select(Session.profileColumns).eq("id", value: id).single().execute().value
+  }
+  static func isFollowing(_ id: UUID, me: UUID) async -> Bool {
+    let n = try? await supabase.from("follows").select("target", head: true, count: .exact).eq("follower", value: me).eq("target", value: id).execute().count
+    return (n ?? 0) > 0
+  }
+  static func setFollow(_ id: UUID, _ on: Bool, me: UUID) async throws {
+    do {
+      if on { try await supabase.from("follows").insert(FollowRow(target: id)).execute() }
+      else { try await supabase.from("follows").delete().eq("follower", value: me).eq("target", value: id).execute() }
+    } catch where "\(error)".contains("23505") {}
+  }
+  // Opens (or creates) the conversation with someone. People who don't know you land in Requests.
+  static func startConversation(with other: UUID) async throws -> String {
+    try await supabase.rpc("start_conversation", params: ["p_other": other.uuidString.lowercased()]).execute().value
+  }
+  static func conversation(_ id: String) async throws -> Conversation {
+    try await supabase.from("conversations").select().eq("id", value: id).single().execute().value
+  }
+
+  // MARK: Messages
+  static func messages(_ conversationId: String) async throws -> [Message] {
+    let list: [Message] = try await supabase.from("messages").select("id, conversation_id, sender_id, body, created_at").eq("conversation_id", value: conversationId).order("created_at", ascending: false).limit(200).execute().value
+    return list.reversed()
+  }
+  static func send(_ conversationId: String, body: String) async throws {
+    try await supabase.from("messages").insert(MessageRow(conversationId: conversationId, body: body)).execute()
+  }
+  static func markRead(_ conversationId: String) async {
+    _ = try? await supabase.rpc("mark_conversation_read", params: ["p_cid": conversationId]).execute()
+  }
+  static func accept(_ conversationId: String) async throws {
+    try await supabase.rpc("accept_conversation", params: ["p_cid": conversationId]).execute()
+  }
+  static func decline(_ conversationId: String) async throws {
+    try await supabase.from("conversations").delete().eq("id", value: conversationId).execute()
+  }
+
+  // MARK: Clubs
+  static func myClubs(me: UUID) async throws -> [Club] {
+    let rows: [Membership] = try await supabase.from("community_members").select("communities(\(Club.columns))").eq("uid", value: me).execute().value
+    return rows.compactMap(\.communities).sorted { $0.name < $1.name }
+  }
+  static func discoverClubs() async throws -> [Club] {
+    try await supabase.from("communities").select(Club.columns).order("member_count", ascending: false).limit(30).execute().value
+  }
+  static func role(in clubId: String, me: UUID) async -> String? {
+    let rows: [Role]? = try? await supabase.from("community_members").select("role").eq("community_id", value: clubId).eq("uid", value: me).limit(1).execute().value
+    return rows?.first?.role
+  }
+  // Public clubs: you're in. Approval clubs: a request the officers see.
+  static func join(_ club: Club, me: UUID) async throws {
+    if club.isPublic { try await supabase.from("community_members").insert(JoinRow(communityId: club.id, uid: me, role: "member")).execute() }
+    else { try await supabase.from("community_requests").insert(ClubRef(communityId: club.id)).execute() }
+  }
+
+  // MARK: Events
+  static func upcomingEvents() async throws -> [ForgeEvent] {
+    let now = ISO8601DateFormatter().string(from: .now)
+    do {
+      return try await supabase.from("events").select(ForgeEvent.columns).eq("status", value: "published").gt("ends_at", value: now).order("starts_at").limit(50).execute().value
+    } catch {
+      // Before club-events.sql, events have no club host.
+      return try await supabase.from("events").select(ForgeEvent.orgColumns).eq("status", value: "published").gt("ends_at", value: now).order("starts_at").limit(50).execute().value
+    }
+  }
+  static func goingTo(me: UUID) async -> Set<String> {
+    struct R: Decodable { let eventId: String }
+    let rows: [R]? = try? await supabase.from("event_rsvps").select("event_id").eq("user_id", value: me).execute().value
+    return Set((rows ?? []).map(\.eventId))
+  }
+  static func setGoing(_ eventId: String, _ on: Bool, me: UUID) async throws {
+    do {
+      if on { try await supabase.from("event_rsvps").insert(EventRef(eventId: eventId)).execute() }
+      else { try await supabase.from("event_rsvps").delete().eq("event_id", value: eventId).eq("user_id", value: me).execute() }
+    } catch where "\(error)".contains("23505") {}
+  }
+
+  // MARK: Alerts
+  static func notifications(me: UUID) async throws -> [ForgeNotification] {
+    try await supabase.from("notifications").select().eq("user_id", value: me).order("created_at", ascending: false).limit(100).execute().value
+  }
+  static func markAlertsRead() async { _ = try? await supabase.rpc("mark_notifications_read").execute() }
+}

@@ -20,3 +20,15 @@ begin
     insert into public.messages (conversation_id, sender_id, body) values (cid, maya, 'Are you coming to launch day?');
   end if;
 end $$;
+
+-- An upcoming in-person club event (for the Events tab and its map).
+do $$
+declare club text := (select id from public.communities where name = 'Rocketry Club');
+        ben uuid := (select id from auth.users where email = 'ben@forge.test');
+begin
+  if club is not null and not exists (select 1 from public.events where title = 'Saturday static fire' and ends_at > now()) then
+    insert into public.events (community_id, title, description, type, format, location, topic, starts_at, ends_at, created_by)
+    values (club, 'Saturday static fire', 'Bring eye protection. We test the new motor on the stand, then pizza.', 'Workshop', 'In person',
+            'Bayside Park, San Francisco, CA', 'Rocketry', date_trunc('hour', now()) + interval '3 days', date_trunc('hour', now()) + interval '3 days 3 hours', ben);
+  end if;
+end $$;

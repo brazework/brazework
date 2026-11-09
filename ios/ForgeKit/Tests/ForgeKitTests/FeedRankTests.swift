@@ -1,5 +1,5 @@
 import XCTest
-@testable import Forge
+@testable import ForgeKit
 
 final class FeedRankTests: XCTestCase {
   private let now = Date(timeIntervalSince1970: 1_800_000_000)

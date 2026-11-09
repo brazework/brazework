@@ -15,6 +15,8 @@ struct PostCard: View {
         Label(item.reason, systemImage: "sparkles").font(.caption).foregroundStyle(p.faint).labelStyle(.titleAndIcon)
       }
       HStack(spacing: 10) {
+        NavigationLink(value: PersonRoute(id: post.authorId)) {
+          HStack(spacing: 10) {
         Avatar(first: post.authorFirst, last: post.authorLast, path: post.avatarPath, size: 40)
         VStack(alignment: .leading, spacing: 1) {
           HStack(spacing: 6) {
@@ -26,6 +28,10 @@ struct PostCard: View {
           let sub = [post.authorHeadline, post.authorHeadline.localizedCaseInsensitiveContains(club) ? "" : club].filter { !$0.isEmpty }.joined(separator: " · ")
           if !sub.isEmpty { Text(sub).font(.caption).foregroundStyle(p.muted).lineLimit(1) }
         }
+          }
+        }
+        .buttonStyle(.plain)
+        .accessibilityHint("Opens their profile")
         Spacer(minLength: 0)
         KindLabel(kind: post.kind)
       }

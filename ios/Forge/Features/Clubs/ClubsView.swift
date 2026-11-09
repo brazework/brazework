@@ -1,37 +1,54 @@
 import SwiftUI
-import Supabase
 
-private struct Membership: Decodable { let role: String; let communities: Club? }
-private struct JoinRow: Encodable { let communityId: String; let uid: UUID; let role: String }
-private struct RequestRow: Encodable { let communityId: String }
-
+// Clubs and events: where members meet. One tab, two lists.
 struct ClubsView: View {
+  enum Section: String, CaseIterable { case clubs = "Clubs", events = "Events" }
   @Environment(Session.self) private var session
   @Environment(\.palette) private var p
+  @State private var section: Section = {
+    #if DEBUG
+    if ProcessInfo.processInfo.environment["FORGE_TEST_SECTION"] == "events" { return .events }
+    #endif
+    return .clubs
+  }()
   @State private var mine: [Club]?
   @State private var discover: [Club] = []
   @State private var query = ""
 
   var body: some View {
     NavigationStack {
-      List {
-        if let mine, !mine.isEmpty {
-          Section("Your clubs") { ForEach(filtered(mine)) { row($0) } }
-        }
-        Section(mine?.isEmpty == false ? "Discover" : "Find your club") {
-          ForEach(filtered(discover.filter { c in !(mine ?? []).contains { $0.id == c.id } })) { row($0) }
-        }
+      Group {
+        if section == .events { EventsList() } else { clubList }
       }
-      .listStyle(.insetGrouped)
-      .scrollContentBackground(.hidden)
+      .safeAreaInset(edge: .top) {
+        Picker("Show", selection: $section) { ForEach(Section.allCases, id: \.self) { Text($0.rawValue) } }
+          .pickerStyle(.segmented).padding(.horizontal, 16).padding(.bottom, 6)
+      }
       .background(p.bg)
-      .overlay { if mine == nil { ProgressView() } }
-      .navigationTitle("Clubs")
-      .searchable(text: $query, prompt: "Search clubs")
+      .navigationTitle(section.rawValue)
       .navigationDestination(for: Club.self) { ClubView(club: $0) }
-      .refreshable { await load() }
-      .task { await load() }
+      .navigationDestination(for: ForgeEvent.self) { EventDetailView(event: $0) }
+      .navigationDestination(for: Post.self) { PostLoader(id: $0.id) }
+      .navigationDestination(for: PersonRoute.self) { ProfileView(id: $0.id) }
+      .navigationDestination(for: InboxItem.self) { ThreadView(item: $0) }
     }
+  }
+
+  private var clubList: some View {
+    List {
+      if let mine, !mine.isEmpty {
+        SwiftUI.Section("Your clubs") { ForEach(filtered(mine)) { row($0) } }
+      }
+      SwiftUI.Section(mine?.isEmpty == false ? "Discover" : "Find your club") {
+        ForEach(filtered(discover.filter { c in !(mine ?? []).contains { $0.id == c.id } })) { row($0) }
+      }
+    }
+    .listStyle(.insetGrouped)
+    .scrollContentBackground(.hidden)
+    .overlay { if mine == nil { ProgressView() } }
+    .searchable(text: $query, prompt: "Search clubs")
+    .refreshable { await load() }
+    .task { await load() }
   }
 
   private func filtered(_ list: [Club]) -> [Club] {
@@ -55,9 +72,9 @@ struct ClubsView: View {
 
   private func load() async {
     guard let me = session.userId else { return }
-    async let m: [Membership] = supabase.from("community_members").select("role, communities(id, name, about, field, privacy, member_count, topics)").eq("uid", value: me).execute().value
-    async let d: [Club] = supabase.from("communities").select("id, name, about, field, privacy, member_count, topics").order("member_count", ascending: false).limit(30).execute().value
-    mine = ((try? await m) ?? []).compactMap(\.communities).sorted { $0.name < $1.name }
+    async let m = API.myClubs(me: me)
+    async let d = API.discoverClubs()
+    mine = (try? await m) ?? []
     discover = (try? await d) ?? []
   }
 }
@@ -103,9 +120,9 @@ struct ClubView: View {
         Text("Posts").font(.headline).foregroundStyle(p.text).padding(.top, 8)
         if posts == nil { ProgressView().frame(maxWidth: .infinity) }
         if posts?.isEmpty == true { EmptyState(icon: "text.bubble", title: "No posts yet", message: role == nil ? "Join to see and share what members are building." : "Share the first update.") }
-        ForEach(posts ?? []) { post in
-          PostCard(item: RankedPost(post: post, reason: "", score: 0), liked: feed.liked.contains(post.id), saved: feed.saved.contains(post.id),
-                   onLike: { Task { await feed.toggleLike(post, me: session.userId!) } }, onSave: { Task { await feed.toggleSave(post, me: session.userId!) } })
+        ForEach(feed.items) { item in
+          PostCard(item: item, liked: feed.liked.contains(item.id), saved: feed.saved.contains(item.id),
+                   onLike: { Task { await feed.toggleLike(item.post, me: session.userId!) } }, onSave: { Task { await feed.toggleSave(item.post, me: session.userId!) } })
         }
       }
       .padding(16)
@@ -131,12 +148,11 @@ struct ClubView: View {
 
   private func load() async {
     guard let me = session.userId else { return }
-    struct R: Decodable { let role: String }
-    role = (try? await supabase.from("community_members").select("role").eq("community_id", value: club.id).eq("uid", value: me).single().execute().value as R)?.role
+    role = await API.role(in: club.id, me: me)
     do {
-      let list: [Post] = try await supabase.from("posts").select().eq("community_id", value: club.id).eq("status", value: "visible").order("created_at", ascending: false).limit(30).execute().value
+      let list = try await API.clubPosts(club.id)
+      await feed.show(list, me: me)
       posts = list
-      feed.items = list.map { RankedPost(post: $0, reason: "", score: 0) }
     } catch { posts = [] }
   }
 
@@ -145,14 +161,8 @@ struct ClubView: View {
     working = true; error = nil
     defer { working = false }
     do {
-      if club.isPublic {
-        try await supabase.from("community_members").insert(JoinRow(communityId: club.id, uid: me, role: "member")).execute()
-        role = "member"
-        await load()
-      } else {
-        try await supabase.from("community_requests").insert(RequestRow(communityId: club.id)).execute()
-        requested = true
-      }
+      try await API.join(club, me: me)
+      if club.isPublic { role = "member"; await load() } else { requested = true }
     } catch { self.error = friendly(error) }
   }
 }

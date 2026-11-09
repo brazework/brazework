@@ -64,7 +64,7 @@ struct ComposerView: View {
     posting = true; error = nil
     defer { posting = false }
     do {
-      try await FeedStore.create(body: trimmed, kind: kind)
+      try await API.createPost(body: trimmed, kind: kind)
       onPosted(); dismiss()
     } catch { self.error = friendly(error) }
   }

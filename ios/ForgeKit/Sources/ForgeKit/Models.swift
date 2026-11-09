@@ -67,6 +67,30 @@ struct Club: Codable, Identifiable, Hashable, Sendable {
   var memberCount: Int
   var topics: [String]
   var isPublic: Bool { privacy == "public" }
+  static let columns = "id, name, about, field, privacy, member_count, topics"
+}
+
+struct HostName: Codable, Hashable, Sendable { var name: String }
+
+struct ForgeEvent: Codable, Identifiable, Hashable, Sendable {
+  let id: String
+  var title: String
+  var description: String
+  var type: String
+  var format: String
+  var location: String
+  var link: String
+  var startsAt: Date
+  var endsAt: Date
+  var rsvpCount: Int
+  var communityId: String?
+  var organizations: HostName?
+  var communities: HostName?
+
+  static let columns = "id, title, description, type, format, location, link, starts_at, ends_at, rsvp_count, community_id, organizations(name), communities(name)"
+  static let orgColumns = "id, title, description, type, format, location, link, starts_at, ends_at, rsvp_count, organizations(name)"
+  var host: String { communities?.name ?? organizations?.name ?? "" }
+  var inPerson: Bool { format != "Online" && !location.trimmingCharacters(in: .whitespaces).isEmpty }
 }
 
 struct Person: Codable, Hashable, Sendable {
@@ -148,3 +172,7 @@ struct InboxItem: Identifiable, Hashable, Sendable {
   let status: String
   let startedByMe: Bool
 }
+
+// Navigation targets shared by every tab.
+struct PersonRoute: Hashable, Sendable { let id: UUID }
+struct PostRoute: Hashable, Sendable { let id: String }

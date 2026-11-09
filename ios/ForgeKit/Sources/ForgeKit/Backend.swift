@@ -8,8 +8,11 @@ enum Env {
   static let anonKey = info("ForgeSupabaseAnonKey") ?? ""
   static let webURL = URL(string: info("ForgeWebURL") ?? "") ?? URL(string: "https://forge-preview-eight.vercel.app")!
 
+  // Environment first (swift test on the Mac: FORGE_SUPABASE_URL, …), then the app's Info.plist.
   private static func info(_ key: String) -> String? {
-    (Bundle.main.object(forInfoDictionaryKey: key) as? String).flatMap { $0.isEmpty ? nil : $0 }
+    let envKey = ["ForgeSupabaseURL": "FORGE_SUPABASE_URL", "ForgeSupabaseAnonKey": "FORGE_SUPABASE_ANON_KEY", "ForgeWebURL": "FORGE_WEB_URL"][key] ?? key
+    if let v = ProcessInfo.processInfo.environment[envKey], !v.isEmpty { return v }
+    return (Bundle.main.object(forInfoDictionaryKey: key) as? String).flatMap { $0.isEmpty ? nil : $0 }
   }
 
   static func web(_ path: String) -> URL { webURL.appending(path: path) }

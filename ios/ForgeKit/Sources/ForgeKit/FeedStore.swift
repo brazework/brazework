@@ -5,9 +5,6 @@ import Supabase
 private struct PostRef: Decodable { let postId: String }
 private struct ClubRef: Decodable { let communityId: String }
 private struct FollowRef: Decodable { let target: UUID }
-private struct NewPost: Encodable { let body: String; let kind: String; let tags: [String] }
-private struct LikeRow: Encodable { let postId: String }
-private struct SaveRow: Encodable { let postId: String }
 
 enum FeedTab: String, CaseIterable, Identifiable { case forYou = "For you", latest = "Latest", following = "Following"; var id: String { rawValue } }
 
@@ -63,40 +60,39 @@ final class FeedStore {
       let ranked = tab == .forYou
         ? FeedRank.rank(sources, interests: interests, now: .now)
         : (sources.values.first ?? []).map { RankedPost(post: $0, reason: "", score: 0) }
-      let ids = ranked.map(\.id)
-      if !ids.isEmpty {
-        async let l: [PostRef] = supabase.from("likes").select("post_id").eq("user_id", value: me).in("post_id", values: ids).execute().value
-        async let s: [PostRef] = supabase.from("saved").select("post_id").eq("user_id", value: me).in("post_id", values: ids).execute().value
-        liked = Set(((try? await l) ?? []).map(\.postId))
-        saved = Set(((try? await s) ?? []).map(\.postId))
-      }
+      await loadMarks(ranked.map(\.id), me: me)
       items = ranked
     } catch {
       self.error = friendly(error)
     }
   }
 
+  // A fixed list (a profile's or a club's posts), with what you've liked and saved.
+  func show(_ posts: [Post], me: UUID) async {
+    await loadMarks(posts.map(\.id), me: me)
+    items = posts.map { RankedPost(post: $0, reason: "", score: 0) }
+    loaded = true
+  }
+
+  private func loadMarks(_ ids: [String], me: UUID) async {
+    guard !ids.isEmpty else { return }
+    async let l: [PostRef] = supabase.from("likes").select("post_id").eq("user_id", value: me).in("post_id", values: ids).execute().value
+    async let s: [PostRef] = supabase.from("saved").select("post_id").eq("user_id", value: me).in("post_id", values: ids).execute().value
+    liked = Set(((try? await l) ?? []).map(\.postId))
+    saved = Set(((try? await s) ?? []).map(\.postId))
+  }
+
   // Optimistic: flips at once, rolls back if the database says no.
   func toggleLike(_ post: Post, me: UUID) async {
     let on = !liked.contains(post.id)
     apply(post.id, like: on)
-    do {
-      if on { try await supabase.from("likes").insert(LikeRow(postId: post.id)).execute() }
-      else { try await supabase.from("likes").delete().eq("post_id", value: post.id).eq("user_id", value: me).execute() }
-    } catch {
-      if !"\(error)".contains("23505") { apply(post.id, like: !on); self.error = friendly(error) }
-    }
+    do { try await API.setLike(post.id, on, me: me) } catch { apply(post.id, like: !on); self.error = friendly(error) }
   }
 
   func toggleSave(_ post: Post, me: UUID) async {
     let on = !saved.contains(post.id)
     if on { saved.insert(post.id) } else { saved.remove(post.id) }
-    do {
-      if on { try await supabase.from("saved").insert(SaveRow(postId: post.id)).execute() }
-      else { try await supabase.from("saved").delete().eq("post_id", value: post.id).eq("user_id", value: me).execute() }
-    } catch {
-      if !"\(error)".contains("23505") { if on { saved.remove(post.id) } else { saved.insert(post.id) }; self.error = friendly(error) }
-    }
+    do { try await API.setSaved(post.id, on, me: me) } catch { if on { saved.remove(post.id) } else { saved.insert(post.id) }; self.error = friendly(error) }
   }
 
   private func apply(_ id: String, like: Bool) {
@@ -108,7 +104,4 @@ final class FeedStore {
     if let i = items.firstIndex(where: { $0.id == id }) { items[i].post.commentCount += n }
   }
 
-  static func create(body: String, kind: String) async throws {
-    try await supabase.from("posts").insert(NewPost(body: body, kind: kind, tags: [])).execute()
-  }
 }

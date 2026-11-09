@@ -5,9 +5,10 @@ struct FeedView: View {
   @Environment(\.palette) private var p
   @State private var store = FeedStore()
   @State private var composing = false
+  @State private var path = NavigationPath()
 
   var body: some View {
-    NavigationStack {
+    NavigationStack(path: $path) {
       ScrollView {
         LazyVStack(spacing: 12) {
           Picker("Feed", selection: $store.tab) { ForEach(FeedTab.allCases) { Text($0.rawValue).tag($0) } }
@@ -45,8 +46,15 @@ struct FeedView: View {
         }
       }
       .navigationDestination(for: Post.self) { PostDetailView(post: $0, feed: store) }
+      .navigationDestination(for: PersonRoute.self) { ProfileView(id: $0.id) }
+      .navigationDestination(for: InboxItem.self) { ThreadView(item: $0) }
       .refreshable { await reload() }
       .task(id: store.tab) { await reload() }
+      #if DEBUG
+      .task {
+        if let id = ProcessInfo.processInfo.environment["FORGE_TEST_PROFILE"].flatMap(UUID.init(uuidString:)), path.isEmpty { path.append(PersonRoute(id: id)) }
+      }
+      #endif
       .sheet(isPresented: $composing) {
         ComposerView { Task { store.tab = .forYou; await reload() } }
           .presentationDetents([.medium, .large])

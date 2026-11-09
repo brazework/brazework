@@ -1,31 +1,6 @@
 import SwiftUI
 import Supabase
 
-private struct NewMessage: Encodable { let conversationId: String; let body: String }
-
-@MainActor @Observable
-final class InboxStore {
-  var items: [InboxItem]?
-  var error: String?
-
-  func load(me: UUID) async {
-    do {
-      async let c: [Conversation] = supabase.from("conversations").select().or("user_a.eq.\(me),user_b.eq.\(me)").order("last_message_at", ascending: false).limit(200).execute().value
-      async let r: [ConversationRead] = supabase.from("conversation_reads").select("conversation_id, read_at").eq("user_id", value: me).execute().value
-      let reads = Dictionary(((try? await r) ?? []).map { ($0.conversationId, $0.readAt) }, uniquingKeysWith: max)
-      items = (try await c).compactMap { conv in
-        let (oid, person) = conv.other(of: me)
-        let mineStarted = conv.startedBy == me
-        guard conv.lastMessageAt != nil || mineStarted else { return nil }
-        let unread = conv.lastMessageAt.map { $0 > (reads[conv.id] ?? .distantPast) && conv.lastSender != me } ?? false
-        return InboxItem(id: conv.id, otherId: oid, name: "\(person.firstName ?? "") \(person.lastName ?? "")".trimmingCharacters(in: .whitespaces),
-                         headline: person.headline ?? "", preview: (conv.lastSender == me ? "You: " : "") + conv.lastBody, at: conv.lastMessageAt,
-                         unread: unread, isRequestToMe: conv.status == "request" && !mineStarted, status: conv.status, startedByMe: mineStarted)
-      }
-    } catch { self.error = friendly(error); if items == nil { items = [] } }
-  }
-}
-
 struct MessagesView: View {
   @Environment(Session.self) private var session
   @Environment(\.palette) private var p
@@ -47,6 +22,7 @@ struct MessagesView: View {
       }
       .navigationTitle("Messages")
       .navigationDestination(for: InboxItem.self) { ThreadView(item: $0) }
+      .navigationDestination(for: PersonRoute.self) { ProfileView(id: $0.id) }
       .refreshable { await reload() }
       .task { await reload() }
       // Fallback while open: Realtime handles it where it's set up.
@@ -109,6 +85,11 @@ struct ThreadView: View {
     .background(p.bg)
     .navigationTitle(item.name.isEmpty ? "Message" : item.name)
     .navigationBarTitleDisplayMode(.inline)
+    .toolbar {
+      ToolbarItem(placement: .primaryAction) {
+        NavigationLink(value: PersonRoute(id: item.otherId)) { Image(systemName: "person.crop.circle") }.accessibilityLabel("View profile")
+      }
+    }
     .safeAreaInset(edge: .bottom) { footer }
     .task { await load(); await markRead() }
     .task { await listen() }
@@ -159,14 +140,13 @@ struct ThreadView: View {
 
   private func load() async {
     do {
-      let list: [Message] = try await supabase.from("messages").select("id, conversation_id, sender_id, body, created_at").eq("conversation_id", value: item.id).order("created_at", ascending: false).limit(200).execute().value
-      messages = list.reversed()
+      messages = try await API.messages(item.id)
     } catch { if messages == nil { messages = [] }; self.error = friendly(error) }
   }
 
   private func markRead() async {
     guard !(status == "request" && !item.startedByMe) else { return }
-    _ = try? await supabase.rpc("mark_conversation_read", params: ["p_cid": item.id]).execute()
+    await API.markRead(item.id)
     await session.refreshBadges()
   }
 
@@ -190,7 +170,7 @@ struct ThreadView: View {
     messages = (messages ?? []) + [Message(id: "pending-\(UUID())", conversationId: item.id, senderId: me, body: text, createdAt: .now)]
     defer { sending = false }
     do {
-      try await supabase.from("messages").insert(NewMessage(conversationId: item.id, body: text)).execute()
+      try await API.send(item.id, body: text)
       await load()
     } catch {
       self.error = friendly(error); draft = text
@@ -199,13 +179,13 @@ struct ThreadView: View {
   }
 
   private func accept() async {
-    do { try await supabase.rpc("accept_conversation", params: ["p_cid": item.id]).execute(); status = "active"; await markRead() }
+    do { try await API.accept(item.id); status = "active"; await markRead() }
     catch { self.error = friendly(error) }
   }
 
   @Environment(\.dismiss) private var dismiss
   private func decline() async {
-    do { try await supabase.from("conversations").delete().eq("id", value: item.id).execute(); dismiss() }
+    do { try await API.decline(item.id); dismiss() }
     catch { self.error = friendly(error) }
   }
 }

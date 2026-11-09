@@ -1,7 +1,4 @@
 import SwiftUI
-import Supabase
-
-private struct NewComment: Encodable { let postId: String; let body: String }
 
 struct PostDetailView: View {
   let post: Post
@@ -27,7 +24,7 @@ struct PostDetailView: View {
         }
         ForEach(comments ?? []) { c in
           HStack(alignment: .top, spacing: 10) {
-            Avatar(first: c.authorFirst, last: c.authorLast, size: 32)
+            NavigationLink(value: PersonRoute(id: c.authorId)) { Avatar(first: c.authorFirst, last: c.authorLast, size: 32) }
             VStack(alignment: .leading, spacing: 3) {
               HStack(spacing: 6) {
                 Text(c.authorName).font(.subheadline.weight(.semibold)).foregroundStyle(p.text)
@@ -74,7 +71,7 @@ struct PostDetailView: View {
 
   private func load() async {
     do {
-      comments = try await supabase.from("comments").select().eq("post_id", value: post.id).order("created_at").limit(200).execute().value
+      comments = try await API.comments(post.id)
     } catch { comments = []; self.error = friendly(error) }
   }
 
@@ -84,10 +81,36 @@ struct PostDetailView: View {
     sending = true; error = nil
     defer { sending = false }
     do {
-      try await supabase.from("comments").insert(NewComment(postId: post.id, body: text)).execute()
+      try await API.addComment(post.id, body: text)
       draft = ""; focused = false
       feed.bumpComments(post.id)
       await load()
     } catch { self.error = friendly(error) }
+  }
+}
+
+// Opens a post by id (from an alert or a link).
+struct PostLoader: View {
+  let id: String
+  @State private var feed = FeedStore()
+  @State private var post: Post?
+  @State private var failed = false
+  @Environment(Session.self) private var session
+  @Environment(\.palette) private var p
+  var body: some View {
+    Group {
+      if let post { PostDetailView(post: post, feed: feed) }
+      else if failed { EmptyState(icon: "eye.slash", title: "Post unavailable", message: "It was deleted, or it's in a club you're not in.") }
+      else { ProgressView() }
+    }
+    .frame(maxWidth: .infinity, maxHeight: .infinity)
+    .background(p.bg)
+    .task {
+      do {
+        let p = try await API.post(id)
+        if let me = session.userId { await feed.show([p], me: me) }
+        post = p
+      } catch { failed = true }
+    }
   }
 }

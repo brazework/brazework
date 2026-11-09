@@ -1,5 +1,6 @@
 import SwiftUI
-import Supabase
+
+enum AlertTarget: Hashable { case post(String), person(UUID), nothing }
 
 struct AlertsView: View {
   @Environment(Session.self) private var session
@@ -9,6 +10,7 @@ struct AlertsView: View {
   var body: some View {
     NavigationStack {
       List(list ?? []) { n in
+        NavigationLink(value: n.postId.map { AlertTarget.post($0) } ?? n.actorId.map { AlertTarget.person($0) } ?? .nothing) {
         HStack(alignment: .top, spacing: 12) {
           ZStack(alignment: .bottomTrailing) {
             Avatar(first: n.actorFirst, last: n.actorLast, size: 44)
@@ -24,6 +26,7 @@ struct AlertsView: View {
           if !n.read { Circle().fill(p.accent).frame(width: 8, height: 8).padding(.top, 6).accessibilityLabel("New") }
         }
         .padding(.vertical, 4)
+        }
         .listRowBackground(n.read ? Color.clear : p.surface2.opacity(0.5))
       }
       .listStyle(.plain)
@@ -34,12 +37,21 @@ struct AlertsView: View {
         else if list?.isEmpty == true { EmptyState(icon: "bell", title: "You're all caught up", message: "Likes, replies, mentions and club news show up here.") }
       }
       .navigationTitle("Alerts")
+      .navigationDestination(for: AlertTarget.self) { t in
+        switch t {
+        case .post(let id): PostLoader(id: id)
+        case .person(let id): ProfileView(id: id)
+        case .nothing: EmptyView()
+        }
+      }
+      .navigationDestination(for: PersonRoute.self) { ProfileView(id: $0.id) }
+      .navigationDestination(for: InboxItem.self) { ThreadView(item: $0) }
       .refreshable { await load() }
       .task {
         await load()
         // Seen once they've been on screen a moment, like the web.
         try? await Task.sleep(for: .seconds(1.5))
-        _ = try? await supabase.rpc("mark_notifications_read").execute()
+        await API.markAlertsRead()
         await session.refreshBadges()
       }
     }
@@ -47,7 +59,7 @@ struct AlertsView: View {
 
   private func load() async {
     guard let me = session.userId else { return }
-    list = (try? await supabase.from("notifications").select().eq("user_id", value: me).order("created_at", ascending: false).limit(100).execute().value) ?? []
+    list = (try? await API.notifications(me: me)) ?? []
   }
 
   private func icon(_ kind: String) -> String {
