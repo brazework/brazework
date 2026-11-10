@@ -31,20 +31,13 @@ struct RootView: View {
   }
 }
 
-enum AppTab: String { case feed, clubs, messages, alerts, me }
-
 struct MainTabs: View {
   @Environment(Session.self) private var session
   @Environment(\.scenePhase) private var phase
-  @State private var tab: AppTab = {
-    #if DEBUG
-    if let t = ProcessInfo.processInfo.environment["FORGE_TEST_TAB"], let tab = AppTab(rawValue: t) { return tab }
-    #endif
-    return .feed
-  }()
+  @State private var nav = AppNav()
 
   var body: some View {
-    TabView(selection: $tab) {
+    TabView(selection: $nav.tab) {
       Tab("Feed", systemImage: "house", value: AppTab.feed) { FeedView() }
       Tab("Clubs", systemImage: "person.3", value: AppTab.clubs) { ClubsView() }
       Tab("Messages", systemImage: "bubble.left.and.bubble.right", value: AppTab.messages) { MessagesView() }
@@ -54,6 +47,7 @@ struct MainTabs: View {
       Tab("You", systemImage: "person.crop.circle", value: AppTab.me) { MeView() }
     }
     .tabBarMinimizeBehavior(.onScrollDown)
+    .environment(nav)
     .onChange(of: phase) { if phase == .active { Task { await session.refreshBadges() } } }
     .task { while !Task.isCancelled { try? await Task.sleep(for: .seconds(30)); await session.refreshBadges() } }
   }

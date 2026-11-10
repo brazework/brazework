@@ -284,6 +284,70 @@ final class JourneyTests: XCTestCase {
     XCTAssertFalse(gone.contains { $0.id == post.id })
   }
 
+  func testFeedModules() async throws {
+    let me = try await signIn("josh")
+    // Reply previews ride along with the feed.
+    let feed = FeedStore(); feed.tab = .latest
+    await feed.load(me: me, interests: [])
+    let withReplies = feed.items.first { $0.post.commentCount > 0 }
+    if let p = withReplies { XCTAssertFalse(feed.replies[p.id, default: []].isEmpty, "replies preview for a post with replies") }
+    XCTAssertLessThanOrEqual(feed.replies.values.map(\.count).max() ?? 0, 2)
+
+    // Filters narrow what's shown, not what's loaded.
+    feed.filter = .questions
+    XCTAssertTrue(feed.visible.allSatisfy { $0.post.kind == "question" })
+    feed.filter = .all
+
+    // People to follow: never you, never someone you already follow.
+    struct F: Decodable { let target: UUID }
+    let followed = Set((try await supabase.from("follows").select("target").eq("follower", value: me).execute().value as [F]).map(\.target))
+    let people = await API.suggestedPeople(me: me, interests: ["Rocketry"], field: "Engineering")
+    XCTAssertFalse(people.contains { $0.id == me || followed.contains($0.id) })
+
+    // "New posts": someone else posts after the feed loaded.
+    _ = try await signIn("ben")
+    try await API.createPost(body: "New fins printed \(Self.stamp)", kind: "update")
+    _ = try await signIn("josh")
+    await feed.checkForNew(me: me)
+    XCTAssertGreaterThanOrEqual(feed.newCount, 1)
+
+    // One inbox for the messages card: DMs and chats, newest first.
+    let inbox = await InboxSummary.load(me: me)
+    XCTAssertFalse(inbox.isEmpty)
+    let dates = inbox.compactMap(\.at)
+    XCTAssertEqual(dates, dates.sorted(by: >))
+  }
+
+  func testLatestPagesBack() async throws {
+    let me = try await signIn("maya")
+    for i in 0..<42 { try await API.createPost(body: "Paging post \(i) \(Self.stamp)", kind: "update") }
+    let feed = FeedStore(); feed.tab = .latest
+    await feed.load(me: me, interests: [])
+    XCTAssertEqual(feed.items.count, 40)
+    XCTAssertTrue(feed.canLoadMore)
+    await feed.loadMore(me: me)
+    XCTAssertGreaterThan(feed.items.count, 40)
+    XCTAssertEqual(Set(feed.items.map(\.id)).count, feed.items.count, "no duplicates")
+    let dates = feed.items.map(\.post.createdAt)
+    XCTAssertEqual(dates, dates.sorted(by: >), "still newest first")
+    for p in try await API.posts(by: me, limit: 60) where p.body.hasPrefix("Paging post") { try await API.deletePost(p.id) }
+  }
+
+  func testSearch() async throws {
+    let me = try await signIn("josh")
+    let byName = await API.search("Maya", me: me, interests: [], field: "")
+    XCTAssertEqual(byName.people.first?.firstName, "Maya")
+    let fullName = await API.search("Ben Cho", me: me, interests: [], field: "")
+    XCTAssertEqual(fullName.people.map(\.firstName), ["Ben"])
+    let club = await API.search("rocket", me: me, interests: [], field: "")
+    XCTAssertTrue(club.clubs.contains { $0.name == "Rocketry Club" })
+    XCTAssertFalse(club.people.contains { $0.id == me }, "never yourself")
+    let event = await API.search("static fire", me: me, interests: [], field: "")
+    XCTAssertTrue(event.events.contains { $0.title == "Saturday static fire" })
+    let tooShort = await API.search("a", me: me, interests: [], field: "")
+    XCTAssertTrue(tooShort.isEmpty)
+  }
+
   func testFollowAndClubs() async throws {
     let me = try await signIn("maya")
     let found: [Profile] = try await supabase.from("profiles").select(Session.profileColumns).eq("first_name", value: "Cara").limit(1).execute().value

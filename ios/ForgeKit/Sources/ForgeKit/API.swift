@@ -150,6 +150,67 @@ enum API {
     return path
   }
 
+  // The latest replies on each post (up to 2), for previews under posts in the feed.
+  static func replyPreviews(_ postIds: [String]) async -> [String: [Comment]] {
+    guard !postIds.isEmpty else { return [:] }
+    let list: [Comment] = (try? await supabase.from("comments").select().in("post_id", values: postIds).order("created_at", ascending: false).limit(400).execute().value) ?? []
+    var out: [String: [Comment]] = [:]
+    for c in list where (out[c.postId]?.count ?? 0) < 2 { out[c.postId, default: []].append(c) }
+    return out.mapValues { Array($0.reversed()) }
+  }
+
+  // Posts newer than `since` from other people (for the "New posts" pill).
+  static func newerPostCount(since: Date, me: UUID) async -> Int {
+    (try? await supabase.from("posts").select("id", head: true, count: .exact).gt("created_at", value: iso(since)).neq("author_id", value: me).execute().count) ?? 0
+  }
+  static func iso(_ d: Date) -> String {
+    let f = ISO8601DateFormatter(); f.formatOptions = [.withInternetDateTime, .withFractionalSeconds]; return f.string(from: d)
+  }
+
+  // People you might want to follow: onboarded, not you, not already followed; sharing your
+  // interests or field first.
+  static func suggestedPeople(me: UUID, interests: [String], field: String) async -> [Profile] {
+    struct F: Decodable { let target: UUID }
+    let followed = Set(((try? await supabase.from("follows").select("target").eq("follower", value: me).limit(500).execute().value as [F]) ?? []).map(\.target))
+    var pool: [Profile] = []
+    if !interests.isEmpty {
+      pool += (try? await supabase.from("profiles").select(Session.profileColumns).eq("onboarded", value: true).neq("id", value: me).overlaps("interests", value: interests).limit(30).execute().value) ?? []
+    }
+    if pool.count < 8 {
+      pool += (try? await supabase.from("profiles").select(Session.profileColumns).eq("onboarded", value: true).neq("id", value: me).order("created_at", ascending: false).limit(30).execute().value) ?? []
+    }
+    var seen = Set<UUID>()
+    let mine = Set(interests)
+    return pool.filter { !followed.contains($0.id) && seen.insert($0.id).inserted }
+      .sorted { a, b in
+        let sa = a.interests.filter(mine.contains).count * 2 + (a.field == field ? 1 : 0)
+        let sb = b.interests.filter(mine.contains).count * 2 + (b.field == field ? 1 : 0)
+        return sa > sb
+      }
+      .prefix(10).map { $0 }
+  }
+
+  // One search across Forge (as the web's search bar): people, clubs, events and posts. Row-level
+  // security decides what you can see; people and clubs sharing your interests or field come first.
+  struct SearchResults: Sendable { var people: [Profile] = []; var clubs: [Club] = []; var events: [ForgeEvent] = []; var posts: [Post] = []
+    var isEmpty: Bool { people.isEmpty && clubs.isEmpty && events.isEmpty && posts.isEmpty } }
+  static func search(_ query: String, me: UUID, interests: [String], field: String) async -> SearchResults {
+    let q = query.trimmingCharacters(in: .whitespaces).filter { !",()%*".contains($0) }
+    guard q.count >= 2 else { return SearchResults() }
+    let like = "%\(q)%"
+    let words = q.split(separator: " ").prefix(2).map(String.init)
+    var peopleQ = supabase.from("profiles").select(Session.profileColumns).eq("onboarded", value: true).neq("id", value: me)
+    if words.count == 2 { peopleQ = peopleQ.ilike("first_name", pattern: "\(words[0])%").ilike("last_name", pattern: "\(words[1])%") }
+    else { peopleQ = peopleQ.or("first_name.ilike.\(like),last_name.ilike.\(like),headline.ilike.\(like),field.ilike.\(like)") }
+    async let people: [Profile] = (try? await peopleQ.limit(20).execute().value) ?? []
+    async let clubs: [Club] = (try? await supabase.from("communities").select(Club.columns).or("name.ilike.\(like),about.ilike.\(like),field.ilike.\(like)").order("member_count", ascending: false).limit(10).execute().value) ?? []
+    async let events: [ForgeEvent] = (try? await supabase.from("events").select(ForgeEvent.columns).eq("status", value: "published").gt("ends_at", value: iso(.now)).ilike("title", pattern: like).order("starts_at").limit(10).execute().value) ?? []
+    async let posts: [Post] = (try? await supabase.from("posts").select().ilike("body", pattern: like).order("created_at", ascending: false).limit(15).execute().value) ?? []
+    let mine = Set(interests)
+    let rank: (Profile) -> Int = { $0.interests.filter(mine.contains).count * 2 + ($0.field == field ? 1 : 0) }
+    return SearchResults(people: await people.sorted { rank($0) > rank($1) }, clubs: await clubs, events: await events, posts: await posts)
+  }
+
   // MARK: People
   static func profile(_ id: UUID) async throws -> Profile {
     try await supabase.from("profiles").select(Session.profileColumns).eq("id", value: id).single().execute().value

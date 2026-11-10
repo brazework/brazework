@@ -30,7 +30,8 @@ struct EditProfileView: View {
               if let newPhoto { Image(uiImage: newPhoto).resizable().scaledToFill().frame(width: 72, height: 72).clipShape(Circle()) }
               else { Avatar(first: edit.firstName, last: edit.lastName, path: session.profile?.avatarPath, size: 72) }
             }
-            PhotosPicker(selection: $photoItem, matching: .images) { Text(session.profile?.avatarPath?.isEmpty == false || newPhoto != nil ? "Change photo" : "Add a photo").font(.subheadline.weight(.semibold)) }
+            let photoLabel = session.profile?.avatarPath?.isEmpty == false || newPhoto != nil ? "Change photo" : "Add a photo"
+            PhotosPicker(selection: $photoItem, matching: .images) { Text(photoLabel).font(.subheadline.weight(.semibold)) }
           }
           .listRowBackground(p.surface)
         }

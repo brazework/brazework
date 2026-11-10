@@ -8,6 +8,8 @@ struct PostCard: View {
   @State private var editing = false
   @State private var confirmDelete = false
   @State private var error: String?
+  @State private var burst = 0
+  @State private var showBurst = false
   private var post: Post { item.post }
   private var liked: Bool { store.liked.contains(item.id) }
   private var saved: Bool { store.saved.contains(item.id) }
@@ -53,6 +55,7 @@ struct PostCard: View {
       if let error { Text(error).font(.caption).foregroundStyle(p.danger) }
       MentionText(text: post.body, mentions: post.mentions).font(.body).foregroundStyle(p.text2).fixedSize(horizontal: false, vertical: true)
       if let media = post.media, !media.isEmpty { MediaView(items: media, postId: post.id) }
+      if let replies = store.replies[post.id], !replies.isEmpty { replyPreview(replies) }
       if !post.tags.isEmpty {
         HStack(spacing: 6) { ForEach(post.tags, id: \.self) { Text("#\($0)").font(.caption).foregroundStyle(p.muted) } }
       }
@@ -77,10 +80,62 @@ struct PostCard: View {
     .padding(16)
     .background(p.surface, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
     .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous).strokeBorder(p.border, lineWidth: 0.5))
+    .overlay {
+      // Double-tap to like: a heart that pops and fades.
+      Image(systemName: "heart.fill").font(.system(size: 84)).foregroundStyle(Color(hex: 0xF43F5E))
+        .shadow(color: .black.opacity(0.2), radius: 10)
+        .scaleEffect(showBurst ? 1 : 0.4).opacity(showBurst ? 1 : 0)
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+    .contentShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+    .onTapGesture(count: 2) { doubleTapLike() }
+    .sensoryFeedback(.impact(weight: .medium), trigger: burst)
+    .contextMenu {
+      Button(liked ? "Unlike" : "Like", systemImage: liked ? "heart.slash" : "heart") { onLike() }
+      Button(saved ? "Remove from saved" : "Save", systemImage: saved ? "bookmark.slash" : "bookmark") { onSave() }
+      ShareLink(item: Env.web("post/\(post.id)")) { Label("Share", systemImage: "square.and.arrow.up") }
+      Button("Copy link", systemImage: "link") { UIPasteboard.general.url = Env.web("post/\(post.id)") }
+      Button("Copy text", systemImage: "doc.on.doc") { UIPasteboard.general.string = post.body }
+      if mine {
+        Divider()
+        Button("Edit", systemImage: "pencil") { editing = true }
+        Button("Delete", systemImage: "trash", role: .destructive) { confirmDelete = true }
+      }
+    }
     .sheet(isPresented: $editing) { EditPostView(post: post) { store.edited(post.id, body: $0) }.presentationDetents([.medium, .large]) }
     .confirmationDialog("Delete this post?", isPresented: $confirmDelete, titleVisibility: .visible) {
       Button("Delete", role: .destructive) { Task { await delete() } }
     } message: { Text("Its likes, replies and saves go with it. This can't be undone.") }
+  }
+
+  private func doubleTapLike() {
+    if !liked { onLike() }
+    burst += 1
+    withAnimation(.spring(response: 0.3, dampingFraction: 0.55)) { showBurst = true }
+    Task { try? await Task.sleep(for: .milliseconds(650)); withAnimation(.easeOut(duration: 0.25)) { showBurst = false } }
+  }
+
+  // The latest replies, under the post; tap to open the conversation.
+  private func replyPreview(_ replies: [Comment]) -> some View {
+    NavigationLink(value: post) {
+      VStack(alignment: .leading, spacing: 6) {
+        ForEach(replies) { c in
+          HStack(alignment: .top, spacing: 8) {
+            Avatar(first: c.authorFirst, last: c.authorLast, size: 22)
+            (Text(c.authorFirst).fontWeight(.semibold).foregroundStyle(p.text) + Text("  \(c.body)").foregroundStyle(p.text2))
+              .font(.footnote).lineLimit(2).multilineTextAlignment(.leading)
+          }
+        }
+        if post.commentCount > replies.count {
+          Text("View all \(post.commentCount) \(post.kind == "question" ? "answers" : "replies")").font(.footnote.weight(.medium)).foregroundStyle(p.muted)
+        }
+      }
+      .padding(12)
+      .frame(maxWidth: .infinity, alignment: .leading)
+      .background(p.surface2.opacity(0.55), in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+    }
+    .buttonStyle(.plain)
   }
 
   private func delete() async {

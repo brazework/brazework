@@ -12,7 +12,7 @@ final class Session {
   var unreadMessages = 0
   var unreadAlerts = 0
 
-  static let profileColumns = "id, first_name, last_name, headline, field, bio, interests, account_type, onboarded, avatar_path"
+  nonisolated static let profileColumns = "id, first_name, last_name, headline, field, bio, interests, account_type, onboarded, avatar_path"
 
   func start() async {
     #if DEBUG

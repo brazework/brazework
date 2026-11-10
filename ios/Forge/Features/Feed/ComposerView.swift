@@ -2,12 +2,15 @@ import PhotosUI
 import SwiftUI
 
 struct ComposerView: View {
+  var initialKind = "update"
+  var openPicker = false
   var onPosted: () -> Void
   @Environment(\.dismiss) private var dismiss
   @Environment(\.palette) private var p
   @Environment(Session.self) private var session
   @State private var text = ""
   @State private var kind = "update"
+  @State private var showPicker = false
   @State private var posting = false
   @State private var error: String?
   @State private var picked: [Picked] = []
@@ -42,7 +45,7 @@ struct ComposerView: View {
         if !status.isEmpty { Label(status, systemImage: "arrow.up.circle").font(.footnote).foregroundStyle(p.muted) }
         Spacer()
         HStack {
-          PhotosPicker(selection: $selectionItems, maxSelectionCount: 4, matching: .any(of: [.images, .videos]), photoLibrary: .shared()) {
+          Button { showPicker = true } label: {
             Image(systemName: "photo.on.rectangle.angled").font(.title3).foregroundStyle(p.text2).frame(width: 44, height: 44)
           }
           .accessibilityLabel("Add photos or a video")
@@ -63,7 +66,8 @@ struct ComposerView: View {
             .disabled(trimmed.isEmpty || text.count > 3000 || posting)
         }
       }
-      .onAppear { focused = true }
+      .onAppear { kind = initialKind; if openPicker { showPicker = true } else { focused = true } }
+      .photosPicker(isPresented: $showPicker, selection: $selectionItems, maxSelectionCount: 4, matching: .any(of: [.images, .videos]), photoLibrary: .shared())
       .onChange(of: selectionItems) { Task { await load(selectionItems) } }
       .task(id: mentionQuery) { await suggest() }
       #if DEBUG

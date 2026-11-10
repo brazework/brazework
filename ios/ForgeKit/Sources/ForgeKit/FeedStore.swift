@@ -8,10 +8,36 @@ private struct FollowRef: Decodable { let target: UUID }
 
 enum FeedTab: String, CaseIterable, Identifiable { case forYou = "For you", latest = "Latest", following = "Following"; var id: String { rawValue } }
 
+// Narrow the feed to one kind of post.
+enum FeedFilter: String, CaseIterable, Identifiable {
+  case all = "All", questions = "Questions", results = "Results", projects = "Projects", media = "Photos & video"
+  var id: String { rawValue }
+  func matches(_ p: Post) -> Bool {
+    switch self {
+    case .all: true
+    case .questions: p.kind == "question"
+    case .results: p.kind == "result"
+    case .projects: p.kind == "project"
+    case .media: !(p.media ?? []).isEmpty
+    }
+  }
+}
+
 @MainActor @Observable
 final class FeedStore {
   var tab: FeedTab = .forYou
   var items: [RankedPost] = []
+  var filter: FeedFilter = .all
+  var visible: [RankedPost] { filter == .all ? items : items.filter { filter.matches($0.post) } }
+  // The latest replies on each post (shown under it).
+  var replies: [String: [Comment]] = [:]
+  // Older posts can be loaded (Latest and Following page back in time).
+  var canLoadMore = false
+  var loadingMore = false
+  // Posts by others since this feed was loaded.
+  var newCount = 0
+  private var loadedAt = Date()
+  private var follows: [String] = []
   var liked: Set<String> = []
   var saved: Set<String> = []
   var loading = false
@@ -41,6 +67,7 @@ final class FeedStore {
       async let followRows: [FollowRef] = supabase.from("follows").select("target").eq("follower", value: me).limit(500).execute().value
       let clubs = (try? await clubRows)?.map(\.communityId) ?? []
       let follows = (try? await followRows)?.map { $0.target.uuidString } ?? []
+      self.follows = follows
       let meId = me.uuidString
 
       var sources: [FeedSource: [Post]] = [:]
@@ -60,16 +87,52 @@ final class FeedStore {
       let ranked = tab == .forYou
         ? FeedRank.rank(sources, interests: interests, now: .now)
         : (sources.values.first ?? []).map { RankedPost(post: $0, reason: "", score: 0) }
-      await loadMarks(ranked.map(\.id), me: me)
+      async let marks: Void = loadMarks(ranked.map(\.id), me: me)
+      async let previews = API.replyPreviews(ranked.map(\.id))
+      await marks
+      replies = await previews
       items = ranked
+      canLoadMore = tab != .forYou && ranked.count >= 40
+      newCount = 0
+      loadedAt = .now
     } catch {
       self.error = friendly(error)
     }
   }
 
+  // Older posts (Latest and Following), appended below.
+  func loadMore(me: UUID) async {
+    guard canLoadMore, !loadingMore, let last = items.last?.post.createdAt else { return }
+    loadingMore = true
+    defer { loadingMore = false }
+    let av = withAvatars ?? false
+    let before = API.iso(last)
+    let follows = self.follows
+    let more: [Post]
+    do {
+      switch tab {
+      case .latest: more = try await Self.fetch(av) { $0.lt("created_at", value: before).order("created_at", ascending: false).limit(20) }
+      case .following: more = try await Self.fetchIf(!follows.isEmpty, av) { $0.in("author_id", values: follows).lt("created_at", value: before).order("created_at", ascending: false).limit(20) }
+      case .forYou: more = []
+      }
+    } catch { self.error = friendly(error); return }
+    let have = Set(items.map(\.id))
+    let fresh = more.filter { !have.contains($0.id) }
+    await loadMarks(items.map(\.id) + fresh.map(\.id), me: me)
+    let previews = await API.replyPreviews(fresh.map(\.id))
+    replies.merge(previews) { a, _ in a }
+    items += fresh.map { RankedPost(post: $0, reason: "", score: 0) }
+    canLoadMore = more.count >= 20
+  }
+
+  func checkForNew(me: UUID) async {
+    newCount = await API.newerPostCount(since: loadedAt, me: me)
+  }
+
   // A fixed list (a profile's or a club's posts), with what you've liked and saved.
   func show(_ posts: [Post], me: UUID) async {
     await loadMarks(posts.map(\.id), me: me)
+    replies = await API.replyPreviews(posts.map(\.id))
     items = posts.map { RankedPost(post: $0, reason: "", score: 0) }
     loaded = true
   }
@@ -105,6 +168,12 @@ final class FeedStore {
   }
   private(set) var deleted: Set<String> = []
   func removed(_ id: String) { deleted.insert(id); items.removeAll { $0.id == id } }
+
+  func addedReply(_ c: Comment) {
+    replies[c.postId, default: []].append(c)
+    if (replies[c.postId]?.count ?? 0) > 2 { replies[c.postId]?.removeFirst() }
+    bumpComments(c.postId)
+  }
 
   func bumpComments(_ id: String, by n: Int = 1) {
     if let i = items.firstIndex(where: { $0.id == id }) { items[i].post.commentCount += n }

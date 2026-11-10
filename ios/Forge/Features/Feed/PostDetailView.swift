@@ -86,8 +86,8 @@ struct PostDetailView: View {
     do {
       try await API.addComment(post.id, body: text)
       draft = ""; focused = false
-      feed.bumpComments(post.id)
       await load()
+      if let mine = comments?.last(where: { $0.authorId == session.userId }) { feed.addedReply(mine) } else { feed.bumpComments(post.id) }
     } catch { self.error = friendly(error) }
   }
 }
