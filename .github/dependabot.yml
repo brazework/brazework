@@ -8,6 +8,16 @@ updates:
     groups:
       minor-and-patch:
         update-types: [minor, patch]
+    # Major versions these move in lockstep with something else, so bump them by hand when that moves:
+    # Node types follow the Node version CI and Vercel run (22); ESLint and TypeScript follow what
+    # eslint-config-next and Next.js support.
+    ignore:
+      - dependency-name: "@types/node"
+        versions: [">=23"]
+      - dependency-name: eslint
+        update-types: [version-update:semver-major]
+      - dependency-name: typescript
+        update-types: [version-update:semver-major]
   - package-ecosystem: github-actions
     directory: /
     schedule: { interval: weekly, day: monday }
