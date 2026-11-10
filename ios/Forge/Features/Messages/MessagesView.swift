@@ -36,6 +36,10 @@ struct MessagesView: View {
         if let club = ProcessInfo.processInfo.environment["FORGE_TEST_CHAT"], path.isEmpty, let c = chats.first(where: { $0.kind == "club" && $0.communityId == club }) {
           path.append(ChatRoute(id: c.id, title: c.title, kind: c.kind, communityId: c.communityId))
         }
+        // FORGE_TEST_DM=<first name> opens your conversation with them.
+        if let who = ProcessInfo.processInfo.environment["FORGE_TEST_DM"], path.isEmpty, let d = store.items?.first(where: { $0.name.hasPrefix(who) }) {
+          path.append(d)
+        }
         #endif
       }
       // Fallback while open: Realtime handles it where it's set up.
@@ -104,6 +108,9 @@ struct ThreadView: View {
   @State private var draft = ""
   @State private var error: String?
   @State private var sending = false
+  @State private var reactions = ReactionsModel(kind: "dm")
+  @State private var replying: Message?
+  @State private var now = Date()
 
   init(item: InboxItem) { self.item = item; _status = State(initialValue: item.status) }
 
@@ -134,19 +141,47 @@ struct ThreadView: View {
     .task { await listen() }
   }
 
+  private func name(_ m: Message) -> String { m.senderId == session.userId ? "You" : (item.name.components(separatedBy: " ").first ?? item.name) }
+
   private func bubble(_ m: Message) -> some View {
     let mine = m.senderId == session.userId
-    return HStack {
-      if mine { Spacer(minLength: 48) }
-      Text(m.body)
-        .font(.body)
+    let pending = m.id.hasPrefix("pending-")
+    let canUnsend = mine && !pending && now.timeIntervalSince(m.createdAt) < ChatExtras.unsendWindow
+    return VStack(alignment: mine ? .trailing : .leading, spacing: 3) {
+      HStack {
+        if mine { Spacer(minLength: 48) }
+        VStack(alignment: .leading, spacing: 6) {
+          if let r = m.replyTo {
+            let target = messages?.first { $0.id == r }
+            ReplyQuote(name: target.map(name), text: target?.body, mine: mine)
+          }
+          Text(m.body).font(.body)
+        }
         .foregroundStyle(mine ? p.onAccent : p.text)
         .padding(.horizontal, 14).padding(.vertical, 9)
         .background(mine ? AnyShapeStyle(p.accent) : AnyShapeStyle(p.surface2), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-        .opacity(m.id.hasPrefix("pending-") ? 0.6 : 1)
-        .contextMenu { Button("Copy", systemImage: "doc.on.doc") { UIPasteboard.general.string = m.body } }
-      if !mine { Spacer(minLength: 48) }
+        .opacity(pending ? 0.6 : 1)
+        .contextMenu {
+          if !pending {
+            MessageMenu(text: m.body, onReact: { e in Task { await react(m, e) } }, onReply: { replying = m },
+                        removeLabel: canUnsend ? "Unsend" : nil, onRemove: canUnsend ? { Task { await unsend(m) } } : nil)
+          }
+        }
+        if !mine { Spacer(minLength: 48) }
+      }
+      ReactionChips(list: reactions.on(m.id), me: session.userId, mine: mine) { e in Task { await react(m, e) } }
     }
+  }
+
+  private func react(_ m: Message, _ emoji: String) async {
+    guard let me = session.userId else { return }
+    await reactions.toggle(m.id, emoji: emoji, me: me)
+    if let e = reactions.error { error = e; reactions.error = nil }
+  }
+
+  private func unsend(_ m: Message) async {
+    messages?.removeAll { $0.id == m.id }
+    do { try await API.unsend(m.id) } catch { self.error = friendly(error); await load() }
   }
 
   @ViewBuilder private var footer: some View {
@@ -160,6 +195,7 @@ struct ThreadView: View {
           Button("Accept") { Task { await accept() } }.buttonStyle(PrimaryButtonStyle())
         }
       } else if canSend {
+        if let r = replying { ReplyBar(name: name(r), text: r.body) { replying = nil } }
         HStack(alignment: .bottom, spacing: 8) {
           TextField("Message", text: $draft, axis: .vertical)
             .lineLimit(1...6)
@@ -180,6 +216,8 @@ struct ThreadView: View {
   private func load() async {
     do {
       messages = try await API.messages(item.id)
+      await reactions.load(messages?.map(\.id) ?? [])
+      now = .now
     } catch { if messages == nil { messages = [] }; self.error = friendly(error) }
   }
 
@@ -205,11 +243,12 @@ struct ThreadView: View {
     let text = draft.trimmingCharacters(in: .whitespacesAndNewlines)
     guard !text.isEmpty, let me = session.userId else { return }
     guard text.count <= 2000 else { error = "Messages can be up to 2,000 characters."; return }
-    sending = true; error = nil; draft = ""
-    messages = (messages ?? []) + [Message(id: "pending-\(UUID())", conversationId: item.id, senderId: me, body: text, createdAt: .now)]
+    let replyTo = replying?.id
+    sending = true; error = nil; draft = ""; replying = nil
+    messages = (messages ?? []) + [Message(id: "pending-\(UUID())", conversationId: item.id, senderId: me, body: text, createdAt: .now, replyTo: replyTo)]
     defer { sending = false }
     do {
-      try await API.send(item.id, body: text)
+      try await API.send(item.id, body: text, replyTo: replyTo)
       await load()
     } catch {
       self.error = friendly(error); draft = text

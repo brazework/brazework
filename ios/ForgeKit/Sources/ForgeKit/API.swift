@@ -14,17 +14,23 @@ enum MediaError: LocalizedError {
   }
 }
 
+enum ExtrasError: LocalizedError {
+  case tooLate
+  var errorDescription: String? { "You can unsend a message for 15 minutes after sending it." }
+}
+
 enum API {
   private struct PostRow: Encodable { let body: String; let kind: String; let tags: [String]; let media: [MediaItem]? }
   private struct CommentRow: Encodable { let postId: String; let body: String }
   private struct PostRef: Encodable { let postId: String }
-  private struct MessageRow: Encodable { let conversationId: String; let body: String }
+  private struct MessageRow: Encodable { let conversationId: String; let body: String; let replyTo: String? }
+  private struct ReactionRow: Encodable { let messageId: String; let emoji: String }
   private struct JoinRow: Encodable { let communityId: String; let uid: UUID; let role: String }
   private struct ClubRef: Encodable { let communityId: String }
   private struct EventRef: Encodable { let eventId: String }
   private struct FollowRow: Encodable { let target: UUID }
   private struct Role: Decodable { let role: String }
-  private struct ChatRow: Encodable { let chatId: String; let body: String; let announcement: Bool }
+  private struct ChatRow: Encodable { let chatId: String; let body: String; let announcement: Bool; let replyTo: String? }
   private struct Membership: Decodable { let communities: Club? }
 
   // MARK: Posts
@@ -94,12 +100,34 @@ enum API {
   }
 
   // MARK: Messages
+  // With replies where chat-extras.sql has run; without them otherwise.
   static func messages(_ conversationId: String) async throws -> [Message] {
-    let list: [Message] = try await supabase.from("messages").select("id, conversation_id, sender_id, body, created_at").eq("conversation_id", value: conversationId).order("created_at", ascending: false).limit(200).execute().value
+    let cols = "id, conversation_id, sender_id, body, created_at"
+    let list: [Message]
+    do { list = try await supabase.from("messages").select(cols + ", reply_to").eq("conversation_id", value: conversationId).order("created_at", ascending: false).limit(200).execute().value }
+    catch { list = try await supabase.from("messages").select(cols).eq("conversation_id", value: conversationId).order("created_at", ascending: false).limit(200).execute().value }
     return list.reversed()
   }
-  static func send(_ conversationId: String, body: String) async throws {
-    try await supabase.from("messages").insert(MessageRow(conversationId: conversationId, body: body)).execute()
+  static func send(_ conversationId: String, body: String, replyTo: String? = nil) async throws {
+    try await supabase.from("messages").insert(MessageRow(conversationId: conversationId, body: body, replyTo: replyTo)).execute()
+  }
+  // Your own message, within 15 minutes; it's removed for both of you.
+  static func unsend(_ messageId: String) async throws {
+    let gone: [Message] = try await supabase.from("messages").delete().eq("id", value: messageId).select("id, conversation_id, sender_id, body, created_at").execute().value
+    if gone.isEmpty { throw ExtrasError.tooLate }
+  }
+
+  // MARK: Reactions (direct messages: kind "dm"; group chats: "group")
+  private static func reactionTable(_ kind: String) -> String { kind == "dm" ? "message_reactions" : "chat_message_reactions" }
+  static func reactions(_ kind: String, messageIds: [String]) async -> [Reaction] {
+    guard !messageIds.isEmpty else { return [] }
+    return (try? await supabase.from(reactionTable(kind)).select("message_id, user_id, emoji").in("message_id", values: messageIds).execute().value) ?? []
+  }
+  static func setReaction(_ kind: String, messageId: String, emoji: String, on: Bool, me: UUID) async throws {
+    do {
+      if on { try await supabase.from(reactionTable(kind)).insert(ReactionRow(messageId: messageId, emoji: emoji)).execute() }
+      else { try await supabase.from(reactionTable(kind)).delete().eq("message_id", value: messageId).eq("user_id", value: me).eq("emoji", value: emoji).execute() }
+    } catch where "\(error)".contains("23505") {}
   }
   static func markRead(_ conversationId: String) async {
     _ = try? await supabase.rpc("mark_conversation_read", params: ["p_cid": conversationId]).execute()
@@ -126,13 +154,15 @@ enum API {
     try await myChats().first { $0.id == id }
   }
   static func chatMessages(_ chatId: String) async throws -> [ChatMessage] {
-    let list: [ChatMessage] = try await supabase.from("chat_messages").select("id, chat_id, sender_id, sender_first, sender_last, body, announcement, ember, created_at")
-      .eq("chat_id", value: chatId).order("created_at", ascending: false).limit(200).execute().value
+    let cols = "id, chat_id, sender_id, sender_first, sender_last, body, announcement, ember, created_at"
+    let list: [ChatMessage]
+    do { list = try await supabase.from("chat_messages").select(cols + ", reply_to").eq("chat_id", value: chatId).order("created_at", ascending: false).limit(200).execute().value }
+    catch { list = try await supabase.from("chat_messages").select(cols).eq("chat_id", value: chatId).order("created_at", ascending: false).limit(200).execute().value }
     return list.reversed()
   }
   // Officers (moderator and up) can post an announcement in their club's chat; the database checks.
-  static func sendChat(_ chatId: String, body: String, announcement: Bool = false) async throws {
-    try await supabase.from("chat_messages").insert(ChatRow(chatId: chatId, body: body, announcement: announcement)).execute()
+  static func sendChat(_ chatId: String, body: String, announcement: Bool = false, replyTo: String? = nil) async throws {
+    try await supabase.from("chat_messages").insert(ChatRow(chatId: chatId, body: body, announcement: announcement, replyTo: replyTo)).execute()
   }
   static func deleteChatMessage(_ id: String) async throws {
     try await supabase.from("chat_messages").delete().eq("id", value: id).execute()

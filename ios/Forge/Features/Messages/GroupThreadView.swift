@@ -16,6 +16,8 @@ struct GroupThreadView: View {
   @State private var officer = false
   @State private var sending = false
   @State private var error: String?
+  @State private var reactions = ReactionsModel(kind: "group")
+  @State private var replying: ChatMessage?
 
   var body: some View {
     ScrollViewReader { proxy in
@@ -70,16 +72,24 @@ struct GroupThreadView: View {
         }
         VStack(alignment: mine ? .trailing : .leading, spacing: 2) {
           if first && !mine { Text(m.ember ? "Ember" : m.senderFirst).font(.caption2.weight(.semibold)).foregroundStyle(p.muted).padding(.leading, 4) }
-          Text(m.body)
-            .font(.body)
-            .foregroundStyle(mine ? p.onAccent : p.text)
-            .padding(.horizontal, 14).padding(.vertical, 9)
-            .background(mine ? AnyShapeStyle(p.accent) : AnyShapeStyle(p.surface2), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-            .opacity(m.id.hasPrefix("pending-") ? 0.6 : 1)
-            .contextMenu {
-              Button("Copy", systemImage: "doc.on.doc") { UIPasteboard.general.string = m.body }
-              if mine && !m.id.hasPrefix("pending-") { Button("Delete", systemImage: "trash", role: .destructive) { Task { await delete(m) } } }
+          VStack(alignment: .leading, spacing: 6) {
+            if let r = m.replyTo {
+              let target = messages?.first { $0.id == r }
+              ReplyQuote(name: target.map { $0.ember ? "Ember" : $0.senderFirst }, text: target?.body, mine: mine)
             }
+            Text(m.body).font(.body)
+          }
+          .foregroundStyle(mine ? p.onAccent : p.text)
+          .padding(.horizontal, 14).padding(.vertical, 9)
+          .background(mine ? AnyShapeStyle(p.accent) : AnyShapeStyle(p.surface2), in: RoundedRectangle(cornerRadius: 20, style: .continuous))
+          .opacity(m.id.hasPrefix("pending-") ? 0.6 : 1)
+          .contextMenu {
+            if !m.id.hasPrefix("pending-") {
+              MessageMenu(text: m.body, onReact: { e in Task { await react(m, e) } }, onReply: { replying = m },
+                          removeLabel: mine ? "Delete" : nil, onRemove: mine ? { Task { await delete(m) } } : nil)
+            }
+          }
+          ReactionChips(list: reactions.on(m.id), me: session.userId, mine: mine) { e in Task { await react(m, e) } }
         }
         if !mine { Spacer(minLength: 48) }
       }
@@ -90,7 +100,8 @@ struct GroupThreadView: View {
   private var composer: some View {
     VStack(spacing: 8) {
       if let error { Text(error).font(.caption).foregroundStyle(p.danger) }
-      if officer {
+      if let r = replying { ReplyBar(name: r.ember ? "Ember" : r.senderFirst, text: r.body) { replying = nil } }
+      if officer && replying == nil {
         Toggle(isOn: $announce) { Label("Post as an announcement", systemImage: "megaphone") }
           .font(.footnote).toggleStyle(.switch).tint(p.accent)
       }
@@ -111,7 +122,10 @@ struct GroupThreadView: View {
   }
 
   private func load() async {
-    do { messages = try await API.chatMessages(route.id) } catch { if messages == nil { messages = [] }; self.error = friendly(error) }
+    do {
+      messages = try await API.chatMessages(route.id)
+      await reactions.load(messages?.map(\.id) ?? [])
+    } catch { if messages == nil { messages = [] }; self.error = friendly(error) }
   }
 
   // Live where Realtime is set up, with a short poll as the fallback.
@@ -130,13 +144,14 @@ struct GroupThreadView: View {
     let text = draft.trimmingCharacters(in: .whitespacesAndNewlines)
     guard !text.isEmpty, let me = session.userId else { return }
     guard text.count <= 2000 else { error = "Messages can be up to 2,000 characters."; return }
-    let asAnnouncement = announce
-    sending = true; error = nil; draft = ""
+    let asAnnouncement = announce && replying == nil
+    let replyTo = replying?.id
+    sending = true; error = nil; draft = ""; replying = nil
     let first = session.profile?.firstName ?? "", last = session.profile?.lastName ?? ""
-    messages = (messages ?? []) + [ChatMessage(id: "pending-\(UUID())", chatId: route.id, senderId: me, senderFirst: first, senderLast: last, body: text, announcement: asAnnouncement, ember: false, createdAt: .now)]
+    messages = (messages ?? []) + [ChatMessage(id: "pending-\(UUID())", chatId: route.id, senderId: me, senderFirst: first, senderLast: last, body: text, announcement: asAnnouncement, ember: false, createdAt: .now, replyTo: replyTo)]
     defer { sending = false }
     do {
-      try await API.sendChat(route.id, body: text, announcement: asAnnouncement)
+      try await API.sendChat(route.id, body: text, announcement: asAnnouncement, replyTo: replyTo)
       announce = false
       await load(); await API.markChatRead(route.id)
     } catch {
@@ -144,6 +159,12 @@ struct GroupThreadView: View {
       draft = text
       messages?.removeAll { $0.id.hasPrefix("pending-") }
     }
+  }
+
+  private func react(_ m: ChatMessage, _ emoji: String) async {
+    guard let me = session.userId else { return }
+    await reactions.toggle(m.id, emoji: emoji, me: me)
+    if let e = reactions.error { error = e; reactions.error = nil }
   }
 
   private func delete(_ m: ChatMessage) async {

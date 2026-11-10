@@ -153,6 +153,58 @@ final class JourneyTests: XCTestCase {
     XCTAssertEqual(row.title, e.title)
   }
 
+  func testReactionsRepliesAndUnsend() async throws {
+    // Ben and Josh (an active conversation, so both can send).
+    let ben = try await signIn("ben")
+    let found: [Profile] = try await supabase.from("profiles").select(Session.profileColumns).eq("first_name", value: "Josh").limit(1).execute().value
+    let josh = try XCTUnwrap(found.first?.id)
+    let cid = try await API.startConversation(with: josh)
+    try await API.send(cid, body: "Motor casing is machined \(Self.stamp)")
+    let firstList = try await API.messages(cid)
+
+    let first = try XCTUnwrap(firstList.last)
+
+    _ = try await signIn("josh")
+    let conv = try await API.conversation(cid)
+    if conv.status == "request" { try await API.accept(cid) }
+    try await API.setReaction("dm", messageId: first.id, emoji: "🔥", on: true, me: josh)
+    try await API.send(cid, body: "Looks clean \(Self.stamp)", replyTo: first.id)
+    let replyList = try await API.messages(cid)
+
+    let reply = try XCTUnwrap(replyList.last)
+    XCTAssertEqual(reply.replyTo, first.id, "the reply points at Ben's message")
+    try await API.send(cid, body: "typo \(Self.stamp)")
+    let typoList = try await API.messages(cid)
+
+    let typo = try XCTUnwrap(typoList.last)
+    try await API.unsend(typo.id)
+    let afterUnsend = try await API.messages(cid)
+    XCTAssertFalse(afterUnsend.contains { $0.id == typo.id })
+
+    // Ben sees the 🔥 and can't unsend Josh's message.
+    _ = try await signIn("ben")
+    let seen = await API.reactions("dm", messageIds: [first.id])
+    XCTAssertEqual(seen, [Reaction(messageId: first.id, userId: josh, emoji: "🔥")])
+    do { try await API.unsend(reply.id); XCTFail("can't unsend someone else's message") } catch { XCTAssertEqual(friendly(error), "You can unsend a message for 15 minutes after sending it.") }
+    try await API.setReaction("dm", messageId: first.id, emoji: "👀", on: true, me: ben)
+    try await API.setReaction("dm", messageId: first.id, emoji: "👀", on: false, me: ben)
+    let after = await API.reactions("dm", messageIds: [first.id])
+    XCTAssertEqual(after.count, 1)
+
+    // Group chats too.
+    let chatId = try await API.openClubChat("rkt")
+    try await API.sendChat(chatId, body: "Pad booked \(Self.stamp)")
+    let padList = try await API.chatMessages(chatId)
+
+    let pad = try XCTUnwrap(padList.last)
+    try await API.setReaction("group", messageId: pad.id, emoji: "🚀", on: true, me: ben)
+    try await API.sendChat(chatId, body: "for 9am \(Self.stamp)", replyTo: pad.id)
+    let chatAfter = try await API.chatMessages(chatId)
+    XCTAssertEqual(chatAfter.last?.replyTo, pad.id)
+    let chatReactions = await API.reactions("group", messageIds: [pad.id])
+    XCTAssertEqual(chatReactions.first?.emoji, "🚀")
+  }
+
   func testFollowAndClubs() async throws {
     let me = try await signIn("maya")
     let found: [Profile] = try await supabase.from("profiles").select(Session.profileColumns).eq("first_name", value: "Cara").limit(1).execute().value

@@ -125,6 +125,19 @@ struct Message: Codable, Identifiable, Hashable, Sendable {
   let senderId: UUID
   var body: String
   var createdAt: Date
+  var replyTo: String? = nil
+}
+
+// Reactions, replies and unsend (supabase/chat-extras.sql), as on the web.
+enum ChatExtras {
+  static let reactions = ["👍", "❤️", "😂", "🎉", "🔥", "👀", "🚀", "💡"]
+  static let unsendWindow: TimeInterval = 15 * 60
+}
+
+struct Reaction: Codable, Hashable, Sendable {
+  let messageId: String
+  let userId: UUID
+  let emoji: String
 }
 
 struct ForgeNotification: Codable, Identifiable, Hashable, Sendable {
@@ -217,6 +230,7 @@ struct ChatMessage: Codable, Identifiable, Hashable, Sendable {
   var announcement: Bool
   var ember: Bool
   var createdAt: Date
+  var replyTo: String? = nil
   var senderName: String { "\(senderFirst) \(senderLast)".trimmingCharacters(in: .whitespaces) }
 }
 
