@@ -20,12 +20,12 @@ const NO_ANSWER: EmberAnswerState = { q: "", text: "", tools: [], proposals: [] 
 // The top of the feed: one box to create and to ask. "Post" is the composer (photos and video by
 // pick, drop or paste; Ember can polish the draft in place). "Ask Ember" sends the same box to
 // Copilot, with answers and confirm cards right underneath.
-export function Composer({ first, last, interests, userId, mediaEnabled = false, avatarSrc, copilot = false, club = null, next = null, mentionsEnabled = false, projects = [], clubs = [] }: { first: string; last: string; interests: string[]; userId: string; mediaEnabled?: boolean; avatarSrc?: string | null; copilot?: boolean; club?: { id: string; name: string } | null; next?: { label: string; href: string } | null; projects?: { id: string; title: string }[]; clubs?: { id: string; name: string }[]; mentionsEnabled?: boolean }) {
+export function Composer({ first, last, interests, userId, mediaEnabled = false, avatarSrc, copilot = false, club = null, next = null, mentionsEnabled = false, projects = [], clubs = [], initialProject }: { first: string; last: string; interests: string[]; userId: string; mediaEnabled?: boolean; avatarSrc?: string | null; copilot?: boolean; club?: { id: string; name: string } | null; next?: { label: string; href: string } | null; projects?: { id: string; title: string }[]; clubs?: { id: string; name: string }[]; initialProject?: string; mentionsEnabled?: boolean }) {
   const [mode, setMode] = useState<"post" | "ask">("post");
   const [state, action, pending] = useActionState<ComposeState, FormData>(createPost, { ok: false, message: "", nonce: 0 });
   const [kind, setKind] = useState<string>("update");
   // Which project it's about comes first (your latest one); "general update" is allowed, not the default.
-  const [projectId, setProjectId] = useState<string>(projects[0]?.id ?? "");
+  const [projectId, setProjectId] = useState<string>(projects.find((p) => p.id === initialProject)?.id ?? projects[0]?.id ?? "");
   const [shareTo, setShareTo] = useState<string>("");
   const [tags, setTags] = useState<string[]>([]);
   const [body, setBody] = useState("");

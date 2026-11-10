@@ -8,6 +8,8 @@ import { dbFeatures } from "@/lib/db-features";
 import { cn } from "@/lib/forge";
 import { getViewer } from "@/lib/supabase/server";
 import { ExploreCard, type ExploreProject } from "./project-card";
+import { Workbench, type BenchProject } from "./workbench";
+import { copilotEnabled } from "@/lib/copilot";
 
 export const metadata: Metadata = { title: "Projects" };
 
@@ -65,6 +67,23 @@ async function Explore({ searchParams }: { searchParams: PageProps<"/projects">[
   const toolCounts = rows.flatMap((r) => (r as unknown as { tools?: string[] }).tools ?? []).reduce((m, t) => m.set(t, (m.get(t) ?? 0) + 1), new Map<string, number>());
   const topTools = [...toolCounts].sort((a, b) => b[1] - a[1]).slice(0, 10).map(([t]) => t);
   if (tool && !topTools.includes(tool)) topTools.unshift(tool);
+  // Your workbench: every project of yours (private too), with where it stands on the way to proof.
+  const [{ data: myRows }, copilot] = await Promise.all([
+    supabase.from("projects").select("id, title, summary, status, private, updated_at").eq("owner_id", user.id).order("updated_at", { ascending: false }).limit(20),
+    copilotEnabled(),
+  ]);
+  const myIds = ((myRows ?? []) as { id: string }[]).map((r) => r.id);
+  const [myMs, myUps] = myIds.length ? await Promise.all([
+    msOn ? supabase.from("milestones").select("project_id, status").in("project_id", myIds).limit(2000) : Promise.resolve({ data: [] }),
+    supabase.from("posts").select("project_id").in("project_id", myIds).limit(2000),
+  ]) : [{ data: [] }, { data: [] }];
+  const msRows = (myMs.data ?? []) as { project_id: string; status: string }[];
+  const bench: BenchProject[] = ((myRows ?? []) as Omit<BenchProject, "verified" | "waiting" | "updates">[]).map((r) => ({
+    ...r,
+    verified: msRows.filter((m) => m.project_id === r.id && m.status === "verified").length,
+    waiting: msRows.filter((m) => m.project_id === r.id && (m.status === "pending" || m.status === "disputed")).length,
+    updates: ((myUps.data ?? []) as { project_id: string }[]).filter((u) => u.project_id === r.id).length,
+  }));
   const href = (patch: Record<string, string>) => {
     const p = new URLSearchParams({ ...(q && { q }), ...(topic && { topic }), ...(tool && { tool }), ...(status && { status }), ...(verifiedOnly && { verified: "1" }), ...(mine && { mine: "1" }), ...patch });
     for (const [k, v] of [...p.entries()]) if (!v) p.delete(k);
@@ -75,7 +94,8 @@ async function Explore({ searchParams }: { searchParams: PageProps<"/projects">[
 
   return (
     <>
-      <PageHeader title="Projects" subtitle="What people across Forge are building, and what their clubs have verified." actions={<Link href={`/u/${user.id}#projects`} className="bg-accent-grad inline-flex h-10 items-center gap-1.5 rounded-full px-4 text-sm font-medium text-on-accent"><FolderGit2 className="size-4" /> Add a project</Link>} />
+      <PageHeader title="Projects" subtitle="What you're building, and what people across Forge have built and had verified." />
+      {!q && !topic && !tool && !status && !verifiedOnly && !mine && <Workbench projects={bench} interests={profile.interests ?? []} copilot={copilot} stack={stackOn} />}
       <form action="/projects" className="relative mt-6">
         {topic && <input type="hidden" name="topic" value={topic} />}
         {tool && <input type="hidden" name="tool" value={tool} />}
