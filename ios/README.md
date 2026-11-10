@@ -13,7 +13,7 @@ Native SwiftUI app on the same Supabase backend as `web/`: same tables, same row
 | **Profiles** | Anyone's profile from a post, reply, alert or thread: headline, field, interests, posts; follow and message them |
 | **Messages** | Club, event and team chats (officers post announcements; Ember's answers show as Ember's), plus direct messages with requests, accept or decline. Long-press any message to react (8 emoji), reply with a quote, copy, or unsend your own (direct messages within 15 minutes). Threads update live (Realtime, with polling as a fallback). Open a club's chat from its page, an event's from its page once you're going |
 | **Alerts** | Likes, replies, mentions, follows, club and milestone news; marked read once seen; tap to open the post or person |
-| **You** | Profile, light/dark and the web's five themes, links to settings and Ember on the web, sign out |
+| **You** | Edit your profile (photo, name, headline, field, about, interests; the web's rules), your saved posts, light/dark and the web's five themes, links to settings and Ember on the web, sign out |
 
 Sign-up, onboarding and Ember open on the web for now.
 
@@ -35,7 +35,7 @@ The app connects to whatever `Config/Local.xcconfig` names (gitignored). It defa
 
 ```sh
 scripts/test-kit.sh   # on the Mac, no simulator: ranking and dates, plus the app's real reads and writes against the
-                      # local stack (edit/delete your own posts and not others'; @mention → they're notified, fake mentions dropped; photo upload → post with it, and the folder rule; post → first in feed → like, save → reply; message from a profile → they see it
+                      # local stack (edit your profile and photo, and the web's validation; saved posts; edit/delete your own posts and not others'; @mention → they're notified, fake mentions dropped; photo upload → post with it, and the folder rule; post → first in feed → like, save → reply; message from a profile → they see it
                       # unread → accept → reply; reactions, replies and unsend (in DMs
                       # and club chats); club chat and announcements (officers only, members can't,
                       # non-members can't read); event chat for people going; follow; join a club; RSVP; alerts)
@@ -45,5 +45,5 @@ scripts/test.sh       # the same, then UI journeys on a simulator (XCUITest; mac
 ## Next
 
 1. Push notifications (APNs + a Supabase webhook on `notifications` and `messages`).
-2. Team chats; your saved posts; editing your profile.
+2. Team chats; message and notification settings.
 3. Native sign-up and onboarding; TestFlight.

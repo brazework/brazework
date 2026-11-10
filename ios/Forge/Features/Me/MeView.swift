@@ -6,6 +6,7 @@ struct MeView: View {
   @Environment(\.openURL) private var openURL
   @AppStorage("forge-skin") private var skin = Skin.forge.rawValue
   @AppStorage("forge-appearance") private var appearance = "system"
+  @State private var editing = false
 
   var body: some View {
     NavigationStack {
@@ -58,7 +59,8 @@ struct MeView: View {
           .listRowBackground(p.surface)
         }
         Section {
-          link("Edit profile", "person.crop.circle", "settings/profile")
+          Button { editing = true } label: { Label("Edit profile", systemImage: "person.crop.circle").foregroundStyle(p.text) }
+          NavigationLink { SavedPostsView() } label: { Label("Saved", systemImage: "bookmark").foregroundStyle(p.text) }
           link("Settings", "gearshape", "settings")
           link("Ask Ember", "sparkles", "copilot")
         }
@@ -71,6 +73,10 @@ struct MeView: View {
       .scrollContentBackground(.hidden)
       .background(p.bg)
       .navigationTitle("You")
+      .sheet(isPresented: $editing) { if let me = session.profile { EditProfileView(profile: me) } }
+      #if DEBUG
+      .task { if ProcessInfo.processInfo.environment["FORGE_TEST_EDIT_PROFILE"] != nil { editing = true } }
+      #endif
       .navigationDestination(for: PersonRoute.self) { ProfileView(id: $0.id) }
       .navigationDestination(for: Post.self) { PostLoader(id: $0.id) }
       .navigationDestination(for: InboxItem.self) { ThreadView(item: $0) }

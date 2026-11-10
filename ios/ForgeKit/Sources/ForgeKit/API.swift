@@ -121,6 +121,35 @@ enum API {
     try await supabase.from("posts").select().eq("community_id", value: clubId).eq("status", value: "visible").order("created_at", ascending: false).limit(30).execute().value
   }
 
+  // Posts you've saved, most recently saved first.
+  static func savedPosts(me: UUID) async throws -> [Post] {
+    struct S: Decodable { let postId: String }
+    let ids: [S] = try await supabase.from("saved").select("post_id").eq("user_id", value: me).order("saved_at", ascending: false).limit(100).execute().value
+    guard !ids.isEmpty else { return [] }
+    let posts: [Post] = try await supabase.from("posts").select().in("id", values: ids.map(\.postId)).execute().value
+    let order = Dictionary(uniqueKeysWithValues: ids.enumerated().map { ($1.postId, $0) })
+    return posts.sorted { (order[$0.id] ?? 0) < (order[$1.id] ?? 0) }
+  }
+
+  // MARK: Your profile
+  static func saveProfile(_ e: ProfileEdit, me: UUID) async throws {
+    if let problem = e.problem { throw ProfileError(message: problem) }
+    struct Row: Encodable { let firstName, lastName, headline, bio, field: String; let interests: [String] }
+    var seen = Set<String>()
+    try await supabase.from("profiles").update(Row(firstName: e.firstName.trimmingCharacters(in: .whitespaces), lastName: e.lastName.trimmingCharacters(in: .whitespaces),
+      headline: e.headline.trimmingCharacters(in: .whitespacesAndNewlines), bio: e.bio.trimmingCharacters(in: .whitespacesAndNewlines), field: e.field,
+      interests: e.interests.filter { seen.insert($0).inserted }), returning: .minimal).eq("id", value: me).execute()
+  }
+  // A new profile photo (a JPEG already shrunk by the app). The old file is tidied up.
+  static func setAvatar(_ jpeg: Data, me: UUID, old: String?) async throws -> String {
+    struct Row: Encodable { let avatarPath: String }
+    let path = try await upload(jpeg, contentType: "image/jpeg", ext: "jpg", me: me)
+    do { try await supabase.from("profiles").update(Row(avatarPath: path), returning: .minimal).eq("id", value: me).execute() }
+    catch { await removeUpload(path); throw error }
+    if let old, !old.isEmpty { await removeUpload(old) }
+    return path
+  }
+
   // MARK: People
   static func profile(_ id: UUID) async throws -> Profile {
     try await supabase.from("profiles").select(Session.profileColumns).eq("id", value: id).single().execute().value

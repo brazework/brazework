@@ -246,6 +246,44 @@ final class JourneyTests: XCTestCase {
     do { _ = try await API.post(post.id); XCTFail("post still there") } catch {}
   }
 
+  func testEditProfileAndPhoto() async throws {
+    let me = try await signIn("cara")
+    let before = try await API.profile(me)
+    var e = ProfileEdit(before)
+    e.headline = "Structures, bridges and test rigs \(Self.stamp)"
+    e.field = "Engineering"
+    e.interests = ["Civil & Structural", "Materials Engineering", "Mechanical Design"]
+    try await API.saveProfile(e, me: me)
+    let after = try await API.profile(me)
+    XCTAssertEqual(after.headline, e.headline)
+    XCTAssertEqual(after.interests, e.interests)
+
+    var bad = e; bad.interests = ["Civil & Structural"]
+    do { try await API.saveProfile(bad, me: me); XCTFail("needs 3 interests") } catch { XCTAssertEqual(friendly(error), "Keep at least 3 interests.") }
+    bad = e; bad.field = "Basket weaving"
+    do { try await API.saveProfile(bad, me: me); XCTFail("needs a real field") } catch { XCTAssertEqual(friendly(error), "Pick your field.") }
+
+    let png = Data(base64Encoded: "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR4nGNgYGD4DwABBAEAwS2OUAAAAABJRU5ErkJggg==")!
+    let path = try await API.setAvatar(png, me: me, old: after.avatarPath)
+    let withPhoto = try await API.profile(me)
+    XCTAssertEqual(withPhoto.avatarPath, path)
+    let (_, resp) = try await URLSession.shared.data(from: XCTUnwrap(mediaURL(path)))
+    XCTAssertEqual((resp as? HTTPURLResponse)?.statusCode, 200)
+  }
+
+  func testSavedPosts() async throws {
+    let me = try await signIn("josh")
+    let feed = FeedStore(); feed.tab = .latest
+    await feed.load(me: me, interests: [])
+    let post = try XCTUnwrap(feed.items.first?.post)
+    try await API.setSaved(post.id, true, me: me)
+    let saved = try await API.savedPosts(me: me)
+    XCTAssertEqual(saved.first?.id, post.id, "most recently saved first")
+    try await API.setSaved(post.id, false, me: me)
+    let gone = try await API.savedPosts(me: me)
+    XCTAssertFalse(gone.contains { $0.id == post.id })
+  }
+
   func testFollowAndClubs() async throws {
     let me = try await signIn("maya")
     let found: [Profile] = try await supabase.from("profiles").select(Session.profileColumns).eq("first_name", value: "Cara").limit(1).execute().value
