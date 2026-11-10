@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { Sparkles, X } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Button } from "@/components/ui";
 import { cn } from "@/lib/forge";
 import { NavTile } from "@/components/app/nav-tile";
@@ -190,7 +191,7 @@ export function UpdatesDialog({ open, onClose, focusId }: { open: boolean; onClo
     }, 30);
     return () => { window.removeEventListener("keydown", onKey); clearTimeout(t); };
   }, [open, focusId, onClose]);
-  if (!open) return null;
+  if (!open || typeof document === "undefined") return null;
   const released = UPDATES.filter((u) => u.kind !== "Next");
   const upcoming = UPDATES.filter((u) => u.kind === "Next");
   const item = (u: (typeof UPDATES)[number]) => (
@@ -201,7 +202,9 @@ export function UpdatesDialog({ open, onClose, focusId }: { open: boolean; onClo
       {u.points && <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted">{u.points.map((p) => <li key={p}>{p}</li>)}</ul>}
     </li>
   );
-  return (
+  // Portalled to <body>: the cards that open it use backdrop-filter, which would otherwise trap this
+  // fixed overlay inside the card and let sticky bars (the feed tabs) draw over it.
+  return createPortal(
     <div role="dialog" aria-modal="true" aria-labelledby="updates-title" className="fixed inset-0 z-[70] grid place-items-center bg-bg/70 p-4 backdrop-blur-sm" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="max-h-[85dvh] w-full max-w-lg overflow-y-auto rounded-3xl border border-line bg-surface p-6 shadow-[var(--shadow)]">
         <div className="flex items-start justify-between">
@@ -221,6 +224,7 @@ export function UpdatesDialog({ open, onClose, focusId }: { open: boolean; onClo
           <div className="mt-2"><FeedbackForm /></div>
         </section>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }
