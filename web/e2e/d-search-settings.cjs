@@ -46,8 +46,10 @@ const pw = require("playwright-core");
     if (await cara.getByText("Private milestone").count()) throw new Error("private milestone shown");
     await go(cara, "/talent?q=quantum");
     await cara.getByText("No one matches that yet").waitFor();
-    await go(josh, "/talent");
-    await josh.getByRole("link", { name: "Register your organization" }).waitFor();
+    // Josh logged out in the step before; a fresh session for him.
+    const j = await as(b, "josh@forge.test");
+    await go(j, "/talent");
+    await j.getByRole("link", { name: "Register your organization" }).waitFor();
   }, cara);
   await step("signed-out visitors can't open app pages", async () => {
     const ctx = await b.newContext(); const p = await ctx.newPage();

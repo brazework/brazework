@@ -57,10 +57,11 @@ To build:
 
 ## Phase 5: company flow
 
-- 🟡 Organizations register by work email (exists; block free email domains ⬜).
-- ⬜ Search builders by field, school, club, grad year, verified skills, verified count (public data only; needs public profile visibility).
+- ✅ Organizations register by work email; free email domains are refused and the email domain must match the website (`create_organization()` in events.sql).
+- ✅ Find builders (`/talent`, verified companies and schools): search by skills and verified work, club, open-to and verified count; public verified milestones only, ranking tested (`web/tests/talent.test.ts`). Grad year ⬜ (not collected yet).
 - 🟡 Messages land in Requests ✅; per-company weekly cap and tier limits ⬜.
-- ⬜ Sponsored challenges end to end; `billing` module with a provider interface and Stripe stub.
+- ✅ Sponsored challenges end to end (`challenges.sql`, step 21): draft → sponsored (paid or Forge-approved pilot) → open → judging → winners; SQL tests and e2e `h-challenges.cjs`.
+- ✅ `web/src/lib/billing.ts`: provider interface, Stripe Checkout over REST (on only with `STRIPE_SECRET_KEY` + `STRIPE_PRICE_CHALLENGE`/`STRIPE_PRICE_TALENT`), otherwise a pilot request; tests in `web/tests/billing.test.ts`. Webhook to mark payments ⬜.
 - 🟡 Company events beside club events (exists; label clearly).
 
 ## Phase 6: Ember
@@ -90,7 +91,7 @@ To build:
 
 ## Phase 9: metrics
 
-- 🟡 Club weekly reports exist → ⬜ admin dashboard: weekly active members, posts per club, milestones submitted vs verified and time to verify, onboarding completion, club retention incl. across handoff, company follows/messages/replies, challenges.
+- ✅ `/admin` (Forge admins, `admin-metrics.sql`, step 22): weekly active, the loop as a funnel, submitted vs verified and median time to verify, active clubs and handoffs, companies, challenges and sponsorships, plus the sponsorship approvals and review queue. ⬜ Retention cohorts and company message/reply rates.
 
 ## Deliverables at the end
 
