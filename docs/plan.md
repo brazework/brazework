@@ -13,14 +13,14 @@ Based on [current-state.md](current-state.md) (the map of what exists). Work goe
 ## Phase 1: clean up and simplify
 
 - ✅ Test-data cleanup script (preview + transactional delete) and a local-only demo seed (`web/scripts/seed-demo.cjs`, refuses non-local targets).
-- ⬜ Five-item navigation: **Home, Clubs, Projects, Messages, Profile** (desktop sidebar and phone tab bar).
+- ✅ Five-item navigation: **Home, Clubs, Projects, Messages, Profile** (desktop sidebar and phone tab bar), commit 42f2005. No route was removed, so nothing needs a redirect; secondary pages sit in a "More" group.
   - Events → inside Clubs (tab) and a "Coming up" panel on Home.
   - Notifications → bell on Home; Saved → a Home tab.
   - Network → search (people and clubs) in the top bar (search bar already exists).
   - Dashboard → Profile's private analytics tab.
   - Copilot page → Ember button + command palette (`/` or ⌘K).
   - Redirects: `/dashboard`, `/analytics`, `/network`, `/saved`, `/copilot` (and keep `/events`, `/notifications` reachable).
-- ⬜ Project at the center: composer asks "Which project?" first; posts belong to a project or a club; "general update" allowed, not default. Today the RLS rule forbids `project_id` with `community_id` set; allow a project post to also go to a club (DB change).
+- ✅ Project at the center (commit 9d3315d): composer asks "Which project?" first, then optionally a club; `supabase/project-posts.sql` (step 16) allows both on one post. Ember palette replacing the Copilot page moves to Phase 6.
 
 ## Phase 2: the student flow
 
