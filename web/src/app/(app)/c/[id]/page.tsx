@@ -17,7 +17,7 @@ import { CommunityBadge, MetaLine, RoleChip } from "../../communities/_component
 import { inLog, withHost, type HostedEvent } from "@/lib/events";
 import { requestTime } from "@/lib/forge";
 import { EventCard } from "../../events/event-card";
-import { EventEditor, EventRow } from "../../org/org-client";
+import { CalendarImport, EventEditor, EventRow } from "../../org/org-client";
 import { CommunityComposer, HeldActions, JoinButton, ModRemove } from "./community-client";
 import { dbFeatures, eventWithHost, postSelect } from "@/lib/db-features";
 import Image from "next/image";
@@ -216,7 +216,7 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
             {canHost && clubEvents && (
               <div className="flex flex-wrap items-center justify-between gap-3 rounded-3xl border border-line bg-surface-2 p-4">
                 <p className="text-sm text-text-2">Club events show up here and in everyone&apos;s Events page{c.privacy === "approval" ? " (members only, since this club approves who joins)" : ""}.</p>
-                <EventEditor communityId={c.id} />
+                <span className="flex flex-wrap gap-2"><CalendarImport communityId={c.id} /><EventEditor communityId={c.id} /></span>
               </div>
             )}
             {upcomingEvents.map((e) => <EventCard key={e.id} event={e} going={goingSet.has(e.id)} saved={savedSet.has(e.id)} now={now} />)}

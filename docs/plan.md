@@ -49,7 +49,8 @@ To build:
 ## Phase 4: club leader flow
 
 - 🟡 Create/claim club, roles (owner/admin/moderator/helper/member exist), invite links ✅.
-- ⬜ Import members (CSV/email list), events from Google Calendar / `.ics`.
+- ✅ Import events from Google Calendar, Outlook or Apple Calendar (`.ics` file, parsed in the browser with time zones and all-day events; pick which to bring; same checks as a hand-made event). Tests: `web/tests/ics.test.ts`, e2e step in `b-clubs-events.cjs`.
+- ⬜ Import members (CSV/email list): needs an email sender for invitations.
 - ✅ Club home as a to-do list for officers (verify queue incl. disputes, join requests, held posts, next event).
 - 🟡 Discord bridge (announcements exist; add Discord → Forge post via bot/webhook, stubbed without credentials).
 - 🟡 Weekly club report by Ember (exists, manual; add a shareable link).

@@ -70,6 +70,28 @@ const { BASE, step, browser, as, go, summary } = require("./lib.cjs");
     await cara.getByRole("button", { name: "Publish event" }).click();
     await cara.getByText(eventTitle).first().waitFor({ timeout: 20000 });
   }, cara);
+  await step("Cara imports two events from a calendar file (.ics)", async () => {
+    const fs = require("fs"), os = require("os"), path = require("path");
+    const ymd = (days) => { const d = new Date(Date.now() + days * 864e5); return d.toISOString().slice(0, 10).replace(/-/g, ""); };
+    const stamp = Date.now() % 1000;
+    const ics = ["BEGIN:VCALENDAR", "VERSION:2.0",
+      "BEGIN:VEVENT", `UID:a-${stamp}`, `DTSTART:${ymd(8)}T220000Z`, `DTEND:${ymd(8)}T233000Z`, `SUMMARY:Imported GBM ${stamp}`, "LOCATION:Dana Hall 210", "END:VEVENT",
+      "BEGIN:VEVENT", `UID:b-${stamp}`, `DTSTART:${ymd(15)}T220000Z`, `SUMMARY:Imported build night ${stamp}`, "URL:https://meet.example.com/build", "END:VEVENT",
+      "BEGIN:VEVENT", "UID:old", "DTSTART:20200101T120000Z", "SUMMARY:Long gone", "END:VEVENT",
+      "END:VCALENDAR"].join("\r\n");
+    const file = path.join(os.tmpdir(), `forge-import-${stamp}.ics`); fs.writeFileSync(file, ics);
+    await go(cara, `${clubUrl}?tab=events`);
+    await cara.getByRole("button", { name: "Import calendar" }).click();
+    await cara.locator("#ics-file").setInputFiles(file);
+    const dlg = cara.getByRole("dialog", { name: "Import events from a calendar" });
+    await dlg.getByText(`Imported GBM ${stamp}`).waitFor();
+    if (await dlg.getByText("Long gone").count()) throw new Error("past event offered");
+    const opts = await cara.locator("#ics-topic option").allInnerTexts(); await cara.locator("#ics-topic").selectOption({ label: opts[1] });
+    await dlg.getByRole("button", { name: "Import 2 events" }).click();
+    await dlg.getByText("Imported 2 events.").waitFor({ timeout: 15000 });
+    await go(cara, `${clubUrl}?tab=events`);
+    await cara.getByText(`Imported build night ${stamp}`).first().waitFor({ timeout: 15000 });
+  }, cara);
   let eventPath = "";
   await step("the event is listed on the club and on Events", async () => {
     eventPath = await cara.getByRole("link", { name: new RegExp(eventTitle) }).first().getAttribute("href");

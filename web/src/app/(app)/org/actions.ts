@@ -82,3 +82,30 @@ export async function cancelEvent(id: string): Promise<OrgState> {
   revalidatePath("/c/[id]", "page");
   return { ok: true, message: "Event cancelled." };
 }
+
+// Calendar import (.ics, parsed in the browser): each event goes through the same checks as one
+// typed in by hand, and the database decides whether this member can host for the club.
+export type ImportItem = { title: string; description: string; location: string; link: string; starts_at: string; ends_at: string };
+export async function importClubEvents(communityId: string, items: ImportItem[], type: string, topic: string): Promise<OrgState & { added?: number }> {
+  if (!communityId) return { ok: false, message: "Choose the club first." };
+  if (!items.length) return { ok: false, message: "Pick at least one event to import." };
+  if (items.length > 50) return { ok: false, message: "Import up to 50 events at a time." };
+  const rows = [];
+  for (const it of items) {
+    const parsed = eventSchema.safeParse({
+      title: (it.title ?? "").slice(0, 120), description: (it.description ?? "").slice(0, 2000), type, format: it.link && !it.location ? "Online" : it.link ? "Hybrid" : "In person",
+      location: (it.location ?? "").slice(0, 160) || (it.link ? "" : "To be announced"), link: it.link ?? "", topic, starts_at: it.starts_at, ends_at: it.ends_at,
+    });
+    if (!parsed.success) return { ok: false, message: `"${(it.title ?? "").slice(0, 40)}": ${parsed.error.issues[0]?.message ?? "check it"}` };
+    if (Date.parse(parsed.data.ends_at) <= Date.now()) continue;
+    rows.push({ ...parsed.data, community_id: communityId });
+  }
+  if (!rows.length) return { ok: false, message: "Those events have already ended." };
+  const { supabase, user } = await getViewer();
+  if (!user) return { ok: false, message: "Log in again." };
+  const { data, error } = await supabase.from("events").insert(rows).select("id");
+  if (error) return { ok: false, message: error.code === "42501" ? "Only a club's admins and owner can host its events." : friendlyError(error) };
+  revalidatePath(`/c/${communityId}`);
+  revalidatePath("/events", "layout");
+  return { ok: true, message: `Imported ${data?.length ?? rows.length} ${rows.length === 1 ? "event" : "events"}.`, added: data?.length ?? rows.length };
+}
