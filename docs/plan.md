@@ -4,11 +4,11 @@
 
 Based on [current-state.md](current-state.md) (the map of what exists). Work goes phase by phase in small commits, never pushed without asking. ✅ exists, 🟡 partly, ⬜ to build.
 
-## Open decisions (need the founders)
+## Decisions (founders, 2026-11-09)
 
-1. **Landing "fields" section.** The build prompt says keep the flip cards with half the copy; the founder's direct instruction on 2026-11-09 was to drop the majors from the landing. Current landing (commit 3391750) has no fields section. Decide before Phase 8.
-2. **Universities as a customer.** The prompt's model is bottom-up (no school purchase) with companies paying; docs/strategy.md also lists universities and national organizations. Plan follows the prompt (companies pay; universities later), pending the founders.
-3. **Production test data.** `supabase/maintenance/remove-test-data.sql` is ready; someone with SQL Editor access runs the preview, then the delete.
+1. **Landing:** keep the majors out (no fields section).
+2. **Universities:** later. Companies pay first; universities come off the landing's audiences and pricing for now (Phase 8).
+3. **Production test data:** `supabase/maintenance/remove-test-data.sql` is ready; someone with SQL Editor access runs the preview, then the delete.
 
 ## Phase 1: clean up and simplify
 
