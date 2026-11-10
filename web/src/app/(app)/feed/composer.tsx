@@ -40,7 +40,6 @@ export function Composer({ first, last, interests, userId, mediaEnabled = false,
   const [shareTo, setShareTo] = useState<string>("");
   const [tags, setTags] = useState<string[]>([]);
   const [body, setBody] = useState("");
-  const [open, setOpen] = useState(false);
   const [dragging, setDragging] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
   const textRef = useRef<HTMLTextAreaElement>(null);
@@ -83,7 +82,7 @@ export function Composer({ first, last, interests, userId, mediaEnabled = false,
   // Also when you're already here: Next changes the hash with pushState, which fires no event, so
   // the Create sheet sends "forge:compose" instead.
   useEffect(() => {
-    const start = () => requestAnimationFrame(() => { setMode("post"); setOpen(true); textRef.current?.focus(); textRef.current?.scrollIntoView({ block: "center", behavior: "smooth" }); });
+    const start = () => requestAnimationFrame(() => { setMode("post"); textRef.current?.focus(); textRef.current?.scrollIntoView({ block: "center", behavior: "smooth" }); });
     const raf = location.hash === "#composer" ? start() : 0;
     window.addEventListener("forge:compose", start);
     return () => { cancelAnimationFrame(raf); window.removeEventListener("forge:compose", start); };
@@ -99,17 +98,23 @@ export function Composer({ first, last, interests, userId, mediaEnabled = false,
     setBody("");
     setTags([]);
     setKind("update");
-    setOpen(false);
     setBefore(null);
     att.clear();
     at.reset();
   }
 
+  // The box grows with what you write (up to max-h-80) and shrinks back once it's posted or cleared.
+  useEffect(() => {
+    const el = textRef.current;
+    if (!el) return;
+    el.style.height = "auto";
+    el.style.height = `${el.scrollHeight}px`;
+  }, [body, question, mode]);
+
   const toggleTag = (t: string) => setTags((cur) => (cur.includes(t) ? cur.filter((x) => x !== t) : cur.length < 3 ? [...cur, t] : cur));
   const pickFiles = (files: FileList | File[]) => {
     if (!mediaEnabled || !files.length) return;
     setMode("post");
-    setOpen(true);
     void att.add(files);
   };
   const remaining = MAX - body.length;
@@ -133,64 +138,72 @@ export function Composer({ first, last, interests, userId, mediaEnabled = false,
       <input ref={photoRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple hidden onChange={(e) => { if (e.target.files) pickFiles(e.target.files); e.target.value = ""; }} />
       <input ref={videoRef} type="file" accept="video/mp4,video/webm,video/quicktime" hidden onChange={(e) => { if (e.target.files) pickFiles(e.target.files); e.target.value = ""; }} />
 
-      {/* One box: write a post, or tap the orb to ask Ember in the same place. */}
-      <div className="flex items-start gap-3">
+      {/* Who and where: you (or Ember), where the post goes, what kind it is, its tags, and the orb,
+          which turns this same box into a question for Ember. One row on a wide screen; on a phone,
+          you and the orb on top and the choices in a full-width row under you. */}
+      <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3 gap-y-2.5">
         {asking
-          ? <Ember size={40} mood={ai.busy ? "thinking" : answer.text ? "happy" : "idle"} className="mt-0.5" />
-          : <span className="h-fit rounded-full bg-accent-grad p-[2px]"><Avatar first={first} last={last} size={40} src={avatarSrc} className="border-2 border-surface" /></span>}
-        <label htmlFor="create-box" className="sr-only">{asking ? "Ask Ember" : `What are you building, ${first}?`}</label>
-        <div className={cn("relative flex min-w-0 flex-1 items-end rounded-2xl border transition", focused || open || asking ? "border-line-strong bg-surface" : "border-transparent bg-surface-2/70 hover:bg-surface-2")}>
-          <textarea
-            id="create-box"
-            ref={textRef}
-            name={asking ? undefined : "body"}
-            value={asking ? question : body}
-            onChange={(e) => { if (asking) { setQuestion(e.target.value); setSoon(false); } else { setBody(e.target.value); setBefore(null); at.track(e.target); } }}
-            onSelect={(e) => { if (!asking) at.track(e.currentTarget); }}
-            {...(asking ? {} : at.inputProps)}
-            onFocus={() => { setFocused(true); if (!asking) setOpen(true); }}
-            onBlur={() => { setFocused(false); at.close(); }}
-            onPaste={(e) => { const files = [...e.clipboardData.files]; if (files.length && mediaEnabled) { e.preventDefault(); pickFiles(files); } }}
-            onKeyDown={(e) => {
-              if (!asking && at.onKeyDown(e)) return;
-              if (asking && e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void ask(question); }
-              if (!asking && (e.metaKey || e.ctrlKey) && e.key === "Enter") formRef.current?.requestSubmit();
-            }}
-            maxLength={asking ? 4000 : MAX}
-            rows={!asking && open ? 3 : 1}
-            placeholder={asking ? typed || "Ask Ember anything" : mentionsEnabled && open ? "Share what you built. Type @ to mention someone." : `What are you building, ${first}?`}
-            style={{ outline: "none" }}
-            className="max-h-72 min-h-11 flex-1 resize-none bg-transparent px-4 py-2.5 text-[15px] leading-relaxed text-text placeholder:text-faint"
-          />
-          {!asking && at.menu}
-          {/* Closed: add a photo or video straight from the box (from a tablet up; on a phone the box
-              gets the room, and the same buttons are in its footer once it opens). */}
-          {!asking && !open && mediaEnabled && (
-            <div className="hidden shrink-0 items-center gap-0.5 p-1 sm:flex">
-              <IconTool label="Add a photo" onClick={() => photoRef.current?.click()}><ImagePlus className="size-[18px] text-sky-500" /></IconTool>
-              <IconTool label="Add a video" onClick={() => videoRef.current?.click()}><Video className="size-[18px] text-rose-500" /></IconTool>
+          ? <Ember size={40} mood={ai.busy ? "thinking" : answer.text ? "happy" : "idle"} className="col-start-1 row-start-1" />
+          : <span className="col-start-1 row-start-1 rounded-full bg-accent-grad p-[2px]"><Avatar first={first} last={last} size={40} src={avatarSrc} className="border-2 border-surface" /></span>}
+        {asking ? (
+          <p className="col-start-2 row-start-1 min-w-0 text-sm font-medium">Ask Ember <span className="font-normal text-muted">· it checks real Brazework data first</span></p>
+        ) : (
+          <>
+            <p className="col-start-2 row-start-1 min-w-0 sm:hidden"><span className="block truncate text-sm font-medium">{first} {last}</span><span className="block truncate text-xs text-faint">Share what you built</span></p>
+            <div className="col-span-3 row-start-2 flex min-w-0 flex-wrap items-center gap-1.5 sm:col-span-1 sm:col-start-2 sm:row-start-1">
+              <ProjectPicker projects={projects} clubs={clubs} projectId={projectId} setProjectId={setProjectId} shareTo={shareTo} setShareTo={setShareTo} />
+              <KindMenu kind={kind} setKind={setKind} />
+              {interests.length > 0 && <TagsMenu interests={interests} tags={tags} toggle={toggleTag} />}
             </div>
-          )}
-          {asking && (
-            <div className="p-1">
-              {ai.busy
-                ? <button type="button" onClick={ai.stop} aria-label="Stop" className="grid size-9 place-items-center rounded-xl border border-line"><Square className="size-3.5 fill-current" /></button>
-                : <button type="submit" disabled={!question.trim()} aria-label="Ask Ember" className="bg-accent-grad grid size-9 place-items-center rounded-xl text-on-accent transition active:scale-90 disabled:opacity-40"><ArrowUp className="size-4" /></button>}
-            </div>
-          )}
-        </div>
-        {/* The orb: ask Ember in this same box, and back to writing. */}
+          </>
+        )}
+        {/* The orb, on the first row's centre line: ask Ember in this same box, and back to writing. */}
         <button type="button" onClick={() => { setMode(asking ? "post" : "ask"); requestAnimationFrame(() => textRef.current?.focus()); }} aria-pressed={asking}
           aria-label={asking ? "Back to writing a post" : "Ask Ember"} title={asking ? "Back to writing a post" : "Ask Ember"}
-          className={cn("group grid size-11 shrink-0 place-items-center rounded-2xl transition hover:-translate-y-px", asking ? "nav-tile-on" : "nav-tile")}>
+          className={cn("group col-start-3 row-start-1 grid size-10 place-items-center rounded-2xl transition hover:-translate-y-px active:scale-95", asking ? "nav-tile-on" : "nav-tile")}>
           {asking ? <PenLine className="size-4" /> : <span className="transition duration-300 group-hover:scale-110"><Ember size={26} mood={ai.busy ? "thinking" : "idle"} /></span>}
         </button>
+      </div>
+
+      {/* The box itself: always open, three lines to start, growing with what you write. */}
+      <label htmlFor="create-box" className="sr-only">{asking ? "Ask Ember" : `What are you building, ${first}?`}</label>
+      <div className={cn("relative mt-3 rounded-2xl border transition duration-200", focused ? "border-line-strong bg-surface shadow-[0_0_0_4px_color-mix(in_oklab,var(--accent)_9%,transparent)]" : "border-line bg-surface/70 hover:border-line-strong")}>
+        <textarea
+          id="create-box"
+          ref={textRef}
+          name={asking ? undefined : "body"}
+          value={asking ? question : body}
+          onChange={(e) => { if (asking) { setQuestion(e.target.value); setSoon(false); } else { setBody(e.target.value); setBefore(null); at.track(e.target); } }}
+          onSelect={(e) => { if (!asking) at.track(e.currentTarget); }}
+          {...(asking ? {} : at.inputProps)}
+          onFocus={() => setFocused(true)}
+          onBlur={() => { setFocused(false); at.close(); }}
+          onPaste={(e) => { const files = [...e.clipboardData.files]; if (files.length && mediaEnabled) { e.preventDefault(); pickFiles(files); } }}
+          onKeyDown={(e) => {
+            if (!asking && at.onKeyDown(e)) return;
+            if (asking && e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void ask(question); }
+            if (!asking && (e.metaKey || e.ctrlKey) && e.key === "Enter") formRef.current?.requestSubmit();
+          }}
+          maxLength={asking ? 4000 : MAX}
+          rows={asking ? 2 : 3}
+          placeholder={asking ? typed || "Ask Ember anything" : mentionsEnabled ? `What are you building, ${first}? Type @ to mention someone.` : `What are you building, ${first}?`}
+          style={{ outline: "none" }}
+          className={cn("block max-h-80 w-full resize-none bg-transparent px-4 py-3 text-[16px] leading-relaxed text-text placeholder:text-faint", asking ? "min-h-[4.5rem] pr-14" : "min-h-[6rem]")}
+        />
+        {!asking && at.menu}
+        {asking && (
+          <div className="absolute right-2 bottom-2">
+            {ai.busy
+              ? <button type="button" onClick={ai.stop} aria-label="Stop" className="grid size-9 place-items-center rounded-xl border border-line bg-surface"><Square className="size-3.5 fill-current" /></button>
+              : <button type="submit" disabled={!question.trim()} aria-label="Ask Ember" className="bg-accent-grad grid size-9 place-items-center rounded-xl text-on-accent transition active:scale-90 disabled:opacity-40"><ArrowUp className="size-4" /></button>}
+          </div>
+        )}
       </div>
 
       {/* Ask Ember: one-tap starts, then the answer. */}
       {asking && (
         <>
-          <div className="no-scrollbar -mx-1 mt-3 flex gap-2 overflow-x-auto px-1 pb-1 pl-[54px]">
+          <div className="no-scrollbar -mx-1 mt-3 flex gap-2 overflow-x-auto px-1 pb-1">
             {emberActions(club).map((a) => {
               const cls = "inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-line bg-surface/80 px-3 py-1.5 text-xs font-medium text-text-2 transition hover:-translate-y-px hover:border-line-strong hover:text-text active:scale-95";
               return copilot
@@ -198,46 +211,36 @@ export function Composer({ first, last, interests, userId, mediaEnabled = false,
                 : <Link key={a.label} href={a.href} className={cls}><a.icon className="size-3.5 text-accent" /> {a.label}</Link>;
             })}
           </div>
-          {soon && <p className="mt-2 pl-[54px] text-xs text-muted">Ember is waking up soon. Until then, these shortcuts take you to the right place.</p>}
+          {soon && <p className="mt-2 text-xs text-muted">Ember is waking up soon. Until then, these shortcuts take you to the right place.</p>}
           <EmberAnswer a={answer} busy={ai.busy} error={ai.error} remaining={ai.remaining} onClear={() => { ai.stop(); setAnswer(NO_ANSWER); }} />
         </>
       )}
 
-      {/* Where it goes and what it is: one quiet row of chips (type and tags appear once you start). */}
+      {/* Posting: what you've attached, then one toolbar (add media, polish with Ember, post). */}
       {!asking && (
-        <div className={cn("mt-2.5 flex-wrap items-center gap-1.5 pl-[52px]", open ? "flex" : "hidden sm:flex")}>
-          <ProjectPicker projects={projects} clubs={clubs} projectId={projectId} setProjectId={setProjectId} shareTo={shareTo} setShareTo={setShareTo} />
-          {open && <KindMenu kind={kind} setKind={setKind} />}
-          {open && interests.length > 0 && <TagsMenu interests={interests} tags={tags} toggle={toggleTag} />}
-          {next && !open && <Link href={next.href} className="ml-auto inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] text-muted transition hover:bg-hover hover:text-text">Next: {next.label} <ArrowRight className="size-3" /></Link>}
-        </div>
+        <>
+          {mediaEnabled && <AttachmentTray slots={att.slots} onRemove={att.remove} onEdit={att.edit} compare={att.compare} onCompare={att.setCompare} captions={captionsEnabled} />}
+          <div className="mt-3 flex flex-wrap items-center gap-1">
+            <IconTool label="Add a photo" disabled={!mediaEnabled || att.full} onClick={() => photoRef.current?.click()}><ImagePlus className="size-[18px] text-sky-500" /></IconTool>
+            <IconTool label="Add a video" disabled={!mediaEnabled || att.full} onClick={() => videoRef.current?.click()}><Video className="size-[18px] text-rose-500" /></IconTool>
+            {copilot && (ai.busy
+              ? <button type="button" onClick={ai.stop} className="inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-sm text-muted"><Loader2 className="size-4 animate-spin" /> Polishing…</button>
+              : before !== null
+                ? <button type="button" onClick={() => { setBody(before); setBefore(null); }} className="inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-sm text-muted hover:bg-hover hover:text-text"><Undo2 className="size-4" /> Undo polish</button>
+                : <button type="button" onClick={() => void polish()} disabled={!body.trim()} className="ai-chip inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-sm font-medium text-text-2 transition hover:text-text active:scale-95 disabled:pointer-events-none disabled:opacity-40"><Wand2 className="size-4 text-accent" /> <span className="hidden sm:inline">Polish with Ember</span><span className="sm:hidden">Polish</span></button>)}
+            {(att.error || state.message || ai.error) && <p role="alert" className="text-sm text-danger">{att.error || state.message || ai.error}</p>}
+            <span className="ml-auto flex items-center gap-3">
+              <CharRing used={body.length} max={MAX} />
+              {remaining <= 200 && <span className={cn("text-xs tabular-nums", remaining < 0 ? "text-danger" : "text-faint")}>{remaining}</span>}
+              {(body || att.slots.length > 0) && <button type="button" onClick={() => { setBody(""); setTags([]); setBefore(null); att.clear(); at.reset(); }} className="text-sm text-muted transition hover:text-text">Clear</button>}
+              <Button type="submit" disabled={pending || att.busy || ai.busy || !body.trim()}>
+                {pending && <Loader2 className="size-4 animate-spin" />} Post
+              </Button>
+            </span>
+          </div>
+          {next && !body && <Link href={next.href} className="mt-2 inline-flex items-center gap-1 rounded-full text-[11px] text-muted transition hover:text-text">Next: {next.label} <ArrowRight className="size-3" /></Link>}
+        </>
       )}
-
-      <AnimatePresence initial={false}>
-        {!asking && open && (
-          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.22 }} className="overflow-hidden">
-            {mediaEnabled && <div className="pl-[52px]"><AttachmentTray slots={att.slots} onRemove={att.remove} onEdit={att.edit} compare={att.compare} onCompare={att.setCompare} captions={captionsEnabled} /></div>}
-            <div className="mt-3 flex flex-wrap items-center gap-1 border-t border-line pt-3 sm:pl-[52px]">
-              <IconTool label="Add a photo" disabled={!mediaEnabled || att.full} onClick={() => photoRef.current?.click()}><ImagePlus className="size-[18px] text-sky-500" /></IconTool>
-              <IconTool label="Add a video" disabled={!mediaEnabled || att.full} onClick={() => videoRef.current?.click()}><Video className="size-[18px] text-rose-500" /></IconTool>
-              {copilot && (ai.busy
-                ? <button type="button" onClick={ai.stop} className="inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-sm text-muted"><Loader2 className="size-4 animate-spin" /> Polishing…</button>
-                : before !== null
-                  ? <button type="button" onClick={() => { setBody(before); setBefore(null); }} className="inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-sm text-muted hover:bg-hover hover:text-text"><Undo2 className="size-4" /> Undo polish</button>
-                  : <button type="button" onClick={() => void polish()} disabled={!body.trim()} className="ai-chip inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-sm font-medium text-text-2 transition hover:text-text active:scale-95 disabled:pointer-events-none disabled:opacity-40"><Wand2 className="size-4 text-accent" /> Polish with Ember</button>)}
-              {(att.error || state.message || ai.error) && <p role="alert" className="text-sm text-danger">{att.error || state.message || ai.error}</p>}
-              <span className="ml-auto flex items-center gap-3">
-                <CharRing used={body.length} max={MAX} />
-                {remaining <= 200 && <span className={cn("text-xs tabular-nums", remaining < 0 ? "text-danger" : "text-faint")}>{remaining}</span>}
-                <button type="button" onClick={() => setOpen(false)} className="text-sm text-muted transition hover:text-text">Cancel</button>
-                <Button type="submit" disabled={pending || att.busy || ai.busy || !body.trim()}>
-                  {pending && <Loader2 className="size-4 animate-spin" />} Post
-                </Button>
-              </span>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
       <AnimatePresence>
         {dragging && (
