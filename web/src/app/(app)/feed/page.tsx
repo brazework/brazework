@@ -14,6 +14,7 @@ import { getViewer } from "@/lib/supabase/server";
 import { copilotEnabled } from "@/lib/copilot";
 import { loadGuide } from "@/lib/guide";
 import { StartChecklist } from "./start-checklist";
+import { WeekLoop } from "./week-loop";
 import { cookies } from "next/headers";
 import { DISMISS_PREFIX } from "@/lib/dismiss";
 import { Composer } from "./composer";
@@ -168,6 +169,8 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
   // The create box: whether Ember is on, your next guide step, and a club you run (for its weekly update).
   const [copilotOn, guide] = await extrasP;
   const hideStart = (await cookies()).has(`${DISMISS_PREFIX}feed-start`);
+  // New members get the first-five-minutes checklist; once it's done (or hidden), the weekly loop.
+  const startOpen = !hideStart && (guide?.loop ?? []).some((s) => !s.done);
   const nextStep = guide?.member.find((s) => !s.done) ?? null;
   const ledClub = guide?.clubs[0] ? { id: guide.clubs[0].id, name: guide.clubs[0].name } : null;
   // For the composer: "Which project?" (latest first) and the clubs it can also go to.
@@ -217,7 +220,7 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
           {SORTS.filter((x) => x.id !== "best" || tab === "for-you").map((x) => (
             <Link key={x.id} href={href({ sort: x.id })} aria-current={sort === x.id ? "true" : undefined} className={cn("rounded-full px-2.5 py-0.5 text-xs whitespace-nowrap transition", sort === x.id ? "bg-text text-surface" : "text-muted hover:text-text")}>{x.label}</Link>
           ))}
-        </span>} hero={<div id="composer" data-tour="composer" className="scroll-mt-24">{!hideStart && <StartChecklist steps={guide?.loop ?? []} />}<Composer first={profile.first_name} last={profile.last_name} interests={interests} userId={user.id} mediaEnabled={mediaEnabled} captionsEnabled={captionsEnabled} avatarSrc={avatarSrc(profile)} copilot={copilotOn} mentionsEnabled={mentionsEnabled} club={ledClub} next={nextStep && (guide?.loop ?? []).every((x) => x.done) ? { label: nextStep.label, href: nextStep.href } : null} projects={(myProjects ?? []) as { id: string; title: string }[]} clubs={composeClubs} initialProject={typeof sp.project === "string" ? sp.project : undefined} /></div>} />
+        </span>} hero={<div id="composer" data-tour="composer" className="scroll-mt-24">{startOpen ? <StartChecklist steps={guide?.loop ?? []} /> : <Suspense fallback={null}><WeekLoop /></Suspense>}<Composer first={profile.first_name} last={profile.last_name} interests={interests} userId={user.id} mediaEnabled={mediaEnabled} captionsEnabled={captionsEnabled} avatarSrc={avatarSrc(profile)} copilot={copilotOn} mentionsEnabled={mentionsEnabled} club={ledClub} next={nextStep && (guide?.loop ?? []).every((x) => x.done) ? { label: nextStep.label, href: nextStep.href } : null} projects={(myProjects ?? []) as { id: string; title: string }[]} clubs={composeClubs} initialProject={typeof sp.project === "string" ? sp.project : undefined} /></div>} />
       {/* What kind of post (a quiet segmented control), and your topics in one chip: one calm row on a
           wide screen; on a phone the kinds get a full-width row of their own (it scrolls if it must). */}
       <nav data-tour="interests" aria-label="Filter the feed" className="mt-4 flex flex-wrap items-center gap-2">

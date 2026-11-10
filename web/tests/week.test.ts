@@ -2,7 +2,7 @@
 // step. Run: npm test
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { buildWeek, type WeekInput } from "@/lib/week";
+import { buildWeek, weekGoal, type WeekInput } from "@/lib/week";
 
 const quiet: WeekInput = { clubPosts: 0, verifiedInClubs: [], myPending: 0, toVerify: null, quietProject: null, nextEvent: null, hasClub: true, hasProject: true };
 
@@ -30,4 +30,23 @@ test("one next step: club first, then a project, then a quiet project", () => {
   assert.equal(q.text, "No update on Test stand in 9 days");
   assert.equal(q.href, "/feed?project=p1#composer");
   assert.deepEqual(buildWeek({ ...quiet, quietProject: { id: "p1", title: "Test stand", days: 3 } }), [], "a recent update isn't nagged");
+});
+
+test("who looked: companies by name first, otherwise a count", () => {
+  const named = buildWeek({ ...quiet, viewers: { total: 4, companies: ["Acme Aerospace", "Orbital Co"] } });
+  assert.equal(named[0].text, "Acme Aerospace and 1 more company viewed your profile");
+  assert.equal(named[0].href, "/dashboard");
+  assert.equal(buildWeek({ ...quiet, viewers: { total: 1, companies: [] } })[0].text, "1 person viewed your profile this week");
+  assert.deepEqual(buildWeek({ ...quiet, viewers: { total: 0, companies: [] } }), []);
+});
+
+test("the week's goal: others first, then what makes your work verifiable, then the streak", () => {
+  const base = { ...quiet, hasMilestone: true };
+  assert.equal(weekGoal({ ...base, toVerify: { clubId: "rkt", n: 2 } }, true).text, "Verify 2 milestones for your club");
+  assert.equal(weekGoal({ ...base, hasClub: false }, false).id, "join");
+  assert.equal(weekGoal({ ...base, hasProject: false }, false).id, "project");
+  assert.equal(weekGoal({ ...base, hasMilestone: false }, false).id, "ask");
+  assert.deepEqual(weekGoal(base, true), { id: "done", text: "You've shown your work this week", href: "/profile", action: "", done: true });
+  assert.equal(weekGoal({ ...base, quietProject: { id: "p1", title: "Test stand", days: 9 } }, false).text, "Post an update on Test stand");
+  assert.equal(weekGoal(base, false).href, "/feed#composer");
 });

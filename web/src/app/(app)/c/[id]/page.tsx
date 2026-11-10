@@ -3,6 +3,7 @@ import { CalendarDays, Globe, MessagesSquare, PartyPopper, Settings, UserPlus, B
 import { accentTint } from "@/lib/club-look";
 import { openClubChat } from "@/lib/chats";
 import Link from "next/link";
+import { BuildersThisTerm } from "./builders";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { LiveRefresh } from "@/components/app/live-refresh";
@@ -170,6 +171,7 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
             </ul>
           </section>
         )}
+        {msOn && <Suspense fallback={null}><BuildersThisTerm cid={c.id} /></Suspense>}
         {typeof sp.chat_error === "string" && <p role="alert" className="mt-4 rounded-2xl border border-danger/30 bg-danger/10 px-4 py-2.5 text-sm text-danger">{sp.chat_error}</p>}
         {sp.joined === "1" && (
           <p className="relative mt-4 flex items-center gap-2 rounded-2xl border border-line bg-surface-2 px-4 py-3 text-sm">

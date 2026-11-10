@@ -126,6 +126,22 @@ const pw = require("playwright-core");
     await ben.waitForURL((u) => !/view=visitor/.test(u.toString()));
     await ben.getByRole("link", { name: "Dashboard" }).waitFor({ timeout: 15000 });
   }, ben);
+  await step("the weekly loop: a company looks at Ben; once he hides the checklist, Home shows his goal, streak and who looked", async () => {
+    await go(cara, `/u/${process.env.BEN_ID}`); // Cara is an admin of Acme Aerospace, a verified company
+    await go(ben, "/feed");
+    const hide = ben.getByRole("button", { name: "Hide your first five minutes" });
+    if (await hide.count()) await hide.click();
+    const loop = ben.getByRole("region", { name: "This week's goal", exact: true });
+    await loop.waitFor({ timeout: 15000 });
+    await loop.getByText(/build streak/).waitFor();
+    await loop.getByText("Acme Aerospace viewed your profile").waitFor({ timeout: 10000 });
+    // Hidden for good: a reload keeps the checklist away.
+    await ben.reload({ waitUntil: "networkidle" });
+    if (await ben.getByRole("button", { name: "Hide your first five minutes" }).count()) throw new Error("the checklist came back after a reload");
+    // The club's leaderboard: verified milestones this term, from real rows.
+    await go(ben, "/c/rkt");
+    await ben.getByRole("region", { name: "Builders this term" }).getByText("Ben Cho").first().waitFor({ timeout: 15000 });
+  }, ben);
   await step("the uptime check (/api/health) says the app and database are up, signed out, uncached", async () => {
     const res = await fetch(BASE + "/api/health");
     const body = await res.json();

@@ -45,3 +45,4 @@ admin-retention
 grad-year
 club-claims
 video-captions
+weekly-loop
