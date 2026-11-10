@@ -79,10 +79,14 @@ async function saved(page, path, text) {
     const picked = await josh.locator("#compose-project option:checked").textContent();
     if (picked !== title) throw new Error(`"Which project?" should default to the latest project, got ${picked}`);
     await closeTour(josh); // a "What's new" card can open over the composer
-    await hydrated(josh.getByRole("button", { name: /^Post$/ }).first()); // the composer streams in after the page
+    // The composer streams in after the page: typing before React owns these fields gets wiped when it hydrates.
+    await hydrated(josh.locator("#create-box"));
+    await hydrated(josh.locator("#compose-club"));
     await josh.locator("#compose-club").selectOption({ label: "Rocketry Club" });
-    await josh.locator("textarea").first().fill(`Tunnel test section is sealed ${stamp}`);
-    await josh.getByRole("button", { name: /^Post$/ }).first().click();
+    await josh.locator("#create-box").fill(`Tunnel test section is sealed ${stamp}`);
+    const post = josh.getByRole("button", { name: "Post", exact: true });
+    await post.waitFor({ timeout: 10000 });
+    await post.click();
     let seen = 0;
     for (let i = 0; i < 10 && !seen; i++) { await josh.waitForTimeout(500); await go(josh, "/c/rkt"); seen = await josh.getByText(`Tunnel test section is sealed ${stamp}`).count(); }
     if (!seen) throw new Error("the update didn't reach the club");
