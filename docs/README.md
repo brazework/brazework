@@ -10,7 +10,7 @@
 
 - [strategy.md](strategy.md): who pays, go-to-market (starting with NSBE at UHart), what YC wants to see.
 - [positioning.md](positioning.md): market research, with sources.
-- [naming.md](naming.md): the rename shortlist (Signet recommended, pending a trademark check).
+- [naming.md](naming.md): the new name, Brazework (pending a trademark check), with what was checked and the fallbacks.
 - [accounts.md](accounts.md): every account and service we run on, who owns it, what it costs, and what's missing (including the company itself).
 - [yc-readiness.md](yc-readiness.md): built and tested, not built yet, and what needs the real world.
 - [demo.md](demo.md): the 3-minute demo of the loop, on local demo data.

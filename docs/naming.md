@@ -1,6 +1,25 @@
-# Renaming Forge: shortlist (2026-11-10)
+# Renaming Forge (2026-11-10)
 
-For Josh and Ian to decide. Nothing is renamed until you pick; then it's one pass across the app, landing, docs and the iPhone app.
+## Decision: Brazework, pending a trademark check
+
+**Brazework.** Brazing joins two metals into one piece stronger than either alone. That's what Forge does for students, their clubs and companies: verified work holds them together. "Verified on Brazework." Josh picked it on 2026-11-10. Signet, the earlier frontrunner, was dropped: signet.com, .app and .io are all registered, and Signet Jewelers is a large company.
+
+**What was free on 2026-11-10** (checked with each registry's RDAP lookup and the GitHub API):
+
+| | Free |
+|---|---|
+| Domains | brazework.com, brazework.app, brazework.io, getbrazework.com, brazeworks.com |
+| GitHub | `brazework`, `brazeworks`, `brazeworkhq` |
+| Social | TikTok @brazework. Instagram, X and LinkedIn need a login to check (Linear FIX-61) |
+| Web | No business called "Brazework" found |
+
+**The risk to clear first:** Braze, Inc. (NASDAQ: BRZE, customer-engagement software) holds about 24 US trademarks on BRAZE, including BRAZEAI (2024, AI software). We'd also be software. Search BRAZE and BRAZEWORK at tmsearch.uspto.gov in classes 9, 35, 41 and 42. A flat-fee clearance opinion from a trademark attorney (about $300–500) is worth it before we file our own mark. Tracked in Linear **FIX-26**; the company setup that follows (domain, email, accounts) is **FIX-57**.
+
+**If it doesn't clear:** these had every check above free, including the .com: **Vouchsmith**, **Vouchforge** and **Meritsmith**. Others with the .com free: brazemark, lathemark, lathewell, quenchyard, ingotyard. Avoid kindleyard and kindlesmith (Kindle is Amazon's).
+
+**Not renamed:** table names like `forge_admins`, env var prefixes and the repo name stay as they are unless we decide otherwise (FIX-35).
+
+The rest of this page is the first shortlist, kept for the reasoning.
 
 ## Why rename
 
@@ -24,7 +43,7 @@ For Josh and Ian to decide. Nothing is renamed until you pick; then it's one pas
 | **Signoff** | Officers sign off on milestones | Plain-English and accurate | An enterprise AI startup launched as "Signoff" in 2026, so it's taken in software. |
 | **Kiln, Mettle, Crucible, Attest, Clubmark** (rejected) | Forge-adjacent or verification words | | All taken in adjacent markets: Kiln (crypto staking, and a future-of-work company), Mettle (NatWest bank, a hiring app), Crucible (careers institute), Attest (consumer research), Clubmark (UK sports-club accreditation). |
 
-**Recommendation: Signet**, if it clears a trademark check. It's the only candidate that carries our actual difference (an authority you trust stamps the work) and isn't already used by a careers or education product. Fallback: keep **Forge** as the company and use a distinct product mark, e.g. "Forge Signet" for the verified badge, until a rename is clear.
+**First recommendation (superseded by Brazework, above): Signet**, if it clears a trademark check. It's the only candidate that carries our actual difference (an authority you trust stamps the work) and isn't already used by a careers or education product. Fallback: keep **Forge** as the company and use a distinct product mark, e.g. "Forge Signet" for the verified badge, until a rename is clear.
 
 ## Before committing (an afternoon, not code)
 

@@ -7,7 +7,7 @@ description: Status of the Forge Linear board, as a short stand-up. What shipped
 
 Linear team **Forge** (ID `e9a4549f-0bad-4ef4-a105-e907d69ab2ca`, key `FIX`). Four projects:
 - **Launch: switch production on**
-- **Brand & growth: Signet**
+- **Brand & growth: Brazework**
 - **Quality: performance & security**
 - **Product: features & member feedback**
 

@@ -66,4 +66,4 @@ If anything fails, it doesn't ship until it's fixed. Linear updates itself from 
 ## Where we are (November 2026)
 
 - **Built and tested:** the full loop described above (student, club, verification, company).
-- **Next:** switch production on (database upgrades, email, AI and payment keys), confirm the name (Signet is the frontrunner), then launch with pilot clubs, starting with NSBE at UHart.
+- **Next:** switch production on (database upgrades, email, AI and payment keys), clear the new name (Brazework, pending a trademark check) and set the company up on it, then launch with pilot clubs, starting with NSBE at UHart.

@@ -4,7 +4,7 @@
 
 Students post what they build. Their club's officers, who saw the work happen, verify it. Companies find proven builders through that verified work instead of through résumés anyone can write.
 
-> Working name: **Forge**. The rename (likely **Signet**) waits on a trademark check ([docs/naming.md](docs/naming.md)).
+> Working name: **Forge**. The new name is **Brazework**, pending a trademark check ([docs/naming.md](docs/naming.md)).
 
 ## For everyone
 
