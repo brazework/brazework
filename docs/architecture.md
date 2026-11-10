@@ -119,7 +119,9 @@ public/                 The original vanilla app, kept until production is confi
 4. Database changes ship separately: a new step file in `supabase/` runs in the Supabase SQL Editor after it lands, in `order.txt` order; the health check confirms it.
 5. The Linear sync links, closes or logs the commit on the board.
 
-## Quality gates (every push to main)
+## Quality gates
+
+Every push to main runs checks, end-to-end, and the audit and secret scan (about 12 Actions minutes). The speed, accessibility and security scan and CodeQL run on pull requests, every Monday and on demand, which keeps CI inside a free plan's 2,000 minutes a month.
 
 | Job | What it proves |
 |---|---|

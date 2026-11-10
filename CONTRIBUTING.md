@@ -14,9 +14,11 @@ How we ship today (two people, moving fast) and what changes when the team grows
 3. Push to `main`. GitHub Actions then runs, on every push:
    - **checks**: typecheck, lint, unit tests, production build, smoke test
    - **e2e**: the same `npm run e2e` (a throwaway Supabase with every migration, then every journey)
-   - **quality**: Lighthouse budgets on public and logged-in pages (accessibility ≥ 90, best practices ≥ 90, no layout shift; speed is reported) and an OWASP ZAP scan of the running app that fails on any High-risk finding. Run it locally with `npm run quality`.
    - **security**: production dependency audit and a secret scan of the history
-   - **CodeQL**: code security analysis (also weekly)
+
+   And on pull requests, every Monday, and on demand (Actions → Run workflow), but not on every push, so CI fits a free plan's 2,000 Actions minutes a month:
+   - **quality**: Lighthouse budgets on public and logged-in pages (accessibility ≥ 90, best practices ≥ 90, no layout shift; speed is reported) and an OWASP ZAP scan of the running app that fails on any High-risk finding. Run it locally with `npm run quality` before a change to layout, scripts or headers.
+   - **CodeQL**: code security analysis
 4. If a check goes red, fixing it comes before anything else. Failure screenshots are attached to the run.
 
 Also on hand:

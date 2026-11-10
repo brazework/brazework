@@ -1,13 +1,11 @@
 name: CodeQL (code security analysis)
 
 # GitHub's static analysis for JavaScript/TypeScript: injection, XSS, unsafe redirects and more.
-# Weekly, and on every change to the app. The repo is private on a personal account, where GitHub's
+# Weekly, on pull requests and on demand (Run workflow), not on every push: it's about 6 Actions
+# minutes a run, and a free plan has 2,000 a month. The repo is private on a personal account, where GitHub's
 # Security tab (code scanning) isn't available, so results are kept as a SARIF artifact, printed in
 # the log, and the job fails on any high or critical finding.
 on:
-  push:
-    branches: [main]
-    paths: ["web/**"]
   pull_request:
     paths: ["web/**"]
   schedule:

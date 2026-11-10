@@ -8,10 +8,10 @@ What runs by itself, what still needs a person, and what to add next. The goal: 
 |---|---|---|
 | **Typecheck, lint, 35 unit tests, production build, smoke test** | Every push to `main`, every PR, and weekly | `.github/workflows/web.yml` → checks |
 | **End-to-end suite:** a throwaway Supabase with every database step, all SQL rule tests, 8 browser journeys (79 checks), failing on any blocked resource | Same | web.yml → e2e (`npm run e2e`) |
-| **Speed and accessibility budgets** (Lighthouse, public and logged-in pages) | Same | web.yml → quality (`npm run quality`) |
-| **Security scan of the running app** (OWASP ZAP, fails on High) | Same | web.yml → quality |
+| **Speed and accessibility budgets** (Lighthouse, public and logged-in pages) | Every PR, weekly and on demand (not every push, to save Actions minutes); locally `npm run quality` | web.yml → quality |
+| **Security scan of the running app** (OWASP ZAP, fails on High) | Same as above | web.yml → quality |
 | **Dependency audit and secret scan** (npm audit, gitleaks over all history) | Same | web.yml → security |
-| **Code security analysis** (CodeQL, fails on severity ≥ 7) | Every push and weekly | `.github/workflows/codeql.yml` |
+| **Code security analysis** (CodeQL, fails on severity ≥ 7) | Every PR, weekly and on demand | `.github/workflows/codeql.yml` |
 | **Dependency updates** as grouped PRs; risky major upgrades pinned on purpose | Weekly (Mondays) | `.github/dependabot.yml` |
 | **Production deploy** of `main` | Every push to `main` | Vercel's GitHub app |
 | **Preview deploy** to forge-preview-eight.vercel.app | Every push to `main` | `.github/workflows/preview-deploy.yml` |

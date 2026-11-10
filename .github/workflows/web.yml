@@ -5,9 +5,12 @@ name: Web (Next.js)
 #   e2e      - the full local suite (web/e2e/run.sh): a throwaway Supabase (Postgres + Auth + REST)
 #              with every migration in supabase/order.txt, the SQL rule tests, then every browser
 #              journey in Chrome. Same command as on a laptop.
-#   quality  - Lighthouse budgets (speed, accessibility, best practices) on public and logged-in
-#              pages, and an OWASP ZAP baseline scan of the running app (fails on High risk)
 #   security - production dependency audit and a secret scan of the git history
+# Pull requests, the weekly run and Run workflow only (not every push, to stay inside a free
+# plan's 2,000 Actions minutes a month; it's 7 of the 19 minutes a full run takes):
+#   quality  - Lighthouse budgets (speed, accessibility, best practices) on public and logged-in
+#              pages, and an OWASP ZAP baseline scan of the running app (fails on High risk).
+#              Locally: npm run quality.
 on:
   pull_request:
     paths: ["web/**", "supabase/**", ".github/workflows/web.yml"]
@@ -92,6 +95,7 @@ jobs:
 
   quality:
     name: Speed, accessibility and security scan
+    if: github.event_name != 'push'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     defaults:
