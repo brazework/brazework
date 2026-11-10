@@ -120,7 +120,8 @@ export function Mission() {
           <Eyebrow>Our mission</Eyebrow>
           <h2 className={cn("mt-5", H2)}>Make what you build <span className="text-grad">the way you get found.</span></h2>
           {/* Draft copy: the founders should rewrite this in their own words. */}
-          <p className="mt-6 text-lg leading-relaxed text-muted">Some of the most capable engineers, scientists and builders get overlooked because their best work lives in group chats and lab notebooks, while hiring runs on keywords and AI-written résumés. We&apos;re starting with the organizations they already belong to, beginning with our own campus, and making what they build the way they get found.</p>
+          <p className="m-hide mt-6 text-lg leading-relaxed text-muted">Some of the most capable engineers, scientists and builders get overlooked because their best work lives in group chats and lab notebooks, while hiring runs on keywords and AI-written résumés. We&apos;re starting with the organizations they already belong to, beginning with our own campus, and making what they build the way they get found.</p>
+          <p className="m-only mt-4 text-base leading-relaxed text-muted">The best builders get overlooked because their work lives in group chats while hiring runs on keywords. We start with their organizations and make that work count.</p>
         </Reveal>
         <div className="m-cards grid gap-4 sm:grid-cols-2">
           {GOALS.map(([t, b], i) => (
@@ -146,9 +147,9 @@ export function FaqSection() {
 }
 
 const AI_POINTS = [
-  { icon: FileCheck2, title: "A trust layer AI can read", body: "Every verified milestone records who vouched for it, when, and the evidence. That's structured signal people and their AI tools can rely on, in a world of generated résumés." },
-  { icon: Bot, title: "Ember, the agent inside", body: "Plans meetings, drafts updates from real numbers, finds the right people and keeps work on the record. It checks Forge first and you approve every action." },
-  { icon: KeyRound, title: "Your Forge in any AI", body: "Connect Claude, Cursor or any MCP client with a personal token and ask about your clubs, events and projects. Read-only, revocable, yours." },
+  { icon: FileCheck2, title: "A trust layer AI can read", body: "Each verified milestone records who vouched for it, when, and the evidence: signal people and their AI tools can trust." },
+  { icon: Bot, title: "Ember, the agent inside", body: "Plans meetings, drafts updates and finds the right people. It checks Forge first, and you approve every action." },
+  { icon: KeyRound, title: "Your Forge in any AI", body: "Connect Claude, Cursor or any MCP client and ask about your clubs, events and projects. Read-only and revocable." },
 ];
 
 export function AiEra() {

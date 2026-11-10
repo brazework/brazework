@@ -56,9 +56,11 @@ export function Hero() {
             <br />
             not résumés.
           </h1>
-          <p className="focus-in mt-6 max-w-xl text-lg leading-relaxed text-muted" style={{ ["--delay" as string]: "0.1s" }}>
+          <p className="m-hide focus-in mt-6 max-w-xl text-lg leading-relaxed text-muted" style={{ ["--delay" as string]: "0.1s" }}>
             Forge is the network for STEM organizations and the people who hire from them. Organizations run on it, members prove what they&apos;ve built, and Ember, the AI agent built in, does the busywork.
           </p>
+          {/* Phones: the same idea, short enough to read in full. */}
+          <p className="m-only focus-in mt-5 text-base leading-relaxed text-muted">The network for STEM organizations and the people who hire from them. Ember, the built-in AI agent, does the busywork.</p>
 
           <div className="rise-in mt-8" style={{ ["--delay" as string]: "0.2s" }}>
             <div role="tablist" aria-label="Who Forge is for" className="flex flex-wrap gap-2">

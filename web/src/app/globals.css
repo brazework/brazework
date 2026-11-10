@@ -439,7 +439,10 @@ html { -webkit-tap-highlight-color: transparent; }
 /* Landing page on phones: a stack of full-screen pages. One flick moves exactly one page
    (mandatory snapping + snap-stop), every page is one screen tall, and each holds one idea:
    eyebrow, title, and one swipe row or control. Desktop is unchanged. */
+/* Phone-only copy (the landing's short versions of long paragraphs). */
+.m-only { display: none; }
 @media (max-width: 767px) {
+  .m-only { display: revert; }
   /* The pages scroll inside .story-root, not the document: Safari only collapses its toolbar when the
      document scrolls, so the visible height stays fixed and every page lines up with the screen. */
   html:has(.story-root), body:has(.story-root) { height: 100%; overflow: hidden; }
@@ -466,11 +469,11 @@ html { -webkit-tap-highlight-color: transparent; }
   /* Hero: the pitch and the field picker; the profile demo lives on the next pages' cards. */
   #top h1 { font-size: 2.9rem; }
   #top .grid.max-w-7xl > :nth-child(2) { display: none; }
-  #top p { display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; font-size: 1.02rem; }
+  #top p { font-size: 1rem; }
   #top .mt-8 { margin-top: 1.25rem; }
   /* No sideways scrolling anywhere: the hero's audience chips and the audience tabs wrap. */
   #top [role="tablist"] button { padding: 6px 11px; font-size: 0.8rem; }
-  #top [aria-live="polite"] { min-height: 0; font-size: 0.9rem; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  #top [aria-live="polite"] { min-height: 0; font-size: 0.9rem; }
   #top p.text-faint { display: none; }
   #who .no-scrollbar { flex-wrap: wrap; overflow: visible; margin-inline: 0; padding-inline: 0; }
   #who .no-scrollbar [role="tab"] { padding: 6px 10px; font-size: 0.78rem; gap: 4px; }
@@ -480,14 +483,14 @@ html { -webkit-tap-highlight-color: transparent; }
   #why .m-cards { grid-template-columns: 1fr; }
   #why .m-cards > * { flex-direction: row; align-items: center; gap: 14px; padding: 14px 16px; }
   #why .m-cards > * > div:first-child { min-width: 4.6rem; font-size: 2rem; }
-  #why .m-cards p { margin-top: 0; font-size: 0.85rem; line-height: 1.35; display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+  #why .m-cards p { margin-top: 0; font-size: 0.8rem; line-height: 1.35; }
   #why .m-cards a { display: none; }
   #product .m-cards { grid-template-columns: 1fr 1fr 1fr; }
   /* Built for AI: three compact rows. Pricing: three compact cards, the points hidden. */
   #ai .m-cards { grid-template-columns: 1fr; }
   #ai .m-cards > * { padding: 14px 16px; display: grid; grid-template-columns: auto 1fr; column-gap: 12px; align-items: center; }
   #ai .m-cards h3 { margin-top: 0; font-size: 1rem; }
-  #ai .m-cards p { grid-column: 2; margin-top: 2px; font-size: 0.8rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  #ai .m-cards p { grid-column: 2; margin-top: 2px; font-size: 0.8rem; line-height: 1.35; }
   #ai .m-cards > * > span:first-child { grid-row: span 2; width: 2.5rem; height: 2.5rem; }
   #pricing .m-cards { grid-template-columns: 1fr; }
   #pricing .m-cards > * { padding: 12px 16px; }
@@ -519,7 +522,7 @@ html { -webkit-tap-highlight-color: transparent; }
   /* Ember: orb, title, one row of what it does, then the steps to swipe. */
   #copilot ul[aria-label="What Ember can do"] { flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; margin-inline: -24px; padding-inline: 24px; scrollbar-width: none; margin-top: 1.25rem; }
   #copilot ul[aria-label="What Ember can do"] > li { flex: none; }
-  #mission p { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+
   /* Every page has to fit Safari's visible height (about 660px on a Pro with the toolbars showing):
      WebKit won't scroll inside a snap page that's taller, it snaps back to its top. */
   #who li:nth-child(n+2) { display: none; }
@@ -545,7 +548,7 @@ html { -webkit-tap-highlight-color: transparent; }
   .story-sec h2 { font-size: 1.7rem; }
   .story-sec h2.mt-5, .story-sec .mt-5 { margin-top: 0.75rem; }
   #top h1 { font-size: 2.35rem; margin-top: 1rem; }
-  #top p { -webkit-line-clamp: 2; }
+
   .m-cards, #how ol { margin-top: 1rem !important; }
   #who p, #faq p { font-size: 0.9rem; }
   #founding form .mt-5, #founding form .gap-4 { margin-top: 0.5rem; gap: 0.6rem; }
