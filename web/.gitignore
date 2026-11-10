@@ -44,3 +44,7 @@ e2e/.anon-key
 e2e/.service-key
 e2e/.results/
 e2e/.media/
+# Lighthouse and security-scan reports (CI keeps them as artifacts)
+.lighthouse/
+.zap/
+.lighthouseci/

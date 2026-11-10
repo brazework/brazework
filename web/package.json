@@ -9,6 +9,7 @@
     "lint": "eslint",
     "typecheck": "next typegen && tsc --noEmit",
     "e2e": "bash e2e/run.sh",
+    "quality": "bash e2e/quality.sh",
     "test": "tsx --test tests/*.test.ts"
   },
   "dependencies": {

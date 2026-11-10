@@ -5,6 +5,8 @@ name: Web (Next.js)
 #   e2e      - the full local suite (web/e2e/run.sh): a throwaway Supabase (Postgres + Auth + REST)
 #              with every migration in supabase/order.txt, the SQL rule tests, then every browser
 #              journey in Chrome. Same command as on a laptop.
+#   quality  - Lighthouse budgets (speed, accessibility, best practices) on public and logged-in
+#              pages, and an OWASP ZAP baseline scan of the running app (fails on High risk)
 #   security - production dependency audit and a secret scan of the git history
 on:
   pull_request:
@@ -83,6 +85,36 @@ jobs:
           path: web/e2e/.results/
           include-hidden-files: true
           retention-days: 7
+
+  quality:
+    name: Speed, accessibility and security scan
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: web
+    env:
+      NEXT_TELEMETRY_DISABLED: 1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - name: Lighthouse budgets and OWASP ZAP baseline (web/e2e/quality.sh)
+        run: bash e2e/quality.sh
+      - name: Keep the reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quality-reports
+          path: |
+            web/.lighthouse/
+            web/.zap/
+          include-hidden-files: true
+          retention-days: 14
 
   security:
     name: Dependency audit and secret scan
