@@ -19,6 +19,10 @@ How we ship today (two people, moving fast) and what changes when the team grows
    - **CodeQL**: code security analysis (also weekly)
 4. If a check goes red, fixing it comes before anything else. Failure screenshots are attached to the run.
 
+Also on hand:
+- `npm run load`: a k6 load test (200 members browsing at once, plus a sign-up burst) against the local stack. On GitHub: Actions → **Load test** → Run workflow.
+- **Working with Claude Code:** `/next` works the next Linear issue end to end, `/ship` runs the safe push-to-main path, and `/standup` reports where things are (see `CLAUDE.md`). The Linear connection is in `.mcp.json`.
+
 Small, focused commits with plain messages ("Events: week strip and host menu"), one feature each.
 
 ## Tracking work (Linear)

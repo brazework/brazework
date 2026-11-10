@@ -2,6 +2,14 @@
 
 How we work is in [CONTRIBUTING.md](CONTRIBUTING.md); the docs index is [docs/README.md](docs/README.md). Read both first.
 
+## Working from the board
+
+The Linear connection is in `.mcp.json`; the first use asks each person to sign in to Linear once. Three skills run the workflow:
+
+- `/next` works the next issue end to end: it picks the lowest open step whose blockers are done, builds, tests, ships, updates and closes it. `/next FIX-30` works that issue.
+- `/ship` does the safe release path: checks, a commit with the issue ID, rebase, push to main, watch CI, report on the issue.
+- `/standup` reports shipped, in progress, next, blocked and CI. `/standup post` also writes each project's weekly update.
+
 ## Keep Linear in step (team Forge, key `FIX`)
 
 - Before starting a piece of work, look for its Linear issue. If there isn't one and the work is bigger than a quick fix, create it in the right project with a Type label, an owner and a milestone.
