@@ -122,9 +122,10 @@ export const monthKey = (ts: string | number, tz?: string) => fmt(ts, tz, { year
 
 export function timeRange(e: Pick<ForgeEvent, "starts_at" | "ends_at">, tz?: string) {
   const sameDay = dayKey(e.starts_at, tz) === dayKey(e.ends_at, tz);
-  return sameDay
-    ? `${clock(e.starts_at, tz)} – ${clock(e.ends_at, tz)}`
-    : `${clock(e.starts_at, tz)} – ${fullDate(e.ends_at, tz)}, ${clock(e.ends_at, tz)}`;
+  if (sameDay) return `${clock(e.starts_at, tz)} – ${clock(e.ends_at, tz)}`;
+  // Overnight (a launch, a hackathon night): just the weekday it ends on.
+  if (Date.parse(e.ends_at) - Date.parse(e.starts_at) < DAY_MS) return `${clock(e.starts_at, tz)} – ${fmt(e.ends_at, tz, { weekday: "short" })} ${clock(e.ends_at, tz)}`;
+  return `${clock(e.starts_at, tz)} – ${fullDate(e.ends_at, tz)}, ${clock(e.ends_at, tz)}`;
 }
 
 export const whereLabel = (e: Pick<ForgeEvent, "format" | "location">) =>

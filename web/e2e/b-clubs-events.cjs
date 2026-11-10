@@ -77,6 +77,15 @@ const { BASE, step, browser, as, go, summary } = require("./lib.cjs");
     await go(josh, "/events");
     await josh.getByText(eventTitle).first().waitFor({ timeout: 10000 });
   }, josh);
+  await step("Events: the host menu offers Cara's club, and 'From your clubs' keeps its event", async () => {
+    await go(cara, "/events");
+    await cara.getByRole("button", { name: /Host an event/ }).click();
+    const href = await cara.getByRole("menuitem", { name: new RegExp(`For ${name}`) }).getAttribute("href");
+    if (href !== `${clubUrl}?tab=events`) throw new Error("host link: " + href);
+    await cara.keyboard.press("Escape");
+    await go(cara, "/events?from=clubs");
+    await cara.getByText(eventTitle).first().waitFor({ timeout: 10000 });
+  }, cara);
   await step("Josh RSVPs on the event page", async () => {
     await go(josh, eventPath);
     await josh.getByRole("button", { name: "RSVP", exact: true }).first().click();
