@@ -1,39 +1,43 @@
-# YC readiness (2026-11-09)
+# YC readiness (updated 2026-11-10)
 
-Where Forge stands against the loop: **join a club → post what you're building → your club verifies it → proof on your profile → companies find you.** See [plan.md](plan.md) for the phase checklist.
+Where Forge stands against the loop: **join a club → post what you're building → your club verifies it → proof on your profile → companies find you.** See [plan.md](plan.md) for the phase checklist and [launch.md](launch.md) for turning it on in production.
 
 ## Built and tested
 
+Every row runs in `npm run e2e` (a fresh local Supabase, real sign-ups, Chrome) and/or the SQL and unit tests.
+
 | Area | What works | Proof |
 |---|---|---|
-| Navigation | Five places: Home, Clubs, Projects, Messages, Profile (web and iPhone) | e2e |
+| Navigation | Five places (Home, Clubs, Projects, Messages, Profile); ⌘K palette to jump anywhere or ask Ember | e2e |
 | First five minutes | Checklist on Home: club → project → update → ask to verify → verified | e2e (a) |
-| Projects at the center | Composer asks "Which project?" first; a project update can also go to a club | e2e (c) |
-| Verification | Evidence required; officers only, never on their own team's project; 1–2 verifiers; badge with verifier, role, club, date; revoke with reason; disputes (club owner → Forge admins); weekly cap and outlier flags; append-only log | `supabase/tests/verification.test.sql` (every rule), e2e (c) |
-| Ember | Approve-first cards; never writes on its own; never verifies; milestone drafts need real evidence | `web/tests/ember-approve-first.test.ts` |
-| Club leaders | Officer to-do list on the club; end-of-term handoff; roles, invites, moderation, events, chat, announcements, team chats | `handoff.test.sql`, e2e (b) |
-| Trust and safety | Report anything; block anyone; request inbox; download your data; delete your account | `account.test.sql`, e2e (g) |
+| Your week | Home's rail: what's waiting on you, what happened in your clubs, one next step (a quiet project) | `week.test.ts`, e2e (c) |
+| Projects at the center | Workbench on Projects; composer asks "Which project?" first; GitHub import with Ember | e2e (c) |
+| Verification | Evidence required; officers only, never their own team's project; 1–2 verifiers; badge with verifier, role, club, date; revoke with reason; disputes (club owner → Forge admins); weekly cap and outlier flags; append-only log; verified-club badge | `verification.test.sql`, e2e (c) |
+| Clubs | Officer to-do list; end-of-term handoff; roles, invites, moderation, events, club chat, announcements; calendar import (.ics) | `handoff.test.sql`, `ics.test.ts`, e2e (b) |
+| Events | Week strip, from-your-clubs filter, connections going, host menu, "Plan it with Ember" | e2e (b) |
+| Companies | Work-domain verification (free email refused); Find builders by club-verified public work; sponsored challenges (draft → sponsored → open → judging → winners); wins on profiles | `talent.test.ts`, `challenges.test.sql`, e2e (d, h) |
+| Billing | Stripe Checkout behind a provider interface (off until keys are set); signature-checked webhook marks sponsorships paid; pilot approvals by Forge admins | `billing.test.ts`, `stripe-webhook.test.ts`, e2e (h) |
+| Ember | Approve-first cards; never writes on its own; never verifies; milestone drafts need real evidence; tools for builders and challenges | `ember-approve-first.test.ts` |
+| Trust and safety | Sign-up rules in the database (school email, minimum age, listed schools, "Request my school"); rate limits; reports on posts, people, projects, challenges; blocking; request inbox; data export; account deletion; privacy page | `signup-rules.test.sql`, `school-requests.test.sql`, `rate-limits.test.sql`, `reports.test.sql`, `account.test.sql`, e2e (a, g, h) |
+| Admin | `/admin`: the loop as a funnel, weekly active, time to verify, clubs and handoffs, companies and challenges; sponsorship approvals, school requests, reports, review queue | `challenges.test.sql`, e2e (h) |
 | Landing | Live traction (zeros hidden), one CTA per audience, checked sources, labelled examples | phone layout checked in WebKit |
 | iPhone app | Native SwiftUI on the same backend: feed, clubs, chat, events, search, settings, sign-up | ForgeKit tests (31) |
 
-## Stubbed or not built yet
+## Not built yet
 
-- **Company flow (Phase 5):** work-domain verification for companies, search by verified work, sponsored challenges, the billing module (Stripe stub). The landing labels these as pilots / coming with Pro.
+- **Email:** weekly digest and member invites by email list need an email provider (e.g. Resend). In-app nudges exist.
 - **Discord → Forge posts:** Forge → Discord announcements exist; the reverse needs a bot (credentials).
-- **Imports:** members by CSV/email list, events from `.ics`.
-- **Weekly nudges by email:** no email provider yet (in-app checklist exists).
-- **Admin dashboard (Phase 9):** the `admin_queue` table and `forge_admins` exist; no admin UI or metrics dashboard yet.
-- **Rate limits** beyond the existing caps (pending milestones, Ember's daily limit).
+- **Duplicate-club review:** the admin queue has the kind; nothing raises it yet.
 - **Push notifications and TestFlight** for the iPhone app (need an APNs key and an App Store Connect record).
 
 ## Needs the real world
 
 - **Real clubs:** the NSBE chapter at UHart as the design partner (see [strategy.md](strategy.md)); don't claim a partnership until NSBE agrees.
 - **Founders section:** fill `FOUNDERS` in `web/src/components/landing/founders.tsx` (it stays hidden until then).
-- **Testimonials:** only from real, consenting members; there's no slot filled with invented quotes.
+- **Testimonials:** only from real, consenting members.
 - **The first sponsor:** one Connecticut employer sponsoring one chapter challenge (a paid pilot or LOI).
-- **Production:** run SQL steps 5–20 in order (`docs/next-migration.md`), run `supabase/maintenance/remove-test-data.sql` (preview first), set `ANTHROPIC_API_KEY`, and open the site publicly.
+- **Production:** everything in [launch.md](launch.md).
 
 ## Metrics to show (once live)
 
-Weekly active members per club (target 40%+ for 8 weeks), milestones submitted vs verified and time to verify, onboarding checklist completion, clubs retained across the officer handoff, company follows and messages. The data is all in the tables; Phase 9 adds the admin view.
+All on `/admin`: weekly active members (target 40%+ for 8 weeks), the loop funnel (member → in a club → has a project → has verified work), milestones submitted vs verified and median time to verify, clubs active per week and handoffs, verified companies, live challenges and entries, sponsorships paid and piloted.
