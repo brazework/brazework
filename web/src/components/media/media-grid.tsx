@@ -1,6 +1,6 @@
 "use client";
 import { AnimatePresence, motion } from "motion/react";
-import { ChevronLeft, ChevronRight, ChevronsLeftRight, Crosshair, Flag, Gauge, Maximize, Minimize, Pause, Play, Volume2, VolumeX, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, ChevronsLeftRight, Crosshair, Flag, Gauge, Maximize, Minimize, Pause, Play, Repeat, Volume2, VolumeX, X } from "lucide-react";
 import Image from "next/image";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { cn } from "@/lib/forge";
@@ -152,6 +152,10 @@ function TestRunPlayer({ v }: { v: MediaItem }) {
   const [t, setT] = useState(0);
   const [dur, setDur] = useState(0);
   const [speed, setSpeed] = useState(1);
+  // Looping is your choice (the Loop button); autoplay plays a video through once, then stops, so a
+  // feed left open doesn't stream the same video again and again.
+  const [looping, setLooping] = useState(false);
+  const finished = useRef(false);
   const [muted, setMuted] = useState(true);
   const [blocked, setBlocked] = useState(false); // the browser refused sound; we're playing muted
   const id = useRef(useId());
@@ -181,7 +185,9 @@ function TestRunPlayer({ v }: { v: MediaItem }) {
     const node = ref.current;
     if (!node) return;
     const io = new IntersectionObserver(([en]) => {
-      if (en.intersectionRatio >= 0.6) { if (!userPaused.current && node.paused) start(node); }
+      // Autoplay only until it has played through once, and never with the phone's Data Saver on.
+      const saveData = !!(navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData;
+      if (en.intersectionRatio >= 0.6) { if (!userPaused.current && node.paused && !finished.current && !saveData) start(node); }
       else if (!node.paused) node.pause();
     }, { threshold: [0, 0.6] });
     io.observe(node);
@@ -242,8 +248,9 @@ function TestRunPlayer({ v }: { v: MediaItem }) {
           src={`${mediaUrl(v.path)}#t=0.1`}
           playsInline
           muted
-          loop
+          loop={looping}
           preload="metadata"
+          onEnded={() => { finished.current = true; setPlaying(false); }}
           onClick={toggle}
           onPlay={() => { setPlaying(true); window.dispatchEvent(new CustomEvent(PLAYING_EVENT, { detail: id.current })); }}
           onPause={() => setPlaying(false)}
@@ -271,6 +278,7 @@ function TestRunPlayer({ v }: { v: MediaItem }) {
           {!playing && held && (
             <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="absolute inset-x-3 top-3 z-10 flex items-center gap-2">
               <button type="button" onClick={nextSpeed} aria-label={`Playback speed ${speed}×`} className={chip}><Gauge className="size-3.5" /> {speed}×{speed < 1 ? " slow-mo" : ""}</button>
+              <button type="button" onClick={() => setLooping((l) => !l)} aria-pressed={looping} aria-label={looping ? "Stop looping" : "Loop"} className={cn(chip, looping && "bg-white text-black")}><Repeat className="size-3.5" /> Loop</button>
               <span className="font-mono text-[11px] text-white/80 tabular-nums">{fmtTime(t)} / {fmtTime(dur)}</span>
               <button type="button" onClick={toggleFull} aria-label={full ? "Exit full screen" : "Full screen"} className={cn(chip, "ml-auto px-2.5")}>{full ? <Minimize className="size-4" /> : <Maximize className="size-4" />}</button>
             </motion.div>
