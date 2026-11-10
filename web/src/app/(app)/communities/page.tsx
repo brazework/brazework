@@ -3,7 +3,7 @@ import { Flame, Users } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
-import { EmptyState, PageHeader, Panel, Skeleton, Tabs } from "@/components/app/page-ui";
+import { ClubsSwitch, EmptyState, PageHeader, Panel, Skeleton, Tabs } from "@/components/app/page-ui";
 import { COMMUNITY_COLS, type Community, type Role } from "@/lib/communities";
 import { getViewer } from "@/lib/supabase/server";
 import { requestTime } from "@/lib/forge";
@@ -16,7 +16,7 @@ export const metadata: Metadata = { title: "Communities" };
 export default function CommunitiesPage({ searchParams }: PageProps<"/communities">) {
   return (
     <div className="mx-auto max-w-4xl 2xl:max-w-6xl">
-      <Suspense fallback={<><PageHeader title="Communities" /><Skeleton className="mt-6 h-96" /></>}>
+      <Suspense fallback={<><PageHeader title="Clubs" /><Skeleton className="mt-6 h-96" /></>}>
         <Communities searchParams={searchParams} />
       </Suspense>
     </div>
@@ -63,7 +63,8 @@ async function Communities({ searchParams }: { searchParams: PageProps<"/communi
 
   return (
     <>
-      <PageHeader title="Communities" subtitle="Clubs, study groups and project teams, each with its own feed, roles and rules." />
+      <ClubsSwitch active="clubs" />
+      <PageHeader title="Clubs" subtitle="Your chapter, team or lab: members, events, chat and the work you verify, in one place." />
       <div className="mt-6">
         <Tabs active={tab} tabs={[
           { id: "mine", label: "Yours", href: "/communities?tab=mine", count: joined.length },

@@ -63,3 +63,16 @@ export function Skeleton({ className }: { className?: string }) {
 }
 
 export const chipCls = "rounded-md border border-line px-2 py-0.5 font-mono text-[11px] text-muted";
+
+// Clubs and their events are one place: this switch sits at the top of both pages.
+export function ClubsSwitch({ active }: { active: "clubs" | "events" }) {
+  const item = (href: string, label: string, on: boolean) => (
+    <Link href={href} aria-current={on ? "page" : undefined} className={cn("rounded-full px-4 py-1.5 text-sm transition", on ? "bg-text font-medium text-bg" : "text-muted hover:text-text")}>{label}</Link>
+  );
+  return (
+    <nav aria-label="Clubs and events" className="mb-5 inline-flex gap-1 rounded-full border border-line bg-surface p-1">
+      {item("/communities", "Clubs", active === "clubs")}
+      {item("/events", "Events", active === "events")}
+    </nav>
+  );
+}

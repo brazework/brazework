@@ -1,6 +1,6 @@
 "use client";
 import { AnimatePresence, motion } from "motion/react";
-import { Bell, Bookmark, CalendarDays, FolderGit2, Home, LayoutDashboard, LogOut, MessageSquare, Network, PanelLeftClose, PanelLeftOpen, PenLine, Plus, Settings, Sparkles, Users, X } from "lucide-react";
+import { Bell, Bookmark, CalendarDays, FolderGit2, Home, LayoutDashboard, LogOut, MessageSquare, Network, PanelLeftClose, PanelLeftOpen, PenLine, Plus, Settings, Sparkles, UserRound, Users, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -14,19 +14,27 @@ import { NavTile } from "@/components/app/nav-tile";
 export type Badges = { notifications: number; messages: number; invites: number };
 type BadgeKey = keyof Badges;
 
-// Every screen of the signed-in app. `match` = path prefixes that light the item up; `badge` = which count it shows.
+// The five places in the signed-in app, built around one loop: join a club → post what you're
+// building → your club verifies it → proof on your profile → companies find you. Everything else
+// lives inside one of these (events in Clubs, notifications and saved on Home, analytics and
+// settings on Profile). `match` = path prefixes that light the item up; `badge` = which count it shows.
 const NAV: { href: string; label: string; icon: typeof Home; match: string[]; badge?: BadgeKey }[] = [
-  { href: "/feed", label: "Feed", icon: Home, match: ["/feed", "/post/"] },
-  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard, match: ["/dashboard", "/analytics"] },
-  { href: "/communities", label: "Communities", icon: Users, match: ["/communities", "/c/"] },
+  { href: "/feed", label: "Home", icon: Home, match: ["/feed", "/post/", "/notifications", "/saved"], badge: "notifications" },
+  { href: "/communities", label: "Clubs", icon: Users, match: ["/communities", "/c/", "/events", "/org"] },
   { href: "/projects", label: "Projects", icon: FolderGit2, match: ["/projects"] },
-  { href: "/copilot", label: "Copilot", icon: Sparkles, match: ["/copilot"] },
-  { href: "/network", label: "Network", icon: Network, match: ["/network"], badge: "invites" },
   { href: "/messages", label: "Messages", icon: MessageSquare, match: ["/messages"], badge: "messages" },
-  { href: "/events", label: "Events", icon: CalendarDays, match: ["/events", "/org"] },
-  { href: "/notifications", label: "Notifications", icon: Bell, match: ["/notifications"], badge: "notifications" },
-  { href: "/saved", label: "Saved", icon: Bookmark, match: ["/saved"] },
-  { href: "/settings", label: "Settings", icon: Settings, match: ["/settings"] },
+  { href: "/profile", label: "Profile", icon: UserRound, match: ["/profile", "/u/", "/dashboard", "/analytics", "/network", "/settings"], badge: "invites" },
+];
+
+// Still a tap away, from the menu: the pages inside the five places.
+const MORE: { href: string; label: string; icon: typeof Home; badge?: BadgeKey }[] = [
+  { href: "/notifications", label: "Notifications", icon: Bell, badge: "notifications" },
+  { href: "/events", label: "Events", icon: CalendarDays },
+  { href: "/saved", label: "Saved", icon: Bookmark },
+  { href: "/network", label: "Connections", icon: Network, badge: "invites" },
+  { href: "/dashboard", label: "Analytics", icon: LayoutDashboard },
+  { href: "/copilot", label: "Ember", icon: Sparkles },
+  { href: "/settings", label: "Settings", icon: Settings },
 ];
 
 const isActive = (path: string, match: string[]) => match.some((m) => path.startsWith(m));
@@ -114,6 +122,23 @@ export function Sidebar({ first, last, userId, badges, avatar, initialCollapsed 
           );
         })}
       </nav>
+      {/* Secondary: smaller, under the five places. Ember first: help where you are, not a destination. */}
+      <div aria-label="More" role="group" className={cn("mt-5 flex flex-col gap-0.5 border-t border-line pt-4", collapsed && "items-center")}>
+        {!collapsed && <div className="px-3 pb-1 text-[11px] font-medium tracking-wide text-faint uppercase">More</div>}
+        {MORE.map((n) => {
+          const active = path.startsWith(n.href);
+          const count = n.badge ? badges[n.badge] : 0;
+          return (
+            <Link key={n.href} href={n.href} data-tour={n.href === "/notifications" ? "bell" : undefined} aria-current={active ? "page" : undefined}
+              aria-label={count ? `${n.label}, ${count} new` : collapsed ? n.label : undefined} title={collapsed ? n.label : undefined}
+              className={cn("relative flex items-center gap-2.5 rounded-xl py-1.5 text-[13px] transition", collapsed ? "justify-center px-2" : "px-3", active ? "bg-hover font-medium text-text" : "text-muted hover:bg-hover hover:text-text")}>
+              <n.icon className={cn("size-4 shrink-0", n.href === "/copilot" && "text-accent")} />
+              {!collapsed && <span>{n.label}</span>}
+              <Count n={count} className={collapsed ? "absolute -top-0.5 right-0.5" : "ml-auto"} />
+            </Link>
+          );
+        })}
+      </div>
       {/* You: your profile lives here (photo and name open it), with your online status and log out. */}
       <div className={cn("mt-auto flex items-center gap-3 rounded-2xl transition", onProfile ? "nav-pill" : "bg-surface/50 hover:bg-hover/60", collapsed ? "flex-col p-1.5" : "p-2.5")}>
         <Link href="/profile" aria-label="Your profile" aria-current={onProfile ? "page" : undefined} title={collapsed ? `${first} ${last} · Profile` : undefined}><WithPresence id={userId} dot="size-2.5"><Avatar first={first} last={last} size={collapsed ? 32 : 36} src={avatar} /></WithPresence></Link>
@@ -132,14 +157,9 @@ export function Sidebar({ first, last, userId, badges, avatar, initialCollapsed 
   );
 }
 
-// Phones: a slim top bar (logo, theme, you) plus a bottom tab bar with the four places people go
-// most and a "More" sheet for everything else.
-const TABS: { href: string; label: string; icon: typeof Home; match: string[]; badge?: BadgeKey }[] = [
-  { href: "/feed", label: "Feed", icon: Home, match: ["/feed", "/post/"] },
-  { href: "/communities", label: "Clubs", icon: Users, match: ["/communities", "/c/"] },
-  { href: "/messages", label: "Messages", icon: MessageSquare, match: ["/messages"], badge: "messages" },
-  { href: "/notifications", label: "Alerts", icon: Bell, match: ["/notifications"], badge: "notifications" },
-];
+// Phones: a slim top bar (logo, create, notifications, menu) plus a bottom tab bar with the same
+// five places as the sidebar.
+const TABS = NAV;
 
 export function MobileBar({ first, last, badges, avatar }: { first: string; last: string; badges: Badges; avatar?: string | null }) {
   const path = usePathname();
@@ -156,8 +176,8 @@ export function MobileBar({ first, last, badges, avatar }: { first: string; last
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [sheet]);
-  const rest = NAV.filter((n) => !TABS.some((t) => t.href === n.href));
-  const restCount = rest.reduce((sum, n) => sum + (n.badge ? badges[n.badge] : 0), 0);
+  const rest = MORE;
+  const restCount = badges.invites;
   const tab = (t: (typeof TABS)[number]) => {
     const active = isActive(path, t.match);
     const count = t.badge ? badges[t.badge] : 0;
@@ -179,6 +199,13 @@ export function MobileBar({ first, last, badges, avatar }: { first: string; last
       <header className="glass fixed inset-x-0 top-0 z-40 flex items-center gap-3 px-4 pt-[calc(env(safe-area-inset-top)+0.625rem)] pb-2.5 md:hidden">
         <Link href="/feed" aria-label="Forge feed"><Logo /></Link>
         <div className="ml-auto flex items-center gap-1">
+          <button type="button" onClick={() => setSheet("create")} aria-expanded={sheet === "create"} aria-label="Create" className="bg-accent-grad grid size-9 place-items-center rounded-full text-on-accent shadow-[0_8px_18px_-8px_rgb(0_0_0/0.5)] transition active:scale-95">
+            <Plus className="size-5" strokeWidth={2.4} />
+          </button>
+          <Link href="/notifications" aria-label={badges.notifications ? `Notifications, ${badges.notifications} new` : "Notifications"} className="relative grid size-10 place-items-center rounded-full text-text-2 transition hover:bg-hover">
+            <Bell className="size-5" />
+            <Count n={badges.notifications} className="absolute top-0.5 right-0" />
+          </Link>
           <ThemeToggle />
           <button type="button" onClick={() => setSheet("more")} aria-expanded={sheet === "more"} aria-label={restCount ? `Menu and your profile, ${restCount} new` : "Menu and your profile"} className="relative ml-1 rounded-full active:scale-90">
             <Avatar first={first} last={last} size={32} src={avatar} />
@@ -187,16 +214,10 @@ export function MobileBar({ first, last, badges, avatar }: { first: string; last
         </div>
       </header>
 
-      {/* Floating tab bar above the home indicator, with Create in the middle. */}
+      {/* Floating tab bar above the home indicator: the five places. */}
       <nav aria-label="Main" className="fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+0.5rem)] z-40 md:hidden">
         <div className="glass grid grid-cols-5 items-center rounded-[26px] border border-line p-1 shadow-[0_18px_40px_-18px_rgb(0_0_0/0.45)]">
-          {TABS.slice(0, 2).map(tab)}
-          <div className="flex justify-center">
-            <button type="button" onClick={() => setSheet("create")} aria-expanded={sheet === "create"} aria-label="Create" className="bg-accent-grad grid size-12 place-items-center rounded-full text-on-accent shadow-[0_10px_24px_-10px_var(--accent)] transition active:scale-90">
-              <Plus className="size-6" strokeWidth={2.4} />
-            </button>
-          </div>
-          {TABS.slice(2).map(tab)}
+          {TABS.map(tab)}
         </div>
       </nav>
 
