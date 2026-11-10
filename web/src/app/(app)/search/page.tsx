@@ -114,7 +114,7 @@ async function Results({ searchParams }: { searchParams: PageProps<"/search">["s
       {res.communities.length > 0 && (
         <section aria-labelledby="sr-clubs" className="mt-8">
           <h2 id="sr-clubs" className="mb-3 flex items-center gap-2 text-sm font-semibold"><Users className="size-4" /> Communities</h2>
-          <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {res.communities.map((h) => <CommunityCard key={h.community.id} c={h.community} role={h.role ?? undefined} joinable={!h.role && !h.requested} />)}
           </div>
         </section>

@@ -73,7 +73,7 @@ async function EventView({ params }: { params: PageProps<"/events/[id]">["params
   const similarList = ((similar.data ?? []) as Mini[]).filter((x) => !moreList.some((m) => m.id === x.id));
 
   return (
-    <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
+    <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
       <div className="flex min-w-0 flex-col gap-6">
         <Panel className="overflow-hidden p-0">
           <div className="flex gap-5 p-6">

@@ -109,14 +109,14 @@ const { step, browser, as, go, summary } = require("./lib.cjs");
   await step("reports: Josh reports Ben's project; a Brazework admin sees it and resolves it", async () => {
     const detail = `Photos are from another team ${Date.now() % 10000}`;
     await go(josh, "/projects/p1");
-    await josh.getByRole("button", { name: "Report" }).click();
+    await josh.getByRole("button", { name: "Report", exact: true }).click(); // the project's, not a post's "Report post"
     const dlg = josh.getByRole("dialog", { name: "Report" });
     await dlg.getByLabel(/Fake or misleading/).check();
     await dlg.locator("#report-detail").fill(detail);
     await dlg.getByRole("button", { name: "Send report" }).click();
     await dlg.getByText(/Thanks\. The Brazework team will review it\./).waitFor({ timeout: 15000 });
     await go(josh, "/u/" + process.env.JOSH_ID);
-    if (await josh.getByRole("button", { name: "Report" }).count()) throw new Error("report offered on your own profile");
+    if (await josh.getByRole("button", { name: "Report", exact: true }).count()) throw new Error("report offered on your own profile");
     await go(maya, "/admin");
     const reports = maya.getByRole("region", { name: "Reports" });
     const row = reports.locator("div").filter({ hasText: detail }).filter({ has: maya.getByRole("button", { name: "Actioned" }) }).last();

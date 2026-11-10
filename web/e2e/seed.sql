@@ -34,6 +34,11 @@ insert into public.posts (id, author_id, body, kind, media, created_at) select '
 update public.communities c set owner_name = btrim(p.first_name || ' ' || p.last_name) from public.profiles p where p.id = c.owner_id and c.owner_name = '';
 -- Ben graduates in 2026 (Find builders' class-year filter, grad-year.sql).
 update public.profiles set grad_year = 2026 where id = (select ben from u);
+-- The captioned video is about Ben's test stand, with its specs: the post card's build strip under
+-- the video (project, club-verified proof, specs, tools).
+update public.posts set project_id = 'p1' where id = 'vidcap1';
+insert into public.project_details (project_id, specs) values ('p1', '[{"label":"Peak thrust","value":"2 kN"},{"label":"Load cell","value":"±0.5%"}]'::jsonb)
+  on conflict (project_id) do update set specs = excluded.specs;
 -- Maya is a Brazework admin (approves sponsorship pilots on /admin).
 insert into public.forge_admins (uid) select maya from u;
 -- The test members are returning members: they've seen the welcome tour (new sign-ups still get it).

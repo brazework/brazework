@@ -28,7 +28,7 @@ export function RegisterOrg({ email }: { email: string }) {
           <button key={t} type="button" aria-pressed={type === t} onClick={() => setType(t)} className="rounded-full border border-line px-4 py-1.5 text-sm text-muted transition aria-pressed:border-accent aria-pressed:bg-accent aria-pressed:text-on-accent">{t === "company" ? "Company" : "School"}</button>
         ))}
       </div>
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Field label="Name"><input name="name" maxLength={120} className={inputCls} required /></Field>
         <Field label="Website" hint={type === "school" ? "Needs an academic domain, e.g. ending in .edu." : undefined}><input name="website" placeholder={domain ? `https://${domain}` : "https://"} className={inputCls} required /></Field>
         <Field label="Location"><input name="location" maxLength={160} placeholder="City, country" className={inputCls} /></Field>
@@ -113,12 +113,12 @@ function EventDialog({ event, host, onClose }: { event?: ForgeEvent; host: Host;
         <input type="hidden" name="org_id" value={host.orgId ?? ""} />
         <input type="hidden" name="community_id" value={host.communityId ?? ""} />
         <Field label="Title"><input name="title" defaultValue={event?.title} maxLength={120} className={inputCls} required /></Field>
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <Field label="Type"><select name="type" defaultValue={event?.type ?? "Talk"} className={inputCls}>{EVENT_TYPES.map((t) => <option key={t}>{t}</option>)}</select></Field>
           <Field label="Format"><select name="format" value={format} onChange={(e) => setFormat(e.target.value)} className={inputCls}>{EVENT_FORMATS.map((t) => <option key={t}>{t}</option>)}</select></Field>
           <Field label="Topic"><select name="topic" defaultValue={event?.topic ?? ""} className={inputCls} required><option value="">Choose…</option>{ALL_TOPICS.map((t) => <option key={t}>{t}</option>)}</select></Field>
         </div>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Field label="Starts"><input name="starts_at" type="datetime-local" defaultValue={event ? toLocalInput(event.starts_at) : ""} className={inputCls} required /></Field>
           <Field label="Ends"><input name="ends_at" type="datetime-local" defaultValue={event ? toLocalInput(event.ends_at) : ""} className={inputCls} required /></Field>
         </div>
@@ -185,7 +185,7 @@ export function CalendarImport({ communityId }: { communityId: string }) {
             <input id="ics-file" type="file" accept=".ics,text/calendar" onChange={(e) => void load(e.target.files?.[0])} className="block w-full text-sm text-muted file:mr-3 file:rounded-full file:border file:border-line file:bg-surface-2 file:px-4 file:py-2 file:text-sm file:text-text" />
             {events && events.length > 0 && (
               <>
-                <div className="grid gap-3 sm:grid-cols-2">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                   <Field label="Type"><select value={type} onChange={(e) => setType(e.target.value)} className={inputCls}>{EVENT_TYPES.map((t) => <option key={t}>{t}</option>)}</select></Field>
                   <Field label="Topic"><select id="ics-topic" value={topic} onChange={(e) => setTopic(e.target.value)} className={inputCls} required><option value="">Choose…</option>{ALL_TOPICS.map((t) => <option key={t}>{t}</option>)}</select></Field>
                 </div>

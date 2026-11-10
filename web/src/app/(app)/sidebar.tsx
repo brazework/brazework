@@ -43,9 +43,10 @@ const isActive = (path: string, match: string[]) => match.some((m) => path.start
 
 // One row, one tile, one group card for every part of the sidebar, so the icons line up and match.
 const ROW = "group relative flex items-center gap-3 rounded-2xl py-1 text-sm transition";
-const GROUP = "rounded-2xl border border-line bg-surface/40 p-1.5 shadow-[inset_0_1px_0_rgb(255_255_255/0.04)]";
+// Sections are separated by a hairline and a small label, not boxed in cards.
+const GROUP = "border-t border-line/70 pt-3";
 const GROUP_LABEL = "px-2 py-1.5 text-[11px] font-medium tracking-[0.12em] text-faint uppercase";
-const TOP_BTN = cn(TILE, "nav-tile text-text-2 hover:-translate-y-px hover:bg-transparent hover:text-text");
+const TOP_BTN = cn(TILE, "text-faint hover:bg-hover hover:text-text");
 
 function Count({ n, className }: { n: number; className?: string }) {
   if (!n) return null;
@@ -166,7 +167,7 @@ export function Sidebar({ first, last, userId, badges, avatar, initialCollapsed 
       <MoreGroup collapsed={collapsed} path={path} badges={badges} />
       </div>
       {/* You: your profile lives here (photo and name open it), with your online status and log out. */}
-      <div className={cn("mt-2 flex shrink-0 items-center gap-3 rounded-2xl transition", onProfile ? "nav-pill" : "bg-surface/50 hover:bg-hover/60", collapsed ? "flex-col p-1.5" : "p-2.5")}>
+      <div className={cn("mt-2 flex shrink-0 items-center gap-3 rounded-2xl transition", onProfile ? "nav-pill" : "hover:bg-hover/60", collapsed ? "flex-col p-1.5" : "p-2.5")}>
         <Link href="/profile" aria-label="Your profile" aria-current={onProfile ? "page" : undefined} title={collapsed ? `${first} ${last} · Profile` : undefined}><WithPresence id={userId} dot="size-2.5"><Avatar first={first} last={last} size={collapsed ? 32 : 36} src={avatar} /></WithPresence></Link>
         {!collapsed && (
           <div className="min-w-0 flex-1">
@@ -329,7 +330,7 @@ function Sheet({ open, title, onClose, children }: { open: boolean; title: strin
   );
 }
 
-// "More": small tiles in a glass card, matching the main nav; the header folds it away.
+// "More": the secondary places under a hairline, matching the main nav; the header folds it away.
 function MoreGroup({ collapsed, path, badges }: { collapsed: boolean; path: string; badges: Badges }) {
   const [folded, setFolded] = useFold("sidebar-more");
   const waiting = MORE.reduce((n, m) => n + (m.badge ? badges[m.badge] ?? 0 : 0), 0);
@@ -349,7 +350,7 @@ function MoreGroup({ collapsed, path, badges }: { collapsed: boolean; path: stri
   });
   if (collapsed) return <div aria-label="More" role="group" className="mt-4 flex flex-col items-center gap-1 border-t border-line pt-4">{items}</div>;
   return (
-    <section aria-label="More" className={cn("mt-3", GROUP)}>
+    <section aria-label="More" className={cn("mt-4", GROUP)}>
       <button type="button" onClick={() => setFolded(!folded)} aria-expanded={!folded} className="group flex w-full items-center gap-2 rounded-xl text-left">
         <span className={GROUP_LABEL}>More</span>
         {folded && waiting > 0 && <span className="rounded-full bg-accent px-1.5 text-[10px] font-semibold text-on-accent tabular-nums">{waiting}</span>}

@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useState } from "react";
 import { cn } from "@/lib/forge";
 import type { GuideStep } from "@/lib/guide";
+import { DismissButton } from "@/components/app/dismiss";
 
 // The first five minutes on Home, until every step is done. Compact by default: your progress and
 // the one next step, with the full list a tap away.
@@ -32,6 +33,7 @@ export function StartChecklist({ steps }: { steps: GuideStep[] }) {
         <Link href={next.href} className="bg-accent-grad hidden h-9 shrink-0 items-center gap-1.5 rounded-full px-4 text-sm font-semibold text-on-accent transition hover:opacity-90 sm:inline-flex">
           Start <ArrowRight className="size-4" />
         </Link>
+        <DismissButton id="feed-start" label="Hide your first five minutes" className="-mr-1.5 self-start sm:self-center" />
       </div>
       <p className="mt-2.5 text-xs leading-relaxed text-muted">{next.why}</p>
       <div className="mt-3 flex items-center gap-2">

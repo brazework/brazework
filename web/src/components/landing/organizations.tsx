@@ -20,7 +20,7 @@ export function Organizations() {
 
   return (
     <section id="founding" data-story="Founding clubs" className="story-sec relative isolate scroll-mt-24 overflow-hidden py-24 sm:py-32">
-      <div className="mx-auto grid max-w-7xl gap-14 px-6 lg:grid-cols-2">
+      <div className="mx-auto grid grid-cols-1 max-w-7xl gap-14 px-6 lg:grid-cols-2">
         <div>
           <Reveal>
             <Eyebrow>Founding clubs program</Eyebrow>
@@ -75,7 +75,7 @@ export function Organizations() {
                       </button>
                     ))}
                   </div>
-                  <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <Field label={type === "club" ? "Club name" : "Company name"}><input name="name" maxLength={120} autoComplete="organization" className={inputCls} required /></Field>
                     <Field label="Your name"><input name="contact" maxLength={80} autoComplete="name" className={inputCls} required /></Field>
                     <Field label={type === "company" ? "Work email" : "School email"}><input name="email" type="email" maxLength={120} autoComplete="email" className={inputCls} required /></Field>

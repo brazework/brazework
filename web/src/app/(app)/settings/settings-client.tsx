@@ -29,7 +29,7 @@ export function ProfileSettings({ profile, gradYear }: { profile: Profile; gradY
   return (
     <form onSubmit={submitWithoutReset(action)} className="flex flex-col gap-5">
       {picked.map((t) => <input key={t} type="hidden" name="interests" value={t} />)}
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Field label="First name"><input name="first_name" defaultValue={profile.first_name} maxLength={80} className={inputCls} /></Field>
         <Field label="Last name"><input name="last_name" defaultValue={profile.last_name} maxLength={80} className={inputCls} /></Field>
       </div>
@@ -208,7 +208,7 @@ export function PasswordForm() {
   const [state, action, pending] = useActionState(changePassword, init);
   return (
     <form onSubmit={submitWithoutReset(action)} className="mt-5 flex flex-col gap-4">
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Field label="New password"><input name="password" type="password" autoComplete="new-password" minLength={8} className={inputCls} /></Field>
         <Field label="Confirm"><input name="confirm" type="password" autoComplete="new-password" minLength={8} className={inputCls} /></Field>
       </div>

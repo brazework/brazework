@@ -1,10 +1,10 @@
 "use client";
 import { AnimatePresence, motion } from "motion/react";
 import { reportThis } from "@/components/report/report-dialog";
-import { ArrowUp, Bookmark, Check, FolderGit2, Heart, Link2, Loader2, Lock, MessageSquare, MoreHorizontal, Pencil, Sparkles, Trash2, Flag } from "lucide-react";
+import { ArrowRight, ArrowUp, BadgeCheck, Bookmark, Check, FolderGit2, Heart, Link2, Loader2, Lock, MessageSquare, Pencil, Sparkles, Trash2, Flag } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useOptimistic, useRef, useState, useTransition } from "react";
-import { Avatar, menuCls, menuItemCls } from "@/components/ui";
+import { useOptimistic, useRef, useState, useTransition } from "react";
+import { Avatar } from "@/components/ui";
 import { POST_KINDS, cn, timeAgo, type Post, type PostProject } from "@/lib/forge";
 import { MediaGrid } from "@/components/media/media-grid";
 import { avatarSrc } from "@/lib/media";
@@ -87,7 +87,7 @@ export function PostCard({ post, liked, saved = false, own = false, index, proje
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45, delay: Math.min(index, 8) * 0.04, ease: [0.16, 1, 0.3, 1] }}
-      className="glass-card relative rounded-3xl p-5 transition duration-300 hover:-translate-y-0.5"
+      className="group/post glass-card relative rounded-3xl p-5 transition-shadow duration-300 hover:shadow-[0_18px_50px_-24px_rgb(0_0_0/0.35)]"
       onDoubleClick={(e) => {
         if ((e.target as Element).closest("a,button,video,input,textarea")) return;
         window.getSelection()?.removeAllRanges();
@@ -121,12 +121,27 @@ export function PostCard({ post, liked, saved = false, own = false, index, proje
             {post.community_name && <> · {post.community_name}</>}
           </div>
         </div>
-        {post.kind !== "update" && (
-          <span className="ml-auto inline-flex shrink-0 items-center gap-1.5 text-xs font-medium text-muted">
-            <span className={cn("size-1.5 rounded-full", KIND_DOT[post.kind])} /> {kind}
-            {question && replyCount === 0 && <span className="rounded-full bg-[color-mix(in_oklab,#f59e0b_14%,transparent)] px-2 py-0.5 text-[10px] text-amber-700 dark:text-amber-300">Unanswered</span>}
-          </span>
-        )}
+        <div className="ml-auto flex shrink-0 items-center gap-1">
+          {post.kind !== "update" && (
+            <span className="inline-flex items-center gap-1.5 rounded-full border border-line px-2.5 py-1 text-[11px] font-medium text-muted">
+              <span className={cn("size-1.5 rounded-full", KIND_DOT[post.kind])} /> {kind}
+              {question && replyCount === 0 && <span className="text-amber-700 dark:text-amber-300">· Unanswered</span>}
+            </span>
+          )}
+          {/* The less-used actions, right where they apply: quiet until you hover the post (always there on touch). */}
+          {!editing && (
+            <span className="flex items-center opacity-0 transition-opacity duration-200 group-focus-within/post:opacity-100 group-hover/post:opacity-100 [@media(hover:none)]:opacity-100">
+              {own ? (
+                <>
+                  <QuietAction label="Edit post" icon={Pencil} onClick={() => setEditing(true)} />
+                  <QuietAction label="Delete post" icon={Trash2} danger onClick={() => { if (confirm("Delete this post? Its likes and comments go too.")) start(async () => { const r = await deletePost(post.id); if (r.ok) setGone(true); else setError(r.message); }); }} />
+                </>
+              ) : (
+                <QuietAction label="Report post" icon={Flag} onClick={() => reportThis({ kind: "post", id: post.id, label: "this post" })} />
+              )}
+            </span>
+          )}
+        </div>
       </header>
       {editing ? (
         <EditPost
@@ -140,32 +155,20 @@ export function PostCard({ post, liked, saved = false, own = false, index, proje
         <p className={cn("mt-3 text-[15px] leading-relaxed whitespace-pre-wrap text-text-2", long && !expanded && "line-clamp-6")}><MentionText body={body} mentions={post.mentions} /></p>
       )}
       {!editing && long && <button type="button" onClick={() => setExpanded((v) => !v)} className="mt-1 text-sm font-medium text-text hover:underline">{expanded ? "Show less" : "Show more"}</button>}
-      {post.media && post.media.length > 0 && <MediaGrid media={post.media} alt={`Shared by ${post.author_first} ${post.author_last}`} />}
-      {project && (
-        <Link href={`/u/${post.author_id}#projects`} className="mt-4 flex items-center gap-3 rounded-2xl border border-line bg-surface-2 p-4 transition hover:border-line-strong">
-          <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-raised text-muted"><FolderGit2 className="size-5" /></span>
-          <span className="min-w-0 flex-1">
-            <span className="flex items-center gap-2 font-medium">
-              <span className="truncate">{project.title}</span>
-              {project.private && <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-line px-2 py-0.5 text-[10px] text-muted"><Lock className="size-3" /> Private</span>}
-            </span>
-            <span className="block text-xs text-faint">{project.status === "completed" ? `Completed${project.year ? ` ${project.year}` : ""}` : `In progress · updated ${timeAgo(project.updated_at)}`}</span>
-          </span>
-          <span className="shrink-0 text-sm text-muted">View project →</span>
-        </Link>
-      )}
       {!editing && tags.length > 0 && (
-        <div className="mt-3 flex flex-wrap gap-1.5">
-          {tags.map((t) => <Link key={t} href={`/feed?tag=${encodeURIComponent(t)}`} className="rounded-md border border-line px-2 py-0.5 font-mono text-[11px] text-muted transition hover:border-line-strong hover:text-text">#{t}</Link>)}
-        </div>
+        <p className="mt-2 flex flex-wrap gap-x-2.5 gap-y-1 text-[13px]">
+          {tags.map((t) => <Link key={t} href={`/feed?tag=${encodeURIComponent(t)}`} className="text-muted transition hover:text-text">#{t}</Link>)}
+        </p>
       )}
+      {post.media && post.media.length > 0 && <MediaGrid media={post.media} alt={`Shared by ${post.author_first} ${post.author_last}`} />}
+      {project && <BuildStrip project={project} authorId={post.author_id} own={own} />}
       <footer className="mt-3 flex items-center gap-0.5 text-sm text-faint">
         <button onClick={() => like(!opt.liked)} aria-pressed={opt.liked} aria-label={opt.liked ? "Unlike" : "Like"} className="tap inline-flex h-9 items-center gap-1.5 rounded-full px-3 transition hover:bg-hover hover:text-text active:scale-90">
           <motion.span className="relative" animate={opt.liked ? { scale: [1, 1.35, 1] } : {}} transition={{ duration: 0.35 }}>
             {burst > 0 && <HeartBurst key={burst} />}
             <Heart className={cn("size-[18px] transition", opt.liked && "fill-[var(--accent)] text-accent")} />
           </motion.span>
-          <span className={cn("tabular-nums", opt.liked && "text-accent")}>{opt.count}</span>
+          <RollingCount n={opt.count} className={cn(opt.liked && "text-accent")} />
         </button>
         {viewer ? (
           <button type="button" onClick={() => { setReplyOpen((v) => !v); requestAnimationFrame(() => replyRef.current?.focus()); }} aria-expanded={replyOpen} aria-label={`${question ? "Answer" : "Reply"} (${replyCount})`} className="tap inline-flex h-9 items-center gap-1.5 rounded-full px-3 transition hover:bg-hover hover:text-text">
@@ -181,17 +184,15 @@ export function PostCard({ post, liked, saved = false, own = false, index, proje
           <Bookmark className={cn("size-[18px]", opt.saved && "fill-[var(--accent)] text-accent")} />
         </button>
         <SendPost postId={post.id} />
-        <MoreMenu
-          items={[
-            { label: copied ? "Link copied" : "Copy link", icon: copied ? Check : Link2, onSelect: share },
-            ...(own && !editing ? [{ label: "Edit post", icon: Pencil, onSelect: () => setEditing(true) }] : []),
-            ...(!own ? [{ label: "Report post", icon: Flag, onSelect: () => reportThis({ kind: "post", id: post.id, label: "this post" }) }] : []),
-            ...(own ? [{ label: "Delete post", icon: Trash2, danger: true, onSelect: () => { if (confirm("Delete this post? Its likes and comments go too.")) start(async () => { const r = await deletePost(post.id); if (r.ok) setGone(true); else setError(r.message); }); } }] : []),
-          ]}
-        />
+        <button type="button" onClick={share} aria-label={copied ? "Link copied" : "Copy link"} className="tap inline-flex h-9 items-center gap-1.5 rounded-full px-3 transition hover:bg-hover hover:text-text">
+          {copied ? <Check className="size-[18px] text-ok" /> : <Link2 className="size-[18px]" />}
+          <AnimatePresence>{copied && <motion.span initial={{ opacity: 0, x: -4 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }} className="text-xs text-ok">Copied</motion.span>}</AnimatePresence>
+        </button>
         {error && <span role="alert" className="ml-auto text-xs text-danger">{error}</span>}
       </footer>
+      <AnimatePresence initial={false}>
       {(shown.length > 0 || replyOpen) && (
+        <motion.div key="replies" initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.28, ease: [0.16, 1, 0.3, 1] }} className="overflow-hidden">
         <div className="mt-2 space-y-2.5 border-t border-line pt-3">
           {replyCount > shown.length && <Link href={`/post/${post.id}`} className="block text-xs font-medium text-muted hover:text-text">View all {replyCount} replies</Link>}
           {shown.map((c) => (
@@ -223,7 +224,9 @@ export function PostCard({ post, liked, saved = false, own = false, index, proje
             </form>
           )}
         </div>
+        </motion.div>
       )}
+      </AnimatePresence>
     </motion.article>
   );
 }
@@ -248,34 +251,63 @@ function HeartBurst() {
   );
 }
 
-// The "⋯" menu for the less-used actions, so the row under a post stays short.
-function MoreMenu({ items }: { items: { label: string; icon: typeof Heart; onSelect: () => void; danger?: boolean }[] }) {
-  const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLDivElement>(null);
-  useEffect(() => {
-    if (!open) return;
-    const off = (e: MouseEvent) => { if (!ref.current?.contains(e.target as Node)) setOpen(false); };
-    const esc = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
-    document.addEventListener("mousedown", off);
-    document.addEventListener("keydown", esc);
-    return () => { document.removeEventListener("mousedown", off); document.removeEventListener("keydown", esc); };
-  }, [open]);
+// A small icon button for the less-used actions (edit, delete, report), shown in the post's header.
+function QuietAction({ label, icon: Icon, onClick, danger = false }: { label: string; icon: typeof Heart; onClick: () => void; danger?: boolean }) {
   return (
-    <div ref={ref} className="relative">
-      <button type="button" onClick={() => setOpen((v) => !v)} aria-expanded={open} aria-haspopup="menu" aria-label="More actions" className="tap inline-flex h-9 items-center rounded-full px-3 transition hover:bg-hover hover:text-text">
-        <MoreHorizontal className="size-[18px]" />
-      </button>
-      <AnimatePresence>
-        {open && (
-          <motion.div role="menu" initial={{ opacity: 0, y: 4, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 4, scale: 0.98 }} transition={{ duration: 0.12 }} className={cn(menuCls, "absolute bottom-full left-0 z-30 mb-1 w-48 overflow-hidden")}>
-            {items.map((it) => (
-              <button key={it.label} role="menuitem" type="button" onClick={() => { it.onSelect(); if (it.label !== "Copy link") setOpen(false); }} className={cn(menuItemCls, it.danger && "text-danger hover:text-danger")}>
-                <it.icon className="size-4" /> {it.label}
-              </button>
-            ))}
-          </motion.div>
-        )}
+    <button type="button" onClick={onClick} aria-label={label} title={label} className={cn("tap grid size-8 place-items-center rounded-full text-faint transition hover:bg-hover active:scale-90", danger ? "hover:text-danger" : "hover:text-text")}>
+      <Icon className="size-4" />
+    </button>
+  );
+}
+
+// The like count rolls to its new number instead of jumping.
+function RollingCount({ n, className }: { n: number; className?: string }) {
+  return (
+    <span className={cn("relative inline-flex overflow-hidden tabular-nums", className)}>
+      <AnimatePresence mode="popLayout" initial={false}>
+        <motion.span key={n} initial={{ y: "100%", opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: "-100%", opacity: 0 }} transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}>{n}</motion.span>
       </AnimatePresence>
+    </span>
+  );
+}
+
+// Under the photos and video: the work itself. Which project, how far along, its club-verified proof,
+// what it's built with and its headline specs; the author gets a nudge to have it verified.
+function BuildStrip({ project, authorId, own }: { project: PostProject; authorId: string; own: boolean }) {
+  const v = project.verified ?? { n: 0, clubs: [] };
+  const tools = project.tools ?? [];
+  const specs = project.specs ?? [];
+  return (
+    <div className="mt-3 rounded-2xl border border-line bg-surface-2/50 p-3">
+      {/* The verified badge sits beside the title when there's room, and drops under it on a phone. */}
+      <Link href={`/u/${authorId}#projects`} className="group/proj flex flex-wrap items-center gap-x-3 gap-y-2">
+        <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-raised text-muted transition group-hover/proj:text-text"><FolderGit2 className="size-[18px]" /></span>
+        <span className="min-w-[min(100%,14rem)] flex-1 basis-0">
+          <span className="flex items-center gap-2 text-sm font-medium">
+            <span className="truncate">{project.title}</span>
+            {project.private && <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-line px-2 py-0.5 text-[10px] text-muted"><Lock className="size-3" /> Private</span>}
+          </span>
+          <span className="block text-xs text-faint">{project.status === "completed" ? `Completed${project.year ? ` ${project.year}` : ""}` : `In progress · updated ${timeAgo(project.updated_at)}`}</span>
+        </span>
+        {v.n > 0 ? (
+          <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[color-mix(in_oklab,var(--ok)_12%,transparent)] px-2.5 py-1 text-xs font-medium text-ok" title={`Verified by ${v.clubs.join(", ")}`}>
+            <BadgeCheck className="size-3.5" /> {v.n} verified{v.clubs[0] ? ` · ${v.clubs[0]}${v.clubs.length > 1 ? ` +${v.clubs.length - 1}` : ""}` : ""}
+          </span>
+        ) : (
+          <ArrowRight className="size-4 shrink-0 text-faint transition group-hover/proj:translate-x-0.5 group-hover/proj:text-text" />
+        )}
+      </Link>
+      {(tools.length > 0 || specs.length > 0) && (
+        <div className="mt-2.5 flex flex-wrap items-center gap-1.5 border-t border-line pt-2.5">
+          {specs.map((x) => <span key={x.label} className="inline-flex items-baseline gap-1 rounded-lg bg-surface px-2 py-1 text-xs"><span className="text-faint">{x.label}</span><span className="font-medium text-text">{x.value}</span></span>)}
+          {tools.map((t) => <span key={t} className="rounded-lg border border-line px-2 py-1 font-mono text-[11px] text-muted">{t}</span>)}
+        </div>
+      )}
+      {own && v.n === 0 && !project.private && (
+        <Link href={`/u/${authorId}#projects`} className="mt-2.5 flex items-center gap-1.5 border-t border-line pt-2.5 text-xs font-medium text-text-2 transition hover:text-text">
+          <BadgeCheck className="size-3.5 text-accent" /> Ask your club to verify a milestone on this project <ArrowRight className="size-3.5" />
+        </Link>
+      )}
     </div>
   );
 }

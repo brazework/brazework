@@ -14,6 +14,8 @@ import { getViewer } from "@/lib/supabase/server";
 import { copilotEnabled } from "@/lib/copilot";
 import { loadGuide } from "@/lib/guide";
 import { StartChecklist } from "./start-checklist";
+import { cookies } from "next/headers";
+import { DISMISS_PREFIX } from "@/lib/dismiss";
 import { Composer } from "./composer";
 import { FeedHeader, TABS, type TabId } from "./header";
 import { PostCard, type ReplyPreview } from "./post-card";
@@ -165,6 +167,7 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
   const discover = (tab === "for-you" || tab === "latest") && !tag && !kind;
   // The create box: whether Ember is on, your next guide step, and a club you run (for its weekly update).
   const [copilotOn, guide] = await extrasP;
+  const hideStart = (await cookies()).has(`${DISMISS_PREFIX}feed-start`);
   const nextStep = guide?.member.find((s) => !s.done) ?? null;
   const ledClub = guide?.clubs[0] ? { id: guide.clubs[0].id, name: guide.clubs[0].name } : null;
   // For the composer: "Which project?" (latest first) and the clubs it can also go to.
@@ -214,10 +217,11 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
           {SORTS.filter((x) => x.id !== "best" || tab === "for-you").map((x) => (
             <Link key={x.id} href={href({ sort: x.id })} aria-current={sort === x.id ? "true" : undefined} className={cn("rounded-full px-2.5 py-0.5 text-xs whitespace-nowrap transition", sort === x.id ? "bg-text text-surface" : "text-muted hover:text-text")}>{x.label}</Link>
           ))}
-        </span>} hero={<div id="composer" data-tour="composer" className="scroll-mt-24"><StartChecklist steps={guide?.loop ?? []} /><Composer first={profile.first_name} last={profile.last_name} interests={interests} userId={user.id} mediaEnabled={mediaEnabled} captionsEnabled={captionsEnabled} avatarSrc={avatarSrc(profile)} copilot={copilotOn} mentionsEnabled={mentionsEnabled} club={ledClub} next={nextStep && (guide?.loop ?? []).every((x) => x.done) ? { label: nextStep.label, href: nextStep.href } : null} projects={(myProjects ?? []) as { id: string; title: string }[]} clubs={composeClubs} initialProject={typeof sp.project === "string" ? sp.project : undefined} /></div>} />
-      {/* What kind of post (a quiet segmented control), and your topics in one chip: one calm row. */}
-      <nav data-tour="interests" aria-label="Filter the feed" className="mt-4 flex items-center gap-2">
-        <div className="no-scrollbar flex min-w-0 items-center gap-0.5 overflow-x-auto rounded-full bg-surface-2/80 p-1">
+        </span>} hero={<div id="composer" data-tour="composer" className="scroll-mt-24">{!hideStart && <StartChecklist steps={guide?.loop ?? []} />}<Composer first={profile.first_name} last={profile.last_name} interests={interests} userId={user.id} mediaEnabled={mediaEnabled} captionsEnabled={captionsEnabled} avatarSrc={avatarSrc(profile)} copilot={copilotOn} mentionsEnabled={mentionsEnabled} club={ledClub} next={nextStep && (guide?.loop ?? []).every((x) => x.done) ? { label: nextStep.label, href: nextStep.href } : null} projects={(myProjects ?? []) as { id: string; title: string }[]} clubs={composeClubs} initialProject={typeof sp.project === "string" ? sp.project : undefined} /></div>} />
+      {/* What kind of post (a quiet segmented control), and your topics in one chip: one calm row on a
+          wide screen; on a phone the kinds get a full-width row of their own (it scrolls if it must). */}
+      <nav data-tour="interests" aria-label="Filter the feed" className="mt-4 flex flex-wrap items-center gap-2">
+        <div className="no-scrollbar flex w-full min-w-0 items-center gap-0.5 overflow-x-auto rounded-full bg-surface-2/80 p-1 sm:w-auto">
           {KINDS.map((k) => (
             <Link key={k.id || "all"} href={href({ kind: k.id })} aria-current={kind === k.id ? "true" : undefined}
               className={cn("shrink-0 rounded-full px-3 py-1 text-xs font-medium whitespace-nowrap transition active:scale-95", kind === k.id ? "bg-surface text-text shadow-[0_1px_2px_rgb(0_0_0/0.08),0_0_0_1px_var(--border)]" : "text-muted hover:text-text")}>

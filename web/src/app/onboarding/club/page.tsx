@@ -53,7 +53,7 @@ async function FindYourClub() {
       <h1 className="text-grad mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">Find your club</h1>
       <p className="mt-3 max-w-xl text-[15px] leading-relaxed text-muted">Your club&apos;s officers are the people who verify what you build, so it&apos;s the first thing to set up. Join yours, or start it if it isn&apos;t here yet.</p>
       {clubs.length > 0 ? (
-        <div className="mt-8 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {clubs.map((c) => <CommunityCard key={c.id} c={c} joinable />)}
         </div>
       ) : (

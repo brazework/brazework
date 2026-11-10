@@ -79,13 +79,13 @@ export function DashboardView({ r, range, likes, comments, follows, views, repor
         </Panel>
       )}
 
-      <div className="mt-4 grid gap-4 xl:grid-cols-3">
+      <div className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-3">
         <Panel><Kicker>Likes per {r.unit}</Kicker><Bars series={likes} unit={r.unit} label="Likes" /></Panel>
         <Panel><Kicker>Comments per {r.unit}</Kicker><Bars series={comments} unit={r.unit} label="Comments" /></Panel>
         <Panel><Kicker>Profile views per {r.unit}</Kicker><Bars series={views} unit={r.unit} label="Profile views" /></Panel>
       </div>
 
-      <div className="mt-4 grid gap-4 lg:grid-cols-2">
+      <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Panel>
           <Kicker>Top posts</Kicker>
           {r.topPosts?.length ? (
@@ -132,7 +132,7 @@ export function DashboardView({ r, range, likes, comments, follows, views, repor
       {reports.length > 0 && (
         <section className="mt-8">
           <h2 className="flex items-center gap-2 text-lg font-semibold tracking-tight"><Users className="size-5" /> Your clubs this week</h2>
-          <div className="mt-3 grid gap-4 lg:grid-cols-2 xl:grid-cols-3">
+          <div className="mt-3 grid grid-cols-1 gap-4 lg:grid-cols-2 xl:grid-cols-3">
             {reports.map(({ id, report: c }) => {
               const max = Math.max(1, c.posts.thisWeek, c.posts.lastWeek);
               return (

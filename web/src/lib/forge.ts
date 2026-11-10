@@ -84,7 +84,11 @@ export type Post = {
 };
 
 // The project card shown inside a project post (Ian's projectBlock() in public/js/projects.js).
-export type PostProject = { id: string; title: string; status: "in_progress" | "completed"; year: number | null; private: boolean; updated_at: string };
+export type PostProject = {
+  id: string; title: string; status: "in_progress" | "completed"; year: number | null; private: boolean; updated_at: string;
+  // Shown under the post (lib/project-posts.ts): what it's built with, its top specs, its club-verified proof.
+  tools?: string[]; specs?: { label: string; value: string }[]; verified?: { n: number; clubs: string[] };
+};
 
 export const POST_KINDS = [
   { id: "update", label: "Update" },

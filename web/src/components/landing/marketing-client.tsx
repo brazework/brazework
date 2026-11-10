@@ -47,7 +47,7 @@ export function AudienceTabs() {
       </div>
       <div id="audience-panel" role="tabpanel" className="mt-6 overflow-hidden rounded-[2rem] border border-line bg-surface shadow-[var(--shadow)]">
         <AnimatePresence mode="wait">
-          <motion.div key={a.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.25 }} className="grid gap-8 p-7 sm:p-10 lg:grid-cols-[1fr_1.2fr] lg:items-center">
+          <motion.div key={a.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.25 }} className="grid grid-cols-1 gap-8 p-7 sm:p-10 lg:grid-cols-[1fr_1.2fr] lg:items-center">
             <div>
               <h3 className="text-3xl font-semibold tracking-tight">{a.headline}</h3>
               <Button href={a.cta.href} className="mt-6">{a.cta.label} <ArrowRight className="size-4" /></Button>

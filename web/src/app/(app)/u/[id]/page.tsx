@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { ReportLink } from "@/components/report/report-dialog";
-import { BadgeCheck, BarChart3, FileText, FolderGit2, Lock, MapPin, MessageSquare, Trophy } from "lucide-react";
+import { BadgeCheck, BarChart3, Eye, FileText, FolderGit2, Lock, MapPin, MessageSquare, Trophy } from "lucide-react";
 import { CommunityBadge } from "../../communities/_components/badge";
 import { ActivityGrid } from "@/components/profile/activity";
 import { requestTime } from "@/lib/forge";
@@ -22,6 +22,8 @@ import { type Post, type Profile } from "@/lib/forge";
 import { recordProfileView } from "@/lib/network";
 import { dbFeatures, postSelect, milestoneCols } from "@/lib/db-features";
 import { getViewer } from "@/lib/supabase/server";
+import { cookies } from "next/headers";
+import { DISMISS_PREFIX } from "@/lib/dismiss";
 import { copilotEnabled } from "@/lib/copilot";
 import { PostCard } from "../../feed/post-card";
 import { PeopleStrip } from "../../feed/discover";
@@ -33,11 +35,11 @@ import type { Club, Milestone } from "./milestones";
 
 export const metadata: Metadata = { title: "Profile" };
 
-export default function ProfilePage({ params }: PageProps<"/u/[id]">) {
+export default function ProfilePage({ params, searchParams }: PageProps<"/u/[id]">) {
   return (
     <div className="mx-auto max-w-3xl lg:max-w-6xl">
       <Suspense fallback={<ProfileSkeleton />}>
-        <ProfileView params={params} />
+        <ProfileView params={params} searchParams={searchParams} />
       </Suspense>
     </div>
   );
@@ -45,12 +47,17 @@ export default function ProfilePage({ params }: PageProps<"/u/[id]">) {
 
 type ClubRow = { role: string; communities: (Club & { logo_path?: string; accent?: string }) | null };
 
-async function ProfileView({ params }: { params: PageProps<"/u/[id]">["params"] }) {
+async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id]">["params"]; searchParams: PageProps<"/u/[id]">["searchParams"] }) {
   const { id } = await params;
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
   const { supabase, user } = await getViewer();
   if (!user) redirect("/login");
   const own = user.id === id;
+  // "Preview" (?view=visitor, Linear FIX-21): your own profile the way another member sees it, without
+  // the owner's tools and with private or unverified work left out. Nothing is recorded as a view.
+  const preview = own && (await searchParams).view === "visitor";
+  const mine = own && !preview;
+  const hideStrength = mine && (await cookies()).has(`${DISMISS_PREFIX}profile-strength`);
   const f = await dbFeatures();
   const { milestones: msOn, projectTools: stackOn, profileExtras: extrasOn } = f;
   const clubCols = `id, name${f.clubProfile ? ", logo_path, accent" : ""}`;
@@ -76,7 +83,7 @@ async function ProfileView({ params }: { params: PageProps<"/u/[id]">["params"] 
   const mediaOn = f.media;
 
   const posts = (postsRes.data ?? []) as unknown as Post[];
-  const projectRows = (projectsRes.data ?? []) as unknown as (Omit<ProjectView, "details" | "link"> & { tools?: string[] })[];
+  const projectRows = ((projectsRes.data ?? []) as unknown as (Omit<ProjectView, "details" | "link"> & { tools?: string[] })[]).filter((r) => !preview || !r.private);
   const following = ((myFollows.data ?? []) as { target: string }[]).map((r) => r.target).filter((t) => t !== id);
   // Second round: what depends on the first (your likes on these posts, project write-ups, mutual follows).
   const [likesRes, detailsRes, mutualRes, winsRes] = await Promise.all([
@@ -91,13 +98,13 @@ async function ProfileView({ params }: { params: PageProps<"/u/[id]">["params"] 
   const liked = new Set(((likesRes.data ?? []) as { post_id: string }[]).map((l) => l.post_id));
   const details = new Map(((detailsRes.data ?? []) as unknown as { project_id: string; details: string; link: string; specs?: { label: string; value: string }[] }[]).map((d) => [d.project_id, d]));
   const byId = Object.fromEntries(projectRows.map((r) => [r.id, r]));
-  const ms = (msRes.data ?? []) as unknown as unknown as Milestone[];
+  const ms = ((msRes.data ?? []) as unknown as Milestone[]).filter((m) => !preview || (m.status === "verified" && !m.private));
   const flat = <T,>(rows: { communities: T | T[] | null }[]) => rows.flatMap((r) => (Array.isArray(r.communities) ? r.communities : r.communities ? [r.communities] : []));
   const myClubs: Club[] = flat((myClubRows.data ?? []) as unknown as { communities: Club | Club[] | null }[]);
   const clubs = ((theirClubs.data ?? []) as unknown as ClubRow[]).filter((r) => r.communities).map((r) => ({ ...r.communities!, role: r.role }));
   const projects: ProjectView[] = projectRows.map((r) => ({ ...r, details: details.get(r.id)?.details ?? null, link: details.get(r.id)?.link ?? null, specs: details.get(r.id)?.specs ?? [], milestones: msOn && (own || !r.private) ? ms.filter((m) => m.project_id === r.id) : undefined }));
   // Proof shows work on public projects (and your own private ones, to you), like the feed and résumé.
-  const titles = new Map(projectRows.filter((r) => own || !r.private).map((r) => [r.id, r.title]));
+  const titles = new Map(projectRows.filter((r) => mine || !r.private).map((r) => [r.id, r.title]));
   const proof: ProofItem[] = ms.filter((m) => m.status === "verified" && titles.has(m.project_id)).map((m) => ({ id: m.id, title: m.title, detail: m.detail, achieved_on: m.achieved_on, community_id: m.community_id, community_name: m.community_name, reviewer_name: m.reviewer_name, project: { id: m.project_id, title: titles.get(m.project_id)! } }));
   const verifiedBy = [...proof.reduce((acc, m) => acc.set(m.community_id, { name: m.community_name, n: (acc.get(m.community_id)?.n ?? 0) + 1 }), new Map<string, { name: string; n: number }>())].sort((a, b) => b[1].n - a[1].n);
 
@@ -115,7 +122,7 @@ async function ProfileView({ params }: { params: PageProps<"/u/[id]">["params"] 
   const mutualCount = (mutualRes as { count?: number | null }).count ?? mutual.length;
   const sharedClubs = own ? [] : clubs.filter((c) => myClubs.some((m) => m.id === c.id));
   // Now building: their most recently updated project that's still in progress (public, unless it's you).
-  const nowBuilding = projectRows.filter((x) => x.status === "in_progress" && (own || !x.private)).sort((a, b) => Date.parse(b.updated_at) - Date.parse(a.updated_at))[0];
+  const nowBuilding = projectRows.filter((x) => x.status === "in_progress" && (mine || !x.private)).sort((a, b) => Date.parse(b.updated_at) - Date.parse(a.updated_at))[0];
   // Skills from their work: the tools across their projects, most used first.
   const skills = [...projectRows.flatMap((x) => x.tools ?? []).reduce((m, t) => m.set(t, (m.get(t) ?? 0) + 1), new Map<string, number>())].sort((a, b) => b[1] - a[1]).slice(0, 12);
   const steps: Step[] = [
@@ -132,20 +139,30 @@ async function ProfileView({ params }: { params: PageProps<"/u/[id]">["params"] 
 
   return (
     <div id="top" className="scroll-mt-24">
+      {preview && (
+        <p role="status" className="mb-4 flex items-start gap-2 rounded-2xl border border-line bg-surface-2/70 px-4 py-3 text-sm text-text-2">
+          <Eye className="mt-0.5 size-4 shrink-0" /> This is how other members see your profile. Private projects, private milestones and anything not yet verified are left out.
+        </p>
+      )}
       <Panel className="relative overflow-hidden p-0">
-        <CoverBanner path={p.cover_path} editable={own && mediaOn} userId={user.id} />
+        <CoverBanner path={p.cover_path} editable={mine && mediaOn} userId={user.id} />
         <div className="px-6 pb-6">
           <div className="pointer-events-none relative z-10 -mt-14 flex flex-wrap items-end justify-between gap-4 *:pointer-events-auto">
             <div className="inline-flex rounded-full bg-accent-grad p-[3px] shadow-[var(--shadow)]">
-              <WithPresence id={p.id} dot="size-5 ring-4 top-[4%] bottom-auto"><ProfilePhoto path={p.avatar_path} first={p.first_name} last={p.last_name} editable={own && mediaOn} userId={user.id} size={104} /></WithPresence>
+              <WithPresence id={p.id} dot="size-5 ring-4 top-[4%] bottom-auto"><ProfilePhoto path={p.avatar_path} first={p.first_name} last={p.last_name} editable={mine && mediaOn} userId={user.id} size={104} /></WithPresence>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <CopyLink path={`/u/${p.id}`} label="Share" />
               <Link href={`/u/${p.id}/resume`} className="inline-flex h-10 items-center gap-1.5 rounded-full border border-line bg-surface px-4 text-sm transition hover:bg-hover active:scale-95"><FileText className="size-4" /> Résumé</Link>
-              {own ? (
+              {mine && (
+                <Link href={`/u/${p.id}?view=visitor`} className="inline-flex h-10 items-center gap-1.5 rounded-full border border-line bg-surface px-4 text-sm transition hover:bg-hover active:scale-95"><Eye className="size-4" /> Preview</Link>
+              )}
+              {mine ? (
                 <Link href="/dashboard" data-tour="analytics" className="inline-flex h-10 items-center gap-1.5 rounded-full border border-line bg-surface px-4 text-sm transition hover:bg-hover active:scale-95">
                   <BarChart3 className="size-4" /> Dashboard
                 </Link>
+              ) : preview ? (
+                <Link href={`/u/${p.id}`} className="bg-accent-grad inline-flex h-10 items-center gap-1.5 rounded-full px-4 text-sm font-medium text-on-accent transition active:scale-95">Done previewing</Link>
               ) : (
                 rel && <ConnectButtons personId={p.id} firstName={p.first_name} relationship={rel} />
               )}
@@ -200,14 +217,14 @@ async function ProfileView({ params }: { params: PageProps<"/u/[id]">["params"] 
           </div>
 
           <div id="about" className="scroll-mt-24">
-            {own ? <EditBasics headline={p.headline} bio={p.bio} /> : p.bio && <p className="mt-5 max-w-2xl text-[15px] leading-relaxed whitespace-pre-wrap text-text-2">{p.bio}</p>}
+            {mine ? <EditBasics headline={p.headline} bio={p.bio} /> : p.bio && <p className="mt-5 max-w-2xl text-[15px] leading-relaxed whitespace-pre-wrap text-text-2">{p.bio}</p>}
           </div>
         </div>
       </Panel>
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
+      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
         <div className="flex min-w-0 flex-col gap-6">
-          {own ? <ProfileStrength steps={steps} /> : <SharedContext clubs={sharedClubs} mutual={mutual} mutualCount={mutualCount} />}
+          {mine ? (hideStrength ? null : <ProfileStrength steps={steps} />) : <SharedContext clubs={sharedClubs} mutual={mutual} mutualCount={mutualCount} />}
           {nowBuilding && (
             <Link href={`/projects/${nowBuilding.id}`} className="glass-card group flex flex-col rounded-3xl p-5 transition hover:-translate-y-0.5">
               <span className="flex items-center gap-2 text-xs font-medium tracking-wide text-faint uppercase"><span className="size-1.5 animate-pulse rounded-full bg-text" /> Now building</span>
@@ -217,7 +234,7 @@ async function ProfileView({ params }: { params: PageProps<"/u/[id]">["params"] 
               </span>
             </Link>
           )}
-          {msOn && <div id="proof" className="scroll-mt-24"><ProofTimeline items={proof} own={own} /></div>}
+          {msOn && <div id="proof" className="scroll-mt-24"><ProofTimeline items={proof} own={mine} /></div>}
 
           <section id="projects" data-tour="projects-tab" className="scroll-mt-24">
             <SwitchTabs
@@ -227,10 +244,10 @@ async function ProfileView({ params }: { params: PageProps<"/u/[id]">["params"] 
                   id: "projects", label: "Projects", count: projects.length,
                   content: (
                     <>
-                      {own && <div className="mb-4 flex items-center justify-between gap-3 rounded-3xl border border-dashed border-line-strong bg-surface/60 p-4"><p className="text-sm text-muted">Show what you&apos;ve built: a summary everyone sees, and a write-up you can keep private.</p><ProjectEditor interests={p.interests ?? []} copilot={copilotOn} stack={stackOn} specsOn={f.projectSpecs} /></div>}
-                      <ProjectGrid projects={projects} own={own} interests={p.interests ?? []} copilot={copilotOn} clubs={msOn && own ? myClubs : undefined} stack={stackOn} specsOn={f.projectSpecs} />
-                      {!projects.length && <EmptyState icon={<FolderGit2 className="size-6" />} title={own ? "Show what you've built" : "No projects yet"} body={own ? "Add a project with a summary, what you did and a link. Keep the write-up private and share only the card if you like." : undefined} />}
-                      {projects.some((x) => x.private) && !own && <p className="mt-3 flex items-center gap-1.5 text-xs text-faint"><Lock className="size-3" /> Private projects show their card only.</p>}
+                      {mine && <div className="mb-4 flex items-center justify-between gap-3 rounded-3xl border border-dashed border-line-strong bg-surface/60 p-4"><p className="text-sm text-muted">Show what you&apos;ve built: a summary everyone sees, and a write-up you can keep private.</p><ProjectEditor interests={p.interests ?? []} copilot={copilotOn} stack={stackOn} specsOn={f.projectSpecs} /></div>}
+                      <ProjectGrid projects={projects} own={mine} interests={p.interests ?? []} copilot={copilotOn} clubs={msOn && mine ? myClubs : undefined} stack={stackOn} specsOn={f.projectSpecs} />
+                      {!projects.length && <EmptyState icon={<FolderGit2 className="size-6" />} title={mine ? "Show what you've built" : "No projects yet"} body={mine ? "Add a project with a summary, what you did and a link. Keep the write-up private and share only the card if you like." : undefined} />}
+                      {projects.some((x) => x.private) && !mine && <p className="mt-3 flex items-center gap-1.5 text-xs text-faint"><Lock className="size-3" /> Private projects show their card only.</p>}
                     </>
                   ),
                 },
@@ -238,8 +255,8 @@ async function ProfileView({ params }: { params: PageProps<"/u/[id]">["params"] 
                   id: "posts", label: "Posts", count: posts.length,
                   content: (
                     <div className="flex flex-col gap-4">
-                      {posts.map((post, i) => <PostCard key={post.id} post={post} liked={liked.has(post.id)} own={own} index={i} project={post.project_id ? byId[post.project_id] ?? null : null} />)}
-                      {!posts.length && <EmptyState icon={<MessageSquare className="size-6" />} title={own ? "You haven't posted yet" : "No posts yet"} body={own ? "Share an update, a question or a result from the feed." : undefined} action={own ? <Link href="/feed" className="text-sm underline underline-offset-4">Go to the feed</Link> : undefined} />}
+                      {posts.map((post, i) => <PostCard key={post.id} post={post} liked={liked.has(post.id)} own={mine} index={i} project={post.project_id ? byId[post.project_id] ?? null : null} />)}
+                      {!posts.length && <EmptyState icon={<MessageSquare className="size-6" />} title={mine ? "You haven't posted yet" : "No posts yet"} body={mine ? "Share an update, a question or a result from the feed." : undefined} action={mine ? <Link href="/feed" className="text-sm underline underline-offset-4">Go to the feed</Link> : undefined} />}
                     </div>
                   ),
                 },
@@ -250,9 +267,9 @@ async function ProfileView({ params }: { params: PageProps<"/u/[id]">["params"] 
 
         {/* The sidebar: who they are at a glance. Sticky on wide screens, after the work on phones. */}
         <aside aria-label={`About ${p.first_name || "this member"}`} className="flex flex-col gap-4 lg:sticky lg:top-6 lg:self-start">
-          {extrasOn && <div id="open-to" className="scroll-mt-24"><ExtrasCard openTo={openTo} location={p.location ?? ""} links={links} own={own} /></div>}
+          {extrasOn && <div id="open-to" className="scroll-mt-24"><ExtrasCard openTo={openTo} location={p.location ?? ""} links={links} own={mine} /></div>}
           {skills.length > 0 && (
-            <SideCard title={`Skills from ${own ? "your" : "their"} work`}>
+            <SideCard title={`Skills from ${mine ? "your" : "their"} work`}>
               <div className="flex flex-wrap gap-1.5">{skills.map(([t, n]) => <Link key={t} href={`/projects?tool=${encodeURIComponent(t)}`} className="rounded-md bg-surface-2 px-2 py-0.5 font-mono text-[11px] text-text-2 transition hover:text-text">{t}{n > 1 && <span className="text-faint"> ×{n}</span>}</Link>)}</div>
             </SideCard>
           )}
@@ -276,7 +293,7 @@ async function ProfileView({ params }: { params: PageProps<"/u/[id]">["params"] 
             <div className="mt-2 grid grid-cols-3 gap-2 text-center">
               {([["followers", counts.followers, "Followers"], ["following", counts.following, "Following"], ["connections", counts.connections, "Connections"]] as const).map(([tab, n, label]) => {
                 const inner = <><span className="block text-lg font-semibold tabular-nums">{n ?? "—"}</span><span className="block text-[11px] text-muted">{label}</span></>;
-                return own ? <Link key={tab} href={`/network?tab=${tab}`} className="rounded-xl py-1.5 transition hover:bg-hover">{inner}</Link> : <div key={tab} className="py-1.5">{inner}</div>;
+                return mine ? <Link key={tab} href={`/network?tab=${tab}`} className="rounded-xl py-1.5 transition hover:bg-hover">{inner}</Link> : <div key={tab} className="py-1.5">{inner}</div>;
               })}
             </div>
           </SideCard>
@@ -305,7 +322,7 @@ function ProfileSkeleton() {
     <div aria-busy="true">
       <Skeleton className="h-[440px]" />
       <Skeleton className="mt-8 h-12" />
-      <div className="mt-6 grid gap-4 sm:grid-cols-2"><Skeleton className="h-48" /><Skeleton className="h-48" /></div>
+      <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2"><Skeleton className="h-48" /><Skeleton className="h-48" /></div>
     </div>
   );
 }

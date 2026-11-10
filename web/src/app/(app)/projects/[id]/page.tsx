@@ -86,7 +86,7 @@ async function ProjectView({ params }: { params: PageProps<"/projects/[id]">["pa
   const ask = `Tell me about the project "${p.title}" by ${ownerName} on Brazework: what it is in plain words, what's impressive about it, and three good questions to ask the builder.`;
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
+    <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
       <div className="flex min-w-0 flex-col gap-6">
         <Panel className="p-6">
           <div className="flex flex-wrap items-center gap-2 text-xs text-muted">

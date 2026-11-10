@@ -14,7 +14,7 @@ export function BuiltWith({ tools, uses }: { tools: string[]; uses: Record<strin
   const label = (c: string) => STACK_CATEGORIES.find((x) => x.id === c)?.label ?? "Other";
   const Icon = (c: string) => STACK_CATEGORIES.find((x) => x.id === c)?.icon ?? Boxes;
   return (
-    <div className="mt-4 grid gap-4 sm:grid-cols-2">
+    <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2">
       {groups.map((g) => {
         const I = Icon(g.cat);
         return (

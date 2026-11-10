@@ -163,9 +163,10 @@ export function Composer({ first, last, interests, userId, mediaEnabled = false,
             className="max-h-72 min-h-11 flex-1 resize-none bg-transparent px-4 py-2.5 text-[15px] leading-relaxed text-text placeholder:text-faint"
           />
           {!asking && at.menu}
-          {/* Closed: add a photo or video straight from the box. */}
+          {/* Closed: add a photo or video straight from the box (from a tablet up; on a phone the box
+              gets the room, and the same buttons are in its footer once it opens). */}
           {!asking && !open && mediaEnabled && (
-            <div className="flex shrink-0 items-center gap-0.5 p-1">
+            <div className="hidden shrink-0 items-center gap-0.5 p-1 sm:flex">
               <IconTool label="Add a photo" onClick={() => photoRef.current?.click()}><ImagePlus className="size-[18px] text-sky-500" /></IconTool>
               <IconTool label="Add a video" onClick={() => videoRef.current?.click()}><Video className="size-[18px] text-rose-500" /></IconTool>
             </div>

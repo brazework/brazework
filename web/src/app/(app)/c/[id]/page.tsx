@@ -148,7 +148,7 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
         {officer && (
           <section aria-label="To do" className="mt-4 rounded-3xl border border-line bg-surface p-4">
             <h2 className="text-xs font-medium tracking-wide text-faint uppercase">To do</h2>
-            <ul className="mt-2 grid gap-1.5 sm:grid-cols-2">
+            <ul className="mt-2 grid grid-cols-1 gap-1.5 sm:grid-cols-2">
               {[
                 { n: toVerify.count ?? 0, label: "milestones to verify", href: `/c/${c.id}/manage?tab=verify`, show: msOn },
                 { n: joinReqs.count ?? 0, label: "join requests", href: `/c/${c.id}/manage?tab=requests`, show: can(role, "approve") },

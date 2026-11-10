@@ -124,7 +124,7 @@ function MilestoneDialog({ projectId, projectTitle, clubs, onClose, onSent }: { 
         <input type="hidden" name="projectId" value={projectId} />
         <Field label="What happened?"><input name="title" maxLength={120} required placeholder="e.g. Passed load test at 3.2 g" className={inputCls} /></Field>
         <Field label="Details" hint="Numbers, conditions, who was there."><textarea name="detail" maxLength={600} rows={3} className={cn(inputCls, "h-auto resize-none py-3")} /></Field>
-        <div className="grid gap-4 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Field label="When"><input name="achievedOn" type="date" max={today} defaultValue={today} required className={inputCls} /></Field>
           <Field label="Evidence" hint="A photo, video, file, commit or the event page."><input name="evidence" type="url" required maxLength={300} placeholder="https://…" className={inputCls} /></Field>
         </div>

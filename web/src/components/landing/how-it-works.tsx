@@ -17,7 +17,7 @@ export function HowItWorks() {
   const [auto, setAuto] = useState(true);
   const reduce = useReducedMotion();
   return (
-    <div className="grid gap-8 lg:grid-cols-[1fr_1.15fr] lg:items-center [&>*]:min-w-0">
+    <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_1.15fr] lg:items-center [&>*]:min-w-0">
       <ol className="flex flex-col gap-3">
         {STEPS.map((s, n) => (
           <li key={s.title}>

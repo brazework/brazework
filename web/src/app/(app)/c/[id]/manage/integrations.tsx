@@ -71,7 +71,7 @@ export function Integrations({ cid, discord: initial, available }: { cid: string
         )}
       </section>
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <section className={card}>
           <div className="flex items-center gap-3"><span className="grid size-10 place-items-center rounded-xl bg-text text-bg"><GitBranch className="size-5" /></span><h3 className="font-semibold">GitHub</h3><span className="ml-auto rounded-full bg-[color-mix(in_oklab,var(--ok)_14%,transparent)] px-2.5 py-1 text-xs font-medium text-ok">Available</span></div>
           <p className="mt-3 text-sm text-muted">Members import public repos as projects (Add project → Import), and releases become milestones your club can verify. Copilot can read repos too.</p>
@@ -84,7 +84,7 @@ export function Integrations({ cid, discord: initial, available }: { cid: string
 
       <section className="rounded-3xl border border-dashed border-line-strong p-5">
         <h3 className="flex items-center gap-2 text-sm font-semibold"><CalendarSync className="size-4" /> Coming next</h3>
-        <ul className="mt-2 grid gap-1 text-sm text-muted sm:grid-cols-2">
+        <ul className="mt-2 grid grid-cols-1 gap-1 text-sm text-muted sm:grid-cols-2">
           <li>· Calendar subscription for club events</li>
           <li>· Slack announcements</li>
           <li>· Onshape and Fusion 360 project imports</li>

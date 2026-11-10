@@ -38,7 +38,7 @@ export function ReportView({ r, clubId, copilot }: { r: ClubReport; clubId: stri
 
       <ClubUpdate report={r} clubId={clubId} copilot={copilot} />
 
-      <div className="grid gap-4 md:grid-cols-2">
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
         <section className={card}>
           <h3 className="text-sm font-semibold">Top post this week</h3>
           {r.topPost ? (

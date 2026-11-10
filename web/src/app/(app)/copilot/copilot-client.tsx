@@ -47,7 +47,7 @@ export function CopilotSoon() {
   return (
     <>
       <Hero title="Ember is almost here" sub="Your AI teammate on Brazework. It looks things up, then gets things done with your OK:" mood="sleepy" />
-      <div className="mt-8 grid gap-3 sm:grid-cols-3">
+      <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-3">
         {CAPS.map((c, i) => (
           <motion.div key={c.title} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 + i * 0.08 }} className="glass-card rounded-3xl p-5">
             <span className="nav-tile grid size-10 place-items-center rounded-xl text-text-2"><c.icon className="size-5" /></span>
@@ -231,7 +231,7 @@ export function CopilotChat({ first, field, initial = "", chats = [], chat = nul
           <>
             <Hero title={`Hi ${first}, what are we building?`} sub="Ask for anything on Brazework. Ember looks it up, shows you the real clubs, events and people, then prepares the next step as a card you approve." mood={busy ? "thinking" : "idle"} />
             {composer}
-            <div className="mt-6 grid gap-4 sm:grid-cols-3">
+            <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
               {GROUPS.map((g, gi) => (
                 <div key={g.label}>
                   <h2 className="mb-2 px-1 text-xs font-medium tracking-wide text-faint uppercase">{g.label}</h2>

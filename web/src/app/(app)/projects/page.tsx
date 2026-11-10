@@ -119,7 +119,7 @@ async function Explore({ searchParams }: { searchParams: PageProps<"/projects">[
           {topTools.map((t) => <Link key={t} href={href({ tool: tool === t ? "" : t })} className={chip(tool === t)}>{t}</Link>)}
         </div>
       )}
-      <div className="mt-6 grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+      <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {list.map((p) => <ExploreCard key={p.id} p={p} />)}
       </div>
       {!list.length && <EmptyState icon={<FolderGit2 className="size-5" />} title={q || topic || tool || status || verifiedOnly || mine ? "No projects match" : "No projects yet"} body={q || topic || tool || status || verifiedOnly || mine ? <Link href="/projects" className="underline">Clear filters</Link> : "Add yours from your profile, or import one from GitHub."} />}

@@ -116,7 +116,7 @@ export function CreateChallengeForm({ orgId }: { orgId: string }) {
       <input type="hidden" name="orgId" value={orgId} />
       <Field label="Title"><input id="challenge-title" name="title" maxLength={120} className={inputCls} required placeholder="Lightest flight computer that logs at 100 Hz" /></Field>
       <Field label="Brief" hint="What to build, the constraints, and how you'll judge it."><textarea id="challenge-brief" name="brief" rows={6} maxLength={4000} className={inputCls} required /></Field>
-      <div className="grid gap-4 sm:grid-cols-3">
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
         <Field label="Prize" optional><input id="challenge-prize" name="prize" maxLength={200} className={inputCls} placeholder="$1,000 + interviews" /></Field>
         <Field label="Topic" optional><select name="topic" className={inputCls} defaultValue=""><option value="">Any</option>{ALL_TOPICS.map((t) => <option key={t}>{t}</option>)}</select></Field>
         <Field label="Deadline"><input id="challenge-deadline" name="deadline" type="datetime-local" className={inputCls} required /></Field>

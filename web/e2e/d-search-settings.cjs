@@ -51,6 +51,11 @@ const pw = require("playwright-core");
     await josh.getByRole("button", { name: "Hide captions" }).waitFor({ timeout: 10000 }); // on by default
     await josh.getByText("Transcript", { exact: true }).click();
     await josh.getByText("a clean two-second burn").waitFor();
+    // Under the video, the build strip: the project, its club-verified proof, a spec and a tool.
+    await josh.getByRole("link", { name: /Liquid engine test stand/ }).first().waitFor({ timeout: 10000 });
+    await josh.getByText(/\d verified · Rocketry Club/).first().waitFor();
+    await josh.getByText("Peak thrust", { exact: true }).waitFor();
+    await josh.getByText("LabVIEW", { exact: true }).first().waitFor();
   }, josh);
   await step("settings: graduation year saves and shows on the profile", async () => {
     await go(josh, "/settings#profile");
@@ -101,6 +106,26 @@ const pw = require("playwright-core");
       if (!/\/login/.test(p.url())) throw new Error(`${path} -> ${p.url()}`);
     }
   });
+  const ben = await as(b, "ben@forge.test");
+  await step("preview profile: Ben sees his profile as others do, without his private milestone or owner tools", async () => {
+    await go(ben, `/u/${process.env.BEN_ID}`);
+    // exact: getByText otherwise matches substrings, case-insensitively, and the preview's own
+    // banner says "private milestones".
+    await ben.getByText("Private milestone", { exact: true }).first().waitFor({ timeout: 15000 }); // his own view shows it
+    await ben.getByRole("link", { name: "Preview" }).click();
+    await ben.waitForURL(/view=visitor/);
+    await ben.getByText("This is how other members see your profile").waitFor({ timeout: 15000 });
+    // Only what's on screen, once the page has settled: Next keeps the page you came from in the DOM
+    // (React <Activity>), and for a moment the outgoing owner view is still fading out.
+    const onScreen = () => ben.getByText("Private milestone", { exact: true }).evaluateAll((els) => els.filter((e) => e.getClientRects().length > 0 && getComputedStyle(e).visibility !== "hidden").length);
+    let seen = await onScreen();
+    for (let i = 0; i < 20 && seen; i++) { await ben.waitForTimeout(500); seen = await onScreen(); }
+    if (seen) throw new Error("the preview shows a private milestone");
+    if (await ben.getByRole("link", { name: "Dashboard" }).count()) throw new Error("the preview shows owner tools");
+    await ben.getByRole("link", { name: "Done previewing" }).click();
+    await ben.waitForURL((u) => !/view=visitor/.test(u.toString()));
+    await ben.getByRole("link", { name: "Dashboard" }).waitFor({ timeout: 15000 });
+  }, ben);
   await step("the uptime check (/api/health) says the app and database are up, signed out, uncached", async () => {
     const res = await fetch(BASE + "/api/health");
     const body = await res.json();

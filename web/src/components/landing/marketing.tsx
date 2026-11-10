@@ -40,7 +40,7 @@ export function Problem() {
     <section id="why" data-story="Why now" className="story-sec bg-surface-2/50 py-24 sm:py-32">
       <div className="mx-auto max-w-7xl px-6">
         <Head eyebrow="Why now" title="AI made résumés free." accent="Proof is what's scarce now." body="Anyone can generate a polished résumé or profile in seconds. What still cuts through is work someone else saw happen, and today that proof is buried in group chats, lab notebooks and slide decks nobody outside ever sees." />
-        <div className="m-cards mt-12 grid gap-4 md:grid-cols-3">
+        <div className="m-cards mt-12 grid grid-cols-1 gap-4 md:grid-cols-3">
           {FACTS.map((f, i) => (
             <Reveal key={f.src} delay={i * 0.08} className="spotlight flex flex-col rounded-3xl border border-line bg-surface p-7">
               <div className="text-5xl font-semibold tracking-tight">{f.n}</div>
@@ -91,7 +91,7 @@ export function Features() {
     <section id="product" data-story="The product" className="story-sec scroll-mt-24 py-24 sm:py-32">
       <div className="mx-auto max-w-7xl px-6">
         <Head eyebrow="The product" title="Everything a club runs on." accent="Everything a member needs to get noticed." />
-        <div className="m-cards mt-12 grid gap-4 md:grid-cols-3">
+        <div className="m-cards mt-12 grid grid-cols-1 gap-4 md:grid-cols-3">
           {FEATURES.map((f, i) => (
             <Reveal key={f.title} delay={(i % 3) * 0.06} className={cn("spotlight group rounded-3xl border border-line bg-surface p-7 transition hover:-translate-y-1 hover:shadow-[var(--shadow)]", f.span)}>
               <span className="grid size-11 place-items-center rounded-2xl bg-accent-grad text-on-accent transition duration-300 group-hover:scale-110"><f.icon className="size-5" /></span>
@@ -115,7 +115,7 @@ const GOALS = [
 export function Mission() {
   return (
     <section id="mission" data-story="Mission" className="story-sec scroll-mt-24 bg-surface-2/50 py-24 sm:py-32">
-      <div className="mx-auto grid max-w-7xl gap-12 px-6 lg:grid-cols-[1fr_1.2fr] lg:items-start">
+      <div className="mx-auto grid grid-cols-1 max-w-7xl gap-12 px-6 lg:grid-cols-[1fr_1.2fr] lg:items-start">
         <Reveal>
           <Eyebrow>Our mission</Eyebrow>
           <h2 className={cn("mt-5", H2)}>Make what you build <span className="text-grad">the way you get found.</span></h2>
@@ -123,7 +123,7 @@ export function Mission() {
           <p className="m-hide mt-6 text-lg leading-relaxed text-muted">Some of the most capable engineers, scientists and builders get overlooked because their best work lives in group chats and lab notebooks, while hiring runs on keywords and AI-written résumés. We&apos;re starting with the organizations they already belong to, beginning with our own campus, and making what they build the way they get found.</p>
           <p className="m-only mt-4 text-base leading-relaxed text-muted">The best builders get overlooked because their work lives in group chats while hiring runs on keywords. We start with their organizations and make that work count.</p>
         </Reveal>
-        <div className="m-cards grid gap-4 sm:grid-cols-2">
+        <div className="m-cards grid grid-cols-1 gap-4 sm:grid-cols-2">
           {GOALS.map(([t, b], i) => (
             <Reveal key={t} delay={i * 0.06} className="spotlight rounded-3xl border border-line bg-surface p-6">
               <div className="text-grad text-sm font-semibold">0{i + 1}</div>
@@ -157,7 +157,7 @@ export function AiEra() {
     <section id="ai" data-story="Built for AI" className="story-sec scroll-mt-24 py-24 sm:py-32">
       <div className="mx-auto max-w-7xl px-6">
         <Head eyebrow="Built for the AI era" title="As AI floods hiring," accent="verified work becomes the signal." body="Brazework is designed so the proof behind a person is something both people and software can trust, and so AI does the busywork instead of the talking." />
-        <div className="m-cards mt-12 grid gap-4 md:grid-cols-3">
+        <div className="m-cards mt-12 grid grid-cols-1 gap-4 md:grid-cols-3">
           {AI_POINTS.map((f, i) => (
             <Reveal key={f.title} delay={i * 0.06} className="spotlight group rounded-3xl border border-line bg-surface p-7">
               <span className="grid size-11 place-items-center rounded-2xl bg-accent-grad text-on-accent transition duration-300 group-hover:scale-110"><f.icon className="size-5" /></span>
@@ -181,7 +181,7 @@ export function Pricing() {
     <section id="pricing" data-story="Pricing" className="story-sec scroll-mt-24 bg-surface-2/50 py-24 sm:py-32">
       <div className="mx-auto max-w-7xl px-6">
         <Head eyebrow="Pricing" title="Free for the people who build." accent="Paid by the people who hire." />
-        <div className="m-cards mx-auto mt-12 grid max-w-4xl gap-4 md:grid-cols-2">
+        <div className="m-cards mx-auto mt-12 grid grid-cols-1 max-w-4xl gap-4 md:grid-cols-2">
           {PLANS.map((p, i) => (
             <Reveal key={p.name} delay={i * 0.06} className={cn("spotlight flex flex-col rounded-3xl border bg-surface p-7", p.featured ? "border-transparent ring-2 ring-[var(--accent)]" : "border-line")}>
               <div className="text-sm font-medium text-muted">{p.name}</div>

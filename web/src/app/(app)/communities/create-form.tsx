@@ -34,7 +34,7 @@ export function CreateCommunity({ interests, field }: { interests: string[]; fie
   const options = [...new Set([...interests, ...ALL_TOPICS])];
   const pill = "relative rounded-2xl border border-line px-4 py-3 text-left text-sm transition hover:border-line-strong aria-pressed:border-text aria-pressed:bg-raised";
   return (
-    <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_280px]">
+    <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_280px]">
     <form ref={formRef} onSubmit={submitWithoutReset(action)} className="flex flex-col gap-5">
       <div>
         <h2 className="text-xl font-semibold tracking-tight">Start a community</h2>
@@ -54,7 +54,7 @@ export function CreateCommunity({ interests, field }: { interests: string[]; fie
       </fieldset>
       <fieldset>
         <legend className="mb-2 text-sm font-medium text-text-2">Who can join</legend>
-        <div className="grid gap-2 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
           {PRIVACY.map((p) => (
             <button key={p.id} type="button" aria-pressed={privacy === p.id} onClick={() => setPrivacy(p.id)} className={pill}>
               <span className="font-medium">{p.label}</span><span className="mt-0.5 block text-xs text-faint">{p.hint}</span>

@@ -1,6 +1,7 @@
 import { ArrowRight, BadgeCheck, Check, Users } from "lucide-react";
 import Link from "next/link";
 import { CommunityBadge } from "../../communities/_components/badge";
+import { DismissButton } from "@/components/app/dismiss";
 import { cn } from "@/lib/forge";
 
 // Pieces of the profile page that need no state: profile strength (your own profile), the proof
@@ -30,12 +31,12 @@ export function ProfileStrength({ steps }: { steps: Step[] }) {
           <h2 className="font-semibold">Profile strength</h2>
           <p className="text-sm text-muted">{pct < 50 ? "A few steps and clubs and recruiters will see what you can do." : "Almost there. Proof is what gets you noticed."}</p>
         </div>
-        <span className="text-2xl font-semibold tabular-nums">{pct}%</span>
+        <span className="flex items-center gap-1"><span className="text-2xl font-semibold tabular-nums">{pct}%</span><DismissButton id="profile-strength" label="Hide profile strength" className="-mr-2" /></span>
       </div>
       <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-surface-2" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label="Profile strength">
         <div className="bg-accent-grad h-full rounded-full transition-[width] duration-700" style={{ width: `${pct}%` }} />
       </div>
-      <ul className="mt-4 grid gap-2 sm:grid-cols-3">
+      <ul className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-3">
         {next.map((s) => (
           <li key={s.label}>
             <a href={s.href} className="group flex h-full items-center justify-between gap-2 rounded-2xl border border-line bg-surface/70 px-3 py-2.5 text-sm transition hover:-translate-y-px hover:border-line-strong">

@@ -171,7 +171,7 @@ export function ProposalCard({ p: initial }: { p: Proposal }) {
               <p className="text-xs text-muted">For <b className="font-medium text-text-2">{p.club_name}</b>. Members see it on the club page and in Events.</p>
               <input aria-label="Event title" value={p.title} onChange={(e) => set({ title: e.target.value })} maxLength={120} className={field} />
               <textarea aria-label="Description" value={p.description} onChange={(e) => set({ description: e.target.value })} maxLength={2000} rows={3} className={cn(field, "resize-y")} />
-              <div className="grid gap-2 sm:grid-cols-2">
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                 <label className="text-xs text-muted">Starts<input type="datetime-local" value={toLocal(p.starts_at)} onChange={(e) => e.target.value && set({ starts_at: fromLocal(e.target.value) })} className={cn(field, "mt-1")} /></label>
                 <label className="text-xs text-muted">Ends<input type="datetime-local" value={toLocal(p.ends_at)} onChange={(e) => e.target.value && set({ ends_at: fromLocal(e.target.value) })} className={cn(field, "mt-1")} /></label>
                 <label className="text-xs text-muted">Type<select value={p.type} onChange={(e) => set({ type: e.target.value })} className={cn(field, "mt-1")}>{EVENT_TYPES.map((t) => <option key={t}>{t}</option>)}</select></label>
