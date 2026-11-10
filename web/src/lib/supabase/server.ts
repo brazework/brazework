@@ -4,6 +4,7 @@ import { connection } from "next/server";
 import { cache } from "react";
 import { env } from "@/lib/env";
 import type { Profile } from "@/lib/forge";
+import { isTemporaryAuthError } from "@/lib/supabase/auth-errors";
 
 // Supabase client for Server Components, Server Actions and Route Handlers.
 // Row-level security in supabase/*.sql is still what protects the data.
@@ -35,9 +36,14 @@ export async function createClient() {
 export const getViewer = cache(viewer);
 async function viewer() {
   const supabase = await createClient();
-  const { data } = await supabase.auth.getClaims();
+  const { data, error } = await supabase.auth.getClaims();
   const claims = data?.claims;
-  if (!claims?.sub) return { supabase, user: null, profile: null } as const;
+  if (!claims?.sub) {
+    // Signed out is "no user"; a busy or unreachable auth server is an error page with "try again",
+    // never a redirect to /login (that signed members out whenever Auth was slow).
+    if (isTemporaryAuthError(error)) throw new Error("We couldn't check your sign-in just now. Try again in a moment.");
+    return { supabase, user: null, profile: null } as const;
+  }
   // Photo and cover paths exist once supabase/media.sql has run; before that, ask without them.
   const base = "id, first_name, last_name, account_type, headline, bio, field, interests, onboarded, created_at";
   let res = await supabase.from("profiles").select(`${base}, avatar_path, cover_path`).eq("id", claims.sub).maybeSingle();

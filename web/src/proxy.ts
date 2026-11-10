@@ -1,6 +1,7 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 import { env } from "@/lib/env";
+import { isTemporaryAuthError } from "@/lib/supabase/auth-errors";
 
 const APP_PATHS = ["/feed", "/search", "/onboarding", "/post/", "/communities", "/c/", "/network", "/messages", "/events", "/org", "/notifications", "/saved", "/profile", "/u/", "/analytics", "/dashboard", "/projects", "/settings", "/copilot", "/talent", "/challenges", "/admin"];
 const AUTH_PATHS = ["/login", "/signup", "/forgot"];
@@ -26,9 +27,12 @@ export async function proxy(request: NextRequest) {
   });
 
   // Don't put code between createServerClient and getClaims: it can sign people out at random.
-  const { data } = await supabase.auth.getClaims();
+  const { data, error } = await supabase.auth.getClaims();
   const signedIn = Boolean(data?.claims?.sub);
   const path = request.nextUrl.pathname;
+  // Auth couldn't be checked just now (busy or unreachable): don't redirect either way. The page
+  // checks again and, if it still can't, shows "try again" instead of signing anyone out.
+  if (!signedIn && isTemporaryAuthError(error)) return response;
 
   const redirect = (to: string) => {
     const url = request.nextUrl.clone();

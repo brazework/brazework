@@ -19,6 +19,7 @@ docker exec forge-e2e-db psql -U supabase_admin -h localhost -d postgres -qc "al
 docker run -d --name forge-e2e-auth --network forge-e2e -p 59999:9999 \
   -e GOTRUE_API_HOST=0.0.0.0 -e GOTRUE_API_PORT=9999 -e API_EXTERNAL_URL=http://localhost:54321/auth/v1 \
   -e GOTRUE_DB_DRIVER=postgres -e GOTRUE_DB_DATABASE_URL=postgres://supabase_auth_admin:postgres@forge-e2e-db:5432/postgres \
+  -e GOTRUE_DB_MAX_POOL_SIZE=20 -e GOTRUE_DB_MAX_IDLE_POOL_SIZE=20 -e GOTRUE_DB_CONN_MAX_IDLE_TIME=60s \
   -e GOTRUE_SITE_URL=http://localhost:3200 -e 'GOTRUE_URI_ALLOW_LIST=http://localhost:3200/**' \
   -e GOTRUE_JWT_SECRET=$SECRET -e GOTRUE_JWT_EXP=3600 -e GOTRUE_JWT_AUD=authenticated -e GOTRUE_JWT_DEFAULT_GROUP_NAME=authenticated \
   -e GOTRUE_JWT_ADMIN_ROLES=service_role -e GOTRUE_MAILER_AUTOCONFIRM=true -e GOTRUE_EXTERNAL_EMAIL_ENABLED=true -e GOTRUE_DISABLE_SIGNUP=false "$AUTH" >/dev/null

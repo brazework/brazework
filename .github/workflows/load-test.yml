@@ -1,0 +1,36 @@
+name: Load test
+
+# On demand only (Actions → Load test → Run workflow): 200 members browsing at once plus a sign-up
+# burst, against a throwaway local stack on the runner (web/e2e/load.sh, web/e2e/load.js). Never
+# touches production. Record the results on Linear FIX-32.
+on:
+  workflow_dispatch:
+
+jobs:
+  load:
+    name: k6 load test (local stack)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    defaults:
+      run:
+        working-directory: web
+    env:
+      NEXT_TELEMETRY_DISABLED: 1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - name: Run the load test
+        run: bash e2e/load.sh
+      - name: Keep the summary
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: load-summary
+          path: web/.load/
+          include-hidden-files: true
+          retention-days: 30
