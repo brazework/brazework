@@ -44,9 +44,23 @@ export async function createPost(prev: ComposeState, form: FormData): Promise<Co
     const kept = keepMentioned(parsed.data.body, picked);
     if (kept.length) row.mentions = kept;
   }
+  // Which project it's about, and which club sees it (project-posts.sql lets one post do both).
+  const ID = /^[A-Za-z0-9-]{1,64}$/;
+  const projectId = String(form.get("project_id") ?? "");
+  const clubId = String(form.get("community_id") ?? "");
+  if (projectId) {
+    if (!ID.test(projectId)) return { ok: false, message: "Pick one of your projects.", nonce: prev.nonce };
+    row.project_id = projectId;
+  }
+  if (clubId) {
+    if (!ID.test(clubId)) return { ok: false, message: "Pick one of your clubs.", nonce: prev.nonce };
+    if (projectId && !(await dbFeatures()).projectPosts) return { ok: false, message: "Project updates can't go to a club yet. Post it to your feed, or leave the project out.", nonce: prev.nonce };
+    row.community_id = clubId;
+  }
   const { error } = await supabase.from("posts").insert(row);
   if (error) return { ok: false, message: friendlyError(error), nonce: prev.nonce };
   revalidatePath("/feed");
+  if (projectId) revalidatePath(`/projects/${projectId}`);
   return { ok: true, message: "", nonce: prev.nonce + 1 };
 }
 

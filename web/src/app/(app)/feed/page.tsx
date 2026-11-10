@@ -164,6 +164,15 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
   const [copilotOn, guide] = await extrasP;
   const nextStep = guide?.member.find((s) => !s.done) ?? null;
   const ledClub = guide?.clubs[0] ? { id: guide.clubs[0].id, name: guide.clubs[0].name } : null;
+  // For the composer: "Which project?" (latest first) and the clubs it can also go to.
+  const [{ data: myProjects }, { data: clubRows }] = await Promise.all([
+    supabase.from("projects").select("id, title").eq("owner_id", user.id).order("updated_at", { ascending: false }).limit(20),
+    supabase.from("community_members").select("communities(id, name)").eq("uid", user.id).limit(50),
+  ]);
+  type ClubRef = { id: string; name: string };
+  const composeClubs = ((clubRows ?? []) as unknown as { communities: ClubRef | ClubRef[] | null }[])
+    .flatMap((r) => (Array.isArray(r.communities) ? r.communities : r.communities ? [r.communities] : []))
+    .sort((a, b) => a.name.localeCompare(b.name));
   const spotlight = <div className="py-2 empty:hidden"><Suspense fallback={<StripSkeleton w={280} h={250} />}><SpotlightStrip /></Suspense></div>;
   const peopleStrip = <div className="py-2 empty:hidden"><Suspense fallback={<StripSkeleton w={200} h={250} />}><PeopleStrip field={profile.field} interests={interests} rows /></Suspense></div>;
   // The last round: project boxes, and which of these you've liked or saved, together.
@@ -202,7 +211,7 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
           {SORTS.filter((x) => x.id !== "best" || tab === "for-you").map((x) => (
             <Link key={x.id} href={href({ sort: x.id })} aria-current={sort === x.id ? "true" : undefined} className={cn("rounded-full px-2.5 py-0.5 text-xs whitespace-nowrap transition", sort === x.id ? "bg-text text-surface" : "text-muted hover:text-text")}>{x.label}</Link>
           ))}
-        </span>} hero={<div id="composer" data-tour="composer" className="scroll-mt-24"><Composer first={profile.first_name} last={profile.last_name} interests={interests} userId={user.id} mediaEnabled={mediaEnabled} avatarSrc={avatarSrc(profile)} copilot={copilotOn} mentionsEnabled={mentionsEnabled} club={ledClub} next={nextStep ? { label: nextStep.label, href: nextStep.href } : null} /></div>} />
+        </span>} hero={<div id="composer" data-tour="composer" className="scroll-mt-24"><Composer first={profile.first_name} last={profile.last_name} interests={interests} userId={user.id} mediaEnabled={mediaEnabled} avatarSrc={avatarSrc(profile)} copilot={copilotOn} mentionsEnabled={mentionsEnabled} club={ledClub} next={nextStep ? { label: nextStep.label, href: nextStep.href } : null} projects={(myProjects ?? []) as { id: string; title: string }[]} clubs={composeClubs} /></div>} />
       {/* What kind of post, then your topics: one row, so filtering is one tap from anywhere in the feed. */}
       <nav data-tour="interests" aria-label="Filter the feed" className="no-scrollbar -mx-1 mt-4 flex items-center gap-1.5 overflow-x-auto px-1 pb-1">
         {KINDS.map((k) => (

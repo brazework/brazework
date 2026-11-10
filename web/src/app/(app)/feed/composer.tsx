@@ -20,10 +20,13 @@ const NO_ANSWER: EmberAnswerState = { q: "", text: "", tools: [], proposals: [] 
 // The top of the feed: one box to create and to ask. "Post" is the composer (photos and video by
 // pick, drop or paste; Ember can polish the draft in place). "Ask Ember" sends the same box to
 // Copilot, with answers and confirm cards right underneath.
-export function Composer({ first, last, interests, userId, mediaEnabled = false, avatarSrc, copilot = false, club = null, next = null, mentionsEnabled = false }: { first: string; last: string; interests: string[]; userId: string; mediaEnabled?: boolean; avatarSrc?: string | null; copilot?: boolean; club?: { id: string; name: string } | null; next?: { label: string; href: string } | null; mentionsEnabled?: boolean }) {
+export function Composer({ first, last, interests, userId, mediaEnabled = false, avatarSrc, copilot = false, club = null, next = null, mentionsEnabled = false, projects = [], clubs = [] }: { first: string; last: string; interests: string[]; userId: string; mediaEnabled?: boolean; avatarSrc?: string | null; copilot?: boolean; club?: { id: string; name: string } | null; next?: { label: string; href: string } | null; projects?: { id: string; title: string }[]; clubs?: { id: string; name: string }[]; mentionsEnabled?: boolean }) {
   const [mode, setMode] = useState<"post" | "ask">("post");
   const [state, action, pending] = useActionState<ComposeState, FormData>(createPost, { ok: false, message: "", nonce: 0 });
   const [kind, setKind] = useState<string>("update");
+  // Which project it's about comes first (your latest one); "general update" is allowed, not the default.
+  const [projectId, setProjectId] = useState<string>(projects[0]?.id ?? "");
+  const [shareTo, setShareTo] = useState<string>("");
   const [tags, setTags] = useState<string[]>([]);
   const [body, setBody] = useState("");
   const [open, setOpen] = useState(false);
@@ -113,6 +116,8 @@ export function Composer({ first, last, interests, userId, mediaEnabled = false,
       className={cn("relative rounded-3xl p-4 transition", asking ? "ai-border shadow-[var(--shadow)]" : "glass-card", dragging && "scale-[1.01]")}
     >
       {!asking && <input type="hidden" name="kind" value={kind} />}
+      {!asking && projectId && <input type="hidden" name="project_id" value={projectId} />}
+      {!asking && shareTo && <input type="hidden" name="community_id" value={shareTo} />}
       {!asking && tags.map((t) => <input key={t} type="hidden" name="tags" value={t} />)}
       {!asking && <input type="hidden" name="media" value={JSON.stringify(att.media)} />}
       {!asking && at.mentions.length > 0 && <input type="hidden" name="mentions" value={JSON.stringify(at.mentions)} />}
@@ -130,6 +135,9 @@ export function Composer({ first, last, interests, userId, mediaEnabled = false,
             </button>
           ))}
         </div>
+        {!asking && (
+          <ProjectPicker projects={projects} clubs={clubs} projectId={projectId} setProjectId={setProjectId} shareTo={shareTo} setShareTo={setShareTo} />
+        )}
         {next && <Link href={next.href} className="ml-auto hidden items-center gap-1 rounded-full border border-line px-2.5 py-1 text-[11px] text-text-2 transition hover:border-line-strong sm:inline-flex">Next: {next.label} <ArrowRight className="size-3" /></Link>}
       </div>
 
@@ -279,5 +287,34 @@ function CharRing({ used, max }: { used: number; max: number }) {
       <circle cx="12" cy="12" r={r} fill="none" stroke="var(--border)" strokeWidth="2.5" />
       <circle cx="12" cy="12" r={r} fill="none" stroke={pct > 0.93 ? "var(--danger)" : "var(--accent)"} strokeWidth="2.5" strokeLinecap="round" strokeDasharray={c} strokeDashoffset={c * (1 - pct)} className="transition-[stroke-dashoffset] duration-200" />
     </svg>
+  );
+}
+
+// "Which project?" then, optionally, a club to share it with (so the club sees the work it may verify).
+function ProjectPicker({ projects, clubs, projectId, setProjectId, shareTo, setShareTo }: {
+  projects: { id: string; title: string }[]; clubs: { id: string; name: string }[];
+  projectId: string; setProjectId: (v: string) => void; shareTo: string; setShareTo: (v: string) => void;
+}) {
+  const pill = "h-8 max-w-[11rem] truncate rounded-full border border-line bg-surface pr-7 pl-3 text-xs text-text-2 transition hover:border-line-strong focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]";
+  if (!projects.length) {
+    return <Link href="/profile#projects" className="inline-flex h-8 items-center gap-1 rounded-full border border-dashed border-line px-3 text-xs text-muted transition hover:border-line-strong hover:text-text">+ Add the project you&apos;re building</Link>;
+  }
+  return (
+    <div className="flex min-w-0 flex-wrap items-center gap-1.5">
+      <label className="sr-only" htmlFor="compose-project">Which project?</label>
+      <select id="compose-project" value={projectId} onChange={(e) => setProjectId(e.target.value)} className={pill} title="Which project?">
+        {projects.map((p) => <option key={p.id} value={p.id}>{p.title}</option>)}
+        <option value="">General update (no project)</option>
+      </select>
+      {clubs.length > 0 && (
+        <>
+          <label className="sr-only" htmlFor="compose-club">Also share with</label>
+          <select id="compose-club" value={shareTo} onChange={(e) => setShareTo(e.target.value)} className={pill} title="Also share with a club">
+            <option value="">Your feed</option>
+            {clubs.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+          </select>
+        </>
+      )}
+    </div>
   );
 }

@@ -60,6 +60,20 @@ async function saved(page, path, text) {
     await josh.getByRole("button", { name: "Add project" }).last().click();
     await josh.getByText(title).first().waitFor({ timeout: 15000 });
   }, josh);
+  await step("Josh posts an update about the project, shared with Rocketry Club", async () => {
+    const stamp = Date.now() % 100000;
+    await go(josh, "/feed");
+    await josh.locator("#compose-project").waitFor({ timeout: 15000 });
+    const picked = await josh.locator("#compose-project option:checked").textContent();
+    if (picked !== title) throw new Error(`"Which project?" should default to the latest project, got ${picked}`);
+    await josh.locator("#compose-club").selectOption({ label: "Rocketry Club" });
+    await josh.locator("textarea").first().fill(`Tunnel test section is sealed ${stamp}`);
+    await josh.getByRole("button", { name: /^Post$/ }).first().click();
+    let seen = 0;
+    for (let i = 0; i < 10 && !seen; i++) { await josh.waitForTimeout(500); await go(josh, "/c/rkt"); seen = await josh.getByText(`Tunnel test section is sealed ${stamp}`).count(); }
+    if (!seen) throw new Error("the update didn't reach the club");
+    await go(josh, `/u/${JOSH}`); // back to the profile for the milestone steps
+  }, josh);
   await step("Josh asks Rocketry Club to verify a milestone", async () => {
     const card = josh.locator("article, li, div").filter({ hasText: title }).filter({ has: josh.getByRole("button", { name: /Add milestone/ }) }).last();
     await card.getByRole("button", { name: /Add milestone/ }).click();

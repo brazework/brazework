@@ -27,7 +27,7 @@ export const dbFeatures = cache(async (): Promise<Features> => {
 
 async function probe() {
   const supabase = await createClient();
-  const [ev, po, inv, cop, ms, intg, gc, st, cp, mn, cc, px, mcp, cx] = await Promise.all([
+  const [ev, po, inv, cop, ms, intg, gc, st, cp, mn, cc, px, mcp, cx, pp] = await Promise.all([
     supabase.from("events").select("community_id").limit(1),
     supabase.from("posts").select("media").limit(1),
     supabase.from("community_invites").select("code").limit(1),
@@ -42,8 +42,9 @@ async function probe() {
     supabase.from("profiles").select("open_to").limit(1),
     supabase.from("api_tokens").select("id").limit(1),
     supabase.from("message_reactions").select("emoji").limit(1),
+    supabase.rpc("project_posts_ready"),
   ]);
-  return { clubEvents: !missing(ev.error), media: !missing(po.error), invites: !missing(inv.error), copilot: !missing(cop.error), milestones: !missing(ms.error), integrations: !missing(intg.error), groupChats: !missing(gc.error), projectTools: !missing(st.error), clubProfile: !missing(cp.error), mentions: !missing(mn.error), copilotChats: !missing(cc.error), profileExtras: !missing(px.error), mcp: !missing(mcp.error), chatExtras: !missing(cx.error) };
+  return { clubEvents: !missing(ev.error), media: !missing(po.error), invites: !missing(inv.error), copilot: !missing(cop.error), milestones: !missing(ms.error), integrations: !missing(intg.error), groupChats: !missing(gc.error), projectTools: !missing(st.error), clubProfile: !missing(cp.error), mentions: !missing(mn.error), copilotChats: !missing(cc.error), profileExtras: !missing(px.error), mcp: !missing(mcp.error), chatExtras: !missing(cx.error), projectPosts: !missing(pp.error) };
 }
 
 export async function eventCols(): Promise<string> {
