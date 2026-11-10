@@ -84,6 +84,7 @@ final class Session {
   // a clean sign-in as that member (whatever session was stored, even one from a reset database).
   private func debugFreshSignIn() async {
     let env = ProcessInfo.processInfo.environment
+    if env["FORGE_TEST_SIGNOUT"] != nil { try? await supabase.auth.signOut(scope: .local); return }
     guard let email = env["FORGE_TEST_EMAIL"], let password = env["FORGE_TEST_PASSWORD"] else { return }
     try? await supabase.auth.signOut(scope: .local)
     _ = try? await signIn(email: email, password: password)

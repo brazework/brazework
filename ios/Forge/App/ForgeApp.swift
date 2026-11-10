@@ -24,7 +24,7 @@ struct RootView: View {
       case .loading: ZStack { p.bg.ignoresSafeArea(); ProgressView() }
       case .signedOut: SignInView()
       case .signedIn:
-        if session.profile?.onboarded == false { FinishOnWeb() } else { MainTabs() }
+        if session.profile?.onboarded == false { OnboardingView() } else { MainTabs() }
       }
     }
     .animation(.smooth, value: session.state)
@@ -50,23 +50,5 @@ struct MainTabs: View {
     .environment(nav)
     .onChange(of: phase) { if phase == .active { Task { await session.refreshBadges() } } }
     .task { while !Task.isCancelled { try? await Task.sleep(for: .seconds(30)); await session.refreshBadges() } }
-  }
-}
-
-// Sign-up and onboarding (university email check, field, interests) live on the web for now.
-private struct FinishOnWeb: View {
-  @Environment(Session.self) private var session
-  @Environment(\.palette) private var p
-  @Environment(\.openURL) private var openURL
-  var body: some View {
-    VStack(spacing: 16) {
-      EmptyState(icon: "person.crop.circle.badge.checkmark", title: "Finish setting up", message: "Pick your field and interests on the web, then come back. It takes a minute.")
-      Button("Continue on the web") { openURL(Env.web("onboarding")) }.buttonStyle(PrimaryButtonStyle())
-      Button("I've finished") { Task { await session.loadProfile() } }.font(.subheadline)
-      Button("Sign out", role: .destructive) { Task { await session.signOut() } }.font(.footnote)
-    }
-    .padding(24)
-    .frame(maxWidth: .infinity, maxHeight: .infinity)
-    .background(p.bg)
   }
 }

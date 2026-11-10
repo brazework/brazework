@@ -13,11 +13,11 @@ Native SwiftUI app on the same Supabase backend as `web/`: same tables, same row
 | **Search** | People, clubs, events and posts in one search; people who share your interests first |
 | **Clubs** | Your clubs and discover, search, a club's page with its posts, join or ask to join. **Events**: upcoming club and organization events, a map of the place with directions, I'm going, join online |
 | **Profiles** | Anyone's profile from a post, reply, alert or thread: headline, field, interests, posts; follow and message them |
-| **Messages** | Club, event and team chats (officers post announcements; Ember's answers show as Ember's), plus direct messages with requests, accept or decline. Long-press any message to react (8 emoji), reply with a quote, copy, or unsend your own (direct messages within 15 minutes). Threads update live (Realtime, with polling as a fallback). Open a club's chat from its page, an event's from its page once you're going |
+| **Messages** | Club, event and team chats (start a team chat from a club with the people you pick; add clubmates, leave) (officers post announcements; Ember's answers show as Ember's), plus direct messages with requests, accept or decline. Long-press any message to react (8 emoji), reply with a quote, copy, or unsend your own (direct messages within 15 minutes). Threads update live (Realtime, with polling as a fallback). Open a club's chat from its page, an event's from its page once you're going |
 | **Alerts** | Likes, replies, mentions, follows, club and milestone news; marked read once seen; tap to open the post or person |
 | **You** | Edit your profile (photo, name, headline, field, about, interests; the web's rules), your saved posts, light/dark and the web's five themes, links to settings and Ember on the web, sign out |
 
-Sign-up, onboarding and Ember open on the web for now.
+Sign-up (student or professional; students use a university email; 18+), email confirmation, password reset and onboarding (major, field, 3+ interests) are native. Ember opens on the web for now.
 
 ## Build and run
 
@@ -37,7 +37,7 @@ The app connects to whatever `Config/Local.xcconfig` names (gitignored). It defa
 
 ```sh
 scripts/test-kit.sh   # on the Mac, no simulator: ranking and dates, plus the app's real reads and writes against the
-                      # local stack (settings, reports and blocking, password change, feedback; edit your profile and photo, and the web's validation; saved posts; edit/delete your own posts and not others'; @mention → they're notified, fake mentions dropped; photo upload → post with it, and the folder rule; post → first in feed → like, save → reply; message from a profile → they see it
+                      # local stack (sign-up rules and onboarding; team chats and who can read them; settings, reports and blocking, password change, feedback; edit your profile and photo, and the web's validation; saved posts; edit/delete your own posts and not others'; @mention → they're notified, fake mentions dropped; photo upload → post with it, and the folder rule; post → first in feed → like, save → reply; message from a profile → they see it
                       # unread → accept → reply; reactions, replies and unsend (in DMs
                       # and club chats); club chat and announcements (officers only, members can't,
                       # non-members can't read); event chat for people going; follow; join a club; RSVP; alerts)
@@ -47,5 +47,5 @@ scripts/test.sh       # the same, then UI journeys on a simulator (XCUITest; mac
 ## Next
 
 1. Push notifications (APNs + a Supabase webhook on `notifications` and `messages`).
-2. Team chats; native sign-up and onboarding.
+2. TestFlight (needs an App Store Connect app record).
 3. Native sign-up and onboarding; TestFlight.

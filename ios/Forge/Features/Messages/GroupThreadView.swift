@@ -19,6 +19,8 @@ struct GroupThreadView: View {
   @State private var reactions = ReactionsModel(kind: "group")
   @State private var replying: ChatMessage?
   @State private var reporting: ReportTarget?
+  @State private var showMembers = false
+  @Environment(\.dismiss) private var dismiss
 
   var body: some View {
     ScrollViewReader { proxy in
@@ -41,6 +43,14 @@ struct GroupThreadView: View {
     .background(p.bg)
     .navigationTitle(route.title)
     .navigationBarTitleDisplayMode(.inline)
+    .toolbar {
+      if route.kind == "team" {
+        ToolbarItem(placement: .primaryAction) {
+          Button { showMembers = true } label: { Image(systemName: "person.2") }.accessibilityLabel("Members")
+        }
+      }
+    }
+    .sheet(isPresented: $showMembers) { TeamMembersView(route: route) { dismiss() } }
     .safeAreaInset(edge: .bottom) { composer }
     .task { await load(); await API.markChatRead(route.id); await session.refreshBadges() }
     .task { await listen() }

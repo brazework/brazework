@@ -236,6 +236,17 @@ struct ChatMessage: Codable, Identifiable, Hashable, Sendable {
   var senderName: String { "\(senderFirst) \(senderLast)".trimmingCharacters(in: .whitespaces) }
 }
 
+// Someone in a club (community_members keeps their name and headline).
+struct ClubMember: Codable, Identifiable, Hashable, Sendable {
+  let uid: UUID
+  var firstName: String
+  var lastName: String
+  var headline: String
+  var role: String
+  var id: UUID { uid }
+  var name: String { "\(firstName) \(lastName)".trimmingCharacters(in: .whitespaces) }
+}
+
 // Navigation targets shared by every tab.
 struct PersonRoute: Hashable, Sendable { let id: UUID }
 struct PostRoute: Hashable, Sendable { let id: String }

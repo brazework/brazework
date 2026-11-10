@@ -365,6 +365,26 @@ enum API {
   static func unreadChats() async -> Int {
     (try? await supabase.rpc("unread_chats").execute().value as Int) ?? 0
   }
+  // Team chats: a named chat inside a club, for the people you pick (up to 50).
+  static func clubMembers(_ clubId: String) async throws -> [ClubMember] {
+    try await supabase.from("community_members").select("uid, first_name, last_name, headline, role").eq("community_id", value: clubId).order("first_name").limit(500).execute().value
+  }
+  static func createTeamChat(clubId: String, name: String, members: [UUID]) async throws -> String {
+    struct P: Encodable, Sendable { let p_community: String; let p_name: String; let p_members: [String] }
+    return try await supabase.rpc("create_team_chat", params: P(p_community: clubId, p_name: name, p_members: members.map { $0.uuidString.lowercased() })).execute().value
+  }
+  static func chatMemberIds(_ chatId: String) async throws -> [UUID] {
+    struct M: Decodable { let uid: UUID }
+    return try await (supabase.from("chat_members").select("uid").eq("chat_id", value: chatId).execute().value as [M]).map(\.uid)
+  }
+  static func addChatMember(_ chatId: String, _ uid: UUID) async throws {
+    struct P: Encodable, Sendable { let p_chat: String; let p_uid: String }
+    try await supabase.rpc("add_chat_member", params: P(p_chat: chatId, p_uid: uid.uuidString.lowercased())).execute()
+  }
+  static func leaveChat(_ chatId: String) async throws {
+    try await supabase.rpc("leave_chat", params: ["p_chat": chatId]).execute()
+  }
+
   static func isOfficer(_ role: String?) -> Bool { ["owner", "admin", "moderator"].contains(role ?? "") }
 
   // MARK: Clubs

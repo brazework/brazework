@@ -44,12 +44,15 @@ func friendly(_ error: Error) -> String {
   if text.contains("column \"media\"") || text.contains("'media' column") { return "Photos and video aren't turned on yet." }
   if text.contains("row-level security") || text.contains("42501") { return "You don't have permission to do that." }
   if text.contains("NSURLErrorDomain") || text.contains("offline") || text.contains("Could not connect") { return "Can't reach Forge. Check your connection." }
+  if text.contains("already registered") || text.contains("user_already_exists") || text.contains("already exists") { return "An account with this email already exists. Log in instead." }
   if text.contains("Invalid login credentials") { return "That email and password don't match." }
   if text.contains("Email not confirmed") { return "Confirm your email first (check your inbox)." }
   if text.contains("You can't report yourself") { return "You can't report yourself." }
   if text.contains("You can't block yourself") { return "You can't block yourself." }
   if text.contains("no longer there") { return "That's no longer there." }
   if text.contains("content_reports") || text.contains("block_user") { return "Reporting isn't switched on yet. Try again soon." }
+  for m in ["Join the club to start a team chat.", "Give the chat a name (up to 60 characters).", "Team chats can have up to 50 people.",
+            "You can only add people to a team chat you're in.", "They need to be in the club first."] where text.contains(m) { return m }
   if text.contains("check constraint") { return "That's too long or not allowed." }
   return "Something went wrong. Try again."
 }

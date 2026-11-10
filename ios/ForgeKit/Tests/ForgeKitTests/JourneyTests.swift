@@ -397,6 +397,84 @@ final class JourneyTests: XCTestCase {
     try await API.changePassword("forge-test-pass-1", confirm: "forge-test-pass-1")
   }
 
+  func testTeamChats() async throws {
+    let josh = try await signIn("josh")
+    let members = try await API.clubMembers("rkt")
+    let maya = try XCTUnwrap(members.first { $0.firstName == "Maya" })
+    let ben = try XCTUnwrap(members.first { $0.firstName == "Ben" })
+    XCTAssertTrue(members.contains { $0.uid == josh })
+    do { _ = try await API.createTeamChat(clubId: "rkt", name: "  ", members: []); XCTFail("needs a name") }
+    catch { XCTAssertEqual(friendly(error), "Give the chat a name (up to 60 characters).") }
+    let chatId = try await API.createTeamChat(clubId: "rkt", name: "Avionics \(Self.stamp)", members: [maya.uid])
+    try await API.sendChat(chatId, body: "Flight computer pinout? \(Self.stamp)")
+    let ids = try await API.chatMemberIds(chatId)
+    XCTAssertEqual(Set(ids), [josh, maya.uid])
+
+    // Ben's in the club but not the team: he can't read it, until Josh adds him.
+    _ = try await signIn("ben")
+    let before = try await API.chatMessages(chatId)
+    XCTAssertTrue(before.isEmpty)
+    _ = try await signIn("josh")
+    try await API.addChatMember(chatId, ben.uid)
+    // Cara isn't in the club: can't be added.
+    let found: [Profile] = try await supabase.from("profiles").select(Session.profileColumns).eq("first_name", value: "Cara").limit(1).execute().value
+    do { try await API.addChatMember(chatId, try XCTUnwrap(found.first?.id)); XCTFail("not in the club") }
+    catch { XCTAssertEqual(friendly(error), "They need to be in the club first.") }
+    _ = try await signIn("ben")
+    let after = try await API.chatMessages(chatId)
+    XCTAssertEqual(after.last?.body, "Flight computer pinout? \(Self.stamp)")
+    let bensChats = try await API.myChats()
+    let row = try XCTUnwrap(bensChats.first { $0.id == chatId })
+    XCTAssertEqual(row.kind, "team")
+    XCTAssertEqual(row.subtitle, "Rocketry Club")
+
+    // Maya leaves; it's gone from her list.
+    _ = try await signIn("maya")
+    try await API.leaveChat(chatId)
+    let mayasChats = try await API.myChats()
+    XCTAssertFalse(mayasChats.contains { $0.id == chatId })
+  }
+
+  func testSignUpAndOnboarding() async throws {
+    try? await supabase.auth.signOut()
+    var f = SignUpForm()
+    f.firstName = "Riya"; f.lastName = "Shah"; f.password = "forge-test-pass-1"
+    f.email = "riya\(Self.stamp)@gmail.com"
+    XCTAssertEqual(f.problem, "Use your university email (for example, ending in .edu or .ac.uk).")
+    f.accountType = "professional"
+    XCTAssertNil(f.problem, "professionals can use any email")
+    f.accountType = "student"; f.email = "riya\(Self.stamp)@mit.edu"
+    f.birthday = Calendar.current.date(byAdding: .year, value: -17, to: .now)!
+    XCTAssertEqual(f.problem, "You must be at least 18 to create an account.")
+    f.birthday = Calendar.current.date(byAdding: .year, value: -19, to: .now)!
+    f.password = "short"
+    XCTAssertEqual(f.problem, "Choose a password with at least 8 characters.")
+    f.password = "forge-test-pass-1"
+    XCTAssertTrue("x@cam.ac.uk".range(of: SignUpForm.academicPattern, options: [.regularExpression, .caseInsensitive]) != nil)
+
+    // The local stack confirms emails at once, so sign-up signs you in.
+    let result = try await API.signUp(f)
+    XCTAssertEqual(result, .signedIn)
+    let me = try await supabase.auth.session.user.id
+    let fresh = try await API.profile(me)
+    XCTAssertEqual(fresh.firstName, "Riya")
+    XCTAssertEqual(fresh.accountType, "student")
+    XCTAssertFalse(fresh.onboarded)
+
+    var o = OnboardingForm(headline: "Mechanical engineering, class of 2028", field: "Engineering", interests: ["Aerospace"])
+    do { try await API.completeOnboarding(o, me: me); XCTFail("needs 3 interests") } catch { XCTAssertEqual(friendly(error), "Pick at least 3 interests.") }
+    o.interests = ["Aerospace", "Mechanical Design", "Embedded Systems"]
+    try await API.completeOnboarding(o, me: me)
+    let done = try await API.profile(me)
+    XCTAssertTrue(done.onboarded)
+    XCTAssertEqual(done.field, "Engineering")
+
+    // The same email again is refused.
+    try? await supabase.auth.signOut()
+    do { _ = try await API.signUp(f); XCTFail("duplicate email") } catch { XCTAssertTrue(friendly(error).contains("already"), friendly(error)) }
+    try await API.requestPasswordReset("riya\(Self.stamp)@mit.edu")
+  }
+
   func testFollowAndClubs() async throws {
     let me = try await signIn("maya")
     let found: [Profile] = try await supabase.from("profiles").select(Session.profileColumns).eq("first_name", value: "Cara").limit(1).execute().value

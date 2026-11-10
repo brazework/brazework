@@ -9,6 +9,8 @@ struct SignInView: View {
   @State private var busy = false
   @State private var error: String?
   @State private var glow = false
+  @State private var signingUp = false
+  @State private var forgot = false
   @FocusState private var field: Field?
   enum Field { case email, password }
 
@@ -41,11 +43,11 @@ struct SignInView: View {
             Button { Task { await submit() } } label: { if busy { ProgressView().tint(p.onAccent) } else { Text("Log in") } }
               .buttonStyle(PrimaryButtonStyle())
               .disabled(email.isEmpty || password.isEmpty || busy)
-            Button("Forgot password?") { openURL(Env.web("forgot")) }.font(.footnote).foregroundStyle(p.muted)
+            Button("Forgot password?") { forgot = true }.font(.footnote).foregroundStyle(p.muted)
           }
           HStack(spacing: 4) {
             Text("New to Forge?").foregroundStyle(p.muted)
-            Button("Create an account") { openURL(Env.web("signup")) }.fontWeight(.semibold)
+            Button("Create an account") { signingUp = true }.fontWeight(.semibold)
           }
           .font(.subheadline)
           .frame(maxWidth: .infinity)
@@ -55,6 +57,11 @@ struct SignInView: View {
       .scrollDismissesKeyboard(.interactively)
     }
     .onAppear { withAnimation(.easeInOut(duration: 3).repeatForever(autoreverses: true)) { glow = true } }
+    .fullScreenCover(isPresented: $signingUp) { SignUpView() }
+    .sheet(isPresented: $forgot) { ForgotPasswordView() }
+    #if DEBUG
+    .task { if ProcessInfo.processInfo.environment["FORGE_TEST_SIGNUP"] != nil { signingUp = true } }
+    #endif
   }
 
   private func submit() async {

@@ -14,9 +14,10 @@ struct ClubsView: View {
   @State private var mine: [Club]?
   @State private var discover: [Club] = []
   @State private var query = ""
+  @State private var path = NavigationPath()
 
   var body: some View {
-    NavigationStack {
+    NavigationStack(path: $path) {
       Group {
         if section == .events { EventsList() } else { clubList }
       }
@@ -48,7 +49,13 @@ struct ClubsView: View {
     .overlay { if mine == nil { ProgressView() } }
     .searchable(text: $query, prompt: "Search clubs")
     .refreshable { await load() }
-    .task { await load() }
+    .task {
+      await load()
+      #if DEBUG
+      // For screenshots: FORGE_TEST_CLUB=<club id> opens that club.
+      if let id = ProcessInfo.processInfo.environment["FORGE_TEST_CLUB"], path.isEmpty, let c = (mine ?? []).first(where: { $0.id == id }) ?? discover.first(where: { $0.id == id }) { path.append(c) }
+      #endif
+    }
   }
 
   private func filtered(_ list: [Club]) -> [Club] {
@@ -104,6 +111,7 @@ struct ClubView: View {
   @State private var working = false
   @State private var error: String?
   @State private var chat: ChatRoute?
+  @State private var newTeam = false
 
   var body: some View {
     ScrollView {
@@ -131,7 +139,13 @@ struct ClubView: View {
     .navigationBarTitleDisplayMode(.inline)
     .navigationDestination(for: Post.self) { PostDetailView(post: $0, feed: feed) }
     .navigationDestination(item: $chat) { GroupThreadView(route: $0) }
-    .task { await load() }
+    .sheet(isPresented: $newTeam) { NewTeamChatView(club: club) { route in chat = route } }
+    .task {
+      await load()
+      #if DEBUG
+      if ProcessInfo.processInfo.environment["FORGE_TEST_NEW_TEAM"] != nil { newTeam = true }
+      #endif
+    }
   }
 
   private func openChat() async {
@@ -145,9 +159,16 @@ struct ClubView: View {
     if let role {
       Label(role == "member" ? "You're a member" : "You're \(role == "admin" ? "an" : "a") \(role)", systemImage: "checkmark.circle.fill")
         .font(.subheadline.weight(.medium)).foregroundStyle(p.muted)
-      Button { Task { await openChat() } } label: { Label("Club chat", systemImage: "bubble.left.and.bubble.right.fill") }
-        .buttonStyle(PrimaryButtonStyle())
-        .disabled(working)
+      HStack(spacing: 10) {
+        Button { Task { await openChat() } } label: { Label("Club chat", systemImage: "bubble.left.and.bubble.right.fill") }
+          .buttonStyle(PrimaryButtonStyle())
+        Button { newTeam = true } label: {
+          Label("Team chat", systemImage: "person.2.badge.plus").font(.body.weight(.semibold)).foregroundStyle(p.text)
+            .frame(maxWidth: .infinity, minHeight: 50).background(p.surface2, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        }
+        .buttonStyle(.plain)
+      }
+      .disabled(working)
     } else if requested {
       Label("Request sent", systemImage: "clock").font(.subheadline.weight(.medium)).foregroundStyle(p.muted)
     } else {
