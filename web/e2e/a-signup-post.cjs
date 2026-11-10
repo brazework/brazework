@@ -39,9 +39,9 @@ const { BASE, step, browser, as, go, closeTour, summary } = require("./lib.cjs")
   await step("Home shows the first-five-minutes checklist, starting with your club", async () => {
     const list = page.getByRole("region", { name: "Get started" });
     await list.waitFor({ timeout: 15000 });
-    const current = list.locator('[aria-current="step"]');
-    if (!(await current.innerText()).includes("Join your club")) throw new Error("step 1 should be Join your club, got: " + (await current.innerText()));
-    if (!(await list.innerText()).includes("0 of 5 done")) throw new Error("progress should start at 0 of 5");
+    const text = await list.innerText();
+    if (!text.includes("Next: Join your club")) throw new Error("the next step should be Join your club, got: " + text.slice(0, 120));
+    if (!text.includes("0/5")) throw new Error("progress should start at 0/5");
   }, page);
   await step("post with an @mention (autocomplete picks Ben)", async () => {
     const box = page.locator("#create-box");

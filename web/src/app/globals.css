@@ -333,6 +333,8 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity
   margin-inline: auto;
   max-width: 42rem;
 }
+/* Phones: search lives in the top bar, not a full-width row. */
+@media (max-width: 767px) { .search-row, main:has(.feed-frame) .search-row { display: none; } }
 @media (width >= 80rem) { .feed-frame, main:has(.feed-frame) .search-row { max-width: 72rem; grid-template-columns: minmax(0, 1fr) 300px; } }
 @media (width >= 96rem) { .feed-frame, main:has(.feed-frame) .search-row { max-width: 80rem; grid-template-columns: minmax(0, 1fr) 340px; } }
 @media (width >= 112.5rem) { .feed-frame, main:has(.feed-frame) .search-row { max-width: 1520px; grid-template-columns: minmax(0, 1fr) 380px; } }

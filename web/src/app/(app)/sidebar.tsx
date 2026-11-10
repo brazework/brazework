@@ -1,6 +1,6 @@
 "use client";
 import { AnimatePresence, motion } from "motion/react";
-import { Bell, Bookmark, CalendarDays, FolderGit2, Home, LayoutDashboard, LogOut, MessageSquare, Network, PanelLeftClose, PanelLeftOpen, PenLine, Plus, Settings, Sparkles, UserRound, Users, X } from "lucide-react";
+import { Bell, Bookmark, CalendarDays, FolderGit2, Home, LayoutDashboard, LogOut, MessageSquare, Network, PanelLeftClose, PanelLeftOpen, PenLine, Plus, Search, Settings, Sparkles, UserRound, Users, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -199,14 +199,16 @@ export function MobileBar({ first, last, badges, avatar }: { first: string; last
       <header className="glass fixed inset-x-0 top-0 z-40 flex items-center gap-3 px-4 pt-[calc(env(safe-area-inset-top)+0.625rem)] pb-2.5 md:hidden">
         <Link href="/feed" aria-label="Forge feed"><Logo /></Link>
         <div className="ml-auto flex items-center gap-1">
-          <button type="button" onClick={() => setSheet("create")} aria-expanded={sheet === "create"} aria-label="Create" className="bg-accent-grad grid size-9 place-items-center rounded-full text-on-accent shadow-[0_8px_18px_-8px_rgb(0_0_0/0.5)] transition active:scale-95">
+          <button type="button" onClick={() => setSheet("create")} aria-expanded={sheet === "create"} aria-label="Create" className="bg-accent-grad mr-1 grid size-9 place-items-center rounded-full text-on-accent shadow-[0_8px_18px_-8px_rgb(0_0_0/0.5)] transition active:scale-95">
             <Plus className="size-5" strokeWidth={2.4} />
           </button>
+          <Link href="/search" aria-label="Search" className="grid size-10 place-items-center rounded-full text-text-2 transition hover:bg-hover">
+            <Search className="size-5" />
+          </Link>
           <Link href="/notifications" aria-label={badges.notifications ? `Notifications, ${badges.notifications} new` : "Notifications"} className="relative grid size-10 place-items-center rounded-full text-text-2 transition hover:bg-hover">
             <Bell className="size-5" />
             <Count n={badges.notifications} className="absolute top-0.5 right-0" />
           </Link>
-          <ThemeToggle />
           <button type="button" onClick={() => setSheet("more")} aria-expanded={sheet === "more"} aria-label={restCount ? `Menu and your profile, ${restCount} new` : "Menu and your profile"} className="relative ml-1 rounded-full active:scale-90">
             <Avatar first={first} last={last} size={32} src={avatar} />
             <Count n={restCount} className="absolute -top-1 -right-1" />
@@ -250,7 +252,8 @@ export function MobileBar({ first, last, badges, avatar }: { first: string; last
             );
           })}
         </div>
-        <div className="mt-2"><UpdatesButton /></div>
+        <div className="mt-2 flex items-center justify-between rounded-xl px-3 py-1 text-sm text-muted">Appearance <ThemeToggle /></div>
+        <div className="mt-1"><UpdatesButton /></div>
         <form action="/auth/signout" method="post" className="mt-1">
           <button className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm text-muted transition hover:bg-hover hover:text-text"><LogOut className="size-[18px]" /> Log out</button>
         </form>

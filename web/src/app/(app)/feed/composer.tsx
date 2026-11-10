@@ -124,11 +124,11 @@ export function Composer({ first, last, interests, userId, mediaEnabled = false,
       <input ref={photoRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple hidden onChange={(e) => { if (e.target.files) pickFiles(e.target.files); e.target.value = ""; }} />
       <input ref={videoRef} type="file" accept="video/mp4,video/webm,video/quicktime" hidden onChange={(e) => { if (e.target.files) pickFiles(e.target.files); e.target.value = ""; }} />
 
-      {/* Post or Ask Ember. */}
-      <div className="mb-3 flex items-center gap-2">
+      {/* Post or Ask Ember (on phones, once you start: the closed composer stays one calm line). */}
+      <div className={cn("mb-3 items-center gap-2", open || asking ? "flex flex-wrap" : "hidden sm:flex")}>
         <div role="tablist" aria-label="Create or ask" className="inline-flex rounded-full bg-surface-2 p-1">
           {([["post", "Post", null], ["ask", "Ask Ember", "ember"]] as const).map(([id, label, icon]) => (
-            <button key={id} type="button" role="tab" aria-selected={mode === id} onClick={() => { setMode(id); requestAnimationFrame(() => textRef.current?.focus()); }} className={cn("relative inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition", mode === id ? "text-on-accent" : "text-muted hover:text-text")}>
+            <button key={id} type="button" role="tab" aria-selected={mode === id} onClick={() => { setMode(id); requestAnimationFrame(() => textRef.current?.focus()); }} className={cn("relative whitespace-nowrap inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium transition", mode === id ? "text-on-accent" : "text-muted hover:text-text")}>
               {mode === id && <motion.span layoutId="compose-mode" className="bg-accent-grad absolute inset-0 rounded-full" transition={{ type: "spring", stiffness: 420, damping: 34 }} />}
               {icon ? <Ember size={18} mood={ai.busy ? "thinking" : "idle"} className="relative" /> : <PenLine className="relative size-3.5" />}
               <span className="relative">{label}</span>
@@ -195,7 +195,7 @@ export function Composer({ first, last, interests, userId, mediaEnabled = false,
 
       {/* Post: shortcuts while collapsed, the full editor once open. */}
       {!asking && !open && (
-        <div className="mt-3 flex flex-wrap gap-1 pl-[52px]">
+        <div className="mt-3 grid grid-cols-4 gap-1 sm:flex sm:flex-wrap sm:pl-[52px]">
           <Quick icon={ImagePlus} label="Photo" tint="text-sky-500" disabled={!mediaEnabled} onClick={() => photoRef.current?.click()} />
           <Quick icon={Video} label="Video" tint="text-rose-500" disabled={!mediaEnabled} onClick={() => videoRef.current?.click()} />
           <Quick icon={FlaskConical} label="Result" tint="text-emerald-500" onClick={() => expand("result")} />
@@ -271,8 +271,8 @@ export function Composer({ first, last, interests, userId, mediaEnabled = false,
 
 function Quick({ icon: Icon, label, tint, onClick, disabled }: { icon: typeof ImagePlus; label: string; tint: string; onClick: () => void; disabled?: boolean }) {
   return (
-    <button type="button" onClick={onClick} disabled={disabled} className="inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-sm text-muted transition hover:bg-hover hover:text-text active:scale-95 disabled:pointer-events-none disabled:opacity-40">
-      <Icon className={cn("size-[18px]", tint)} /> {label}
+    <button type="button" onClick={onClick} disabled={disabled} className="inline-flex h-9 items-center justify-center gap-1.5 rounded-full px-1.5 text-[13px] text-muted sm:px-3 sm:text-sm transition hover:bg-hover hover:text-text active:scale-95 disabled:pointer-events-none disabled:opacity-40">
+      <Icon className={cn("size-[18px] shrink-0", tint)} /> {label}
     </button>
   );
 }
