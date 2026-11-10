@@ -20,7 +20,7 @@ enum ExtrasError: LocalizedError {
 }
 
 enum API {
-  private struct PostRow: Encodable { let body: String; let kind: String; let tags: [String]; let media: [MediaItem]? }
+  private struct PostRow: Encodable { let body: String; let kind: String; let tags: [String]; let media: [MediaItem]?; let mentions: [Mention]? }
   private struct CommentRow: Encodable { let postId: String; let body: String }
   private struct PostRef: Encodable { let postId: String }
   private struct MessageRow: Encodable { let conversationId: String; let body: String; let replyTo: String? }
@@ -34,8 +34,33 @@ enum API {
   private struct Membership: Decodable { let communities: Club? }
 
   // MARK: Posts
-  static func createPost(body: String, kind: String, media: [MediaItem] = []) async throws {
-    try await supabase.from("posts").insert(PostRow(body: body, kind: kind, tags: [], media: media.isEmpty ? nil : media)).execute()
+  // The database re-checks each mention (a real member, named in the text) and notifies those who
+  // can see the post. Before mentions.sql, the post goes out without them.
+  static func createPost(body: String, kind: String, media: [MediaItem] = [], mentions: [Mention] = []) async throws {
+    let kept = Mentions.keep(body, mentions)
+    do {
+      try await supabase.from("posts").insert(PostRow(body: body, kind: kind, tags: [], media: media.isEmpty ? nil : media, mentions: kept.isEmpty ? nil : kept)).execute()
+    } catch where !kept.isEmpty && "\(error)".contains("mentions") {
+      try await supabase.from("posts").insert(PostRow(body: body, kind: kind, tags: [], media: media.isEmpty ? nil : media, mentions: nil)).execute()
+    }
+  }
+
+  // Who you can @mention: people you follow first, then anyone on Forge whose name matches.
+  static func mentionSuggestions(_ query: String, me: UUID) async -> [MentionPerson] {
+    struct F: Decodable { let target: UUID }
+    struct Row: Decodable { let id: UUID; let firstName: String; let lastName: String; let headline: String; let avatarPath: String? }
+    let words = query.split(separator: " ").map { $0.filter { $0.isLetter || $0.isNumber || $0 == "'" || $0 == "-" } }.filter { !$0.isEmpty }.prefix(2)
+    let followed = ((try? await supabase.from("follows").select("target").eq("follower", value: me).order("created_at", ascending: false).limit(500).execute().value as [F]) ?? []).map(\.target)
+    var q = supabase.from("profiles").select("id, first_name, last_name, headline, avatar_path").eq("onboarded", value: true).neq("id", value: me)
+    if !words.isEmpty { for w in words { q = q.or("first_name.ilike.\(w)*,last_name.ilike.\(w)*") } }
+    else if !followed.isEmpty { q = q.in("id", values: followed.prefix(50).map { $0.uuidString.lowercased() }) }
+    else { return [] }
+    let rows: [Row] = (try? await q.limit(30).execute().value) ?? []
+    let mine = Set(followed)
+    return rows.filter { !"\($0.firstName) \($0.lastName)".trimmingCharacters(in: .whitespaces).isEmpty }
+      .map { MentionPerson(id: $0.id, first: $0.firstName, last: $0.lastName, headline: $0.headline, avatarPath: $0.avatarPath, follows: mine.contains($0.id)) }
+      .sorted { $0.follows && !$1.follows }
+      .prefix(6).map { $0 }
   }
 
   // MARK: Media

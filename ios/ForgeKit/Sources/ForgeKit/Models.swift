@@ -29,6 +29,7 @@ struct Post: Codable, Identifiable, Hashable, Sendable {
   var createdAt: Date
   var media: [MediaItem]?
   var author: AvatarRef?
+  var mentions: [Mention]?
 
   var authorName: String { "\(authorFirst) \(authorLast)".trimmingCharacters(in: .whitespaces) }
   var avatarPath: String? { author?.avatarPath }

@@ -35,7 +35,7 @@ struct PostCard: View {
         Spacer(minLength: 0)
         KindLabel(kind: post.kind)
       }
-      Text(post.body).font(.body).foregroundStyle(p.text2).fixedSize(horizontal: false, vertical: true).textSelection(.enabled)
+      MentionText(text: post.body, mentions: post.mentions).font(.body).foregroundStyle(p.text2).fixedSize(horizontal: false, vertical: true)
       if let media = post.media, !media.isEmpty { MediaView(items: media, postId: post.id) }
       if !post.tags.isEmpty {
         HStack(spacing: 6) { ForEach(post.tags, id: \.self) { Text("#\($0)").font(.caption).foregroundStyle(p.muted) } }

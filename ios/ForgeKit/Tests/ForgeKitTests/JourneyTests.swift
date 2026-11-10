@@ -205,6 +205,24 @@ final class JourneyTests: XCTestCase {
     XCTAssertEqual(chatReactions.first?.emoji, "🚀")
   }
 
+  func testMentionNotifiesThem() async throws {
+    let me = try await signIn("maya")
+    let found = await API.mentionSuggestions("Be", me: me)
+    let ben = try XCTUnwrap(found.first { $0.first == "Ben" })
+    let body = "Great burn data from @\(ben.name) today \(Self.stamp)"
+    try await API.createPost(body: body, kind: "update", mentions: [Mention(id: ben.id, name: ben.name), Mention(id: UUID(), name: "Nobody Here")])
+    let mine = try await API.posts(by: me)
+    let post = try XCTUnwrap(mine.first { $0.body == body })
+    XCTAssertEqual(post.mentions, [Mention(id: ben.id, name: ben.name)], "only people named in the text are kept")
+
+    _ = try await signIn("ben")
+    let benId = try await supabase.auth.session.user.id
+    let alerts = try await API.notifications(me: benId)
+    let n = try XCTUnwrap(alerts.first { $0.kind == "mention" && $0.postId == post.id })
+    XCTAssertEqual(n.sentence, "mentioned you in a post")
+    XCTAssertEqual(n.actorFirst, "Maya")
+  }
+
   func testFollowAndClubs() async throws {
     let me = try await signIn("maya")
     let found: [Profile] = try await supabase.from("profiles").select(Session.profileColumns).eq("first_name", value: "Cara").limit(1).execute().value

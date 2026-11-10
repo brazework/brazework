@@ -11,8 +11,11 @@ struct ComposerView: View {
   @State private var posting = false
   @State private var error: String?
   @State private var picked: [Picked] = []
-  @State private var selection: [PhotosPickerItem] = []
+  @State private var selectionItems: [PhotosPickerItem] = []
   @State private var status = ""
+  @State private var selection: TextSelection?
+  @State private var mentions: [Mention] = []
+  @State private var suggestions: [MentionPerson] = []
   @FocusState private var focused: Bool
 
   private let kinds = [("update", "Update"), ("question", "Question"), ("result", "Result")]
@@ -28,17 +31,18 @@ struct ComposerView: View {
         }
         HStack(alignment: .top, spacing: 10) {
           Avatar(first: session.profile?.firstName ?? "", last: session.profile?.lastName ?? "", path: session.profile?.avatarPath, size: 36)
-          TextField(placeholder, text: $text, axis: .vertical)
+          TextField(placeholder, text: $text, selection: $selection, axis: .vertical)
             .font(.body)
             .lineLimit(4...14)
             .focused($focused)
         }
+        if !suggestions.isEmpty { MentionSuggestions(people: suggestions, onPick: pick) }
         PickedStrip(items: $picked)
         if let error { Text(error).font(.footnote).foregroundStyle(p.danger) }
         if !status.isEmpty { Label(status, systemImage: "arrow.up.circle").font(.footnote).foregroundStyle(p.muted) }
         Spacer()
         HStack {
-          PhotosPicker(selection: $selection, maxSelectionCount: 4, matching: .any(of: [.images, .videos]), photoLibrary: .shared()) {
+          PhotosPicker(selection: $selectionItems, maxSelectionCount: 4, matching: .any(of: [.images, .videos]), photoLibrary: .shared()) {
             Image(systemName: "photo.on.rectangle.angled").font(.title3).foregroundStyle(p.text2).frame(width: 44, height: 44)
           }
           .accessibilityLabel("Add photos or a video")
@@ -60,14 +64,40 @@ struct ComposerView: View {
         }
       }
       .onAppear { focused = true }
-      .onChange(of: selection) { Task { await load(selection) } }
+      .onChange(of: selectionItems) { Task { await load(selectionItems) } }
+      .task(id: mentionQuery) { await suggest() }
       #if DEBUG
       .task {
         // For screenshots: FORGE_TEST_ATTACH=/path/to/photo.jpg preloads a photo.
         if let path = ProcessInfo.processInfo.environment["FORGE_TEST_ATTACH"], let img = UIImage(contentsOfFile: path) { picked = [.photo(id: UUID(), image: img)] }
+        // FORGE_TEST_TEXT pre-fills the text (to show mention suggestions).
+        if let t = ProcessInfo.processInfo.environment["FORGE_TEST_TEXT"] { text = t; selection = TextSelection(insertionPoint: text.endIndex) }
       }
       #endif
     }
+  }
+
+  // The caret, when the text field reports one (otherwise the end of the text).
+  private var caret: String.Index? {
+    if case .selection(let r) = selection?.indices, r.upperBound <= text.endIndex { return r.upperBound }
+    return nil
+  }
+  private var mentionQuery: String? { Mentions.query(text, caret: caret)?.q }
+
+  private func suggest() async {
+    guard let q = mentionQuery, let me = session.userId else { suggestions = []; return }
+    try? await Task.sleep(for: .milliseconds(180))
+    if Task.isCancelled { return }
+    suggestions = await API.mentionSuggestions(q, me: me)
+  }
+
+  private func pick(_ u: MentionPerson) {
+    let m = Mention(id: u.id, name: u.name)
+    guard let next = Mentions.insert(m, into: text, caret: caret) else { return }
+    text = next
+    selection = nil
+    mentions.append(m)
+    suggestions = []
   }
 
   private var placeholder: String {
@@ -93,7 +123,7 @@ struct ComposerView: View {
     if out.isEmpty { error = "Couldn't open that. Try another photo or video." }
     if items.count > 1 && out.contains(where: \.isVideo) { error = "A post can have one video, or up to 4 photos." }
     picked = out
-    selection = []
+    selectionItems = []
   }
 
   private func post() async {
@@ -117,7 +147,7 @@ struct ComposerView: View {
         }
       }
       status = ""
-      try await API.createPost(body: trimmed, kind: kind, media: uploaded)
+      try await API.createPost(body: trimmed, kind: kind, media: uploaded, mentions: mentions)
       onPosted(); dismiss()
     } catch {
       // Tidy up files that won't be used.
