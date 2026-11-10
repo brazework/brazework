@@ -7,7 +7,7 @@ import { dbFeatures } from "@/lib/db-features";
 import { listApiTokens } from "@/lib/api-tokens";
 import { env } from "@/lib/env";
 import { getViewer } from "@/lib/supabase/server";
-import { AiToolsSettings, AppearanceSettings, BlockedList, EmberSettings, HelpSettings, MessagingSettings, PasswordForm, ProfileSettings, YourDataSettings } from "./settings-client";
+import { AiToolsSettings, AppearanceSettings, BlockedList, EmailSettings, EmberSettings, HelpSettings, MessagingSettings, PasswordForm, ProfileSettings, YourDataSettings } from "./settings-client";
 import { OnlineStatusSetting, SettingsNav } from "./settings-nav";
 
 export const metadata: Metadata = { title: "Settings" };
@@ -43,11 +43,14 @@ async function Settings() {
   if (!user || !profile) redirect("/login");
   const { copilotChats: saving, mcp: mcpOn } = await dbFeatures();
   const tokens = mcpOn ? await listApiTokens() : [];
-  const [ms, blocks, chatCount] = await Promise.all([
+  const [ms, blocks, chatCount, ep] = await Promise.all([
     supabase.from("message_settings").select("requests_on, who_can_message").eq("user_id", user.id).maybeSingle(),
     supabase.from("message_blocks").select("blocked, created_at").eq("blocker", user.id).order("created_at", { ascending: false }),
     saving ? supabase.from("copilot_chats").select("id", { count: "exact", head: true }).eq("user_id", user.id) : Promise.resolve({ count: 0 }),
+    // Before email-digest.sql there's no table; the section stays hidden.
+    supabase.from("email_prefs").select("weekly_digest").eq("user_id", user.id).maybeSingle(),
   ]);
+  const emailOn = !ep.error;
   const ids = (blocks.data ?? []).map((b) => b.blocked as string);
   const { data: people } = ids.length ? await supabase.from("profiles").select("id, first_name, last_name").in("id", ids) : { data: [] };
   const blocked = ids.map((id) => {
@@ -59,6 +62,7 @@ async function Settings() {
     <>
       <Section id="profile" title="Profile" desc="What people see on your profile and posts."><ProfileSettings profile={profile} /></Section>
       <Section id="appearance" title="Appearance" desc="Light or dark, and the colour theme."><AppearanceSettings /></Section>
+      {emailOn && <Section id="email" title="Email" desc="What Forge sends to your inbox. Sign-in emails always come."><EmailSettings weekly={ep.data ? Boolean(ep.data.weekly_digest) : true} /></Section>}
       <Section id="messaging" title="Messaging and privacy" desc="Who can message you, and whether you show as online."><OnlineStatusSetting /><div className="my-6 border-t border-line" /><MessagingSettings requestsOn={ms.data ? Boolean(ms.data.requests_on) : true} who={(ms.data?.who_can_message as "everyone" | "communities" | "connections") ?? "everyone"} /></Section>
       <Section id="blocked" title="Blocked people" desc="People who can't message you or see your activity."><BlockedList people={blocked} /></Section>
       <Section id="ember" title="Ember and your data" desc="What Forge's AI teammate can see, what it can do, and your chats with it."><EmberSettings saving={saving} chats={chatCount.count ?? 0} /></Section>

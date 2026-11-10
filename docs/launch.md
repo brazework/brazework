@@ -4,7 +4,7 @@ What has to happen, in order, before the first real club uses Forge. Everything 
 
 ## 1. Database (Supabase → SQL Editor)
 
-Run each file in [next-migration.md](next-migration.md)'s order, one at a time, and check it says "Success". Steps 5–29 are new since the last production update. Each one is additive: the app works before and after each step, so a pause halfway is safe.
+Run each file in [next-migration.md](next-migration.md)'s order, one at a time, and check it says "Success". Steps 5–30 are new since the last production update. Each one is additive: the app works before and after each step, so a pause halfway is safe.
 
 ## 2. Remove test data
 
@@ -38,6 +38,15 @@ insert into public.school_domains (domain, school) values ('example.ca', 'Exampl
 | `STRIPE_WEBHOOK_SECRET` | Stripe → Developers → Webhooks: endpoint `https://<your domain>/api/billing/webhook`, event `checkout.session.completed` | Before payments |
 
 Without the Stripe keys, sponsoring a challenge files a pilot request that you approve on `/admin`. Nothing is ever charged without them.
+
+### Weekly email digest (optional)
+
+| Variable | For |
+|---|---|
+| `RESEND_API_KEY`, `FORGE_EMAIL_FROM` (e.g. `Forge <hello@yourdomain>`, a domain verified in Resend) | Sending the digest |
+| `CRON_SECRET` (any long random string) | Protects `/api/cron/digest` |
+
+Then add a weekly Vercel Cron job that calls `GET /api/cron/digest` (Vercel sends the `CRON_SECRET` automatically), e.g. Mondays at 13:00 UTC. Without the Resend keys the route is a dry run: it returns how many members would get one, and sends nothing. Members turn it off in Settings → Email; nobody is emailed twice in a week.
 
 ## 6. Check it
 

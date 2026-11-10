@@ -17,6 +17,24 @@ const pw = require("playwright-core");
     if (!(await josh.locator('input[name="who"]').nth(2).isChecked())) throw new Error("setting did not stick");
     await josh.locator('input[name="who"]').nth(0).check(); await josh.waitForLoadState("networkidle");
   }, josh);
+  await step("weekly digest: the cron needs its secret, counts a dry run, and respects Settings", async () => {
+    const url = BASE + "/api/cron/digest";
+    const secret = process.env.CRON_SECRET || "cron_forge_e2e";
+    const anon = await fetch(url);
+    if (anon.status !== 401) throw new Error("no secret should be refused, got " + anon.status);
+    const run = async () => { const r = await fetch(url, { headers: { authorization: `Bearer ${secret}` } }); if (r.status !== 200) throw new Error("digest " + r.status + " " + (await r.text())); return r.json(); };
+    const before = await run();
+    if (before.emailOn !== false || before.dry !== true) throw new Error("without a key it should be a dry run: " + JSON.stringify(before));
+    await go(josh, "/settings#email");
+    const box = josh.locator("#email-weekly");
+    if (!(await box.isChecked())) throw new Error("the digest should be on by default");
+    await box.uncheck();
+    await josh.getByText("Weekly emails are off.").waitFor({ timeout: 10000 });
+    const after = await run();
+    if (after.wouldSend + after.quiet !== before.wouldSend + before.quiet - 1) throw new Error(`turning it off should drop Josh: ${JSON.stringify(before)} -> ${JSON.stringify(after)}`);
+    await box.check();
+    await josh.getByText("You'll get your week by email.").waitFor({ timeout: 10000 });
+  }, josh);
   await step("settings: profile headline saves", async () => {
     await go(josh, "/settings#profile");
     const h = josh.locator('input[name="headline"]').first();

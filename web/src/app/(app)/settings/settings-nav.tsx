@@ -1,5 +1,5 @@
 "use client";
-import { Download, Ban, CircleUser, HelpCircle, KeyRound, MessageSquare, Palette, Plug, Sparkles } from "lucide-react";
+import { Download, Ban, CircleUser, HelpCircle, KeyRound, Mail, MessageSquare, Palette, Plug, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 import { NavTile } from "@/components/app/nav-tile";
 import { useAppearOffline } from "@/components/presence/presence";
@@ -8,6 +8,7 @@ import { cn } from "@/lib/forge";
 export const SECTIONS = [
   { id: "profile", label: "Profile", icon: CircleUser },
   { id: "appearance", label: "Appearance", icon: Palette },
+  { id: "email", label: "Email", icon: Mail },
   { id: "messaging", label: "Messaging and privacy", icon: MessageSquare },
   { id: "blocked", label: "Blocked people", icon: Ban },
   { id: "ember", label: "Ember and your data", icon: Sparkles },

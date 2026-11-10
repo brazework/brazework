@@ -7,7 +7,7 @@ import { Button, Field, inputCls } from "@/components/ui";
 import { FIELDS, TOPICS, cn, type Profile } from "@/lib/forge";
 import { deleteAllChats } from "@/lib/copilot-chats";
 import { createApiToken, listApiTokens, revokeApiToken, type ApiToken } from "@/lib/api-tokens";
-import { changePassword, deleteAccount, saveMessageSettings, saveProfileSettings, unblockPerson, type SettingsState } from "@/lib/settings";
+import { changePassword, deleteAccount, saveEmailPrefs, saveMessageSettings, saveProfileSettings, type SettingsState, unblockPerson } from "@/lib/settings";
 import { submitWithoutReset } from "@/lib/submit";
 
 const init: SettingsState = { ok: false, message: "" };
@@ -307,6 +307,21 @@ export function YourDataSettings() {
         </div>
         {state.message && <p role="status" className={state.ok ? "mt-2 text-sm text-ok" : "mt-2 text-sm text-danger"}>{state.message}</p>}
       </form>
+    </div>
+  );
+}
+
+export function EmailSettings({ weekly }: { weekly: boolean }) {
+  const [on, setOn] = useState(weekly);
+  const [msg, setMsg] = useState<SettingsState>(init);
+  const [pending, start] = useTransition();
+  return (
+    <div className="flex flex-col gap-3">
+      <label className="flex items-start justify-between gap-4">
+        <span><span className="text-sm font-medium">Your week, by email</span><span className="block text-sm text-faint">Once a week: what&apos;s waiting on you and what happened in your clubs. Never sent when there&apos;s nothing to say.</span></span>
+        <input id="email-weekly" type="checkbox" role="switch" checked={on} disabled={pending} onChange={(e) => { const v = e.target.checked; setOn(v); start(async () => setMsg(await saveEmailPrefs(v))); }} className="mt-1 size-5 shrink-0 accent-[var(--text)]" />
+      </label>
+      <Status state={msg} />
     </div>
   );
 }

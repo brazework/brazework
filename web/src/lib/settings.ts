@@ -74,3 +74,13 @@ export async function deleteAccount(confirm: string): Promise<SettingsState> {
   await supabase.auth.signOut();
   return { ok: true, message: "Your account and everything you posted are deleted." };
 }
+
+// The weekly email digest (supabase/email-digest.sql).
+export async function saveEmailPrefs(weekly: boolean): Promise<SettingsState> {
+  const { supabase, user } = await getViewer();
+  if (!user) return { ok: false, message: "Log in again." };
+  const { error } = await supabase.rpc("save_email_prefs", { p_weekly: weekly });
+  if (error) return { ok: false, message: friendlyError(error) };
+  revalidatePath("/settings");
+  return { ok: true, message: weekly ? "You'll get your week by email." : "Weekly emails are off." };
+}

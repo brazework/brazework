@@ -29,7 +29,7 @@ Based on [current-state.md](current-state.md) (the map of what exists). Work goe
 - ✅ "Find your club" before the feed: onboarding step 2 (`/onboarding/club`) suggests clubs by field and topics, with search, start-your-club and skip; invite links join you directly.
 - ✅ Projects with photos, a specs table (`project-specs.sql`, step 29), a team (owner adds teammates from their clubs) and GitHub import via Ember.
 - ✅ Weekly nudge in-app: "Your week" on Home (what's waiting on you first, what happened in your clubs, one next step such as a quiet project); folds like every rail card. Tests: `web/tests/week.test.ts`, e2e step in `c-messages-projects.cjs`.
-- ⬜ Email digest: needs an email sender (e.g. Resend) and an off switch in Settings.
+- ✅ Weekly email digest (`email-digest.sql`, step 30; `/api/cron/digest`): the same items as Your week, skipped when empty, once per week per member, off switch in Settings → Email. Resend sends it once `RESEND_API_KEY` is set; until then it's a dry run. Tests: `digest.test.ts`, `email.test.ts`, SQL, e2e (d).
 - ✅ Profile = proof: verified count, clubs, challenge wins, featured project, per-project timeline; public/private per project and per milestone (milestones are private until shown).
 
 ## Phase 3: verification (the core)
