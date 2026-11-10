@@ -35,7 +35,7 @@ jobs:
         run: echo "::notice::Preview deploy skipped. Add VERCEL_TOKEN, VERCEL_ORG_ID and VERCEL_PROJECT_ID as repo secrets to turn it on."
       - uses: actions/checkout@v4
         if: env.VERCEL_TOKEN != '' && env.VERCEL_ORG_ID != '' && env.VERCEL_PROJECT_ID != ''
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@v7
         if: env.VERCEL_TOKEN != '' && env.VERCEL_ORG_ID != '' && env.VERCEL_PROJECT_ID != ''
         with:
           node-version: 22
