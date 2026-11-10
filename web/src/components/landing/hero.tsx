@@ -9,20 +9,20 @@ import { cn } from "@/lib/forge";
 // them in a small live preview (example data, labelled as such). It cycles until you pick one.
 const AUDIENCES = [
   {
-    id: "orgs", label: "Student organizations", short: "Organizations", icon: Users,
+    id: "students", label: "Students", short: "Students", icon: GraduationCap, cta: { label: "Create your profile", href: "/signup" },
+    line: "Post what you're building, get it verified by your club, and carry that proof into every application.",
+  },
+  {
+    id: "orgs", label: "Clubs", short: "Clubs", icon: Users, cta: { label: "Bring your club", href: "#founding" },
     line: "Run your chapter in one place. Ember handles the busywork, and every milestone you verify follows your members into their careers.",
   },
   {
-    id: "pros", label: "Professionals", short: "Professionals", icon: UserRound,
+    id: "companies", label: "Companies", short: "Companies", icon: Building2, cta: { label: "Sponsor a challenge", href: "#founding" },
+    line: "Find people by verified work, not keywords. Sponsor a build challenge and meet the members who win it.",
+  },
+  {
+    id: "pros", label: "Professionals", short: "Professionals", icon: UserRound, cta: { label: "Join free", href: "/signup" },
     line: "Show work that's been vouched for, mentor the chapters in your field, and get found for what you've actually built.",
-  },
-  {
-    id: "companies", label: "Companies", short: "Companies", icon: Building2,
-    line: "Find people by verified work, not keywords. Sponsor the chapters where the building happens and meet members before anyone else does.",
-  },
-  {
-    id: "universities", label: "Universities", short: "Universities", icon: GraduationCap,
-    line: "Every student organization on one platform, with a clear record of what students build and who they meet.",
   },
 ] as const;
 type Id = (typeof AUDIENCES)[number]["id"];
@@ -48,7 +48,7 @@ export function Hero() {
         <div>
           <a href="#founding" className="rise-in inline-flex max-w-full items-center gap-2 rounded-full border border-line bg-surface px-3 py-1.5 text-xs text-text-2 shadow-sm transition hover:border-line-strong">
             <span className="relative flex size-2"><span className="absolute inset-0 animate-ping rounded-full bg-ok opacity-60" /><span className="relative size-2 rounded-full bg-ok" /></span>
-            <span className="truncate">Founding organizations program is open</span>
+            <span className="truncate">Founding clubs program is open</span>
             <ArrowRight className="size-3.5 shrink-0" />
           </a>
           <h1 className="focus-in mt-7 text-[clamp(2.7rem,6.2vw,5rem)] leading-[0.98] font-semibold tracking-[-0.045em]">
@@ -57,10 +57,10 @@ export function Hero() {
             not résumés.
           </h1>
           <p className="m-hide focus-in mt-6 max-w-xl text-lg leading-relaxed text-muted" style={{ ["--delay" as string]: "0.1s" }}>
-            Forge is the network for STEM organizations and the people who hire from them. Organizations run on it, members prove what they&apos;ve built, and Ember, the AI agent built in, does the busywork.
+            Forge is the network for STEM clubs and the people who hire from them. Clubs run on it, members prove what they&apos;ve built, and Ember, the AI agent built in, does the busywork.
           </p>
           {/* Phones: the same idea, short enough to read in full. */}
-          <p className="m-only focus-in mt-5 text-base leading-relaxed text-muted">The network for STEM organizations and the people who hire from them. Ember, the built-in AI agent, does the busywork.</p>
+          <p className="m-only focus-in mt-5 text-base leading-relaxed text-muted">The network for STEM clubs and the people who hire from them. Ember, the built-in AI agent, does the busywork.</p>
 
           <div className="rise-in mt-8" style={{ ["--delay" as string]: "0.2s" }}>
             <div role="tablist" aria-label="Who Forge is for" className="flex flex-wrap gap-2">
@@ -88,10 +88,10 @@ export function Hero() {
           </div>
 
           <div className="rise-in mt-7 flex flex-wrap items-center gap-3" style={{ ["--delay" as string]: "0.3s" }}>
-            <Button href="#founding" size="lg">Bring your organization <ArrowRight className="size-4 transition group-hover:translate-x-0.5" /></Button>
-            <Button href="/signup" variant="outline" size="lg">Join free</Button>
+            <Button href={a.cta.href} size="lg">{a.cta.label} <ArrowRight className="size-4 transition group-hover:translate-x-0.5" /></Button>
+            {a.cta.href !== "/signup" && <Button href="/signup" variant="outline" size="lg">Join free</Button>}
           </div>
-          <p className="rise-in mt-4 text-sm text-faint" style={{ ["--delay" as string]: "0.35s" }}>Free for members and student organizations · Verified university and work emails</p>
+          <p className="rise-in mt-4 text-sm text-faint" style={{ ["--delay" as string]: "0.35s" }}>Free for students and clubs · Verified university and work emails</p>
         </div>
 
         <div id="hero-preview" role="tabpanel" className="relative mx-auto w-full max-w-[440px]">
@@ -127,6 +127,7 @@ function Row({ children, delay = 0 }: { children: React.ReactNode; delay?: numbe
 const Dot = ({ className }: { className?: string }) => <span className={cn("grid size-7 shrink-0 place-items-center rounded-full", className)} />;
 
 function Preview({ id }: { id: Id }) {
+  if (id === "students") return <StudentPreview />;
   if (id === "orgs") {
     return (
       <Panel title="Ember · this week for your chapter" icon={Sparkles}>
@@ -171,20 +172,22 @@ function Preview({ id }: { id: Id }) {
       </Panel>
     );
   }
+  return null;
+}
+
+function StudentPreview() {
   return (
-    <Panel title="Your campus at a glance" icon={GraduationCap}>
-      <div className="grid grid-cols-3 gap-2">
-        {[["24", "organizations active"], ["312", "milestones verified this term"], ["41", "employer connections"]].map(([n, l], k) => (
-          <motion.div key={l} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: k * 0.1 }} className="rounded-2xl border border-line bg-surface p-3">
-            <div className="text-2xl font-semibold tracking-tight">{n}</div>
-            <div className="mt-1 text-[11px] leading-snug text-muted">{l}</div>
-          </motion.div>
-        ))}
+    <Panel title="A profile built from proof" icon={GraduationCap}>
+      <div className="flex items-center gap-3">
+        <span className="bg-accent-grad grid size-12 place-items-center rounded-full text-sm font-semibold text-on-accent">JR</span>
+        <div><div className="font-semibold">Jordan Reyes</div><div className="text-xs text-muted">Aerospace engineering · Class of 2027</div></div>
       </div>
-      <div className="mt-3 space-y-2">
-        <Row delay={0.3}><Users className="size-4 shrink-0 text-text-2" /><span className="flex-1">Most active: engineering and computing societies</span></Row>
-        <Row delay={0.42}><Building2 className="size-4 shrink-0 text-text-2" /><span className="flex-1">Employers sponsoring: 9</span></Row>
+      <div className="mt-4 space-y-2">
+        <Row><BadgeCheck className="size-4 shrink-0 text-ok" /><span className="flex-1">Flight computer logs at 200 Hz</span><span className="text-xs text-faint">Verified</span></Row>
+        <Row delay={0.12}><BadgeCheck className="size-4 shrink-0 text-ok" /><span className="flex-1">Static fire passed, L2 motor</span><span className="text-xs text-faint">Verified</span></Row>
+        <Row delay={0.24}><Users className="size-4 shrink-0 text-text-2" /><span className="flex-1">Rocketry Club · Avionics lead</span></Row>
       </div>
+      <p className="mt-4 text-xs text-faint">Each badge names the club officer who verified it.</p>
     </Panel>
   );
 }

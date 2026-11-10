@@ -1,6 +1,9 @@
+import { Suspense } from "react";
 import { FinalCta, Footer } from "@/components/landing/closing";
 import { CopilotSection } from "@/components/landing/copilot-section";
 import { Hero } from "@/components/landing/hero";
+import { Founders } from "@/components/landing/founders";
+import { Traction } from "@/components/landing/traction";
 import { SpotlightTracker } from "@/components/landing/interactive";
 import { LegacyLinks } from "@/components/landing/legacy-links";
 import { AiEra, Audiences, FaqSection, Features, How, Mission, Pricing, Problem } from "@/components/landing/marketing";
@@ -21,6 +24,7 @@ export default function Landing() {
       <StoryRail />
       <main className="story scroll-smooth">
         <Hero />
+        <Suspense fallback={null}><Traction /></Suspense>
         <Problem />
         <How />
         <CopilotSection />
@@ -29,6 +33,7 @@ export default function Landing() {
         <Features />
         <Pricing />
         <Mission />
+        <Founders />
         <Organizations />
         <FaqSection />
         <FinalCta />

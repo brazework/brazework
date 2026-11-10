@@ -30,7 +30,7 @@ function Head({ eyebrow, title, accent, body, center }: { eyebrow: string; title
 }
 
 const FACTS = [
-  { n: <CountUp to={3} suffix="×" />, label: "applications per job compared with 2021, and 91% of recruiters have caught candidates misrepresenting themselves.", src: "Greenhouse, 2025", href: "https://www.greenhouse.com/newsroom/an-ai-trust-crisis-70-of-hiring-managers-trust-ai-to-make-faster-and-better-hiring-decisions-only-8-of-job-seekers-call-it-fair" },
+  { n: <CountUp to={91} suffix="%" />, label: "of recruiters have spotted candidate deception, and a third spend up to half their week filtering junk applications.", src: "Greenhouse, 2025", href: "https://www.greenhouse.com/newsroom/an-ai-trust-crisis-70-of-hiring-managers-trust-ai-to-make-faster-and-better-hiring-decisions-only-8-of-job-seekers-call-it-fair" },
   { n: <>1 in <CountUp to={4} /></>, label: "candidate profiles expected to be fake by 2028, as AI makes polished résumés free.", src: "Gartner via HR Dive", href: "https://www.hrdive.com/news/fake-job-candidates-ai/757126/" },
   { n: <CountUp to={54} suffix="%" />, label: "of long-form posts from top LinkedIn profiles in 2025 were likely written by AI.", src: "Originality.ai", href: "https://ppc.land/over-half-of-linkedin-posts-are-now-likely-ai-but-authenticity-still-wins/" },
 ];
@@ -58,7 +58,7 @@ export function How() {
   return (
     <section id="how" data-story="How it works" className="story-sec scroll-mt-24 py-24 sm:py-32">
       <div className="mx-auto max-w-7xl px-6">
-        <Head eyebrow="How it works" title="One organization" accent="starts the loop." />
+        <Head eyebrow="How it works" title="One club" accent="starts the loop." />
         <div className="mt-12"><HowItWorks /></div>
       </div>
     </section>
@@ -82,7 +82,7 @@ const FEATURES = [
   { icon: BadgeCheck, title: "Proof-of-work profiles", body: "Projects with a public summary, a private write-up and milestones your club verified." },
   { icon: CalendarDays, title: "Events that fill up", body: "General body meetings, build nights and demo days next to career events from verified companies, with RSVPs, maps and an attendee chat.", span: "md:col-span-2" },
   { icon: MessageSquareLock, title: "Respectful messaging", body: "Strangers land in Requests. Accept, decline, or block and report. Read status is never shown." },
-  { icon: ShieldCheck, title: "Verified members", body: "Students verify with a university email; companies and schools with their own domain. Report and block anywhere." },
+  { icon: ShieldCheck, title: "Verified members", body: "Students verify with a university email; companies with their work domain. Report and block anywhere." },
   { icon: BarChart3, title: "Private analytics", body: "Profile views and engagement that only you can see." },
 ];
 
@@ -90,7 +90,7 @@ export function Features() {
   return (
     <section id="product" data-story="The product" className="story-sec scroll-mt-24 py-24 sm:py-32">
       <div className="mx-auto max-w-7xl px-6">
-        <Head eyebrow="The product" title="Everything an organization runs on." accent="Everything a member needs to get noticed." />
+        <Head eyebrow="The product" title="Everything a club runs on." accent="Everything a member needs to get noticed." />
         <div className="m-cards mt-12 grid gap-4 md:grid-cols-3">
           {FEATURES.map((f, i) => (
             <Reveal key={f.title} delay={(i % 3) * 0.06} className={cn("spotlight group rounded-3xl border border-line bg-surface p-7 transition hover:-translate-y-1 hover:shadow-[var(--shadow)]", f.span)}>
@@ -106,10 +106,10 @@ export function Features() {
 }
 
 const GOALS = [
-  ["Start with organizations", "One chapter of 30 to 100 people is useful on day one. We win one organization, then one campus, at a time."],
-  ["Make verified work the signal", "Work an organization vouched for should matter more than a polished, AI-written résumé."],
+  ["Start with clubs", "One chapter of 30 to 100 people is useful on day one. We win one club, then one campus, at a time."],
+  ["Make verified work the signal", "Work a club vouched for should matter more than a polished, AI-written résumé."],
   ["AI that works for you", "Ember does the busywork for officers and members, and you approve everything it does."],
-  ["Earn it from those who hire", "Free for members and student organizations. Companies and universities pay to find and support the people building."],
+  ["Earn it from those who hire", "Free for students and clubs. Companies pay to sponsor challenges and meet the people building."],
 ];
 
 export function Mission() {
@@ -172,9 +172,8 @@ export function AiEra() {
 }
 
 const PLANS = [
-  { name: "Members & student organizations", price: "Free", note: "Always", points: ["Profiles built from verified work", "Run your organization: events, chat, roles, moderation", "Ember, the AI agent, included", "iPhone and web"], cta: { label: "Join free", href: "/signup" } },
-  { name: "Companies", price: "Sponsor & recruit", note: "Pilot pricing", points: ["Search people by verified work and skills", "Sponsor chapters, challenges and events", "Host events beside the organizations you support", "Reporting on who you met"], cta: { label: "Talk to us", href: "#founding" }, featured: true },
-  { name: "Universities & national organizations", price: "Campus & network", note: "Pilot pricing", points: ["Every organization on one platform", "Outcomes: verified projects, events, employer connections", "Chapter health across a whole network", "Verified domain and admin tools"], cta: { label: "Talk to us", href: "#founding" } },
+  { name: "Students & clubs", price: "Free", note: "Forever, no ads", points: ["Profiles built from verified work", "Run your club: events, chat, roles, moderation, handoff", "Ember, the AI agent, included", "iPhone and web"], cta: { label: "Create your profile", href: "/signup" } },
+  { name: "Companies", price: "Sponsor & recruit", note: "Pilots, set up with the founders", points: ["Sponsor a build challenge; clubs opt in", "Meet the winners, verified by their clubs", "Follow clubs and builders; host events", "Search verified builders (coming with Pro)"], cta: { label: "Sponsor a challenge", href: "#founding" }, featured: true },
 ];
 
 export function Pricing() {
@@ -182,7 +181,7 @@ export function Pricing() {
     <section id="pricing" data-story="Pricing" className="story-sec scroll-mt-24 bg-surface-2/50 py-24 sm:py-32">
       <div className="mx-auto max-w-7xl px-6">
         <Head eyebrow="Pricing" title="Free for the people who build." accent="Paid by the people who hire." />
-        <div className="m-cards mt-12 grid gap-4 md:grid-cols-3">
+        <div className="m-cards mx-auto mt-12 grid max-w-4xl gap-4 md:grid-cols-2">
           {PLANS.map((p, i) => (
             <Reveal key={p.name} delay={i * 0.06} className={cn("spotlight flex flex-col rounded-3xl border bg-surface p-7", p.featured ? "border-transparent ring-2 ring-[var(--accent)]" : "border-line")}>
               <div className="text-sm font-medium text-muted">{p.name}</div>

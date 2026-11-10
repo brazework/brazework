@@ -32,7 +32,7 @@ Claims marked *(unverified)* couldn't be confirmed against a primary source.
 
 ## 3. Why now
 
-- **Hiring trust has broken down.** Recruiters see about 3x the applications per role compared with 2021, and 91% have caught candidate deception ([Greenhouse](https://www.greenhouse.com/newsroom/an-ai-trust-crisis-70-of-hiring-managers-trust-ai-to-make-faster-and-better-hiring-decisions-only-8-of-job-seekers-call-it-fair)).
+- **Hiring trust has broken down.** 91% of recruiters have caught candidate deception (the "3x applications since 2021" figure isn't on this page; removed from the site 2026-11-09) ([Greenhouse](https://www.greenhouse.com/newsroom/an-ai-trust-crisis-70-of-hiring-managers-trust-ai-to-make-faster-and-better-hiring-decisions-only-8-of-job-seekers-call-it-fair)).
 - **Fake candidates are coming.** Gartner expects 1 in 4 candidate profiles to be fake by 2028 ([HR Dive](https://www.hrdive.com/news/fake-job-candidates-ai/757126/)).
 - **Skills are replacing résumés.** 85% of employers say they use skills-based hiring ([TestGorilla](https://www.testgorilla.com/skills-based-hiring/state-of-skills-based-hiring-2025/)).
 - **Verified STEM expertise has a cash price.** Mercor is valued at $10B ([TechCrunch](https://techcrunch.com/2025/10/27/mercor-quintuples-valuation-to-10b-with-350m-series-c/)).

@@ -82,11 +82,11 @@ To build:
 
 ## Phase 8: landing (after decision 1)
 
-- ⬜ Live traction strip from the database, zeros hidden.
-- ⬜ Founders section with empty slots (no invented bio).
+- ✅ Live traction strip from the database, zeros hidden.
+- ✅ Founders section: fill `FOUNDERS` in `web/src/components/landing/founders.tsx`; hidden until then.
 - ✅ Example data labelled "Example".
-- ⬜ Re-check every "Why now" source opens and matches.
-- ⬜ One primary CTA per audience: Students "Create your profile", Clubs "Bring your club", Companies "Sponsor a challenge".
+- ✅ Re-check every "Why now" source opens and matches (the "3x applications" claim wasn't in its source: replaced with Greenhouse's 91% finding).
+- ✅ One primary CTA per audience: Students "Create your profile", Clubs "Bring your club", Companies "Sponsor a challenge".
 
 ## Phase 9: metrics
 

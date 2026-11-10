@@ -1,6 +1,6 @@
 "use client";
 import { AnimatePresence, motion } from "motion/react";
-import { Building2, GraduationCap, Loader2, PartyPopper, Wrench } from "lucide-react";
+import { Building2, Loader2, PartyPopper, Wrench } from "lucide-react";
 import { useActionState, useState } from "react";
 import { registerOrgInterest, type OrgInterestState } from "@/app/actions/org-interest";
 import { Button, Field, inputCls } from "@/components/ui";
@@ -10,9 +10,8 @@ import { Reveal } from "./reveal";
 import { submitWithoutReset } from "@/lib/submit";
 
 const TYPES = [
-  { id: "club", label: "Organization", icon: Wrench, title: "For student organizations", body: "Chapters, societies, clubs, labs and teams. Run your organization on Forge, let Ember handle the busywork, and your members' verified work follows them into their careers." },
+  { id: "club", label: "Club", icon: Wrench, title: "For clubs and chapters", body: "Chapters, societies, clubs, labs and teams. Run your organization on Forge, let Ember handle the busywork, and your members' verified work follows them into their careers." },
   { id: "company", label: "Company", icon: Building2, title: "For companies", body: "Meet engineers and scientists through what they've built and what their organization vouched for. Sponsor chapters, host events, skip the résumé pile." },
-  { id: "school", label: "University", icon: GraduationCap, title: "For universities", body: "Put every student organization on one platform, see what students build, and connect them with employers and alumni." },
 ] as const;
 
 export function Organizations() {
@@ -20,18 +19,18 @@ export function Organizations() {
   const [state, action, pending] = useActionState<OrgInterestState, FormData>(registerOrgInterest, { ok: false, message: "" });
 
   return (
-    <section id="founding" data-story="Founding organizations" className="story-sec relative isolate scroll-mt-24 overflow-hidden py-24 sm:py-32">
+    <section id="founding" data-story="Founding clubs" className="story-sec relative isolate scroll-mt-24 overflow-hidden py-24 sm:py-32">
       <div className="mx-auto grid max-w-7xl gap-14 px-6 lg:grid-cols-2">
         <div>
           <Reveal>
-            <Eyebrow>Founding organizations program</Eyebrow>
+            <Eyebrow>Founding clubs program</Eyebrow>
             <h2 className={`mt-5 ${H2}`}>
-              Be one of the first organizations <span className="text-grad">on Forge.</span>
+              Be one of the first clubs <span className="text-grad">on Forge.</span>
             </h2>
             <ul className="mt-6 grid gap-2 text-sm text-text-2">
-              <li>· We set your organization up with you, personally.</li>
+              <li>· We set your club up with you, personally.</li>
               <li>· Your requests shape what we build next.</li>
-              <li>· Free for your organization and every member.</li>
+              <li>· Free for your club and every member.</li>
             </ul>
           </Reveal>
           <div className="mt-10 space-y-3">
@@ -67,7 +66,7 @@ export function Organizations() {
                 </motion.div>
               ) : (
                 <motion.form key="form" onSubmit={submitWithoutReset(action)} exit={{ opacity: 0 }} className="flex flex-col gap-5">
-                  <h3 className="text-xl font-semibold">Apply to be a founding organization</h3><p className="-mt-3 text-sm text-muted">Companies and universities: pick your type below and we&apos;ll reach out.</p>
+                  <h3 className="text-xl font-semibold">Apply to be a founding club</h3><p className="-mt-3 text-sm text-muted">Companies: pick Company below and we&apos;ll reach out.</p>
                   <input type="hidden" name="type" value={type} />
                   <div role="group" aria-label="Organization type" className="flex flex-wrap gap-2">
                     {TYPES.map((t) => (
@@ -77,7 +76,7 @@ export function Organizations() {
                     ))}
                   </div>
                   <div className="grid gap-4 sm:grid-cols-2">
-                    <Field label={type === "club" ? "Organization name" : type === "company" ? "Company name" : "University name"}><input name="name" maxLength={120} autoComplete="organization" className={inputCls} required /></Field>
+                    <Field label={type === "club" ? "Club name" : "Company name"}><input name="name" maxLength={120} autoComplete="organization" className={inputCls} required /></Field>
                     <Field label="Your name"><input name="contact" maxLength={80} autoComplete="name" className={inputCls} required /></Field>
                     <Field label={type === "company" ? "Work email" : "School email"}><input name="email" type="email" maxLength={120} autoComplete="email" className={inputCls} required /></Field>
                     <Field label="Your role"><input name="role" maxLength={60} placeholder={type === "club" ? "e.g. President" : "e.g. University recruiter"} className={inputCls} /></Field>
