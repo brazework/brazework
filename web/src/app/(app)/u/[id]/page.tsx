@@ -19,7 +19,7 @@ import { ConnectButtons } from "@/components/network/connect-buttons";
 import { getNetworkCounts, getRelationship } from "@/components/network/queries";
 import { type Post, type Profile } from "@/lib/forge";
 import { recordProfileView } from "@/lib/network";
-import { dbFeatures, postSelect } from "@/lib/db-features";
+import { dbFeatures, postSelect, milestoneCols } from "@/lib/db-features";
 import { getViewer } from "@/lib/supabase/server";
 import { copilotEnabled } from "@/lib/copilot";
 import { PostCard } from "../../feed/post-card";
@@ -62,7 +62,7 @@ async function ProfileView({ params }: { params: PageProps<"/u/[id]">["params"] 
     supabase.from("posts").select(await postSelect()).eq("author_id", id).is("community_id", null).order("created_at", { ascending: false }).limit(50),
     supabase.from("projects").select(stackOn ? "id, title, summary, status, year, tags, private, updated_at, tools" : "id, title, summary, status, year, tags, private, updated_at").eq("owner_id", id).order("created_at", { ascending: false }).limit(100),
     // Milestones (supabase/milestones.sql): others only get verified ones back, the owner gets all of theirs.
-    msOn ? supabase.from("milestones").select("id, project_id, community_id, community_name, title, detail, evidence, achieved_on, status, reviewer_name, review_note").eq("owner_id", id).order("achieved_on", { ascending: false }).limit(300) : Promise.resolve({ data: [] }),
+    msOn ? supabase.from("milestones").select(await milestoneCols()).eq("owner_id", id).order("achieved_on", { ascending: false }).limit(300) : Promise.resolve({ data: [] }),
     supabase.from("community_members").select(`role, communities(${clubCols})`).eq("uid", id).limit(12),
     supabase.from("follows").select("follower, follower_info").eq("target", id).order("created_at", { ascending: false }).limit(5),
     supabase.from("community_members").select("communities(id, name)").eq("uid", user.id).limit(50),
@@ -86,7 +86,7 @@ async function ProfileView({ params }: { params: PageProps<"/u/[id]">["params"] 
   const liked = new Set(((likesRes.data ?? []) as { post_id: string }[]).map((l) => l.post_id));
   const details = new Map(((detailsRes.data ?? []) as { project_id: string; details: string; link: string }[]).map((d) => [d.project_id, d]));
   const byId = Object.fromEntries(projectRows.map((r) => [r.id, r]));
-  const ms = (msRes.data ?? []) as Milestone[];
+  const ms = (msRes.data ?? []) as unknown as unknown as Milestone[];
   const flat = <T,>(rows: { communities: T | T[] | null }[]) => rows.flatMap((r) => (Array.isArray(r.communities) ? r.communities : r.communities ? [r.communities] : []));
   const myClubs: Club[] = flat((myClubRows.data ?? []) as unknown as { communities: Club | Club[] | null }[]);
   const clubs = ((theirClubs.data ?? []) as unknown as ClubRow[]).filter((r) => r.communities).map((r) => ({ ...r.communities!, role: r.role }));

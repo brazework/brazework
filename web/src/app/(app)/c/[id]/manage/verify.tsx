@@ -1,16 +1,17 @@
 "use client";
 import { AnimatePresence, motion } from "motion/react";
-import { BadgeCheck, ExternalLink, Loader2, X, XCircle } from "lucide-react";
+import { BadgeCheck, ExternalLink, Loader2, Scale, Undo2, X, XCircle } from "lucide-react";
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import { Celebrate } from "@/components/app/celebrate";
 import { Avatar } from "@/components/ui";
 import { cn } from "@/lib/forge";
-import { reviewMilestone } from "@/lib/milestones";
+import { resolveDispute, reviewMilestone, revokeMilestone } from "@/lib/milestones";
 
 export type QueueItem = {
   id: string; owner_id: string; title: string; detail: string; evidence: string; achieved_on: string; created_at: string;
-  status: "pending" | "verified" | "declined"; reviewer_name: string; review_note: string;
+  status: "pending" | "verified" | "declined" | "refused" | "revoked" | "disputed" | "draft"; reviewer_name: string; review_note: string;
+  dispute_note?: string; escalated?: boolean; revoked_reason?: string;
   project: { title: string; summary: string } | null;
   owner: { first_name: string; last_name: string; headline: string } | null;
 };
@@ -94,20 +95,63 @@ function QueueCard({ m, result, onDone }: { m: QueueItem; result?: "verified" | 
 }
 
 // What the club verified or declined lately, so officers can see each other's calls.
-export function RecentReviews({ items }: { items: QueueItem[] }) {
+// Recently reviewed, plus what officers can still do: revoke a verification (with a reason), and,
+// for the club's owner, decide disputes (uphold → verified; reject → Forge admins decide).
+export function RecentReviews({ items, isOwner = false }: { items: QueueItem[]; isOwner?: boolean }) {
+  const [state, setState] = useState<Record<string, QueueItem["status"] | "escalated">>({});
+  const [revoking, setRevoking] = useState<string | null>(null);
+  const [why, setWhy] = useState("");
+  const [msg, setMsg] = useState("");
+  const [pending, start] = useTransition();
   if (!items.length) return null;
+  const disputes = items.filter((m) => m.status === "disputed" && !m.escalated && !state[m.id]);
   return (
-    <section className="mt-8">
-      <h2 className="text-sm font-semibold">Recently reviewed</h2>
-      <ul className="mt-3 flex flex-col divide-y divide-line rounded-3xl border border-line bg-surface">
-        {items.map((m) => (
-          <li key={m.id} className="flex items-center gap-3 px-4 py-3 text-sm">
-            {m.status === "verified" ? <BadgeCheck className="size-4 shrink-0 text-ok" /> : <XCircle className="size-4 shrink-0 text-faint" />}
-            <span className="min-w-0 flex-1 truncate"><span className="font-medium">{m.title}</span> <span className="text-muted">· {m.owner?.first_name} {m.owner?.last_name}</span></span>
-            <span className="shrink-0 text-xs text-faint">{m.reviewer_name}</span>
-          </li>
-        ))}
-      </ul>
-    </section>
+    <>
+      {isOwner && disputes.length > 0 && (
+        <section className="mt-8">
+          <h2 className="flex items-center gap-2 text-sm font-semibold"><Scale className="size-4" /> Disputes for you to decide</h2>
+          <ul className="mt-3 flex flex-col gap-2">
+            {disputes.map((m) => (
+              <li key={m.id} className="rounded-3xl border border-line bg-surface p-4 text-sm">
+                <div><span className="font-medium">{m.title}</span> <span className="text-muted">· {m.owner?.first_name} {m.owner?.last_name}</span></div>
+                {m.dispute_note && <p className="mt-2 rounded-xl bg-surface-2 px-3 py-2 text-text-2">&ldquo;{m.dispute_note}&rdquo;</p>}
+                <div className="mt-3 flex flex-wrap gap-2">
+                  <button type="button" disabled={pending} onClick={() => start(async () => { const r = await resolveDispute(m.id, true); setMsg(r.message); if (r.ok) setState((s) => ({ ...s, [m.id]: "verified" })); })} className="inline-flex h-9 items-center gap-1.5 rounded-full bg-accent-grad px-4 text-sm font-medium text-on-accent disabled:opacity-60"><BadgeCheck className="size-4" /> Uphold: verify it</button>
+                  <button type="button" disabled={pending} onClick={() => start(async () => { const r = await resolveDispute(m.id, false); setMsg(r.message); if (r.ok) setState((s) => ({ ...s, [m.id]: "escalated" })); })} className="inline-flex h-9 items-center gap-1.5 rounded-full border border-line px-4 text-sm disabled:opacity-60">Disagree: send to Forge admins</button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
+      <section className="mt-8">
+        <h2 className="text-sm font-semibold">Recently reviewed</h2>
+        {msg && <p role="status" className="mt-2 text-xs text-muted">{msg}</p>}
+        <ul className="mt-3 flex flex-col divide-y divide-line rounded-3xl border border-line bg-surface">
+          {items.map((m) => {
+            const status = state[m.id] ?? m.status;
+            return (
+              <li key={m.id} className="px-4 py-3 text-sm">
+                <div className="flex items-center gap-3">
+                  {status === "verified" ? <BadgeCheck className="size-4 shrink-0 text-ok" /> : status === "disputed" || status === "escalated" ? <Scale className="size-4 shrink-0 text-faint" /> : <XCircle className="size-4 shrink-0 text-faint" />}
+                  <span className="min-w-0 flex-1 truncate"><span className="font-medium">{m.title}</span> <span className="text-muted">· {m.owner?.first_name} {m.owner?.last_name}</span></span>
+                  <span className="shrink-0 text-xs text-faint">{status === "revoked" ? "Revoked" : status === "disputed" ? (m.escalated ? "With Forge admins" : "Disputed") : status === "escalated" ? "With Forge admins" : m.reviewer_name}</span>
+                  {status === "verified" && revoking !== m.id && (
+                    <button type="button" onClick={() => { setRevoking(m.id); setWhy(""); }} className="inline-flex shrink-0 items-center gap-1 text-xs text-muted hover:text-danger"><Undo2 className="size-3.5" /> Revoke</button>
+                  )}
+                </div>
+                {revoking === m.id && (
+                  <form className="mt-2 flex flex-wrap gap-2" onSubmit={(e) => { e.preventDefault(); start(async () => { const r = await revokeMilestone(m.id, why); setMsg(r.message); if (r.ok) { setState((s) => ({ ...s, [m.id]: "revoked" })); setRevoking(null); } }); }}>
+                    <input value={why} onChange={(e) => setWhy(e.target.value)} required minLength={5} maxLength={300} placeholder="Why it's being revoked (they'll see this)" className="h-9 min-w-0 flex-1 rounded-full border border-line bg-surface-2 px-3 text-sm" />
+                    <button type="submit" disabled={pending} className="h-9 rounded-full bg-danger px-4 text-sm font-medium text-white disabled:opacity-60">Revoke</button>
+                    <button type="button" onClick={() => setRevoking(null)} className="h-9 rounded-full px-3 text-sm text-muted">Cancel</button>
+                  </form>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      </section>
+    </>
   );
 }

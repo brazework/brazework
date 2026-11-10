@@ -64,7 +64,7 @@ async function Manage({ params, searchParams }: { params: PageProps<"/c/[id]/man
   const discord = { connected: !!intg?.discord_webhook, masked: intg?.discord_webhook ? `••••${intg.discord_webhook.slice(-6)}` : "", events: intg?.discord_events ?? true, milestones: intg?.discord_milestones ?? true, updates: intg?.discord_updates ?? true };
   const [report, copilotOn] = tab === "report" ? await Promise.all([loadClubReport(supabase, id, features), copilotEnabled()]) : [null, false];
 
-  const MS_COLS = "id, owner_id, title, detail, evidence, achieved_on, created_at, status, reviewer_name, review_note, project:projects(title, summary), owner:profiles!milestones_owner_id_fkey(first_name, last_name, headline)";
+  const MS_COLS = ((await dbFeatures()).verification ? "dispute_note, escalated, revoked_reason, " : "") + "id, owner_id, title, detail, evidence, achieved_on, created_at, status, reviewer_name, review_note, project:projects(title, summary), owner:profiles!milestones_owner_id_fkey(first_name, last_name, headline)";
   const [reqs, members, bans, invites, queue, reviewed] = await Promise.all([
     tab === "requests" ? supabase.from("community_requests").select("*").eq("community_id", id).order("at", { ascending: true }).limit(100) : Promise.resolve({ data: [] }),
     tab === "members" ? supabase.from("community_members").select("*").eq("community_id", id).limit(500) : Promise.resolve({ data: [] }),
@@ -87,7 +87,7 @@ async function Manage({ params, searchParams }: { params: PageProps<"/c/[id]/man
         {tab === "verify" && (((queue.data ?? []) as unknown as QueueItem[]).length ? <VerifyQueue items={(queue.data ?? []) as unknown as QueueItem[]} /> : (
           <EmptyState icon={<BadgeCheck className="size-6" />} title="Nothing to verify" body="When members ask the club to vouch for a milestone (a test, a build, a result), it shows up here." />
         ))}
-        {tab === "verify" && <RecentReviews items={(reviewed.data ?? []) as unknown as QueueItem[]} />}
+        {tab === "verify" && <RecentReviews items={(reviewed.data ?? []) as unknown as QueueItem[]} isOwner={rank(role) >= 5} />}
         {tab === "invite" && <Panel className="p-6"><InviteLinks cid={id} clubName={c.name} origin={env.siteUrl} invites={(invites.data ?? []) as Invite[]} /></Panel>}
         {tab === "requests" && (((reqs.data ?? []) as JoinRequest[]).length ? (
           <Panel className="divide-y divide-line p-0">

@@ -8,7 +8,7 @@ import { EmptyState, Panel, Skeleton } from "@/components/app/page-ui";
 import { Ember } from "@/components/ember/ember";
 import { SendPost } from "@/components/share/send-post";
 import { Avatar, Kicker } from "@/components/ui";
-import { dbFeatures, postSelect } from "@/lib/db-features";
+import { dbFeatures, postSelect, milestoneCols } from "@/lib/db-features";
 import { timeAgo, type Post } from "@/lib/forge";
 import { getViewer } from "@/lib/supabase/server";
 import { PostCard } from "../../feed/post-card";
@@ -48,13 +48,13 @@ async function ProjectView({ params }: { params: PageProps<"/projects/[id]">["pa
 
   const [det, ms, ups, more] = await Promise.all([
     supabase.from("project_details").select("details, link").eq("project_id", id).maybeSingle(),
-    msOn ? supabase.from("milestones").select("id, project_id, community_id, community_name, title, detail, evidence, achieved_on, status, reviewer_name, review_note").eq("project_id", id).order("achieved_on", { ascending: false }).limit(100) : Promise.resolve({ data: [] }),
+    msOn ? supabase.from("milestones").select(await milestoneCols()).eq("project_id", id).order("achieved_on", { ascending: false }).limit(100) : Promise.resolve({ data: [] }),
     supabase.from("posts").select(await postSelect()).eq("project_id", id).eq("status", "visible").order("created_at", { ascending: false }).limit(30),
     supabase.from("projects").select("id, title, status").eq("owner_id", p.owner_id).eq("private", false).neq("id", id).order("updated_at", { ascending: false }).limit(4),
   ]);
   const details = (det.data as { details: string; link: string } | null) ?? { details: "", link: "" };
   const link = /^https?:\/\/\S+$/i.test(details.link) ? details.link : "";
-  const milestones = (ms.data ?? []) as Milestone[];
+  const milestones = (ms.data ?? []) as unknown as unknown as Milestone[];
   const verified = milestones.filter((m) => m.status === "verified");
   const posts = (ups.data ?? []) as unknown as Post[];
   const ids = posts.map((x) => x.id);

@@ -78,6 +78,7 @@ async function saved(page, path, text) {
     const card = josh.locator("article, li, div").filter({ hasText: title }).filter({ has: josh.getByRole("button", { name: /Add milestone/ }) }).last();
     await card.getByRole("button", { name: /Add milestone/ }).click();
     await josh.fill('input[name="title"]', "Measured lift on 3 fin shapes");
+    await josh.fill('input[name="evidence"]', "https://github.com/josh/wind-tunnel/commit/3f2a9c1");
     await josh.getByRole("button", { name: /Ask for verification/ }).click();
     await josh.getByText(/Measured lift on 3 fin shapes/).first().waitFor({ timeout: 15000 });
   }, josh);
