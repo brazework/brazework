@@ -1,0 +1,32 @@
+name: Linear sync
+
+# On every push to main, keep Linear in step with what shipped (.github/scripts/linear-sync.mjs):
+# commits naming an issue (FOR-12) are linked to it, "Fixes FOR-12" closes it, and commits with no
+# issue are logged as Done issues so nothing we build goes untracked.
+# Needs the repository secret LINEAR_API_KEY; without it the job passes and does nothing.
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: linear-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    name: Update Linear
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: .github/scripts
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Link, close or log each commit
+        env:
+          LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}
+          LINK_COMMITS: ${{ vars.LINEAR_LINK_COMMITS }}
+          COMMITS: ${{ toJson(github.event.commits) }}
+        run: node .github/scripts/linear-sync.mjs
