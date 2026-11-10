@@ -66,7 +66,7 @@ docs/positioning.md     Market research and positioning, with sources
 docs/next-migration.md  Moving production to web/ (the checklist)
 docs/data-model.md      Every table, who can do what, and known limits
 SETUP.md                Putting Forge online with Vercel and Supabase
-.github/workflows/      CI: the app builds and passes checks, every SQL file applies in order, main redeploys the preview
+.github/workflows/      CI: checks + unit tests + build, the full end-to-end suite, security (audit, secret scan, CodeQL); main redeploys the preview
 ```
 
 ## Run it locally
@@ -86,7 +86,7 @@ npm run e2e   # builds the app, starts a local Supabase, runs every journey (sig
 
 ## Database
 
-The SQL files are additive and run in this order (the same order CI applies to a fresh database on every push):
+The SQL files are additive and run in the order listed in [`supabase/order.txt`](supabase/order.txt) (the one list: CI, the local test stack and production setup all follow it). Today:
 
 `schema` → `messages` → `events` → `activity` → `projects` → `tours` → `club-events` → `media` → `invites` → `post-edits` → `copilot` → `milestones` → `feedback` → `feedback-review` → `integrations` → `group-chats` → `project-stack` → `club-profile` → `mentions` → `copilot-chats` → `profile-extras` → `mcp` → `chat-extras` → `reports` → `project-posts` → `verification` → `club-handoff` → `public-stats` → `account` → `challenges` → `admin-metrics` → `rate-limits` → `reports-more` → `signup-rules` → `school-requests` → `club-duplicates` → `club-reports` → `project-specs` → `email-digest`
 

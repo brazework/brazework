@@ -1,22 +1,28 @@
 name: Web (Next.js)
 
-# Runs alongside ci.yml (the vanilla app) for any change to the Next.js app in web/.
+# Every push to main and every pull request touching the app or the database:
+#   checks   - typecheck, lint, unit tests, production build, smoke test
+#   e2e      - the full local suite (web/e2e/run.sh): a throwaway Supabase (Postgres + Auth + REST)
+#              with every migration in supabase/order.txt, the SQL rule tests, then every browser
+#              journey in Chrome. Same command as on a laptop.
+#   security - production dependency audit and a secret scan of the git history
 on:
   pull_request:
     paths: ["web/**", "supabase/**", ".github/workflows/web.yml"]
   push:
     branches: [main]
     paths: ["web/**", "supabase/**", ".github/workflows/web.yml"]
+  workflow_dispatch:
 
 concurrency:
   group: web-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  web:
-    name: Lint, typecheck and build
+  checks:
+    name: Typecheck, lint, unit tests, build
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     defaults:
       run:
         working-directory: web
@@ -38,31 +44,58 @@ jobs:
         run: npx tsc --noEmit
       - name: Lint
         run: npm run lint
+      - name: Unit tests
+        run: npm test
       - name: Build
         run: npm run build
       - name: Smoke test (pages serve, protected pages redirect)
         run: |
           npx next start -p 3000 >/dev/null 2>&1 &
           for i in $(seq 1 30); do curl -fsS -o /dev/null http://localhost:3000/ && break; sleep 1; done
-          curl -fsS http://localhost:3000/ | grep -q "home base for university STEM clubs"
-          for p in /signup /login; do curl -fsS -o /dev/null "http://localhost:3000$p" || { echo "failed: $p"; exit 1; }; done
+          curl -fsS http://localhost:3000/ | grep -q "Verified work" || { echo "landing page headline missing"; exit 1; }
+          for p in /signup /login /privacy; do curl -fsS -o /dev/null "http://localhost:3000$p" || { echo "failed: $p"; exit 1; }; done
           code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/feed); [ "$code" = "307" ] || { echo "/feed returned $code, expected 307"; exit 1; }
 
-  database:
-    name: All SQL files apply in order
+  e2e:
+    name: End-to-end (database rules + browser journeys)
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    defaults:
+      run:
+        working-directory: web
+    env:
+      NEXT_TELEMETRY_DISABLED: 1
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci
+      - name: Run the suite
+        run: bash e2e/run.sh
+      - name: Keep failure screenshots
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-results
+          path: web/e2e/.results/
+          retention-days: 7
+
+  security:
+    name: Dependency audit and secret scan
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
-      - name: Start a fresh Supabase Postgres
-        run: |
-          docker run -d --name db -e POSTGRES_PASSWORD=postgres public.ecr.aws/supabase/postgres:17.11.0.004
-          for i in $(seq 1 60); do docker exec db pg_isready -U postgres -h localhost && break; sleep 2; done
-          sleep 3
-      - name: Apply schema, messages, events, activity, projects, tours, club-events, media, invites, post-edits, copilot, milestones, feedback, feedback-review, integrations, group-chats, project-stack, club-profile, mentions, copilot-chats, profile-extras, mcp, chat-extras, reports, project-posts, verification, club-handoff, public-stats, account, challenges, admin-metrics, rate-limits, reports-more, signup-rules, school-requests, club-duplicates, club-reports, project-specs, email-digest
-        run: |
-          for f in schema messages events activity projects tours club-events media invites post-edits copilot milestones feedback feedback-review integrations group-chats project-stack club-profile mentions copilot-chats profile-extras mcp chat-extras reports project-posts verification club-handoff public-stats account challenges admin-metrics rate-limits reports-more signup-rules school-requests club-duplicates club-reports project-specs email-digest; do
-            echo "::group::$f.sql"
-            docker exec -i db psql -U postgres -h localhost -d postgres -v ON_ERROR_STOP=1 -q < supabase/$f.sql
-            echo "::endgroup::"
-          done
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Audit production dependencies (fails on high or critical)
+        working-directory: web
+        run: npm audit --omit=dev --audit-level=high
+      - name: Secret scan (gitleaks, whole history, values redacted)
+        run: docker run --rm -v "$GITHUB_WORKSPACE:/repo" ghcr.io/gitleaks/gitleaks:v8.28.0 git /repo --redact --config /repo/.gitleaks.toml

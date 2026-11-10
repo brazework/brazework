@@ -23,8 +23,8 @@ docker run -d --name forge-e2e-auth --network forge-e2e -p 59999:9999 \
   -e GOTRUE_JWT_SECRET=$SECRET -e GOTRUE_JWT_EXP=3600 -e GOTRUE_JWT_AUD=authenticated -e GOTRUE_JWT_DEFAULT_GROUP_NAME=authenticated \
   -e GOTRUE_JWT_ADMIN_ROLES=service_role -e GOTRUE_MAILER_AUTOCONFIRM=true -e GOTRUE_EXTERNAL_EMAIL_ENABLED=true -e GOTRUE_DISABLE_SIGNUP=false "$AUTH" >/dev/null
 until curl -sf http://localhost:59999/health >/dev/null; do sleep 1; done
-# Every SQL file, in the same order as CI (read from the workflow, so there's one list).
-FILES=$(grep -o 'for f in [^;]*' ../.github/workflows/web.yml | head -1 | sed 's/for f in //')
+# Every SQL file, in order (supabase/order.txt is the one list; CI and production follow it too).
+FILES=$(grep -v '^#' ../supabase/order.txt | grep -v '^$')
 for f in $FILES; do docker exec -i forge-e2e-db psql -U postgres -h localhost -d postgres -v ON_ERROR_STOP=1 -q < "../supabase/$f.sql" >/dev/null; done
 docker run -d --name forge-e2e-rest --network forge-e2e -p 53000:3000 -e PGRST_DB_URI=postgres://authenticator:postgres@forge-e2e-db:5432/postgres \
   -e PGRST_DB_SCHEMAS=public -e PGRST_DB_ANON_ROLE=anon -e PGRST_JWT_SECRET=$SECRET "$REST" >/dev/null

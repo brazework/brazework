@@ -1,0 +1,17 @@
+# Secret scanning (gitleaks, run in CI's security job). Starts from the default rules; the allowlist
+# covers values that are public by design.
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Local-only test credentials"
+paths = [
+  # Supabase CLI local state: the well-known "supabase-demo" keys, never production.
+  '''supabase/\.temp/''',
+]
+regexes = [
+  # The throwaway test stack's fixed secrets (web/e2e): only valid on a laptop or CI runner.
+  '''forge-local-test-secret''',
+  '''whsec_forge_e2e''',
+  '''cron_forge_e2e''',
+]

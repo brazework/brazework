@@ -15,3 +15,6 @@ node_modules/
 .DS_Store
 Thumbs.db
 desktop.ini
+
+# Supabase CLI local state (demo keys for `supabase start`); never commit.
+supabase/.temp/

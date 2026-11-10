@@ -1,0 +1,29 @@
+name: CodeQL (code security analysis)
+
+# GitHub's static analysis for JavaScript/TypeScript: injection, XSS, unsafe redirects and more.
+# Findings show under the repo's Security tab. Weekly, and on every change to the app.
+on:
+  push:
+    branches: [main]
+    paths: ["web/**"]
+  pull_request:
+    paths: ["web/**"]
+  schedule:
+    - cron: "17 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  security-events: write
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: javascript-typescript
+          queries: security-extended
+      - uses: github/codeql-action/analyze@v3
