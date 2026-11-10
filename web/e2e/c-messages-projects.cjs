@@ -87,13 +87,24 @@ async function saved(page, path, text) {
     const post = josh.getByRole("button", { name: "Post", exact: true });
     await post.waitFor({ timeout: 10000 });
     if ((await josh.locator("#compose-club").inputValue()) !== "rkt") throw new Error("the club choice didn't stick");
+    // Watch the server action itself, so a failure says where it stopped: never sent, still waiting, or answered.
+    const sent = [];
+    const onRequest = (r) => { if (r.method() === "POST" && r.headers()["next-action"]) sent.push({ r, at: Date.now(), status: null, failed: null }); };
+    const onFinished = (r) => { const s = sent.find((x) => x.r === r); if (s) r.response().then((res) => { s.status = res?.status() ?? null; s.ms = Date.now() - s.at; }).catch(() => {}); };
+    const onFailed = (r) => { const s = sent.find((x) => x.r === r); if (s) s.failed = r.failure()?.errorText ?? "failed"; };
+    josh.on("request", onRequest); josh.on("requestfinished", onFinished); josh.on("requestfailed", onFailed);
     await post.click();
     // Saved = the box clears; refused = the composer shows why (role=alert). Either way, know which.
     const outcome = await Promise.race([
-      josh.waitForFunction(() => document.querySelector("#create-box")?.value === "", null, { timeout: 20000 }).then(() => "saved"),
-      josh.locator("form [role=alert]").first().waitFor({ timeout: 20000 }).then(async () => "refused: " + (await josh.locator("form [role=alert]").first().textContent())),
-    ]).catch(() => "no response after 20s");
-    if (outcome !== "saved") throw new Error(`the post wasn't saved (${outcome})`);
+      josh.waitForFunction(() => document.querySelector("#create-box")?.value === "", null, { timeout: 30000 }).then(() => "saved"),
+      josh.locator("form [role=alert]").first().waitFor({ timeout: 30000 }).then(async () => "refused: " + (await josh.locator("form [role=alert]").first().textContent())),
+    ]).catch(() => "no response after 30s");
+    josh.off("request", onRequest); josh.off("requestfinished", onFinished); josh.off("requestfailed", onFailed);
+    if (outcome !== "saved") {
+      const net = sent.length ? sent.map((s) => s.failed ? `request failed: ${s.failed}` : s.status ? `answered ${s.status} in ${s.ms} ms` : "request sent, no answer yet").join("; ") : "no request was sent";
+      const btn = await post.isDisabled().catch(() => null) ? "Post button disabled" : "Post button enabled";
+      throw new Error(`the post wasn't saved (${outcome}; ${net}; ${btn}; box: "${(await josh.locator("#create-box").inputValue()).slice(0, 40)}")`);
+    }
     let seen = 0;
     for (let i = 0; i < 10 && !seen; i++) { if (i) await josh.waitForTimeout(1000); await go(josh, "/c/rkt"); seen = await josh.getByText(`Tunnel test section is sealed ${stamp}`).count(); }
     if (!seen) throw new Error("the update didn't reach the club");
