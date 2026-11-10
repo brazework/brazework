@@ -7,6 +7,7 @@ import { ALL_TOPICS, requestTime } from "@/lib/forge";
 import { loadClubReport } from "@/lib/club-report";
 import { GitHubError, fetchRepo, fetchUser, matchTopics, parseRepo, parseUser } from "@/lib/connectors/github";
 import { loadGuide } from "@/lib/guide";
+import { buildBuilders, rankBuilders, type Person, type VerifiedRow } from "@/lib/talent";
 import type { createClient } from "@/lib/supabase/server";
 
 // Copilot's tools. They run with the member's own Supabase session, so row-level security decides
@@ -31,6 +32,16 @@ export const TOOLS: Anthropic.Tool[] = [
     name: "find_people",
     description: "Find Forge members by keyword (name or headline) and/or field or interest. Returns up to 8, each with a profile link path.",
     input_schema: { type: "object", properties: { query: { type: "string" }, field: { type: "string" }, interest: { type: "string" } } },
+  },
+  {
+    name: "find_builders",
+    description: "For admins of a verified company or school only: members ranked by work their club verified (public verified milestones), matching skills or work keywords, optionally only those open to internships, full_time, research, co_founder, collaborators or mentoring. Returns up to 8 with who verified what, and a profile link path. Messages to them land in their Requests.",
+    input_schema: { type: "object", properties: { query: { type: "string", description: "Skills or work, e.g. 'STM32 flight computer'" }, open_to: { type: "string" } } },
+  },
+  {
+    name: "open_challenges",
+    description: "Sponsored build challenges open for entries, soonest deadline first, optionally matching keywords. Each has its sponsor, prize, deadline and link path; members enter with a project they own.",
+    input_schema: { type: "object", properties: { query: { type: "string" } } },
   },
   {
     name: "my_profile",
@@ -151,6 +162,35 @@ export function makeExec(db: DB, userId: string, onProposal: (p: Proposal) => vo
         const { data, error } = await req;
         if (error) return { error: "People search failed." };
         return (data ?? []).map((p) => ({ name: `${p.first_name} ${p.last_name}`.trim(), headline: snip(p.headline, 100), field: p.field, link: `/u/${p.id}` }));
+      }
+      case "find_builders": {
+        const f = await dbFeatures();
+        const { data: adm } = await db.from("organization_admins").select("organizations(verification_status, type)").eq("uid", userId).limit(1);
+        const org = (adm?.[0] as unknown as { organizations: { verification_status: string; type: string } | null } | undefined)?.organizations;
+        if (!org || org.verification_status !== "verified" || org.type === "forge") return { error: "Finding builders is for admins of a verified company or school. They can register at /org." };
+        let mq = db.from("milestones").select(`id, owner_id, community_id, community_name, title, reviewer_name, reviewed_at${f.verification ? ", reviewer_role" : ""}, projects(title, tags, tools)`).eq("status", "verified").order("reviewed_at", { ascending: false }).limit(1000);
+        if (f.verification) mq = mq.eq("private", false);
+        const { data: rows } = await mq;
+        const verified = (rows ?? []) as unknown as VerifiedRow[];
+        const ids = [...new Set(verified.map((r) => r.owner_id))];
+        const { data: people } = ids.length ? await db.from("profiles").select(`id, first_name, last_name, headline, field${f.profileExtras ? ", open_to" : ""}`).in("id", ids) : { data: [] };
+        const list = rankBuilders(buildBuilders(verified, (people ?? []) as unknown as Person[]), { q: clean(a.query, 120), openTo: clean(a.open_to, 20) });
+        return list.slice(0, 8).map((b) => ({
+          name: `${b.person.first_name} ${b.person.last_name}`.trim(), headline: snip(b.person.headline, 100), verified: b.verified,
+          clubs: b.clubs.map((c) => c.name), skills: b.skills.slice(0, 8), open_to: b.person.open_to ?? [],
+          latest: b.latest.slice(0, 2).map((r) => ({ title: r.title, verified_by: r.reviewer_name, club: r.community_name })),
+          link: `/u/${b.person.id}`,
+        }));
+      }
+      case "open_challenges": {
+        if (!(await dbFeatures()).challenges) return { error: "Challenges aren't switched on yet." };
+        const q = clean(a.query);
+        let req = db.from("challenges").select("id, title, brief, prize, topic, deadline, organizations(name)").eq("status", "open").gt("deadline", new Date(requestTime()).toISOString()).order("deadline", { ascending: true }).limit(8);
+        if (q) req = req.or(`title.ilike.*${q}*,brief.ilike.*${q}*,topic.ilike.*${q}*`);
+        const { data, error } = await req;
+        if (error) return { error: "Challenge search failed." };
+        return ((data ?? []) as unknown as { id: string; title: string; brief: string; prize: string; topic: string; deadline: string; organizations: { name: string } | null }[])
+          .map((c) => ({ title: c.title, sponsor: c.organizations?.name ?? "", prize: c.prize, topic: c.topic, deadline: c.deadline, brief: snip(c.brief, 240), link: `/challenges/${c.id}` }));
       }
       case "my_profile": {
         const f = await dbFeatures();
