@@ -17,6 +17,7 @@ import { MilestoneTimeline, type Milestone } from "../../u/[id]/milestones";
 import { ProjectIcon } from "../project-card";
 import { PostUpdate } from "./post-update";
 import { BuiltWith } from "@/components/projects/built-with";
+import { TeamList } from "./team";
 import { OrganizeWithEmber } from "./organize";
 import { copilotEnabled } from "@/lib/copilot";
 
@@ -47,12 +48,22 @@ async function ProjectView({ params }: { params: PageProps<"/projects/[id]">["pa
   const own = p?.owner_id === user.id;
   if (!p || (p.private && !own)) return <EmptyState title="This project isn't available" body="It may be private, or it was removed." />;
 
-  const [det, ms, ups, more] = await Promise.all([
+  const [det, ms, ups, more, teamRes, clubRes] = await Promise.all([
     supabase.from("project_details").select("details, link").eq("project_id", id).maybeSingle(),
     msOn ? supabase.from("milestones").select(await milestoneCols()).eq("project_id", id).order("achieved_on", { ascending: false }).limit(100) : Promise.resolve({ data: [] }),
     supabase.from("posts").select(await postSelect()).eq("project_id", id).eq("status", "visible").order("created_at", { ascending: false }).limit(30),
     supabase.from("projects").select("id, title, status").eq("owner_id", p.owner_id).eq("private", false).neq("id", id).order("updated_at", { ascending: false }).limit(4),
+    (await dbFeatures()).verification ? supabase.from("project_members").select("uid, profiles(first_name, last_name, headline)").eq("project_id", id).order("added_at", { ascending: true }).limit(20) : Promise.resolve({ data: [] }),
+    own ? supabase.from("community_members").select("community_id").eq("uid", user.id).limit(50) : Promise.resolve({ data: [] }),
   ]);
+  type TM = { uid: string; profiles: { first_name: string; last_name: string; headline: string } | null };
+  const team = ((teamRes.data ?? []) as unknown as TM[]).map((t) => ({ id: t.uid, first: t.profiles?.first_name ?? "", last: t.profiles?.last_name ?? "", headline: t.profiles?.headline ?? "" }));
+  // Who the owner can add: people in their clubs.
+  const myClubIds = ((clubRes.data ?? []) as { community_id: string }[]).map((r) => r.community_id);
+  const { data: clubPeople } = own && myClubIds.length
+    ? await supabase.from("community_members").select("uid, first_name, last_name").in("community_id", myClubIds).neq("uid", user.id).limit(200)
+    : { data: [] };
+  const candidates = [...new Map(((clubPeople ?? []) as { uid: string; first_name: string; last_name: string }[]).map((c) => [c.uid, { id: c.uid, first: c.first_name, last: c.last_name }])).values()];
   const details = (det.data as { details: string; link: string } | null) ?? { details: "", link: "" };
   const link = /^https?:\/\/\S+$/i.test(details.link) ? details.link : "";
   const milestones = (ms.data ?? []) as unknown as unknown as Milestone[];
@@ -127,11 +138,12 @@ async function ProjectView({ params }: { params: PageProps<"/projects/[id]">["pa
 
       <aside className="flex flex-col gap-4">
         <Panel>
-          <Kicker>Built by</Kicker>
+          <Kicker>{team.length ? "Built by the team" : "Built by"}</Kicker>
           <Link href={`/u/${p.owner_id}`} className="mt-3 flex items-center gap-3">
             <Avatar first={owner?.first_name ?? ""} last={owner?.last_name ?? ""} size={44} />
             <span className="min-w-0"><span className="block truncate font-medium hover:underline">{ownerName}</span><span className="block truncate text-xs text-muted">{owner?.headline || owner?.field || "Forge member"}</span></span>
           </Link>
+          {(team.length > 0 || own) && <TeamList projectId={p.id} team={team} candidates={candidates} own={own} me={user.id} />}
           {!own && <Link href={`/messages/new?to=${p.owner_id}`} className="mt-4 inline-flex h-9 w-full items-center justify-center rounded-full border border-line text-sm font-medium transition hover:bg-hover">Message {owner?.first_name || "them"}</Link>}
         </Panel>
         <Link href={`/copilot?q=${encodeURIComponent(ask)}`} className="glass-card flex items-center gap-3 rounded-3xl p-4 transition hover:-translate-y-0.5">

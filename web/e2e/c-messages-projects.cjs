@@ -60,6 +60,15 @@ async function saved(page, path, text) {
     await josh.getByRole("button", { name: "Add project" }).last().click();
     await josh.getByText(title).first().waitFor({ timeout: 15000 });
   }, josh);
+  await step("Josh adds Maya to the project's team", async () => {
+    await josh.getByRole("link", { name: title }).first().click();
+    await josh.waitForURL(/\/projects\/[^/]+$/, { timeout: 15000 });
+    const opt = await josh.locator("#team-add option", { hasText: "Maya Patel" }).getAttribute("value");
+    await josh.locator("#team-add").selectOption(opt);
+    await josh.getByRole("button", { name: "Add teammate" }).click();
+    await josh.locator('[aria-label="Team"]').getByText("Maya Patel").waitFor({ timeout: 15000 });
+    await josh.getByText("Built by the team").waitFor();
+  }, josh);
   await step("Josh posts an update about the project, shared with Rocketry Club", async () => {
     const stamp = Date.now() % 100000;
     await go(josh, "/feed");
