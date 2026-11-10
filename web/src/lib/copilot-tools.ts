@@ -50,7 +50,7 @@ export const TOOLS: Anthropic.Tool[] = [
   {
     name: "propose_milestone",
     description: "Prepare a milestone on one of the member's projects for one of their clubs to verify. Get project and club ids from my_profile. It is NOT sent until they confirm.",
-    input_schema: { type: "object", properties: { project_id: { type: "string" }, club_id: { type: "string" }, title: { type: "string", description: "What happened, at most 120 characters" }, detail: { type: "string", description: "Numbers and conditions, at most 600 characters" }, achieved_on: { type: "string", description: "YYYY-MM-DD" } }, required: ["project_id", "club_id", "title"] },
+    input_schema: { type: "object", properties: { project_id: { type: "string" }, club_id: { type: "string" }, title: { type: "string", description: "What happened, at most 120 characters" }, evidence: { type: "string", description: "Required: an https link to a photo, video, file, commit or the club event where it happened. Ask the member for it; never invent one." }, detail: { type: "string", description: "Numbers and conditions, at most 600 characters" }, achieved_on: { type: "string", description: "YYYY-MM-DD" } }, required: ["project_id", "club_id", "title", "evidence"] },
   },
   {
     name: "propose_join_club",
@@ -84,18 +84,13 @@ export const TOOLS: Anthropic.Tool[] = [
   },
   {
     name: "verify_queue",
-    description: "Milestones members asked the club to verify, oldest first, with their details and evidence links (for the club's moderators and up). Use with propose_review.",
+    description: "Milestones members asked the club to verify, oldest first, with their details and evidence links (for the club's moderators and up). Read-only: Ember never verifies; officers review each one themselves in the club's Verify tab.",
     input_schema: { type: "object", properties: { club_id: { type: "string" } }, required: ["club_id"] },
   },
   {
     name: "propose_club_post",
     description: "Prepare a post in one of the member's clubs (for example the weekly update, an announcement or a welcome). It is NOT posted until they confirm.",
     input_schema: { type: "object", properties: { club_id: { type: "string" }, body: { type: "string", description: "At most 3000 characters" }, kind: { type: "string", enum: ["update", "question", "result", "project"] } }, required: ["club_id", "body"] },
-  },
-  {
-    name: "propose_review",
-    description: "Prepare a verify-or-decline decision on a pending milestone from verify_queue, with a short note for the member (required when declining). The officer confirms or changes it; nothing is decided until then. Only recommend verifying when the details or evidence support it.",
-    input_schema: { type: "object", properties: { milestone_id: { type: "string" }, verify: { type: "boolean" }, note: { type: "string", description: "At most 300 characters" } }, required: ["milestone_id", "verify"] },
   },
   {
     name: "github_repo",
@@ -222,8 +217,10 @@ export function makeExec(db: DB, userId: string, onProposal: (p: Proposal) => vo
         if (!club) return { error: "The member isn't in that club, and only their clubs can verify their milestones." };
         const title = typeof a.title === "string" ? a.title.trim().slice(0, 120) : "";
         if (!title) return { error: "Say what happened." };
+        const evidence = typeof a.evidence === "string" ? a.evidence.trim() : "";
+        if (!/^https:\/\/\S{4,290}$/i.test(evidence)) return { error: "A milestone needs evidence: ask the member for an https link to a photo, video, file, commit or the club event. Don't make one up." };
         const day = typeof a.achieved_on === "string" && /^\d{4}-\d{2}-\d{2}$/.test(a.achieved_on) ? a.achieved_on : new Date(requestTime()).toISOString().slice(0, 10);
-        onProposal({ id: pid(), kind: "milestone", project_id: projectId, project_title: proj.data.title, club_id: clubId, club_name: club.name, title, detail: typeof a.detail === "string" ? a.detail.trim().slice(0, 600) : "", achieved_on: day });
+        onProposal({ id: pid(), kind: "milestone", project_id: projectId, project_title: proj.data.title, club_id: clubId, club_name: club.name, title, evidence, detail: typeof a.detail === "string" ? a.detail.trim().slice(0, 600) : "", achieved_on: day });
         return SHOWN;
       }
       case "propose_join_club": {
@@ -326,6 +323,8 @@ export function makeExec(db: DB, userId: string, onProposal: (p: Proposal) => vo
         return SHOWN;
       }
       case "propose_review": {
+        // Verification is a person checking evidence; Ember never prepares or makes that decision.
+        if (true as boolean) return { error: "Ember doesn't verify milestones. Officers review each one in the club's Verify tab." };
         const id = String(a.milestone_id ?? "");
         if (!ID_RE.test(id)) return { error: "Use a milestone_id from verify_queue." };
         if (!(await dbFeatures()).milestones) return { error: "Milestones aren't switched on yet." };

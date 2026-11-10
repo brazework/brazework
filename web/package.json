@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "eslint",
     "typecheck": "next typegen && tsc --noEmit",
-    "e2e": "bash e2e/run.sh"
+    "e2e": "bash e2e/run.sh",
+    "test": "tsx --test tests/*.test.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.6.0",
@@ -32,6 +33,7 @@
     "eslint-config-next": "16.4.5",
     "playwright-core": "^1.65.0",
     "tailwindcss": "^4",
+    "tsx": "^4.23.15",
     "typescript": "^5"
   }
 }

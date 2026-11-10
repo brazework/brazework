@@ -57,7 +57,7 @@ export function ProposalCard({ p: initial }: { p: Proposal }) {
       r = await createPost({ ok: false, message: "", nonce: 0 }, f);
     } else if (p.kind === "milestone") {
       const f = new FormData();
-      f.set("projectId", p.project_id); f.set("communityId", p.club_id); f.set("title", p.title); f.set("detail", p.detail); f.set("evidence", ""); f.set("achievedOn", p.achieved_on);
+      f.set("projectId", p.project_id); f.set("communityId", p.club_id); f.set("title", p.title); f.set("detail", p.detail); f.set("evidence", p.evidence); f.set("achievedOn", p.achieved_on); f.set("showOnProfile", "on");
       r = await addMilestone({ ok: false, message: "" }, f);
     } else if (p.kind === "join") {
       r = await joinCommunity(p.club_id);
@@ -119,6 +119,7 @@ export function ProposalCard({ p: initial }: { p: Proposal }) {
             <>
               <p className="text-xs text-muted">On <b className="font-medium text-text-2">{p.project_title}</b>, for <b className="font-medium text-text-2">{p.club_name}</b> to verify</p>
               <input aria-label="Milestone" value={p.title} onChange={(e) => set({ title: e.target.value })} maxLength={120} className={field} />
+              <input aria-label="Evidence link" type="url" value={p.evidence} onChange={(e) => set({ evidence: e.target.value })} maxLength={300} placeholder="Evidence: https://…" className={field} />
               <textarea aria-label="Details" value={p.detail} onChange={(e) => set({ detail: e.target.value })} maxLength={600} rows={2} placeholder="Details (optional)" className={cn(field, "resize-none")} />
               <input aria-label="Date" type="date" value={p.achieved_on} onChange={(e) => set({ achieved_on: e.target.value })} className={cn(field, "w-auto")} />
             </>

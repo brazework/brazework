@@ -31,7 +31,7 @@ export const TOOL_LABEL: Record<string, { doing: string; done: string }> = {
 // the card shows this, the member edits or confirms, and the app's normal server action runs.
 export type Proposal = { id: string } & (
   | { kind: "post"; body: string; postKind: "update" | "question" | "result" | "project"; tags: string[] }
-  | { kind: "milestone"; project_id: string; project_title: string; club_id: string; club_name: string; title: string; detail: string; achieved_on: string }
+  | { kind: "milestone"; project_id: string; project_title: string; club_id: string; club_name: string; title: string; evidence: string; detail: string; achieved_on: string }
   | { kind: "join"; club_id: string; club_name: string; privacy: "public" | "approval" }
   | { kind: "follow"; person_id: string; name: string; headline: string }
   | { kind: "event"; club_id: string; club_name: string; title: string; description: string; type: string; format: string; location: string; topic: string; starts_at: string; ends_at: string }
