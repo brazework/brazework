@@ -32,6 +32,8 @@ GW_JWT_SECRET=$SECRET nohup node e2e/gateway.cjs > /tmp/forge-e2e-gateway.log 2>
 until curl -sf http://localhost:54321/rest/v1/ >/dev/null; do sleep 1; done
 ANON=$(node -e 'const c=require("crypto");const b=o=>Buffer.from(JSON.stringify(o)).toString("base64url");const h=b({alg:"HS256",typ:"JWT"}),p=b({role:"anon",iss:"supabase",exp:2000000000});console.log(h+"."+p+"."+c.createHmac("sha256",process.argv[1]).update(h+"."+p).digest("base64url"))' "$SECRET")
 echo "$ANON" > e2e/.anon-key
+# A service-role key for trusted server code (the billing webhook).
+node -e 'const c=require("crypto");const b=o=>Buffer.from(JSON.stringify(o)).toString("base64url");const h=b({alg:"HS256",typ:"JWT"}),p=b({role:"service_role",iss:"supabase",exp:2000000000});console.log(h+"."+p+"."+c.createHmac("sha256",process.argv[1]).update(h+"."+p).digest("base64url"))' "$SECRET" > e2e/.service-key
 # Test members sign up through the real sign-up API (their profiles come from the same trigger).
 for u in josh:Josh:Menzies maya:Maya:Patel ben:Ben:Cho cara:Cara:Diaz; do IFS=: read -r e f l <<< "$u"
   curl -sf -X POST http://localhost:54321/auth/v1/signup -H "apikey: $ANON" -H "Content-Type: application/json" \

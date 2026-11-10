@@ -41,5 +41,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 e2e/.anon-key
+e2e/.service-key
 e2e/.results/
 e2e/.media/

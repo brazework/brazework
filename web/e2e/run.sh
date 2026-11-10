@@ -5,7 +5,7 @@ set -euo pipefail
 cd "$(dirname "$0")/.."
 trap 'kill $(lsof -ti:3200 -sTCP:LISTEN) 2>/dev/null || true; e2e/local-supabase.sh down >/dev/null' EXIT
 e2e/local-supabase.sh up
-export NEXT_PUBLIC_SUPABASE_URL=http://localhost:54321 NEXT_PUBLIC_SUPABASE_ANON_KEY="$(cat e2e/.anon-key)" ANTHROPIC_API_KEY=
+export NEXT_PUBLIC_SUPABASE_URL=http://localhost:54321 NEXT_PUBLIC_SUPABASE_ANON_KEY="$(cat e2e/.anon-key)" ANTHROPIC_API_KEY= SUPABASE_SERVICE_ROLE_KEY="$(cat e2e/.service-key)" STRIPE_WEBHOOK_SECRET=whsec_forge_e2e
 npx next build >/tmp/forge-e2e-build.log 2>&1 || { tail -20 /tmp/forge-e2e-build.log; exit 1; }
 npx next start -p 3200 >/tmp/forge-e2e-server.log 2>&1 &
 until curl -sf http://localhost:3200/login >/dev/null; do sleep 1; done
