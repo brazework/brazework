@@ -37,7 +37,7 @@ async function Explore({ searchParams }: { searchParams: PageProps<"/projects">[
   const tool = typeof sp.tool === "string" ? sp.tool.slice(0, 40) : "";
   const { milestones: msOn, projectTools: stackOn } = await dbFeatures();
 
-  let req = supabase.from("projects").select(`id, title, summary, status, year, tags, updated_at, owner_id, profiles(first_name, last_name, field)${stackOn ? ", tools" : ""}`).eq("private", false).order("updated_at", { ascending: false }).limit(120);
+  let req = supabase.from("projects").select(`id, title, summary, status, year, tags, updated_at, owner_id, profiles!projects_owner_id_fkey(first_name, last_name, field)${stackOn ? ", tools" : ""}`).eq("private", false).order("updated_at", { ascending: false }).limit(120);
   if (mine) req = req.eq("owner_id", user.id);
   if (topic) req = req.contains("tags", [topic]);
   if (tool && stackOn) req = req.contains("tools", [tool]);

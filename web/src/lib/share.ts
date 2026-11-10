@@ -73,7 +73,7 @@ export async function projectPreview(projectId: string): Promise<{ id: string; t
   if (!/^[A-Za-z0-9-]{1,64}$/.test(projectId)) return null;
   const { supabase, user } = await getViewer();
   if (!user) return null;
-  const { data } = await supabase.from("projects").select("id, title, summary, status, profiles(first_name, last_name)").eq("id", projectId).maybeSingle();
+  const { data } = await supabase.from("projects").select("id, title, summary, status, profiles!projects_owner_id_fkey(first_name, last_name)").eq("id", projectId).maybeSingle();
   if (!data) return null;
   const o = (data as unknown as { profiles: { first_name: string; last_name: string } | null }).profiles;
   return { id: data.id, title: data.title, summary: String(data.summary).slice(0, 180), owner: `${o?.first_name ?? ""} ${o?.last_name ?? ""}`.trim(), status: data.status === "completed" ? "Completed" : "In progress" };

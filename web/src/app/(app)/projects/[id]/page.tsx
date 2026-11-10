@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ReportLink } from "@/components/report/report-dialog";
 import { ArrowLeft, BadgeCheck, CheckCircle2, ExternalLink, Pencil } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -41,7 +42,7 @@ async function ProjectView({ params }: { params: PageProps<"/projects/[id]">["pa
   const { supabase, user } = await getViewer();
   if (!user) redirect("/login");
   const { milestones: msOn, projectTools: stackOn } = await dbFeatures();
-  const { data } = await supabase.from("projects").select(`id, title, summary, status, year, tags, private, updated_at, created_at, owner_id, profiles(first_name, last_name, headline, field)${stackOn ? ", tools" : ""}`).eq("id", id).maybeSingle();
+  const { data } = await supabase.from("projects").select(`id, title, summary, status, year, tags, private, updated_at, created_at, owner_id, profiles!projects_owner_id_fkey(first_name, last_name, headline, field)${stackOn ? ", tools" : ""}`).eq("id", id).maybeSingle();
   const p = data as unknown as Project | null;
   const own = p?.owner_id === user.id;
   if (!p || (p.private && !own)) return <EmptyState title="This project isn't available" body="It may be private, or it was removed." />;
@@ -88,6 +89,7 @@ async function ProjectView({ params }: { params: PageProps<"/projects/[id]">["pa
             {link && <a href={link} target="_blank" rel="noopener noreferrer nofollow" className="bg-accent-grad inline-flex h-10 items-center gap-1.5 rounded-full px-4 text-sm font-medium text-on-accent"><ExternalLink className="size-4" /> {new URL(link).hostname.replace(/^www\./, "")}</a>}
             <SendPost projectId={p.id} compact={false} />
             <CopyLink path={`/projects/${p.id}`} label="Share" />
+            {!own && <ReportLink kind="project" id={p.id} label="this project" className="ml-auto" />}
             {own && <Link href={`/u/${user.id}#projects`} className="inline-flex h-10 items-center gap-1.5 rounded-full border border-line px-4 text-sm transition hover:bg-hover"><Pencil className="size-4" /> Edit</Link>}
           </div>
         </Panel>
