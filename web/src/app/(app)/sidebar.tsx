@@ -111,7 +111,8 @@ export function Sidebar({ first, last, userId, badges, avatar, initialCollapsed 
         {/* Ember, the orb: ask anything or jump anywhere (also ⌘K from any page). */}
         <button type="button" onClick={() => window.dispatchEvent(new Event("forge:palette"))} title="Ask Ember (⌘K)" aria-label="Ask Ember, or jump anywhere (Command K)"
           className="group grid size-10 shrink-0 place-items-center rounded-2xl border border-line bg-surface/60 transition hover:-translate-y-px hover:bg-hover">
-          <span className="transition duration-300 group-hover:scale-110" style={{ "--ember-a": "#ffd166", "--ember-b": "#ff4d4d", "--ember-c": "#ff3d7f" } as React.CSSProperties}><Ember size={28} /></span>
+          {/* The orb takes the theme's Ember colours (globals.css --ember-*), like Ember everywhere else. */}
+          <span className="transition duration-300 group-hover:scale-110"><Ember size={28} /></span>
         </button>
       </div>
       <nav data-tour="menu" aria-label="Main" className={cn("flex shrink-0 flex-col gap-0.5", collapsed ? "mt-4" : "mt-5")}>
