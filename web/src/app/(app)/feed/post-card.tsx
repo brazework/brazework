@@ -1,6 +1,7 @@
 "use client";
 import { AnimatePresence, motion } from "motion/react";
-import { ArrowUp, Bookmark, Check, FolderGit2, Heart, Link2, Loader2, Lock, MessageSquare, MoreHorizontal, Pencil, Sparkles, Trash2 } from "lucide-react";
+import { reportThis } from "@/components/report/report-dialog";
+import { ArrowUp, Bookmark, Check, FolderGit2, Heart, Link2, Loader2, Lock, MessageSquare, MoreHorizontal, Pencil, Sparkles, Trash2, Flag } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useOptimistic, useRef, useState, useTransition } from "react";
 import { Avatar } from "@/components/ui";
@@ -184,6 +185,7 @@ export function PostCard({ post, liked, saved = false, own = false, index, proje
           items={[
             { label: copied ? "Link copied" : "Copy link", icon: copied ? Check : Link2, onSelect: share },
             ...(own && !editing ? [{ label: "Edit post", icon: Pencil, onSelect: () => setEditing(true) }] : []),
+            ...(!own ? [{ label: "Report post", icon: Flag, onSelect: () => reportThis({ kind: "post", id: post.id, label: "this post" }) }] : []),
             ...(own ? [{ label: "Delete post", icon: Trash2, danger: true, onSelect: () => { if (confirm("Delete this post? Its likes and comments go too.")) start(async () => { const r = await deletePost(post.id); if (r.ok) setGone(true); else setError(r.message); }); } }] : []),
           ]}
         />

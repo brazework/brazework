@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ReportLink } from "@/components/report/report-dialog";
 import { BadgeCheck, BarChart3, FileText, FolderGit2, Lock, MapPin, MessageSquare, Trophy } from "lucide-react";
 import { CommunityBadge } from "../../communities/_components/badge";
 import { ActivityGrid } from "@/components/profile/activity";
@@ -157,6 +158,7 @@ async function ProfileView({ params }: { params: PageProps<"/u/[id]">["params"] 
             {p.field && <> · {p.field}</>}
             {p.location && <> · <MapPin className="size-3.5" /> {p.location}</>}
             <> · Joined {joined}</>
+            {!own && <ReportLink kind="person" id={p.id} label={name || "this member"} className="ml-2" />}
           </p>
           {openTo.length > 0 && (
             <p className="mt-3 inline-flex flex-wrap items-center gap-1.5 rounded-full bg-[color-mix(in_oklab,var(--ok)_12%,transparent)] px-3 py-1 text-xs font-medium text-ok">

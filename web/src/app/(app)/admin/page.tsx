@@ -6,6 +6,7 @@ import { EmptyState, PageHeader, Panel, Skeleton } from "@/components/app/page-u
 import { Kicker } from "@/components/ui";
 import { getViewer } from "@/lib/supabase/server";
 import { SponsorshipDecision } from "../challenges/challenge-client";
+import { ResolveReport } from "@/components/report/report-dialog";
 
 export const metadata: Metadata = { title: "Forge admin" };
 
@@ -32,11 +33,24 @@ async function Admin() {
   if (!user) redirect("/login");
   const { data: isAdmin } = await supabase.rpc("is_forge_admin");
   if (!isAdmin) notFound();
-  const [{ data: m }, { data: requests }, { data: queue }] = await Promise.all([
+  const [{ data: m }, { data: requests }, { data: queue }, { data: reportRows }] = await Promise.all([
     supabase.rpc("admin_metrics"),
     supabase.from("challenges").select("id, title, prize, deadline, organizations(name)").eq("sponsorship", "requested").order("created_at", { ascending: true }).limit(50),
     supabase.from("admin_queue").select("id, kind, subject_id, detail, created_at").eq("status", "open").order("created_at", { ascending: true }).limit(50),
+    supabase.from("content_reports").select("id, kind, target_id, reason, detail, reported, created_at").eq("status", "open").order("created_at", { ascending: true }).limit(50),
   ]);
+  type Report = { id: number; kind: string; target_id: string; reason: string; detail: string; reported: string | null; created_at: string };
+  const reports = (reportRows ?? []) as Report[];
+  // Who was reported, and where a milestone lives (its project page), for the links.
+  const reportedIds = [...new Set(reports.map((r) => r.reported).filter((x): x is string => !!x))];
+  const msIds = reports.filter((r) => r.kind === "milestone").map((r) => r.target_id);
+  const [{ data: reportedPeople }, { data: msRows }] = await Promise.all([
+    reportedIds.length ? supabase.from("profiles").select("id, first_name, last_name").in("id", reportedIds) : Promise.resolve({ data: [] }),
+    msIds.length ? supabase.from("milestones").select("id, project_id").in("id", msIds) : Promise.resolve({ data: [] }),
+  ]);
+  const personName = new Map((reportedPeople ?? []).map((p) => [p.id as string, `${p.first_name} ${p.last_name}`.trim()]));
+  const msProject = new Map((msRows ?? []).map((r) => [r.id as string, r.project_id as string]));
+  const reportHref = (r: Report) => ({ post: `/post/${r.target_id}`, person: `/u/${r.target_id}`, project: `/projects/${r.target_id}`, challenge: `/challenges/${r.target_id}`, milestone: msProject.get(r.target_id) ? `/projects/${msProject.get(r.target_id)}` : "" } as Record<string, string>)[r.kind] ?? "";
   const x = m as Metrics | null;
   const reqs = (requests ?? []) as unknown as { id: string; title: string; prize: string; organizations: { name: string } | null }[];
 
@@ -95,6 +109,27 @@ async function Admin() {
             </Panel>
           ))}
           {!reqs.length && <p className="text-sm text-muted">Nothing waiting.</p>}
+        </div>
+      </section>
+
+      <section className="mt-8" aria-label="Reports">
+        <Kicker>Reports · {reports.length}</Kicker>
+        <div className="mt-3 flex flex-col gap-2">
+          {reports.map((r) => (
+            <Panel key={r.id} className="flex flex-wrap items-start gap-3 p-4 text-sm">
+              <div className="min-w-0 flex-1">
+                <p className="font-medium">
+                  {r.kind.replace("_", " ")} · {r.reason}
+                  {r.reported && <span className="font-normal text-muted"> · by {personName.get(r.reported) ?? "a member"}</span>}
+                  <span className="ml-2 text-xs font-normal text-faint">{new Date(r.created_at).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" })}</span>
+                </p>
+                {r.detail && <p className="mt-1 text-text-2">{r.detail}</p>}
+                {reportHref(r) && <Link href={reportHref(r)} className="mt-1 inline-block text-xs text-muted underline hover:text-text">Open what was reported</Link>}
+              </div>
+              <ResolveReport id={r.id} />
+            </Panel>
+          ))}
+          {!reports.length && <p className="text-sm text-muted">No open reports.</p>}
         </div>
       </section>
 

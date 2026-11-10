@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { ReportLink } from "@/components/report/report-dialog";
 import { ArrowLeft, BadgeCheck, Building2, CalendarClock, Trophy } from "lucide-react";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
@@ -74,6 +75,7 @@ async function ChallengeView({ params }: { params: PageProps<"/challenges/[id]">
             {c.prize && <span className="inline-flex items-center gap-1.5 font-medium text-text"><Trophy className="size-4" /> {c.prize}</span>}
             <span className="inline-flex items-center gap-1.5"><CalendarClock className="size-4" /> Due <LocalTime kind="full-clock" value={c.deadline} />{c.status === "open" ? ` · ${left} ${left === 1 ? "day" : "days"} left` : ""}</span>
             <span>{total} {total === 1 ? "entry" : "entries"}</span>
+            {!isSponsor && <ReportLink kind="challenge" id={c.id} label="this challenge" />}
           </div>
           {isSponsor && <div className="mt-5"><SponsorControls id={c.id} status={c.status} sponsorship={c.sponsorship} entries={total} /></div>}
         </div>

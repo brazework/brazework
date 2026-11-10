@@ -1,4 +1,5 @@
 import { ThemeChrome } from "@/components/theme-chrome";
+import { ReportDialog } from "@/components/report/report-dialog";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
@@ -59,6 +60,7 @@ async function SignedInShell() {
       <PresenceMount userId={user.id} />
       <Sidebar first={profile.first_name} last={profile.last_name} userId={user.id} badges={badges} avatar={avatarSrc(profile)} initialCollapsed={collapsed} clubs={myClubs} />
       <CommandPalette />
+      <ReportDialog />
       <MobileBar first={profile.first_name} last={profile.last_name} badges={badges} avatar={avatarSrc(profile)} />
       <ThemeChrome />
       <TourMount />
