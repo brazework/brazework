@@ -8,10 +8,10 @@ import { Button, Logo } from "@/components/ui";
 import { cn } from "@/lib/forge";
 
 const LINKS = [
-  { href: "#builders", label: "Fields" },
   { href: "#how", label: "How it works" },
-  { href: "#copilot", label: "Copilot" },
+  { href: "#copilot", label: "Ember" },
   { href: "#who", label: "Who it's for" },
+  { href: "#pricing", label: "Pricing" },
   { href: "#faq", label: "FAQ" },
 ];
 

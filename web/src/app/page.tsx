@@ -3,7 +3,7 @@ import { CopilotSection } from "@/components/landing/copilot-section";
 import { Hero } from "@/components/landing/hero";
 import { SpotlightTracker } from "@/components/landing/interactive";
 import { LegacyLinks } from "@/components/landing/legacy-links";
-import { Audiences, Builders, ClubStrip, FaqSection, Features, How, Mission, Problem } from "@/components/landing/marketing";
+import { AiEra, Audiences, FaqSection, Features, How, Mission, Pricing, Problem } from "@/components/landing/marketing";
 import { Nav } from "@/components/landing/nav";
 import { Organizations } from "@/components/landing/organizations";
 import { StoryRail } from "@/components/landing/story-rail";
@@ -21,13 +21,13 @@ export default function Landing() {
       <StoryRail />
       <main className="story scroll-smooth">
         <Hero />
-        <ClubStrip />
-        <Builders />
         <Problem />
         <How />
         <CopilotSection />
         <Audiences />
+        <AiEra />
         <Features />
+        <Pricing />
         <Mission />
         <Organizations />
         <FaqSection />

@@ -5,9 +5,9 @@ import { useState } from "react";
 import { cn } from "@/lib/forge";
 
 const STEPS = [
-  { title: "Your club runs on Forge", body: "Posts, roles, approvals, moderation, events and invite links: one place instead of a Discord, a Google Form and a group chat." },
-  { title: "Members show the work", body: "Projects with photos, video and write-ups. The club vouches for milestones it saw happen, so profiles carry proof." },
-  { title: "The right people find it", body: "Verified companies follow builders, host events next to club ones, and reach out through a respectful inbox." },
+  { title: "Your organization runs on Forge", body: "Members, events, chat, announcements and roles in one place, instead of a group chat, a Google Form and a spreadsheet. Ember does the busywork." },
+  { title: "Members prove the work", body: "Projects with photos, video and write-ups. Officers verify the milestones they saw happen, so every profile carries proof." },
+  { title: "The right people find it", body: "Companies, universities and alumni find people by verified work, sponsor the organizations behind it, and reach out through a respectful inbox." },
 ];
 
 // Three steps on the left, a live mock of the app for the active step on the right.

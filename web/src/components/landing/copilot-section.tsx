@@ -22,6 +22,15 @@ type Scenario = {
 
 const SCENARIOS: Scenario[] = [
   {
+    id: "meeting",
+    tab: "Plan our next meeting",
+    icon: CalendarPlus,
+    ask: "Set up our general body meeting next Thursday and remind everyone.",
+    tools: ["Reading your organization", "Checking the events calendar"],
+    answer: "Thursday at 6 is open and doesn't clash with anything your members RSVP'd to. Here's the event, with a reminder to the chapter.",
+    card: { title: "Host: General body meeting", lines: ["Thu 6:00 PM · Engineering Hall 210", "Announces to the chapter chat"], confirm: "Create event" },
+  },
+  {
     id: "club",
     tab: "Find my club",
     icon: Users,
@@ -29,15 +38,6 @@ const SCENARIOS: Scenario[] = [
     tools: ["Reading your profile", "Searching clubs", "Checking upcoming events"],
     answer: "Rocketry Club fits best: they build flight computers in-house, and their build night is Thursday at 7.",
     card: { title: "Join Rocketry Club", lines: ["42 members · Aerospace", "Next: Build night, Thu 7:00 PM"], confirm: "Join" },
-  },
-  {
-    id: "github",
-    tab: "Import a GitHub repo",
-    icon: GitBranch,
-    ask: "Add github.com/maya/rover-nav to my profile.",
-    tools: ["Reading the GitHub repo", "Reading your profile"],
-    answer: "Rover Nav: autonomous navigation in ROS 2. I wrote the summary from the README and found 2 releases you can add as milestones.",
-    card: { title: "Add project: Rover Nav", lines: ["Robotics & Autonomy · In progress", "2 milestones from releases"], confirm: "Add to profile" },
   },
   {
     id: "meet",
@@ -86,14 +86,14 @@ export function CopilotSection() {
   const s = SCENARIOS[pick];
 
   return (
-    <section id="copilot" data-story="Ember, your AI teammate" className="story-sec relative isolate scroll-mt-24 overflow-hidden py-24 sm:py-32">
+    <section id="copilot" data-story="Ember, the AI agent" className="story-sec relative isolate scroll-mt-24 overflow-hidden py-24 sm:py-32">
       <div className="bg-accent-grad pointer-events-none absolute top-1/3 left-1/2 -z-10 h-[420px] w-[720px] -translate-x-1/2 rounded-full opacity-[0.12] blur-3xl" aria-hidden="true" />
       <div className="mx-auto max-w-7xl px-6">
         <div className="mx-auto max-w-3xl text-center">
           <div className="flex justify-center"><Ember size={72} mood="happy" /></div>
-          <Eyebrow className="mt-4">Ember · Forge Copilot</Eyebrow>
-          <h2 className={`mt-5 ${H2}`}>An AI teammate that <span className="text-grad">gets things done.</span></h2>
-          <p className="m-hide mt-5 text-lg leading-relaxed text-muted">Ember works inside Forge. Ask it to find your club, meet the right person, add your project or run your club&apos;s week. It checks real data first, then does the work as a card you approve. It never invents results.</p>
+          <Eyebrow className="mt-4">Ember · the AI agent inside Forge</Eyebrow>
+          <h2 className={`mt-5 ${H2}`}>An AI agent that runs <span className="text-grad">the busywork.</span></h2>
+          <p className="m-hide mt-5 text-lg leading-relaxed text-muted">Ember works inside Forge for officers and members. Ask it to plan the next meeting, draft the week&apos;s update, find the right person or add your project. It checks real data first, then does the work as a card you approve. It never invents results.</p>
           <ul className="mt-8 flex flex-wrap justify-center gap-2" aria-label="What Ember can do">
             {CAN.map((c) => <li key={c.label} className="glass-card inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm text-text-2"><c.icon className="size-4 text-text" /> {c.label}</li>)}
           </ul>

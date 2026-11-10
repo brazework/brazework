@@ -9,16 +9,16 @@ const mono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 export const metadata: Metadata = {
   metadataBase: new URL(env.siteUrl),
-  title: { default: "Forge: where STEM clubs build, prove it and get hired", template: "%s · Forge" },
+  title: { default: "Forge: verified work, not résumés", template: "%s · Forge" },
   description:
-    "Forge is home base for university STEM clubs. Talk, plan and build together, and every result your club verifies becomes proof that gets you hired. Ember, your AI teammate, handles the busywork.",
+    "Forge is the network for STEM organizations and the people who hire from them. Organizations run on it, members prove what they've built, and Ember, the AI agent built in, does the busywork.",
   applicationName: "Forge",
   // Installed from Safari's Share menu: full screen; the status bar takes the theme-color (ThemeChrome).
   appleWebApp: { capable: true, title: "Forge", statusBarStyle: "default" },
   icons: { apple: [{ url: "/app-icon/180", sizes: "180x180" }] },
   openGraph: {
-    title: "Forge: where STEM clubs build, prove it and get hired",
-    description: "Your club's home base. Your verified work. Proof that beats a résumé.",
+    title: "Forge: verified work, not résumés",
+    description: "The network for STEM organizations and the people who hire from them. Verified work, not résumés, and an AI agent that does the busywork.",
     type: "website",
   },
 };
