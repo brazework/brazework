@@ -15,7 +15,8 @@ export default function RequestSchoolPage({ searchParams }: PageProps<"/request-
         <h1 className="mt-10 text-2xl font-semibold tracking-tight">Request your school</h1>
         <p className="mt-2 text-sm leading-relaxed text-muted">Students sign up with their school email, so clubs and companies know they&apos;re real. If your school&apos;s email isn&apos;t recognized yet, tell us and we&apos;ll add it.</p>
         <div className="mt-8">
-          <Suspense fallback={<RequestSchoolForm domain="" />}>
+          {/* No empty form while the email's domain is read from the link: it would flash, then refill. */}
+          <Suspense fallback={<div className="h-72 shimmer rounded-3xl" aria-busy="true" />}>
             <WithDomain searchParams={searchParams} />
           </Suspense>
         </div>

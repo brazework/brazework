@@ -27,5 +27,10 @@ async function go(page, path) {
   await page.goto(BASE + path, { waitUntil: "networkidle" });
   await page.waitForFunction(() => { const el = document.querySelector("main input, main textarea, main button"); return !el || Object.keys(el).some((k) => k.startsWith("__reactProps")); }, null, { timeout: 15000 }).catch(() => {});
 }
+// Wait until React is attached to this element (streamed parts of a page hydrate after the rest).
+async function hydrated(locator) {
+  await locator.waitFor();
+  await locator.evaluate((el) => new Promise((ok) => { const t = setInterval(() => { if (Object.keys(el).some((k) => k.startsWith("__reactProps"))) { clearInterval(t); ok(); } }, 50); }));
+}
 function summary() { const f = results.filter((r) => r[0] === "FAIL"); console.log(`\n${results.length - f.length}/${results.length} passed`); for (const r of f) console.log("  FAIL", r[1], "→", (r[3] || "").slice(0, 200)); }
-module.exports = { BASE, step, browser, as, go, closeTour, summary, results };
+module.exports = { BASE, step, browser, as, go, closeTour, hydrated, summary, results };

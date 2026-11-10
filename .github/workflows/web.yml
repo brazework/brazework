@@ -81,6 +81,7 @@ jobs:
         with:
           name: e2e-results
           path: web/e2e/.results/
+          include-hidden-files: true
           retention-days: 7
 
   security:

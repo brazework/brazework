@@ -1,4 +1,4 @@
-const { BASE, step, browser, as, go, summary } = require("./lib.cjs");
+const { BASE, step, browser, as, go, hydrated, summary } = require("./lib.cjs");
 const BEN = process.env.BEN_ID, JOSH = process.env.JOSH_ID; // set by run.sh
 // A sent message shows at once; reload until the server has it, so the other person can see it.
 async function saved(page, path, text) {
@@ -78,6 +78,7 @@ async function saved(page, path, text) {
     await josh.locator("#compose-project").waitFor({ timeout: 15000 });
     const picked = await josh.locator("#compose-project option:checked").textContent();
     if (picked !== title) throw new Error(`"Which project?" should default to the latest project, got ${picked}`);
+    await hydrated(josh.getByRole("button", { name: /^Post$/ }).first()); // the composer streams in after the page
     await josh.locator("#compose-club").selectOption({ label: "Rocketry Club" });
     await josh.locator("textarea").first().fill(`Tunnel test section is sealed ${stamp}`);
     await josh.getByRole("button", { name: /^Post$/ }).first().click();
