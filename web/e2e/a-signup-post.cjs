@@ -36,6 +36,13 @@ const { BASE, step, browser, as, go, closeTour, summary } = require("./lib.cjs")
     await page.locator("article").first().waitFor({ timeout: 10000 });
   }, page);
   const body = `Hello Forge! Thanks @Ben Cho for the static fire writeup ${Date.now() % 1000}`;
+  await step("Home shows the first-five-minutes checklist, starting with your club", async () => {
+    const list = page.getByRole("region", { name: "Get started" });
+    await list.waitFor({ timeout: 15000 });
+    const current = list.locator('[aria-current="step"]');
+    if (!(await current.innerText()).includes("Join your club")) throw new Error("step 1 should be Join your club, got: " + (await current.innerText()));
+    if (!(await list.innerText()).includes("0 of 5 done")) throw new Error("progress should start at 0 of 5");
+  }, page);
   await step("post with an @mention (autocomplete picks Ben)", async () => {
     const box = page.locator("#create-box");
     await box.click(); await box.pressSequentially("Hello Forge! Thanks @Be", { delay: 25 });

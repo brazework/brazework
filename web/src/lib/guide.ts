@@ -17,7 +17,9 @@ export type GuideStep = {
   ask?: string;
 };
 export type ClubGuide = { id: string; name: string; steps: GuideStep[] };
-export type Guide = { member: GuideStep[]; clubs: ClubGuide[] };
+// `loop`: the first five minutes, in the order of Forge's loop (club → project → update →
+// verification → proof). Home shows it until every step is done.
+export type Guide = { member: GuideStep[]; clubs: ClubGuide[]; loop: GuideStep[] };
 
 type Club = { id: string; name: string; about: string; rules: string; member_count: number };
 
@@ -27,11 +29,12 @@ export async function loadGuide(): Promise<Guide | null> {
   const f = await dbFeatures();
   const p = profile as typeof profile & { avatar_path?: string | null };
 
-  const [memberships, projects, posts, milestones] = await Promise.all([
+  const [memberships, projects, posts, milestones, projectPosts] = await Promise.all([
     supabase.from("community_members").select("role, communities(id, name, about, rules, member_count)").eq("uid", user.id).limit(50),
     supabase.from("projects").select("id", { count: "exact", head: true }).eq("owner_id", user.id),
     supabase.from("posts").select("id", { count: "exact", head: true }).eq("author_id", user.id),
     f.milestones ? supabase.from("milestones").select("status").eq("owner_id", user.id).limit(200) : Promise.resolve({ data: [] as { status: string }[] }),
+    supabase.from("posts").select("id", { count: "exact", head: true }).eq("author_id", user.id).not("project_id", "is", null),
   ]);
   const rows = (memberships.data ?? []) as unknown as { role: string; communities: Club | Club[] | null }[];
   const mine = rows.flatMap((r) => (Array.isArray(r.communities) ? r.communities : r.communities ? [r.communities] : []).map((c) => ({ ...c, role: r.role })));
@@ -47,6 +50,17 @@ export async function loadGuide(): Promise<Guide | null> {
     ...(f.milestones ? [
       { id: "ask-verify", label: "Ask your club to verify a milestone", done: ms.length > 0, href: "/profile#projects", why: "A club-verified milestone is proof no résumé can fake.", ask: "Which of my project milestones would make a strong verified milestone, and how should I describe it?" },
       { id: "verified", label: "Get your first verified milestone", done: ms.some((m) => m.status === "verified"), href: "/profile#projects", why: "It shows on your profile with your club's name on it." },
+    ] : []),
+  ];
+
+  const verified = ms.filter((m) => m.status === "verified").length;
+  const loop: GuideStep[] = [
+    { id: "club", label: "Join your club", done: mine.length > 0, href: "/communities?tab=discover", why: "Your club is who vouches for your work. Not here yet? Create it, or invite your officer." },
+    { id: "project", label: "Add what you're building", done: (projects.count ?? 0) > 0, href: "/profile#projects", why: "A project with photos and specs. No repo needed; Ember can import one from GitHub.", ask: "Help me turn something I've built into a project on my profile." },
+    { id: "update", label: "Post an update about it", done: (projectPosts.count ?? 0) > 0, href: "/feed#composer", why: "Pick the project in the composer and share it with your club." },
+    ...(f.milestones ? [
+      { id: "ask-verify", label: "Ask your club to verify a milestone", done: ms.length > 0, href: "/profile#projects", why: "Add evidence (a photo, video, commit or the event) and your officers review it." },
+      { id: "verified", label: "Get your first verified milestone", done: verified > 0, href: "/profile#projects", why: "It shows on your profile with your club's name on it: proof no résumé can fake." },
     ] : []),
   ];
 
@@ -71,5 +85,5 @@ export async function loadGuide(): Promise<Guide | null> {
     return { id: c.id, name: c.name, steps };
   }));
 
-  return { member, clubs };
+  return { member, clubs, loop };
 }
