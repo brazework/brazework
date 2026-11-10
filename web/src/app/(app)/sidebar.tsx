@@ -33,7 +33,6 @@ const MORE: { href: string; label: string; icon: typeof Home; badge?: BadgeKey }
   { href: "/saved", label: "Saved", icon: Bookmark },
   { href: "/network", label: "Connections", icon: Network, badge: "invites" },
   { href: "/dashboard", label: "Analytics", icon: LayoutDashboard },
-  { href: "/copilot", label: "Ember", icon: Sparkles },
   { href: "/settings", label: "Settings", icon: Settings },
 ];
 
@@ -65,7 +64,7 @@ export function SidebarSkeleton() {
 // Remembered in a cookie (not localStorage) so the server draws it at the right width: no jump on load.
 export const SIDEBAR_COOKIE = "forge-sidebar";
 
-export function Sidebar({ first, last, userId, badges, avatar, initialCollapsed = false }: { first: string; last: string; userId: string; badges: Badges; avatar?: string | null; initialCollapsed?: boolean }) {
+export function Sidebar({ first, last, userId, badges, avatar, initialCollapsed = false, clubs = [] }: { first: string; last: string; userId: string; badges: Badges; avatar?: string | null; clubs?: { id: string; name: string }[]; initialCollapsed?: boolean }) {
   const path = usePathname();
   const onProfile = path.startsWith("/profile") || path === `/u/${userId}`;
   const [collapsed, setCollapsed] = useState(initialCollapsed);
@@ -100,7 +99,18 @@ export function Sidebar({ first, last, userId, badges, avatar, initialCollapsed 
           </button>
         </div>
       </div>
-      <nav data-tour="menu" aria-label="Main" className={cn("flex min-h-0 flex-col gap-0.5 overflow-y-auto", collapsed ? "mt-5" : "mt-8")}>
+      {/* The two things you do most: post what you're building, and ask Ember (⌘K from anywhere). */}
+      <div className={cn("mt-6 flex gap-1.5", collapsed ? "flex-col items-center" : "px-1")}>
+        <Link href="/feed#composer" onClick={(e) => { if (path === "/feed") { e.preventDefault(); window.dispatchEvent(new Event("forge:compose")); } }} title={collapsed ? "New post" : undefined} aria-label="New post"
+          className={cn("bg-accent-grad inline-flex h-10 items-center justify-center gap-2 rounded-2xl text-sm font-semibold text-on-accent shadow-[0_8px_20px_-10px_rgb(0_0_0/0.5)] transition hover:opacity-90", collapsed ? "w-10" : "flex-1")}>
+          <PenLine className="size-4" />{!collapsed && "New post"}
+        </Link>
+        <button type="button" onClick={() => window.dispatchEvent(new Event("forge:palette"))} title="Ask Ember (⌘K)" aria-label="Ask Ember, or jump anywhere (Command K)"
+          className={cn("inline-flex h-10 items-center justify-center gap-1.5 rounded-2xl border border-line bg-surface/60 text-sm text-text-2 transition hover:bg-hover", collapsed ? "w-10" : "px-3")}>
+          <Sparkles className="size-4 text-accent" />{!collapsed && <kbd className="font-mono text-[10px] text-faint">⌘K</kbd>}
+        </button>
+      </div>
+      <nav data-tour="menu" aria-label="Main" className={cn("flex min-h-0 flex-col gap-0.5 overflow-y-auto", collapsed ? "mt-4" : "mt-5")}>
         {NAV.map((n) => {
           const active = isActive(path, n.match);
           const count = n.badge ? badges[n.badge] : 0;
@@ -122,6 +132,22 @@ export function Sidebar({ first, last, userId, badges, avatar, initialCollapsed 
           );
         })}
       </nav>
+      {/* Your clubs, one click away. */}
+      {clubs.length > 0 && (
+        <div aria-label="Your clubs" role="group" className={cn("mt-5 flex flex-col gap-0.5 border-t border-line pt-4", collapsed && "items-center")}>
+          {!collapsed && <div className="px-3 pb-1 text-[11px] font-medium tracking-wide text-faint uppercase">Your clubs</div>}
+          {clubs.map((c) => {
+            const active = path.startsWith(`/c/${c.id}`);
+            return (
+              <Link key={c.id} href={`/c/${c.id}`} title={collapsed ? c.name : undefined} aria-current={active ? "page" : undefined}
+                className={cn("flex items-center gap-2.5 rounded-xl py-1.5 text-[13px] transition", collapsed ? "justify-center px-2" : "px-3", active ? "bg-hover font-medium text-text" : "text-text-2 hover:bg-hover hover:text-text")}>
+                <span className="bg-accent-grad grid size-5 shrink-0 place-items-center rounded-md text-[10px] font-bold text-on-accent">{c.name.slice(0, 1).toUpperCase()}</span>
+                {!collapsed && <span className="truncate">{c.name}</span>}
+              </Link>
+            );
+          })}
+        </div>
+      )}
       {/* Secondary: smaller, under the five places. Ember first: help where you are, not a destination. */}
       <div aria-label="More" role="group" className={cn("mt-5 flex flex-col gap-0.5 border-t border-line pt-4", collapsed && "items-center")}>
         {!collapsed && <div className="px-3 pb-1 text-[11px] font-medium tracking-wide text-faint uppercase">More</div>}

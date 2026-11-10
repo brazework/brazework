@@ -8,6 +8,7 @@ import { TourMount } from "@/components/tour/tour-mount";
 import { PresenceMount } from "@/components/presence/presence";
 import { avatarSrc } from "@/lib/media";
 import { getViewer } from "@/lib/supabase/server";
+import { CommandPalette } from "@/components/palette/command-palette";
 import { dbFeatures } from "@/lib/db-features";
 import { MobileBar, SIDEBAR_COOKIE, Sidebar, SidebarSkeleton, type Badges } from "./sidebar";
 
@@ -37,12 +38,16 @@ async function SignedInShell() {
 
   // What's waiting for you, shown as badges across the app (supabase/activity.sql, messages.sql).
   const groupChats = (await dbFeatures()).groupChats;
-  const [n, m, i, g] = await Promise.all([
+  const [n, m, i, g, cl] = await Promise.all([
     supabase.rpc("unread_notifications"),
     supabase.rpc("unread_conversations"),
     supabase.from("connections").select("*", { count: "exact", head: true }).eq("to_id", user.id).eq("status", "pending"),
     groupChats ? supabase.rpc("unread_chats") : Promise.resolve({ data: 0 }),
+    // Your clubs, as shortcuts in the sidebar.
+    supabase.from("community_members").select("communities(id, name)").eq("uid", user.id).order("joined_at", { ascending: false }).limit(5),
   ]);
+  type ClubRef = { id: string; name: string };
+  const myClubs = ((cl.data ?? []) as unknown as { communities: ClubRef | ClubRef[] | null }[]).flatMap((r) => (Array.isArray(r.communities) ? r.communities : r.communities ? [r.communities] : []));
   const badges: Badges = { notifications: Number(n.data) || 0, messages: (Number(m.data) || 0) + (Number(g.data) || 0), invites: i.count ?? 0 };
   const collapsed = (await cookies()).get(SIDEBAR_COOKIE)?.value === "collapsed";
 
@@ -52,7 +57,8 @@ async function SignedInShell() {
       <LiveRefresh tables={["notifications", "conversations", "connections", "chats"]} delay={800} />
       {/* Online status: who has Forge open right now. */}
       <PresenceMount userId={user.id} />
-      <Sidebar first={profile.first_name} last={profile.last_name} userId={user.id} badges={badges} avatar={avatarSrc(profile)} initialCollapsed={collapsed} />
+      <Sidebar first={profile.first_name} last={profile.last_name} userId={user.id} badges={badges} avatar={avatarSrc(profile)} initialCollapsed={collapsed} clubs={myClubs} />
+      <CommandPalette />
       <MobileBar first={profile.first_name} last={profile.last_name} badges={badges} avatar={avatarSrc(profile)} />
       <ThemeChrome />
       <TourMount />
