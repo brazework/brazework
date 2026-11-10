@@ -310,6 +310,14 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity
     conic-gradient(from var(--ai-angle), var(--accent), color-mix(in oklab, var(--accent) 10%, transparent) 25%, var(--border-strong) 50%, color-mix(in oklab, var(--accent) 10%, transparent) 75%, var(--accent)) border-box;
   animation: ai-sweep 8s linear infinite;
 }
+/* An AI action chip (Polish with Ember): the same Ember gradient as .ai-border, as a still hairline. */
+.ai-chip {
+  border: 1px solid transparent;
+  background:
+    linear-gradient(var(--surface), var(--surface)) padding-box,
+    linear-gradient(120deg, var(--ember-a), var(--ember-b), var(--ember-c)) border-box;
+}
+.ai-chip:hover { background: linear-gradient(var(--hover), var(--hover)) padding-box, linear-gradient(120deg, var(--ember-a), var(--ember-b), var(--ember-c)) border-box; }
 @keyframes ai-drift { 50% { transform: translate(-24px, 18px) scale(1.08); } }
 @keyframes ai-drift-2 { 50% { transform: translate(28px, -14px) scale(0.94); } }
 .ai-aurora { opacity: 0.16; animation: ai-drift 14s ease-in-out infinite; }

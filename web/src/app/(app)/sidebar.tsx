@@ -9,7 +9,7 @@ import { UpdatesButton } from "@/components/tour/tour-mount";
 import { Avatar, Logo } from "@/components/ui";
 import { MyStatus, WithPresence } from "@/components/presence/presence";
 import { cn } from "@/lib/forge";
-import { NavTile } from "@/components/app/nav-tile";
+import { NavTile, TILE } from "@/components/app/nav-tile";
 import { Ember } from "@/components/ember/ember";
 import { foldMotion, useFold } from "@/components/app/rail-card";
 
@@ -40,6 +40,12 @@ const MORE: { href: string; label: string; icon: typeof Home; badge?: BadgeKey }
 ];
 
 const isActive = (path: string, match: string[]) => match.some((m) => path.startsWith(m));
+
+// One row, one tile, one group card for every part of the sidebar, so the icons line up and match.
+const ROW = "group relative flex items-center gap-3 rounded-2xl py-1 text-sm transition";
+const GROUP = "rounded-2xl border border-line bg-surface/40 p-1.5 shadow-[inset_0_1px_0_rgb(255_255_255/0.04)]";
+const GROUP_LABEL = "px-2 py-1.5 text-[11px] font-medium tracking-[0.12em] text-faint uppercase";
+const TOP_BTN = cn(TILE, "nav-tile text-text-2 hover:-translate-y-px hover:bg-transparent hover:text-text");
 
 function Count({ n, className }: { n: number; className?: string }) {
   if (!n) return null;
@@ -88,7 +94,7 @@ export function Sidebar({ first, last, userId, badges, avatar, initialCollapsed 
       <div className={cn("flex items-center gap-1", collapsed ? "flex-col" : "justify-between pr-1 pl-2")}>
         <Link href="/feed" aria-label="Forge feed" className={cn(collapsed && "mb-2")}><Logo withWord={!collapsed} /></Link>
         <div className={cn("flex items-center gap-1", collapsed && "flex-col")}>
-          <ThemeToggle />
+          <ThemeToggle className={TOP_BTN} />
           <button
             type="button"
             data-tour="sidebar-toggle"
@@ -96,9 +102,9 @@ export function Sidebar({ first, last, userId, badges, avatar, initialCollapsed 
             aria-expanded={!collapsed}
             aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
             title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-            className="grid size-9 place-items-center rounded-full text-faint transition hover:bg-hover hover:text-text"
+            className={TOP_BTN}
           >
-            {collapsed ? <PanelLeftOpen className="size-[18px]" /> : <PanelLeftClose className="size-[18px]" />}
+            {collapsed ? <PanelLeftOpen className="size-4" /> : <PanelLeftClose className="size-4" />}
           </button>
         </div>
       </div>
@@ -110,7 +116,7 @@ export function Sidebar({ first, last, userId, badges, avatar, initialCollapsed 
         </Link>
         {/* Ember, the orb: ask anything or jump anywhere (also ⌘K from any page). */}
         <button type="button" onClick={() => window.dispatchEvent(new Event("forge:palette"))} title="Ask Ember (⌘K)" aria-label="Ask Ember, or jump anywhere (Command K)"
-          className="group grid size-10 shrink-0 place-items-center rounded-2xl border border-line bg-surface/60 transition hover:-translate-y-px hover:bg-hover">
+          className="nav-tile group grid size-10 shrink-0 place-items-center rounded-2xl transition hover:-translate-y-px">
           {/* The orb takes the theme's Ember colours (globals.css --ember-*), like Ember everywhere else. */}
           <span className="transition duration-300 group-hover:scale-110"><Ember size={28} /></span>
         </button>
@@ -127,7 +133,7 @@ export function Sidebar({ first, last, userId, badges, avatar, initialCollapsed 
               aria-current={active ? "page" : undefined}
               aria-label={count ? `${n.label}, ${count} new` : collapsed ? n.label : undefined}
               title={collapsed ? n.label : undefined}
-              className={cn("group relative flex items-center gap-3 rounded-2xl py-1.5 text-sm transition", collapsed ? "justify-center px-0" : "px-2", active ? "font-medium text-text" : "text-text-2 hover:bg-hover/60 hover:text-text")}
+              className={cn(ROW, collapsed ? "justify-center px-0" : "px-2", active ? "font-medium text-text" : "text-text-2 hover:bg-hover/60 hover:text-text")}
             >
               {active && <motion.span layoutId="nav-active" className="nav-pill absolute inset-0 rounded-2xl" transition={{ type: "spring", stiffness: 400, damping: 34 }} />}
               <NavTile icon={n.icon} active={active} ember={n.href === "/copilot"} />
@@ -141,15 +147,16 @@ export function Sidebar({ first, last, userId, badges, avatar, initialCollapsed 
       <div className="no-scrollbar -mx-1 min-h-0 flex-1 overflow-y-auto px-1 pb-2">
       {/* Your clubs, one click away. */}
       {clubs.length > 0 && (
-        <div aria-label="Your clubs" role="group" className={cn("mt-5 flex flex-col gap-0.5 border-t border-line pt-4", collapsed && "items-center")}>
-          {!collapsed && <div className="px-3 pb-1 text-[11px] font-medium tracking-wide text-faint uppercase">Your clubs</div>}
+        <div aria-label="Your clubs" role="group" className={cn("mt-5 flex flex-col gap-0.5", collapsed ? "items-center border-t border-line pt-4" : GROUP)}>
+          {!collapsed && <div className={GROUP_LABEL}>Your clubs</div>}
           {clubs.map((c) => {
             const active = path.startsWith(`/c/${c.id}`);
             return (
               <Link key={c.id} href={`/c/${c.id}`} title={collapsed ? c.name : undefined} aria-current={active ? "page" : undefined}
-                className={cn("flex items-center gap-2.5 rounded-xl py-1.5 text-[13px] transition", collapsed ? "justify-center px-2" : "px-3", active ? "bg-hover font-medium text-text" : "text-text-2 hover:bg-hover hover:text-text")}>
-                <span className="bg-accent-grad grid size-5 shrink-0 place-items-center rounded-md text-[10px] font-bold text-on-accent">{c.name.slice(0, 1).toUpperCase()}</span>
-                {!collapsed && <span className="truncate">{c.name}</span>}
+                className={cn(ROW, collapsed ? "justify-center px-0" : "px-1.5", active ? "font-medium text-text" : "text-text-2 hover:bg-hover/70 hover:text-text")}>
+                {active && <motion.span layoutId="club-active" className="nav-pill absolute inset-0 rounded-2xl" transition={{ type: "spring", stiffness: 400, damping: 34 }} />}
+                <NavTile letter={c.name} active={active} />
+                {!collapsed && <span className="relative truncate">{c.name}</span>}
               </Link>
             );
           })}
@@ -332,11 +339,9 @@ function MoreGroup({ collapsed, path, badges }: { collapsed: boolean; path: stri
     return (
       <Link key={n.href} href={n.href} data-tour={n.href === "/notifications" ? "bell" : undefined} aria-current={active ? "page" : undefined}
         aria-label={count ? `${n.label}, ${count} new` : collapsed ? n.label : undefined} title={collapsed ? n.label : undefined}
-        className={cn("group relative flex items-center gap-2.5 rounded-xl py-1 text-[13px] transition", collapsed ? "justify-center px-0" : "px-1.5", active ? "font-medium text-text" : "text-text-2 hover:bg-hover/70 hover:text-text")}>
-        {active && <motion.span layoutId="more-active" className="nav-pill absolute inset-0 rounded-xl" transition={{ type: "spring", stiffness: 400, damping: 34 }} />}
-        <span className={cn("relative grid size-7 shrink-0 place-items-center rounded-lg transition duration-200 group-hover:-translate-y-px", active ? "nav-tile-on" : "nav-tile text-text-2 group-hover:text-text")}>
-          <n.icon className="size-[15px]" />
-        </span>
+        className={cn(ROW, collapsed ? "justify-center px-0" : "px-1.5", active ? "font-medium text-text" : "text-text-2 hover:bg-hover/70 hover:text-text")}>
+        {active && <motion.span layoutId="more-active" className="nav-pill absolute inset-0 rounded-2xl" transition={{ type: "spring", stiffness: 400, damping: 34 }} />}
+        <NavTile icon={n.icon} active={active} />
         {!collapsed && <span className="relative truncate">{n.label}</span>}
         <Count n={count} className={collapsed ? "absolute -top-0.5 right-0.5" : "relative ml-auto"} />
       </Link>
@@ -344,9 +349,9 @@ function MoreGroup({ collapsed, path, badges }: { collapsed: boolean; path: stri
   });
   if (collapsed) return <div aria-label="More" role="group" className="mt-4 flex flex-col items-center gap-1 border-t border-line pt-4">{items}</div>;
   return (
-    <section aria-label="More" className="mt-5 rounded-2xl border border-line bg-surface/40 p-1.5 shadow-[inset_0_1px_0_rgb(255_255_255/0.04)]">
-      <button type="button" onClick={() => setFolded(!folded)} aria-expanded={!folded} className="group flex w-full items-center gap-2 rounded-xl px-2 py-1.5 text-left">
-        <span className="text-[11px] font-medium tracking-[0.12em] text-faint uppercase">More</span>
+    <section aria-label="More" className={cn("mt-3", GROUP)}>
+      <button type="button" onClick={() => setFolded(!folded)} aria-expanded={!folded} className="group flex w-full items-center gap-2 rounded-xl text-left">
+        <span className={GROUP_LABEL}>More</span>
         {folded && waiting > 0 && <span className="rounded-full bg-accent px-1.5 text-[10px] font-semibold text-on-accent tabular-nums">{waiting}</span>}
         <ChevronDown className={cn("ml-auto size-3.5 text-faint transition group-hover:text-text", !folded && "rotate-180")} />
       </button>

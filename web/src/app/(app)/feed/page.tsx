@@ -1,8 +1,10 @@
 import type { Metadata } from "next";
+import { ChevronDown, Hash } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { EmptyState } from "@/components/app/page-ui";
+import { menuCls } from "@/components/ui";
 import { cn, requestTime, type Post } from "@/lib/forge";
 import { rankForYou, scoreProof } from "@/lib/feed-rank";
 import { projectsForPosts } from "@/lib/project-posts";
@@ -213,22 +215,40 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
             <Link key={x.id} href={href({ sort: x.id })} aria-current={sort === x.id ? "true" : undefined} className={cn("rounded-full px-2.5 py-0.5 text-xs whitespace-nowrap transition", sort === x.id ? "bg-text text-surface" : "text-muted hover:text-text")}>{x.label}</Link>
           ))}
         </span>} hero={<div id="composer" data-tour="composer" className="scroll-mt-24"><StartChecklist steps={guide?.loop ?? []} /><Composer first={profile.first_name} last={profile.last_name} interests={interests} userId={user.id} mediaEnabled={mediaEnabled} captionsEnabled={captionsEnabled} avatarSrc={avatarSrc(profile)} copilot={copilotOn} mentionsEnabled={mentionsEnabled} club={ledClub} next={nextStep && (guide?.loop ?? []).every((x) => x.done) ? { label: nextStep.label, href: nextStep.href } : null} projects={(myProjects ?? []) as { id: string; title: string }[]} clubs={composeClubs} initialProject={typeof sp.project === "string" ? sp.project : undefined} /></div>} />
-      {/* What kind of post, then your topics: one row, so filtering is one tap from anywhere in the feed. */}
-      <nav data-tour="interests" aria-label="Filter the feed" className="no-scrollbar -mx-1 mt-4 flex items-center gap-1.5 overflow-x-auto px-1 pb-1">
-        {KINDS.map((k) => (
-          <Link key={k.id || "all"} href={href({ kind: k.id })} aria-current={kind === k.id ? "true" : undefined} className={cn("shrink-0 rounded-full border px-3 py-1 text-xs font-medium whitespace-nowrap transition active:scale-95", kind === k.id ? "border-text bg-text text-surface" : "border-line bg-surface text-text-2 hover:border-line-strong hover:text-text")}>
-            {k.label}
-          </Link>
-        ))}
-        {interests.length > 0 && <span aria-hidden className="mx-1 h-4 w-px shrink-0 bg-line" />}
-        {interests.map((t) => (
-          <Link key={t} href={href({ tag: tag === t ? "" : t })} aria-current={tag === t ? "true" : undefined} className={cn("shrink-0 rounded-full border px-3 py-1 text-xs whitespace-nowrap transition active:scale-95", tag === t ? "bg-accent-grad border-transparent text-on-accent shadow-[0_6px_18px_-8px_var(--accent)]" : "border-line bg-surface text-muted hover:border-line-strong hover:text-text")}>
-            #{t}
-          </Link>
-        ))}
-        {interests.length > 0 && <Link href="/settings#profile" className="shrink-0 rounded-full px-2 py-1 text-xs text-faint hover:text-text">Edit</Link>}
+      {/* What kind of post (a quiet segmented control), and your topics in one chip: one calm row. */}
+      <nav data-tour="interests" aria-label="Filter the feed" className="mt-4 flex items-center gap-2">
+        <div className="no-scrollbar flex min-w-0 items-center gap-0.5 overflow-x-auto rounded-full bg-surface-2/80 p-1">
+          {KINDS.map((k) => (
+            <Link key={k.id || "all"} href={href({ kind: k.id })} aria-current={kind === k.id ? "true" : undefined}
+              className={cn("shrink-0 rounded-full px-3 py-1 text-xs font-medium whitespace-nowrap transition active:scale-95", kind === k.id ? "bg-surface text-text shadow-[0_1px_2px_rgb(0_0_0/0.08),0_0_0_1px_var(--border)]" : "text-muted hover:text-text")}>
+              {k.label}
+            </Link>
+          ))}
+        </div>
+        {interests.length > 0 && (
+          <details className="group relative shrink-0">
+            <summary className={cn("flex h-8 cursor-pointer list-none items-center gap-1.5 rounded-full border px-3 text-xs font-medium transition [&::-webkit-details-marker]:hidden", tag ? "bg-accent-grad border-transparent text-on-accent" : "border-line bg-surface text-text-2 hover:border-line-strong hover:text-text")}>
+              <Hash className="size-3.5" />{tag || "Topics"}
+              <ChevronDown className="size-3 transition group-open:rotate-180" />
+            </summary>
+            <div className={cn(menuCls, "absolute top-full right-0 z-30 mt-1.5 w-64 p-2")}>
+              <div className="flex flex-wrap gap-1.5">
+                {interests.map((t) => (
+                  <Link key={t} href={href({ tag: tag === t ? "" : t })} aria-current={tag === t ? "true" : undefined}
+                    className={cn("rounded-full border px-2.5 py-1 text-xs transition", tag === t ? "bg-accent-grad border-transparent text-on-accent" : "border-line text-muted hover:border-line-strong hover:text-text")}>
+                    #{t}
+                  </Link>
+                ))}
+              </div>
+              <div className="mt-2 flex items-center justify-between border-t border-line px-1 pt-2 text-xs">
+                {tag ? <Link href={href({ tag: "" })} className="text-muted hover:text-text">All topics</Link> : <span className="text-faint">Your interests</span>}
+                <Link href="/settings#profile" className="text-muted hover:text-text">Edit</Link>
+              </div>
+            </div>
+          </details>
+        )}
         {/* Phones: sort lives at the end of this row (the tabs row is too narrow there). */}
-        <span className="ml-1 inline-flex shrink-0 items-center gap-0.5 rounded-full border border-line bg-surface p-0.5 sm:hidden" role="group" aria-label="Sort posts">
+        <span className="ml-auto inline-flex shrink-0 items-center gap-0.5 rounded-full border border-line bg-surface p-0.5 sm:hidden" role="group" aria-label="Sort posts">
           {SORTS.filter((x) => x.id !== "best" || tab === "for-you").map((x) => (
             <Link key={x.id} href={href({ sort: x.id })} aria-current={sort === x.id ? "true" : undefined} className={cn("rounded-full px-2.5 py-0.5 text-xs whitespace-nowrap transition", sort === x.id ? "bg-text text-surface" : "text-muted hover:text-text")}>{x.label}</Link>
           ))}

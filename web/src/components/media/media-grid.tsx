@@ -167,6 +167,10 @@ function TestRunPlayer({ v }: { v: MediaItem }) {
   const [flash, setFlash] = useState<{ n: number; play: boolean } | null>(null);
   // Speed and full screen show when *you* paused it, not on a video that just hasn't played yet.
   const [held, setHeld] = useState(false);
+  // The control bar shows while paused, while you hover or drag; a slim line stays while it plays.
+  const [buffered, setBuffered] = useState(0);
+  const [hover, setHover] = useState(false);
+  const [scrubbing, setScrubbing] = useState(false);
   const [full, setFull] = useState(false);
   const portrait = !!(v.w && v.h && v.h > v.w);
   useEffect(() => {
@@ -245,6 +249,8 @@ function TestRunPlayer({ v }: { v: MediaItem }) {
           else if (e.key === "f") toggleFull();
         }}
         aria-label="Video. Tap to play or pause. Keys: space plays or pauses, arrows skip 5 seconds, comma and period step one frame, f for full screen."
+        onMouseEnter={() => setHover(true)}
+        onMouseLeave={() => setHover(false)}
         className={cn("relative overflow-hidden bg-black outline-none", full ? "flex h-dvh w-screen items-center justify-center" : "rounded-2xl border border-line focus-visible:ring-2 focus-visible:ring-accent")}
       >
         <video
@@ -260,6 +266,7 @@ function TestRunPlayer({ v }: { v: MediaItem }) {
           onPlay={() => { setPlaying(true); window.dispatchEvent(new CustomEvent(PLAYING_EVENT, { detail: id.current })); }}
           onPause={() => setPlaying(false)}
           onTimeUpdate={(e) => setT(e.currentTarget.currentTime)}
+          onProgress={(e) => { const b = e.currentTarget.buffered; if (b.length) setBuffered(b.end(b.length - 1)); }}
           onLoadedMetadata={(e) => setDur(e.currentTarget.duration)}
           onDurationChange={(e) => { if (Number.isFinite(e.currentTarget.duration)) setDur(e.currentTarget.duration); }}
           className={full ? "h-full w-full bg-black object-contain" : cn("mx-auto block bg-black", portrait ? "max-h-[70svh] w-auto max-w-full" : "max-h-[560px] w-full")}
@@ -276,35 +283,32 @@ function TestRunPlayer({ v }: { v: MediaItem }) {
           )}
         </AnimatePresence>
         {!playing && !flash && <span className="pointer-events-none absolute top-1/2 left-1/2 grid size-16 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-black shadow-2xl" aria-hidden="true"><Play className="ml-1 size-7 fill-current" /></span>}
+        {/* Captions and sound: always reachable, bottom right (grows left when it asks for a tap). */}
+        <div className="absolute right-3 bottom-3 z-10 flex items-center gap-1.5">
         {ccUrl && (
-          <button type="button" onClick={() => setCcOn((on) => !on)} aria-pressed={ccOn} aria-label={ccOn ? "Hide captions" : "Show captions"} className={cn("absolute bottom-4 left-3 z-10 grid size-8 place-items-center rounded-full backdrop-blur transition active:scale-90", ccOn ? "bg-white text-black" : "bg-black/55 text-white")}>
+          <button type="button" onClick={() => setCcOn((on) => !on)} aria-pressed={ccOn} aria-label={ccOn ? "Hide captions" : "Show captions"} className={cn("grid size-8 place-items-center rounded-full backdrop-blur transition active:scale-90", ccOn ? "bg-white text-black" : "bg-black/55 text-white")}>
             <Captions className="size-4" />
           </button>
         )}
-        {/* Sound: always reachable, small. */}
-        <button type="button" onClick={() => { const on = muted; const x = el(); if (x) { x.muted = !on; if (on && x.paused && !userPaused.current) void x.play(); } setMuted(!on); setBlocked(false); setSoundOn(on); }} aria-label={muted ? "Turn sound on" : "Mute"} className={cn("absolute right-3 bottom-4 z-10 inline-flex h-8 items-center gap-1.5 rounded-full bg-black/55 text-white backdrop-blur transition active:scale-90", blocked && muted ? "px-3 text-xs font-medium" : "w-8 justify-center")}>
-          {muted ? <VolumeX className="size-4" /> : <Volume2 className="size-4" />}{blocked && muted && " Tap for sound"}
+        <button type="button" onClick={() => { const on = muted; const x = el(); if (x) { x.muted = !on; if (on && x.paused && !userPaused.current) void x.play(); } setMuted(!on); setBlocked(false); setSoundOn(on); }} aria-label={muted ? "Turn sound on" : "Mute"} className={cn("inline-flex h-8 items-center gap-1.5 rounded-full bg-black/55 text-white backdrop-blur transition active:scale-90", blocked && muted ? "w-8 justify-center text-xs font-medium sm:w-auto sm:px-3" : "w-8 justify-center")}>
+          {muted ? <VolumeX className="size-4" /> : <Volume2 className="size-4" />}{blocked && muted && <span className="hidden sm:inline">Tap for sound</span>}
         </button>
+        </div>
         {/* Paused: speed and full screen. */}
         <AnimatePresence>
           {!playing && held && (
             <motion.div initial={{ opacity: 0, y: -4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="absolute inset-x-3 top-3 z-10 flex items-center gap-2">
               <button type="button" onClick={nextSpeed} aria-label={`Playback speed ${speed}×`} className={chip}><Gauge className="size-3.5" /> {speed}×{speed < 1 ? " slow-mo" : ""}</button>
               <button type="button" onClick={() => setLooping((l) => !l)} aria-pressed={looping} aria-label={looping ? "Stop looping" : "Loop"} className={cn(chip, looping && "bg-white text-black")}><Repeat className="size-3.5" /> Loop</button>
-              <span className="font-mono text-[11px] text-white/80 tabular-nums">{fmtTime(t)} / {fmtTime(dur)}</span>
               <button type="button" onClick={toggleFull} aria-label={full ? "Exit full screen" : "Full screen"} className={cn(chip, "ml-auto px-2.5")}>{full ? <Minimize className="size-4" /> : <Maximize className="size-4" />}</button>
             </motion.div>
           )}
         </AnimatePresence>
         {full && playing && <button type="button" onClick={toggleFull} aria-label="Close full screen" className="absolute top-4 right-4 z-10 grid size-11 place-items-center rounded-full bg-black/55 text-white backdrop-blur"><X className="size-5" /></button>}
         {speed !== 1 && playing && <span className="pointer-events-none absolute top-3 left-3 rounded-full bg-black/55 px-2.5 py-1 font-mono text-[11px] text-white backdrop-blur">{speed}×</span>}
-        {/* The scrubber, with the poster's markers as ticks. */}
-        <div className="absolute inset-x-0 bottom-0 h-3">
-          <div className="absolute inset-x-0 bottom-0 h-[3px] bg-white/25" />
-          <div className="bg-accent-grad absolute bottom-0 left-0 h-[3px]" style={{ width: dur ? `${(t / dur) * 100}%` : 0 }} />
-          {dur > 0 && marks.map((m) => <span key={`${m.s}${m.t}`} className="absolute bottom-0 h-2 w-1 -translate-x-1/2 rounded-full bg-white" style={{ left: `${(m.s / dur) * 100}%` }} title={`${fmtTime(m.s)} ${m.t}`} />)}
-          <input type="range" min={0} max={dur || 0} step={0.01} value={t} onChange={(e) => seek(Number(e.target.value))} aria-label="Seek" className="absolute inset-0 h-full w-full cursor-pointer opacity-0" />
-        </div>
+        {/* The scrubber: buffered, played, chapter markers, a thumb and a hover time; a slim line while playing. */}
+        <Scrubber t={t} dur={dur} buffered={buffered} marks={marks} visible={!playing || hover || scrubbing}
+          onSeek={seek} onScrub={setScrubbing} reserve={cn(ccUrl ? "pr-24" : "pr-14", blocked && muted && (ccUrl ? "sm:pr-52" : "sm:pr-40"))} />
       </div>
       {marks.length > 0 && (
         <ol className="no-scrollbar mt-3 flex flex-wrap gap-1.5">
@@ -375,5 +379,48 @@ function Lightbox({ images, index, onClose, onIndex, alt }: { images: MediaItem[
         </motion.div>
       )}
     </AnimatePresence>
+  );
+}
+
+// The video's timeline. The real control is a range input on top (keyboard and screen readers seek
+// with it); the track under it draws buffered and played time, chapter markers, a thumb and, on
+// hover, the time you'd jump to.
+function Scrubber({ t, dur, buffered, marks, visible, onSeek, onScrub, reserve }: {
+  t: number; dur: number; buffered: number; marks: { s: number; t: string }[]; visible: boolean;
+  onSeek: (s: number) => void; onScrub: (on: boolean) => void; reserve: string; // room kept clear for the captions/sound buttons
+}) {
+  const [at, setAt] = useState<number | null>(null);
+  const pct = (s: number) => (dur ? `${Math.min(100, (s / dur) * 100)}%` : "0%");
+  return (
+    <>
+      {/* Playing, controls hidden: a slim progress line. */}
+      <div aria-hidden className={cn("pointer-events-none absolute inset-x-0 bottom-0 h-[3px] bg-white/20 transition-opacity duration-200", visible ? "opacity-0" : "opacity-100")}>
+        <div className="bg-accent-grad h-full" style={{ width: pct(t) }} />
+      </div>
+      <div className={cn("absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent px-3 pt-10 pb-3 transition-opacity duration-200", reserve, visible ? "opacity-100" : "pointer-events-none opacity-0")}>
+        <div className="flex items-center gap-3">
+          <span className="shrink-0 font-mono text-[11px] text-white/90 tabular-nums">{fmtTime(t)} <span className="text-white/50">/ {fmtTime(dur)}</span></span>
+          <div className="group/track relative h-5 flex-1"
+            onMouseMove={(e) => { const r = e.currentTarget.getBoundingClientRect(); setAt(Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * dur); }}
+            onMouseLeave={() => setAt(null)}>
+            <div className="absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 overflow-hidden rounded-full bg-white/25 transition-[height] duration-150 group-hover/track:h-1.5">
+              <div className="absolute inset-y-0 left-0 bg-white/35" style={{ width: pct(buffered) }} />
+              <div className="bg-accent-grad absolute inset-y-0 left-0" style={{ width: pct(t) }} />
+            </div>
+            {dur > 0 && marks.map((m) => <span key={`${m.s}${m.t}`} aria-hidden className="absolute top-1/2 h-2.5 w-1 -translate-x-1/2 -translate-y-1/2 rounded-full bg-white shadow" style={{ left: pct(m.s) }} title={`${fmtTime(m.s)} ${m.t}`} />)}
+            <span aria-hidden className="pointer-events-none absolute top-1/2 size-3 -translate-x-1/2 -translate-y-1/2 scale-0 rounded-full bg-white shadow-[0_0_0_3px_rgb(0_0_0/0.25)] transition-transform duration-150 group-hover/track:scale-100" style={{ left: pct(t) }} />
+            {at !== null && dur > 0 && (
+              <span aria-hidden className="pointer-events-none absolute -top-7 -translate-x-1/2 rounded-md bg-black/80 px-1.5 py-0.5 font-mono text-[10px] text-white tabular-nums" style={{ left: pct(at) }}>
+                {fmtTime(at)}{marks.find((m) => Math.abs(m.s - at) < dur / 60) ? ` · ${marks.find((m) => Math.abs(m.s - at) < dur / 60)!.t}` : ""}
+              </span>
+            )}
+            <input type="range" min={0} max={dur || 0} step={0.01} value={t} aria-label="Seek" aria-valuetext={`${fmtTime(t)} of ${fmtTime(dur)}`}
+              onChange={(e) => onSeek(Number(e.target.value))}
+              onPointerDown={() => onScrub(true)} onPointerUp={() => onScrub(false)} onBlur={() => onScrub(false)}
+              className="absolute inset-0 h-full w-full cursor-pointer opacity-0" />
+          </div>
+        </div>
+      </div>
+    </>
   );
 }
