@@ -1,6 +1,6 @@
 "use client";
 import { AnimatePresence, motion } from "motion/react";
-import { BadgeCheck, Building2, CalendarDays, FolderGit2, MessageSquare, PenLine, Search, Settings, Sparkles, UserRound, Users } from "lucide-react";
+import { BadgeCheck, Building2, CalendarDays, FolderGit2, MessageSquare, PenLine, Search, Settings, Sparkles, Trophy, UserRound, Users } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/forge";
@@ -41,6 +41,7 @@ export function CommandPalette() {
       { id: "verify", label: "Ask your club to verify a milestone", icon: BadgeCheck, run: go("/projects") },
       { id: "clubs", label: "Find a club", icon: Users, run: go("/communities?tab=discover") },
       { id: "events", label: "Events", icon: CalendarDays, run: go("/events") },
+      { id: "challenges", label: "Challenges", hint: "Build briefs from companies and schools", icon: Trophy, run: go("/challenges") },
       { id: "talent", label: "Find builders by verified work", hint: "For verified companies and schools", icon: Building2, run: go("/talent") },
       { id: "messages", label: "Messages", icon: MessageSquare, run: go("/messages") },
       { id: "profile", label: "Your profile", icon: UserRound, run: go("/profile") },

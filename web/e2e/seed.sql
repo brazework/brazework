@@ -24,3 +24,5 @@ insert into public.posts (author_id, body, kind, community_id, created_at) selec
 insert into public.organizations (type, name, domain) values ('company', 'Acme Aerospace', 'forge.test');
 insert into public.organization_admins (org_id, uid) select id, (select cara from u) from public.organizations where domain = 'forge.test';
 update public.milestones set private = false where id in ('m1', 'm2');
+-- Maya is a Forge admin (approves sponsorship pilots on /admin).
+insert into public.forge_admins (uid) select maya from u;

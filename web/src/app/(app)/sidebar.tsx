@@ -1,6 +1,6 @@
 "use client";
 import { AnimatePresence, motion } from "motion/react";
-import { Bell, Bookmark, CalendarDays, FolderGit2, Home, LayoutDashboard, LogOut, MessageSquare, Network, PanelLeftClose, PanelLeftOpen, PenLine, Plus, Search, Settings, Sparkles, UserRound, Users, X } from "lucide-react";
+import { Bell, Bookmark, CalendarDays, FolderGit2, Home, LayoutDashboard, LogOut, MessageSquare, Network, PanelLeftClose, PanelLeftOpen, PenLine, Plus, Search, Settings, Sparkles, Trophy, UserRound, Users, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -30,6 +30,7 @@ const NAV: { href: string; label: string; icon: typeof Home; match: string[]; ba
 const MORE: { href: string; label: string; icon: typeof Home; badge?: BadgeKey }[] = [
   { href: "/notifications", label: "Notifications", icon: Bell, badge: "notifications" },
   { href: "/events", label: "Events", icon: CalendarDays },
+  { href: "/challenges", label: "Challenges", icon: Trophy },
   { href: "/saved", label: "Saved", icon: Bookmark },
   { href: "/network", label: "Connections", icon: Network, badge: "invites" },
   { href: "/dashboard", label: "Analytics", icon: LayoutDashboard },
