@@ -2,6 +2,7 @@
 import { AnimatePresence, motion } from "motion/react";
 import { ArrowRight, ArrowUp, FlaskConical, HelpCircle, ImagePlus, Loader2, Megaphone, PenLine, Rocket, Square, Undo2, Upload, Video, Wand2, X } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useRef, useState } from "react";
 import { Avatar, Button } from "@/components/ui";
 import { POST_KINDS, cn } from "@/lib/forge";
@@ -78,7 +79,10 @@ export function Composer({ first, last, interests, userId, mediaEnabled = false,
     return () => { cancelAnimationFrame(raf); window.removeEventListener("forge:compose", start); };
   }, []);
 
-  // Clear after a successful post (adjusting state during render, not in an effect).
+  // Clear after a successful post (adjusting state during render, not in an effect), then show it:
+  // the save answers right away, and the feed refreshes on its own (see createPost).
+  const router = useRouter();
+  useEffect(() => { if (state.nonce > 0) router.refresh(); }, [state.nonce, router]);
   const [seenNonce, setSeenNonce] = useState(0);
   if (state.nonce !== seenNonce) {
     setSeenNonce(state.nonce);

@@ -59,8 +59,9 @@ export async function createPost(prev: ComposeState, form: FormData): Promise<Co
   }
   const { error } = await supabase.from("posts").insert(row);
   if (error) return { ok: false, message: friendlyError(error), nonce: prev.nonce };
-  revalidatePath("/feed");
-  if (projectId) revalidatePath(`/projects/${projectId}`);
+  // No revalidatePath here: it made this response carry the whole re-rendered feed (news rail
+  // included), and the composer only showed "posted" once all of it arrived, so a slow feed made a
+  // saved post look stuck (Linear FIX-45). The composer refreshes the page itself once it's saved.
   return { ok: true, message: "", nonce: prev.nonce + 1 };
 }
 
