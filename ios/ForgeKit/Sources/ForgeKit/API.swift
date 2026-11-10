@@ -211,6 +211,64 @@ enum API {
     return SearchResults(people: await people.sorted { rank($0) > rank($1) }, clubs: await clubs, events: await events, posts: await posts)
   }
 
+  // MARK: Settings and safety
+  struct MessageSettings: Codable, Equatable, Sendable { var requestsOn: Bool = true; var whoCanMessage: String = "everyone" }
+  static func messageSettings(me: UUID) async -> MessageSettings {
+    let rows: [MessageSettings]? = try? await supabase.from("message_settings").select("requests_on, who_can_message").eq("user_id", value: me).limit(1).execute().value
+    return rows?.first ?? MessageSettings()
+  }
+  static func saveMessageSettings(_ m: MessageSettings) async throws {
+    guard ["everyone", "communities", "connections"].contains(m.whoCanMessage) else { throw ProfileError(message: "Choose who can message you.") }
+    try await supabase.rpc("save_message_settings", params: SaveSettings(p_requests_on: m.requestsOn, p_who: m.whoCanMessage)).execute()
+  }
+  private struct SaveSettings: Encodable, Sendable { let p_requests_on: Bool; let p_who: String }
+
+  // People you've blocked, with their names.
+  static func blocked(me: UUID) async -> [Profile] {
+    struct B: Decodable { let blocked: UUID }
+    let ids = ((try? await supabase.from("message_blocks").select("blocked").eq("blocker", value: me).execute().value as [B]) ?? []).map { $0.blocked.uuidString.lowercased() }
+    guard !ids.isEmpty else { return [] }
+    return (try? await supabase.from("profiles").select(Session.profileColumns).in("id", values: ids).execute().value) ?? []
+  }
+  static func blockedIds(me: UUID) async -> Set<UUID> {
+    struct B: Decodable { let blocked: UUID }
+    return Set(((try? await supabase.from("message_blocks").select("blocked").eq("blocker", value: me).execute().value as [B]) ?? []).map(\.blocked))
+  }
+  // Block someone from anywhere (supabase/reports.sql): no messages, no follows, their posts hidden.
+  static func block(_ id: UUID) async throws {
+    try await supabase.rpc("block_user", params: ["p_uid": id.uuidString.lowercased()]).execute()
+  }
+  static func unblock(_ id: UUID, me: UUID) async throws {
+    try await supabase.from("message_blocks").delete().eq("blocker", value: me).eq("blocked", value: id).execute()
+  }
+
+  enum ReportKind: String, Sendable { case post, comment, person, message, chatMessage = "chat_message" }
+  static let reportReasons: [(id: String, label: String)] = [
+    ("spam", "Spam or scam"), ("harassment", "Harassment or bullying"), ("hate", "Hate speech"), ("sexual", "Sexual content"),
+    ("violence", "Violence or threats"), ("misinformation", "False or misleading"), ("other", "Something else"),
+  ]
+  // Report something to the Forge team. Reporting the same thing twice is fine (kept once).
+  static func report(_ kind: ReportKind, id: String, reason: String, detail: String = "") async throws {
+    struct Row: Encodable { let kind: String; let targetId: String; let reason: String; let detail: String }
+    do {
+      try await supabase.from("content_reports").insert(Row(kind: kind.rawValue, targetId: id, reason: reason, detail: String(detail.prefix(500))), returning: .minimal).execute()
+    } catch where "\(error)".contains("23505") {}
+  }
+
+  static func changePassword(_ password: String, confirm: String) async throws {
+    if password.count < 8 { throw ProfileError(message: "Choose a password with at least 8 characters.") }
+    if password != confirm { throw ProfileError(message: "The two passwords don't match.") }
+    try await supabase.auth.update(user: UserAttributes(password: password))
+  }
+
+  // Ideas, problems and praise for the Forge team (same as Feedback on the web).
+  static func sendFeedback(kind: String, area: String, body: String) async throws {
+    let text = body.trimmingCharacters(in: .whitespacesAndNewlines)
+    if text.count < 10 { throw ProfileError(message: "Tell us a little more (at least 10 characters).") }
+    try await supabase.rpc("submit_feedback", params: Feedback(p_kind: kind, p_area: area, p_body: String(text.prefix(1000)), p_may_contact: true)).execute()
+  }
+  private struct Feedback: Encodable, Sendable { let p_kind: String; let p_area: String; let p_body: String; let p_may_contact: Bool }
+
   // MARK: People
   static func profile(_ id: UUID) async throws -> Profile {
     try await supabase.from("profiles").select(Session.profileColumns).eq("id", value: id).single().execute().value

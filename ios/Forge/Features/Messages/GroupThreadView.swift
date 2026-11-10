@@ -18,6 +18,7 @@ struct GroupThreadView: View {
   @State private var error: String?
   @State private var reactions = ReactionsModel(kind: "group")
   @State private var replying: ChatMessage?
+  @State private var reporting: ReportTarget?
 
   var body: some View {
     ScrollViewReader { proxy in
@@ -43,6 +44,7 @@ struct GroupThreadView: View {
     .safeAreaInset(edge: .bottom) { composer }
     .task { await load(); await API.markChatRead(route.id); await session.refreshBadges() }
     .task { await listen() }
+    .sheet(item: $reporting) { ReportSheet(kind: $0.kind, targetId: $0.id, title: $0.title) }
     .task {
       if route.kind == "club", let c = route.communityId, let me = session.userId { officer = API.isOfficer(await API.role(in: c, me: me)) }
     }
@@ -86,7 +88,8 @@ struct GroupThreadView: View {
           .contextMenu {
             if !m.id.hasPrefix("pending-") {
               MessageMenu(text: m.body, onReact: { e in Task { await react(m, e) } }, onReply: { replying = m },
-                          removeLabel: mine ? "Delete" : nil, onRemove: mine ? { Task { await delete(m) } } : nil)
+                          removeLabel: mine ? "Delete" : nil, onRemove: mine ? { Task { await delete(m) } } : nil,
+                          onReport: mine || m.ember ? nil : { reporting = ReportTarget(kind: .chatMessage, id: m.id, title: "Report message") })
             }
           }
           ReactionChips(list: reactions.on(m.id), me: session.userId, mine: mine) { e in Task { await react(m, e) } }

@@ -28,7 +28,9 @@ final class FeedStore {
   var tab: FeedTab = .forYou
   var items: [RankedPost] = []
   var filter: FeedFilter = .all
-  var visible: [RankedPost] { filter == .all ? items : items.filter { filter.matches($0.post) } }
+  // People you've blocked: their posts are hidden.
+  var blocked: Set<UUID> = []
+  var visible: [RankedPost] { items.filter { !blocked.contains($0.post.authorId) && (filter == .all || filter.matches($0.post)) } }
   // The latest replies on each post (shown under it).
   var replies: [String: [Comment]] = [:]
   // Older posts can be loaded (Latest and Following page back in time).
@@ -64,10 +66,12 @@ final class FeedStore {
       }
       let av = withAvatars ?? false
       async let clubRows: [ClubRef] = supabase.from("community_members").select("community_id").eq("uid", value: me).limit(200).execute().value
+      async let blockedNow = API.blockedIds(me: me)
       async let followRows: [FollowRef] = supabase.from("follows").select("target").eq("follower", value: me).limit(500).execute().value
       let clubs = (try? await clubRows)?.map(\.communityId) ?? []
       let follows = (try? await followRows)?.map { $0.target.uuidString } ?? []
       self.follows = follows
+      blocked = await blockedNow
       let meId = me.uuidString
 
       var sources: [FeedSource: [Post]] = [:]

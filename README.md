@@ -43,7 +43,7 @@ Students verify with a university email. Members must be 18 or older. Everything
 
 Production needs (Ian's account; full steps in [docs/next-migration.md](docs/next-migration.md)):
 
-1. Run the newer SQL files in the Supabase SQL Editor (steps 5 to 14). Until then the app hides those features instead of breaking.
+1. Run the newer SQL files in the Supabase SQL Editor (steps 5 to 15). Until then the app hides those features instead of breaking.
 2. Turn off Vercel Deployment Protection for production so the site is public.
 3. Add `ANTHROPIC_API_KEY` to switch on Ember.
 
@@ -88,7 +88,7 @@ npm run e2e   # builds the app, starts a local Supabase, runs every journey (sig
 
 The SQL files are additive and run in this order (the same order CI applies to a fresh database on every push):
 
-`schema` → `messages` → `events` → `activity` → `projects` → `tours` → `club-events` → `media` → `invites` → `post-edits` → `copilot` → `milestones` → `feedback` → `feedback-review` → `integrations` → `group-chats` → `project-stack` → `club-profile` → `mentions` → `copilot-chats` → `profile-extras` → `mcp` → `chat-extras`
+`schema` → `messages` → `events` → `activity` → `projects` → `tours` → `club-events` → `media` → `invites` → `post-edits` → `copilot` → `milestones` → `feedback` → `feedback-review` → `integrations` → `group-chats` → `project-stack` → `club-profile` → `mentions` → `copilot-chats` → `profile-extras` → `mcp` → `chat-extras` → `reports`
 
 The app checks which ones have run and hides features whose tables don't exist yet (`web/src/lib/db-features.ts`). What each table holds and who can touch it: [docs/data-model.md](docs/data-model.md).
 

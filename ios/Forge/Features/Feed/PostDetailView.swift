@@ -11,6 +11,7 @@ struct PostDetailView: View {
   @State private var error: String?
   @FocusState private var focused: Bool
   @Environment(\.dismiss) private var dismiss
+  @State private var reporting: ReportTarget?
 
   var body: some View {
     ScrollView {
@@ -35,6 +36,10 @@ struct PostDetailView: View {
           .padding(12)
           .frame(maxWidth: .infinity, alignment: .leading)
           .background(p.surface2.opacity(0.6), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
+          .contextMenu {
+            Button("Copy", systemImage: "doc.on.doc") { UIPasteboard.general.string = c.body }
+            if c.authorId != session.userId { Button("Report reply", systemImage: "flag") { reporting = ReportTarget(kind: .comment, id: c.id, title: "Report reply") } }
+          }
         }
       }
       .padding(16)
@@ -44,6 +49,7 @@ struct PostDetailView: View {
     .navigationBarTitleDisplayMode(.inline)
     .safeAreaInset(edge: .bottom) { composer }
     .task { await load() }
+    .sheet(item: $reporting) { ReportSheet(kind: $0.kind, targetId: $0.id, title: $0.title) }
     .onChange(of: feed.items.contains { $0.id == post.id }) { _, stillThere in if !stillThere && deletedHere { dismiss() } }
   }
 

@@ -10,6 +10,9 @@ struct ProfileView: View {
   @State private var thread: InboxItem?
   @State private var busy = false
   @State private var error: String?
+  @State private var isBlocked = false
+  @State private var reporting: ReportTarget?
+  @State private var confirmBlock = false
 
   private var isMe: Bool { id == session.userId }
 
@@ -34,7 +37,23 @@ struct ProfileView: View {
     }
     .background(p.bg)
     .navigationBarTitleDisplayMode(.inline)
-    .toolbar { ToolbarItem(placement: .primaryAction) { ShareLink(item: Env.web("u/\(id.uuidString.lowercased())")) } }
+    .toolbar {
+      ToolbarItem(placement: .primaryAction) {
+        Menu {
+          ShareLink(item: Env.web("u/\(id.uuidString.lowercased())")) { Label("Share profile", systemImage: "square.and.arrow.up") }
+          if !isMe {
+            Button("Report", systemImage: "flag") { reporting = ReportTarget(kind: .person, id: id.uuidString.lowercased(), title: "Report \(profile?.firstName ?? "person")") }
+            if isBlocked { Button("Unblock", systemImage: "hand.raised.slash") { Task { await unblock() } } }
+            else { Button("Block", systemImage: "hand.raised", role: .destructive) { confirmBlock = true } }
+          }
+        } label: { Image(systemName: "ellipsis.circle") }
+        .accessibilityLabel("More")
+      }
+    }
+    .sheet(item: $reporting) { ReportSheet(kind: $0.kind, targetId: $0.id, title: $0.title) }
+    .confirmationDialog("Block \(profile?.name ?? "them")?", isPresented: $confirmBlock, titleVisibility: .visible) {
+      Button("Block", role: .destructive) { Task { await block() } }
+    } message: { Text("They won't be able to message you, you'll stop following each other, and their posts leave your feed.") }
     .navigationDestination(item: $thread) { ThreadView(item: $0) }
     .task { await load() }
   }
@@ -74,8 +93,19 @@ struct ProfileView: View {
       profile = try await API.profile(id)
       let posts = try await API.posts(by: id)
       await feed.show(posts, me: me)
-      if !isMe { following = await API.isFollowing(id, me: me) }
+      if !isMe {
+        following = await API.isFollowing(id, me: me)
+        isBlocked = await API.blockedIds(me: me).contains(id)
+      }
     } catch { self.error = friendly(error) }
+  }
+
+  private func block() async {
+    do { try await API.block(id); isBlocked = true; following = false } catch { self.error = friendly(error) }
+  }
+  private func unblock() async {
+    guard let me = session.userId else { return }
+    do { try await API.unblock(id, me: me); isBlocked = false } catch { self.error = friendly(error) }
   }
 
   private func toggleFollow() async {

@@ -7,6 +7,8 @@ struct MeView: View {
   @AppStorage("forge-skin") private var skin = Skin.forge.rawValue
   @AppStorage("forge-appearance") private var appearance = "system"
   @State private var editing = false
+  @State private var showSettings = false
+  @State private var testReport: ReportTarget?
 
   var body: some View {
     NavigationStack {
@@ -61,7 +63,7 @@ struct MeView: View {
         Section {
           Button { editing = true } label: { Label("Edit profile", systemImage: "person.crop.circle").foregroundStyle(p.text) }
           NavigationLink { SavedPostsView() } label: { Label("Saved", systemImage: "bookmark").foregroundStyle(p.text) }
-          link("Settings", "gearshape", "settings")
+          NavigationLink { SettingsView() } label: { Label("Settings", systemImage: "gearshape").foregroundStyle(p.text) }
           link("Ask Ember", "sparkles", "copilot")
         }
         .listRowBackground(p.surface)
@@ -75,7 +77,14 @@ struct MeView: View {
       .navigationTitle("You")
       .sheet(isPresented: $editing) { if let me = session.profile { EditProfileView(profile: me) } }
       #if DEBUG
-      .task { if ProcessInfo.processInfo.environment["FORGE_TEST_EDIT_PROFILE"] != nil { editing = true } }
+      .task {
+        let env = ProcessInfo.processInfo.environment
+        if env["FORGE_TEST_EDIT_PROFILE"] != nil { editing = true }
+        if env["FORGE_TEST_SETTINGS"] != nil { showSettings = true }
+        if env["FORGE_TEST_REPORT"] != nil { testReport = ReportTarget(kind: .post, id: "x", title: "Report post") }
+      }
+      .navigationDestination(isPresented: $showSettings) { SettingsView() }
+      .sheet(item: $testReport) { ReportSheet(kind: $0.kind, targetId: $0.id, title: $0.title) }
       #endif
       .navigationDestination(for: PersonRoute.self) { ProfileView(id: $0.id) }
       .navigationDestination(for: Post.self) { PostLoader(id: $0.id) }

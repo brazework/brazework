@@ -38,13 +38,18 @@ func friendly(_ error: Error) -> String {
   if let e = error as? ExtrasError { return e.errorDescription ?? "" }
   if let e = error as? PostError { return e.errorDescription ?? "" }
   if let e = error as? ProfileError { return e.errorDescription ?? "" }
-  let text = "\(error)"
+  // The database's own message where there is one (the debug text escapes apostrophes).
+  let text = ((error as? PostgrestError).map { "\($0.message) \($0.code ?? "")" } ?? "") + " \(error)"
   if text.contains("posts_media") { return "Something's wrong with those attachments. Remove them and try again." }
   if text.contains("column \"media\"") || text.contains("'media' column") { return "Photos and video aren't turned on yet." }
   if text.contains("row-level security") || text.contains("42501") { return "You don't have permission to do that." }
   if text.contains("NSURLErrorDomain") || text.contains("offline") || text.contains("Could not connect") { return "Can't reach Forge. Check your connection." }
   if text.contains("Invalid login credentials") { return "That email and password don't match." }
   if text.contains("Email not confirmed") { return "Confirm your email first (check your inbox)." }
+  if text.contains("You can't report yourself") { return "You can't report yourself." }
+  if text.contains("You can't block yourself") { return "You can't block yourself." }
+  if text.contains("no longer there") { return "That's no longer there." }
+  if text.contains("content_reports") || text.contains("block_user") { return "Reporting isn't switched on yet. Try again soon." }
   if text.contains("check constraint") { return "That's too long or not allowed." }
   return "Something went wrong. Try again."
 }

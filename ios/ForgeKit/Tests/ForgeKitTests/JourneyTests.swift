@@ -348,6 +348,55 @@ final class JourneyTests: XCTestCase {
     XCTAssertTrue(tooShort.isEmpty)
   }
 
+  func testSettingsReportsAndBlocking() async throws {
+    let me = try await signIn("cara")
+    try await API.saveMessageSettings(.init(requestsOn: false, whoCanMessage: "communities"))
+    let saved = await API.messageSettings(me: me)
+    XCTAssertEqual(saved, .init(requestsOn: false, whoCanMessage: "communities"))
+    try await API.saveMessageSettings(.init())
+
+    // Report a post (twice is fine), and not yourself.
+    let found: [Profile] = try await supabase.from("profiles").select(Session.profileColumns).eq("first_name", value: "Ben").limit(1).execute().value
+    let ben = try XCTUnwrap(found.first)
+    let bensPosts = try await API.posts(by: ben.id)
+    let post = try XCTUnwrap(bensPosts.first)
+    try await API.report(.post, id: post.id, reason: "spam", detail: "Testing reports")
+    try await API.report(.post, id: post.id, reason: "spam")
+    struct R: Decodable { let kind: String; let targetId: String; let reason: String; let status: String }
+    let mine: [R] = try await supabase.from("content_reports").select("kind, target_id, reason, status").execute().value
+    XCTAssertEqual(mine.filter { $0.targetId == post.id }.count, 1)
+    XCTAssertEqual(mine.first { $0.targetId == post.id }?.status, "open")
+    do { try await API.report(.person, id: me.uuidString.lowercased(), reason: "other"); XCTFail("reported yourself") }
+    catch { XCTAssertEqual(friendly(error), "You can't report yourself.") }
+
+    // Block Ben: his posts leave the feed and he's listed; unblock restores.
+    try await API.setFollow(ben.id, true, me: me)
+    try await API.block(ben.id)
+    let blocked = await API.blocked(me: me)
+    XCTAssertTrue(blocked.contains { $0.id == ben.id })
+    let stillFollowing = await API.isFollowing(ben.id, me: me)
+    XCTAssertFalse(stillFollowing, "blocking removes the follow")
+    let feed = FeedStore(); feed.tab = .latest
+    await feed.load(me: me, interests: [])
+    XCTAssertFalse(feed.visible.contains { $0.post.authorId == ben.id })
+    try await API.unblock(ben.id, me: me)
+    let after = await API.blocked(me: me)
+    XCTAssertFalse(after.contains { $0.id == ben.id })
+
+    // Feedback reaches the team.
+    try await API.sendFeedback(kind: "idea", area: "feed", body: "Let me pin a post to my profile \(Self.stamp)")
+    do { try await API.sendFeedback(kind: "idea", area: "feed", body: "short"); XCTFail("too short") } catch {}
+  }
+
+  func testChangePassword() async throws {
+    _ = try await signIn("cara")
+    do { try await API.changePassword("short", confirm: "short"); XCTFail() } catch { XCTAssertEqual(friendly(error), "Choose a password with at least 8 characters.") }
+    do { try await API.changePassword("long-enough-1", confirm: "long-enough-2"); XCTFail() } catch { XCTAssertEqual(friendly(error), "The two passwords don't match.") }
+    try await API.changePassword("forge-test-pass-2", confirm: "forge-test-pass-2")
+    try await supabase.auth.signIn(email: "cara@forge.test", password: "forge-test-pass-2")
+    try await API.changePassword("forge-test-pass-1", confirm: "forge-test-pass-1")
+  }
+
   func testFollowAndClubs() async throws {
     let me = try await signIn("maya")
     let found: [Profile] = try await supabase.from("profiles").select(Session.profileColumns).eq("first_name", value: "Cara").limit(1).execute().value

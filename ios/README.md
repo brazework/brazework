@@ -9,6 +9,7 @@ Native SwiftUI app on the same Supabase backend as `web/`: same tables, same row
 | Tab | |
 |---|---|
 | **Feed** | A composer prompt with one-tap Photo / Question / Result; your **messages inline** in a collapsible card (unread first, tap through, remembers open or closed); For you (ranked, with reasons; your new post first), Latest and Following, filtered by Questions, Results, Projects or Photos & video; infinite scroll and a "new posts" pill; upcoming events, people to follow and clubs to join between posts. Posts: double-tap to like, long-press for save/share/copy/edit/delete, the latest replies inline, @mentions, edit or delete your own. Videos play as you scroll with sound (following the ringer switch), one at a time; tap to pause, then speed and fullscreen |
+| **Settings & safety** | Message requests and who can message you, blocked people, video sound, change password, send feedback. Report any post, reply, person or message; block someone from their profile or a post (no messages, no follows, their posts hidden). Needs `supabase/reports.sql` |
 | **Search** | People, clubs, events and posts in one search; people who share your interests first |
 | **Clubs** | Your clubs and discover, search, a club's page with its posts, join or ask to join. **Events**: upcoming club and organization events, a map of the place with directions, I'm going, join online |
 | **Profiles** | Anyone's profile from a post, reply, alert or thread: headline, field, interests, posts; follow and message them |
@@ -36,7 +37,7 @@ The app connects to whatever `Config/Local.xcconfig` names (gitignored). It defa
 
 ```sh
 scripts/test-kit.sh   # on the Mac, no simulator: ranking and dates, plus the app's real reads and writes against the
-                      # local stack (edit your profile and photo, and the web's validation; saved posts; edit/delete your own posts and not others'; @mention → they're notified, fake mentions dropped; photo upload → post with it, and the folder rule; post → first in feed → like, save → reply; message from a profile → they see it
+                      # local stack (settings, reports and blocking, password change, feedback; edit your profile and photo, and the web's validation; saved posts; edit/delete your own posts and not others'; @mention → they're notified, fake mentions dropped; photo upload → post with it, and the folder rule; post → first in feed → like, save → reply; message from a profile → they see it
                       # unread → accept → reply; reactions, replies and unsend (in DMs
                       # and club chats); club chat and announcements (officers only, members can't,
                       # non-members can't read); event chat for people going; follow; join a club; RSVP; alerts)
@@ -46,5 +47,5 @@ scripts/test.sh       # the same, then UI journeys on a simulator (XCUITest; mac
 ## Next
 
 1. Push notifications (APNs + a Supabase webhook on `notifications` and `messages`).
-2. Team chats; message and notification settings.
+2. Team chats; native sign-up and onboarding.
 3. Native sign-up and onboarding; TestFlight.

@@ -84,6 +84,7 @@ struct MessageMenu: View {
   let onReply: () -> Void
   var removeLabel: String? = nil
   var onRemove: (() -> Void)? = nil
+  var onReport: (() -> Void)? = nil
 
   var body: some View {
     ControlGroup {
@@ -96,5 +97,6 @@ struct MessageMenu: View {
     Button("Reply", systemImage: "arrowshape.turn.up.left", action: onReply)
     Button("Copy", systemImage: "doc.on.doc") { UIPasteboard.general.string = text }
     if let removeLabel, let onRemove { Button(removeLabel, systemImage: "arrow.uturn.backward", role: .destructive, action: onRemove) }
+    if let onReport { Button("Report", systemImage: "flag", action: onReport) }
   }
 }

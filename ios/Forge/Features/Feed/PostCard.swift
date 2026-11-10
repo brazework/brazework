@@ -9,6 +9,8 @@ struct PostCard: View {
   @State private var confirmDelete = false
   @State private var error: String?
   @State private var burst = 0
+  @State private var reporting: ReportTarget?
+  @State private var confirmBlock = false
   @State private var showBurst = false
   private var post: Post { item.post }
   private var liked: Bool { store.liked.contains(item.id) }
@@ -42,10 +44,15 @@ struct PostCard: View {
         .accessibilityHint("Opens their profile")
         Spacer(minLength: 0)
         KindLabel(kind: post.kind)
-        if mine {
+        if session.userId != nil {
           Menu {
-            Button("Edit", systemImage: "pencil") { editing = true }
-            Button("Delete", systemImage: "trash", role: .destructive) { confirmDelete = true }
+            if mine {
+              Button("Edit", systemImage: "pencil") { editing = true }
+              Button("Delete", systemImage: "trash", role: .destructive) { confirmDelete = true }
+            } else {
+              Button("Report post", systemImage: "flag") { reporting = ReportTarget(kind: .post, id: post.id, title: "Report post") }
+              Button("Block \(post.authorFirst)", systemImage: "hand.raised", role: .destructive) { confirmBlock = true }
+            }
           } label: {
             Image(systemName: "ellipsis").font(.subheadline.weight(.semibold)).foregroundStyle(p.muted).frame(width: 32, height: 32).contentShape(Rectangle())
           }
@@ -97,16 +104,28 @@ struct PostCard: View {
       ShareLink(item: Env.web("post/\(post.id)")) { Label("Share", systemImage: "square.and.arrow.up") }
       Button("Copy link", systemImage: "link") { UIPasteboard.general.url = Env.web("post/\(post.id)") }
       Button("Copy text", systemImage: "doc.on.doc") { UIPasteboard.general.string = post.body }
+      Divider()
       if mine {
-        Divider()
         Button("Edit", systemImage: "pencil") { editing = true }
         Button("Delete", systemImage: "trash", role: .destructive) { confirmDelete = true }
+      } else {
+        Button("Report post", systemImage: "flag") { reporting = ReportTarget(kind: .post, id: post.id, title: "Report post") }
+        Button("Block \(post.authorFirst)", systemImage: "hand.raised", role: .destructive) { confirmBlock = true }
       }
     }
+    .sheet(item: $reporting) { ReportSheet(kind: $0.kind, targetId: $0.id, title: $0.title) }
+    .confirmationDialog("Block \(post.authorName)?", isPresented: $confirmBlock, titleVisibility: .visible) {
+      Button("Block", role: .destructive) { Task { await block() } }
+    } message: { Text("They won't be able to message you, you'll stop following each other, and their posts leave your feed. You can unblock them in Settings.") }
     .sheet(isPresented: $editing) { EditPostView(post: post) { store.edited(post.id, body: $0) }.presentationDetents([.medium, .large]) }
     .confirmationDialog("Delete this post?", isPresented: $confirmDelete, titleVisibility: .visible) {
       Button("Delete", role: .destructive) { Task { await delete() } }
     } message: { Text("Its likes, replies and saves go with it. This can't be undone.") }
+  }
+
+  private func block() async {
+    do { try await API.block(post.authorId); withAnimation(.snappy) { store.blocked.insert(post.authorId) } }
+    catch { self.error = friendly(error) }
   }
 
   private func doubleTapLike() {

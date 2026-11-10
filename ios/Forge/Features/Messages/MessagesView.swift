@@ -111,6 +111,7 @@ struct ThreadView: View {
   @State private var reactions = ReactionsModel(kind: "dm")
   @State private var replying: Message?
   @State private var now = Date()
+  @State private var reporting: ReportTarget?
 
   init(item: InboxItem) { self.item = item; _status = State(initialValue: item.status) }
 
@@ -138,6 +139,7 @@ struct ThreadView: View {
     }
     .safeAreaInset(edge: .bottom) { footer }
     .task { await load(); await markRead() }
+    .sheet(item: $reporting) { ReportSheet(kind: $0.kind, targetId: $0.id, title: $0.title) }
     .task { await listen() }
   }
 
@@ -164,7 +166,8 @@ struct ThreadView: View {
         .contextMenu {
           if !pending {
             MessageMenu(text: m.body, onReact: { e in Task { await react(m, e) } }, onReply: { replying = m },
-                        removeLabel: canUnsend ? "Unsend" : nil, onRemove: canUnsend ? { Task { await unsend(m) } } : nil)
+                        removeLabel: canUnsend ? "Unsend" : nil, onRemove: canUnsend ? { Task { await unsend(m) } } : nil,
+                        onReport: mine ? nil : { reporting = ReportTarget(kind: .message, id: m.id, title: "Report message") })
           }
         }
         if !mine { Spacer(minLength: 48) }
