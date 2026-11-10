@@ -28,7 +28,7 @@ jobs:
         run: bash e2e/load.sh
       - name: Keep the summary
         if: always()
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: load-summary
           path: web/.load/
