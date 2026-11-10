@@ -108,6 +108,26 @@ const { BASE, step, browser, as, go, closeTour, summary } = require("./lib.cjs")
     if ((await again.getByText("Start with a complementary filter.").count()) !== 1) throw new Error("answer missing or duplicated after reload");
   }, ben);
   console.log("page errors:", [...page.errs, ...ben.errs].slice(0, 5));
+  await step("a photo without a description gets a prompt; describing it clears the prompt", async () => {
+    const file = require("path").join(require("os").tmpdir(), "forge-e2e-photo.png");
+    // A real 64x64 PNG, so the upload and conversion run exactly as for a phone photo.
+    const zlib = require("zlib"), w = 64, h = 64, raw = Buffer.alloc((w * 3 + 1) * h);
+    for (let y = 0; y < h; y++) for (let x = 0; x < w; x++) { const i = y * (w * 3 + 1) + 1 + x * 3; raw[i] = x * 4; raw[i + 1] = y * 4; raw[i + 2] = 160; }
+    const table = Array.from({ length: 256 }, (_, n) => { let c = n; for (let k = 0; k < 8; k++) c = c & 1 ? 0xedb88320 ^ (c >>> 1) : c >>> 1; return c >>> 0; });
+    const crc = (b) => { let r = 0xffffffff; for (const x of b) r = table[(r ^ x) & 255] ^ (r >>> 8); return (r ^ 0xffffffff) >>> 0; };
+    const chunk = (t, d) => { const l = Buffer.alloc(4); l.writeUInt32BE(d.length); const td = Buffer.concat([Buffer.from(t), d]); const c = Buffer.alloc(4); c.writeUInt32BE(crc(td)); return Buffer.concat([l, td, c]); };
+    const ihdr = Buffer.alloc(13); ihdr.writeUInt32BE(w, 0); ihdr.writeUInt32BE(h, 4); ihdr[8] = 8; ihdr[9] = 2;
+    require("fs").writeFileSync(file, Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), chunk("IHDR", ihdr), chunk("IDAT", zlib.deflateSync(raw)), chunk("IEND", Buffer.alloc(0))]));
+    await go(page, "/feed");
+    await page.locator('input[type="file"][accept^="image"]').first().setInputFiles(file);
+    const prompt = page.getByRole("button", { name: "Add description" });
+    await prompt.waitFor({ timeout: 20000 });
+    await prompt.click();
+    await page.locator("#alt-text").fill("Blue and green gradient test card");
+    await page.getByText("Save", { exact: true }).click();
+    await prompt.waitFor({ state: "detached", timeout: 10000 });
+    await page.getByText(/· alt/).first().waitFor();
+  }, page);
   summary();
   await b.close();
 })();

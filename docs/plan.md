@@ -82,7 +82,7 @@ To build:
 - ✅ Blocking (block_user); ⬜ blocked parties can't view private items.
 - ✅ Rate limits (`rate-limits.sql`, step 23) on posts, replies, messages, message requests and milestone submissions, tunable in `app_config`; SQL tests. Sign-ups are limited by Supabase Auth's own settings.
 - ✅ Plain-language privacy page (`/privacy`).
-- 🟡 Accessibility: alt text exists on photos; prompts and captions ⬜.
+- ✅ Accessibility: photos without a description get an "Add description" prompt before posting (screen-reader text). Video captions ⬜.
 
 ## Phase 8: landing (after decision 1)
 

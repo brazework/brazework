@@ -1,6 +1,6 @@
 "use client";
 import { AnimatePresence, motion } from "motion/react";
-import { Columns2, Crosshair, Flag, ImagePlus, Loader2, Video, X } from "lucide-react";
+import { Columns2, Crosshair, Flag, ImagePlus, Loader2, TextQuote, Video, X } from "lucide-react";
 import Image from "next/image";
 import { useRef, useState } from "react";
 import { CalloutEditor, MarkerEditor } from "./annotate";
@@ -110,6 +110,12 @@ export function AttachmentTray({ slots, onRemove, onEdit, compare, onCompare }: 
           {s.kind === "image" && s.item?.notes?.map((n, i) => (
             <span key={i} className="absolute grid size-5 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full border border-white bg-black/70 text-[10px] font-bold text-white" style={{ left: `${n.x * 100}%`, top: `${n.y * 100}%` }}>{i + 1}</span>
           ))}
+          {/* A nudge, not a gate: photos without a description get a prompt for screen-reader users. */}
+          {onEdit && s.status === "done" && s.kind === "image" && !s.item?.alt && (
+            <button type="button" onClick={() => setEditing(s.id)} className="absolute bottom-2 left-2 inline-flex h-7 items-center gap-1 rounded-full bg-black/65 px-2.5 text-[11px] font-medium text-white ring-1 ring-white/40 backdrop-blur transition hover:bg-black/85 active:scale-95">
+              <TextQuote className="size-3.5" /> Add description
+            </button>
+          )}
           {onEdit && s.status === "done" && (
             <button type="button" onClick={() => setEditing(s.id)} className="absolute right-2 bottom-2 inline-flex h-7 items-center gap-1 rounded-full bg-black/65 px-2.5 text-[11px] font-medium text-white backdrop-blur transition hover:bg-black/85 active:scale-95">
               {s.kind === "image" ? <><Crosshair className="size-3.5" /> {s.item?.notes?.length ? `${s.item.notes.length} callout${s.item.notes.length > 1 ? "s" : ""}` : "Callouts"}{s.item?.alt ? " · alt" : ""}</> : <><Flag className="size-3.5" /> {s.item?.marks?.length ? `${s.item.marks.length} marker${s.item.marks.length > 1 ? "s" : ""}` : "Markers"}</>}
