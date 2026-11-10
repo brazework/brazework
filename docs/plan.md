@@ -28,8 +28,9 @@ Based on [current-state.md](current-state.md) (the map of what exists). Work goe
 - ✅ Onboarding checklist on Home until done: club → project → first update → request verification → verified (c6abefa).
 - 🟡 "Find your club" before the feed (search exists; invite links exist).
 - 🟡 Projects with photos/specs/team, GitHub import via Ember (exists; add hardware fields: specs, team list).
-- ⬜ Weekly nudges (in-app + email digest, both can be turned off).
-- 🟡 Profile = proof: verified count, clubs, featured project, per-project timeline; public/private per project ✅, per milestone ⬜.
+- ✅ Weekly nudge in-app: "Your week" on Home (what's waiting on you first, what happened in your clubs, one next step such as a quiet project); folds like every rail card. Tests: `web/tests/week.test.ts`, e2e step in `c-messages-projects.cjs`.
+- ⬜ Email digest: needs an email sender (e.g. Resend) and an off switch in Settings.
+- ✅ Profile = proof: verified count, clubs, challenge wins, featured project, per-project timeline; public/private per project and per milestone (milestones are private until shown).
 
 ## Phase 3: verification (the core)
 
@@ -63,12 +64,12 @@ To build:
 - ✅ Messages land in Requests; company and school admins have a weekly request cap (`limit_org_requests_per_week`). Tier limits ⬜.
 - ✅ Sponsored challenges end to end (`challenges.sql`, step 21): draft → sponsored (paid or Forge-approved pilot) → open → judging → winners; SQL tests and e2e `h-challenges.cjs`.
 - ✅ `web/src/lib/billing.ts`: provider interface, Stripe Checkout over REST (on only with `STRIPE_SECRET_KEY` + `STRIPE_PRICE_CHALLENGE`/`STRIPE_PRICE_TALENT`), otherwise a pilot request; tests in `web/tests/billing.test.ts`. Stripe webhook `/api/billing/webhook` (signature-checked, idempotent) marks sponsorships paid; needs `STRIPE_WEBHOOK_SECRET` and `SUPABASE_SERVICE_ROLE_KEY`.
-- 🟡 Company events beside club events (exists; label clearly).
+- ✅ Company events beside club events, labelled "Verified company" / "Verified school" / "Club event".
 
 ## Phase 6: Ember
 
 - ✅ Approve-first cards (`propose_*`), tool calls shown, facts from tools.
-- ⬜ Ember as contextual buttons + command palette (replaces the page).
+- ✅ Ember in the ⌘K command palette and sidebar (type a request, it opens Ember with it); contextual entry points on Events ("Plan it with Ember") and Projects (GitHub import).
 - ✅ Tests proving Ember can't write without an Approve tap and can never verify (web/tests, `npm test`).
 
 ## Phase 7: trust and safety

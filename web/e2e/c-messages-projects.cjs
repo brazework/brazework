@@ -82,6 +82,13 @@ async function saved(page, path, text) {
     await josh.getByRole("button", { name: /Ask for verification/ }).click();
     await josh.getByText(/Measured lift on 3 fin shapes/).first().waitFor({ timeout: 15000 });
   }, josh);
+  await step("Ben's week on Home says a milestone is waiting for him", async () => {
+    await go(ben, "/feed");
+    const week = ben.getByRole("region", { name: /Your week/ });
+    await week.getByText(/milestones? waiting for you to verify/).waitFor({ timeout: 15000 });
+    const href = await week.getByRole("link", { name: /waiting for you to verify/ }).getAttribute("href");
+    if (!/^\/c\/rkt\/manage\?tab=verify$/.test(href || "")) throw new Error("link: " + href);
+  }, ben);
   await step("Ben (club owner) gets a request and verifies it", async () => {
     await go(ben, "/c/rkt/manage?tab=verify");
     await ben.getByText(/Measured lift on 3 fin shapes/).first().waitFor({ timeout: 15000 });
