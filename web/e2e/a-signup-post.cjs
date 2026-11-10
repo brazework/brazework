@@ -4,6 +4,23 @@ const { BASE, step, browser, as, go, closeTour, summary } = require("./lib.cjs")
   const ctx = await b.newContext({ viewport: { width: 1440, height: 950 } });
   const page = await ctx.newPage(); page.errs = []; page.on("pageerror", (e) => page.errs.push(e.message));
   const email = `dana${Date.now() % 100000}@forge.edu`;
+  const schoolDomain = `college${Date.now() % 100000}.qc.ca`;
+  await step("a student email the app doesn't recognize offers 'Request your school'", async () => {
+    await go(page, "/signup");
+    await page.getByRole("button", { name: /student/i }).first().click();
+    await page.fill('input[name="firstName"]', "Sam"); await page.fill('input[name="lastName"]', "Roy");
+    await page.fill('input[name="birthday"]', "2003-05-01");
+    await page.fill('input[name="email"]', `sam@${schoolDomain}`); await page.fill('input[name="password"]', "forge-test-pass-1");
+    await page.locator('button[type="submit"]').click();
+    await page.getByText(/Use your university email/).waitFor({ timeout: 15000 });
+    await page.locator("#request-school").click();
+    await page.waitForURL(/\/request-school/);
+    if ((await page.locator("#school-domain").inputValue()) !== schoolDomain) throw new Error("domain not prefilled");
+    await page.fill("#school-name", "Test College");
+    await page.getByRole("button", { name: "Request my school" }).click();
+    await page.getByText(/^Requested\./).waitFor({ timeout: 15000 });
+    require("fs").writeFileSync(require("path").join(__dirname, ".results", "school-domain.txt"), schoolDomain);
+  }, page);
   await step("sign up as a new student", async () => {
     await go(page, "/signup");
     await page.getByRole("button", { name: /student/i }).first().click();

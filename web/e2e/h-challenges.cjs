@@ -121,6 +121,14 @@ const { step, browser, as, go, summary } = require("./lib.cjs");
     await row.getByRole("button", { name: "Actioned" }).click();
     await reports.getByText(detail).waitFor({ state: "detached", timeout: 15000 });
   }, maya);
+  await step("a Forge admin adds a requested school (from the sign-up spec)", async () => {
+    const domain = require("fs").readFileSync(require("path").join(__dirname, ".results", "school-domain.txt"), "utf8").trim();
+    await go(maya, "/admin");
+    const list = maya.getByRole("region", { name: "School requests" });
+    const row = list.locator("div").filter({ hasText: "@" + domain }).filter({ has: maya.getByRole("button", { name: "Add school" }) }).last();
+    await row.getByRole("button", { name: "Add school" }).click();
+    await list.getByText("@" + domain).waitFor({ state: "detached", timeout: 15000 });
+  }, maya);
   summary();
   await b.close();
 })();

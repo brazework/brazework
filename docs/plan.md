@@ -74,7 +74,7 @@ To build:
 
 ## Phase 7: trust and safety
 
-- ✅ School emails: academic domains plus a `school_domains` list Forge admins extend. "Request my school" form ⬜.
+- ✅ School emails: academic domains plus a `school_domains` list Forge admins extend. "Request my school" from sign-up (`/request-school`, step 26), decided on `/admin`.
 - ✅ Minimum age enforced in the database (`min_age` in `app_config`, 18 by default).
 - ✅ "Forge never pulls records from your school" stated next to Download my data and on the privacy page.
 - ✅ Data export (JSON with links to your files) and account deletion (`account.sql`, step 20; SQL and e2e tests).

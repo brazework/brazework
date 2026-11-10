@@ -7,6 +7,7 @@ import { Kicker } from "@/components/ui";
 import { getViewer } from "@/lib/supabase/server";
 import { SponsorshipDecision } from "../challenges/challenge-client";
 import { ResolveReport } from "@/components/report/report-dialog";
+import { SchoolDecision } from "../../request-school/form";
 
 export const metadata: Metadata = { title: "Forge admin" };
 
@@ -33,12 +34,14 @@ async function Admin() {
   if (!user) redirect("/login");
   const { data: isAdmin } = await supabase.rpc("is_forge_admin");
   if (!isAdmin) notFound();
-  const [{ data: m }, { data: requests }, { data: queue }, { data: reportRows }] = await Promise.all([
+  const [{ data: m }, { data: requests }, { data: queue }, { data: reportRows }, { data: schoolRows }] = await Promise.all([
     supabase.rpc("admin_metrics"),
     supabase.from("challenges").select("id, title, prize, deadline, organizations(name)").eq("sponsorship", "requested").order("created_at", { ascending: true }).limit(50),
     supabase.from("admin_queue").select("id, kind, subject_id, detail, created_at").eq("status", "open").order("created_at", { ascending: true }).limit(50),
     supabase.from("content_reports").select("id, kind, target_id, reason, detail, reported, created_at").eq("status", "open").order("created_at", { ascending: true }).limit(50),
+    supabase.from("school_requests").select("id, domain, school, contact, asks, created_at").eq("status", "open").order("asks", { ascending: false }).limit(50),
   ]);
+  const schools = (schoolRows ?? []) as { id: number; domain: string; school: string; contact: string; asks: number; created_at: string }[];
   type Report = { id: number; kind: string; target_id: string; reason: string; detail: string; reported: string | null; created_at: string };
   const reports = (reportRows ?? []) as Report[];
   // Who was reported, and where a milestone lives (its project page), for the links.
@@ -109,6 +112,23 @@ async function Admin() {
             </Panel>
           ))}
           {!reqs.length && <p className="text-sm text-muted">Nothing waiting.</p>}
+        </div>
+      </section>
+
+      <section className="mt-8" aria-label="School requests">
+        <Kicker>School requests · {schools.length}</Kicker>
+        <p className="mt-1 text-xs text-faint">Check the domain belongs to a real school before adding it: its students can then sign up with it.</p>
+        <div className="mt-3 flex flex-col gap-2">
+          {schools.map((r) => (
+            <Panel key={r.id} className="flex flex-wrap items-center gap-3 p-4 text-sm">
+              <div className="min-w-0 flex-1">
+                <p className="font-medium">{r.school} <span className="font-mono text-xs font-normal text-muted">@{r.domain}</span></p>
+                <p className="text-xs text-faint">{r.asks} {r.asks === 1 ? "request" : "requests"}{r.contact ? ` · ${r.contact}` : ""}</p>
+              </div>
+              <SchoolDecision id={r.id} />
+            </Panel>
+          ))}
+          {!schools.length && <p className="text-sm text-muted">No schools waiting.</p>}
         </div>
       </section>
 

@@ -92,6 +92,7 @@ export function LoginForm({ next, confirmed, resetExpired }: { next?: string; co
 export function SignupForm({ invite, clubName }: { invite?: string; clubName?: string } = {}) {
   const [state, action, pending] = useActionState<AuthState, FormData>(signUp, { message: "" });
   const [type, setType] = useState<"student" | "professional" | "">("");
+  const [emailValue, setEmailValue] = useState("");
   const choices = [
     { id: "student", label: "Student", hint: "Verify with your university email.", icon: GraduationCap },
     { id: "professional", label: "Professional", hint: "Working in STEM.", icon: Briefcase },
@@ -128,10 +129,11 @@ export function SignupForm({ invite, clubName }: { invite?: string; clubName?: s
       </div>
       <Field label="Birthday" hint="Private, never shown. Forge is for people 18 and older."><input name="birthday" type="date" autoComplete="bday" className={inputCls} /></Field>
       <Field label={type === "student" ? "University email" : "Email"} hint={type === "student" ? "The address your school gave you, e.g. ending in .edu." : "We'll send a link to confirm it."}>
-        <input name="email" type="email" autoComplete="email" className={inputCls} />
+        <input name="email" type="email" autoComplete="email" onChange={(e) => setEmailValue(e.target.value)} className={inputCls} />
       </Field>
       <Field label="Password" hint="At least 8 characters. Longer, with a mix of letters and numbers, is stronger."><PasswordInput name="password" autoComplete="new-password" meter /></Field>
       <ErrorLine message={state.message} />
+      {/university email/.test(state.message) && <p className="-mt-2 text-sm text-muted">Is your school&apos;s email not recognized? <Link id="request-school" href={`/request-school?email=${encodeURIComponent(emailValue)}`} className="text-accent hover:underline">Request your school</Link></p>}
       {!type && <p className="-mb-2 text-xs text-muted">Choose <b className="font-medium text-text-2">Student</b> or <b className="font-medium text-text-2">Professional</b> above to continue.</p>}
       <Button type="submit" size="lg" disabled={pending || !type}>{pending && <Loader2 className="size-4 animate-spin" />} {pending ? "Creating your account…" : "Create account"}</Button>
       <p className="text-sm text-muted">Already have an account? <Link href="/login" className="text-accent hover:underline">Log in</Link></p>
