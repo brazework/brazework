@@ -68,7 +68,9 @@ export function useMentions({ text, setText, ref, enabled, suggest = mentionSugg
     track,
     onKeyDown,
     close,
-    inputProps: { "aria-autocomplete": "list" as const, "aria-expanded": open, "aria-controls": open ? listId : undefined, "aria-activedescendant": open ? `${listId}-${active}` : undefined },
+    // No aria-expanded: it isn't valid on a plain text box (the composer), and screen readers get the
+    // same signal from aria-controls appearing while the list is open.
+    inputProps: { "aria-autocomplete": "list" as const, "aria-controls": open ? listId : undefined, "aria-activedescendant": open ? `${listId}-${active}` : undefined },
     menu: open ? <MentionMenu id={listId} people={people} active={active} onHover={setActive} onPick={pick} /> : soon ? (
       <div role="status" className="absolute inset-x-0 top-full z-40 mt-2 flex items-center gap-1.5 rounded-2xl border border-line bg-surface px-3 py-2 text-xs text-muted shadow-[var(--shadow)]"><AtSign className="size-3.5" /> @mentions are switching on soon. For now this posts as plain text.</div>
     ) : null,

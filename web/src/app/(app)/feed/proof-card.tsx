@@ -21,7 +21,7 @@ export function ProofCard({ p, reason = "" }: { p: Proof; reason?: string }) {
       </div>
 
       <div className="mt-4 flex items-start gap-3">
-        <Link href={`/u/${p.owner.id}`} className="shrink-0"><Avatar first={p.owner.first} last={p.owner.last} size={40} src={p.owner.avatar} /></Link>
+        <Link href={`/u/${p.owner.id}`} tabIndex={-1} aria-hidden="true" className="shrink-0"><Avatar first={p.owner.first} last={p.owner.last} size={40} src={p.owner.avatar} /></Link>
         <div className="min-w-0">
           <p className="text-[15px] leading-snug text-text-2">
             <Link href={`/u/${p.owner.id}`} className="font-medium text-text hover:underline">{`${p.owner.first} ${p.owner.last}`.trim()}</Link> hit a milestone on{" "}

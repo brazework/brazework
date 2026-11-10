@@ -113,10 +113,10 @@ export function PostCard({ post, liked, saved = false, own = false, index, proje
       <header className="flex items-center gap-3">
         <Link href={`/u/${post.author_id}`} aria-hidden="true" tabIndex={-1} className="rounded-full bg-accent-grad p-[2px]"><Avatar first={post.author_first} last={post.author_last} size={38} src={avatarSrc(post.author)} className="border-2 border-surface" /></Link>
         <div className="min-w-0">
-          <Link href={`/u/${post.author_id}`} className="text-[15px] font-medium hover:underline">{post.author_first} {post.author_last}</Link>
+          <Link href={`/u/${post.author_id}`} className="-my-[3px] inline-block py-[3px] text-[15px] font-medium hover:underline">{post.author_first} {post.author_last}</Link>
           <div className="truncate text-xs text-faint">
             {post.author_headline}{post.author_headline && " · "}
-            <Link href={`/post/${post.id}`} className="hover:underline">{timeAgo(post.created_at)}</Link>
+            <Link href={`/post/${post.id}`} className="-my-1 inline-block min-w-6 py-1 text-center hover:underline">{timeAgo(post.created_at)}</Link>
             {(edited || post.edited_at) && <span title={post.edited_at ? `Edited ${new Date(post.edited_at).toLocaleString()}` : "Edited just now"}> · Edited</span>}
             {post.community_name && <> · {post.community_name}</>}
           </div>
@@ -196,7 +196,7 @@ export function PostCard({ post, liked, saved = false, own = false, index, proje
           {replyCount > shown.length && <Link href={`/post/${post.id}`} className="block text-xs font-medium text-muted hover:text-text">View all {replyCount} replies</Link>}
           {shown.map((c) => (
             <div key={c.id} className="flex gap-2.5">
-              <Link href={`/u/${c.author_id}`} className="shrink-0"><Avatar first={c.author_first} last={c.author_last} size={28} /></Link>
+              <Link href={`/u/${c.author_id}`} tabIndex={-1} aria-hidden="true" className="shrink-0"><Avatar first={c.author_first} last={c.author_last} size={28} /></Link>
               <div className="min-w-0 rounded-2xl bg-surface-2/70 px-3 py-2">
                 <div className="text-xs"><Link href={`/u/${c.author_id}`} className="font-medium text-text hover:underline">{`${c.author_first} ${c.author_last}`.trim()}</Link> <span className="text-faint">· {timeAgo(c.created_at)}</span></div>
                 <p className="mt-0.5 text-sm leading-relaxed whitespace-pre-wrap text-text-2">{c.body}</p>

@@ -69,7 +69,9 @@ export function UpdatesPanel() {
       {tab === "feedback" ? (
         <div role="tabpanel" aria-label="Send feedback" className="relative mt-3"><FeedbackForm compact /></div>
       ) : (
-      <ul role="tabpanel" aria-label={tab === "recent" ? "Recent changes" : "Coming next"} className="relative mt-2 flex flex-col">
+      // The panel wraps the list (a <ul> with a tab role stops being a list to screen readers).
+      <div role="tabpanel" aria-label={tab === "recent" ? "Recent changes" : "Coming next"} className="relative mt-2">
+      <ul className="flex flex-col">
         {list.map((u) => (
           <li key={u.id}>
             <button type="button" onClick={() => setOpen(u.id)} className="group flex w-full items-start gap-3 rounded-xl px-1.5 py-2 text-left transition hover:bg-hover">
@@ -88,6 +90,7 @@ export function UpdatesPanel() {
           </li>
         ))}
       </ul>
+      </div>
       )}
       </motion.div>
       )}

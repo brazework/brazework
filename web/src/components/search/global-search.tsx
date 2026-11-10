@@ -102,7 +102,7 @@ export function GlobalSearch() {
           onFocus={() => setOpen(true)}
           placeholder="Search people, clubs, projects, events…"
           autoComplete="off"
-          aria-controls={listId}
+          aria-controls={showPanel ? listId : undefined}
           className="min-w-0 flex-1 bg-transparent text-[15px] outline-none placeholder:text-faint [&::-webkit-search-cancel-button]:hidden"
         />
         {q ? (
