@@ -21,5 +21,6 @@ export async function completeOnboarding(_: OnboardState, form: FormData): Promi
   const { error } = await supabase.from("profiles").update({ ...parsed.data, onboarded: true }).eq("id", user.id);
   if (error) return { message: friendlyError(error) };
   // Came in through a club invite link: land in that club.
-  redirect((await joinRememberedInvite()) ?? "/feed");
+  // Otherwise: find your club next (its officers verify your work), before the feed.
+  redirect((await joinRememberedInvite()) ?? "/onboarding/club");
 }

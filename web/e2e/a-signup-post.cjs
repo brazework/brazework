@@ -46,6 +46,12 @@ const { BASE, step, browser, as, go, closeTour, summary } = require("./lib.cjs")
     let need = await page.getByText(/Pick \d more interest/).count();
     for (let i = 0; need && i < 12; i++) { await page.locator('button[aria-pressed="false"]').nth(i).click().catch(() => {}); need = await page.getByText(/Pick \d more interest/).count(); }
     await page.locator('button[type="submit"]').click();
+    await page.waitForURL(/\/onboarding\/club/, { timeout: 20000 });
+  }, page);
+  await step("then 'Find your club', with clubs to join, before the feed", async () => {
+    await page.getByRole("heading", { name: "Find your club" }).waitFor();
+    await page.getByText("Rocketry Club").first().waitFor({ timeout: 10000 });
+    await page.getByRole("link", { name: /Skip for now/ }).click();
     await page.waitForURL(/\/feed/, { timeout: 20000 });
   }, page);
   await closeTour(page);
