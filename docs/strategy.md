@@ -7,7 +7,7 @@ Builds on [positioning.md](positioning.md) (market research, with sources). Numb
 **Forge is the verified work network for STEM.** Organizations run on it, members prove what they've built, and the companies and universities that hire find them there. Ember, the AI agent built in, does the organization's busywork.
 
 - **YC "describe it in 50 characters":** *Verified work, not résumés, for STEM.*
-- **Why it matters now:** AI made résumés and profiles free to generate. Recruiters see about 3x the applications per role, and Gartner expects 1 in 4 candidate profiles to be fake by 2028 (sources in positioning.md). Work that someone else saw happen is what still carries signal, and today it's buried in group chats and lab notebooks.
+- **Why it matters now:** AI made résumés and profiles free to generate. 91% of recruiters have caught candidate deception (Greenhouse, 2025), and Gartner expects 1 in 4 candidate profiles to be fake by 2028 (sources in positioning.md). Work that someone else saw happen is what still carries signal, and today it's buried in group chats and lab notebooks.
 
 ## 2. The product loop
 

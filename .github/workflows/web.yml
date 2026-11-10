@@ -15,6 +15,10 @@ on:
     branches: [main]
     paths: ["web/**", "supabase/**", ".github/workflows/web.yml"]
   workflow_dispatch:
+  # Weekly, even with no pushes: catches what changes without us (new dependency advisories,
+  # scanner rules, outside services) before it surprises the next push. Mondays 06:00 UTC.
+  schedule:
+    - cron: "0 6 * * 1"
 
 concurrency:
   group: web-${{ github.ref }}
