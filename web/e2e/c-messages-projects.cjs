@@ -86,9 +86,16 @@ async function saved(page, path, text) {
     await josh.locator("#create-box").fill(`Tunnel test section is sealed ${stamp}`);
     const post = josh.getByRole("button", { name: "Post", exact: true });
     await post.waitFor({ timeout: 10000 });
+    if ((await josh.locator("#compose-club").inputValue()) !== "rkt") throw new Error("the club choice didn't stick");
     await post.click();
+    // Saved = the box clears; refused = the composer shows why (role=alert). Either way, know which.
+    const outcome = await Promise.race([
+      josh.waitForFunction(() => document.querySelector("#create-box")?.value === "", null, { timeout: 20000 }).then(() => "saved"),
+      josh.locator("form [role=alert]").first().waitFor({ timeout: 20000 }).then(async () => "refused: " + (await josh.locator("form [role=alert]").first().textContent())),
+    ]).catch(() => "no response after 20s");
+    if (outcome !== "saved") throw new Error(`the post wasn't saved (${outcome})`);
     let seen = 0;
-    for (let i = 0; i < 10 && !seen; i++) { await josh.waitForTimeout(500); await go(josh, "/c/rkt"); seen = await josh.getByText(`Tunnel test section is sealed ${stamp}`).count(); }
+    for (let i = 0; i < 10 && !seen; i++) { if (i) await josh.waitForTimeout(1000); await go(josh, "/c/rkt"); seen = await josh.getByText(`Tunnel test section is sealed ${stamp}`).count(); }
     if (!seen) throw new Error("the update didn't reach the club");
     await go(josh, `/u/${JOSH}`); // back to the profile for the milestone steps
   }, josh);
