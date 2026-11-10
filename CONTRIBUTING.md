@@ -20,6 +20,19 @@ How we ship today (two people, moving fast) and what changes when the team grows
 
 Small, focused commits with plain messages ("Events: week strip and host menu"), one feature each.
 
+## Tracking work (Linear)
+
+Everything lives in the Linear team **Forge**. Its key, `FOR`, is the prefix on every issue: `FOR-30` is issue 30.
+
+- **Projects** are the big goals: *Launch* (switching production on), *Brand & growth* (the rename and the landing page), *Quality* (speed and security in CI) and *Product* (features and member feedback). Each project has numbered milestones, so reading top to bottom gives the order of work.
+- **Labels** come in groups:
+  - **Type**: pick exactly one. Feature, Bug, Improvement or Chore.
+  - **Area**: where a member would notice it. Clubs, Projects, Profiles, Feed & Events, Messages, Notifications, Companies, AI, iPhone.
+  - **Focus**: cross-cutting work. Ops, Security, Performance, Docs, Growth.
+  - **Source**: Feedback or Roadmap. The in-app feedback sync sets Feedback itself.
+- **Commits mention the issue.** Write `FOR-30: Lighthouse budget in CI` to link the commit. Add `Fixes FOR-30` on its own line to close the issue when the commit lands on `main`. Both need Linear's GitHub integration (FOR-5).
+- **Statuses:** Backlog (not yet decided), Todo (decided, has an owner), In Progress, Done or Canceled. Canceled always gets a one-line reason in a comment.
+
 ## Changing the database
 
 - Add a new file in `supabase/`, additive only (new tables, columns, functions; never drop what the live app uses).
@@ -42,4 +55,4 @@ Never commit keys. Server keys live in Vercel's environment variables; local one
 ## Where things are
 
 - Plan and status: `docs/plan.md`. Production setup: `docs/launch.md`. Migration steps: `docs/next-migration.md`.
-- Work tracking: Linear.
+- Work tracking: Linear, team Forge (see "Tracking work" above).
