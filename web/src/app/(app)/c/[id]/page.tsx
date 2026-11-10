@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Globe, MessagesSquare, PartyPopper, Settings, UserPlus } from "lucide-react";
+import { CalendarDays, Globe, MessagesSquare, PartyPopper, Settings, UserPlus } from "lucide-react";
 import { accentTint } from "@/lib/club-look";
 import { openClubChat } from "@/lib/chats";
 import Link from "next/link";
@@ -58,6 +58,14 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
     : { data: [] };
   const now = requestTime();
   const events = ((evRows ?? []) as unknown as Parameters<typeof withHost>[0][]).map(withHost) as HostedEvent[];
+  // Officers: what's waiting on them, at the top of the club.
+  const officer = rank(role) >= 3;
+  const { milestones: msOn } = await dbFeatures();
+  const [toVerify, joinReqs] = officer ? await Promise.all([
+    msOn ? supabase.from("milestones").select("id", { count: "exact", head: true }).eq("community_id", id).in("status", ["pending", "disputed"]) : Promise.resolve({ count: 0 }),
+    can(role, "approve") ? supabase.from("community_requests").select("uid", { count: "exact", head: true }).eq("community_id", id) : Promise.resolve({ count: 0 }),
+  ]) : [{ count: 0 }, { count: 0 }];
+  const nextEvent = events.find((e) => Date.parse(e.ends_at) > now) ?? null;
   const upcomingEvents = events.filter((e) => !inLog(e, now));
   const pastEvents = events.filter((e) => inLog(e, now)).reverse();
   const evIds = upcomingEvents.map((e) => e.id);
@@ -134,6 +142,31 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
             </li>
           ))}
         </ul>
+        {officer && (
+          <section aria-label="To do" className="mt-4 rounded-3xl border border-line bg-surface p-4">
+            <h2 className="text-xs font-medium tracking-wide text-faint uppercase">To do</h2>
+            <ul className="mt-2 grid gap-1.5 sm:grid-cols-2">
+              {[
+                { n: toVerify.count ?? 0, label: "milestones to verify", href: `/c/${c.id}/manage?tab=verify`, show: msOn },
+                { n: joinReqs.count ?? 0, label: "join requests", href: `/c/${c.id}/manage?tab=requests`, show: can(role, "approve") },
+                { n: (held.data ?? []).length, label: "held posts to review", href: `/c/${c.id}?tab=held`, show: isMod },
+              ].filter((t) => t.show).map((t) => (
+                <li key={t.label}>
+                  <Link href={t.href} className="flex items-center gap-2.5 rounded-2xl px-3 py-2.5 text-sm transition hover:bg-hover">
+                    <span className={t.n ? "grid min-w-7 place-items-center rounded-full bg-accent-grad px-2 py-0.5 text-xs font-semibold text-on-accent tabular-nums" : "grid min-w-7 place-items-center rounded-full bg-surface-2 px-2 py-0.5 text-xs text-faint tabular-nums"}>{t.n}</span>
+                    <span className={t.n ? "text-text" : "text-muted"}>{t.label}</span>
+                  </Link>
+                </li>
+              ))}
+              <li>
+                <Link href={nextEvent ? `/events/${nextEvent.id}` : `/c/${c.id}?tab=events`} className="flex items-center gap-2.5 rounded-2xl px-3 py-2.5 text-sm transition hover:bg-hover">
+                  <CalendarDays className="size-4 shrink-0 text-faint" />
+                  <span className="min-w-0 truncate text-text-2">{nextEvent ? `Next: ${nextEvent.title}` : "No event planned. Host one"}</span>
+                </Link>
+              </li>
+            </ul>
+          </section>
+        )}
         {typeof sp.chat_error === "string" && <p role="alert" className="mt-4 rounded-2xl border border-danger/30 bg-danger/10 px-4 py-2.5 text-sm text-danger">{sp.chat_error}</p>}
         {sp.joined === "1" && (
           <p className="relative mt-4 flex items-center gap-2 rounded-2xl border border-line bg-surface-2 px-4 py-3 text-sm">

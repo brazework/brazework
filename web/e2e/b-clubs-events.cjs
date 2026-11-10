@@ -20,6 +20,14 @@ const { BASE, step, browser, as, go, summary } = require("./lib.cjs");
     await josh.getByRole("button", { name: /^Leave$/ }).waitFor({ timeout: 15000 });
   }, josh);
   let chatUrl = "";
+  await step("officers see a To do list on the club; members don't", async () => {
+    await go(cara, clubUrl);
+    const todo = cara.getByRole("region", { name: "To do" });
+    await todo.waitFor({ timeout: 15000 });
+    for (const t of ["milestones to verify", "join requests"]) if (!(await todo.getByText(t).count())) throw new Error(`missing: ${t}`);
+    await go(josh, clubUrl);
+    if (await josh.getByRole("region", { name: "To do" }).count()) throw new Error("members shouldn't see the officer to-do list");
+  }, cara);
   await step("Josh opens the club chat and posts", async () => {
     await josh.getByRole("button", { name: "Club chat" }).click();
     await josh.waitForURL(/\/messages\/g\//, { timeout: 20000 });

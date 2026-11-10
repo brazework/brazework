@@ -50,7 +50,7 @@ To build:
 
 - 🟡 Create/claim club, roles (owner/admin/moderator/helper/member exist), invite links ✅.
 - ⬜ Import members (CSV/email list), events from Google Calendar / `.ics`.
-- ⬜ Club home as a to-do list (verify queue, join requests, held posts, upcoming events).
+- ✅ Club home as a to-do list for officers (verify queue incl. disputes, join requests, held posts, next event).
 - 🟡 Discord bridge (announcements exist; add Discord → Forge post via bot/webhook, stubbed without credentials).
 - 🟡 Weekly club report by Ember (exists, manual; add a shareable link).
 - ✅ Officer handoff at end of term: `club-handoff.sql` (step 18), "Hand off" tab, SQL and e2e tests.
