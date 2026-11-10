@@ -18,6 +18,7 @@ import type { Invite } from "../../../communities/actions";
 import { BanRow, MemberActions, RequestActions, SettingsForm } from "./manage-client";
 import { RecentReviews, VerifyQueue, type QueueItem } from "./verify";
 import { ReportView } from "./report";
+import { ShareReport } from "./report-client";
 import { HandOff } from "./handoff";
 import { Integrations } from "./integrations";
 import { loadClubReport } from "@/lib/club-report";
@@ -65,6 +66,10 @@ async function Manage({ params, searchParams }: { params: PageProps<"/c/[id]/man
   const intg = tab === "integrations" && features.integrations ? (await supabase.from("club_integrations").select("discord_webhook, discord_events, discord_milestones, discord_updates").eq("community_id", id).maybeSingle()).data : null;
   const discord = { connected: !!intg?.discord_webhook, masked: intg?.discord_webhook ? `••••${intg.discord_webhook.slice(-6)}` : "", events: intg?.discord_events ?? true, milestones: intg?.discord_milestones ?? true, updates: intg?.discord_updates ?? true };
   const [report, copilotOn] = tab === "report" ? await Promise.all([loadClubReport(supabase, id, features), copilotEnabled()]) : [null, false];
+  // The live share link, for owners and admins (club-reports.sql; absent before that step).
+  const shareToken = tab === "report" && rank(role) >= 4
+    ? ((await supabase.from("club_report_links").select("token").eq("community_id", id).is("revoked_at", null).maybeSingle()).data?.token as string | undefined) ?? null
+    : null;
 
   const MS_COLS = ((await dbFeatures()).verification ? "dispute_note, escalated, revoked_reason, " : "") + "id, owner_id, title, detail, evidence, achieved_on, created_at, status, reviewer_name, review_note, project:projects(title, summary), owner:profiles!milestones_owner_id_fkey(first_name, last_name, headline)";
   const [reqs, members, bans, invites, queue, reviewed] = await Promise.all([
@@ -86,6 +91,7 @@ async function Manage({ params, searchParams }: { params: PageProps<"/c/[id]/man
       <div className="mt-6">
         {tab === "integrations" && <Integrations cid={id} discord={discord} available={features.integrations} />}
         {tab === "report" && report && <ReportView r={report} clubId={id} copilot={copilotOn} />}
+        {tab === "report" && rank(role) >= 4 && <div className="mt-4"><ShareReport clubId={id} token={shareToken} /></div>}
         {tab === "verify" && (((queue.data ?? []) as unknown as QueueItem[]).length ? <VerifyQueue items={(queue.data ?? []) as unknown as QueueItem[]} /> : (
           <EmptyState icon={<BadgeCheck className="size-6" />} title="Nothing to verify" body="When members ask the club to vouch for a milestone (a test, a build, a result), it shows up here." />
         ))}
