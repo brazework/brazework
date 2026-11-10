@@ -516,12 +516,11 @@ html { -webkit-tap-highlight-color: transparent; }
   #faq h3 button { padding: 13px 18px; font-size: 0.93rem; }
   #faq [id^="faq-"] p { padding: 0 18px 14px; font-size: 0.88rem; }
   #faq .divide-y > :nth-child(n+7) { display: none; }
-  #mission .m-cards { grid-template-columns: 1fr 1fr; }
   #product .m-cards > * { padding: 12px !important; }
   #product .m-cards h3 { font-size: 0.8rem !important; }
-  #product .m-cards > *, #mission .m-cards > * { padding: 14px; grid-column: auto !important; }
-  #product .m-cards p, #mission .m-cards p { display: none; }
-  #product .m-cards h3, #mission .m-cards h3 { margin-top: 0.6rem; font-size: 0.92rem; line-height: 1.25; }
+  #product .m-cards > * { padding: 14px; grid-column: auto !important; }
+  #product .m-cards p { display: none; }
+  #product .m-cards h3 { margin-top: 0.6rem; font-size: 0.92rem; line-height: 1.25; }
   #product .m-cards > * > span:first-child { width: 2.25rem; height: 2.25rem; }
   /* How it works: every step listed; only the active one (it advances on its own) shows its line. */
   #how [aria-live="polite"] { display: none; }

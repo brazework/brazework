@@ -57,10 +57,10 @@ export function Hero() {
             not résumés.
           </h1>
           <p className="m-hide focus-in mt-6 max-w-xl text-lg leading-relaxed text-muted" style={{ ["--delay" as string]: "0.1s" }}>
-            Brazework is the network for STEM clubs and the people who hire from them. Clubs run on it, members prove what they&apos;ve built, and Ember, the AI agent built in, does the busywork.
+            Your club&apos;s officers saw you build it. On Brazework they vouch for it, and companies hire on that proof, not on a résumé anyone can write. Clubs run on it, and Ember, the built-in AI agent, does the busywork.
           </p>
           {/* Phones: the same idea, short enough to read in full. */}
-          <p className="m-only focus-in mt-5 text-base leading-relaxed text-muted">The network for STEM clubs and the people who hire from them. Ember, the built-in AI agent, does the busywork.</p>
+          <p className="m-only focus-in mt-5 text-base leading-relaxed text-muted">Your club vouches for what you build. Companies hire on that proof, not a résumé.</p>
 
           <div className="rise-in mt-8" style={{ ["--delay" as string]: "0.2s" }}>
             <div role="tablist" aria-label="Who Brazework is for" className="flex flex-wrap gap-2">

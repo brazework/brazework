@@ -1,4 +1,4 @@
-import { BadgeCheck, BarChart3, Bot, CalendarDays, Check, FileCheck2, Images, KeyRound, MessageSquareLock, ShieldCheck, Users } from "lucide-react";
+import { BadgeCheck, BarChart3, CalendarDays, Check, Images, MessageSquareLock, ShieldCheck, Users } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/forge";
 import { HowItWorks } from "./how-it-works";
@@ -105,68 +105,11 @@ export function Features() {
   );
 }
 
-const GOALS = [
-  ["Start with clubs", "One chapter of 30 to 100 people is useful on day one. We win one club, then one campus, at a time."],
-  ["Make verified work the signal", "Work a club vouched for should matter more than a polished, AI-written résumé."],
-  ["AI that works for you", "Ember does the busywork for officers and members, and you approve everything it does."],
-  ["Earn it from those who hire", "Free for students and clubs. Companies pay to sponsor challenges and meet the people building."],
-];
-
-export function Mission() {
-  return (
-    <section id="mission" data-story="Mission" className="story-sec scroll-mt-24 bg-surface-2/50 py-24 sm:py-32">
-      <div className="mx-auto grid grid-cols-1 max-w-7xl gap-12 px-6 lg:grid-cols-[1fr_1.2fr] lg:items-start">
-        <Reveal>
-          <Eyebrow>Our mission</Eyebrow>
-          <h2 className={cn("mt-5", H2)}>Make what you build <span className="text-grad">the way you get found.</span></h2>
-          {/* Draft copy: the founders should rewrite this in their own words. */}
-          <p className="m-hide mt-6 text-lg leading-relaxed text-muted">Some of the most capable engineers, scientists and builders get overlooked because their best work lives in group chats and lab notebooks, while hiring runs on keywords and AI-written résumés. We&apos;re starting with the organizations they already belong to, beginning with our own campus, and making what they build the way they get found.</p>
-          <p className="m-only mt-4 text-base leading-relaxed text-muted">The best builders get overlooked because their work lives in group chats while hiring runs on keywords. We start with their organizations and make that work count.</p>
-        </Reveal>
-        <div className="m-cards grid grid-cols-1 gap-4 sm:grid-cols-2">
-          {GOALS.map(([t, b], i) => (
-            <Reveal key={t} delay={i * 0.06} className="spotlight rounded-3xl border border-line bg-surface p-6">
-              <div className="text-grad text-sm font-semibold">0{i + 1}</div>
-              <h3 className="mt-2 font-semibold">{t}</h3>
-              <p className="mt-1.5 text-sm text-muted">{b}</p>
-            </Reveal>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
 export function FaqSection() {
   return (
     <section id="faq" data-story="Questions" className="story-sec mx-auto max-w-3xl scroll-mt-24 px-6 py-24 sm:py-32">
       <Head eyebrow="FAQ" title="Questions, answered." center />
       <div className="mt-10"><Faq /></div>
-    </section>
-  );
-}
-
-const AI_POINTS = [
-  { icon: FileCheck2, title: "A trust layer AI can read", body: "Each verified milestone records who vouched for it, when, and the evidence: signal people and their AI tools can trust." },
-  { icon: Bot, title: "Ember, the agent inside", body: "Plans meetings, drafts updates and finds the right people. It checks Brazework first, and you approve every action." },
-  { icon: KeyRound, title: "Your Brazework in any AI", body: "Connect Claude, Cursor or any MCP client and ask about your clubs, events and projects. Read-only and revocable." },
-];
-
-export function AiEra() {
-  return (
-    <section id="ai" data-story="Built for AI" className="story-sec scroll-mt-24 py-24 sm:py-32">
-      <div className="mx-auto max-w-7xl px-6">
-        <Head eyebrow="Built for the AI era" title="As AI floods hiring," accent="verified work becomes the signal." body="Brazework is designed so the proof behind a person is something both people and software can trust, and so AI does the busywork instead of the talking." />
-        <div className="m-cards mt-12 grid grid-cols-1 gap-4 md:grid-cols-3">
-          {AI_POINTS.map((f, i) => (
-            <Reveal key={f.title} delay={i * 0.06} className="spotlight group rounded-3xl border border-line bg-surface p-7">
-              <span className="grid size-11 place-items-center rounded-2xl bg-accent-grad text-on-accent transition duration-300 group-hover:scale-110"><f.icon className="size-5" /></span>
-              <h3 className="mt-5 text-lg font-semibold tracking-tight">{f.title}</h3>
-              <p className="mt-1.5 text-sm leading-relaxed text-muted">{f.body}</p>
-            </Reveal>
-          ))}
-        </div>
-      </div>
     </section>
   );
 }

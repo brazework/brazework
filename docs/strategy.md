@@ -1,6 +1,19 @@
-# Brazework: strategy to YC and to revenue (2026-11-09)
+# Brazework: strategy to YC and to revenue (updated 2026-11-10)
 
 Builds on [positioning.md](positioning.md) (market research, with sources). Numbers marked *assumption* are hypotheses to test, not facts.
+
+## The one-pager
+
+| | |
+|---|---|
+| **Problem** | AI made résumés and profiles free to fake: 91% of recruiters have caught candidate deception, and 1 in 4 candidate profiles may be fake by 2028. STEM students build real things in clubs, but the proof lives in group chats and lab notebooks, where no one hiring can see it. |
+| **Product** | The verified work network for STEM. **Clubs run on it** (members, events, chat, announcements, with Ember, the AI agent, doing the busywork). **Members post projects** (photos, video with callouts, specs, the tools). **Club officers, who saw the work happen, verify each milestone** with its evidence, and their name stays on it. **Companies find people by that proof** and sponsor the clubs behind it. |
+| **Why us, why it's defensible** | Verification is a social act only the club can perform, so the trust graph is ours: who vouched, when, with what evidence. Each verified milestone makes a profile more valuable to its owner and the whole network more useful to companies, and a club's history carries across officer turnover. Competitors either have the audience without the proof (LinkedIn, Handshake) or the admin without the careers outcome (Presence, Engage). |
+| **The habit** | A weekly loop that pays off: post what you built, get it verified, see who looked (Your week, the digest, "viewed by 3 companies"). Officers come back every Monday for Ember's brief. Clubs live on it, so it's where the chapter actually happens. |
+| **Business model** | Free forever for students and clubs (the supply side and the trust). Companies pay first: chapter sponsorships ($1–5k per chapter per semester) and verified-work search ($300–500 per seat per month). Then universities ($15–40k per campus per year) and national organizations (a per-chapter network license). |
+| **Go-to-market** | Atomic network: one club of 30–100 people, useful on day one. Design partner: NSBE @ UHart, then the other engineering clubs, then nearby campuses through officer-to-officer intros, then national organizations (NSBE, SHPE, SWE) once 20+ chapters are live. First sponsors: Connecticut employers that already recruit at NSBE (Pratt & Whitney, Collins, Electric Boat, Sikorsky). |
+| **What we'll show YC** | 40%+ of a pilot club's members active weekly for 8 weeks; 15+ verified milestones in the first month; organizations growing 5–10% a week; companies messaging members; one paid sponsor pilot or signed LOI. |
+| **Where we are (Nov 2026)** | The full loop is built and tested (84 end-to-end checks): club, projects, verification with evidence and revocation, company search, sponsored challenges, Ember. Live in production on the new name; the pilot with the UHart chapter is next. |
 
 ## 1. What Brazework is, in one line
 
@@ -108,7 +121,7 @@ Don't say "NSBE partner" publicly until NSBE agrees; say "built with student cha
 2. **Sponsor report:** a semester summary per organization, shareable.
 3. **Company side:** search by verified work, sponsor pages, sponsorship checkout.
 4. **University dashboard:** organizations, engagement, outcomes.
-5. **Production:** run SQL steps 5–15, add `ANTHROPIC_API_KEY`, open the site publicly.
+5. **Production:** finish the database steps (34–36 left, FIX-25), add `ANTHROPIC_API_KEY` (FIX-15), real email (FIX-1), then open the site publicly.
 6. **iPhone app:** TestFlight and push notifications once the web loop is proven at UHart.
 
 ## 9. Risks

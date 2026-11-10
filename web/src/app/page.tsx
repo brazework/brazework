@@ -6,14 +6,16 @@ import { Founders } from "@/components/landing/founders";
 import { Traction } from "@/components/landing/traction";
 import { SpotlightTracker } from "@/components/landing/interactive";
 import { LegacyLinks } from "@/components/landing/legacy-links";
-import { AiEra, Audiences, FaqSection, Features, How, Mission, Pricing, Problem } from "@/components/landing/marketing";
+import { Audiences, FaqSection, Features, How, Pricing, Problem } from "@/components/landing/marketing";
 import { Nav } from "@/components/landing/nav";
 import { Organizations } from "@/components/landing/organizations";
+import { ClubShowcase, ProjectShowcase } from "@/components/landing/showcase";
 import { StoryRail } from "@/components/landing/story-rail";
 import { ThemeChrome } from "@/components/theme-chrome";
 
-// The marketing page: pick your field and see your profile, every kind of builder, why now,
-// how it works, who it's for, the product, the mission, the founding clubs program, and questions.
+// The marketing page, in the order a cold visitor needs it: what it is and who it's for (the hero,
+// with the live numbers), why now, how verification works, Ember, the four ways in, what clubs get,
+// pricing, the founding clubs program, questions, and one last call to join.
 export default function Landing() {
   return (
     <div className="story-root min-h-dvh">
@@ -27,12 +29,12 @@ export default function Landing() {
         <Suspense fallback={null}><Traction /></Suspense>
         <Problem />
         <How />
+        <ProjectShowcase />
+        <ClubShowcase />
         <CopilotSection />
         <Audiences />
-        <AiEra />
         <Features />
         <Pricing />
-        <Mission />
         <Founders />
         <Organizations />
         <FaqSection />
