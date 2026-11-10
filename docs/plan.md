@@ -27,7 +27,7 @@ Based on [current-state.md](current-state.md) (the map of what exists). Work goe
 - ✅ Sign-up with school email + fields, enforced in the database too (`signup-rules.sql`, step 25).
 - ✅ Onboarding checklist on Home until done: club → project → first update → request verification → verified (c6abefa).
 - ✅ "Find your club" before the feed: onboarding step 2 (`/onboarding/club`) suggests clubs by field and topics, with search, start-your-club and skip; invite links join you directly.
-- 🟡 Projects with photos/specs/team, GitHub import via Ember (exists; add hardware fields: specs, team list).
+- ✅ Projects with photos, a specs table (`project-specs.sql`, step 29), a team (owner adds teammates from their clubs) and GitHub import via Ember.
 - ✅ Weekly nudge in-app: "Your week" on Home (what's waiting on you first, what happened in your clubs, one next step such as a quiet project); folds like every rail card. Tests: `web/tests/week.test.ts`, e2e step in `c-messages-projects.cjs`.
 - ⬜ Email digest: needs an email sender (e.g. Resend) and an off switch in Settings.
 - ✅ Profile = proof: verified count, clubs, challenge wins, featured project, per-project timeline; public/private per project and per milestone (milestones are private until shown).

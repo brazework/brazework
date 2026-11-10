@@ -57,10 +57,12 @@ async function saved(page, path, text) {
     await josh.getByRole("button", { name: "Add project" }).first().click();
     await josh.fill('input[name="title"]', title);
     await josh.fill('textarea[name="summary"]', "A small open-loop wind tunnel for testing fin shapes.");
+    await josh.locator('input[name="spec_label"]').first().fill("Test section");
+    await josh.locator('input[name="spec_value"]').first().fill("30 × 30 cm");
     await josh.getByRole("button", { name: "Add project" }).last().click();
     await josh.getByText(title).first().waitFor({ timeout: 15000 });
   }, josh);
-  await step("Josh adds Maya to the project's team", async () => {
+  await step("Josh adds Maya to the project's team (and its specs show)", async () => {
     await josh.getByRole("link", { name: title }).first().click();
     await josh.waitForURL(/\/projects\/[^/]+$/, { timeout: 15000 });
     const opt = await josh.locator("#team-add option", { hasText: "Maya Patel" }).getAttribute("value");
@@ -68,6 +70,7 @@ async function saved(page, path, text) {
     await josh.getByRole("button", { name: "Add teammate" }).click();
     await josh.locator('[aria-label="Team"]').getByText("Maya Patel").waitFor({ timeout: 15000 });
     await josh.getByText("Built by the team").waitFor();
+    await josh.getByText("30 × 30 cm").waitFor(); // the spec saved with the project shows on its page
   }, josh);
   await step("Josh posts an update about the project, shared with Rocketry Club", async () => {
     const stamp = Date.now() % 100000;

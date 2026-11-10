@@ -23,6 +23,7 @@ const schema = z
     details: z.string().trim().max(5000).default(""),
     link: z.string().trim().max(300).default(""),
     tools: z.array(z.string().trim().min(1).max(40).refine((t) => !/[<>]/.test(t))).max(12, "Pick up to 12 tools.").default([]),
+    specs: z.array(z.object({ label: z.string().trim().min(1).max(40, "Spec names are up to 40 characters."), value: z.string().trim().min(1).max(80, "Spec values are up to 80 characters.") })).max(16, "Up to 16 specs.").default([]),
   })
   .refine((v) => v.link === "" || /^https?:\/\/\S+$/i.test(v.link), { message: "Links must start with http:// or https://", path: ["link"] });
 
@@ -38,6 +39,8 @@ export async function saveProject(_: ProjectState, form: FormData): Promise<Proj
     details: form.get("details") ?? "",
     link: form.get("link") ?? "",
     tools: [...new Set(form.getAll("tools").map(String))],
+    // Specs come as matching label/value rows; a row with either side empty is dropped.
+    specs: form.getAll("spec_label").map((l, i) => ({ label: String(l).trim(), value: String(form.getAll("spec_value")[i] ?? "").trim() })).filter((r) => r.label && r.value),
   });
   if (!parsed.success) return { ok: false, message: parsed.error.issues[0]?.message ?? "Check the form." };
   const v = parsed.data;
@@ -51,7 +54,7 @@ export async function saveProject(_: ProjectState, form: FormData): Promise<Proj
   if (error) return { ok: false, message: friendlyError(error) };
   const id = data?.[0]?.id as string | undefined;
   if (!id) return { ok: false, message: "You don't have permission to do that." };
-  const d = { details: v.details, link: v.link };
+  const d = { details: v.details, link: v.link, ...((await dbFeatures()).projectSpecs && { specs: v.specs }) };
   const upd = v.id ? await supabase.from("project_details").update(d).eq("project_id", id).select("project_id") : { data: [] };
   if (!upd.data?.length) {
     const { error: e2 } = await supabase.from("project_details").insert({ project_id: id, ...d });

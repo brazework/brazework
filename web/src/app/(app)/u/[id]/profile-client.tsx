@@ -27,6 +27,7 @@ export type ProjectView = {
   link: string | null;
   milestones?: Milestone[];
   tools?: string[];
+  specs?: { label: string; value: string }[];
 };
 
 const initial: ProjectState = { ok: false, message: "" };
@@ -65,7 +66,7 @@ export function EditBasics({ headline, bio }: { headline: string; bio: string })
 const meta = (p: ProjectView) => (p.status === "completed" ? `Completed${p.year ? ` ${p.year}` : ""}` : `In progress · updated ${timeAgo(p.updated_at)}`);
 const safeLink = (l: string | null) => (l && /^https?:\/\/\S+$/i.test(l) ? l : null);
 
-export function ProjectCard({ project, own, interests, copilot = false, clubs, stack = false }: { project: ProjectView; own: boolean; interests: string[]; copilot?: boolean; clubs?: Club[]; stack?: boolean }) {
+export function ProjectCard({ project, own, interests, copilot = false, clubs, stack = false, specsOn = false }: { project: ProjectView; own: boolean; interests: string[]; copilot?: boolean; clubs?: Club[]; stack?: boolean; specsOn?: boolean }) {
   const verified = (project.milestones ?? []).filter((m) => m.status === "verified").length;
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -117,7 +118,7 @@ export function ProjectCard({ project, own, interests, copilot = false, clubs, s
         </div>
       )}
       {sharing && <ShareBox id={project.id} title={project.title} onDone={(m) => { setSharing(false); setMsg(m); }} />}
-      {editing && <ProjectDialog project={project} interests={interests} copilot={copilot} stack={stack} onClose={() => setEditing(false)} />}
+      {editing && <ProjectDialog project={project} interests={interests} copilot={copilot} stack={stack} specsOn={specsOn} onClose={() => setEditing(false)} />}
     </article>
   );
 }
@@ -129,7 +130,7 @@ const FILTERS = [
 ] as const;
 
 // The project grid with All / In progress / Completed filters; cards glide into their new spots.
-export function ProjectGrid({ projects, own, interests, copilot = false, clubs, stack = false }: { projects: ProjectView[]; own: boolean; interests: string[]; copilot?: boolean; clubs?: Club[]; stack?: boolean }) {
+export function ProjectGrid({ projects, own, interests, copilot = false, clubs, stack = false, specsOn = false }: { projects: ProjectView[]; own: boolean; interests: string[]; copilot?: boolean; clubs?: Club[]; stack?: boolean; specsOn?: boolean }) {
   const [filter, setFilter] = useState<(typeof FILTERS)[number]["id"]>("all");
   const shown = filter === "all" ? projects : projects.filter((p) => p.status === filter);
   const count = (id: string) => (id === "all" ? projects.length : projects.filter((p) => p.status === id).length);
@@ -149,7 +150,7 @@ export function ProjectGrid({ projects, own, interests, copilot = false, clubs, 
         <AnimatePresence mode="popLayout" initial={false}>
           {shown.map((pr) => (
             <motion.div key={pr.id} layout initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} transition={{ duration: 0.25 }}>
-              <ProjectCard project={pr} own={own} interests={interests} copilot={copilot} clubs={clubs} stack={stack} />
+              <ProjectCard project={pr} own={own} interests={interests} copilot={copilot} clubs={clubs} stack={stack} specsOn={specsOn} />
             </motion.div>
           ))}
         </AnimatePresence>
@@ -183,17 +184,17 @@ function ShareBox({ id, title, onDone }: { id: string; title: string; onDone: (m
   );
 }
 
-export function ProjectEditor({ interests, copilot = false, stack = false }: { interests: string[]; copilot?: boolean; stack?: boolean }) {
+export function ProjectEditor({ interests, copilot = false, stack = false, specsOn = false }: { interests: string[]; copilot?: boolean; stack?: boolean; specsOn?: boolean }) {
   const [open, setOpen] = useState(false);
   return (
     <>
       <Button onClick={() => setOpen(true)}><Plus className="size-4" /> Add project</Button>
-      {open && <ProjectDialog interests={interests} copilot={copilot} stack={stack} onClose={() => setOpen(false)} />}
+      {open && <ProjectDialog interests={interests} copilot={copilot} stack={stack} specsOn={specsOn} onClose={() => setOpen(false)} />}
     </>
   );
 }
 
-function ProjectDialog({ project, interests, onClose, copilot = false, stack = false }: { project?: ProjectView; interests: string[]; onClose: () => void; copilot?: boolean; stack?: boolean }) {
+function ProjectDialog({ project, interests, onClose, copilot = false, stack = false, specsOn = false }: { project?: ProjectView; interests: string[]; onClose: () => void; copilot?: boolean; stack?: boolean; specsOn?: boolean }) {
   const formRef = useRef<HTMLFormElement>(null);
   const [details, setDetails] = useState(project?.details ?? "");
   const [tools, setTools] = useState<string[]>(project?.tools ?? []);
@@ -308,6 +309,7 @@ function ProjectDialog({ project, interests, onClose, copilot = false, stack = f
         )}
         {stack && <StackPicker value={tools} onChange={setTools} text={`${summaryText}\n${details}`} />}
         <Field label="Link"><input name="link" type="url" defaultValue={project?.link ?? ""} placeholder="https://github.com/…" maxLength={300} className={inputCls} /></Field>
+        {specsOn && <SpecsEditor initial={project?.specs ?? []} />}
         <label className="flex items-start gap-3 rounded-2xl border border-line p-4 text-sm">
           <input type="checkbox" name="private" defaultChecked={project?.private} className="mt-0.5 size-4 accent-[var(--text)]" />
           <span><span className="font-medium">Keep the write-up and link private</span><span className="block text-faint">Others see only the card.</span></span>
@@ -319,5 +321,24 @@ function ProjectDialog({ project, interests, onClose, copilot = false, stack = f
         </div>
       </form>
     </dialog>
+  );
+}
+
+// Specs: label/value rows for the numbers that matter ("Peak thrust: 2 kN"). Empty rows are dropped.
+function SpecsEditor({ initial }: { initial: { label: string; value: string }[] }) {
+  const [rows, setRows] = useState(initial.length ? initial : [{ label: "", value: "" }]);
+  const set = (i: number, k: "label" | "value", v: string) => setRows((r) => r.map((x, j) => (j === i ? { ...x, [k]: v } : x)));
+  return (
+    <fieldset className="flex flex-col gap-2">
+      <legend className="mb-1.5 text-sm font-medium">Specs <span className="font-normal text-faint">(optional)</span></legend>
+      {rows.map((r, i) => (
+        <div key={i} className="flex items-center gap-2">
+          <input name="spec_label" value={r.label} onChange={(e) => set(i, "label", e.target.value)} maxLength={40} placeholder={i === 0 ? "e.g. Peak thrust" : "Name"} aria-label={`Spec ${i + 1} name`} className={cn(inputCls, "w-2/5")} />
+          <input name="spec_value" value={r.value} onChange={(e) => set(i, "value", e.target.value)} maxLength={80} placeholder={i === 0 ? "e.g. 2 kN" : "Value"} aria-label={`Spec ${i + 1} value`} className={cn(inputCls, "flex-1")} />
+          <button type="button" onClick={() => setRows((x) => (x.length > 1 ? x.filter((_, j) => j !== i) : [{ label: "", value: "" }]))} aria-label={`Remove spec ${i + 1}`} className="grid size-9 shrink-0 place-items-center rounded-full text-faint hover:bg-hover hover:text-text"><X className="size-4" /></button>
+        </div>
+      ))}
+      {rows.length < 16 && <button type="button" onClick={() => setRows((x) => [...x, { label: "", value: "" }])} className="self-start rounded-full px-1 text-sm text-text-2 hover:text-text">+ Add a spec</button>}
+    </fieldset>
   );
 }

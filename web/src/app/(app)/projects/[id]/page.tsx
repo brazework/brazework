@@ -42,14 +42,14 @@ async function ProjectView({ params }: { params: PageProps<"/projects/[id]">["pa
   const { id } = await params;
   const { supabase, user } = await getViewer();
   if (!user) redirect("/login");
-  const { milestones: msOn, projectTools: stackOn } = await dbFeatures();
+  const { milestones: msOn, projectTools: stackOn, projectSpecs: specsOn } = await dbFeatures();
   const { data } = await supabase.from("projects").select(`id, title, summary, status, year, tags, private, updated_at, created_at, owner_id, profiles!projects_owner_id_fkey(first_name, last_name, headline, field)${stackOn ? ", tools" : ""}`).eq("id", id).maybeSingle();
   const p = data as unknown as Project | null;
   const own = p?.owner_id === user.id;
   if (!p || (p.private && !own)) return <EmptyState title="This project isn't available" body="It may be private, or it was removed." />;
 
   const [det, ms, ups, more, teamRes, clubRes] = await Promise.all([
-    supabase.from("project_details").select("details, link").eq("project_id", id).maybeSingle(),
+    supabase.from("project_details").select(specsOn ? "details, link, specs" : "details, link").eq("project_id", id).maybeSingle(),
     msOn ? supabase.from("milestones").select(await milestoneCols()).eq("project_id", id).order("achieved_on", { ascending: false }).limit(100) : Promise.resolve({ data: [] }),
     supabase.from("posts").select(await postSelect()).eq("project_id", id).eq("status", "visible").order("created_at", { ascending: false }).limit(30),
     supabase.from("projects").select("id, title, status").eq("owner_id", p.owner_id).eq("private", false).neq("id", id).order("updated_at", { ascending: false }).limit(4),
@@ -64,7 +64,8 @@ async function ProjectView({ params }: { params: PageProps<"/projects/[id]">["pa
     ? await supabase.from("community_members").select("uid, first_name, last_name").in("community_id", myClubIds).neq("uid", user.id).limit(200)
     : { data: [] };
   const candidates = [...new Map(((clubPeople ?? []) as { uid: string; first_name: string; last_name: string }[]).map((c) => [c.uid, { id: c.uid, first: c.first_name, last: c.last_name }])).values()];
-  const details = (det.data as { details: string; link: string } | null) ?? { details: "", link: "" };
+  const details = (det.data as unknown as { details: string; link: string; specs?: { label: string; value: string }[] } | null) ?? { details: "", link: "" };
+  const specs = details.specs ?? [];
   const link = /^https?:\/\/\S+$/i.test(details.link) ? details.link : "";
   const milestones = (ms.data ?? []) as unknown as unknown as Milestone[];
   const verified = milestones.filter((m) => m.status === "verified");
@@ -104,6 +105,20 @@ async function ProjectView({ params }: { params: PageProps<"/projects/[id]">["pa
             {own && <Link href={`/u/${user.id}#projects`} className="inline-flex h-10 items-center gap-1.5 rounded-full border border-line px-4 text-sm transition hover:bg-hover"><Pencil className="size-4" /> Edit</Link>}
           </div>
         </Panel>
+
+        {specs.length > 0 && (
+          <Panel className="p-6">
+            <Kicker>Specs</Kicker>
+            <dl className="mt-3 divide-y divide-line overflow-hidden rounded-2xl border border-line">
+              {specs.map((sp, i) => (
+                <div key={i} className="grid grid-cols-[minmax(0,2fr)_minmax(0,3fr)] gap-3 px-4 py-2.5 text-sm">
+                  <dt className="truncate text-muted">{sp.label}</dt>
+                  <dd className="font-medium tabular-nums">{sp.value}</dd>
+                </div>
+              ))}
+            </dl>
+          </Panel>
+        )}
 
         {(tools.length > 0 || emberOn) && (
           <Panel className="p-6">

@@ -81,7 +81,7 @@ async function ProfileView({ params }: { params: PageProps<"/u/[id]">["params"] 
   // Second round: what depends on the first (your likes on these posts, project write-ups, mutual follows).
   const [likesRes, detailsRes, mutualRes, winsRes] = await Promise.all([
     posts.length ? supabase.from("likes").select("post_id").eq("user_id", user.id).in("post_id", posts.map((x) => x.id)) : Promise.resolve({ data: [] }),
-    projectRows.length ? supabase.from("project_details").select("project_id, details, link").in("project_id", projectRows.map((x) => x.id)) : Promise.resolve({ data: [] }),
+    projectRows.length ? supabase.from("project_details").select(f.projectSpecs ? "project_id, details, link, specs" : "project_id, details, link").in("project_id", projectRows.map((x) => x.id)) : Promise.resolve({ data: [] }),
     following.length ? supabase.from("follows").select("follower, follower_info", { count: "exact" }).eq("target", id).in("follower", following.slice(0, 300)).limit(2) : Promise.resolve({ data: [], count: 0 }),
     // Challenge placements (supabase/challenges.sql): public once the sponsor announces winners.
     f.challenges ? supabase.from("challenge_entries").select("challenge_id, placement, challenges(title, status, organizations(name))").eq("uid", id).not("placement", "is", null).limit(20) : Promise.resolve({ data: [] }),
@@ -89,13 +89,13 @@ async function ProfileView({ params }: { params: PageProps<"/u/[id]">["params"] 
   type Win = { challenge_id: string; placement: number; challenges: { title: string; status: string; organizations: { name: string } | null } | null };
   const wins = ((winsRes.data ?? []) as unknown as Win[]).filter((w) => w.challenges?.status === "closed").sort((a, b) => a.placement - b.placement);
   const liked = new Set(((likesRes.data ?? []) as { post_id: string }[]).map((l) => l.post_id));
-  const details = new Map(((detailsRes.data ?? []) as { project_id: string; details: string; link: string }[]).map((d) => [d.project_id, d]));
+  const details = new Map(((detailsRes.data ?? []) as unknown as { project_id: string; details: string; link: string; specs?: { label: string; value: string }[] }[]).map((d) => [d.project_id, d]));
   const byId = Object.fromEntries(projectRows.map((r) => [r.id, r]));
   const ms = (msRes.data ?? []) as unknown as unknown as Milestone[];
   const flat = <T,>(rows: { communities: T | T[] | null }[]) => rows.flatMap((r) => (Array.isArray(r.communities) ? r.communities : r.communities ? [r.communities] : []));
   const myClubs: Club[] = flat((myClubRows.data ?? []) as unknown as { communities: Club | Club[] | null }[]);
   const clubs = ((theirClubs.data ?? []) as unknown as ClubRow[]).filter((r) => r.communities).map((r) => ({ ...r.communities!, role: r.role }));
-  const projects: ProjectView[] = projectRows.map((r) => ({ ...r, details: details.get(r.id)?.details ?? null, link: details.get(r.id)?.link ?? null, milestones: msOn && (own || !r.private) ? ms.filter((m) => m.project_id === r.id) : undefined }));
+  const projects: ProjectView[] = projectRows.map((r) => ({ ...r, details: details.get(r.id)?.details ?? null, link: details.get(r.id)?.link ?? null, specs: details.get(r.id)?.specs ?? [], milestones: msOn && (own || !r.private) ? ms.filter((m) => m.project_id === r.id) : undefined }));
   // Proof shows work on public projects (and your own private ones, to you), like the feed and résumé.
   const titles = new Map(projectRows.filter((r) => own || !r.private).map((r) => [r.id, r.title]));
   const proof: ProofItem[] = ms.filter((m) => m.status === "verified" && titles.has(m.project_id)).map((m) => ({ id: m.id, title: m.title, detail: m.detail, achieved_on: m.achieved_on, community_id: m.community_id, community_name: m.community_name, reviewer_name: m.reviewer_name, project: { id: m.project_id, title: titles.get(m.project_id)! } }));
@@ -226,8 +226,8 @@ async function ProfileView({ params }: { params: PageProps<"/u/[id]">["params"] 
                   id: "projects", label: "Projects", count: projects.length,
                   content: (
                     <>
-                      {own && <div className="mb-4 flex items-center justify-between gap-3 rounded-3xl border border-dashed border-line-strong bg-surface/60 p-4"><p className="text-sm text-muted">Show what you&apos;ve built: a summary everyone sees, and a write-up you can keep private.</p><ProjectEditor interests={p.interests ?? []} copilot={copilotOn} stack={stackOn} /></div>}
-                      <ProjectGrid projects={projects} own={own} interests={p.interests ?? []} copilot={copilotOn} clubs={msOn && own ? myClubs : undefined} stack={stackOn} />
+                      {own && <div className="mb-4 flex items-center justify-between gap-3 rounded-3xl border border-dashed border-line-strong bg-surface/60 p-4"><p className="text-sm text-muted">Show what you&apos;ve built: a summary everyone sees, and a write-up you can keep private.</p><ProjectEditor interests={p.interests ?? []} copilot={copilotOn} stack={stackOn} specsOn={f.projectSpecs} /></div>}
+                      <ProjectGrid projects={projects} own={own} interests={p.interests ?? []} copilot={copilotOn} clubs={msOn && own ? myClubs : undefined} stack={stackOn} specsOn={f.projectSpecs} />
                       {!projects.length && <EmptyState icon={<FolderGit2 className="size-6" />} title={own ? "Show what you've built" : "No projects yet"} body={own ? "Add a project with a summary, what you did and a link. Keep the write-up private and share only the card if you like." : undefined} />}
                       {projects.some((x) => x.private) && !own && <p className="mt-3 flex items-center gap-1.5 text-xs text-faint"><Lock className="size-3" /> Private projects show their card only.</p>}
                     </>

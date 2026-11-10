@@ -69,6 +69,7 @@ The Vercel project lives in Ian's account, so these are his steps. It's already 
    26. `supabase/school-requests.sql`: "Request my school" from sign-up; Forge admins add or dismiss requests on `/admin`
    27. `supabase/club-duplicates.sql`: a new club whose name closely matches an existing one is flagged in `/admin`'s review queue
    28. `supabase/club-reports.sql`: a shareable club report link for sponsors (public information only; owners and admins make or turn off the link)
+   29. `supabase/project-specs.sql`: a specs table on projects (label/value pairs like "Peak thrust: 2 kN")
 2. **Vercel → Project → Settings → Environment Variables (Production):** these exact names must exist.
    - `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`. The old app also accepted `SUPABASE_URL` or a "publishable key", but the new app reads only these two names. If the project has them under other names, add these two with the same values, or the site loads but nobody can sign in.
    - `GITHUB_TOKEN` (optional): a GitHub token with no scopes. GitHub import works without it, but it raises GitHub's rate limit from 60 to 5,000 requests an hour.

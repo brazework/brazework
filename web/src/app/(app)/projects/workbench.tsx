@@ -5,7 +5,7 @@ import { ProjectEditor } from "../u/[id]/profile-client";
 export type BenchProject = { id: string; title: string; summary: string; status: string; private: boolean; updated_at: string; verified: number; waiting: number; updates: number };
 
 // Your projects first: where each one stands on the way to proof, and the next thing to do.
-export function Workbench({ projects, interests, copilot, stack }: { projects: BenchProject[]; interests: string[]; copilot: boolean; stack: boolean }) {
+export function Workbench({ projects, interests, copilot, stack, specsOn = false }: { projects: BenchProject[]; interests: string[]; copilot: boolean; stack: boolean; specsOn?: boolean }) {
   if (!projects.length) {
     return (
       <section aria-label="Your workbench" className="glass-card mt-6 rounded-3xl p-6">
@@ -24,7 +24,7 @@ export function Workbench({ projects, interests, copilot, stack }: { projects: B
           })}
         </div>
         <div className="mt-5 flex flex-wrap items-center gap-2">
-          <ProjectEditor interests={interests} copilot={copilot} stack={stack} />
+          <ProjectEditor interests={interests} copilot={copilot} stack={stack} specsOn={specsOn} />
           {copilot && <Link href="/copilot?q=Import%20my%20GitHub%20repo%20as%20a%20project" className="inline-flex h-10 items-center gap-1.5 rounded-full border border-line px-4 text-sm font-medium transition hover:bg-hover"><GitBranch className="size-4" /> Import from GitHub with Ember</Link>}
         </div>
       </section>
@@ -36,7 +36,7 @@ export function Workbench({ projects, interests, copilot, stack }: { projects: B
         <h2 className="text-sm font-semibold">Your workbench</h2>
         <div className="flex items-center gap-2">
           {copilot && <Link href="/copilot?q=Import%20my%20GitHub%20repo%20as%20a%20project" className="hidden h-10 items-center gap-1.5 rounded-full border border-line px-4 text-sm transition hover:bg-hover sm:inline-flex"><GitBranch className="size-4" /> Import</Link>}
-          <ProjectEditor interests={interests} copilot={copilot} stack={stack} />
+          <ProjectEditor interests={interests} copilot={copilot} stack={stack} specsOn={specsOn} />
         </div>
       </div>
       <ul className="mt-3 grid gap-3 md:grid-cols-2">
