@@ -46,7 +46,7 @@ export function Nav() {
           scrolled || open ? "glass shadow-[0_10px_40px_-12px_rgba(0,0,0,0.6)]" : "border border-transparent",
         )}
       >
-        <Link href="/" aria-label="Forge home"><Logo /></Link>
+        <Link href="/" aria-label="Brazework home"><Logo /></Link>
         <ul className="ml-4 hidden items-center gap-1 md:flex">
           {LINKS.map((l) => (
             <li key={l.href}>

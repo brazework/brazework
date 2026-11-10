@@ -78,7 +78,7 @@ export function OnboardingForm({ firstName, student, askGradYear = false }: { fi
       {state.message && <p role="alert" className="rounded-xl border border-danger/30 bg-danger/10 px-3.5 py-2.5 text-sm text-danger">{state.message}</p>}
       <div className="flex flex-wrap items-center gap-3">
         <Button type="submit" size="lg" disabled={pending || need > 0}>
-          {pending && <Loader2 className="size-4 animate-spin" />} {pending ? "Setting up your feed…" : "Enter Forge"}
+          {pending && <Loader2 className="size-4 animate-spin" />} {pending ? "Setting up your feed…" : "Enter Brazework"}
         </Button>
         <span aria-live="polite" className={cn("text-sm", need ? "text-muted" : "text-ok")}>{need ? `Pick ${need} more interest${need === 1 ? "" : "s"} to continue` : "You're all set"}</span>
       </div>

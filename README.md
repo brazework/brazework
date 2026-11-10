@@ -1,10 +1,10 @@
-# Forge
+# Brazework
 
 **Verified work, not résumés, for STEM.**
 
 Students post what they build. Their club's officers, who saw the work happen, verify it. Companies find proven builders through that verified work instead of through résumés anyone can write.
 
-> Working name: **Forge**. The new name is **Brazework**, pending a trademark check ([docs/naming.md](docs/naming.md)).
+> **Brazework** was called Forge until November 2026 ([why the new name](docs/naming.md); the trademark check is still open). Internal names keep the old one: the repo `forge-app`, tables like `forge_admins`, env vars like `FORGE_EMAIL_FROM` and the Linear team "Forge".
 
 ## For everyone
 
@@ -16,7 +16,7 @@ Students post what they build. Their club's officers, who saw the work happen, v
 **How it works**
 1. A club joins and invites its members.
 2. Members post their projects: updates, photos, video, results.
-3. A member asks the club to verify a milestone, with evidence. An officer who saw it happen verifies it, and Forge records who vouched and when.
+3. A member asks the club to verify a milestone, with evidence. An officer who saw it happen verifies it, and Brazework records who vouched and when.
 4. It shows on the member's profile, and companies find them through it.
 
 **Ember**, the AI helper built in, drafts posts, plans events and finds clubs and people. It never acts on its own: a person always taps Approve.
@@ -24,7 +24,7 @@ Students post what they build. Their club's officers, who saw the work happen, v
 **Why it matters now:** AI made résumés free to generate. 91% of recruiters have caught candidate deception (Greenhouse, 2025). Work that someone accountable saw happen still carries signal, and today it's buried in group chats and lab notebooks. Research and sources: [docs/positioning.md](docs/positioning.md).
 
 **Read more**
-- [Forge in plain language](docs/overview.md): how it works, how we know it's working, where everything lives
+- [Brazework in plain language](docs/overview.md): how it works, how we know it's working, where everything lives
 - [Strategy](docs/strategy.md): who pays, go-to-market (starting with NSBE at UHart), the case for YC
 - [Accounts and services](docs/accounts.md): everything the company runs on, and what's missing
 

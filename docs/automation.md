@@ -14,7 +14,7 @@ What runs by itself, what still needs a person, and what to add next. The goal: 
 | **Code security analysis** (CodeQL, fails on severity ≥ 7) | Every PR, weekly and on demand | `.github/workflows/codeql.yml` |
 | **Dependency updates** as grouped PRs; risky major upgrades pinned on purpose | Weekly (Mondays) | `.github/dependabot.yml` |
 | **Production deploy** of `main` | Every push to `main` | Vercel's GitHub app |
-| **Preview deploy** to forge-preview-eight.vercel.app | Every push to `main` | `.github/workflows/preview-deploy.yml` |
+| **Preview deploy** to forge-preview-eight.vercel.app | Every push to `main`, **once its three Vercel secrets are set**. Until then it skips itself (and still shows green); see docs/github-org-move.md | `.github/workflows/preview-deploy.yml` |
 | **Member feedback → Linear:** themes, grades, a weekly review issue | As feedback arrives | In the database (pg_cron), `supabase/feedback*.sql` |
 | **The app adapts to the database:** features whose step hasn't run stay hidden instead of breaking | Every request | `web/src/lib/db-features.ts` |
 

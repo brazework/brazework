@@ -65,11 +65,11 @@ export function AudienceTabs() {
 }
 
 const QA = [
-  ["Is Forge free?", "Yes, for students and clubs, always. Companies pay: they sponsor build challenges and, with a subscription, search and message verified builders."],
+  ["Is Brazework free?", "Yes, for students and clubs, always. Companies pay: they sponsor build challenges and, with a subscription, search and message verified builders."],
   ["Who is it for?", "Anyone 18 or older studying or working in STEM, the clubs they belong to, and the companies that hire from them. Students verify with a university email; companies with their work domain."],
-  ["What does \"verified\" mean?", "An organization vouched for it: officers confirm a milestone they saw happen, and Forge records who verified it and when. It's proof of the work, not just of who you are."],
-  ["What does the AI do?", "Ember, the agent inside Forge, plans meetings, drafts updates from real numbers, finds the right people and helps members keep their work on the record. It checks real Forge data first and never acts without your approval."],
-  ["How is this different from LinkedIn, Handshake or Discord?", "LinkedIn is built for reach and is filling up with AI-written posts; Handshake is run by career centers; Discord is chat that disappears. Forge is where organizations actually run, so the work is recorded where it happens and verified by the people who saw it."],
+  ["What does \"verified\" mean?", "An organization vouched for it: officers confirm a milestone they saw happen, and Brazework records who verified it and when. It's proof of the work, not just of who you are."],
+  ["What does the AI do?", "Ember, the agent inside Brazework, plans meetings, drafts updates from real numbers, finds the right people and helps members keep their work on the record. It checks real Brazework data first and never acts without your approval."],
+  ["How is this different from LinkedIn, Handshake or Discord?", "LinkedIn is built for reach and is filling up with AI-written posts; Handshake is run by career centers; Discord is chat that disappears. Brazework is where organizations actually run, so the work is recorded where it happens and verified by the people who saw it."],
   ["What happens to my data?", "Your birthday and analytics are private, read status in messages is never shown, private write-ups stay private, and you decide who can message you. Everything is enforced by the database, not just the app."],
   ["What does a founding organization get?", "We set you up personally, your requests shape what we build next, and it's free for your organization and its members."],
 ] as const;

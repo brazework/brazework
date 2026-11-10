@@ -42,7 +42,7 @@ export async function signUp(_: AuthState, form: FormData): Promise<AuthState> {
   const { email, password, firstName, lastName, birthday, accountType } = parsed.data;
 
   const supabase = await createClient();
-  // Students sign up with a school email: an academic domain, or a school Forge has listed
+  // Students sign up with a school email: an academic domain, or a school Brazework has listed
   // (is_school_email in signup-rules.sql; the database enforces the same rule).
   if (accountType === "student" && !ACADEMIC_RE.test(email)) {
     const { data: listed } = await supabase.rpc("is_school_email", { p_email: email });

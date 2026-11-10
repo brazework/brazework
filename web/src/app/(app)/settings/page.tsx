@@ -15,7 +15,7 @@ export const metadata: Metadata = { title: "Settings" };
 export default function SettingsPage() {
   return (
     <div className="mx-auto max-w-2xl lg:max-w-5xl">
-      <PageHeader title="Settings" subtitle="Your profile, how Forge looks, who can reach you, and your account." />
+      <PageHeader title="Settings" subtitle="Your profile, how Brazework looks, who can reach you, and your account." />
       <div className="lg:grid lg:grid-cols-[230px_minmax(0,1fr)] lg:gap-8">
         <div className="pt-6"><SettingsNav /></div>
         <div>
@@ -65,12 +65,12 @@ async function Settings() {
     <>
       <Section id="profile" title="Profile" desc="What people see on your profile and posts."><ProfileSettings profile={profile} gradYear={gradYear} /></Section>
       <Section id="appearance" title="Appearance" desc="Light or dark, and the colour theme."><AppearanceSettings /></Section>
-      {emailOn && <Section id="email" title="Email" desc="What Forge sends to your inbox. Sign-in emails always come."><EmailSettings weekly={ep.data ? Boolean(ep.data.weekly_digest) : true} /></Section>}
+      {emailOn && <Section id="email" title="Email" desc="What Brazework sends to your inbox. Sign-in emails always come."><EmailSettings weekly={ep.data ? Boolean(ep.data.weekly_digest) : true} /></Section>}
       <Section id="messaging" title="Messaging and privacy" desc="Who can message you, and whether you show as online."><OnlineStatusSetting /><div className="my-6 border-t border-line" /><MessagingSettings requestsOn={ms.data ? Boolean(ms.data.requests_on) : true} who={(ms.data?.who_can_message as "everyone" | "communities" | "connections") ?? "everyone"} /></Section>
       <Section id="blocked" title="Blocked people" desc="People who can't message you or see your activity."><BlockedList people={blocked} /></Section>
-      <Section id="ember" title="Ember and your data" desc="What Forge's AI teammate can see, what it can do, and your chats with it."><EmberSettings saving={saving} chats={chatCount.count ?? 0} /></Section>
-      {mcpOn && <Section id="ai-tools" title="AI tools (MCP)" desc="Use your Forge from Claude, Cursor and other AI assistants."><AiToolsSettings tokens={tokens} endpoint={`${env.siteUrl}/api/mcp`} /></Section>}
-      <Section id="data" title="Your data" desc="Download everything you've put on Forge, or delete your account."><YourDataSettings /></Section>
+      <Section id="ember" title="Ember and your data" desc="What Brazework's AI teammate can see, what it can do, and your chats with it."><EmberSettings saving={saving} chats={chatCount.count ?? 0} /></Section>
+      {mcpOn && <Section id="ai-tools" title="AI tools (MCP)" desc="Use your Brazework from Claude, Cursor and other AI assistants."><AiToolsSettings tokens={tokens} endpoint={`${env.siteUrl}/api/mcp`} /></Section>}
+      <Section id="data" title="Your data" desc="Download everything you've put on Brazework, or delete your account."><YourDataSettings /></Section>
       <Section id="help" title="Help" desc="Tours, what's new, and how to reach us."><HelpSettings /></Section>
       <Section id="account" title="Account" desc="Your sign-in email, password and session.">
         <p className="text-sm text-muted">Signed in as <span className="text-text">{user.email}</span></p>

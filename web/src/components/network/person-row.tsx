@@ -17,7 +17,7 @@ export function PersonRow({
   actions?: React.ReactNode;
   className?: string;
 }) {
-  const name = `${person.firstName} ${person.lastName}`.trim() || "Forge member";
+  const name = `${person.firstName} ${person.lastName}`.trim() || "Brazework member";
   return (
     <div className={cn("flex flex-wrap items-center gap-x-4 gap-y-3 px-4 py-4 sm:px-5", className)}>
       <Link href={`/u/${person.id}`} tabIndex={-1} aria-hidden="true" className="shrink-0">

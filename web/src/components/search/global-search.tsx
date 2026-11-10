@@ -78,7 +78,7 @@ export function GlobalSearch() {
   const askRow = cur && (
     <Link data-result href={`/copilot?q=${encodeURIComponent(query)}`} className="flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm transition hover:bg-hover focus:bg-hover focus:outline-none">
       <span className="bg-accent-grad grid size-9 shrink-0 place-items-center rounded-xl text-on-accent"><Sparkles className="size-4" /></span>
-      <span className="min-w-0"><span className="block truncate font-medium">Ask Copilot: &ldquo;{query}&rdquo;</span><span className="block text-xs text-faint">Answers with clubs, events and people from Forge</span></span>
+      <span className="min-w-0"><span className="block truncate font-medium">Ask Copilot: &ldquo;{query}&rdquo;</span><span className="block text-xs text-faint">Answers with clubs, events and people from Brazework</span></span>
     </Link>
   );
 
@@ -86,12 +86,12 @@ export function GlobalSearch() {
     <div ref={box} className="relative" onKeyDown={onKeyDown}>
       <form
         role="search"
-        aria-label="Search Forge"
+        aria-label="Search Brazework"
         onSubmit={(e) => { e.preventDefault(); if (query) { setOpen(false); router.push(`/search?q=${encodeURIComponent(query)}`); } }}
         className="glass flex h-12 items-center gap-3 rounded-2xl border border-line px-4 shadow-[var(--shadow)] transition focus-within:border-line-strong"
       >
         {loading ? <Loader2 className="size-[18px] shrink-0 animate-spin text-faint" /> : <Search className="size-[18px] shrink-0 text-faint" />}
-        <label htmlFor="forge-search" className="sr-only">Search Forge</label>
+        <label htmlFor="forge-search" className="sr-only">Search Brazework</label>
         <input
           ref={input}
           id="forge-search"
@@ -132,7 +132,7 @@ export function GlobalSearch() {
                 {cur.topics.map((t) => <Link key={t} data-result href={`/feed?tab=latest&tag=${encodeURIComponent(t)}`} className="inline-flex items-center gap-1 rounded-full bg-surface-2 px-2.5 py-1 text-xs text-text-2 transition hover:bg-hover"><Hash className="size-3" /> {t}</Link>)}
               </div>
             )}
-            {nothing && <p className="px-3 py-4 text-sm text-muted">Nothing on Forge matches &ldquo;{query}&rdquo; yet. Try a name, a field, a club or a topic.</p>}
+            {nothing && <p className="px-3 py-4 text-sm text-muted">Nothing on Brazework matches &ldquo;{query}&rdquo; yet. Try a name, a field, a club or a topic.</p>}
             {cur && cur.people.length > 0 && (
               <section aria-label="People">
                 <h3 className="px-3 pt-2 pb-1 font-mono text-[10px] tracking-wide text-faint uppercase">People</h3>
@@ -196,7 +196,7 @@ const primaryPill = cn(pill, "bg-accent-grad text-on-accent hover:-translate-y-p
 const donePill = cn(pill, "border border-line text-muted");
 
 function PersonResult({ p }: { p: PersonHit }) {
-  const name = `${p.firstName} ${p.lastName}`.trim() || "Forge member";
+  const name = `${p.firstName} ${p.lastName}`.trim() || "Brazework member";
   const [status, setStatus] = useState(p.relationship.status);
   const [asking, setAsking] = useState(false);
   const [err, setErr] = useState("");

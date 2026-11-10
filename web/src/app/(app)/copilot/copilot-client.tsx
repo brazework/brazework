@@ -28,7 +28,7 @@ function Hero({ title, sub, mood = "idle" }: { title: string; sub: string; mood?
   return (
     <header className="flex flex-col items-center pt-6 text-center sm:pt-10">
       <motion.div initial={{ opacity: 0, scale: 0.85 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}>
-        <Ember size={112} mood={mood} label="Ember, your Forge Copilot" />
+        <Ember size={112} mood={mood} label="Ember, your Brazework Copilot" />
       </motion.div>
       <h1 className="mt-5 text-3xl font-semibold tracking-tight sm:text-4xl">{title}</h1>
       <p className="mt-2 max-w-md text-[15px] text-muted">{sub}</p>
@@ -39,14 +39,14 @@ function Hero({ title, sub, mood = "idle" }: { title: string; sub: string; mood?
 const CAPS = [
   { icon: Compass, title: "Find and join", body: "Finds the clubs, events and people that fit you, then joins, RSVPs, follows or messages for you once you tap OK." },
   { icon: GitBranch, title: "Build your record", body: "Imports your GitHub projects, writes them up from the README, and asks your club to verify milestones." },
-  { icon: Megaphone, title: "Run your club", body: "Weekly reports, the verification queue, events and club updates, posted to Forge and Discord." },
+  { icon: Megaphone, title: "Run your club", body: "Weekly reports, the verification queue, events and club updates, posted to Brazework and Discord." },
 ];
 
 // Shown until Copilot is switched on (an API key plus supabase/copilot.sql). Shortcuts still work.
 export function CopilotSoon() {
   return (
     <>
-      <Hero title="Ember is almost here" sub="Your AI teammate on Forge. It looks things up, then gets things done with your OK:" mood="sleepy" />
+      <Hero title="Ember is almost here" sub="Your AI teammate on Brazework. It looks things up, then gets things done with your OK:" mood="sleepy" />
       <div className="mt-8 grid gap-3 sm:grid-cols-3">
         {CAPS.map((c, i) => (
           <motion.div key={c.title} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 + i * 0.08 }} className="glass-card rounded-3xl p-5">
@@ -59,7 +59,7 @@ export function CopilotSoon() {
       <section className="mt-8">
         <h2 className="text-center text-xs font-medium tracking-wide text-faint uppercase">Meanwhile</h2>
         <div className="mt-3 flex flex-wrap justify-center gap-2">
-          {[[Search, "Search Forge", "/search"], [Users, "Find clubs", "/communities?tab=discover"], [CalendarDays, "Events this week", "/events"], [FileText, "Add a project", "/profile#projects"]].map(([Icon, label, href]) => {
+          {[[Search, "Search Brazework", "/search"], [Users, "Find clubs", "/communities?tab=discover"], [CalendarDays, "Events this week", "/events"], [FileText, "Add a project", "/profile#projects"]].map(([Icon, label, href]) => {
             const I = Icon as typeof Search;
             return <Link key={label as string} href={href as string} className="glass-card inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm text-text-2 transition hover:-translate-y-px hover:text-text"><I className="size-4" /> {label as string} <ArrowRight className="size-3.5 text-faint" /></Link>;
           })}
@@ -98,7 +98,7 @@ export function Lookups({ tools, live }: { tools?: string[]; live: boolean }) {
 
 
 // The chat: a rail of your saved chats (when supabase/copilot-chats.sql has run), the conversation
-// with real Forge cards under each answer, tap-to-ask follow-ups, and the confirm cards.
+// with real Brazework cards under each answer, tap-to-ask follow-ups, and the confirm cards.
 export function CopilotChat({ first, field, initial = "", chats = [], chat = null, saving = false }: { first: string; field: string; initial?: string; chats?: ChatSummary[]; chat?: { id: string; title: string; messages: SavedMsg[] } | null; saving?: boolean }) {
   const { run, stop, busy, error, remaining } = useCopilot();
   const [msgs, setMsgs] = useState<Msg[]>(chat?.messages ?? []);
@@ -116,7 +116,7 @@ export function CopilotChat({ first, field, initial = "", chats = [], chat = nul
       { icon: CalendarCheck, text: "Find an event this week that fits me and RSVP me." },
     ] },
     { label: "Meet people", ideas: [
-      { icon: Users, text: "Which clubs on Forge fit me best? Help me join one." },
+      { icon: Users, text: "Which clubs on Brazework fit me best? Help me join one." },
       { icon: MessageSquare, text: `Find someone in ${field || "my field"} worth meeting and draft an intro message.` },
     ] },
     { label: "Build your record", ideas: [
@@ -229,7 +229,7 @@ export function CopilotChat({ first, field, initial = "", chats = [], chat = nul
         )}
         {empty ? (
           <>
-            <Hero title={`Hi ${first}, what are we building?`} sub="Ask for anything on Forge. Ember looks it up, shows you the real clubs, events and people, then prepares the next step as a card you approve." mood={busy ? "thinking" : "idle"} />
+            <Hero title={`Hi ${first}, what are we building?`} sub="Ask for anything on Brazework. Ember looks it up, shows you the real clubs, events and people, then prepares the next step as a card you approve." mood={busy ? "thinking" : "idle"} />
             {composer}
             <div className="mt-6 grid gap-4 sm:grid-cols-3">
               {GROUPS.map((g, gi) => (
@@ -342,7 +342,7 @@ function ChatRail({ list, current, opening, onOpen, onNew, onDelete, onDeleteAll
 
 const REASONS = ["Wrong or made up", "Not helpful", "Unsafe or inappropriate", "Didn't do what I asked"];
 
-// Thumbs up or down on one answer. A rating sends only this question and answer to the Forge team.
+// Thumbs up or down on one answer. A rating sends only this question and answer to the Brazework team.
 function Rate({ question, answer, tools }: { question: string; answer: string; tools: string[] }) {
   const [state, setState] = useState<"idle" | "down" | "sent">("idle");
   const [reason, setReason] = useState("");
@@ -366,7 +366,7 @@ function Rate({ question, answer, tools }: { question: string; answer: string; t
             {REASONS.map((r) => <button key={r} type="button" onClick={() => setReason(r === reason ? "" : r)} aria-pressed={r === reason} className={cn("rounded-full border px-2.5 py-1 text-xs transition", r === reason ? "border-transparent bg-accent-grad text-on-accent" : "border-line text-muted hover:border-line-strong hover:text-text")}>{r}</button>)}
           </div>
           <textarea value={note} onChange={(e) => setNote(e.target.value)} maxLength={400} rows={2} placeholder="Anything else? (optional)" className="mt-2 w-full resize-none rounded-xl border border-line bg-surface px-3 py-2 text-sm outline-none focus:border-line-strong" />
-          <p className="mt-1 text-[11px] leading-snug text-faint">Sends this question and answer to the Forge team, nothing else from the chat.</p>
+          <p className="mt-1 text-[11px] leading-snug text-faint">Sends this question and answer to the Brazework team, nothing else from the chat.</p>
           <button type="button" disabled={pending || (!reason && !note.trim())} onClick={() => void send("down")} className="bg-accent-grad mt-2 inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-xs font-medium text-on-accent disabled:opacity-40">{pending && <Loader2 className="size-3.5 animate-spin" />} Send</button>
         </div>
       )}

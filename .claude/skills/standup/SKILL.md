@@ -1,6 +1,6 @@
 ---
 name: standup
-description: Status of the Forge Linear board, as a short stand-up. What shipped since the last update, what's in progress, what's next in step order, what's blocked and on whom, plus CI health. Optionally posts each project's weekly update. Use when asked for a "standup", "status", "where are we", "what's left", or "/standup" (add "post" to also write the project updates).
+description: Status of the Brazework Linear board, as a short stand-up. What shipped since the last update, what's in progress, what's next in step order, what's blocked and on whom, plus CI health. Optionally posts each project's weekly update. Use when asked for a "standup", "status", "where are we", "what's left", or "/standup" (add "post" to also write the project updates).
 ---
 
 # /standup: where are we

@@ -23,7 +23,7 @@ function useFolded() {
   return [folded, set] as const;
 }
 
-// Forge updates at the top right of the feed: what changed recently, what's coming next, and a
+// Brazework updates at the top right of the feed: what changed recently, what's coming next, and a
 // place to tell us what to build. Each update opens its full note. The header folds it to one line.
 export function UpdatesPanel() {
   const [tab, setTab] = useState<Tab>("recent");
@@ -38,7 +38,7 @@ export function UpdatesPanel() {
         <button type="button" onClick={() => setFolded(!folded)} aria-expanded={!folded} aria-controls="updates-panel-body" className="group -m-1 flex min-w-0 flex-1 items-center gap-2 rounded-xl p-1 text-left">
           <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-accent-grad text-on-accent"><Sparkles className="size-3.5" /></span>
           <span className="min-w-0">
-            <h2 id="updates-panel-title" className="text-sm font-semibold">Forge updates</h2>
+            <h2 id="updates-panel-title" className="text-sm font-semibold">Brazework updates</h2>
             {folded && RECENT[0] && <span className="block truncate text-xs text-muted">Latest: {RECENT[0].title}</span>}
           </span>
           <ChevronDown className={cn("ml-auto size-4 shrink-0 text-faint transition group-hover:text-text", !folded && "rotate-180")} />

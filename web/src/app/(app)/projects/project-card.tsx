@@ -25,7 +25,7 @@ export function ProjectIcon({ tools = [], className }: { tools?: string[]; class
 // A project in Explore: what it is, how far along, what a club has verified, what it's built with
 // (the whole stack shows on hover), and who built it.
 export function ExploreCard({ p }: { p: ExploreProject }) {
-  const name = `${p.owner?.first_name ?? ""} ${p.owner?.last_name ?? ""}`.trim() || "Forge member";
+  const name = `${p.owner?.first_name ?? ""} ${p.owner?.last_name ?? ""}`.trim() || "Brazework member";
   const tools = p.tools ?? [];
   return (
     <article className="glass-card group relative flex h-full flex-col rounded-3xl p-5 transition duration-300 hover:-translate-y-1">

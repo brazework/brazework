@@ -3,7 +3,7 @@ import Link from "next/link";
 import { Avatar } from "@/components/ui";
 import { timeAgo } from "@/lib/forge";
 
-// A club-verified milestone in the feed: the thing Forge exists for. Someone did the work, their
+// A club-verified milestone in the feed: the thing Brazework exists for. Someone did the work, their
 // club checked it, and anyone can open the project to see the evidence.
 export type Proof = {
   id: string; title: string; detail: string; reviewed_at: string; community_id: string; community_name: string; reviewer_name: string;

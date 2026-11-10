@@ -90,12 +90,12 @@ export const TYPES: { id: CommunityType; label: string }[] = [
 export const TYPE_LABEL: Record<CommunityType, string> = Object.fromEntries(TYPES.map((t) => [t.id, t.label])) as Record<CommunityType, string>;
 
 export const PRIVACY: { id: Privacy; label: string; hint: string }[] = [
-  { id: "public", label: "Public", hint: "Anyone on Forge can find it, read it and join." },
+  { id: "public", label: "Public", hint: "Anyone on Brazework can find it, read it and join." },
   { id: "approval", label: "Approval required", hint: "Anyone can find it; posts are for members, and you approve who joins." },
 ];
 export const PRIVACY_LABEL: Record<Privacy, string> = { public: "Public", approval: "Approval required" };
 
-// The community's main field: any Forge field, or all of STEM.
+// The community's main field: any Brazework field, or all of STEM.
 export const COMMUNITY_FIELDS: string[] = [...FIELDS, "All of STEM"];
 
 export const LIMITS = { name: 60, about: 500, rules: 1500, topics: 3, words: 50, wordsText: 2000, members: 500 } as const;
@@ -166,7 +166,7 @@ export function communityError(err: unknown): string {
   if (code === "23503") return "That post was removed.";
   if (code === "P0002") return msg || "That request was withdrawn.";
   if (code === "23514") return "Some of that is too long or isn't allowed.";
-  if (/failed to fetch|network/i.test(msg)) return "Can't reach Forge right now. Check your connection.";
+  if (/failed to fetch|network/i.test(msg)) return "Can't reach Brazework right now. Check your connection.";
   // Messages raised by the database functions are already written for people.
   if (code === "42501" && msg && !/row-level security|permission denied/i.test(msg)) return msg;
   return friendlyError(err);

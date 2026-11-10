@@ -10,7 +10,7 @@ import { Reveal } from "./reveal";
 import { submitWithoutReset } from "@/lib/submit";
 
 const TYPES = [
-  { id: "club", label: "Club", icon: Wrench, title: "For clubs and chapters", body: "Chapters, societies, clubs, labs and teams. Run your organization on Forge, let Ember handle the busywork, and your members' verified work follows them into their careers." },
+  { id: "club", label: "Club", icon: Wrench, title: "For clubs and chapters", body: "Chapters, societies, clubs, labs and teams. Run your organization on Brazework, let Ember handle the busywork, and your members' verified work follows them into their careers." },
   { id: "company", label: "Company", icon: Building2, title: "For companies", body: "Meet engineers and scientists through what they've built and what their organization vouched for. Sponsor chapters, host events, skip the résumé pile." },
 ] as const;
 
@@ -25,7 +25,7 @@ export function Organizations() {
           <Reveal>
             <Eyebrow>Founding clubs program</Eyebrow>
             <h2 className={`mt-5 ${H2}`}>
-              Be one of the first clubs <span className="text-grad">on Forge.</span>
+              Be one of the first clubs <span className="text-grad">on Brazework.</span>
             </h2>
             <ul className="mt-6 grid gap-2 text-sm text-text-2">
               <li>· We set your club up with you, personally.</li>

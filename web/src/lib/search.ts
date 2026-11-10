@@ -7,11 +7,11 @@ import { getViewer } from "@/lib/supabase/server";
 import { matchTopics } from "@/lib/connectors/github";
 import { ALL_TOPICS, requestTime } from "@/lib/forge";
 
-// One search across Forge: members, communities, projects, events and posts. Used by the search bar at the top of every
+// One search across Brazework: members, communities, projects, events and posts. Used by the search bar at the top of every
 // signed-in page (live suggestions) and by /search (full results). Row-level security decides what
 // each person can see; this only matches and ranks.
 //
-// Ranking follows Forge's interests-first rule: people and clubs that share your interests or your
+// Ranking follows Brazework's interests-first rule: people and clubs that share your interests or your
 // field come first, then closer name matches.
 
 export type PersonHit = {
@@ -45,7 +45,7 @@ function looksLikeQuestion(q: string) {
   return /\?\s*$/.test(q) || /^(how|what|which|who|why|when|where|should|can|could|is|are|do|does|help|find me|recommend)\b/i.test(q.trim());
 }
 
-// Forge topics the query is about: a topic's name (or part of it), or a common alias (ros2, pytorch…).
+// Brazework topics the query is about: a topic's name (or part of it), or a common alias (ros2, pytorch…).
 function queryTopics(query: string, words: string[]) {
   const q = query.toLowerCase();
   const byName = ALL_TOPICS.filter((t) => {

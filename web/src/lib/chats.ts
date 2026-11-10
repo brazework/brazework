@@ -6,7 +6,7 @@ import { friendlyError } from "@/lib/forge";
 import { getViewer } from "@/lib/supabase/server";
 
 // Group chats (supabase/group-chats.sql): one per club, one per event, and team chats inside a club.
-// Who's in each follows Forge itself; the database decides it (can_read_chat) and stamps every message.
+// Who's in each follows Brazework itself; the database decides it (can_read_chat) and stamps every message.
 type R = { ok: boolean; message: string };
 const ID_RE = /^[A-Za-z0-9-]{1,64}$/;
 

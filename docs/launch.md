@@ -1,6 +1,6 @@
 # Launch checklist (production)
 
-What has to happen, in order, before the first real club uses Forge. Everything below is done by someone with access to the production Supabase project and Vercel; nothing here is automated.
+What has to happen, in order, before the first real club uses Brazework. Everything below is done by someone with access to the production Supabase project and Vercel; nothing here is automated.
 
 ## 1. Database (Supabase → SQL Editor)
 
@@ -12,7 +12,7 @@ Before and after, run `supabase/maintenance/health-check.sql` (read-only): it li
 
 Run `supabase/maintenance/remove-test-data.sql`: first the preview query (read what it would delete), then the delete inside its transaction.
 
-## 3. You, as a Forge admin
+## 3. You, as a Brazework admin
 
 In the SQL Editor, with your own account's email:
 
@@ -45,7 +45,7 @@ Without the Stripe keys, sponsoring a challenge files a pilot request that you a
 
 | Variable | For |
 |---|---|
-| `RESEND_API_KEY`, `FORGE_EMAIL_FROM` (e.g. `Forge <hello@yourdomain>`, a domain verified in Resend) | Sending the digest |
+| `RESEND_API_KEY`, `FORGE_EMAIL_FROM` (e.g. `Brazework <hello@yourdomain>`, a domain verified in Resend) | Sending the digest |
 | `CRON_SECRET` (any long random string) | Protects `/api/cron/digest` |
 
 Then add a weekly Vercel Cron job that calls `GET /api/cron/digest` (Vercel sends the `CRON_SECRET` automatically), e.g. Mondays at 13:00 UTC. Without the Resend keys the route is a dry run: it returns how many members would get one, and sends nothing. Members turn it off in Settings → Email; nobody is emailed twice in a week.

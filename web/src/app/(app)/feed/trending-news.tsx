@@ -10,8 +10,8 @@ import type { NewsPick } from "@/lib/news";
 type Tab = "trending" | "news";
 const KEY = "forge.rail.tab";
 
-// One box, two views: what's trending on Forge, and STEM news from around the web picked for your
-// interests. Flip between them with the tabs; Forge remembers which one you looked at last.
+// One box, two views: what's trending on Brazework, and STEM news from around the web picked for your
+// interests. Flip between them with the tabs; Brazework remembers which one you looked at last.
 export function TrendingNews({ trending, news, hasInterests }: { trending: [string, number][]; news: NewsPick[]; hasInterests: boolean }) {
   const [tab, setTab] = useState<Tab>(trending.length ? "trending" : "news");
   const [folded, setFolded] = useFold("news");
@@ -58,8 +58,8 @@ export function TrendingNews({ trending, news, hasInterests }: { trending: [stri
           ))}
         </div>
       {tab === "trending" ? (
-        <div id="rail-trending" role="tabpanel" aria-label="Trending on Forge">
-          <h2 className="mt-3 text-sm font-semibold">Trending on Forge</h2>
+        <div id="rail-trending" role="tabpanel" aria-label="Trending on Brazework">
+          <h2 className="mt-3 text-sm font-semibold">Trending on Brazework</h2>
           {trending.length ? (
             <ol className="mt-1 flex flex-col">
               {trending.map(([t, n], i) => (

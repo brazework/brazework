@@ -23,7 +23,7 @@ export default function ProjectsPage({ searchParams }: PageProps<"/projects">) {
   );
 }
 
-// What people across Forge are building: the proof behind every profile, newest progress first.
+// What people across Brazework are building: the proof behind every profile, newest progress first.
 // Filter by topic, status and club-verified work; search titles and summaries.
 async function Explore({ searchParams }: { searchParams: PageProps<"/projects">["searchParams"] }) {
   const sp = await searchParams;
@@ -94,7 +94,7 @@ async function Explore({ searchParams }: { searchParams: PageProps<"/projects">[
 
   return (
     <>
-      <PageHeader title="Projects" subtitle="What you're building, and what people across Forge have built and had verified." />
+      <PageHeader title="Projects" subtitle="What you're building, and what people across Brazework have built and had verified." />
       {!q && !topic && !tool && !status && !verifiedOnly && !mine && <Workbench projects={bench} interests={profile.interests ?? []} copilot={copilot} stack={stackOn} specsOn={specsOn} />}
       <form action="/projects" className="relative mt-6">
         {topic && <input type="hidden" name="topic" value={topic} />}

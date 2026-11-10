@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-/* Forge design tokens: monochrome, light and dark. Use these, never fixed colours.
+/* Brazework design tokens: monochrome, light and dark. Use these, never fixed colours.
    Theme = the visitor's system setting, unless they pick one (html[data-theme], set before paint in layout.tsx). */
 :root {
   /* Phone chrome: the top bar and the floating tab bar, plus the notch and home indicator. */
@@ -389,7 +389,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity
   background: color-mix(in oklab, var(--text) 5%, transparent);
 }
 
-/* ---------- Ember, Forge's AI (components/ember/ember.tsx) ----------
+/* ---------- Ember, Brazework's AI (components/ember/ember.tsx) ----------
    A glowing glass orb with light swirling inside. --ember-a is its bright tone, --ember-b its deep
    tone, --ember-c the accent that swirls through it. In Mono it's black glass with white light,
    matching the black-and-white app; the other skins tint it. */
@@ -574,7 +574,7 @@ html { -webkit-tap-highlight-color: transparent; }
   .js-story .story-sec > *, .js-story #founding .grid.max-w-7xl > * > * { opacity: 1 !important; transform: none !important; transition: none !important; }
 }
 
-/* Dropdowns: every native <select> gets Forge's chevron and spacing instead of the browser's arrow,
+/* Dropdowns: every native <select> gets Brazework's chevron and spacing instead of the browser's arrow,
    so form fields, pills and filters all match. Unlayered on purpose: it must win over utility padding,
    or the text runs under the chevron. The option list itself stays native (keyboard, screen readers,
    phone pickers) and follows color-scheme in dark mode. */

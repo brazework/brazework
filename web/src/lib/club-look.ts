@@ -1,5 +1,5 @@
 // A club's accent colour (supabase/club-profile.sql): the badge fill and a tint over its banner.
-// "" keeps Forge's default look. Classes are spelled out so Tailwind keeps them.
+// "" keeps Brazework's default look. Classes are spelled out so Tailwind keeps them.
 export const ACCENTS = [
   { id: "", label: "Default", swatch: "var(--accent)", badge: "" },
   { id: "ink", label: "Ink", swatch: "#18181b", badge: "bg-zinc-900 text-white border-transparent" },

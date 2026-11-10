@@ -14,7 +14,7 @@ test("a quiet week sends nothing", () => {
 test("waiting items lead the subject; links are absolute; the off switch is there", () => {
   const items = buildWeek({ ...quiet, toVerify: { clubId: "rkt", n: 2 }, clubPosts: 3 });
   const d = buildDigest("Ben", items, "https://forge.test")!;
-  assert.equal(d.subject, "Your week on Forge: 1 thing waiting on you");
+  assert.equal(d.subject, "Your week on Brazework: 1 thing waiting on you");
   assert.match(d.text, /2 milestones waiting for you to verify \(Review: https:\/\/forge\.test\/c\/rkt\/manage\?tab=verify\)/);
   assert.match(d.text, /3 new posts in your clubs this week/);
   assert.match(d.text, /Turn it off in Settings: https:\/\/forge\.test\/settings#email/);

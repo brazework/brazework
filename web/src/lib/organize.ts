@@ -30,7 +30,7 @@ export async function organizeProject(projectId: string): Promise<Suggestion> {
     const res = await new Anthropic().messages.create({
       model: COPILOT_MODEL,
       max_tokens: 300,
-      system: `You organize STEM projects on Forge. From the project text, pick the tools it was built with and its topics. Only name tools the text says or clearly implies were used. Prefer names from this catalog: ${catalog}. Topics must come from: ${ALL_TOPICS.join(", ")}. Reply with JSON only: {"tools": [up to 12 strings], "topics": [up to 3 strings]}.`,
+      system: `You organize STEM projects on Brazework. From the project text, pick the tools it was built with and its topics. Only name tools the text says or clearly implies were used. Prefer names from this catalog: ${catalog}. Topics must come from: ${ALL_TOPICS.join(", ")}. Reply with JSON only: {"tools": [up to 12 strings], "topics": [up to 3 strings]}.`,
       messages: [{ role: "user", content: text }],
     });
     const raw = res.content.map((b) => (b.type === "text" ? b.text : "")).join("");

@@ -148,15 +148,15 @@ export function FaqSection() {
 
 const AI_POINTS = [
   { icon: FileCheck2, title: "A trust layer AI can read", body: "Each verified milestone records who vouched for it, when, and the evidence: signal people and their AI tools can trust." },
-  { icon: Bot, title: "Ember, the agent inside", body: "Plans meetings, drafts updates and finds the right people. It checks Forge first, and you approve every action." },
-  { icon: KeyRound, title: "Your Forge in any AI", body: "Connect Claude, Cursor or any MCP client and ask about your clubs, events and projects. Read-only and revocable." },
+  { icon: Bot, title: "Ember, the agent inside", body: "Plans meetings, drafts updates and finds the right people. It checks Brazework first, and you approve every action." },
+  { icon: KeyRound, title: "Your Brazework in any AI", body: "Connect Claude, Cursor or any MCP client and ask about your clubs, events and projects. Read-only and revocable." },
 ];
 
 export function AiEra() {
   return (
     <section id="ai" data-story="Built for AI" className="story-sec scroll-mt-24 py-24 sm:py-32">
       <div className="mx-auto max-w-7xl px-6">
-        <Head eyebrow="Built for the AI era" title="As AI floods hiring," accent="verified work becomes the signal." body="Forge is designed so the proof behind a person is something both people and software can trust, and so AI does the busywork instead of the talking." />
+        <Head eyebrow="Built for the AI era" title="As AI floods hiring," accent="verified work becomes the signal." body="Brazework is designed so the proof behind a person is something both people and software can trust, and so AI does the busywork instead of the talking." />
         <div className="m-cards mt-12 grid gap-4 md:grid-cols-3">
           {AI_POINTS.map((f, i) => (
             <Reveal key={f.title} delay={i * 0.06} className="spotlight group rounded-3xl border border-line bg-surface p-7">

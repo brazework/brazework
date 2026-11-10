@@ -56,7 +56,7 @@ export function MilestoneTimeline({ items, own }: { items: Milestone[]; own: boo
                   {m.status === "draft" && <span className="inline-flex items-center gap-1 rounded-full bg-surface-2 px-2 py-0.5 text-muted">Draft</span>}
                   {refused(m.status) && <span className="inline-flex items-center gap-1 rounded-full bg-[color-mix(in_oklab,var(--danger)_12%,transparent)] px-2 py-0.5 text-danger"><XCircle className="size-3" /> Not verified by {m.community_name}</span>}
                   {m.status === "revoked" && <span className="inline-flex items-center gap-1 rounded-full bg-[color-mix(in_oklab,var(--danger)_12%,transparent)] px-2 py-0.5 text-danger"><XCircle className="size-3" /> Revoked by {m.community_name}</span>}
-                  {m.status === "disputed" && <span className="inline-flex items-center gap-1 rounded-full bg-surface-2 px-2 py-0.5 text-muted"><Scale className="size-3" /> Disputed · {m.escalated ? "with Forge admins" : "with the club's owner"}</span>}
+                  {m.status === "disputed" && <span className="inline-flex items-center gap-1 rounded-full bg-surface-2 px-2 py-0.5 text-muted"><Scale className="size-3" /> Disputed · {m.escalated ? "with Brazework admins" : "with the club's owner"}</span>}
                   {m.evidence && <a href={m.evidence} target="_blank" rel="noopener noreferrer nofollow" className="inline-flex items-center gap-1 text-muted hover:text-text"><ExternalLink className="size-3" /> Evidence</a>}
                   {own && m.status === "verified" && m.private !== undefined && (
                     <button type="button" onClick={() => start(async () => { const r = await setMilestoneVisible(m.id, !!m.private); setMsg(r.message); if (r.ok) setPatch((p) => ({ ...p, [m.id]: { private: !m.private } })); })} className="inline-flex items-center gap-1 text-muted hover:text-text">
@@ -68,7 +68,7 @@ export function MilestoneTimeline({ items, own }: { items: Milestone[]; own: boo
                 {m.status === "revoked" && m.revoked_reason && <p className="mt-1 rounded-lg bg-surface-2 px-2 py-1 text-[11px] text-text-2">&ldquo;{m.revoked_reason}&rdquo;</p>}
                 {own && (refused(m.status) || m.status === "revoked") && (disputing === m.id ? (
                   <form className="mt-2 flex flex-col gap-2" onSubmit={(e) => { e.preventDefault(); start(async () => { const r = await disputeMilestone(m.id, note); setMsg(r.message); if (r.ok) { setPatch((p) => ({ ...p, [m.id]: { status: "disputed", escalated: false } })); setDisputing(null); setNote(""); } }); }}>
-                    <textarea value={note} onChange={(e) => setNote(e.target.value)} maxLength={500} rows={2} required placeholder="What happened? The club's owner decides first; if they disagree, Forge admins look at it." className={cn(inputCls, "h-auto resize-none py-2 text-xs")} />
+                    <textarea value={note} onChange={(e) => setNote(e.target.value)} maxLength={500} rows={2} required placeholder="What happened? The club's owner decides first; if they disagree, Brazework admins look at it." className={cn(inputCls, "h-auto resize-none py-2 text-xs")} />
                     <div className="flex gap-2"><Button type="submit">Send dispute</Button><Button type="button" variant="ghost" onClick={() => setDisputing(null)}>Cancel</Button></div>
                   </form>
                 ) : (

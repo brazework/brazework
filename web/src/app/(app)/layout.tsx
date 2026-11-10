@@ -56,7 +56,7 @@ async function SignedInShell() {
     <>
       {/* Badges stay current as things arrive; row-level security limits these to your own rows. */}
       <LiveRefresh tables={["notifications", "conversations", "connections", "chats"]} delay={800} />
-      {/* Online status: who has Forge open right now. */}
+      {/* Online status: who has Brazework open right now. */}
       <PresenceMount userId={user.id} />
       <Sidebar first={profile.first_name} last={profile.last_name} userId={user.id} badges={badges} avatar={avatarSrc(profile)} initialCollapsed={collapsed} clubs={myClubs} />
       <CommandPalette />

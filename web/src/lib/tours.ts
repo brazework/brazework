@@ -1,4 +1,4 @@
-// Guided tours and Forge updates, ported from public/js/tour.js and public/js/updates.js.
+// Guided tours and Brazework updates, ported from public/js/tour.js and public/js/updates.js.
 // Which tours someone has finished or closed lives in public.seen_tours (supabase/tours.sql).
 //
 // To announce a new feature: add an entry at the TOP of UPDATES with a new, never-reused id.
@@ -43,7 +43,7 @@ export const UPDATES: ForgeUpdate[] = [
     title: "STEM news on your feed",
     summary: "Headlines from IEEE Spectrum, ScienceDaily, Nature, NASA and more, picked for your interests.",
     points: [
-      "The Trending box on your feed now has a News tab. Flip between them any time; Forge remembers the one you used last.",
+      "The Trending box on your feed now has a News tab. Flip between them any time; Brazework remembers the one you used last.",
       "Stories on your interests come first and say which interest they match, then stories in your field.",
       "Each headline opens the full story on the publisher's site.",
     ],
@@ -56,22 +56,22 @@ export const UPDATES: ForgeUpdate[] = [
     title: "Connect GitHub and Discord",
     summary: "Import projects from GitHub, and let your club's Discord hear about new events and verified milestones.",
     points: [
-      "Adding a project? Paste a public GitHub repo link and Forge fills in the title, summary, write-up, link and topics. Releases become milestones your club can verify.",
-      "Club admins connect a Discord channel under Manage → Integrations. New club events, verified milestones and weekly updates are announced there, and Forge never pings @everyone.",
+      "Adding a project? Paste a public GitHub repo link and Brazework fills in the title, summary, write-up, link and topics. Releases become milestones your club can verify.",
+      "Club admins connect a Discord channel under Manage → Integrations. New club events, verified milestones and weekly updates are announced there, and Brazework never pings @everyone.",
       "Copilot can read public GitHub repos and draft a project from one, for you to confirm.",
     ],
   },
   {
     id: "2026-11-09-feedback", date: "2026-11-09", kind: "New",
     title: "Tell us what to build",
-    summary: "Send ideas, problems and praise straight to the Forge team from Forge updates.",
+    summary: "Send ideas, problems and praise straight to the Brazework team from Brazework updates.",
     points: [
-      "Open the Feedback tab in Forge updates, or the bottom of the full updates list.",
+      "Open the Feedback tab in Brazework updates, or the bottom of the full updates list.",
       "Similar ideas from different members are grouped together, so the most-requested ones rise to the top.",
       "Your name is only shared with the team if you say they can contact you.",
     ],
     tour: [
-      { route: ROUTES.feed, target: "feedback-tab", title: "Tell us what to build", body: "Ideas, problems and praise go straight to the Forge team. Similar ideas are grouped, so popular ones rise to the top." },
+      { route: ROUTES.feed, target: "feedback-tab", title: "Tell us what to build", body: "Ideas, problems and praise go straight to the Brazework team. Similar ideas are grouped, so popular ones rise to the top." },
     ],
   },
   {
@@ -94,21 +94,21 @@ export const UPDATES: ForgeUpdate[] = [
       "Search by name, field, headline or club from the bar at the top of every page. Press / to jump to it.",
       "Connect with people and join communities right from the results. People and clubs that share your interests come first.",
       "Collapse the sidebar to icons with the button next to the logo; the feed uses the extra width.",
-      "Forge updates now sit at the top right of your feed, with recent changes and what's coming next.",
+      "Brazework updates now sit at the top right of your feed, with recent changes and what's coming next.",
       "Edit the text and topics of your own posts at any time. Edited posts say so.",
     ],
     tour: [
-      { route: ROUTES.feed, target: "search", title: "Search Forge", body: "Find people and communities by name, field or club. Connect or join right from the results." },
-      { route: ROUTES.feed, target: "sidebar-toggle", title: "More room", body: "Collapse the sidebar to icons when you want more space. Forge remembers your choice." },
-      { route: ROUTES.feed, target: "updates-panel", title: "Forge updates", body: "Recent changes and what's coming next. Click any item to read more." },
+      { route: ROUTES.feed, target: "search", title: "Search Brazework", body: "Find people and communities by name, field or club. Connect or join right from the results." },
+      { route: ROUTES.feed, target: "sidebar-toggle", title: "More room", body: "Collapse the sidebar to icons when you want more space. Brazework remembers your choice." },
+      { route: ROUTES.feed, target: "updates-panel", title: "Brazework updates", body: "Recent changes and what's coming next. Click any item to read more." },
     ],
   },
   {
     id: "2026-11-08-redesign", date: "2026-11-08", kind: "Changed",
-    title: "A rebuilt, faster Forge",
+    title: "A rebuilt, faster Brazework",
     summary: "Every screen was rebuilt for speed, with new themes, a livelier feed and real links for every page.",
     points: [
-      "Themes in Settings: Mono, Forge Fire, Blueprint, Aurora and Emerald, each in light and dark.",
+      "Themes in Settings: Mono, Brazework Fire, Blueprint, Aurora and Emerald, each in light and dark.",
       "The feed adds events this week, project spotlights and builders to follow, plus a profile strength guide.",
       "On phones, a bottom tab bar keeps Feed, Clubs, Messages and Alerts one tap away.",
       "Old links and bookmarks still work.",
@@ -137,11 +137,11 @@ export const UPDATES: ForgeUpdate[] = [
   {
     id: "2026-11-07-tour", date: "2026-11-07", kind: "New",
     title: "Guided tour and update notes",
-    summary: "New members get a short tour of Forge, and every update now opens to a quick summary like this one.",
+    summary: "New members get a short tour of Brazework, and every update now opens to a quick summary like this one.",
     points: [
       "The tour runs once, the first time you sign in. Close it at any time, or go back a step without leaving it.",
       "Replay it whenever you like from Settings, under Help.",
-      "Click any item in Forge updates to read what changed.",
+      "Click any item in Brazework updates to read what changed.",
       "When a new feature ships, you get a short walkthrough of it the next time you sign in. You can close that at any time too.",
     ],
   },
@@ -220,7 +220,7 @@ export const UPDATES: ForgeUpdate[] = [
   },
   {
     id: "next-copilot", kind: "Next",
-    title: "Forge Copilot",
+    title: "Brazework Copilot",
     summary: "An assistant that turns rough notes into a post, drafts project write-ups and answers career questions for your field.",
   },
   {
@@ -250,16 +250,16 @@ export const RELEASED = UPDATES.filter((u) => u.kind !== "Next");
 
 export function welcomeSteps(firstName: string): TourStep[] {
   return [
-    { route: ROUTES.feed, title: `Welcome to Forge, ${firstName || "there"}`, body: "Here's a one-minute look at the essentials. Close this at any time, or use Back to see a step again." },
+    { route: ROUTES.feed, title: `Welcome to Brazework, ${firstName || "there"}`, body: "Here's a one-minute look at the essentials. Close this at any time, or use Back to see a step again." },
     { route: ROUTES.feed, target: "feed-tabs", title: "Your feed", body: "For you only shows posts that match your interests, with a note saying why. Latest has every post, Following has the people you follow, and Communities has your groups." },
-    { route: ROUTES.feed, target: "search", title: "Find people and clubs", body: "Search Forge by name, field or club from the bar at the top of every page, and connect or join from the results." },
+    { route: ROUTES.feed, target: "search", title: "Find people and clubs", body: "Search Brazework by name, field or club from the bar at the top of every page, and connect or join from the results." },
     { route: ROUTES.feed, target: "composer", title: "Share your work", body: "Post an update, question, result or project. Add up to 3 topics so it reaches the people interested in them." },
     { route: ROUTES.feed, target: "interests", title: "Your focus areas", body: "Your interests decide what's in For you and which people and events we suggest. Click one to filter the feed, or change them in Settings." },
     { route: ROUTES.feed, target: "menu", title: "Everything else", body: "The menu has every page: Network, Communities, Messages, Events, Saved and Settings." },
     { route: ROUTES.feed, target: "bell", title: "Notifications", body: "Likes, comments, new followers and connection requests show up here." },
     { route: ROUTES.projects, target: "projects-tab", title: "Your profile and projects", body: "Show what you've built. Projects can be public or private, and you can share them to the feed." },
     { route: ROUTES.profile, target: "analytics", title: "Your dashboard", body: "See how people find your profile and how your posts are doing over time. Only you can see it." },
-    { route: ROUTES.feed, target: "updates-panel", title: "Forge updates", body: "Recent changes and what's coming next. Click any update to read what changed. When a new feature ships, we'll show you around it." },
+    { route: ROUTES.feed, target: "updates-panel", title: "Brazework updates", body: "Recent changes and what's coming next. Click any update to read what changed. When a new feature ships, we'll show you around it." },
     { route: ROUTES.feed, title: "You're all set", body: "You can replay this tour any time from Settings, under Help." },
   ];
 }
@@ -268,12 +268,12 @@ export function whatsNewSteps(list: ForgeUpdate[]): TourStep[] {
   return [
     {
       route: ROUTES.feed,
-      title: "What's new on Forge",
+      title: "What's new on Brazework",
       body: list.length === 1 ? "One update since you were last here:" : `${list.length} updates since you were last here:`,
       list: list.map((u) => [u.title, u.summary]),
     },
     ...list.flatMap((u) => u.tour ?? []),
-    { route: ROUTES.feed, target: "updates-panel", title: "That's what's new", body: "Read any update again by clicking it in Forge updates, at the top right of your feed." },
+    { route: ROUTES.feed, target: "updates-panel", title: "That's what's new", body: "Read any update again by clicking it in Brazework updates, at the top right of your feed." },
   ];
 }
 

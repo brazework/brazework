@@ -7,7 +7,7 @@ import { STACK_CATEGORIES, groupStack } from "@/lib/stack";
 import { cn } from "@/lib/forge";
 
 // A project's "Built with" stack, grouped by kind of tool. Tap a tool for what it's for and how many
-// other projects on Forge use it, and jump to them: the tools are what connect builders across majors.
+// other projects on Brazework use it, and jump to them: the tools are what connect builders across majors.
 export function BuiltWith({ tools, uses }: { tools: string[]; uses: Record<string, number> }) {
   const [open, setOpen] = useState<string | null>(null);
   const groups = groupStack(tools);
@@ -36,7 +36,7 @@ export function BuiltWith({ tools, uses }: { tools: string[]; uses: Record<strin
                     <div className="mt-2 rounded-xl bg-surface-2/70 p-3 text-xs">
                       <p className="text-text-2">{t.what || `${t.name}, used in this project.`}</p>
                       <Link href={`/projects?tool=${encodeURIComponent(t.name)}`} className="mt-2 inline-flex items-center gap-1 font-medium text-text hover:underline">
-                        {others ? `${others} other project${others === 1 ? "" : "s"} on Forge use${others === 1 ? "s" : ""} it` : "See projects built with it"} <ArrowRight className="size-3" />
+                        {others ? `${others} other project${others === 1 ? "" : "s"} on Brazework use${others === 1 ? "s" : ""} it` : "See projects built with it"} <ArrowRight className="size-3" />
                       </Link>
                     </div>
                   </motion.div>

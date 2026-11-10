@@ -4,14 +4,14 @@ import { Suspense } from "react";
 import { Logo } from "@/components/ui";
 import { RequestSchoolForm } from "./form";
 
-export const metadata: Metadata = { title: "Request your school", description: "Ask Forge to recognize your school's email." };
+export const metadata: Metadata = { title: "Request your school", description: "Ask Brazework to recognize your school's email." };
 
 // For students whose school email isn't recognized yet (no .edu or .ac.uk domain).
 export default function RequestSchoolPage({ searchParams }: PageProps<"/request-school">) {
   return (
     <main className="min-h-dvh bg-bg text-text">
       <div className="mx-auto max-w-md px-4 py-10 sm:py-16">
-        <Link href="/" aria-label="Forge home"><Logo /></Link>
+        <Link href="/" aria-label="Brazework home"><Logo /></Link>
         <h1 className="mt-10 text-2xl font-semibold tracking-tight">Request your school</h1>
         <p className="mt-2 text-sm leading-relaxed text-muted">Students sign up with their school email, so clubs and companies know they&apos;re real. If your school&apos;s email isn&apos;t recognized yet, tell us and we&apos;ll add it.</p>
         <div className="mt-8">

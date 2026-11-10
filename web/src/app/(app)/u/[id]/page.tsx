@@ -151,7 +151,7 @@ async function ProfileView({ params }: { params: PageProps<"/u/[id]">["params"] 
               )}
             </div>
           </div>
-          <div className="mt-4 flex flex-wrap items-center gap-3"><h1 className="text-3xl font-semibold tracking-tight">{name || "Forge member"}</h1><OnlineLabel id={p.id} /></div>
+          <div className="mt-4 flex flex-wrap items-center gap-3"><h1 className="text-3xl font-semibold tracking-tight">{name || "Brazework member"}</h1><OnlineLabel id={p.id} /></div>
           {p.headline && <p className="mt-1 text-lg text-text-2">{p.headline}</p>}
           <p className="mt-2 flex flex-wrap items-center gap-x-1.5 text-sm text-muted">
             {p.account_type === "student" ? "Student" : "Professional"}

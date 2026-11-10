@@ -26,7 +26,7 @@ test("any one matching v1 signature is enough (Stripe rotates secrets)", () => {
   assert.equal(verifyStripeSignature(body, `t=${t},v1=deadbeef,${sign(t).split(",")[1]}`, secret, now), true);
 });
 
-test("only paid checkouts with Forge metadata count", () => {
+test("only paid checkouts with Brazework metadata count", () => {
   assert.deepEqual(paidCheckout(JSON.parse(body)), { plan: "challenge", reference: "ch1", sessionId: "cs_1" });
   assert.equal(paidCheckout({ type: "checkout.session.completed", data: { object: { id: "cs_2", payment_status: "unpaid", metadata: { plan: "challenge", reference: "ch1" } } } }), null);
   assert.equal(paidCheckout({ type: "payment_intent.succeeded", data: { object: { id: "pi_1" } } }), null);

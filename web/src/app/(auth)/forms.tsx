@@ -84,7 +84,7 @@ export function LoginForm({ next, confirmed, resetExpired }: { next?: string; co
       </div>
       <ErrorLine message={state.message} />
       <Button type="submit" size="lg" disabled={pending}>{pending && <Loader2 className="size-4 animate-spin" />} Log in</Button>
-      <p className="text-sm text-muted">New to Forge? <Link href="/signup" className="text-accent hover:underline">Create an account</Link></p>
+      <p className="text-sm text-muted">New to Brazework? <Link href="/signup" className="text-accent hover:underline">Create an account</Link></p>
     </form>
   );
 }
@@ -108,7 +108,7 @@ export function SignupForm({ invite, clubName }: { invite?: string; clubName?: s
       {invite && <input type="hidden" name="invite" value={invite} />}
       {clubName && <p className="rounded-2xl border border-line bg-surface-2 px-4 py-3 text-sm">You&apos;re joining <strong className="font-medium">{clubName}</strong>. Create your account and you&apos;ll land in the club once you&apos;re set up.</p>}
       <fieldset className="grid grid-cols-2 gap-3">
-        <legend className="mb-2 text-sm font-medium text-text-2">How will you use Forge?</legend>
+        <legend className="mb-2 text-sm font-medium text-text-2">How will you use Brazework?</legend>
         {choices.map((c) => (
           <button
             key={c.id}
@@ -127,7 +127,7 @@ export function SignupForm({ invite, clubName }: { invite?: string; clubName?: s
         <Field label="First name"><input name="firstName" autoComplete="given-name" maxLength={80} className={inputCls} /></Field>
         <Field label="Last name"><input name="lastName" autoComplete="family-name" maxLength={80} className={inputCls} /></Field>
       </div>
-      <Field label="Birthday" hint="Private, never shown. Forge is for people 18 and older."><input name="birthday" type="date" autoComplete="bday" className={inputCls} /></Field>
+      <Field label="Birthday" hint="Private, never shown. Brazework is for people 18 and older."><input name="birthday" type="date" autoComplete="bday" className={inputCls} /></Field>
       <Field label={type === "student" ? "University email" : "Email"} hint={type === "student" ? "The address your school gave you, e.g. ending in .edu." : "We'll send a link to confirm it."}>
         <input name="email" type="email" autoComplete="email" onChange={(e) => setEmailValue(e.target.value)} className={inputCls} />
       </Field>

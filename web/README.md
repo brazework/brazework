@@ -1,6 +1,6 @@
-# Forge web (Next.js)
+# Brazework web (Next.js)
 
-The redesign of Forge on **Next.js 16 + Tailwind CSS 4 + Supabase**. It lives next to the original app in `public/` and uses **the same Supabase project, schema and row-level security**, so both apps can run at once while screens move over. See [`../docs/next-migration.md`](../docs/next-migration.md) for the plan.
+The redesign of Brazework on **Next.js 16 + Tailwind CSS 4 + Supabase**. It lives next to the original app in `public/` and uses **the same Supabase project, schema and row-level security**, so both apps can run at once while screens move over. See [`../docs/next-migration.md`](../docs/next-migration.md) for the plan.
 
 ## Run it
 

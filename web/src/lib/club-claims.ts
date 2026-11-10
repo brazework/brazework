@@ -4,7 +4,7 @@ import { friendlyError } from "@/lib/forge";
 import { createClient } from "@/lib/supabase/server";
 
 // Claiming a club (supabase/club-claims.sql): an officer asks to take over a club someone else
-// started; a Forge admin decides on /admin. The database checks everything again.
+// started; a Brazework admin decides on /admin. The database checks everything again.
 export type ClaimState = { ok: boolean; message: string };
 
 const say = (error: { code?: string; message: string }) => (error.code === "P0001" || error.code === "42501" ? error.message : friendlyError(error));
@@ -19,7 +19,7 @@ export async function requestClaim(_: ClaimState, form: FormData): Promise<Claim
   const { error } = await supabase.rpc("request_club_claim", { p_cid: cid, p_role: role, p_evidence: evidence });
   if (error) return { ok: false, message: say(error) };
   revalidatePath(`/c/${cid}/claim`);
-  return { ok: true, message: "Sent. The Forge team checks it, usually within two days, and you'll get a notification either way." };
+  return { ok: true, message: "Sent. The Brazework team checks it, usually within two days, and you'll get a notification either way." };
 }
 
 export async function withdrawClaim(id: number, cid: string): Promise<ClaimState> {

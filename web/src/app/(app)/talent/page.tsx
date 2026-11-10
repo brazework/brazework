@@ -123,7 +123,7 @@ async function Talent({ searchParams }: { searchParams: PageProps<"/talent">["se
       <p className="mt-6 text-xs text-faint">{list.length} {list.length === 1 ? "person" : "people"} with verified work{q ? ` matching "${q}"` : ""}</p>
       <div className="mt-3 grid grid-cols-1 gap-3 xl:grid-cols-2">
         {list.slice(0, 60).map((b) => {
-          const name = `${b.person.first_name} ${b.person.last_name}`.trim() || "Forge member";
+          const name = `${b.person.first_name} ${b.person.last_name}`.trim() || "Brazework member";
           return (
             <article key={b.person.id} className="glass-card flex min-w-0 flex-col gap-3 rounded-3xl p-4 sm:p-5">
               <div className="flex items-start gap-3">

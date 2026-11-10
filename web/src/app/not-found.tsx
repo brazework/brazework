@@ -16,7 +16,7 @@ export default function NotFound() {
         </h1>
         <p className="mt-4 max-w-md text-muted">That page doesn&apos;t exist, or it moved. The work is this way.</p>
         <div className="mt-8 flex gap-3">
-          <Button href="/">Back to Forge</Button>
+          <Button href="/">Back to Brazework</Button>
           <Button href="/feed" variant="outline">Open your feed</Button>
         </div>
       </div>

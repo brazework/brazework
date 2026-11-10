@@ -48,7 +48,7 @@ async function Resume({ params }: { params: PageProps<"/u/[id]/resume">["params"
   const clubs = ((clubRes.data ?? []) as unknown as { role: string; communities: { name: string } | null }[]).filter((c) => c.communities);
   const skills = [...projects.flatMap((x) => x.tools ?? []).reduce((m, t) => m.set(t, (m.get(t) ?? 0) + 1), new Map<string, number>())].sort((a, b) => b[1] - a[1]).map(([t]) => t).slice(0, 16);
   const when = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString("en-US", { month: "short", year: "numeric" });
-  const name = `${p.first_name} ${p.last_name}`.trim() || "Forge member";
+  const name = `${p.first_name} ${p.last_name}`.trim() || "Brazework member";
 
   return (
     <>
@@ -111,7 +111,7 @@ async function Resume({ params }: { params: PageProps<"/u/[id]/resume">["params"
             <p className="mt-3 text-zinc-700">{skills.join(" · ")}</p>
           </>
         )}
-        <footer className="mt-10 border-t border-zinc-200 pt-3 text-[11px] text-zinc-400">Verified work is checked by the named club on Forge. Full profile: /u/{id}</footer>
+        <footer className="mt-10 border-t border-zinc-200 pt-3 text-[11px] text-zinc-400">Verified work is checked by the named club on Brazework. Full profile: /u/{id}</footer>
       </article>
     </>
   );

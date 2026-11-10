@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 
-// Home Screen icons for the installed web app (manifest.ts): the Forge mark on near-black, full
+// Home Screen icons for the installed web app (manifest.ts): the Brazework mark on near-black, full
 // bleed so iOS and Android can round or mask the corners themselves. /app-icon/192, /app-icon/512.
 const SIZES = new Set([180, 192, 512]);
 

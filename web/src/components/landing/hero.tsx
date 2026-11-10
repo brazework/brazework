@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui";
 import { cn } from "@/lib/forge";
 
-// The hero: one clear line, then the four groups Forge serves. Each one shows what Forge does for
+// The hero: one clear line, then the four groups Brazework serves. Each one shows what Brazework does for
 // them in a small live preview (example data, labelled as such). It cycles until you pick one.
 const AUDIENCES = [
   {
@@ -40,7 +40,7 @@ export function Hero() {
   }, [auto, reduce]);
 
   return (
-    <section id="top" data-story="Forge" className="story-sec relative isolate overflow-hidden pt-32 pb-20 sm:pt-40">
+    <section id="top" data-story="Brazework" className="story-sec relative isolate overflow-hidden pt-32 pb-20 sm:pt-40">
       <div className="pointer-events-none absolute inset-0 -z-10" aria-hidden="true">
         <div className="bg-accent-grad absolute -top-40 left-1/2 h-[560px] w-[900px] -translate-x-1/2 rounded-full opacity-[0.14] blur-3xl" />
       </div>
@@ -57,13 +57,13 @@ export function Hero() {
             not résumés.
           </h1>
           <p className="m-hide focus-in mt-6 max-w-xl text-lg leading-relaxed text-muted" style={{ ["--delay" as string]: "0.1s" }}>
-            Forge is the network for STEM clubs and the people who hire from them. Clubs run on it, members prove what they&apos;ve built, and Ember, the AI agent built in, does the busywork.
+            Brazework is the network for STEM clubs and the people who hire from them. Clubs run on it, members prove what they&apos;ve built, and Ember, the AI agent built in, does the busywork.
           </p>
           {/* Phones: the same idea, short enough to read in full. */}
           <p className="m-only focus-in mt-5 text-base leading-relaxed text-muted">The network for STEM clubs and the people who hire from them. Ember, the built-in AI agent, does the busywork.</p>
 
           <div className="rise-in mt-8" style={{ ["--delay" as string]: "0.2s" }}>
-            <div role="tablist" aria-label="Who Forge is for" className="flex flex-wrap gap-2">
+            <div role="tablist" aria-label="Who Brazework is for" className="flex flex-wrap gap-2">
               {AUDIENCES.map((x, n) => (
                 <button
                   key={x.id}

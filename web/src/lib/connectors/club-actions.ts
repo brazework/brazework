@@ -27,7 +27,7 @@ export async function connectDiscord(cid: string, url: string, opts: { events: b
   const hook = url.trim();
   if (!DISCORD_WEBHOOK.test(hook)) return { ok: false, message: "Paste a Discord webhook link: Server settings → Integrations → Webhooks → Copy webhook URL." };
   // Prove the webhook works before saving it.
-  const test = await sendDiscord(hook, { username: `Forge · ${o.name}`.slice(0, 80), content: `Forge is connected. ${o.name}'s events, verified milestones and weekly updates can now be announced here.`, allowed_mentions: { parse: [] } });
+  const test = await sendDiscord(hook, { username: `Brazework · ${o.name}`.slice(0, 80), content: `Brazework is connected. ${o.name}'s events, verified milestones and weekly updates can now be announced here.`, allowed_mentions: { parse: [] } });
   if (!test.ok) return test;
   const { error } = await o.supabase.from("club_integrations").upsert({ community_id: cid, discord_webhook: hook, discord_events: opts.events, discord_milestones: opts.milestones, discord_updates: opts.updates });
   if (error) return { ok: false, message: friendlyError(error) };
@@ -50,7 +50,7 @@ export async function disconnectDiscord(cid: string): Promise<R> {
   const { error } = await o.supabase.from("club_integrations").delete().eq("community_id", cid);
   if (error) return { ok: false, message: friendlyError(error) };
   revalidatePath(`/c/${cid}/manage`);
-  return { ok: true, message: "Disconnected. Forge won't post to that channel any more." };
+  return { ok: true, message: "Disconnected. Brazework won't post to that channel any more." };
 }
 
 // Officers share a post (like the weekly update) to the club's Discord.

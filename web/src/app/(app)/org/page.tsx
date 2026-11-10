@@ -33,7 +33,7 @@ async function Org() {
   if (!org)
     return (
       <>
-        <PageHeader title="Host events on Forge" subtitle="Companies and schools are verified by the domain of the email you signed up with." />
+        <PageHeader title="Host events on Brazework" subtitle="Companies and schools are verified by the domain of the email you signed up with." />
         <Panel className="mt-6 p-6"><RegisterOrg email={user.email} /></Panel>
       </>
     );

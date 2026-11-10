@@ -1,10 +1,10 @@
 import type { MetadataRoute } from "next";
 
-// "Add to Home Screen": Forge opens full screen like an app, straight to your feed.
+// "Add to Home Screen": Brazework opens full screen like an app, straight to your feed.
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Forge",
-    short_name: "Forge",
+    name: "Brazework",
+    short_name: "Brazework",
     description: "Home base for university STEM clubs: build, prove it, get hired.",
     start_url: "/feed",
     scope: "/",

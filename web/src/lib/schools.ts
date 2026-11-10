@@ -3,7 +3,7 @@ import { revalidatePath } from "next/cache";
 import { friendlyError } from "@/lib/forge";
 import { createClient } from "@/lib/supabase/server";
 
-// "Request my school" (supabase/school-requests.sql): anyone can ask; Forge admins decide.
+// "Request my school" (supabase/school-requests.sql): anyone can ask; Brazework admins decide.
 export type SchoolState = { ok: boolean; message: string; listed?: boolean };
 
 export async function requestSchool(_: SchoolState, form: FormData): Promise<SchoolState> {
@@ -14,7 +14,7 @@ export async function requestSchool(_: SchoolState, form: FormData): Promise<Sch
   const { data, error } = await supabase.rpc("request_school", { p_domain: domain, p_school: school, p_contact: contact });
   if (error) return { ok: false, message: error.code === "P0001" ? error.message : friendlyError(error) };
   if (data === "listed") return { ok: true, listed: true, message: "Good news: that school is already recognized. Go back and sign up with your school email." };
-  return { ok: true, message: "Requested. The Forge team checks it's a real school, then you can sign up with that email." };
+  return { ok: true, message: "Requested. The Brazework team checks it's a real school, then you can sign up with that email." };
 }
 
 export async function decideSchool(id: number, add: boolean): Promise<SchoolState> {

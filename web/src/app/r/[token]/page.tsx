@@ -19,7 +19,7 @@ type Report = {
 
 const day = (ts: string) => new Date(ts).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
 
-// A club's semester at a glance, for people who aren't on Forge (a sponsor, a dean). Opened from a
+// A club's semester at a glance, for people who aren't on Brazework (a sponsor, a dean). Opened from a
 // private link an officer shares; public information only (supabase/club-reports.sql).
 export default function ClubReportPage({ params }: PageProps<"/r/[token]">) {
   return (
@@ -120,7 +120,7 @@ async function ReportBody({ params }: { params: PageProps<"/r/[token]">["params"
       {!r.verified.length && !r.events.length && !r.wins.length && <p className="mt-10 text-sm text-muted">Nothing to report for this period yet.</p>}
 
       <p className="mt-12 border-t border-line pt-6 text-xs text-faint print:border-neutral-300">
-        Made with <Link href="/" className="underline">Forge</Link>, where clubs verify what their members build. Shared by the club&apos;s officers; public information only.
+        Made with <Link href="/" className="underline">Brazework</Link>, where clubs verify what their members build. Shared by the club&apos;s officers; public information only.
       </p>
     </>
   );

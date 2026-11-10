@@ -1,6 +1,6 @@
 import { ImageResponse } from "next/og";
 
-export const alt = "Forge: where STEM clubs build, prove it and get hired.";
+export const alt = "Brazework: where STEM clubs build, prove it and get hired.";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -15,7 +15,7 @@ export default function OpengraphImage() {
             <path d="M4 22 L14 4 L24 22 Z" stroke="#fafafa" strokeWidth="2" strokeLinejoin="round" />
             <path d="M9 22 L14 13 L19 22" stroke="#fafafa" strokeWidth="2" strokeLinejoin="round" />
           </svg>
-          Forge
+          Brazework
         </div>
         <div style={{ display: "flex", flexDirection: "column" }}>
           <div style={{ fontSize: 96, fontWeight: 700, letterSpacing: -4, lineHeight: 1 }}>Proof of work</div>

@@ -40,7 +40,7 @@ export function ReportDialog() {
           <div className="flex items-start justify-between gap-3">
             <div>
               <h2 className="flex items-center gap-2 text-lg font-semibold tracking-tight"><Flag className="size-4" /> Report {target.label}</h2>
-              <p className="mt-1 text-sm text-muted">Only the Forge team sees reports. The person isn&apos;t told who reported them.</p>
+              <p className="mt-1 text-sm text-muted">Only the Brazework team sees reports. The person isn&apos;t told who reported them.</p>
             </div>
             <button type="button" onClick={() => setTarget(null)} aria-label="Close" className="grid size-8 shrink-0 place-items-center rounded-full text-faint hover:bg-hover hover:text-text"><X className="size-4" /></button>
           </div>
@@ -75,7 +75,7 @@ export function ReportLink({ kind, id, label, className }: Target & { className?
   );
 }
 
-// Forge admins: resolve a report from /admin.
+// Brazework admins: resolve a report from /admin.
 export function ResolveReport({ id }: { id: number }) {
   const [pending, start] = useTransition();
   const [msg, setMsg] = useState("");

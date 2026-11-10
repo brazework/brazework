@@ -20,7 +20,7 @@ export function verifyStripeSignature(payload: string, header: string | null, se
   });
 }
 
-// What a paid checkout means for Forge: which challenge, and Stripe's reference for the session.
+// What a paid checkout means for Brazework: which challenge, and Stripe's reference for the session.
 export type Paid = { plan: string; reference: string; sessionId: string };
 export function paidCheckout(event: unknown): Paid | null {
   const e = event as { type?: string; data?: { object?: { id?: string; payment_status?: string; metadata?: Record<string, string> } } };

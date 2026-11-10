@@ -9,25 +9,25 @@ type Embed = { title: string; url?: string; description?: string; fields?: { nam
 export type DiscordPayload = { username: string; content?: string; embeds?: Embed[]; allowed_mentions: { parse: never[] } };
 
 const cut = (s: string, n: number) => (s.length > n ? `${s.slice(0, n - 1)}…` : s);
-const base = (club: string) => ({ username: cut(`Forge · ${club}`, 80), allowed_mentions: { parse: [] as never[] } });
+const base = (club: string) => ({ username: cut(`Brazework · ${club}`, 80), allowed_mentions: { parse: [] as never[] } });
 
 export function eventMessage(club: string, e: { id: string; title: string; description: string; starts_at: string; format: string; location: string }, site: string): DiscordPayload {
   const t = Math.floor(Date.parse(e.starts_at) / 1000);
   return { ...base(club), embeds: [{
     title: cut(`New event: ${e.title}`, 256), url: `${site}/events/${e.id}`, color: COLOR,
-    description: cut(e.description || "RSVP on Forge.", 1000),
+    description: cut(e.description || "RSVP on Brazework.", 1000),
     // Discord shows <t:…> in each reader's own timezone.
     fields: [{ name: "When", value: `<t:${t}:F> (<t:${t}:R>)`, inline: true }, { name: "Where", value: cut(e.format === "Online" ? "Online" : e.location || e.format, 200), inline: true }],
-    footer: { text: "RSVP on Forge" },
+    footer: { text: "RSVP on Brazework" },
   }] };
 }
 
 export function milestoneMessage(club: string, m: { member: string; memberId: string; title: string; project: string }, site: string): DiscordPayload {
-  return { ...base(club), embeds: [{ title: cut(`Verified: ${m.title}`, 256), url: `${site}/u/${m.memberId}`, color: 0x16a34a, description: cut(`${m.member}${m.project ? ` · ${m.project}` : ""}. Verified by ${club} on Forge.`, 1000) }] };
+  return { ...base(club), embeds: [{ title: cut(`Verified: ${m.title}`, 256), url: `${site}/u/${m.memberId}`, color: 0x16a34a, description: cut(`${m.member}${m.project ? ` · ${m.project}` : ""}. Verified by ${club} on Brazework.`, 1000) }] };
 }
 
 export function updateMessage(club: string, clubId: string, text: string, site: string): DiscordPayload {
-  return { ...base(club), content: cut(text, 1900), embeds: [{ title: cut(`${club} on Forge`, 256), url: `${site}/c/${clubId}`, color: COLOR }] };
+  return { ...base(club), content: cut(text, 1900), embeds: [{ title: cut(`${club} on Brazework`, 256), url: `${site}/c/${clubId}`, color: COLOR }] };
 }
 
 export async function sendDiscord(url: string, payload: DiscordPayload, fetchImpl: typeof fetch = fetch): Promise<{ ok: boolean; message: string }> {

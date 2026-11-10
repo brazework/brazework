@@ -12,7 +12,7 @@ export type FeedbackResult =
 
 const schema = z.object({
   kind: z.enum(["idea", "problem", "improvement", "praise"], { message: "Choose what kind of feedback this is." }),
-  area: z.enum(["general", "feed", "search", "profiles", "communities", "messages", "events", "network", "notifications", "other"], { message: "Choose which part of Forge this is about." }),
+  area: z.enum(["general", "feed", "search", "profiles", "communities", "messages", "events", "network", "notifications", "other"], { message: "Choose which part of Brazework this is about." }),
   body: z.string().trim().min(10, "Tell us a little more (at least 10 characters).").max(1000, "Keep it under 1,000 characters."),
   mayContact: z.boolean(),
 });

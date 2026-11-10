@@ -10,7 +10,7 @@ import { getViewer } from "@/lib/supabase/server";
 export const metadata: Metadata = { title: "Claim a club" };
 
 // Claiming a club someone else started (supabase/club-claims.sql): the officer says their role and
-// how to check it; a Forge admin decides on /admin.
+// how to check it; a Brazework admin decides on /admin.
 export default function ClaimPage({ params }: PageProps<"/c/[id]/claim">) {
   return (
     <div className="mx-auto max-w-2xl">
@@ -37,13 +37,13 @@ async function Claim({ params }: { params: PageProps<"/c/[id]/claim">["params"] 
 
   return (
     <>
-      <PageHeader title={`Claim ${club.name}`} subtitle="For a chapter's real officers when someone else started the club on Forge." />
+      <PageHeader title={`Claim ${club.name}`} subtitle="For a chapter's real officers when someone else started the club on Brazework." />
       <Panel className="mt-6 flex flex-col gap-4 p-6">
         {me?.role === "owner" ? (
           <p className="text-sm text-text-2">You already own this club.</p>
         ) : latest?.status === "open" ? (
           <>
-            <p className="text-sm text-text-2">Your claim as <span className="font-medium text-text">{latest.role_title}</span> is with the Forge team. You&apos;ll get a notification when it&apos;s decided.</p>
+            <p className="text-sm text-text-2">Your claim as <span className="font-medium text-text">{latest.role_title}</span> is with the Brazework team. You&apos;ll get a notification when it&apos;s decided.</p>
             <div><WithdrawClaim id={latest.id} cid={club.id} /></div>
           </>
         ) : (
@@ -53,7 +53,7 @@ async function Claim({ params }: { params: PageProps<"/c/[id]/claim">["params"] 
             )}
             <div className="text-sm leading-relaxed text-text-2">
               <p>If it&apos;s approved, you become the owner. {club.owner_name || "The person who started it"} stays in the club as a member, and the club&apos;s members, posts, events and verified work don&apos;t change.</p>
-              <p className="mt-2 text-faint">You need a school email on your account. The Forge team checks every claim by hand.</p>
+              <p className="mt-2 text-faint">You need a school email on your account. The Brazework team checks every claim by hand.</p>
             </div>
             <ClaimForm cid={club.id} clubName={club.name} />
           </>

@@ -73,7 +73,7 @@ export function withHost(r: WithOrg): HostedEvent {
   return o ? { ...rest, host: o.name, host_type: o.type } : { ...rest, host: c?.name ?? "", host_type: c ? "community" : "" };
 }
 
-export const ORG_LABEL: Record<HostType, string> = { company: "Verified company", school: "Verified school", forge: "Forge", community: "Club event" };
+export const ORG_LABEL: Record<HostType, string> = { company: "Verified company", school: "Verified school", forge: "Brazework", community: "Club event" };
 
 export const isOver = (e: Pick<ForgeEvent, "ends_at">, now: number) => Date.parse(e.ends_at) <= now;
 // Past or cancelled events go in the host's log; the rest are still coming up.
@@ -152,7 +152,7 @@ export function calendarFile(e: Pick<ForgeEvent, "id" | "title" | "description" 
   const text = (v: string) => String(v || "").replace(/\\/g, "\\\\").replace(/([,;])/g, "\\$1").replace(/\r?\n/g, "\\n");
   const details = [e.description, e.link].filter(Boolean).join("\n\n");
   return [
-    "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Forge//Events//EN", "BEGIN:VEVENT",
+    "BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Brazework//Events//EN", "BEGIN:VEVENT",
     `UID:${e.id}@forge`, `DTSTAMP:${stamp(now)}`, `DTSTART:${stamp(e.starts_at)}`, `DTEND:${stamp(e.ends_at)}`,
     `SUMMARY:${text(e.title)}`, `DESCRIPTION:${text(details)}`, `LOCATION:${text(whereLabel(e))}`,
     "END:VEVENT", "END:VCALENDAR",

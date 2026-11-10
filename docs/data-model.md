@@ -1,4 +1,4 @@
-# Forge data model
+# Brazework data model
 
 Every table, who can read and change it, and the known limits of the current slice. The SQL files in `supabase/` are the source of truth; row-level security there is what protects the data.
 
@@ -19,7 +19,7 @@ The database fills in names, counts and times itself, so the app can't fake them
 - `message_settings`: whether requests wait in a separate tab, and who can send you one (anyone, connections plus people in your communities, or connections only). The database enforces who can send. Visible only to you.
 - `message_blocks`: who you've blocked. Neither of you can message the other. The blocked person can't see the block, and you can undo it in Settings.
 - `message_reports`: created by Block & report, with a copy of the messages. Can't be read from the site; review them in the Supabase dashboard under Table Editor.
-- `organizations`, `organization_admins`: companies and schools, verified when the registering account's confirmed email matches the website's domain (personal providers are rejected). The `forge` organization posts Forge's own events; add its admins in the dashboard.
+- `organizations`, `organization_admins`: companies and schools, verified when the registering account's confirmed email matches the website's domain (personal providers are rejected). The `forge` organization posts Brazework's own events; add its admins in the dashboard.
 - `events`, `event_rsvps`, `event_saves`: hosted by an organization. Events are never deleted. Row-level security hides them from members 24 hours after they end, and from then on only the host's admins can see them, which is the past-events log. Ended events can't be edited.
 - `notifications`: written only by the database when someone likes or comments on your post, follows you, sends or accepts a connection request, asks to join a community you help run, or approves your request. Unliking, unfollowing or withdrawing removes it again. Nothing is sent about your own actions or by people you've blocked. Only you can read, mark read or clear yours.
 - `profile_views`: one row per viewer, per profile, per day (your own visits don't count). Nobody can read it from the site; `my_analytics()` gives the owner totals only, and the viewer breakdown appears only once at least 3 different people have viewed you.
@@ -40,7 +40,7 @@ The database fills in names, counts and times itself, so the app can't fake them
 - Organizations have one admin (the person who registered) and no public page yet; adding colleagues as admins and the company page come later. Their name isn't checked, only their email domain, and unlisted schools aren't reviewed yet: a school needs an academic domain.
 - Events have one topic each and no reminders. Communities can't host events yet.
 - The first-time tour runs once per account, the first time the feed opens; closing it counts as done. Replay it from Settings → Help.
-- To announce a feature: add an entry at the top of `public/js/updates.js` with a new id, a summary and points, and optionally `tour` steps that point at `data-tour="…"` names on the page. Members who joined before it get a short What's new walkthrough on their next visit; everyone can read the note by clicking it under Forge updates.
+- To announce a feature: add an entry at the top of `public/js/updates.js` with a new id, a summary and points, and optionally `tour` steps that point at `data-tour="…"` names on the page. Members who joined before it get a short What's new walkthrough on their next visit; everyone can read the note by clicking it under Brazework updates.
 - Notifications appear in the app only; there are no emails or phone push notifications yet, and no settings to turn kinds off.
 - Analytics counts profile views and engagement on your posts. Project views, search appearances and access requests from the prototype wait on those features. Career progression only shows when you joined until profiles have experience and education, and the career benchmark waits on deciding how skill levels are measured. Company analytics wait on the company page.
 - Supabase's built-in email sender only sends a few emails an hour; set up your own email sender before launch (SETUP.md, step 4).
@@ -52,15 +52,15 @@ The database fills in names, counts and times itself, so the app can't fake them
 
 ## Member feedback (`supabase/feedback.sql`)
 
-Members send ideas, problems, improvements and praise from Forge updates (`submit_feedback()`, at most 10 a day).
+Members send ideas, problems, improvements and praise from Brazework updates (`submit_feedback()`, at most 10 a day).
 
-- `feedback`: kind, area of Forge, the text, whether the team may contact them, and which idea it belongs to. A member can read only their own.
+- `feedback`: kind, area of Brazework, the text, whether the team may contact them, and which idea it belongs to. A member can read only their own.
 - `feedback_themes`: ideas. New feedback joins the closest existing idea in the same area (similar wording or at least half its meaningful words shared; a few synonyms like "laggy" and "slow" count as the same word), otherwise it starts a new idea with a plain-English name. Members can't see this table.
 - Grade (out of 9): demand (members who asked, up to 5) + pain (2 for a problem, 1 for a request) + momentum (1 if mentioned in the last 2 weeks) + breadth (1 if students and professionals both asked). A 7+, B 5-6, C 3-4, D 0-2.
-- Linear: `feedback_sync()` (after each submission and every 2 minutes via pg_cron) creates one task per idea in team Forge, project Forge v1, in Backlog, labelled Feedback plus Feature, Bug or Improvement. The task id is the idea's id, so new feedback updates the same task's description and adds a comment. Praise goes only to the log. It also keeps the "Forge feedback log" document in the project current. Founders approve (Todo, due date, owner) or deny (Canceled) in Linear. Titles, status, labels and dates are never overwritten.
+- Linear: `feedback_sync()` (after each submission and every 2 minutes via pg_cron) creates one task per idea in team Forge, project Brazework v1, in Backlog, labelled Feedback plus Feature, Bug or Improvement. The task id is the idea's id, so new feedback updates the same task's description and adds a comment. Praise goes only to the log. It also keeps the "Brazework feedback log" document in the project current. Founders approve (Todo, due date, owner) or deny (Canceled) in Linear. Titles, status, labels and dates are never overwritten.
 - Needs `linear_api_key` in Supabase Vault. Without it, feedback is stored and grouped and syncs once the key is added. Where it goes in Linear lives in `feedback_settings`.
 - `select public.feedback_log_markdown();` in the SQL Editor prints the same log as Markdown at any time.
-- Weekly review (`supabase/feedback-review.sql`): every Monday at 13:00 UTC (pg_cron job `forge-feedback-weekly-review`) the database creates one "Feedback review · week of …" task in Linear (Forge v1, Todo, label Feedback, due two days later) listing new ideas by grade, ideas more members asked for, and praise, with quotes. Weeks without feedback are skipped. Run it by hand with `select public.feedback_weekly_review();`, or preview the text with `select public.feedback_weekly_markdown();`.
+- Weekly review (`supabase/feedback-review.sql`): every Monday at 13:00 UTC (pg_cron job `forge-feedback-weekly-review`) the database creates one "Feedback review · week of …" task in Linear (Brazework v1, Todo, label Feedback, due two days later) listing new ideas by grade, ideas more members asked for, and praise, with quotes. Weeks without feedback are skipped. Run it by hand with `select public.feedback_weekly_review();`, or preview the text with `select public.feedback_weekly_markdown();`.
 
 ## Post edits (`supabase/post-edits.sql`)
 

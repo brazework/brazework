@@ -16,7 +16,7 @@ export function splitNext(raw: string): { text: string; next: string[] } {
   return { text, next };
 }
 
-// Links to things on Forge in an answer, in order, without repeats (for the cards under it).
+// Links to things on Brazework in an answer, in order, without repeats (for the cards under it).
 export function forgeLinks(text: string, max = 4): string[] {
   const out: string[] = [];
   for (const m of text.matchAll(/\/(c|u|events|projects|post)\/([A-Za-z0-9-]{1,64})/g)) {

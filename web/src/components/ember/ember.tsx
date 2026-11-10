@@ -1,6 +1,6 @@
 import { cn } from "@/lib/forge";
 
-// Ember: Forge's AI, shown as a glowing glass orb with light moving inside it (Forge is where sparks
+// Ember: Brazework's AI, shown as a glowing glass orb with light moving inside it (Brazework is where sparks
 // fly). It appears wherever the app talks to you: the feed's create box, the guide, Copilot, empty
 // and waiting states. Pure SVG + CSS (no JavaScript), so it renders on the server.
 //

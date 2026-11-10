@@ -20,17 +20,17 @@ type DB = Awaited<ReturnType<typeof createClient>>;
 export const TOOLS: Anthropic.Tool[] = [
   {
     name: "search_clubs",
-    description: "Search clubs (communities) on Forge by keyword and/or field. Returns up to 8, biggest first, each with its link path.",
+    description: "Search clubs (communities) on Brazework by keyword and/or field. Returns up to 8, biggest first, each with its link path.",
     input_schema: { type: "object", properties: { query: { type: "string", description: "Keywords, e.g. 'rocketry' or 'formula'" }, field: { type: "string", description: "A field, e.g. 'Mechanical Engineering'" } } },
   },
   {
     name: "upcoming_events",
-    description: "Published events on Forge in the next N days (default 30), soonest first, optionally matching keywords. Each has its link path.",
+    description: "Published events on Brazework in the next N days (default 30), soonest first, optionally matching keywords. Each has its link path.",
     input_schema: { type: "object", properties: { days: { type: "integer", minimum: 1, maximum: 90 }, query: { type: "string" } } },
   },
   {
     name: "find_people",
-    description: "Find Forge members by keyword (name or headline) and/or field or interest. Returns up to 8, each with a profile link path.",
+    description: "Find Brazework members by keyword (name or headline) and/or field or interest. Returns up to 8, each with a profile link path.",
     input_schema: { type: "object", properties: { query: { type: "string" }, field: { type: "string" }, interest: { type: "string" } } },
   },
   {
@@ -115,7 +115,7 @@ export const TOOLS: Anthropic.Tool[] = [
   },
   {
     name: "propose_project",
-    description: "Prepare a new project on the member's Forge profile, usually from github_repo. title <= 120 chars, summary <= 600, details (the write-up) <= 5000, link to the repo or demo, up to 3 tags. It is NOT added until they confirm.",
+    description: "Prepare a new project on the member's Brazework profile, usually from github_repo. title <= 120 chars, summary <= 600, details (the write-up) <= 5000, link to the repo or demo, up to 3 tags. It is NOT added until they confirm.",
     input_schema: { type: "object", properties: { title: { type: "string" }, summary: { type: "string" }, details: { type: "string" }, link: { type: "string" }, tags: { type: "array", items: { type: "string" } }, status: { type: "string", enum: ["in_progress", "completed"] }, year: { type: "string" } }, required: ["title", "summary"] },
   },
 ];

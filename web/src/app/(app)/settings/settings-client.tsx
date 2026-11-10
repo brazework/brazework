@@ -90,7 +90,7 @@ function applyTheme(c: Choice) {
 // App-wide themes (html[data-skin], saved as localStorage "forge-skin"). Mono = no attribute.
 const SKINS = [
   { id: "mono", label: "Mono", bg: "#0b0b0d", card: "#18181b", grad: "linear-gradient(135deg, #fafafa, #a1a1aa)" },
-  { id: "fire", label: "Forge Fire", bg: "#120a07", card: "#21150e", grad: "linear-gradient(135deg, #ffd166, #ff8a3d 45%, #ff4d4d)" },
+  { id: "fire", label: "Brazework Fire", bg: "#120a07", card: "#21150e", grad: "linear-gradient(135deg, #ffd166, #ff8a3d 45%, #ff4d4d)" },
   { id: "blueprint", label: "Blueprint", bg: "#0a1c35", card: "#112d52", grad: "linear-gradient(135deg, #a5d8ff, #7cc4ff 50%, #5b9dff)" },
   { id: "aurora", label: "Aurora", bg: "#0b0a1a", card: "#171433", grad: "linear-gradient(135deg, #22d3ee, #818cf8 50%, #e879f9)" },
   { id: "emerald", label: "Emerald", bg: "#06140f", card: "#0e241b", grad: "linear-gradient(135deg, #d9f99d, #34d399 50%, #22d3ee)" },
@@ -156,7 +156,7 @@ export function MessagingSettings({ requestsOn, who }: { requestsOn: boolean; wh
   const [msg, setMsg] = useState<SettingsState>(init);
   const [pending, start] = useTransition();
   const save = (nextOn: boolean, nextWho: typeof w) => start(async () => setMsg(await saveMessageSettings(nextOn, nextWho)));
-  const whoOpts: [typeof w, string][] = [["everyone", "Anyone on Forge"], ["communities", "Connections and people in your communities"], ["connections", "Connections only"]];
+  const whoOpts: [typeof w, string][] = [["everyone", "Anyone on Brazework"], ["communities", "Connections and people in your communities"], ["connections", "Connections only"]];
   return (
     <div className="flex flex-col gap-5">
       <label className="flex items-start justify-between gap-4">
@@ -198,7 +198,7 @@ export function BlockedList({ people }: { people: { id: string; name: string }[]
 export function HelpSettings() {
   return (
     <div className="flex flex-wrap items-center justify-between gap-3">
-      <p className="text-sm text-muted">Take the one-minute tour of Forge again.</p>
+      <p className="text-sm text-muted">Take the one-minute tour of Brazework again.</p>
       <Button variant="outline" onClick={() => window.dispatchEvent(new CustomEvent("forge:tour", { detail: "welcome" }))}>Replay the tour</Button>
     </div>
   );
@@ -226,10 +226,10 @@ export function EmberSettings({ saving, chats }: { saving: boolean; chats: numbe
   return (
     <div className="space-y-4 text-sm leading-relaxed text-text-2">
       <ul className="space-y-2">
-        <li><strong className="font-medium text-text">What Ember reads:</strong> your profile, clubs and projects, and what any member can see on Forge (clubs, events, people, posts), plus public GitHub when you ask about a repo.</li>
+        <li><strong className="font-medium text-text">What Ember reads:</strong> your profile, clubs and projects, and what any member can see on Brazework (clubs, events, people, posts), plus public GitHub when you ask about a repo.</li>
         <li><strong className="font-medium text-text">What it never reads:</strong> your direct messages. In a group chat it reads recent messages only when someone there asks @Ember or taps Catch me up.</li>
         <li><strong className="font-medium text-text">What it does on its own:</strong> nothing. It prepares cards; posting, joining, RSVPing or messaging happens only when you confirm.</li>
-        <li><strong className="font-medium text-text">Your chats:</strong> {saving ? "private to you, and deleted 180 days after you last use them. A thumbs up or down sends only that question and answer to the Forge team." : "not kept after you leave the page."}</li>
+        <li><strong className="font-medium text-text">Your chats:</strong> {saving ? "private to you, and deleted 180 days after you last use them. A thumbs up or down sends only that question and answer to the Brazework team." : "not kept after you leave the page."}</li>
       </ul>
       {saving && (
         <div className="flex flex-wrap items-center gap-3 border-t border-line pt-4">
@@ -244,7 +244,7 @@ export function EmberSettings({ saving, chats }: { saving: boolean; chats: numbe
   );
 }
 
-// Settings → AI tools: personal tokens for Forge's MCP server (supabase/mcp.sql, /api/mcp).
+// Settings → AI tools: personal tokens for Brazework's MCP server (supabase/mcp.sql, /api/mcp).
 export function AiToolsSettings({ tokens, endpoint }: { tokens: ApiToken[]; endpoint: string }) {
   const [list, setList] = useState(tokens);
   const [name, setName] = useState("Claude");
@@ -259,7 +259,7 @@ export function AiToolsSettings({ tokens, endpoint }: { tokens: ApiToken[]; endp
   const when = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "never");
   return (
     <div className="space-y-5 text-sm">
-      <p className="leading-relaxed text-text-2">Use Forge from Claude, Cursor or any MCP-compatible assistant: ask it what&apos;s on in your clubs this week, what you&apos;re missing, or to find people in your field. It can <strong className="font-medium text-text">read</strong> your Forge (profile, clubs, events, projects, notifications, search); it can&apos;t post or change anything.</p>
+      <p className="leading-relaxed text-text-2">Use Brazework from Claude, Cursor or any MCP-compatible assistant: ask it what&apos;s on in your clubs this week, what you&apos;re missing, or to find people in your field. It can <strong className="font-medium text-text">read</strong> your Brazework (profile, clubs, events, projects, notifications, search); it can&apos;t post or change anything.</p>
       {fresh ? (
         <div className="space-y-3 rounded-2xl border border-line bg-surface-2/60 p-4">
           <p className="font-medium text-text">Your new token. Copy it now: it won&apos;t be shown again.</p>
@@ -307,7 +307,7 @@ export function YourDataSettings() {
     <div className="flex flex-col gap-6">
       <div>
         <a href="/api/export" download className="inline-flex h-10 items-center rounded-full border border-line px-4 text-sm font-medium transition hover:bg-hover">Download my data</a>
-        <p className="mt-2 text-xs text-muted">A JSON file with your profile, posts, replies, projects, milestones, messages you sent, clubs, follows and saved posts, plus links to your files. Forge never pulls records from your school. <Link href="/privacy" className="underline hover:text-text">How Forge handles your data</Link></p>
+        <p className="mt-2 text-xs text-muted">A JSON file with your profile, posts, replies, projects, milestones, messages you sent, clubs, follows and saved posts, plus links to your files. Brazework never pulls records from your school. <Link href="/privacy" className="underline hover:text-text">How Brazework handles your data</Link></p>
       </div>
       <form className="border-t border-line pt-6" onSubmit={(e) => { e.preventDefault(); start(async () => { const r = await deleteAccount(confirm); setState(r); if (r.ok) { router.replace("/"); router.refresh(); } }); }}>
         <div className="text-sm font-medium text-danger">Delete my account</div>

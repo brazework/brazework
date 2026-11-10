@@ -32,7 +32,7 @@ async function Thread({ params }: { params: PageProps<"/messages/[id]">["params"
 
   const otherId = conv.user_a === me ? conv.user_b : conv.user_a;
   const other = (conv.people?.[otherId] ?? {}) as { firstName?: string; lastName?: string; headline?: string };
-  const name = `${other.firstName ?? ""} ${other.lastName ?? ""}`.trim() || "Forge member";
+  const name = `${other.firstName ?? ""} ${other.lastName ?? ""}`.trim() || "Brazework member";
   const requestToMe = conv.status === "request" && conv.started_by !== me;
   const requestFromMe = conv.status === "request" && conv.started_by === me;
 

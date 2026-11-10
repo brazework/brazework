@@ -1,5 +1,5 @@
 // "For you": one ranked feed from everything that's relevant to you, so it's never empty.
-// Posts from your clubs, people you follow, your interests and the newest on Forge are merged,
+// Posts from your clubs, people you follow, your interests and the newest on Brazework are merged,
 // deduped and scored; each item says why it's there. Club-verified milestones ("proof") rank in
 // alongside posts. Pure, so it can be tested without a database.
 
@@ -31,8 +31,8 @@ export function reasonFor(p: RankPost, src: Set<Source>, interests: Set<string>,
   const m = p.tags.find((t) => interests.has(t));
   if (m) return `Matches your interest: ${m}`;
   if (p.kind === "question" && p.comment_count === 0) return "Unanswered question";
-  if (p.like_count + p.comment_count >= 5) return "Popular on Forge";
-  return "New on Forge";
+  if (p.like_count + p.comment_count >= 5) return "Popular on Brazework";
+  return "New on Brazework";
 }
 
 // Merge sources (a post can come from several), score, sort. `followNames` names the people you follow.

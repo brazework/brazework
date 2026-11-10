@@ -23,7 +23,7 @@ export async function shareTargets(): Promise<ShareTarget[]> {
   const people: ShareTarget[] = ((dms.data ?? []) as Row[]).map((c) => {
     const other = c.user_a === me ? c.user_b : c.user_a;
     const p = c.people?.[other] ?? {};
-    return { kind: "dm", id: c.id, title: `${p.firstName ?? ""} ${p.lastName ?? ""}`.trim() || "Forge member", subtitle: p.headline ?? "", first: p.firstName ?? "", last: p.lastName ?? "" };
+    return { kind: "dm", id: c.id, title: `${p.firstName ?? ""} ${p.lastName ?? ""}`.trim() || "Brazework member", subtitle: p.headline ?? "", first: p.firstName ?? "", last: p.lastName ?? "" };
   });
   const chats: ShareTarget[] = ((groups.data ?? []) as { id: string; kind: string; title: string; subtitle: string }[]).map((g) => ({ kind: "group", id: g.id, title: g.title, subtitle: g.subtitle }));
   return [...people, ...chats];

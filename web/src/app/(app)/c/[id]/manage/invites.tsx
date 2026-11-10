@@ -24,7 +24,7 @@ export function InviteLinks({ cid, clubName, origin, invites }: { cid: string; c
   };
   const share = async (code: string) => {
     if (navigator.share) {
-      try { await navigator.share({ title: `Join ${clubName} on Forge`, text: `You're invited to ${clubName} on Forge.`, url: url(code) }); } catch {}
+      try { await navigator.share({ title: `Join ${clubName} on Brazework`, text: `You're invited to ${clubName} on Brazework.`, url: url(code) }); } catch {}
     } else void copy(code);
   };
   const chip = "rounded-full border border-line px-3 py-1 text-xs text-muted transition aria-pressed:border-accent aria-pressed:bg-accent aria-pressed:text-on-accent";

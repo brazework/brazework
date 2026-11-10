@@ -1,4 +1,4 @@
-# Moving Forge to Next.js
+# Moving Brazework to Next.js
 
 **Proposal by Josh, 2026-11-07. Needs both founders' agreement before cut-over.**
 
@@ -44,43 +44,43 @@ The Vercel project lives in Ian's account, so these are his steps. It's already 
    1. `supabase/club-events.sql`: clubs host events
    2. `supabase/media.sql`: photos and video on posts (callouts, before/after, timeline markers), profile and club covers; it also creates the `media` Storage bucket
    3. `supabase/invites.sql`: club invite links
-   4. `supabase/copilot.sql`: Forge Copilot's daily limit (25 requests per person)
+   4. `supabase/copilot.sql`: Brazework Copilot's daily limit (25 requests per person)
    5. `supabase/milestones.sql`: club-verified milestones (members ask a club to vouch; moderators and up verify)
    6. `supabase/integrations.sql`: club integrations (Discord announcements for events, verified milestones and weekly updates)
-   7. `supabase/group-chats.sql`: group chats inside Forge (a chat for every club with officer announcements, a chat for every event's attendees, and team chats)
+   7. `supabase/group-chats.sql`: group chats inside Brazework (a chat for every club with officer announcements, a chat for every event's attendees, and team chats)
    8. `supabase/project-stack.sql`: what each project is built with (its tools), shown as a "Built with" stack and searchable in Explore
    9. `supabase/club-profile.sql`: a club's logo, tagline, website and accent colour
    10. `supabase/mentions.sql`: @mentions in posts (the people you tag get a notification)
    11. `supabase/copilot-chats.sql`: Ember chats members can come back to (private to each member, deleted after 180 days untouched) and answer ratings
    12. `supabase/profile-extras.sql`: what members are open to (internships, research, co-founding…), their links and location
-   13. `supabase/mcp.sql`: AI tools: members create personal tokens to use their Forge from Claude, Cursor and other MCP clients (read-only)
+   13. `supabase/mcp.sql`: AI tools: members create personal tokens to use their Brazework from Claude, Cursor and other MCP clients (read-only)
    14. `supabase/chat-extras.sql`: reactions, replies and unsend in messages and group chats
    15. `supabase/reports.sql`: report a post, reply, person or message, and block someone from anywhere (the iPhone app needs both for App Store review)
    16. `supabase/project-posts.sql`: project updates can also go to one of your clubs, and keep their kind (update, result, question)
-   17. `supabase/verification.sql`: verification made airtight: evidence required, no verifying your own team's work, 1–2 verifiers per club, revocation with a reason, disputes (club owner, then Forge admins), weekly limits per officer, an append-only log, and milestones private until the member shows them
+   17. `supabase/verification.sql`: verification made airtight: evidence required, no verifying your own team's work, 1–2 verifiers per club, revocation with a reason, disputes (club owner, then Brazework admins), weekly limits per officer, an append-only log, and milestones private until the member shows them
    18. `supabase/club-handoff.sql`: officer handoff at the end of term (pass your role to a successor; the club and its history carry over)
    19. `supabase/public-stats.sql`: the landing page's live traction numbers (counts only, no names)
    20. `supabase/account.sql`: members delete their own account (everything they authored goes; the verification log keeps anonymized records)
    21. `supabase/challenges.sql`: sponsored build challenges (draft → sponsored → open → judging → winners) and billing requests
-   22. `supabase/admin-metrics.sql`: the Forge admin dashboard's numbers (aggregates only, Forge admins only)
+   22. `supabase/admin-metrics.sql`: the Brazework admin dashboard's numbers (aggregates only, Brazework admins only)
    23. `supabase/rate-limits.sql`: per-member limits on posts, replies, messages, message requests (plus a weekly cap for company admins) and milestone submissions; tune them in `app_config`
-   24. `supabase/reports-more.sql`: report projects, milestones and challenges; Forge admins see and resolve every report on `/admin`
+   24. `supabase/reports-more.sql`: report projects, milestones and challenges; Brazework admins see and resolve every report on `/admin`
    25. `supabase/signup-rules.sql`: sign-up rules in the database (students need a school email; minimum age from `app_config`); add schools without an academic domain to `school_domains`
-   26. `supabase/school-requests.sql`: "Request my school" from sign-up; Forge admins add or dismiss requests on `/admin`
+   26. `supabase/school-requests.sql`: "Request my school" from sign-up; Brazework admins add or dismiss requests on `/admin`
    27. `supabase/club-duplicates.sql`: a new club whose name closely matches an existing one is flagged in `/admin`'s review queue
    28. `supabase/club-reports.sql`: a shareable club report link for sponsors (public information only; owners and admins make or turn off the link)
    29. `supabase/project-specs.sql`: a specs table on projects (label/value pairs like "Peak thrust: 2 kN")
    30. `supabase/email-digest.sql`: the weekly email digest (members turn it off in Settings; one send per member per week)
    31. `supabase/indexes.sql`: an index for every foreign key (faster joins, deletes and rate-limit checks as data grows)
    32. `supabase/blocking-content.sql`: blocking hides posts and replies both ways, even in a club you share (club moderators still see everything in their club)
-   33. `supabase/admin-retention.sql`: retention by weekly sign-up cohort and the company reply rate, on `/admin` (Forge admins only)
+   33. `supabase/admin-retention.sql`: retention by weekly sign-up cohort and the company reply rate, on `/admin` (Brazework admins only)
    34. `supabase/grad-year.sql`: an optional graduation year on profiles; a class-year filter on Find builders
-   35. `supabase/club-claims.sql`: an officer claims a club someone else started; a Forge admin decides on /admin
+   35. `supabase/club-claims.sql`: an officer claims a club someone else started; a Brazework admin decides on /admin
    36. `supabase/video-captions.sql`: captions (.vtt or .srt) and a transcript on videos
 2. **Vercel → Project → Settings → Environment Variables (Production):** these exact names must exist.
    - `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`. The old app also accepted `SUPABASE_URL` or a "publishable key", but the new app reads only these two names. If the project has them under other names, add these two with the same values, or the site loads but nobody can sign in.
    - `GITHUB_TOKEN` (optional): a GitHub token with no scopes. GitHub import works without it, but it raises GitHub's rate limit from 60 to 5,000 requests an hour.
-   - `ANTHROPIC_API_KEY`: turns on Forge Copilot. Optional: without it (or without `copilot.sql`), Copilot stays hidden and everything else works. `COPILOT_MODEL` can override the model (default `claude-sonnet-5`).
+   - `ANTHROPIC_API_KEY`: turns on Brazework Copilot. Optional: without it (or without `copilot.sql`), Copilot stays hidden and everything else works. `COPILOT_MODEL` can override the model (default `claude-sonnet-5`).
    - Email links use Vercel's production domain automatically; `NEXT_PUBLIC_SITE_URL` is only needed for a custom domain that isn't the project's production domain.
 3. **Settings → Build and Deployment:**
    - **Root Directory:** `web`

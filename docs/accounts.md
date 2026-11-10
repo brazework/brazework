@@ -1,6 +1,6 @@
 # Accounts and services
 
-Every account Forge runs on: who owns it, what it costs, and what's still missing. Keep this current when anything changes. **Never put a password or key in this file or anywhere in the repo**; keys live in Vercel, GitHub secrets or a shared password manager.
+Every account Brazework runs on: who owns it, what it costs, and what's still missing. Keep this current when anything changes. **Never put a password or key in this file or anywhere in the repo**; keys live in Vercel, GitHub secrets or a shared password manager.
 
 Status as of 2026-11-10. Linear issue IDs say what's open; the order to set everything up in is the company setup checklist, **FIX-57**. Every company account should be owned by a company email (`@brazework.com`), not a personal one.
 
@@ -12,7 +12,7 @@ Status as of 2026-11-10. Linear issue IDs say what's open; the order to set ever
 | **Vercel** | Hosting: builds and deploys `web/` from `main` | Team **FORGE DEV** (production project `forge-app`), owned by Ian; Josh is a Developer | **Pro** (checked 2026-11-10), paid by Ian | Josh → Member (FIX-6); add the company email (FIX-63); previews on staging data (FIX-2) |
 | **Supabase** | Database, sign-in, file storage, live updates | Org **Forge DEV**: project **FORGE** (production) and **forge-staging** (testing). Ian is Owner; Josh and the company email are Administrators | Free, **over its quota** (Cached Egress 6.6 of 5 GB, cycle ends Nov 18). Pro is $25/month and adds daily backups | Upgrade (FIX-10); database steps (FIX-25); signing keys (FIX-53); real email (FIX-1); rotate the staging password (FIX-12) |
 | **Linear** | What we're building, in order; member feedback lands here | Workspace **Josh-Products**, team **Forge** (key `FIX`); both founders and the company email are admins | Free. **Limit: 250 open issues** (archived ones don't count) | Auto-archive closed issues after a month so the Free plan lasts (FIX-5); the sync's API key (FIX-5) |
-| **Anthropic** (via Claude Code) | Building Forge: Claude Code sessions | Each founder's own Claude subscription | Per person | None |
+| **Anthropic** (via Claude Code) | Building Brazework: Claude Code sessions | Each founder's own Claude subscription | Per person | None |
 | **Company Gmail** | `brazeworkhq@gmail.com`: the owner and contact email for company accounts until we have the domain | Both founders (password and backup codes in Bitwarden) | Free | 2-step verification on both founders' phones (FIX-59) |
 | **Bitwarden** | Shared vault for every login and key | Free organization "Brazework" (2 seats), on the company Gmail | Free | Ian accepts the invite; 2FA (FIX-60) |
 | **GitHub organization** | Where the repo moves so both founders are owners | `github.com/brazework`, created by Josh; contact email the company Gmail | Free | Ian accepts Owner; transfer per the runbook on FIX-54 |
@@ -45,7 +45,7 @@ Needed before taking real money or raising, and asked for by YC:
 - **A legal entity:** usually a Delaware C corporation, with founder equity and IP assignment signed.
 - **An EIN** (US tax ID) and a **business bank account** (for example Mercury). Stripe pays out there.
 - **Terms of Service and a Privacy Policy** reviewed by a lawyer. The plain-language privacy page (`/privacy`) is a start, not a substitute.
-- **Student data:** members are 18 or older and Forge never pulls school records, but schools will ask how student data is handled. Keep [data-model.md](data-model.md) and `/privacy` current.
+- **Student data:** members are 18 or older and Brazework never pulls school records, but schools will ask how student data is handled. Keep [data-model.md](data-model.md) and `/privacy` current.
 
 ## Keys and where they live
 

@@ -7,7 +7,7 @@ import { Ember } from "@/components/ember/ember";
 import { cn } from "@/lib/forge";
 
 // Ember on the landing page, shown the way it really works (lib/copilot-agent.ts): you ask in plain
-// words, it looks things up on Forge with tools (each lookup shown as it runs), answers from what it
+// words, it looks things up on Brazework with tools (each lookup shown as it runs), answers from what it
 // found, and prepares actions as cards you confirm. It never saves anything on its own.
 
 type Scenario = {
@@ -69,12 +69,12 @@ const CAN = [
   { icon: BadgeCheck, label: "Get milestones verified" },
   { icon: CalendarPlus, label: "Host club events" },
   { icon: ClipboardList, label: "Run weekly club reports" },
-  { icon: Megaphone, label: "Post updates to Forge and Discord" },
+  { icon: Megaphone, label: "Post updates to Brazework and Discord" },
 ];
 
 const HOW = [
   { icon: MessageSquareText, title: "Ask in plain words", body: "Write it like you'd text a teammate. No prompts to learn." },
-  { icon: Wrench, title: "It checks real Forge data", body: "Clubs, events, your profile, GitHub and club reports, through tools. You see every lookup." },
+  { icon: Wrench, title: "It checks real Brazework data", body: "Clubs, events, your profile, GitHub and club reports, through tools. You see every lookup." },
   { icon: ShieldCheck, title: "You approve every action", body: "Joining, posting or adding a project shows up as a card. Nothing happens until you tap." },
 ];
 
@@ -91,9 +91,9 @@ export function CopilotSection() {
       <div className="mx-auto max-w-7xl px-6">
         <div className="mx-auto max-w-3xl text-center">
           <div className="flex justify-center"><Ember size={72} mood="happy" /></div>
-          <Eyebrow className="mt-4">Ember · the AI agent inside Forge</Eyebrow>
+          <Eyebrow className="mt-4">Ember · the AI agent inside Brazework</Eyebrow>
           <h2 className={`mt-5 ${H2}`}>An AI agent that runs <span className="text-grad">the busywork.</span></h2>
-          <p className="m-hide mt-5 text-lg leading-relaxed text-muted">Ember works inside Forge for officers and members. Ask it to plan the next meeting, draft the week&apos;s update, find the right person or add your project. It checks real data first, then does the work as a card you approve. It never invents results.</p>
+          <p className="m-hide mt-5 text-lg leading-relaxed text-muted">Ember works inside Brazework for officers and members. Ask it to plan the next meeting, draft the week&apos;s update, find the right person or add your project. It checks real data first, then does the work as a card you approve. It never invents results.</p>
           <ul className="mt-8 flex flex-wrap justify-center gap-2" aria-label="What Ember can do">
             {CAN.map((c) => <li key={c.label} className="glass-card inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-sm text-text-2"><c.icon className="size-4 text-text" /> {c.label}</li>)}
           </ul>

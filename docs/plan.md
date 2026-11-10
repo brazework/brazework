@@ -1,4 +1,4 @@
-# Forge build plan: one loop
+# Brazework build plan: one loop
 
 > Join a club → post what you're building → your club verifies it → it becomes proof on your profile → companies find you.
 
@@ -42,18 +42,18 @@ To build:
 - ✅ Verifier can't be on the project team; 1–2 verifiers per club (config).
 - ✅ Badge shows verifier, role, club, date.
 - ✅ Per-officer weekly limit (config) and an outlier flag to an admin queue.
-- ✅ Revocation with a reason; disputes → club owner → Forge admin.
+- ✅ Revocation with a reason; disputes → club owner → Brazework admin.
 - ✅ Verified milestones survive the author leaving the club; officers lose verifying power when the role ends.
 - ✅ Verified-club badge on club pages (`club_is_verified()`: a school-email officer and enough members with verified work). Possible duplicate clubs are flagged to `/admin`'s review queue (`club-duplicates.sql`, step 27).
 - ✅ Tests for every rule.
 
 ## Phase 4: club leader flow
 
-- ✅ Create and claim a club: roles (owner/admin/moderator/helper/member), invite links, and claiming a club someone else started (role + proof, decided by a Forge admin on `/admin`; the old owner stays a member) (`club-claims.sql`, step 35; SQL and e2e tests).
+- ✅ Create and claim a club: roles (owner/admin/moderator/helper/member), invite links, and claiming a club someone else started (role + proof, decided by a Brazework admin on `/admin`; the old owner stays a member) (`club-claims.sql`, step 35; SQL and e2e tests).
 - ✅ Import events from Google Calendar, Outlook or Apple Calendar (`.ics` file, parsed in the browser with time zones and all-day events; pick which to bring; same checks as a hand-made event). Tests: `web/tests/ics.test.ts`, e2e step in `b-clubs-events.cjs`.
 - ⬜ Import members (CSV/email list): needs an email sender for invitations.
 - ✅ Club home as a to-do list for officers (verify queue incl. disputes, join requests, held posts, next event).
-- 🟡 Discord bridge (announcements exist; add Discord → Forge post via bot/webhook, stubbed without credentials).
+- 🟡 Discord bridge (announcements exist; add Discord → Brazework post via bot/webhook, stubbed without credentials).
 - ✅ Weekly club report (Manage → This week) and a shareable semester report for sponsors at `/r/<link>` (`club-reports.sql`, step 28): events, public verified work, challenge wins; public information only; revocable.
 - ✅ Officer handoff at end of term: `club-handoff.sql` (step 18), "Hand off" tab, SQL and e2e tests.
 
@@ -62,7 +62,7 @@ To build:
 - ✅ Organizations register by work email; free email domains are refused and the email domain must match the website (`create_organization()` in events.sql).
 - ✅ Find builders (`/talent`, verified companies and schools): search by skills and verified work, club, open-to and verified count; public verified milestones only, ranking tested (`web/tests/talent.test.ts`). Graduation year: optional, asked at onboarding and in Settings, shown on profiles, and a class-year filter (`grad-year.sql`, step 34).
 - ✅ Messages land in Requests; company and school admins have a weekly request cap (`limit_org_requests_per_week`). Tier limits ⬜.
-- ✅ Sponsored challenges end to end (`challenges.sql`, step 21): draft → sponsored (paid or Forge-approved pilot) → open → judging → winners; SQL tests and e2e `h-challenges.cjs`.
+- ✅ Sponsored challenges end to end (`challenges.sql`, step 21): draft → sponsored (paid or Brazework-approved pilot) → open → judging → winners; SQL tests and e2e `h-challenges.cjs`.
 - ✅ `web/src/lib/billing.ts`: provider interface, Stripe Checkout over REST (on only with `STRIPE_SECRET_KEY` + `STRIPE_PRICE_CHALLENGE`/`STRIPE_PRICE_TALENT`), otherwise a pilot request; tests in `web/tests/billing.test.ts`. Stripe webhook `/api/billing/webhook` (signature-checked, idempotent) marks sponsorships paid; needs `STRIPE_WEBHOOK_SECRET` and `SUPABASE_SERVICE_ROLE_KEY`.
 - ✅ Company events beside club events, labelled "Verified company" / "Verified school" / "Club event".
 
@@ -74,11 +74,11 @@ To build:
 
 ## Phase 7: trust and safety
 
-- ✅ School emails: academic domains plus a `school_domains` list Forge admins extend. "Request my school" from sign-up (`/request-school`, step 26), decided on `/admin`.
+- ✅ School emails: academic domains plus a `school_domains` list Brazework admins extend. "Request my school" from sign-up (`/request-school`, step 26), decided on `/admin`.
 - ✅ Minimum age enforced in the database (`min_age` in `app_config`, 18 by default).
-- ✅ "Forge never pulls records from your school" stated next to Download my data and on the privacy page.
+- ✅ "Brazework never pulls records from your school" stated next to Download my data and on the privacy page.
 - ✅ Data export (JSON with links to your files) and account deletion (`account.sql`, step 20; SQL and e2e tests).
-- ✅ Reports: posts, people, projects and challenges from the app (one Report dialog; the reported member never learns who reported); milestones, replies and messages in the database. Forge admins resolve them on `/admin` (`reports-more.sql`, step 24; SQL tests and e2e).
+- ✅ Reports: posts, people, projects and challenges from the app (one Report dialog; the reported member never learns who reported); milestones, replies and messages in the database. Brazework admins resolve them on `/admin` (`reports-more.sql`, step 24; SQL tests and e2e).
 - ✅ Blocking (block_user): stops messages, notifications and follows, and hides posts and replies both ways, even in a shared club (`blocking-content.sql`, step 32; SQL tests). Club moderators still see everything in their club.
 - ✅ Rate limits (`rate-limits.sql`, step 23) on posts, replies, messages, message requests and milestone submissions, tunable in `app_config`; SQL tests. Sign-ups are limited by Supabase Auth's own settings.
 - ✅ Plain-language privacy page (`/privacy`).
@@ -94,7 +94,7 @@ To build:
 
 ## Phase 9: metrics
 
-- ✅ `/admin` (Forge admins, `admin-metrics.sql`, step 22): weekly active, the loop as a funnel, submitted vs verified and median time to verify, active clubs and handoffs, companies, challenges and sponsorships, plus the sponsorship approvals and review queue. ✅ Retention by weekly sign-up cohort and the company reply rate (share of company conversations students answer, and how fast), on `/admin` (`admin-retention.sql`, step 33; SQL tests).
+- ✅ `/admin` (Brazework admins, `admin-metrics.sql`, step 22): weekly active, the loop as a funnel, submitted vs verified and median time to verify, active clubs and handoffs, companies, challenges and sponsorships, plus the sponsorship approvals and review queue. ✅ Retention by weekly sign-up cohort and the company reply rate (share of company conversations students answer, and how fast), on `/admin` (`admin-retention.sql`, step 33; SQL tests).
 
 ## Deliverables at the end
 

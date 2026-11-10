@@ -92,7 +92,7 @@ export function Sidebar({ first, last, userId, badges, avatar, initialCollapsed 
       </div>
       <div className="glass-panel flex h-full flex-col rounded-3xl px-2 py-4">
       <div className={cn("flex items-center gap-1", collapsed ? "flex-col" : "justify-between pr-1 pl-2")}>
-        <Link href="/feed" aria-label="Forge feed" className={cn(collapsed && "mb-2")}><Logo withWord={!collapsed} /></Link>
+        <Link href="/feed" aria-label="Brazework feed" className={cn(collapsed && "mb-2")}><Logo withWord={!collapsed} /></Link>
         <div className={cn("flex items-center gap-1", collapsed && "flex-col")}>
           <ThemeToggle className={TOP_BTN} />
           <button
@@ -223,7 +223,7 @@ export function MobileBar({ first, last, badges, avatar }: { first: string; last
     <>
       {/* Top bar: under the notch / Dynamic Island, padded by the safe area. */}
       <header className="glass fixed inset-x-0 top-0 z-40 flex items-center gap-3 px-4 pt-[calc(env(safe-area-inset-top)+0.625rem)] pb-2.5 md:hidden">
-        <Link href="/feed" aria-label="Forge feed"><Logo /></Link>
+        <Link href="/feed" aria-label="Brazework feed"><Logo /></Link>
         <div className="ml-auto flex items-center gap-1">
           <button type="button" onClick={() => setSheet("create")} aria-expanded={sheet === "create"} aria-label="Create" className="bg-accent-grad mr-1 grid size-9 place-items-center rounded-full text-on-accent shadow-[0_8px_18px_-8px_rgb(0_0_0/0.5)] transition active:scale-95">
             <Plus className="size-5" strokeWidth={2.4} />

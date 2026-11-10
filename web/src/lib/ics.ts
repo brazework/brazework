@@ -1,5 +1,5 @@
 // Calendar import: read the events out of an .ics file (Google Calendar, Outlook, Apple Calendar all
-// export one), so a club can bring its semester to Forge in one step. Pure functions, no network:
+// export one), so a club can bring its semester to Brazework in one step. Pure functions, no network:
 // the file comes from the officer's own computer. Tested in tests/ics.test.ts.
 
 export type IcsEvent = { uid: string; title: string; description: string; location: string; link: string; starts_at: string; ends_at: string; allDay: boolean };

@@ -32,7 +32,7 @@ export default function ErrorPage({ error, reset }: { error: Error & { digest?: 
         {error.digest && <p className="mt-2 font-mono text-xs text-faint">Ref {error.digest}</p>}
         <div className="mt-8 flex gap-3">
           <Button onClick={reset}><RotateCcw className="size-4" /> Try again</Button>
-          <Button href="/" variant="outline">Back to Forge</Button>
+          <Button href="/" variant="outline">Back to Brazework</Button>
         </div>
       </div>
     </main>

@@ -2,7 +2,7 @@ import { Atom, BrainCircuit, Code, Cog, Dna, FlaskConical, HeartPulse, Landmark,
 
 // The STEM fields the landing page shows: engineering, the sciences, math and computing.
 // Each has a schematic (see schematics.tsx, keyed by id) and an example profile, clearly
-// labelled "Example" wherever it's shown, so visitors can see what their Forge page would hold.
+// labelled "Example" wherever it's shown, so visitors can see what their Brazework page would hold.
 export type Profession = {
   id: string;
   title: string;

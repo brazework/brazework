@@ -13,7 +13,7 @@ import { UpdatesPanel } from "@/components/tour/updates-panel";
 import { newsPool, pickNews, type NewsPick } from "@/lib/news";
 import { TrendingNews } from "./trending-news";
 
-// The feed's right rail (wide screens): Forge updates (recent and coming next), what's trending, your clubs and what's coming up, so the rest of Forge is one glance away.
+// The feed's right rail (wide screens): Brazework updates (recent and coming next), what's trending, your clubs and what's coming up, so the rest of Brazework is one glance away.
 export async function FeedRail() {
   const { supabase, user, profile } = await getViewer();
   if (!user || !profile) return null;

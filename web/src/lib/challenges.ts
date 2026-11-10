@@ -41,7 +41,7 @@ export async function createChallenge(_: ChallengeState, form: FormData): Promis
   return { ok: true, message: "Draft saved. Sponsor it to go live.", id: data.id };
 }
 
-// Sponsoring: Stripe Checkout when it's switched on; otherwise a pilot request for a Forge admin.
+// Sponsoring: Stripe Checkout when it's switched on; otherwise a pilot request for a Brazework admin.
 export async function sponsorChallenge(id: string): Promise<ChallengeState> {
   const { supabase, user } = await getViewer();
   if (!user) return { ok: false, message: "Log in again." };
@@ -60,7 +60,7 @@ export async function sponsorChallenge(id: string): Promise<ChallengeState> {
   const { error } = await supabase.rpc("request_sponsorship", { p_id: id });
   if (error) return { ok: false, message: reason(error) };
   refresh(id);
-  return { ok: true, message: "Pilot requested. The Forge team will approve it, then you can publish." };
+  return { ok: true, message: "Pilot requested. The Brazework team will approve it, then you can publish." };
 }
 
 export async function publishChallenge(id: string): Promise<ChallengeState> {
@@ -69,7 +69,7 @@ export async function publishChallenge(id: string): Promise<ChallengeState> {
   const { error } = await supabase.rpc("publish_challenge", { p_id: id });
   if (error) return { ok: false, message: reason(error) };
   refresh(id);
-  return { ok: true, message: "Live. Every club on Forge can see it now." };
+  return { ok: true, message: "Live. Every club on Brazework can see it now." };
 }
 
 export async function enterChallenge(_: ChallengeState, form: FormData): Promise<ChallengeState> {
@@ -113,7 +113,7 @@ export async function placeEntry(challengeId: string, entryId: number, place: nu
   return { ok: true, message: place ? `Placed ${["1st", "2nd", "3rd"][place - 1]}.` : "Place cleared." };
 }
 
-// Forge admins approve a pilot (or record a payment made outside checkout).
+// Brazework admins approve a pilot (or record a payment made outside checkout).
 export async function setSponsorship(id: string, status: "pilot" | "paid" | "unpaid"): Promise<ChallengeState> {
   const { supabase, user } = await getViewer();
   if (!user) return { ok: false, message: "Log in again." };

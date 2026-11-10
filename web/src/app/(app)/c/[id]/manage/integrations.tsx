@@ -44,10 +44,10 @@ export function Integrations({ cid, discord: initial, available }: { cid: string
         ) : (
           <div className="mt-4 flex flex-col gap-3">
             {d.connected ? (
-              <p className="text-sm text-muted">Posting to webhook <span className="font-mono text-text-2">{d.masked}</span>. Mentions are always off, so Forge can never ping @everyone.</p>
+              <p className="text-sm text-muted">Posting to webhook <span className="font-mono text-text-2">{d.masked}</span>. Mentions are always off, so Brazework can never ping @everyone.</p>
             ) : (
               <>
-                <label htmlFor="hook" className="text-sm text-text-2">In Discord: <b className="font-medium">Server settings → Integrations → Webhooks → New webhook → Copy webhook URL</b>, then paste it here. Forge sends a test message before saving.</label>
+                <label htmlFor="hook" className="text-sm text-text-2">In Discord: <b className="font-medium">Server settings → Integrations → Webhooks → New webhook → Copy webhook URL</b>, then paste it here. Brazework sends a test message before saving.</label>
                 <input id="hook" value={url} onChange={(e) => setUrl(e.target.value)} placeholder="https://discord.com/api/webhooks/…" className="h-11 w-full rounded-xl border border-line bg-surface-2 px-3 font-mono text-sm outline-none focus:border-line-strong" />
               </>
             )}
@@ -60,7 +60,7 @@ export function Integrations({ cid, discord: initial, available }: { cid: string
               {d.connected ? (
                 <>
                   <button type="button" disabled={pending} onClick={() => run(() => updateDiscordSettings(cid, opts))} className="bg-accent-grad inline-flex h-9 items-center gap-1.5 rounded-full px-4 text-sm font-medium text-on-accent disabled:opacity-50">{pending ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />} Save</button>
-                  <button type="button" disabled={pending} onClick={() => confirm("Disconnect Discord? Forge stops posting to that channel.") && run(() => disconnectDiscord(cid), () => setD({ ...d, connected: false, masked: "" }))} className="inline-flex h-9 items-center gap-1.5 rounded-full border border-line px-4 text-sm text-muted hover:text-danger"><Unplug className="size-4" /> Disconnect</button>
+                  <button type="button" disabled={pending} onClick={() => confirm("Disconnect Discord? Brazework stops posting to that channel.") && run(() => disconnectDiscord(cid), () => setD({ ...d, connected: false, masked: "" }))} className="inline-flex h-9 items-center gap-1.5 rounded-full border border-line px-4 text-sm text-muted hover:text-danger"><Unplug className="size-4" /> Disconnect</button>
                 </>
               ) : (
                 <button type="button" disabled={pending || !url.trim()} onClick={() => run(() => connectDiscord(cid, url, opts), () => { setD({ ...d, connected: true, masked: `••••${url.trim().slice(-6)}` }); setUrl(""); })} className="bg-accent-grad inline-flex h-9 items-center gap-1.5 rounded-full px-4 text-sm font-medium text-on-accent disabled:opacity-50">{pending ? <Loader2 className="size-4 animate-spin" /> : <Plug className="size-4" />} Connect and send a test</button>
@@ -88,7 +88,7 @@ export function Integrations({ cid, discord: initial, available }: { cid: string
           <li>· Calendar subscription for club events</li>
           <li>· Slack announcements</li>
           <li>· Onshape and Fusion 360 project imports</li>
-          <li>· Use Forge from any AI assistant (MCP)</li>
+          <li>· Use Brazework from any AI assistant (MCP)</li>
         </ul>
       </section>
     </div>

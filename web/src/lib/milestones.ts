@@ -87,14 +87,14 @@ export async function disputeMilestone(id: string, note: string): Promise<Milest
   return { ok: true, message: "Sent to the club's owner." };
 }
 
-// The club owner upholds a dispute (it's verified) or rejects it (it goes to Forge admins).
+// The club owner upholds a dispute (it's verified) or rejects it (it goes to Brazework admins).
 export async function resolveDispute(id: string, uphold: boolean, note = ""): Promise<MilestoneState> {
   const { supabase, user } = await getViewer();
   if (!user) return { ok: false, message: "Log in again." };
   const { data, error } = await supabase.rpc("resolve_dispute", { p_id: id, p_uphold: uphold, p_note: note.trim().slice(0, 300) });
   if (error) return { ok: false, message: reason(error) };
   revalidatePath("/c/[id]/manage", "page");
-  return { ok: true, message: data === "verified" ? "Upheld: it's verified." : "Sent to Forge admins to decide." };
+  return { ok: true, message: data === "verified" ? "Upheld: it's verified." : "Sent to Brazework admins to decide." };
 }
 
 // Show or hide a milestone on your profile.

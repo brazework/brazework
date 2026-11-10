@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { Eyebrow, H2 } from "./marketing";
 
-// Who built Forge and why. Empty until the founders write it themselves: no invented bios. Add an
+// Who built Brazework and why. Empty until the founders write it themselves: no invented bios. Add an
 // entry per founder (photo in /public/founders/, optional), and the section appears.
 type Founder = { name: string; role: string; photo?: string; bio: string; links: { label: string; href: string }[] };
 export const FOUNDERS: Founder[] = [

@@ -3,7 +3,7 @@ import { dbFeatures } from "@/lib/db-features";
 import { avatarSrc } from "@/lib/media";
 import { getViewer } from "@/lib/supabase/server";
 
-// Who you can @mention: people you follow first, then anyone on Forge whose name matches.
+// Who you can @mention: people you follow first, then anyone on Brazework whose name matches.
 // Who actually gets notified is decided by the database (supabase/mentions.sql).
 
 export type MentionPerson = { id: string; first: string; last: string; headline: string; avatar: string | null; follows: boolean };

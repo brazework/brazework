@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# End-to-end tests against a private local Supabase: start it, build Forge pointed at it, run every
+# End-to-end tests against a private local Supabase: start it, build Brazework pointed at it, run every
 # phase as real test members, stop everything. Needs Docker and Google Chrome. Usage: npm run e2e
 set -euo pipefail
 cd "$(dirname "$0")/.."

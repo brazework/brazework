@@ -54,7 +54,7 @@ export async function askEmberInChat(chatId: string, question: string): Promise<
   if (!q) return { ok: false, message: "Ask Ember something after @Ember." };
   const t = await transcript(chatId);
   if ("error" in t) return { ok: false, message: t.error ?? "" };
-  const system = `${t.ctx.system}\n\nYou are Ember, answering inside ${t.title} on Forge, where everyone in the chat will read your reply. Answer the question from ${t.ctx.name} for the group: short (under 120 words), friendly, concrete, plain text. Use the conversation for context and your tools for anything on Forge (clubs, events, people, GitHub). Never invent facts; say what you don't know. Don't address only the asker unless the question is personal.`;
+  const system = `${t.ctx.system}\n\nYou are Ember, answering inside ${t.title} on Brazework, where everyone in the chat will read your reply. Answer the question from ${t.ctx.name} for the group: short (under 120 words), friendly, concrete, plain text. Use the conversation for context and your tools for anything on Brazework (clubs, events, people, GitHub). Never invent facts; say what you don't know. Don't address only the asker unless the question is personal.`;
   try {
     const text = await answer(system, `Recent messages in the chat:\n${t.lines.join("\n") || "(none yet)"}\n\nQuestion from ${t.ctx.name}: ${q}`, t.ctx, true);
     if (!text) return { ok: false, message: "Ember couldn't answer that. Try rephrasing." };

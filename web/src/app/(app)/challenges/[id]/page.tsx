@@ -44,7 +44,7 @@ async function ChallengeView({ params }: { params: PageProps<"/challenges/[id]">
   const total = Number((counts as { entries: number }[] | null)?.[0]?.entries ?? 0);
   const mine = entries.find((e) => e.uid === user.id);
   const shown = isSponsor ? entries : entries.filter((e) => e.placement != null);
-  // Names, plus each entry's verified milestones (what makes Forge entries worth judging).
+  // Names, plus each entry's verified milestones (what makes Brazework entries worth judging).
   const uids = [...new Set(shown.map((e) => e.uid))];
   const pids = [...new Set(shown.map((e) => e.project_id))];
   const [{ data: people }, { data: verified }] = await Promise.all([

@@ -95,7 +95,7 @@ async function Challenges({ searchParams }: { searchParams: PageProps<"/challeng
         <EmptyState
           icon={<Trophy className="size-5" />}
           title={tab === "open" ? "No open challenges right now" : tab === "past" ? "No past challenges yet" : canPost ? "You haven't posted a challenge" : "You haven't entered a challenge"}
-          body={canPost ? "Post a brief, sponsor it, and every club on Forge can enter." : "When a company or school sponsors a build challenge, it shows up here. Keep adding verified work to your projects so you're ready."}
+          body={canPost ? "Post a brief, sponsor it, and every club on Brazework can enter." : "When a company or school sponsors a build challenge, it shows up here. Keep adding verified work to your projects so you're ready."}
           action={canPost ? <Link href="/challenges/new" className="text-sm font-medium underline">Post a challenge</Link> : undefined}
         />
       )}

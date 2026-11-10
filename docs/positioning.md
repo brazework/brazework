@@ -1,4 +1,4 @@
-# Forge: positioning research (2026-11-07)
+# Brazework: positioning research (2026-11-07)
 
 **Bottom line:** the opening is about *trust*, not a nicer LinkedIn.
 - AI has flooded hiring with noise: about 3x the applications per role, AI-written posts, and fake candidates.
@@ -6,7 +6,7 @@
 - Verified STEM people are now worth money. Handshake and Mercor earn most of their revenue selling expert time to AI labs.
 - The "LinkedIn but better" startups (Polywork, Read.cv) both shut down in January 2025.
 
-**Forge should start as the verified proof-of-work network for university STEM clubs, one club and one campus at a time.**
+**Brazework should start as the verified proof-of-work network for university STEM clubs, one club and one campus at a time.**
 
 Claims marked *(unverified)* couldn't be confirmed against a primary source.
 
@@ -28,7 +28,7 @@ Claims marked *(unverified)* couldn't be confirmed against a primary source.
 | **ResearchGate** | Built around papers. Not for students or industry. |
 | **Polywork** | Raised $44.5M, then shut down Jan 2025. It was a broad LinkedIn alternative without an atomic network. |
 | **Read.cv** | Acquired by Perplexity and wound down in Jan 2025 ([TechCrunch via Yahoo](https://finance.yahoo.com/news/perplexity-acquires-read-cv-social-202751374.html)). |
-| **Discord / Slack** | **Where clubs live today.** Chat disappears, can't be searched, and carries no identity or career value. **Forge replaces this.** |
+| **Discord / Slack** | **Where clubs live today.** Chat disappears, can't be searched, and carries no identity or career value. **Brazework replaces this.** |
 
 ## 3. Why now
 
@@ -39,14 +39,14 @@ Claims marked *(unverified)* couldn't be confirmed against a primary source.
 
 ## 4. Positioning
 
-**One-liner:** Forge is where STEM builders show verified work, not résumés: the home for your club, your projects, and the people who'll hire you.
+**One-liner:** Brazework is where STEM builders show verified work, not résumés: the home for your club, your projects, and the people who'll hire you.
 
 **Wedge:** university STEM club leaders: robotics, rocketry, ACM/IEEE, hackathon organizers, SWE/NSBE/SHPE. Win one campus deeply before the next ([PG, *Do Things That Don't Scale*](https://paulgraham.com/ds.html)).
 
-**Atomic network:** the smallest network that is useful on its own ([Andrew Chen](https://techcrunch.com/2021/12/08/andrew-chen-of-a16z-on-how-startups-get-past-a-cold-start-to-survive-and-thrive)). For Forge, that's one club of 30–100 members plus its sponsors and events.
+**Atomic network:** the smallest network that is useful on its own ([Andrew Chen](https://techcrunch.com/2021/12/08/andrew-chen-of-a16z-on-how-startups-get-past-a-cold-start-to-survive-and-thrive)). For Brazework, that's one club of 30–100 members plus its sponsors and events.
 
 **Core loop:**
-1. A club runs its events and community on Forge.
+1. A club runs its events and community on Brazework.
 2. Members post projects and results tied to the club or event.
 3. Verified sponsors and alumni see the work and follow or message.
 4. Members gain opportunities.
@@ -70,7 +70,7 @@ Claims marked *(unverified)* couldn't be confirmed against a primary source.
 - **Metrics to show:**
   - Weekly active users who post, RSVP or message.
   - The share of a pilot club's members who are weekly active.
-  - The number of clubs running their events on Forge.
+  - The number of clubs running their events on Brazework.
   - Messages from organizations to students.
   - Clubs referred by other clubs.
 - **Headwind:** YC expects founders to go full-time ([FAQ](https://www.ycombinator.com/faq)). Agree on a go/no-go trigger, for example 3 clubs above 40% weekly-active for 8 weeks.
@@ -79,7 +79,7 @@ Claims marked *(unverified)* couldn't be confirmed against a primary source.
 
 | Risk | Mitigation |
 |---|---|
-| Cold start (what killed Polywork and Read.cv) | One campus above 50% weekly-active club members before expanding. Make Forge useful to a single club with zero outside network. |
+| Cold start (what killed Polywork and Read.cv) | One campus above 50% weekly-active club members before expanding. Make Brazework useful to a single club with zero outside network. |
 | Handshake | Go in through clubs, not career centers. Include professionals and alumni, whom Handshake doesn't serve. |
 | Verification is copyable | The moat is attested work plus club history. Tighten the school check, which today is a domain pattern only. |
 | Part-time founders | A clear trigger metric for going full-time. Ruthless scope. |

@@ -56,7 +56,7 @@ export function readmeText(md: string, max = 2500) {
     .slice(0, max);
 }
 
-// Common GitHub topics and languages, mapped onto the nearest Forge topic.
+// Common GitHub topics and languages, mapped onto the nearest Brazework topic.
 const ALIASES: Record<string, string> = Object.fromEntries(Object.entries({
   "Machine Learning": ["machine-learning", "deep-learning", "ml", "pytorch", "tensorflow", "scikit-learn", "neural-network", "jupyter notebook"],
   "Large Language Models": ["llm", "llms", "gpt", "langchain", "transformers", "rag", "openai", "anthropic"],
@@ -77,7 +77,7 @@ const ALIASES: Record<string, string> = Object.fromEntries(Object.entries({
   "Software Engineering": ["cli", "web", "api", "react", "nextjs", "typescript", "javascript", "rust", "go", "python", "java", "kotlin", "swift", "ruby", "php", "c#"],
 }).flatMap(([topic, keys]) => keys.map((k) => [k, topic])));
 
-// GitHub topics and languages to Forge topics (exact names first, then aliases), up to 3.
+// GitHub topics and languages to Brazework topics (exact names first, then aliases), up to 3.
 export function matchTopics(words: string[]) {
   const lower = new Map(ALL_TOPICS.map((t) => [t.toLowerCase(), t]));
   const out: string[] = [];
@@ -129,7 +129,7 @@ export async function fetchUser(username: string) {
   };
 }
 
-// A Forge project draft from a repo: what "Import from GitHub" fills in.
+// A Brazework project draft from a repo: what "Import from GitHub" fills in.
 export type ProjectDraft = { title: string; summary: string; details: string; link: string; tags: string[]; tools: string[]; status: "in_progress" | "completed"; year: string; milestones: { title: string; date: string; evidence: string }[] };
 
 export function repoToDraft(r: RepoSummary): ProjectDraft {

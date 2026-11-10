@@ -1,4 +1,4 @@
-// Sponsored challenges, end to end: a verified company posts a draft and asks to sponsor it, a Forge
+// Sponsored challenges, end to end: a verified company posts a draft and asks to sponsor it, a Brazework
 // admin approves the pilot, the company publishes, a member enters a project, the company judges and
 // announces, and everyone sees the winner. Also: Find builders and the admin dashboard.
 const { step, browser, as, go, summary } = require("./lib.cjs");
@@ -31,7 +31,7 @@ const { step, browser, as, go, summary } = require("./lib.cjs");
     await cara.getByText(/Pilot requested/).first().waitFor({ timeout: 15000 });
   }, cara);
   const maya = await as(b, "maya@forge.test");
-  await step("Maya (Forge admin) approves the pilot on /admin", async () => {
+  await step("Maya (Brazework admin) approves the pilot on /admin", async () => {
     await go(maya, "/admin");
     await maya.getByText("The loop", { exact: true }).waitFor();
     // Retention by sign-up week and the company reply rate (admin-retention.sql, step 33).
@@ -49,7 +49,7 @@ const { step, browser, as, go, summary } = require("./lib.cjs");
   await step("Cara publishes it to every club", async () => {
     await go(cara, url);
     await cara.getByRole("button", { name: "Publish to every club" }).click();
-    await cara.getByText(/Every club on Forge can see it/).waitFor({ timeout: 15000 });
+    await cara.getByText(/Every club on Brazework can see it/).waitFor({ timeout: 15000 });
   }, cara);
   const ben = await as(b, "ben@forge.test");
   await step("Ben finds it and enters a project", async () => {
@@ -87,7 +87,7 @@ const { step, browser, as, go, summary } = require("./lib.cjs");
     const paidTitle = `Paid challenge ${Date.now() % 10000}`;
     await go(cara, "/challenges/new");
     await cara.fill("#challenge-title", paidTitle);
-    await cara.fill("#challenge-brief", "A paid sponsorship: Stripe tells Forge it's paid, and the sponsor can publish.");
+    await cara.fill("#challenge-brief", "A paid sponsorship: Stripe tells Brazework it's paid, and the sponsor can publish.");
     const d = new Date(Date.now() + 6 * 864e5); const pad = (n) => String(n).padStart(2, "0");
     await cara.fill("#challenge-deadline", `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T17:00`);
     await cara.getByRole("button", { name: "Save draft" }).click();
@@ -104,9 +104,9 @@ const { step, browser, as, go, summary } = require("./lib.cjs");
     await go(cara, `/challenges/${id}`);
     await cara.getByText("Paid", { exact: true }).waitFor({ timeout: 10000 });
     await cara.getByRole("button", { name: "Publish to every club" }).click();
-    await cara.getByText(/Every club on Forge can see it/).waitFor({ timeout: 15000 });
+    await cara.getByText(/Every club on Brazework can see it/).waitFor({ timeout: 15000 });
   }, cara);
-  await step("reports: Josh reports Ben's project; a Forge admin sees it and resolves it", async () => {
+  await step("reports: Josh reports Ben's project; a Brazework admin sees it and resolves it", async () => {
     const detail = `Photos are from another team ${Date.now() % 10000}`;
     await go(josh, "/projects/p1");
     await josh.getByRole("button", { name: "Report" }).click();
@@ -114,7 +114,7 @@ const { step, browser, as, go, summary } = require("./lib.cjs");
     await dlg.getByLabel(/Fake or misleading/).check();
     await dlg.locator("#report-detail").fill(detail);
     await dlg.getByRole("button", { name: "Send report" }).click();
-    await dlg.getByText(/Thanks\. The Forge team will review it\./).waitFor({ timeout: 15000 });
+    await dlg.getByText(/Thanks\. The Brazework team will review it\./).waitFor({ timeout: 15000 });
     await go(josh, "/u/" + process.env.JOSH_ID);
     if (await josh.getByRole("button", { name: "Report" }).count()) throw new Error("report offered on your own profile");
     await go(maya, "/admin");
@@ -124,7 +124,7 @@ const { step, browser, as, go, summary } = require("./lib.cjs");
     await row.getByRole("button", { name: "Actioned" }).click();
     await reports.getByText(detail).waitFor({ state: "detached", timeout: 15000 });
   }, maya);
-  await step("a Forge admin adds a requested school (from the sign-up spec)", async () => {
+  await step("a Brazework admin adds a requested school (from the sign-up spec)", async () => {
     const domain = require("fs").readFileSync(require("path").join(__dirname, ".results", "school-domain.txt"), "utf8").trim();
     await go(maya, "/admin");
     const list = maya.getByRole("region", { name: "School requests" });
@@ -132,7 +132,7 @@ const { step, browser, as, go, summary } = require("./lib.cjs");
     await row.getByRole("button", { name: "Add school" }).click();
     await list.getByText("@" + domain).waitFor({ state: "detached", timeout: 15000 });
   }, maya);
-  await step("an officer claims a club someone else started; a Forge admin approves; they own it", async () => {
+  await step("an officer claims a club someone else started; a Brazework admin approves; they own it", async () => {
     // Robotics Society was started by Maya; Josh, not a member, says he's its real president.
     await go(josh, "/c/rob?tab=about");
     await josh.getByRole("link", { name: "Claim this club" }).click();
@@ -141,7 +141,7 @@ const { step, browser, as, go, summary } = require("./lib.cjs");
     await josh.fill('textarea[name="evidence"]', "The engineering school's club directory lists me as president: https://example.edu/clubs/robotics");
     await josh.getByRole("button", { name: "Send claim" }).click();
     // Once sent, the page re-renders into the claim's status (the form and its message go away).
-    await josh.getByText(/is with the Forge team/).waitFor({ timeout: 15000 });
+    await josh.getByText(/is with the Brazework team/).waitFor({ timeout: 15000 });
     await go(maya, "/admin");
     const claims = maya.getByRole("region", { name: "Club claims" });
     const row = claims.locator("div").filter({ hasText: "President of" }).filter({ has: maya.getByRole("button", { name: "Approve" }) }).last();

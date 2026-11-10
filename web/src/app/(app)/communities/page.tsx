@@ -74,7 +74,7 @@ async function Communities({ searchParams }: { searchParams: PageProps<"/communi
       </div>
       <div className="mt-6">
         {tab === "mine" && discover.length > 0 && (
-          <Carousel className="mb-8" title={profile.field ? `Popular in ${profile.field}` : "Popular on Forge"} icon={<Flame className="size-3.5" />} href="/communities?tab=discover" hrefLabel="Discover">
+          <Carousel className="mb-8" title={profile.field ? `Popular in ${profile.field}` : "Popular on Brazework"} icon={<Flame className="size-3.5" />} href="/communities?tab=discover" hrefLabel="Discover">
             {discover.slice(0, 10).map((c) => <div key={c.id} className="w-[300px]"><CommunityCard c={c} joinable pulse={pulse[c.id]} /></div>)}
           </Carousel>
         )}

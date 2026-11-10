@@ -16,7 +16,7 @@ export async function Traction() {
   ] as [number, string][]).filter(([n]) => Number(n) > 0);
   if (!items.length) return null;
   return (
-    <section aria-label="Forge today" className="border-y border-line">
+    <section aria-label="Brazework today" className="border-y border-line">
       <ul className="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-x-10 gap-y-3 px-6 py-6">
         {items.map(([n, label]) => (
           <li key={label} className="flex items-baseline gap-2">

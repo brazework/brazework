@@ -41,14 +41,14 @@ export function SettingsNav() {
   );
 }
 
-// Online status: whether others see the green dot when you're on Forge (kept per browser).
+// Online status: whether others see the green dot when you're on Brazework (kept per browser).
 export function OnlineStatusSetting() {
   const [off, setOff] = useAppearOffline();
   return (
     <div className="flex items-start justify-between gap-4">
       <div>
         <div className="text-sm font-medium">Show when I&apos;m online</div>
-        <p className="mt-0.5 text-xs text-muted">Others see a green dot on your photo while Forge is open. Off means you appear offline on this browser; you still see who&apos;s online.</p>
+        <p className="mt-0.5 text-xs text-muted">Others see a green dot on your photo while Brazework is open. Off means you appear offline on this browser; you still see who&apos;s online.</p>
       </div>
       <button type="button" role="switch" aria-checked={!off} aria-label="Show when I'm online" onClick={() => setOff(!off)} className={cn("relative h-6 w-11 shrink-0 rounded-full transition-colors", off ? "bg-raised" : "bg-emerald-500")}>
         <span className={cn("absolute top-0.5 size-5 rounded-full bg-white shadow transition-all", off ? "left-0.5" : "left-[22px]")} />

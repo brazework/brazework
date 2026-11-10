@@ -3,7 +3,7 @@ import { cn } from "@/lib/forge";
 import type { Profession } from "./professions";
 import { Schematic } from "./schematics";
 
-// A Forge profile as a visitor would see it, filled with a profession's example data.
+// A Brazework profile as a visitor would see it, filled with a profession's example data.
 // No hooks, so it renders on the server (auth pages) and inside client components (hero).
 export function ProfileCard({ p, className }: { p: Profession; className?: string }) {
   const Icon = p.icon;

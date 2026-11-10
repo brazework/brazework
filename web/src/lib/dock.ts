@@ -12,7 +12,7 @@ export type DockMsg = { id: string; mine: boolean; name: string; body: string; a
 export async function dockInbox(): Promise<{ items: DockItem[]; unread: number }> {
   const [{ convs }, { groups }] = await Promise.all([loadConversations(), loadGroups()]);
   const items: DockItem[] = [
-    ...convs.map((c) => ({ kind: "dm" as const, id: c.id, title: `${c.other.firstName} ${c.other.lastName}`.trim() || "Forge member", preview: `${c.lastFromMe ? "You: " : ""}${c.lastBody}`, at: c.lastAt, unread: c.unread, request: c.status === "request" && !c.startedByMe, first: c.other.firstName, last: c.other.lastName })),
+    ...convs.map((c) => ({ kind: "dm" as const, id: c.id, title: `${c.other.firstName} ${c.other.lastName}`.trim() || "Brazework member", preview: `${c.lastFromMe ? "You: " : ""}${c.lastBody}`, at: c.lastAt, unread: c.unread, request: c.status === "request" && !c.startedByMe, first: c.other.firstName, last: c.other.lastName })),
     ...groups.map((g) => ({ kind: "group" as const, id: g.id, title: g.title, preview: g.lastBody ? `${g.lastFromMe ? "You" : g.lastSenderName || "Someone"}: ${g.lastBody}` : g.subtitle, at: g.lastAt, unread: g.unread, request: false, first: g.title, last: "" })),
   ].sort((a, b) => Date.parse(b.at ?? "0") - Date.parse(a.at ?? "0"));
   return { items: items.slice(0, 15), unread: items.filter((i) => i.unread).length };

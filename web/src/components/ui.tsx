@@ -9,7 +9,7 @@ export function Logo({ className, withWord = true }: { className?: string; withW
         <path d="M4 22 L14 4 L24 22 Z" stroke="currentColor" strokeWidth="2.2" strokeLinejoin="round" />
         <path d="M9 22 L14 13 L19 22" stroke="currentColor" strokeWidth="2.2" strokeLinejoin="round" />
       </svg>
-      {withWord && <span className="text-[17px]">Forge</span>}
+      {withWord && <span className="text-[17px]">Brazework</span>}
     </span>
   );
 }

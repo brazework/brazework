@@ -252,9 +252,9 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
                 </li>
               ))}
             </ol>
-            <p className="mt-6 text-xs text-faint">Started by {c.owner_name || "a Forge member"}.</p>
+            <p className="mt-6 text-xs text-faint">Started by {c.owner_name || "a Brazework member"}.</p>
             {claimsOn && role !== "owner" && (
-              <p className="mt-1 text-xs text-faint">Are you this organization&apos;s officer, and someone else started it on Forge? <Link href={`/c/${c.id}/claim`} className="font-medium text-text-2 underline-offset-2 hover:underline">Claim this club</Link></p>
+              <p className="mt-1 text-xs text-faint">Are you this organization&apos;s officer, and someone else started it on Brazework? <Link href={`/c/${c.id}/claim`} className="font-medium text-text-2 underline-offset-2 hover:underline">Claim this club</Link></p>
             )}
           </Panel>
         )}

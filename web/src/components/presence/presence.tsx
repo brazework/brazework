@@ -3,7 +3,7 @@ import { useEffect, useSyncExternalStore } from "react";
 import { getBrowserClient } from "@/lib/supabase/client";
 import { cn } from "@/lib/forge";
 
-// Who's on Forge right now, through Supabase Realtime Presence (no table, nothing stored): every
+// Who's on Brazework right now, through Supabase Realtime Presence (no table, nothing stored): every
 // open tab of a signed-in member joins one channel keyed by their user id, and leaves when the tab
 // closes. "Appear offline" (kept per browser) stops this tab announcing you; you still see others.
 
@@ -48,7 +48,7 @@ export function useOnline(id: string | null | undefined) {
   return useSyncExternalStore(subscribe, () => !!id && online.has(id), () => false);
 }
 
-// How many of these people are on Forge right now (club cards, club pages, group chats).
+// How many of these people are on Brazework right now (club cards, club pages, group chats).
 export function useOnlineCount(ids: string[]) {
   return useSyncExternalStore(subscribe, () => ids.reduce((n, id) => n + (online.has(id) ? 1 : 0), 0), () => 0);
 }
@@ -91,7 +91,7 @@ export function OnlineLabel({ id }: { id: string }) {
 export function MyStatus() {
   const [off, setOff] = useAppearOffline();
   return (
-    <button type="button" onClick={() => setOff(!off)} aria-pressed={off} title={off ? "Others see you as offline. Tap to show you're online." : "Others can see you're on Forge. Tap to appear offline."} className="inline-flex items-center gap-1.5 truncate text-xs text-faint transition hover:text-text">
+    <button type="button" onClick={() => setOff(!off)} aria-pressed={off} title={off ? "Others see you as offline. Tap to show you're online." : "Others can see you're on Brazework. Tap to appear offline."} className="inline-flex items-center gap-1.5 truncate text-xs text-faint transition hover:text-text">
       <span className={cn("size-2 shrink-0 rounded-full", off ? "border border-faint" : "bg-emerald-500")} />
       {off ? "Appearing offline" : "Online"}
     </button>

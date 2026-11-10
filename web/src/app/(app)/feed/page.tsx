@@ -35,7 +35,7 @@ export default function FeedPage({ searchParams }: PageProps<"/feed">) {
           <Feed searchParams={searchParams} />
         </Suspense>
       </div>
-      <aside aria-label="Forge updates, your clubs and upcoming events" className="hidden xl:block">
+      <aside aria-label="Brazework updates, your clubs and upcoming events" className="hidden xl:block">
         <Suspense fallback={<div className="h-96 shimmer rounded-3xl" />}>
           <FeedRail />
         </Suspense>
@@ -117,7 +117,7 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
 
   if (tab === "for-you") {
     // Everything relevant to you, ranked, so it's never empty: your clubs, people you follow,
-    // your interests, and what's new on Forge (lib/feed-rank.ts).
+    // your interests, and what's new on Brazework (lib/feed-rank.ts).
     const [club, follow, interest, recent, mine] = await Promise.all([
       cids.length ? base().in("community_id", cids).eq("status", "visible").limit(40) : Promise.resolve({ data: [] }),
       people.length ? base().is("community_id", null).in("author_id", people.slice(0, 300)).limit(40) : Promise.resolve({ data: [] }),
@@ -129,7 +129,7 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
     items = rankForYou({ club: rows(club), follow: rows(follow), interest: rows(interest), recent: rows(recent), mine: rows(mine) }, interests, names, now)
       .map((r) => asPost(r.item, r.reason, r.score));
     emptyTitle = kind || tag ? "Nothing here yet" : "Your feed is waiting for its first post";
-    emptyBody = kind === "question" ? "No open questions right now. Ask one: clubs on Forge answer fast." : "Share what you're building, or join a club to fill your feed.";
+    emptyBody = kind === "question" ? "No open questions right now. Ask one: clubs on Brazework answer fast." : "Share what you're building, or join a club to fill your feed.";
     emptyAction = <Link href="/communities?tab=discover" className="text-sm underline underline-offset-4">Find clubs to join</Link>;
   } else if (tab === "latest") {
     items = rows(await base().is("community_id", null).limit(60)).map((p) => asPost(p));
@@ -287,7 +287,7 @@ function FeedEnd({ tab }: { tab: TabId }) {
       <div className="mt-4 flex flex-wrap justify-center gap-2">
         <Link href="/feed?kind=question" className="rounded-full border border-line px-3.5 py-1.5 text-sm transition hover:border-line-strong">Answer a question</Link>
         <Link href="/feed#composer" className="rounded-full border border-line px-3.5 py-1.5 text-sm transition hover:border-line-strong">Post your progress</Link>
-        {tab !== "latest" && <Link href="/feed?tab=latest" className="rounded-full border border-line px-3.5 py-1.5 text-sm transition hover:border-line-strong">Everything on Forge</Link>}
+        {tab !== "latest" && <Link href="/feed?tab=latest" className="rounded-full border border-line px-3.5 py-1.5 text-sm transition hover:border-line-strong">Everything on Brazework</Link>}
       </div>
     </div>
   );

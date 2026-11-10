@@ -1,4 +1,4 @@
-# Forge: current state (2026-11-09)
+# Brazework: current state (2026-11-09)
 
 A map of what exists today, for restructuring the product around one loop:
 **Join a club → post what you're building → your club verifies it → it becomes proof on your profile → companies find you.**
@@ -20,7 +20,7 @@ Checked against the code on branch `josh/next-redesign` (HEAD `69be8fe`). SQL in
 | Components | `web/src/components/` | `app/` (shared UI), `copilot/` (proposal cards), `ember/`, `landing/` (marketing), `media/`, `mentions/`, `messages/dock.tsx`, `network/`, `search/global-search.tsx`, `tour/`, `ui.tsx` |
 | Feature flags by schema | `web/src/lib/db-features.ts` | Probes for 14 optional SQL files (club events, media, invites, copilot, milestones, integrations, group chats, project stack, club profile, mentions, copilot chats, profile extras, MCP, chat extras) and hides features whose tables/columns are missing. Rechecked every 60 s |
 | Legacy app | `public/` | Original vanilla JS app, kept until production is confirmed on `web/` (`README.md`) |
-| iOS | `ios/` | SwiftUI app (`ios/Forge/Features/{Feed,Clubs,Events,Messages,Alerts,Profile,Me,Search,Settings,Auth}`) on `ios/ForgeKit` (data layer: `API.swift`, `FeedRank.swift`, `SignUp.swift`…). Same Supabase + RLS. **No projects, milestones or verification on iOS**; Ember opens on the web |
+| iOS | `ios/` | SwiftUI app (`ios/Brazework/Features/{Feed,Clubs,Events,Messages,Alerts,Profile,Me,Search,Settings,Auth}`) on `ios/ForgeKit` (data layer: `API.swift`, `FeedRank.swift`, `SignUp.swift`…). Same Supabase + RLS. **No projects, milestones or verification on iOS**; Ember opens on the web |
 | E2E | `web/e2e/` | Playwright-core journeys `a-…f-*.cjs` against a throwaway local Supabase in Docker (`local-supabase.sh`, `seed.sql`, `gateway.cjs`). Phase `c` covers "add project → ask club to verify → owner verifies → proof on profile and feed" |
 | CI | `.github/workflows/web.yml` | Lint, typecheck, build, smoke test; and applies every SQL file in order to a fresh Supabase Postgres. `preview-deploy.yml` redeploys `forge-preview-eight.vercel.app` from `main`. (`web.yml` mentions a `ci.yml` for the vanilla app; that file no longer exists) |
 
@@ -133,7 +133,7 @@ Storage: one public bucket `media`, paths must be under `<uid>/` (`media_path_ok
 | `/communities` | Browse/search/create clubs |
 | `/c/[id]` | Club page: Posts, Events, About & rules, Held (mods) |
 | `/c/[id]/manage` | Tabs: This week (mod+), Integrations (admin+), **Verify** (mod+), Invite, Requests (helper+), Members, Bans (mod+), Settings (admin+), Roles |
-| `/projects` | Explore projects across Forge; filter topic/status/**verified only** (`?verified=1`), search |
+| `/projects` | Explore projects across Brazework; filter topic/status/**verified only** (`?verified=1`), search |
 | `/projects/[id]` | Project home: write-up, milestone timeline, updates (owner posts updates to the main feed), "Built with" |
 | `/events`, `/events/[id]`, `/events/[id]/ics` | Event list (going/saved), detail (RSVP, connections going, event chat), calendar file |
 | `/org` | Register a company/school; manage its events |
@@ -236,7 +236,7 @@ Known production test content (from `supabase/maintenance/remove-test-data.sql`,
 - Patterns: club names `^(test|dummy)\b` or `\btest(ing)? (club|group)\b`; event titles `^(test|dummy)\b`; posts whose whole body is test/testing/hello free world/dummy.
 
 Local-only seeds (never production):
-- `web/e2e/seed.sql`: members `josh|maya|ben|cara@forge.test` (password `forge-test-pass-1`, created by `local-supabase.sh`), clubs "Rocketry Club" (`rkt`) and "Robotics Society" (`rob`), projects "Liquid engine test stand", "Recovery avionics", "Stealth side project" (private), milestones "Static fire at 1.2 kN" (inserted directly as verified), "Private milestone", posts "Hello Forge!", "Static fire #3 done…", "Launch day is Saturday. Who is driving?".
+- `web/e2e/seed.sql`: members `josh|maya|ben|cara@forge.test` (password `forge-test-pass-1`, created by `local-supabase.sh`), clubs "Rocketry Club" (`rkt`) and "Robotics Society" (`rob`), projects "Liquid engine test stand", "Recovery avionics", "Stealth side project" (private), milestones "Static fire at 1.2 kN" (inserted directly as verified), "Private milestone", posts "Hello Brazework!", "Static fire #3 done…", "Launch day is Saturday. Who is driving?".
 - `web/scripts/seed-demo.cjs`: demo posts (truss bridge, flight computer, casing concentricity, Kalman filters, Rocketry recruiting); refuses non-localhost targets unless `FORGE_DEMO_SEED=1`.
 - `ios/scripts/seed-ui-tests.sql`: "Saturday static fire" event (Bayside Park), "Are you coming to launch day?".
 - Untracked in the working tree: `public/js/supabase-config.local.bak`, `scripts/check.mjs` (not inspected).

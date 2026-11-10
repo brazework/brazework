@@ -9,7 +9,7 @@ import { createClient, getViewer } from "@/lib/supabase/server";
 import { CommunityBadge } from "../../(app)/communities/_components/badge";
 import { JoinButton } from "./join-button";
 
-export const metadata: Metadata = { title: "You're invited", description: "You've been invited to a club on Forge, home base for university STEM clubs." };
+export const metadata: Metadata = { title: "You're invited", description: "You've been invited to a club on Brazework, home base for university STEM clubs." };
 
 type Preview = { community_id: string; name: string; about: string; field: string; privacy: string; member_count: number };
 
@@ -20,7 +20,7 @@ export default function JoinPage({ params }: PageProps<"/join/[code]">) {
       <div className="app-backdrop absolute inset-0 -z-10" />
       <ThemeToggle className="absolute top-5 right-5" />
       <div className="w-full max-w-md">
-        <Link href="/" aria-label="Forge home" className="mb-10 inline-block"><Logo /></Link>
+        <Link href="/" aria-label="Brazework home" className="mb-10 inline-block"><Logo /></Link>
         <Suspense fallback={<div className="h-80 shimmer rounded-3xl" />}>
           <Invite params={params} />
         </Suspense>
@@ -40,7 +40,7 @@ async function Invite({ params }: { params: PageProps<"/join/[code]">["params"] 
       <div className="rounded-3xl border border-line bg-surface/80 p-8 text-center">
         <h1 className="text-2xl font-semibold tracking-tight">This invite isn&apos;t working</h1>
         <p className="mt-2 text-muted">It may have expired, reached its limit, or been turned off. Ask whoever sent it for a new link.</p>
-        <Button href="/" variant="outline" className="mt-6">Visit Forge</Button>
+        <Button href="/" variant="outline" className="mt-6">Visit Brazework</Button>
       </div>
     );
   const { user } = await getViewer();
@@ -65,7 +65,7 @@ async function Invite({ params }: { params: PageProps<"/join/[code]">["params"] 
           </>
         )}
       </div>
-      <p className="mt-6 text-xs text-faint">Forge is home base for university STEM clubs: talk and plan with your club, show what you build, and let your club verify it so it gets you noticed.{c.privacy === "approval" ? " This invite skips the club's usual approval." : ""}</p>
+      <p className="mt-6 text-xs text-faint">Brazework is home base for university STEM clubs: talk and plan with your club, show what you build, and let your club verify it so it gets you noticed.{c.privacy === "approval" ? " This invite skips the club's usual approval." : ""}</p>
     </div>
   );
 }

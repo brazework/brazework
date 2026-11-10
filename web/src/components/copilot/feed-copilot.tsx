@@ -34,8 +34,8 @@ export function useTypedPlaceholder(on: boolean) {
 
 export function emberActions(club?: { id: string; name: string } | null): EmberAction[] {
   return [
-    { icon: Compass, label: "Find clubs for me", ask: "Which clubs on Forge fit me best, and why?", href: "/communities?tab=discover" },
-    { icon: CalendarDays, label: "What's on this week", ask: "What's coming up on Forge in the next 7 days that fits me?", href: "/events" },
+    { icon: Compass, label: "Find clubs for me", ask: "Which clubs on Brazework fit me best, and why?", href: "/communities?tab=discover" },
+    { icon: CalendarDays, label: "What's on this week", ask: "What's coming up on Brazework in the next 7 days that fits me?", href: "/events" },
     { icon: GitBranch, label: "Import a GitHub repo", prefill: "Add my GitHub repo to my profile: github.com/", href: "/profile#projects" },
     { icon: BadgeCheck, label: "Get a milestone verified", ask: "Help me pick one of my milestones to ask my club to verify, then draft it.", href: "/profile#projects" },
     ...(club ? [{ icon: Megaphone, label: `This week's update for ${club.name}`, ask: `Use club_report for club ${club.id}, then draft this week's update for ${club.name} with propose_club_post. Use only the report's numbers.`, href: `/c/${club.id}/manage?tab=report` }] : []),

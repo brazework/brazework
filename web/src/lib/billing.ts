@@ -1,11 +1,11 @@
 // Billing: one interface, one real provider (Stripe Checkout) and an "off" provider. Nothing is
 // charged unless STRIPE_SECRET_KEY and a price ID are set in the environment; until then, sponsors
-// request a pilot and a Forge admin approves it (supabase/challenges.sql). Tested in tests/billing.test.ts.
+// request a pilot and a Brazework admin approves it (supabase/challenges.sql). Tested in tests/billing.test.ts.
 
 export type Plan = "challenge" | "talent";
 
 export const PLANS: Record<Plan, { name: string; blurb: string; priceEnv: string }> = {
-  challenge: { name: "Sponsored challenge", blurb: "Post a build challenge to every club on Forge and meet the members who win it.", priceEnv: "STRIPE_PRICE_CHALLENGE" },
+  challenge: { name: "Sponsored challenge", blurb: "Post a build challenge to every club on Brazework and meet the members who win it.", priceEnv: "STRIPE_PRICE_CHALLENGE" },
   talent: { name: "Find builders seat", blurb: "Search members by club-verified work and message them in their Requests.", priceEnv: "STRIPE_PRICE_TALENT" },
 };
 

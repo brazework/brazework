@@ -22,7 +22,7 @@ test("a key without a from address doesn't call Resend", async () => {
 test("Resend gets from, to, subject, text and html; its id comes back", async () => {
   let sent: Record<string, unknown> = {};
   let auth = "";
-  const p = resendProvider({ RESEND_API_KEY: "re_x", FORGE_EMAIL_FROM: "Forge <hello@forge.test>" }, async (url, init) => {
+  const p = resendProvider({ RESEND_API_KEY: "re_x", FORGE_EMAIL_FROM: "Brazework <hello@forge.test>" }, async (url, init) => {
     assert.equal(url, "https://api.resend.com/emails");
     sent = JSON.parse(String(init.body));
     auth = (init.headers as Record<string, string>).Authorization;
@@ -30,7 +30,7 @@ test("Resend gets from, to, subject, text and html; its id comes back", async ()
   });
   assert.deepEqual(await p.send(e), { ok: true, id: "em_1" });
   assert.equal(auth, "Bearer re_x");
-  assert.deepEqual(sent, { from: "Forge <hello@forge.test>", to: ["josh@forge.test"], subject: "Hi", text: "Hello", html: "<p>Hello</p>" });
+  assert.deepEqual(sent, { from: "Brazework <hello@forge.test>", to: ["josh@forge.test"], subject: "Hi", text: "Hello", html: "<p>Hello</p>" });
 });
 
 test("a Resend error is reported", async () => {

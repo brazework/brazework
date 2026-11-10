@@ -157,7 +157,7 @@ export function TourMount() {
   );
 }
 
-// "Forge updates": every shipped (and upcoming) change, readable any time. In the sidebar it's a
+// "Brazework updates": every shipped (and upcoming) change, readable any time. In the sidebar it's a
 // button; collapsed, it's just the icon.
 export function UpdatesButton({ collapsed = false }: { collapsed?: boolean }) {
   const [open, setOpen] = useState(false);
@@ -208,7 +208,7 @@ export function UpdatesDialog({ open, onClose, focusId }: { open: boolean; onClo
     <div role="dialog" aria-modal="true" aria-labelledby="updates-title" className="fixed inset-0 z-[70] grid place-items-center bg-bg/70 p-4 backdrop-blur-sm" onClick={(e) => e.target === e.currentTarget && onClose()}>
       <div className="max-h-[85dvh] w-full max-w-lg overflow-y-auto rounded-3xl border border-line bg-surface p-6 shadow-[var(--shadow)]">
         <div className="flex items-start justify-between">
-          <h2 id="updates-title" className="text-xl font-semibold tracking-tight">Forge updates</h2>
+          <h2 id="updates-title" className="text-xl font-semibold tracking-tight">Brazework updates</h2>
           <button ref={closeBtn} onClick={onClose} aria-label="Close" className="grid size-8 place-items-center rounded-full text-faint hover:bg-hover hover:text-text"><X className="size-4" /></button>
         </div>
         <h3 className="mt-5 font-mono text-[11px] tracking-wide text-faint uppercase">Recent changes</h3>

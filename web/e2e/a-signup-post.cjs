@@ -58,7 +58,7 @@ const { BASE, step, browser, as, go, closeTour, summary } = require("./lib.cjs")
   await step("feed is never empty for a new member", async () => {
     await page.locator("article").first().waitFor({ timeout: 10000 });
   }, page);
-  const body = `Hello Forge! Thanks @Ben Cho for the static fire writeup ${Date.now() % 1000}`;
+  const body = `Hello Brazework! Thanks @Ben Cho for the static fire writeup ${Date.now() % 1000}`;
   await step("Home shows the first-five-minutes checklist, starting with your club", async () => {
     const list = page.getByRole("region", { name: "Get started" });
     await list.waitFor({ timeout: 15000 });
@@ -68,7 +68,7 @@ const { BASE, step, browser, as, go, closeTour, summary } = require("./lib.cjs")
   }, page);
   await step("post with an @mention (autocomplete picks Ben)", async () => {
     const box = page.locator("#create-box");
-    await box.click(); await box.pressSequentially("Hello Forge! Thanks @Be", { delay: 25 });
+    await box.click(); await box.pressSequentially("Hello Brazework! Thanks @Be", { delay: 25 });
     await page.getByRole("option", { name: /Ben Cho/ }).waitFor({ timeout: 10000 });
     await box.press("Enter");
     await box.pressSequentially(`for the static fire writeup ${Date.now() % 1000}`, { delay: 5 });
@@ -79,13 +79,13 @@ const { BASE, step, browser, as, go, closeTour, summary } = require("./lib.cjs")
   await step("your new post shows first in For you (desktop and phone)", async () => {
     await go(page, "/feed");
     const first = await page.locator("article").first().innerText();
-    if (!first.includes("Hello Forge! Thanks")) throw new Error("first post is: " + first.slice(0, 80));
+    if (!first.includes("Hello Brazework! Thanks")) throw new Error("first post is: " + first.slice(0, 80));
     const phone = await b.newContext({ viewport: { width: 393, height: 852 }, isMobile: true, hasTouch: true, storageState: await page.context().storageState() });
     const pp = await phone.newPage();
     await go(pp, "/feed");
     const firstPhone = await pp.locator("article").first().innerText();
     await phone.close();
-    if (!firstPhone.includes("Hello Forge! Thanks")) throw new Error("phone first post is: " + firstPhone.slice(0, 80));
+    if (!firstPhone.includes("Hello Brazework! Thanks")) throw new Error("phone first post is: " + firstPhone.slice(0, 80));
   }, page);
   await step("mention renders as a profile link", async () => {
     const href = await page.locator("article a", { hasText: "@Ben Cho" }).first().getAttribute("href");
@@ -99,7 +99,7 @@ const { BASE, step, browser, as, go, closeTour, summary } = require("./lib.cjs")
   await step("notification opens the post", async () => {
     await ben.getByText(/Dana Reyes mentioned you in a post/).first().click();
     await ben.waitForURL(/\/post\//, { timeout: 10000 });
-    await ben.getByText("Hello Forge! Thanks").first().waitFor();
+    await ben.getByText("Hello Brazework! Thanks").first().waitFor();
   }, ben);
   await step("Ben answers Maya's question right in his feed", async () => {
     await go(ben, "/feed");

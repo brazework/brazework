@@ -98,7 +98,7 @@ export function ConvList({ convs, requestsOn, groups = null }: { convs: Conv[]; 
               <WithPresence id={c.other.id} className="self-start"><Avatar first={c.other.firstName} last={c.other.lastName} size={40} /></WithPresence>
               <div className="min-w-0 flex-1">
                 <div className="flex items-baseline justify-between gap-2">
-                  <span className={cn("truncate text-sm", c.unread ? "font-semibold" : "font-medium")}>{`${c.other.firstName} ${c.other.lastName}`.trim() || "Forge member"}</span>
+                  <span className={cn("truncate text-sm", c.unread ? "font-semibold" : "font-medium")}>{`${c.other.firstName} ${c.other.lastName}`.trim() || "Brazework member"}</span>
                   {c.lastAt && <span className="shrink-0 text-[11px] text-faint">{timeAgo(c.lastAt)}</span>}
                 </div>
                 <p className={cn("truncate text-sm", c.unread ? "text-text" : "text-muted")}>

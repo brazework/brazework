@@ -6,7 +6,7 @@ const SKINS = /^(blueprint|fire|aurora|emerald)$/;
 
 // Keeps the phone's chrome (the strip behind the notch / Dynamic Island, and the theme-color Safari
 // and the installed app tint with) the same color as the page. The landing page is always plain
-// Forge (no color theme); the app uses the member's chosen theme.
+// Brazework (no color theme); the app uses the member's chosen theme.
 export function ThemeChrome({ landing = false }: { landing?: boolean }) {
   useEffect(() => {
     const d = document.documentElement;
@@ -19,7 +19,7 @@ export function ThemeChrome({ landing = false }: { landing?: boolean }) {
       const bg = getComputedStyle(d).getPropertyValue("--bg").trim() || getComputedStyle(document.body).backgroundColor;
       let metas = [...document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]')];
       if (!metas.length) { const m = document.createElement("meta"); m.name = "theme-color"; document.head.appendChild(m); metas = [m]; }
-      // One value for every media variant, so the tint follows Forge's theme, not just the OS setting.
+      // One value for every media variant, so the tint follows Brazework's theme, not just the OS setting.
       metas.forEach((m) => { m.content = bg; });
     };
     paint();

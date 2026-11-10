@@ -10,7 +10,7 @@ import { ResolveReport } from "@/components/report/report-dialog";
 import { SchoolDecision } from "../../request-school/form";
 import { ClaimDecision } from "@/components/clubs/claim";
 
-export const metadata: Metadata = { title: "Forge admin" };
+export const metadata: Metadata = { title: "Brazework admin" };
 
 type Metrics = {
   members: number; onboarded: number; weekly_active: number; in_a_club: number; with_project: number; with_verified: number;
@@ -27,10 +27,10 @@ type Retention = {
 
 const pct = (n: number, d: number) => (d ? `${Math.round((n / d) * 100)}%` : "–");
 
-// Forge admins only (the database refuses everyone else; this page 404s for them too).
+// Brazework admins only (the database refuses everyone else; this page 404s for them too).
 export default function AdminPage() {
   return (
-    <Suspense fallback={<div className="mx-auto max-w-3xl xl:max-w-5xl"><PageHeader title="Forge admin" /><Skeleton className="mt-6 h-96" /></div>}>
+    <Suspense fallback={<div className="mx-auto max-w-3xl xl:max-w-5xl"><PageHeader title="Brazework admin" /><Skeleton className="mt-6 h-96" /></div>}>
       <Admin />
     </Suspense>
   );
@@ -88,7 +88,7 @@ async function Admin() {
 
   return (
     <div className="mx-auto max-w-3xl xl:max-w-5xl">
-      <PageHeader title="Forge admin" subtitle="Whether the loop works, and what's waiting on the Forge team." />
+      <PageHeader title="Brazework admin" subtitle="Whether the loop works, and what's waiting on the Brazework team." />
 
       <section className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-3" aria-label="Metrics">
         {tiles.map(([label, value, sub]) => (

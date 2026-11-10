@@ -1,10 +1,10 @@
-# Forge, in plain language
+# Brazework, in plain language
 
 For anyone: co-founders, advisors, investors, a new teammate. No technical background needed. The engineering version is [architecture.md](architecture.md).
 
 ## What it is
 
-**Forge is where STEM students prove what they've built.** A student posts their project. Their club's officers, who saw the work happen, put their name on it ("verified"). Companies looking for builders find students through that verified work, not through résumés anyone can write.
+**Brazework is where STEM students prove what they've built.** A student posts their project. Their club's officers, who saw the work happen, put their name on it ("verified"). Companies looking for builders find students through that verified work, not through résumés anyone can write.
 
 Three kinds of people use it:
 
@@ -19,7 +19,7 @@ Three kinds of people use it:
 1. **A club joins.** An officer sets it up and invites members. It's useful on day one: events, chat and a club feed replace a Discord server, a Google Form and a group chat.
 2. **Members post their work:** updates, photos, video, results, questions.
 3. **They ask the club to verify a milestone,** for example "rocket engine static-fired at 1.2 kN", with evidence such as a photo, a video, a link to the code or a club event.
-4. **An officer checks it and verifies it.** Forge records who vouched, when, and the evidence. Officers can't verify their own team's work, and there are limits so nobody can rubber-stamp everything.
+4. **An officer checks it and verifies it.** Brazework records who vouched, when, and the evidence. Officers can't verify their own team's work, and there are limits so nobody can rubber-stamp everything.
 5. **It shows on the student's profile** as verified work, with the club and officer behind it.
 6. **Companies find them.** A verified company searches by skills and verified work, messages students (who can accept or ignore), and sponsors challenges that clubs enter.
 

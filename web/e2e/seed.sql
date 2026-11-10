@@ -19,7 +19,7 @@ insert into public.milestones (id, project_id, owner_id, community_id, community
 alter table public.milestones enable trigger user;
 insert into public.posts (author_id, body, kind, tags, created_at) select ben, 'Static fire #3 done. 1.2 kN peak, clean shutdown.', 'result', '{Rocketry}'::text[], now() - interval '9 days' from u
  union all select maya, 'Anyone tried Kalman filtering on a cheap IMU? Looking for tips.', 'question', '{Robotics}'::text[], now() - interval '3 hours' from u
- union all select cara, 'Hello Forge!', 'update', '{}'::text[], now() - interval '1 day' from u;
+ union all select cara, 'Hello Brazework!', 'update', '{}'::text[], now() - interval '1 day' from u;
 insert into public.posts (author_id, body, kind, community_id, created_at) select ben, 'Launch day is Saturday. Who is driving?', 'update', 'rkt', now() - interval '5 hours' from u;
 -- A verified company (Cara is its admin) for Find builders; Ben made two verified milestones public.
 insert into public.organizations (type, name, domain) values ('company', 'Acme Aerospace', 'forge.test');
@@ -34,7 +34,7 @@ insert into public.posts (id, author_id, body, kind, media, created_at) select '
 update public.communities c set owner_name = btrim(p.first_name || ' ' || p.last_name) from public.profiles p where p.id = c.owner_id and c.owner_name = '';
 -- Ben graduates in 2026 (Find builders' class-year filter, grad-year.sql).
 update public.profiles set grad_year = 2026 where id = (select ben from u);
--- Maya is a Forge admin (approves sponsorship pilots on /admin).
+-- Maya is a Brazework admin (approves sponsorship pilots on /admin).
 insert into public.forge_admins (uid) select maya from u;
 -- The test members are returning members: they've seen the welcome tour (new sign-ups still get it).
 insert into public.seen_tours (user_id, key) select id, 'welcome' from public.profiles on conflict do nothing;

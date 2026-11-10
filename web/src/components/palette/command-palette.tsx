@@ -49,8 +49,8 @@ export function CommandPalette() {
     ];
     const match = text ? actions.filter((a) => a.label.toLowerCase().includes(text.toLowerCase())) : actions;
     const typed: Item[] = text ? [
-      { id: "ask", label: `Ask Ember: "${text}"`, hint: "Your AI teammate checks Forge and drafts it for you", icon: Sparkles, run: go(`/copilot?q=${encodeURIComponent(text)}`) },
-      { id: "search", label: `Search Forge for "${text}"`, hint: "People, clubs, projects, events", icon: Search, run: go(`/search?q=${encodeURIComponent(text)}`) },
+      { id: "ask", label: `Ask Ember: "${text}"`, hint: "Your AI teammate checks Brazework and drafts it for you", icon: Sparkles, run: go(`/copilot?q=${encodeURIComponent(text)}`) },
+      { id: "search", label: `Search Brazework for "${text}"`, hint: "People, clubs, projects, events", icon: Search, run: go(`/search?q=${encodeURIComponent(text)}`) },
     ] : [{ id: "ask-empty", label: "Ask Ember anything", hint: "Plan a meeting, draft an update, find people", icon: Sparkles, run: go("/copilot") }];
     return [...typed, ...match];
     // eslint-disable-next-line react-hooks/exhaustive-deps

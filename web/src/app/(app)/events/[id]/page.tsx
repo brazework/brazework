@@ -68,7 +68,7 @@ async function EventView({ params }: { params: PageProps<"/events/[id]">["params
   const badge = whenBadge(e, requestTime());
   const inPerson = e.format !== "Online" && e.location.trim().length > 2;
   const q = encodeURIComponent(e.location.trim());
-  const prep = `Prep me for the event "${e.title}" (${e.type}, ${e.topic}) on Forge: what to bring, three people or kinds of people to meet there, and two good questions to ask. Keep it short.`;
+  const prep = `Prep me for the event "${e.title}" (${e.type}, ${e.topic}) on Brazework: what to bring, three people or kinds of people to meet there, and two good questions to ask. Keep it short.`;
   const moreList = (more.data ?? []) as Mini[];
   const similarList = ((similar.data ?? []) as Mini[]).filter((x) => !moreList.some((m) => m.id === x.id));
 

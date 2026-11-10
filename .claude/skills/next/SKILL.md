@@ -1,6 +1,6 @@
 ---
 name: next
-description: Work the next Linear issue end to end, like a product agent. Pick the next open step from the Forge team's board (or the issue named in the arguments), plan it, build it, test it, ship it to main with the issue ID, and keep the issue updated the whole way. Use when asked "what's next", "do the next thing", "work FIX-30", or "/next".
+description: Work the next Linear issue end to end, like a product agent. Pick the next open step from the Brazework team's board (or the issue named in the arguments), plan it, build it, test it, ship it to main with the issue ID, and keep the issue updated the whole way. Use when asked "what's next", "do the next thing", "work FIX-30", or "/next".
 ---
 
 # /next: work the board

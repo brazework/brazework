@@ -96,7 +96,7 @@ function QueueCard({ m, result, onDone }: { m: QueueItem; result?: "verified" | 
 
 // What the club verified or declined lately, so officers can see each other's calls.
 // Recently reviewed, plus what officers can still do: revoke a verification (with a reason), and,
-// for the club's owner, decide disputes (uphold → verified; reject → Forge admins decide).
+// for the club's owner, decide disputes (uphold → verified; reject → Brazework admins decide).
 export function RecentReviews({ items, isOwner = false }: { items: QueueItem[]; isOwner?: boolean }) {
   const [state, setState] = useState<Record<string, QueueItem["status"] | "escalated">>({});
   const [revoking, setRevoking] = useState<string | null>(null);
@@ -117,7 +117,7 @@ export function RecentReviews({ items, isOwner = false }: { items: QueueItem[]; 
                 {m.dispute_note && <p className="mt-2 rounded-xl bg-surface-2 px-3 py-2 text-text-2">&ldquo;{m.dispute_note}&rdquo;</p>}
                 <div className="mt-3 flex flex-wrap gap-2">
                   <button type="button" disabled={pending} onClick={() => start(async () => { const r = await resolveDispute(m.id, true); setMsg(r.message); if (r.ok) setState((s) => ({ ...s, [m.id]: "verified" })); })} className="inline-flex h-9 items-center gap-1.5 rounded-full bg-accent-grad px-4 text-sm font-medium text-on-accent disabled:opacity-60"><BadgeCheck className="size-4" /> Uphold: verify it</button>
-                  <button type="button" disabled={pending} onClick={() => start(async () => { const r = await resolveDispute(m.id, false); setMsg(r.message); if (r.ok) setState((s) => ({ ...s, [m.id]: "escalated" })); })} className="inline-flex h-9 items-center gap-1.5 rounded-full border border-line px-4 text-sm disabled:opacity-60">Disagree: send to Forge admins</button>
+                  <button type="button" disabled={pending} onClick={() => start(async () => { const r = await resolveDispute(m.id, false); setMsg(r.message); if (r.ok) setState((s) => ({ ...s, [m.id]: "escalated" })); })} className="inline-flex h-9 items-center gap-1.5 rounded-full border border-line px-4 text-sm disabled:opacity-60">Disagree: send to Brazework admins</button>
                 </div>
               </li>
             ))}
@@ -135,7 +135,7 @@ export function RecentReviews({ items, isOwner = false }: { items: QueueItem[]; 
                 <div className="flex items-center gap-3">
                   {status === "verified" ? <BadgeCheck className="size-4 shrink-0 text-ok" /> : status === "disputed" || status === "escalated" ? <Scale className="size-4 shrink-0 text-faint" /> : <XCircle className="size-4 shrink-0 text-faint" />}
                   <span className="min-w-0 flex-1 truncate"><span className="font-medium">{m.title}</span> <span className="text-muted">· {m.owner?.first_name} {m.owner?.last_name}</span></span>
-                  <span className="shrink-0 text-xs text-faint">{status === "revoked" ? "Revoked" : status === "disputed" ? (m.escalated ? "With Forge admins" : "Disputed") : status === "escalated" ? "With Forge admins" : m.reviewer_name}</span>
+                  <span className="shrink-0 text-xs text-faint">{status === "revoked" ? "Revoked" : status === "disputed" ? (m.escalated ? "With Brazework admins" : "Disputed") : status === "escalated" ? "With Brazework admins" : m.reviewer_name}</span>
                   {status === "verified" && revoking !== m.id && (
                     <button type="button" onClick={() => { setRevoking(m.id); setWhy(""); }} className="inline-flex shrink-0 items-center gap-1 text-xs text-muted hover:text-danger"><Undo2 className="size-3.5" /> Revoke</button>
                   )}

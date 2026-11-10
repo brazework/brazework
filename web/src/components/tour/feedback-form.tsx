@@ -6,21 +6,21 @@ import { cn } from "@/lib/forge";
 import { sendFeedback, type FeedbackKind } from "@/lib/feedback";
 
 const KINDS: { id: FeedbackKind; label: string; icon: typeof Lightbulb; prompt: string }[] = [
-  { id: "idea", label: "Idea", icon: Lightbulb, prompt: "What would make Forge more useful to you?" },
+  { id: "idea", label: "Idea", icon: Lightbulb, prompt: "What would make Brazework more useful to you?" },
   { id: "problem", label: "Problem", icon: Bug, prompt: "What went wrong, and where?" },
   { id: "improvement", label: "Improve", icon: Wrench, prompt: "What could work better, and how?" },
   { id: "praise", label: "Praise", icon: Heart, prompt: "What do you like? We'd love to know what to keep." },
 ];
 
 const AREAS: [string, string][] = [
-  ["general", "Forge in general"], ["feed", "Feed"], ["search", "Search"], ["profiles", "Profiles & projects"],
+  ["general", "Brazework in general"], ["feed", "Feed"], ["search", "Search"], ["profiles", "Profiles & projects"],
   ["communities", "Communities"], ["messages", "Messages"], ["events", "Events"], ["network", "Network"],
   ["notifications", "Notifications"], ["other", "Something else"],
 ];
 
 const MAX = 1000;
 
-// "Send feedback": ideas, problems, improvements and praise go straight to the Forge team.
+// "Send feedback": ideas, problems, improvements and praise go straight to the Brazework team.
 // Similar feedback is grouped into one idea, so we tell people when others asked for the same thing.
 export function FeedbackForm({ compact = false }: { compact?: boolean }) {
   const id = useId();
@@ -102,7 +102,7 @@ export function FeedbackForm({ compact = false }: { compact?: boolean }) {
       </div>
       <label className="flex cursor-pointer items-start gap-2 text-xs text-text-2">
         <input type="checkbox" checked={contact} onChange={(e) => setContact(e.target.checked)} className="mt-0.5 size-4 accent-[var(--accent)]" />
-        <span>The Forge team can contact me about this (they&apos;ll see my name)</span>
+        <span>The Brazework team can contact me about this (they&apos;ll see my name)</span>
       </label>
       {error && <p role="alert" className="text-xs text-danger">{error}</p>}
       <button
@@ -112,7 +112,7 @@ export function FeedbackForm({ compact = false }: { compact?: boolean }) {
       >
         {pending ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />} Send feedback
       </button>
-      <p className="text-[11px] text-faint">Only the Forge team sees your feedback. Unless you tick the box above, it&apos;s shared with the team without your name.</p>
+      <p className="text-[11px] text-faint">Only the Brazework team sees your feedback. Unless you tick the box above, it&apos;s shared with the team without your name.</p>
     </form>
   );
 }

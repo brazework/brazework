@@ -1,6 +1,6 @@
 # Architecture (technical)
 
-How Forge is built, for engineers. The plain-language version is [overview.md](overview.md). Last checked against the code on 2026-11-10.
+How Brazework is built, for engineers. The plain-language version is [overview.md](overview.md). Last checked against the code on 2026-11-10.
 
 ## The system at a glance
 
@@ -96,7 +96,7 @@ public/                 The original vanilla app, kept until production is confi
 - **Column grants:** members can insert and update only the columns meant for them. For example, a post's author, counts and timestamps are set by the database, never by the client.
 - **Security-definer functions** for actions that need checks across tables: verifying a milestone, publishing a challenge, reports, blocking. Each starts by checking who's calling.
 - **Verification is the core rule set** (step 17): evidence required, verifiers can't be on the team, per-officer weekly limits, an append-only `verification_events` log, revocation and disputes. Every rule has a SQL test.
-- **Abuse limits** in the database: rate limits per member (step 23, tunable in `app_config`), school-email and minimum-age rules at sign-up (step 25), blocking that hides content both ways (step 32), reports resolved by Forge admins.
+- **Abuse limits** in the database: rate limits per member (step 23, tunable in `app_config`), school-email and minimum-age rules at sign-up (step 25), blocking that hides content both ways (step 32), reports resolved by Brazework admins.
 - **The app adapts to the database.** `lib/db-features.ts` probes which steps have run and hides features whose tables don't exist yet, so production never breaks between a deploy and a migration.
 - **Secrets:** server keys live in Vercel environment variables, never in the repo. The service-role key is used only by the Stripe webhook and the digest cron (`lib/supabase/admin.ts`).
 - **Headers:** a Content-Security-Policy plus HSTS, nosniff, no framing, a referrer policy and a permissions policy on every response (`next.config.ts`).

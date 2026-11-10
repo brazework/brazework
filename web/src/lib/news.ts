@@ -2,7 +2,7 @@ import { cacheLife } from "next/cache";
 import { ALL_TOPICS, TOPICS } from "@/lib/forge";
 
 // STEM news for the feed's right rail: headlines from well-known science and engineering
-// publishers' public RSS feeds, matched to each member's interests (Forge's interests-first rule).
+// publishers' public RSS feeds, matched to each member's interests (Brazework's interests-first rule).
 // We show only the headline, the source, the date and a link to the publisher; article text is
 // never shown. All feeds are fetched together at most once an hour and shared by every member.
 
@@ -11,9 +11,9 @@ export type NewsItem = {
   link: string;
   source: string;
   published: string; // ISO date
-  topics: string[]; // Forge interests the headline itself names (strong match)
+  topics: string[]; // Brazework interests the headline itself names (strong match)
   related: string[]; // interests the publisher's summary mentions at least twice (weaker match)
-  fields: string[]; // Forge fields (Engineering, Physics, ...)
+  fields: string[]; // Brazework fields (Engineering, Physics, ...)
 };
 
 export type NewsPick = NewsItem & { reason: string };
@@ -41,7 +41,7 @@ const SOURCES: Source[] = [
   { name: "TechCrunch", url: "https://techcrunch.com/category/artificial-intelligence/feed/", fields: ["Data & AI"] },
 ];
 
-// Words that put a headline under each Forge interest. Matched as whole words, ignoring case.
+// Words that put a headline under each Brazework interest. Matched as whole words, ignoring case.
 const KEYWORDS: Record<string, string[]> = {
   "Mechanical Design": ["mechanical engineer\\w*", "gearbox", "actuators?", "cad", "machine design", "mechanism", "prototype"],
   "Electrical & Power Systems": ["power grid", "grid", "transformers?", "electric(al)? power", "circuits?", "semiconductors?", "chips?", "transistors?", "power electronics"],
@@ -108,7 +108,7 @@ const KEYWORDS: Record<string, string[]> = {
 const FIELD_OF: Record<string, string> = Object.fromEntries(TOPICS.flatMap((g) => g.topics.map((t) => [t, g.name])));
 const MATCHERS: [string, RegExp][] = ALL_TOPICS.map((t) => [t, new RegExp(`\\b(${(KEYWORDS[t] ?? [t.toLowerCase()]).join("|")})\\b`, "gi")]);
 const hits = (re: RegExp, s: string) => s.match(re)?.length ?? 0;
-// Publisher categories that name a Forge field directly (e.g. Quanta's "Physics").
+// Publisher categories that name a Brazework field directly (e.g. Quanta's "Physics").
 const CATEGORY_FIELDS: [RegExp, string][] = [
   [/\b(engineering|technology)\b/i, "Engineering"], [/\bcomputer science|computing\b/i, "Computer Science"],
   [/\b(ai|artificial intelligence|machine learning)\b/i, "Data & AI"], [/\bmath\w*/i, "Mathematics"], [/\bphysics\b/i, "Physics"],

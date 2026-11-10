@@ -13,18 +13,18 @@ export function weekLink(item: WeekItem): string {
 export function buildDigest(first: string, items: WeekItem[], site: string): { subject: string; text: string; html: string } | null {
   if (!items.length) return null;
   const todo = items.filter((i) => i.tone === "todo").length;
-  const subject = todo ? `Your week on Forge: ${todo} ${todo === 1 ? "thing" : "things"} waiting on you` : "Your week on Forge";
+  const subject = todo ? `Your week on Brazework: ${todo} ${todo === 1 ? "thing" : "things"} waiting on you` : "Your week on Brazework";
   const hi = first ? `Hi ${first},` : "Hi,";
   const settings = `${site}/settings#email`;
   const text = [
-    hi, "", "Here's your week on Forge:", "",
+    hi, "", "Here's your week on Brazework:", "",
     ...items.map((i) => `- ${i.text}${i.action ? ` (${i.action}: ${site}${weekLink(i)})` : ""}`),
-    "", `Open Forge: ${site}/feed`, "", `You get this weekly. Turn it off in Settings: ${settings}`,
+    "", `Open Brazework: ${site}/feed`, "", `You get this weekly. Turn it off in Settings: ${settings}`,
   ].join("\n");
   const rows = items.map((i) => `<li style="margin:0 0 10px">${esc(i.text)}${i.action ? ` <a href="${esc(site + weekLink(i))}" style="color:#111;font-weight:600">${esc(i.action)} →</a>` : ""}</li>`).join("");
   const html = `<div style="font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.5;color:#111;max-width:520px">
-<p>${esc(hi)}</p><p>Here's your week on Forge:</p><ul style="padding-left:18px">${rows}</ul>
-<p><a href="${esc(site)}/feed" style="display:inline-block;background:#111;color:#fff;padding:10px 18px;border-radius:999px;text-decoration:none">Open Forge</a></p>
+<p>${esc(hi)}</p><p>Here's your week on Brazework:</p><ul style="padding-left:18px">${rows}</ul>
+<p><a href="${esc(site)}/feed" style="display:inline-block;background:#111;color:#fff;padding:10px 18px;border-radius:999px;text-decoration:none">Open Brazework</a></p>
 <p style="font-size:12px;color:#666">You get this weekly. <a href="${esc(settings)}" style="color:#666">Turn it off in Settings</a>.</p></div>`;
   return { subject, text, html };
 }

@@ -5,7 +5,7 @@ import { cn } from "@/lib/forge";
 
 export type Face = { uid: string; first: string; last: string };
 
-// A club's people at a glance: a few overlapping faces, how many more, and who's on Forge right now
+// A club's people at a glance: a few overlapping faces, how many more, and who's on Brazework right now
 // (live, from presence). `ids` can be longer than `faces` so the online count covers more members.
 export function MemberFaces({ faces, total, ids, size = 28, className }: { faces: Face[]; total: number; ids?: string[]; size?: number; className?: string }) {
   const online = useOnlineCount(ids ?? faces.map((f) => f.uid));

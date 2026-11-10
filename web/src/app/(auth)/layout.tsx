@@ -10,7 +10,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       <aside className="relative hidden overflow-hidden border-r border-line bg-surface-2/60 lg:block">
         <div className="pointer-events-none absolute top-1/3 left-1/2 -z-10 h-[460px] w-[460px] -translate-x-1/2 rounded-full opacity-25 blur-3xl" style={{ background: PROFESSIONS[0].grad }} aria-hidden="true" />
         <div className="flex h-full flex-col justify-between gap-10 p-12">
-          <Link href="/" aria-label="Forge home"><Logo /></Link>
+          <Link href="/" aria-label="Brazework home"><Logo /></Link>
           <div className="relative mx-auto w-full max-w-[340px]" aria-hidden="true">
             <ProfileCard p={PROFESSIONS[4]} className="absolute top-6 left-10 -rotate-6 opacity-60" />
             <ProfileCard p={PROFESSIONS[0]} className="relative rotate-2" />
@@ -26,7 +26,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       <ThemeToggle className="absolute top-5 right-5" />
       <main className="flex items-center justify-center px-6 py-16">
         <div className="w-full max-w-md">
-          <Link href="/" aria-label="Forge home" className="mb-10 inline-block lg:hidden"><Logo /></Link>
+          <Link href="/" aria-label="Brazework home" className="mb-10 inline-block lg:hidden"><Logo /></Link>
           {children}
         </div>
       </main>

@@ -1,7 +1,7 @@
 import { mediaUrl } from "@/lib/media";
 import { getViewer } from "@/lib/supabase/server";
 
-// "Download my data": everything you've put on Forge, as JSON, with links to your files.
+// "Download my data": everything you've put on Brazework, as JSON, with links to your files.
 // Your own session reads it, so row-level security decides; nothing about other people beyond
 // what's part of your own records (for example who you follow).
 export async function GET() {
@@ -29,7 +29,7 @@ export async function GET() {
   if (prof?.cover_path) paths.add(prof.cover_path);
   const body = {
     exported_at: new Date().toISOString(),
-    note: "Everything you've put on Forge. Files are linked under files; download them while signed in or before deleting your account.",
+    note: "Everything you've put on Brazework. Files are linked under files; download them while signed in or before deleting your account.",
     account: { id: me, email: user.email },
     profile: (profile as unknown[])[0] ?? null, posts, comments, projects, milestones, messages_you_sent: messages,
     clubs: memberships, following: follows, saved, notifications,

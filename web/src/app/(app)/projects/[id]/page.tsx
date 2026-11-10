@@ -82,8 +82,8 @@ async function ProjectView({ params }: { params: PageProps<"/projects/[id]">["pa
   const uses = Object.fromEntries(tools.map((t, i) => [t, useCounts[i]?.count ?? 1]));
   const emberOn = own && stackOn && (await copilotEnabled());
   const owner = p.profiles;
-  const ownerName = `${owner?.first_name ?? ""} ${owner?.last_name ?? ""}`.trim() || "Forge member";
-  const ask = `Tell me about the project "${p.title}" by ${ownerName} on Forge: what it is in plain words, what's impressive about it, and three good questions to ask the builder.`;
+  const ownerName = `${owner?.first_name ?? ""} ${owner?.last_name ?? ""}`.trim() || "Brazework member";
+  const ask = `Tell me about the project "${p.title}" by ${ownerName} on Brazework: what it is in plain words, what's impressive about it, and three good questions to ask the builder.`;
 
   return (
     <div className="grid gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
@@ -138,7 +138,7 @@ async function ProjectView({ params }: { params: PageProps<"/projects/[id]">["pa
         {milestones.length > 0 && (
           <Panel className="p-6">
             <Kicker>Milestones</Kicker>
-            <p className="mt-1 text-xs text-muted">{own ? "Verified ones show to everyone; pending and declined ones only to you." : "Each one was verified by a club on Forge."}</p>
+            <p className="mt-1 text-xs text-muted">{own ? "Verified ones show to everyone; pending and declined ones only to you." : "Each one was verified by a club on Brazework."}</p>
             <MilestoneTimeline items={milestones} own={own} />
           </Panel>
         )}
@@ -156,7 +156,7 @@ async function ProjectView({ params }: { params: PageProps<"/projects/[id]">["pa
           <Kicker>{team.length ? "Built by the team" : "Built by"}</Kicker>
           <Link href={`/u/${p.owner_id}`} className="mt-3 flex items-center gap-3">
             <Avatar first={owner?.first_name ?? ""} last={owner?.last_name ?? ""} size={44} />
-            <span className="min-w-0"><span className="block truncate font-medium hover:underline">{ownerName}</span><span className="block truncate text-xs text-muted">{owner?.headline || owner?.field || "Forge member"}</span></span>
+            <span className="min-w-0"><span className="block truncate font-medium hover:underline">{ownerName}</span><span className="block truncate text-xs text-muted">{owner?.headline || owner?.field || "Brazework member"}</span></span>
           </Link>
           {(team.length > 0 || own) && <TeamList projectId={p.id} team={team} candidates={candidates} own={own} me={user.id} />}
           {!own && <Link href={`/messages/new?to=${p.owner_id}`} className="mt-4 inline-flex h-9 w-full items-center justify-center rounded-full border border-line text-sm font-medium transition hover:bg-hover">Message {owner?.first_name || "them"}</Link>}

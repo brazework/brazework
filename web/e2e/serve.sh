@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Start a private local Supabase, build Forge pointed at it, and serve it on :3200. Sourced by run.sh
+# Start a private local Supabase, build Brazework pointed at it, and serve it on :3200. Sourced by run.sh
 # (the e2e suite) and by CI's quality job (Lighthouse and the security scan), so every check runs
 # against the same thing. The caller stops it: e2e/local-supabase.sh down, and the server on :3200.
 e2e/local-supabase.sh up
