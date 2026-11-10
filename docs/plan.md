@@ -79,7 +79,7 @@ To build:
 - ✅ "Forge never pulls records from your school" stated next to Download my data and on the privacy page.
 - ✅ Data export (JSON with links to your files) and account deletion (`account.sql`, step 20; SQL and e2e tests).
 - ✅ Reports: posts, people, projects and challenges from the app (one Report dialog; the reported member never learns who reported); milestones, replies and messages in the database. Forge admins resolve them on `/admin` (`reports-more.sql`, step 24; SQL tests and e2e).
-- ✅ Blocking (block_user); ⬜ blocked parties can't view private items.
+- ✅ Blocking (block_user): stops messages, notifications and follows, and hides posts and replies both ways, even in a shared club (`blocking-content.sql`, step 32; SQL tests). Club moderators still see everything in their club.
 - ✅ Rate limits (`rate-limits.sql`, step 23) on posts, replies, messages, message requests and milestone submissions, tunable in `app_config`; SQL tests. Sign-ups are limited by Supabase Auth's own settings.
 - ✅ Plain-language privacy page (`/privacy`).
 - ✅ Accessibility: photos without a description get an "Add description" prompt before posting (screen-reader text). Video captions ⬜.
@@ -94,7 +94,7 @@ To build:
 
 ## Phase 9: metrics
 
-- ✅ `/admin` (Forge admins, `admin-metrics.sql`, step 22): weekly active, the loop as a funnel, submitted vs verified and median time to verify, active clubs and handoffs, companies, challenges and sponsorships, plus the sponsorship approvals and review queue. ⬜ Retention cohorts and company message/reply rates.
+- ✅ `/admin` (Forge admins, `admin-metrics.sql`, step 22): weekly active, the loop as a funnel, submitted vs verified and median time to verify, active clubs and handoffs, companies, challenges and sponsorships, plus the sponsorship approvals and review queue. ✅ Retention by weekly sign-up cohort and the company reply rate (share of company conversations students answer, and how fast), on `/admin` (`admin-retention.sql`, step 33; SQL tests).
 
 ## Deliverables at the end
 

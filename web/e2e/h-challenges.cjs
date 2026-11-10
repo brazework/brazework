@@ -34,6 +34,9 @@ const { step, browser, as, go, summary } = require("./lib.cjs");
   await step("Maya (Forge admin) approves the pilot on /admin", async () => {
     await go(maya, "/admin");
     await maya.getByText("The loop", { exact: true }).waitFor();
+    // Retention by sign-up week and the company reply rate (admin-retention.sql, step 33).
+    await maya.getByText("Retention by sign-up week").waitFor();
+    await maya.getByText("Students reply to companies").waitFor();
     const row = maya.locator("div").filter({ hasText: title }).filter({ has: maya.getByRole("button", { name: "Approve pilot" }) }).last();
     await row.getByRole("button", { name: "Approve pilot" }).click();
     // Approved requests leave the list.

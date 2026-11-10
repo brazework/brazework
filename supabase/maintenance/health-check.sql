@@ -28,7 +28,9 @@ from (values
   (28, 'club-reports',    to_regclass('public.club_report_links') is not null),
   (29, 'project-specs',   exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'project_details' and column_name = 'specs')),
   (30, 'email-digest',    to_regclass('public.email_prefs') is not null),
-  (31, 'indexes',         to_regclass('public.comments_author_id_fk_idx') is not null)
+  (31, 'indexes',         to_regclass('public.comments_author_id_fk_idx') is not null),
+  (32, 'blocking-content', to_regprocedure('public.blocked_between(uuid,uuid)') is not null),
+  (33, 'admin-retention', to_regprocedure('public.admin_retention()') is not null)
 ) as s(step, file, present)
 order by step;
 

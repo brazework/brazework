@@ -18,6 +18,12 @@ type Metrics = {
   companies: number; challenges_live: number; challenge_entries: number; sponsorships_paid: number; sponsorships_pilot: number; open_queue: number;
 };
 
+// Weekly sign-up cohorts and whether students answer companies (supabase/admin-retention.sql).
+type Retention = {
+  cohorts: { week: string; size: number; active: number[] }[];
+  company_conversations_90d: number; company_replied_90d: number; company_median_hours_to_reply: number | null;
+};
+
 const pct = (n: number, d: number) => (d ? `${Math.round((n / d) * 100)}%` : "–");
 
 // Forge admins only (the database refuses everyone else; this page 404s for them too).
@@ -34,13 +40,16 @@ async function Admin() {
   if (!user) redirect("/login");
   const { data: isAdmin } = await supabase.rpc("is_forge_admin");
   if (!isAdmin) notFound();
-  const [{ data: m }, { data: requests }, { data: queue }, { data: reportRows }, { data: schoolRows }] = await Promise.all([
+  const [{ data: m }, { data: requests }, { data: queue }, { data: reportRows }, { data: schoolRows }, { data: ret }] = await Promise.all([
     supabase.rpc("admin_metrics"),
     supabase.from("challenges").select("id, title, prize, deadline, organizations(name)").eq("sponsorship", "requested").order("created_at", { ascending: true }).limit(50),
     supabase.from("admin_queue").select("id, kind, subject_id, detail, created_at").eq("status", "open").order("created_at", { ascending: true }).limit(50),
     supabase.from("content_reports").select("id, kind, target_id, reason, detail, reported, created_at").eq("status", "open").order("created_at", { ascending: true }).limit(50),
     supabase.from("school_requests").select("id, domain, school, contact, asks, created_at").eq("status", "open").order("asks", { ascending: false }).limit(50),
+    // Until step 33 runs, this errors and the retention section stays hidden.
+    supabase.rpc("admin_retention"),
   ]);
+  const r = ret as Retention | null;
   const schools = (schoolRows ?? []) as { id: number; domain: string; school: string; contact: string; asks: number; created_at: string }[];
   type Report = { id: number; kind: string; target_id: string; reason: string; detail: string; reported: string | null; created_at: string };
   const reports = (reportRows ?? []) as Report[];
@@ -68,6 +77,8 @@ async function Admin() {
     ["Clubs active this week", `${x.clubs_active_7d}`, `of ${x.clubs} · ${x.handoffs} handoffs`],
     ["Verified companies", `${x.companies}`, `${x.challenges_live} live challenges · ${x.challenge_entries} entries`],
     ["Sponsorships", `${x.sponsorships_paid} paid`, `${x.sponsorships_pilot} pilots`],
+    ...(r ? [["Students reply to companies", pct(r.company_replied_90d, r.company_conversations_90d),
+      `${r.company_conversations_90d} conversations (90 days)${r.company_median_hours_to_reply == null ? "" : ` · median ${r.company_median_hours_to_reply} h`}`] as [string, string, string]] : []),
   ] : [];
 
   return (
@@ -98,6 +109,8 @@ async function Admin() {
           </ol>
         </Panel>
       )}
+
+      {r && r.cohorts.length > 0 && <Cohorts cohorts={r.cohorts} />}
 
       <section className="mt-8">
         <Kicker>Sponsorship requests · {reqs.length}</Kicker>
@@ -167,5 +180,45 @@ async function Admin() {
         </div>
       </section>
     </div>
+  );
+}
+
+// Retention by weekly sign-up cohort: of the members who joined in a week, the share active in each
+// later week. One hue, darker = more retained (capped at 40% so text stays readable in every theme); the number is always printed, so color isn't the only cue.
+function Cohorts({ cohorts }: { cohorts: Retention["cohorts"] }) {
+  const weeks = Math.max(0, ...cohorts.map((c) => c.active.length));
+  const label = (d: string) => new Date(`${d}T00:00:00Z`).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
+  return (
+    <Panel className="mt-4 overflow-x-auto p-5">
+      <Kicker>Retention by sign-up week</Kicker>
+      <p className="mt-1 text-xs text-muted">Of the members who joined each week, the share who posted, replied, messaged or added a milestone in each week after.</p>
+      <table className="mt-3 w-full min-w-[32rem] border-separate border-spacing-1 text-sm tabular-nums">
+        <thead>
+          <tr className="text-xs text-faint">
+            <th scope="col" className="text-left font-normal">Joined</th>
+            <th scope="col" className="text-right font-normal">Members</th>
+            {Array.from({ length: weeks }, (_, i) => <th key={i} scope="col" className="text-center font-normal">Week {i + 1}</th>)}
+          </tr>
+        </thead>
+        <tbody>
+          {cohorts.map((c) => (
+            <tr key={c.week}>
+              <th scope="row" className="text-left font-normal text-text-2">{label(c.week)}</th>
+              <td className="text-right text-text-2">{c.size}</td>
+              {Array.from({ length: weeks }, (_, i) => {
+                const n = c.active[i];
+                if (n === undefined) return <td key={i} />;
+                const share = c.size ? n / c.size : 0;
+                return (
+                  <td key={i} className="rounded-md px-2 py-1 text-center" style={{ background: `color-mix(in oklab, var(--accent) ${Math.round(6 + share * 34)}%, transparent)` }} title={`${n} of ${c.size}`}>
+                    {c.size ? `${Math.round(share * 100)}%` : "–"}
+                  </td>
+                );
+              })}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </Panel>
   );
 }

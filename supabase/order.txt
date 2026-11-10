@@ -40,3 +40,5 @@ club-reports
 project-specs
 email-digest
 indexes
+blocking-content
+admin-retention

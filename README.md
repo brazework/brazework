@@ -88,7 +88,7 @@ npm run e2e   # builds the app, starts a local Supabase, runs every journey (sig
 
 The SQL files are additive and run in the order listed in [`supabase/order.txt`](supabase/order.txt) (the one list: CI, the local test stack and production setup all follow it). Today:
 
-`schema` → `messages` → `events` → `activity` → `projects` → `tours` → `club-events` → `media` → `invites` → `post-edits` → `copilot` → `milestones` → `feedback` → `feedback-review` → `integrations` → `group-chats` → `project-stack` → `club-profile` → `mentions` → `copilot-chats` → `profile-extras` → `mcp` → `chat-extras` → `reports` → `project-posts` → `verification` → `club-handoff` → `public-stats` → `account` → `challenges` → `admin-metrics` → `rate-limits` → `reports-more` → `signup-rules` → `school-requests` → `club-duplicates` → `club-reports` → `project-specs` → `email-digest` → `indexes`
+`schema` → `messages` → `events` → `activity` → `projects` → `tours` → `club-events` → `media` → `invites` → `post-edits` → `copilot` → `milestones` → `feedback` → `feedback-review` → `integrations` → `group-chats` → `project-stack` → `club-profile` → `mentions` → `copilot-chats` → `profile-extras` → `mcp` → `chat-extras` → `reports` → `project-posts` → `verification` → `club-handoff` → `public-stats` → `account` → `challenges` → `admin-metrics` → `rate-limits` → `reports-more` → `signup-rules` → `school-requests` → `club-duplicates` → `club-reports` → `project-specs` → `email-digest` → `indexes` → `blocking-content` → `admin-retention`
 
 The app checks which ones have run and hides features whose tables don't exist yet (`web/src/lib/db-features.ts`). What each table holds and who can touch it: [docs/data-model.md](docs/data-model.md).
 
