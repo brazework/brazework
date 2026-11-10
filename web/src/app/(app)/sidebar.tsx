@@ -1,6 +1,6 @@
 "use client";
 import { AnimatePresence, motion } from "motion/react";
-import { Bell, Bookmark, CalendarDays, FolderGit2, Home, LayoutDashboard, LogOut, MessageSquare, Network, PanelLeftClose, PanelLeftOpen, PenLine, Plus, Search, Settings, Sparkles, Trophy, UserRound, Users, X } from "lucide-react";
+import { Bell, Bookmark, CalendarDays, ChevronDown, FolderGit2, Home, LayoutDashboard, LogOut, MessageSquare, Network, PanelLeftClose, PanelLeftOpen, PenLine, Plus, Search, Settings, Sparkles, Trophy, UserRound, Users, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -10,6 +10,8 @@ import { Avatar, Logo } from "@/components/ui";
 import { MyStatus, WithPresence } from "@/components/presence/presence";
 import { cn } from "@/lib/forge";
 import { NavTile } from "@/components/app/nav-tile";
+import { Ember } from "@/components/ember/ember";
+import { foldMotion, useFold } from "@/components/app/rail-card";
 
 export type Badges = { notifications: number; messages: number; invites: number };
 type BadgeKey = keyof Badges;
@@ -106,12 +108,13 @@ export function Sidebar({ first, last, userId, badges, avatar, initialCollapsed 
           className={cn("bg-accent-grad inline-flex h-10 items-center justify-center gap-2 rounded-2xl text-sm font-semibold text-on-accent shadow-[0_8px_20px_-10px_rgb(0_0_0/0.5)] transition hover:opacity-90", collapsed ? "w-10" : "flex-1")}>
           <PenLine className="size-4" />{!collapsed && "New post"}
         </Link>
+        {/* Ember, the orb: ask anything or jump anywhere (also ⌘K from any page). */}
         <button type="button" onClick={() => window.dispatchEvent(new Event("forge:palette"))} title="Ask Ember (⌘K)" aria-label="Ask Ember, or jump anywhere (Command K)"
-          className={cn("inline-flex h-10 items-center justify-center gap-1.5 rounded-2xl border border-line bg-surface/60 text-sm text-text-2 transition hover:bg-hover", collapsed ? "w-10" : "px-3")}>
-          <Sparkles className="size-4 text-accent" />{!collapsed && <kbd className="font-mono text-[10px] text-faint">⌘K</kbd>}
+          className="group grid size-10 shrink-0 place-items-center rounded-2xl border border-line bg-surface/60 transition hover:-translate-y-px hover:bg-hover">
+          <span className="transition duration-300 group-hover:scale-110" style={{ "--ember-a": "#ffd166", "--ember-b": "#ff4d4d", "--ember-c": "#ff3d7f" } as React.CSSProperties}><Ember size={28} /></span>
         </button>
       </div>
-      <nav data-tour="menu" aria-label="Main" className={cn("flex min-h-0 flex-col gap-0.5 overflow-y-auto", collapsed ? "mt-4" : "mt-5")}>
+      <nav data-tour="menu" aria-label="Main" className={cn("flex shrink-0 flex-col gap-0.5", collapsed ? "mt-4" : "mt-5")}>
         {NAV.map((n) => {
           const active = isActive(path, n.match);
           const count = n.badge ? badges[n.badge] : 0;
@@ -133,6 +136,8 @@ export function Sidebar({ first, last, userId, badges, avatar, initialCollapsed 
           );
         })}
       </nav>
+      {/* Your clubs and More scroll on short screens, so the five main places are always whole. */}
+      <div className="no-scrollbar -mx-1 min-h-0 flex-1 overflow-y-auto px-1 pb-2">
       {/* Your clubs, one click away. */}
       {clubs.length > 0 && (
         <div aria-label="Your clubs" role="group" className={cn("mt-5 flex flex-col gap-0.5 border-t border-line pt-4", collapsed && "items-center")}>
@@ -149,25 +154,11 @@ export function Sidebar({ first, last, userId, badges, avatar, initialCollapsed 
           })}
         </div>
       )}
-      {/* Secondary: smaller, under the five places. Ember first: help where you are, not a destination. */}
-      <div aria-label="More" role="group" className={cn("mt-5 flex flex-col gap-0.5 border-t border-line pt-4", collapsed && "items-center")}>
-        {!collapsed && <div className="px-3 pb-1 text-[11px] font-medium tracking-wide text-faint uppercase">More</div>}
-        {MORE.map((n) => {
-          const active = path.startsWith(n.href);
-          const count = n.badge ? badges[n.badge] : 0;
-          return (
-            <Link key={n.href} href={n.href} data-tour={n.href === "/notifications" ? "bell" : undefined} aria-current={active ? "page" : undefined}
-              aria-label={count ? `${n.label}, ${count} new` : collapsed ? n.label : undefined} title={collapsed ? n.label : undefined}
-              className={cn("relative flex items-center gap-2.5 rounded-xl py-1.5 text-[13px] transition", collapsed ? "justify-center px-2" : "px-3", active ? "bg-hover font-medium text-text" : "text-muted hover:bg-hover hover:text-text")}>
-              <n.icon className={cn("size-4 shrink-0", n.href === "/copilot" && "text-accent")} />
-              {!collapsed && <span>{n.label}</span>}
-              <Count n={count} className={collapsed ? "absolute -top-0.5 right-0.5" : "ml-auto"} />
-            </Link>
-          );
-        })}
+      {/* Secondary places, in a quiet card under the five main ones. Folds to its header (remembered). */}
+      <MoreGroup collapsed={collapsed} path={path} badges={badges} />
       </div>
       {/* You: your profile lives here (photo and name open it), with your online status and log out. */}
-      <div className={cn("mt-auto flex items-center gap-3 rounded-2xl transition", onProfile ? "nav-pill" : "bg-surface/50 hover:bg-hover/60", collapsed ? "flex-col p-1.5" : "p-2.5")}>
+      <div className={cn("mt-2 flex shrink-0 items-center gap-3 rounded-2xl transition", onProfile ? "nav-pill" : "bg-surface/50 hover:bg-hover/60", collapsed ? "flex-col p-1.5" : "p-2.5")}>
         <Link href="/profile" aria-label="Your profile" aria-current={onProfile ? "page" : undefined} title={collapsed ? `${first} ${last} · Profile` : undefined}><WithPresence id={userId} dot="size-2.5"><Avatar first={first} last={last} size={collapsed ? 32 : 36} src={avatar} /></WithPresence></Link>
         {!collapsed && (
           <div className="min-w-0 flex-1">
@@ -327,5 +318,40 @@ function Sheet({ open, title, onClose, children }: { open: boolean; title: strin
         </motion.div>
       )}
     </AnimatePresence>
+  );
+}
+
+// "More": small tiles in a glass card, matching the main nav; the header folds it away.
+function MoreGroup({ collapsed, path, badges }: { collapsed: boolean; path: string; badges: Badges }) {
+  const [folded, setFolded] = useFold("sidebar-more");
+  const waiting = MORE.reduce((n, m) => n + (m.badge ? badges[m.badge] ?? 0 : 0), 0);
+  const items = MORE.map((n) => {
+    const active = path.startsWith(n.href);
+    const count = n.badge ? badges[n.badge] : 0;
+    return (
+      <Link key={n.href} href={n.href} data-tour={n.href === "/notifications" ? "bell" : undefined} aria-current={active ? "page" : undefined}
+        aria-label={count ? `${n.label}, ${count} new` : collapsed ? n.label : undefined} title={collapsed ? n.label : undefined}
+        className={cn("group relative flex items-center gap-2.5 rounded-xl py-1 text-[13px] transition", collapsed ? "justify-center px-0" : "px-1.5", active ? "font-medium text-text" : "text-text-2 hover:bg-hover/70 hover:text-text")}>
+        {active && <motion.span layoutId="more-active" className="nav-pill absolute inset-0 rounded-xl" transition={{ type: "spring", stiffness: 400, damping: 34 }} />}
+        <span className={cn("relative grid size-7 shrink-0 place-items-center rounded-lg transition duration-200 group-hover:-translate-y-px", active ? "nav-tile-on" : "nav-tile text-text-2 group-hover:text-text")}>
+          <n.icon className="size-[15px]" />
+        </span>
+        {!collapsed && <span className="relative truncate">{n.label}</span>}
+        <Count n={count} className={collapsed ? "absolute -top-0.5 right-0.5" : "relative ml-auto"} />
+      </Link>
+    );
+  });
+  if (collapsed) return <div aria-label="More" role="group" className="mt-4 flex flex-col items-center gap-1 border-t border-line pt-4">{items}</div>;
+  return (
+    <section aria-label="More" className="mt-5 rounded-2xl border border-line bg-surface/40 p-1.5 shadow-[inset_0_1px_0_rgb(255_255_255/0.04)]">
+      <button type="button" onClick={() => setFolded(!folded)} aria-expanded={!folded} className="group flex w-full items-center gap-2 rounded-xl px-2 py-1.5 text-left">
+        <span className="text-[11px] font-medium tracking-[0.12em] text-faint uppercase">More</span>
+        {folded && waiting > 0 && <span className="rounded-full bg-accent px-1.5 text-[10px] font-semibold text-on-accent tabular-nums">{waiting}</span>}
+        <ChevronDown className={cn("ml-auto size-3.5 text-faint transition group-hover:text-text", !folded && "rotate-180")} />
+      </button>
+      <AnimatePresence initial={false}>
+        {!folded && <motion.div {...foldMotion} className="overflow-hidden"><div className="flex flex-col gap-0.5 pt-0.5">{items}</div></motion.div>}
+      </AnimatePresence>
+    </section>
   );
 }
