@@ -9,10 +9,13 @@ Status as of 2026-11-10. Linear issue IDs say what's open; the order to set ever
 | Service | What it's for | Account / owner | Plan and cost | Open items |
 |---|---|---|---|---|
 | **GitHub** | The code, CI (GitHub Actions), Dependabot, CodeQL | Repo `forge-app` on **Ian's personal account**; Josh has write | Free | Personal repos allow **one admin only**, so move it to the organization **`brazework`** with both founders as owners. Create it now; transfer after the production switch-over (FIX-54) |
-| **Vercel** | Hosting: builds and deploys `web/` from `main` | Ian's team (production project `forge-app`); Josh is a Viewer | Check the plan: **Hobby isn't allowed for commercial use**. Pro is $20 per member per month | Josh → Member (FIX-6); previews on staging data (FIX-2); move to Pro before charging money |
-| **Supabase** | Database, sign-in, file storage, live updates | Project **FORGE** (production); **forge-staging** (testing) | Free, **over its quota** (Cached Egress 6.6 of 5 GB, cycle ends Nov 18). Pro is $25/month and adds daily backups | Upgrade (FIX-10); database steps (FIX-25); signing keys (FIX-53); real email (FIX-1); rotate the staging password (FIX-12) |
-| **Linear** | What we're building, in order; member feedback lands here | Workspace **Josh-Products**, team **Forge** (key `FIX`); both founders are admins | Free. **Limit: 250 open issues** (archived ones don't count) | Auto-archive closed issues after a month so the Free plan lasts (FIX-5); the sync's API key (FIX-5) |
+| **Vercel** | Hosting: builds and deploys `web/` from `main` | Team **FORGE DEV** (production project `forge-app`), owned by Ian; Josh is a Developer | **Pro** (checked 2026-11-10), paid by Ian | Josh → Member (FIX-6); add the company email (FIX-63); previews on staging data (FIX-2) |
+| **Supabase** | Database, sign-in, file storage, live updates | Org **Forge DEV**: project **FORGE** (production) and **forge-staging** (testing). Ian is Owner; Josh and the company email are Administrators | Free, **over its quota** (Cached Egress 6.6 of 5 GB, cycle ends Nov 18). Pro is $25/month and adds daily backups | Upgrade (FIX-10); database steps (FIX-25); signing keys (FIX-53); real email (FIX-1); rotate the staging password (FIX-12) |
+| **Linear** | What we're building, in order; member feedback lands here | Workspace **Josh-Products**, team **Forge** (key `FIX`); both founders and the company email are admins | Free. **Limit: 250 open issues** (archived ones don't count) | Auto-archive closed issues after a month so the Free plan lasts (FIX-5); the sync's API key (FIX-5) |
 | **Anthropic** (via Claude Code) | Building Forge: Claude Code sessions | Each founder's own Claude subscription | Per person | None |
+| **Company Gmail** | `brazeworkhq@gmail.com`: the owner and contact email for company accounts until we have the domain | Both founders (password and backup codes in Bitwarden) | Free | 2-step verification on both founders' phones (FIX-59) |
+| **Bitwarden** | Shared vault for every login and key | Free organization "Brazework" (2 seats), on the company Gmail | Free | Ian accepts the invite; 2FA (FIX-60) |
+| **GitHub organization** | Where the repo moves so both founders are owners | `github.com/brazework`, created by Josh; contact email the company Gmail | Free | Ian accepts Owner; transfer per the runbook on FIX-54 |
 
 ## Needed to switch production on
 
@@ -27,11 +30,10 @@ Status as of 2026-11-10. Linear issue IDs say what's open; the order to set ever
 
 | Service | Why | Suggested | Cost |
 |---|---|---|---|
-| **Shared password manager** | One safe place for every key and login. Today a key has to be pasted somewhere to share it | Bitwarden, free organization (2 users) (FIX-60) | Free |
-| **Founder email on the domain** | `josh@` / `ian@` / `hello@`: looks real to clubs, schools and companies; owns the accounts above (FIX-63) | Zoho Mail Free or Cloudflare Email Routing now; Google Workspace once there's revenue (FIX-59) | Free now; Workspace ~$7 per person per month |
+| **Founder email on the domain** | `josh@` / `ian@` / `hello@`, forwarded into the company Gmail, once we buy the domain (FIX-58) | Cloudflare Email Routing; Google Workspace once there's revenue (FIX-59) | Free; Workspace ~$7 per person per month |
 | **Team chat** | Founder chat, plus Linear, GitHub and alert notifications in one place | Slack, free plan (FIX-62) | Free (90 days of history) |
 | **Error monitoring** | Know when something breaks for a member, with the exact error, before they tell us. Vercel only keeps raw logs | Sentry (Next.js SDK; creates Linear issues from errors) (FIX-55) | Free tier |
-| **Uptime monitoring** | A text or email if the site goes down | Better Stack or UptimeRobot (FIX-55) | Free tier |
+| **Uptime monitoring** | A text or email if the site or database goes down | UptimeRobot on `/api/health` (FIX-55) | Free tier |
 | **Web analytics** | Landing-page visits and sign-up conversion (the admin dashboard covers in-app behavior) | Vercel Web Analytics, or PostHog | Free tier |
 | **Social handles** | Reserve @brazework everywhere | Instagram, TikTok, LinkedIn, X (FIX-61) | Free |
 | **Apple Developer Program** | Shipping the iPhone app (TestFlight, App Store) when it resumes | Apple, as the company | $99 a year |

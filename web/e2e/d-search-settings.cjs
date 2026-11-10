@@ -101,6 +101,12 @@ const pw = require("playwright-core");
       if (!/\/login/.test(p.url())) throw new Error(`${path} -> ${p.url()}`);
     }
   });
+  await step("the uptime check (/api/health) says the app and database are up, signed out, uncached", async () => {
+    const res = await fetch(BASE + "/api/health");
+    const body = await res.json();
+    if (res.status !== 200 || body.ok !== true || body.db !== "ok") throw new Error(`${res.status} ${JSON.stringify(body)}`);
+    if (!/no-store/.test(res.headers.get("cache-control") || "")) throw new Error("cacheable: " + res.headers.get("cache-control"));
+  });
   console.log("page errors:", josh.errs.slice(0, 5));
   summary();
   await b.close();

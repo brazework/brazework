@@ -25,7 +25,8 @@ What runs by itself, what still needs a person, and what to add next. The goal: 
 | **Linear sync:** every commit on `main` linked to its issue, `Fixes FIX-n` closes it, untracked commits logged as Done issues | The `LINEAR_API_KEY` repo secret (an admin adds it) | FIX-5, FIX-54 |
 | **Linear ↔ GitHub:** PRs and commits shown on issues; weekly cycles; auto-close stale Backlog; **auto-archive closed issues** (keeps us under the Free plan's 250-issue limit) | Linear settings, a workspace admin, ~10 minutes | FIX-5 |
 | **Weekly email digest** to members | Resend keys + a Vercel Cron job | FIX-27 |
-| **Sign-up and password emails** without Supabase's few-per-hour cap | Resend as Supabase's SMTP | FIX-1 |
+| **Sign-up and password emails** without Supabase's few-per-hour cap | The company Gmail's SMTP now (free, steps on FIX-1); Resend once we have the domain | FIX-1 |
+| **Uptime alerts:** a text or email if the site or its database goes down | A free UptimeRobot monitor on `/api/health` (200 = app and database up, 503 = not), every 5 minutes | FIX-55 |
 | **Daily database backups** | Supabase Pro | FIX-10 |
 
 ## Done by a person, on purpose 👤
