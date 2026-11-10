@@ -25,9 +25,7 @@ struct FeedView: View {
                        message: store.tab == .following ? "Follow builders from their profile to see their work here." : "Be the first to share what you're building.")
           }
           ForEach(store.items) { item in
-            PostCard(item: item, liked: store.liked.contains(item.id), saved: store.saved.contains(item.id),
-                     onLike: { Task { await store.toggleLike(item.post, me: session.userId!) } },
-                     onSave: { Task { await store.toggleSave(item.post, me: session.userId!) } })
+            PostCard(item: item, store: store)
           }
           if store.loaded && !store.items.isEmpty {
             Text("You're all caught up").font(.footnote).foregroundStyle(p.faint).padding(.vertical, 24)

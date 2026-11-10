@@ -223,6 +223,29 @@ final class JourneyTests: XCTestCase {
     XCTAssertEqual(n.actorFirst, "Maya")
   }
 
+  func testEditAndDeleteYourOwnPostsOnly() async throws {
+    let me = try await signIn("cara")
+    try await API.createPost(body: "Bridge truss holds 40 kg \(Self.stamp)", kind: "result")
+    let mine = try await API.posts(by: me)
+    let post = try XCTUnwrap(mine.first { $0.body.hasPrefix("Bridge truss") })
+    XCTAssertNil(post.editedAt)
+    try await API.editPost(post.id, body: "Bridge truss holds 45 kg \(Self.stamp)", me: me)
+    let edited = try await API.post(post.id)
+    XCTAssertEqual(edited.body, "Bridge truss holds 45 kg \(Self.stamp)")
+    XCTAssertNotNil(edited.editedAt, "readers see it was edited")
+
+    // Someone else can't edit or delete it.
+    let josh = try await signIn("josh")
+    do { try await API.editPost(post.id, body: "hijacked", me: josh); XCTFail("edited someone else's post") } catch { XCTAssertEqual(friendly(error), "You can only change your own posts.") }
+    do { try await API.deletePost(post.id); XCTFail("deleted someone else's post") } catch { XCTAssertEqual(friendly(error), "You can only change your own posts.") }
+    try await API.setLike(post.id, true, me: josh)
+
+    // The author deletes it, likes and all.
+    _ = try await signIn("cara")
+    try await API.deletePost(post.id)
+    do { _ = try await API.post(post.id); XCTFail("post still there") } catch {}
+  }
+
   func testFollowAndClubs() async throws {
     let me = try await signIn("maya")
     let found: [Profile] = try await supabase.from("profiles").select(Session.profileColumns).eq("first_name", value: "Cara").limit(1).execute().value
@@ -260,6 +283,6 @@ final class JourneyTests: XCTestCase {
     let me = try await signIn("ben")
     let list = try await API.notifications(me: me)
     XCTAssertFalse(list.isEmpty, "Ben has seeded follow notifications")
-    XCTAssertEqual(list.first?.sentence, "started following you")
+    XCTAssertEqual(list.first { $0.kind == "follow" }?.sentence, "started following you")
   }
 }

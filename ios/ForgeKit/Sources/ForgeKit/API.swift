@@ -19,6 +19,11 @@ enum ExtrasError: LocalizedError {
   var errorDescription: String? { "You can unsend a message for 15 minutes after sending it." }
 }
 
+enum PostError: LocalizedError {
+  case notYours
+  var errorDescription: String? { "You can only change your own posts." }
+}
+
 enum API {
   private struct PostRow: Encodable { let body: String; let kind: String; let tags: [String]; let media: [MediaItem]?; let mentions: [Mention]? }
   private struct CommentRow: Encodable { let postId: String; let body: String }
@@ -92,6 +97,20 @@ enum API {
   static func addComment(_ postId: String, body: String) async throws {
     try await supabase.from("comments").insert(CommentRow(postId: postId, body: body)).execute()
   }
+  // Your own post's text (the database marks it edited). Photos, video and mentions stay as posted.
+  static func editPost(_ id: String, body: String, me: UUID) async throws {
+    struct Body: Encodable { let body: String }
+    struct Ref: Decodable { let id: String }
+    let rows: [Ref] = try await supabase.from("posts").update(Body(body: body)).eq("id", value: id).eq("author_id", value: me).select("id").execute().value
+    if rows.isEmpty { throw PostError.notYours }
+  }
+  // Deleting a post also removes its likes, replies and saves.
+  static func deletePost(_ id: String) async throws {
+    struct Ref: Decodable { let id: String }
+    let rows: [Ref] = try await supabase.from("posts").delete().eq("id", value: id).select("id").execute().value
+    if rows.isEmpty { throw PostError.notYours }
+  }
+
   static func post(_ id: String) async throws -> Post {
     try await supabase.from("posts").select().eq("id", value: id).single().execute().value
   }

@@ -122,8 +122,7 @@ struct ClubView: View {
         if posts == nil { ProgressView().frame(maxWidth: .infinity) }
         if posts?.isEmpty == true { EmptyState(icon: "text.bubble", title: "No posts yet", message: role == nil ? "Join to see and share what members are building." : "Share the first update.") }
         ForEach(feed.items) { item in
-          PostCard(item: item, liked: feed.liked.contains(item.id), saved: feed.saved.contains(item.id),
-                   onLike: { Task { await feed.toggleLike(item.post, me: session.userId!) } }, onSave: { Task { await feed.toggleSave(item.post, me: session.userId!) } })
+          PostCard(item: item, store: feed)
         }
       }
       .padding(16)

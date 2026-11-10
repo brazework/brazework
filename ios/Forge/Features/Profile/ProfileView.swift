@@ -26,8 +26,7 @@ struct ProfileView: View {
           Text(isMe ? "Your posts" : "Posts").font(.headline).foregroundStyle(p.text).padding(.top, 4)
           if feed.items.isEmpty && feed.loaded { Text("Nothing posted yet.").font(.subheadline).foregroundStyle(p.muted) }
           ForEach(feed.items) { item in
-            PostCard(item: item, liked: feed.liked.contains(item.id), saved: feed.saved.contains(item.id),
-                     onLike: { Task { await feed.toggleLike(item.post, me: session.userId!) } }, onSave: { Task { await feed.toggleSave(item.post, me: session.userId!) } })
+            PostCard(item: item, store: feed)
           }
         }
       }

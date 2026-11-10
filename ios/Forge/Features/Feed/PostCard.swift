@@ -2,12 +2,18 @@ import SwiftUI
 
 struct PostCard: View {
   let item: RankedPost
-  var liked: Bool
-  var saved: Bool
-  var onLike: () -> Void
-  var onSave: () -> Void
+  let store: FeedStore
   @Environment(\.palette) private var p
+  @Environment(Session.self) private var session
+  @State private var editing = false
+  @State private var confirmDelete = false
+  @State private var error: String?
   private var post: Post { item.post }
+  private var liked: Bool { store.liked.contains(item.id) }
+  private var saved: Bool { store.saved.contains(item.id) }
+  private var mine: Bool { post.authorId == session.userId }
+  private func onLike() { if let me = session.userId { Task { await store.toggleLike(post, me: me) } } }
+  private func onSave() { if let me = session.userId { Task { await store.toggleSave(post, me: me) } } }
 
   var body: some View {
     VStack(alignment: .leading, spacing: 12) {
@@ -21,7 +27,7 @@ struct PostCard: View {
         VStack(alignment: .leading, spacing: 1) {
           HStack(spacing: 6) {
             Text(post.authorName.isEmpty ? "Forge member" : post.authorName).font(.subheadline.weight(.semibold)).foregroundStyle(p.text).lineLimit(1)
-            Text("· \(timeAgo(post.createdAt))").font(.caption).foregroundStyle(p.faint)
+            Text("· \(timeAgo(post.createdAt))\(post.editedAt != nil ? " · edited" : "")").font(.caption).foregroundStyle(p.faint)
           }
           let club = post.communityName ?? ""
           // The club, unless the headline already names it.
@@ -34,7 +40,17 @@ struct PostCard: View {
         .accessibilityHint("Opens their profile")
         Spacer(minLength: 0)
         KindLabel(kind: post.kind)
+        if mine {
+          Menu {
+            Button("Edit", systemImage: "pencil") { editing = true }
+            Button("Delete", systemImage: "trash", role: .destructive) { confirmDelete = true }
+          } label: {
+            Image(systemName: "ellipsis").font(.subheadline.weight(.semibold)).foregroundStyle(p.muted).frame(width: 32, height: 32).contentShape(Rectangle())
+          }
+          .accessibilityLabel("Post options")
+        }
       }
+      if let error { Text(error).font(.caption).foregroundStyle(p.danger) }
       MentionText(text: post.body, mentions: post.mentions).font(.body).foregroundStyle(p.text2).fixedSize(horizontal: false, vertical: true)
       if let media = post.media, !media.isEmpty { MediaView(items: media, postId: post.id) }
       if !post.tags.isEmpty {
@@ -61,6 +77,16 @@ struct PostCard: View {
     .padding(16)
     .background(p.surface, in: RoundedRectangle(cornerRadius: 24, style: .continuous))
     .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous).strokeBorder(p.border, lineWidth: 0.5))
+    .sheet(isPresented: $editing) { EditPostView(post: post) { store.edited(post.id, body: $0) }.presentationDetents([.medium, .large]) }
+    .confirmationDialog("Delete this post?", isPresented: $confirmDelete, titleVisibility: .visible) {
+      Button("Delete", role: .destructive) { Task { await delete() } }
+    } message: { Text("Its likes, replies and saves go with it. This can't be undone.") }
+  }
+
+  private func delete() async {
+    error = nil
+    do { try await API.deletePost(post.id); withAnimation(.snappy) { store.removed(post.id) } }
+    catch { self.error = friendly(error) }
   }
 
   private func action(_ icon: String, _ count: Int?, tint: Color, label: String, run: @escaping () -> Void) -> some View {
@@ -107,5 +133,50 @@ struct MediaView: View {
     .frame(maxWidth: .infinity)
     .clipped()
     .accessibilityLabel(i.alt ?? "Photo")
+  }
+}
+
+// Edit your post's text. Photos, video and mentions stay as they were posted (as on the web).
+struct EditPostView: View {
+  let post: Post
+  var onSaved: (String) -> Void
+  @Environment(\.dismiss) private var dismiss
+  @Environment(\.palette) private var p
+  @Environment(Session.self) private var session
+  @State private var text: String
+  @State private var saving = false
+  @State private var error: String?
+
+  init(post: Post, onSaved: @escaping (String) -> Void) { self.post = post; self.onSaved = onSaved; _text = State(initialValue: post.body) }
+  private var trimmed: String { text.trimmingCharacters(in: .whitespacesAndNewlines) }
+
+  var body: some View {
+    NavigationStack {
+      VStack(alignment: .leading, spacing: 12) {
+        TextField("Your post", text: $text, axis: .vertical).lineLimit(4...16).font(.body)
+        if let error { Text(error).font(.footnote).foregroundStyle(p.danger) }
+        Spacer()
+        HStack { Spacer(); Text("\(3000 - text.count)").font(.caption.monospacedDigit()).foregroundStyle(text.count > 3000 ? p.danger : p.faint) }
+      }
+      .padding(16)
+      .background(p.bg)
+      .navigationTitle("Edit post")
+      .navigationBarTitleDisplayMode(.inline)
+      .toolbar {
+        ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
+        ToolbarItem(placement: .confirmationAction) {
+          Button { Task { await save() } } label: { if saving { ProgressView() } else { Text("Save").bold() } }
+            .disabled(trimmed.isEmpty || trimmed == post.body || text.count > 3000 || saving)
+        }
+      }
+    }
+  }
+
+  private func save() async {
+    guard let me = session.userId else { return }
+    saving = true; error = nil
+    defer { saving = false }
+    do { try await API.editPost(post.id, body: trimmed, me: me); onSaved(trimmed); dismiss() }
+    catch { self.error = friendly(error) }
   }
 }

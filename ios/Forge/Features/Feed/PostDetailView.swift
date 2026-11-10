@@ -10,13 +10,12 @@ struct PostDetailView: View {
   @State private var sending = false
   @State private var error: String?
   @FocusState private var focused: Bool
+  @Environment(\.dismiss) private var dismiss
 
   var body: some View {
     ScrollView {
       VStack(alignment: .leading, spacing: 14) {
-        PostCard(item: RankedPost(post: current, reason: "", score: 0), liked: feed.liked.contains(post.id), saved: feed.saved.contains(post.id),
-                 onLike: { Task { await feed.toggleLike(current, me: session.userId!) } },
-                 onSave: { Task { await feed.toggleSave(current, me: session.userId!) } })
+        PostCard(item: RankedPost(post: current, reason: "", score: 0), store: feed)
         Text(post.kind == "question" ? "Answers" : "Replies").font(.headline).foregroundStyle(p.text).padding(.top, 6)
         if comments == nil { ProgressView().frame(maxWidth: .infinity) }
         if comments?.isEmpty == true {
@@ -45,7 +44,11 @@ struct PostDetailView: View {
     .navigationBarTitleDisplayMode(.inline)
     .safeAreaInset(edge: .bottom) { composer }
     .task { await load() }
+    .onChange(of: feed.items.contains { $0.id == post.id }) { _, stillThere in if !stillThere && deletedHere { dismiss() } }
   }
+
+  // Deleted from this screen (not just absent from a list that never had it).
+  private var deletedHere: Bool { feed.deleted.contains(post.id) }
 
   private var current: Post { feed.items.first { $0.id == post.id }?.post ?? post }
 

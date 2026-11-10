@@ -100,6 +100,12 @@ final class FeedStore {
     if let i = items.firstIndex(where: { $0.id == id }) { items[i].post.likeCount += like ? 1 : -1 }
   }
 
+  func edited(_ id: String, body: String) {
+    if let i = items.firstIndex(where: { $0.id == id }) { items[i].post.body = body; items[i].post.editedAt = .now }
+  }
+  private(set) var deleted: Set<String> = []
+  func removed(_ id: String) { deleted.insert(id); items.removeAll { $0.id == id } }
+
   func bumpComments(_ id: String, by n: Int = 1) {
     if let i = items.firstIndex(where: { $0.id == id }) { items[i].post.commentCount += n }
   }

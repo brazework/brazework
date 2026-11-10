@@ -36,6 +36,7 @@ func mediaURL(_ path: String) -> URL? {
 func friendly(_ error: Error) -> String {
   if let e = error as? MediaError { return e.errorDescription ?? "" }
   if let e = error as? ExtrasError { return e.errorDescription ?? "" }
+  if let e = error as? PostError { return e.errorDescription ?? "" }
   let text = "\(error)"
   if text.contains("posts_media") { return "Something's wrong with those attachments. Remove them and try again." }
   if text.contains("column \"media\"") || text.contains("'media' column") { return "Photos and video aren't turned on yet." }
