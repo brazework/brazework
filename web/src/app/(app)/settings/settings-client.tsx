@@ -1,11 +1,12 @@
 "use client";
 import { Check, Loader2, Monitor, Moon, Sun } from "lucide-react";
+import { useRouter } from "next/navigation";
 import { useActionState, useState, useSyncExternalStore, useTransition } from "react";
 import { Button, Field, inputCls } from "@/components/ui";
 import { FIELDS, TOPICS, cn, type Profile } from "@/lib/forge";
 import { deleteAllChats } from "@/lib/copilot-chats";
 import { createApiToken, listApiTokens, revokeApiToken, type ApiToken } from "@/lib/api-tokens";
-import { changePassword, saveMessageSettings, saveProfileSettings, unblockPerson, type SettingsState } from "@/lib/settings";
+import { changePassword, deleteAccount, saveMessageSettings, saveProfileSettings, unblockPerson, type SettingsState } from "@/lib/settings";
 import { submitWithoutReset } from "@/lib/submit";
 
 const init: SettingsState = { ok: false, message: "" };
@@ -279,6 +280,32 @@ export function AiToolsSettings({ tokens, endpoint }: { tokens: ApiToken[]; endp
         </ul>
       )}
       <p className="text-xs text-faint">Tokens act as you, read-only. Only a fingerprint of each token is stored. Up to 5 active.</p>
+    </div>
+  );
+}
+
+// Your data: download it all, or delete your account.
+export function YourDataSettings() {
+  const router = useRouter();
+  const [confirm, setConfirm] = useState("");
+  const [state, setState] = useState<SettingsState>({ ok: false, message: "" });
+  const [pending, start] = useTransition();
+  return (
+    <div className="flex flex-col gap-6">
+      <div>
+        <a href="/api/export" download className="inline-flex h-10 items-center rounded-full border border-line px-4 text-sm font-medium transition hover:bg-hover">Download my data</a>
+        <p className="mt-2 text-xs text-muted">A JSON file with your profile, posts, replies, projects, milestones, messages you sent, clubs, follows and saved posts, plus links to your files. Forge never pulls records from your school.</p>
+      </div>
+      <form className="border-t border-line pt-6" onSubmit={(e) => { e.preventDefault(); start(async () => { const r = await deleteAccount(confirm); setState(r); if (r.ok) { router.replace("/"); router.refresh(); } }); }}>
+        <div className="text-sm font-medium text-danger">Delete my account</div>
+        <p className="mt-1 text-xs text-muted">Deletes your profile, posts, replies, projects, milestones and messages, and your uploaded files. Verification records keep only an anonymous entry. Clubs you run with other members need a new owner first (Hand off). This can&apos;t be undone.</p>
+        <label className="mt-3 block text-xs text-muted" htmlFor="delete-confirm">Type DELETE to confirm</label>
+        <div className="mt-1 flex flex-wrap gap-2">
+          <input id="delete-confirm" value={confirm} onChange={(e) => setConfirm(e.target.value)} autoComplete="off" className="h-10 w-40 rounded-full border border-line bg-surface-2 px-3 text-sm" />
+          <button type="submit" disabled={confirm !== "DELETE" || pending} className="h-10 rounded-full bg-danger px-4 text-sm font-medium text-white disabled:opacity-40">{pending ? "Deleting…" : "Delete my account"}</button>
+        </div>
+        {state.message && <p role="status" className={state.ok ? "mt-2 text-sm text-ok" : "mt-2 text-sm text-danger"}>{state.message}</p>}
+      </form>
     </div>
   );
 }

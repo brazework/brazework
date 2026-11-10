@@ -16,6 +16,7 @@ Needs Docker and Google Chrome. Takes a few minutes (most of it is `next build`)
 | `d-search-settings` | Search → settings save and stick → log out → signed-out visitors are sent to log in |
 | `e-chat` | Reactions, replies and unsend in a direct message and a club chat, checked from both sides |
 | `f-dock` | The feed's message dock: unread count, requests stay read-only until accepted, replying in place, hidden on phones |
+| `g-account` | Your data: download everything (your posts are in it), then delete the account with DELETE typed; logging in fails afterwards |
 
 - `local-supabase.sh up|down`: Postgres + GoTrue + PostgREST in Docker, every `supabase/*.sql` file in CI order,
   four test members (`josh|maya|ben|cara@forge.test`, password `forge-test-pass-1`) and `seed.sql`.

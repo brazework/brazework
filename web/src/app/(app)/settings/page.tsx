@@ -7,7 +7,7 @@ import { dbFeatures } from "@/lib/db-features";
 import { listApiTokens } from "@/lib/api-tokens";
 import { env } from "@/lib/env";
 import { getViewer } from "@/lib/supabase/server";
-import { AiToolsSettings, AppearanceSettings, BlockedList, EmberSettings, HelpSettings, MessagingSettings, PasswordForm, ProfileSettings } from "./settings-client";
+import { AiToolsSettings, AppearanceSettings, BlockedList, EmberSettings, HelpSettings, MessagingSettings, PasswordForm, ProfileSettings, YourDataSettings } from "./settings-client";
 import { OnlineStatusSetting, SettingsNav } from "./settings-nav";
 
 export const metadata: Metadata = { title: "Settings" };
@@ -63,6 +63,7 @@ async function Settings() {
       <Section id="blocked" title="Blocked people" desc="People who can't message you or see your activity."><BlockedList people={blocked} /></Section>
       <Section id="ember" title="Ember and your data" desc="What Forge's AI teammate can see, what it can do, and your chats with it."><EmberSettings saving={saving} chats={chatCount.count ?? 0} /></Section>
       {mcpOn && <Section id="ai-tools" title="AI tools (MCP)" desc="Use your Forge from Claude, Cursor and other AI assistants."><AiToolsSettings tokens={tokens} endpoint={`${env.siteUrl}/api/mcp`} /></Section>}
+      <Section id="data" title="Your data" desc="Download everything you've put on Forge, or delete your account."><YourDataSettings /></Section>
       <Section id="help" title="Help" desc="Tours, what's new, and how to reach us."><HelpSettings /></Section>
       <Section id="account" title="Account" desc="Your sign-in email, password and session.">
         <p className="text-sm text-muted">Signed in as <span className="text-text">{user.email}</span></p>

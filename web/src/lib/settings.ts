@@ -60,3 +60,17 @@ export async function changePassword(_: SettingsState, form: FormData): Promise<
   if (error) return { ok: false, message: friendlyError(error) };
   return { ok: true, message: "Password changed." };
 }
+
+// Delete your account (supabase/account.sql): your files first, then everything you authored.
+export async function deleteAccount(confirm: string): Promise<SettingsState> {
+  if (confirm !== "DELETE") return { ok: false, message: "Type DELETE to confirm." };
+  const { supabase, user } = await getViewer();
+  if (!user) return { ok: false, message: "Log in again." };
+  // Your uploads live in your own folder of the media bucket; remove them while you still can.
+  const { data: files } = await supabase.storage.from("media").list(user.id, { limit: 1000 });
+  if (files?.length) await supabase.storage.from("media").remove(files.map((f) => `${user.id}/${f.name}`));
+  const { error } = await supabase.rpc("delete_my_account", { p_confirm: confirm });
+  if (error) return { ok: false, message: error.code === "P0001" ? error.message : friendlyError(error) };
+  await supabase.auth.signOut();
+  return { ok: true, message: "Your account and everything you posted are deleted." };
+}

@@ -16,7 +16,7 @@ fail=0
 for t in ../supabase/tests/*.test.sql; do
   echo "== $t"; docker exec -i forge-e2e-db psql -U postgres -h localhost -d postgres -v ON_ERROR_STOP=1 -q < "$t" 2>&1 | grep -E "FAILED|ERROR|passed" ; [ "${PIPESTATUS[0]}" = 0 ] || fail=1
 done
-for spec in e2e/a-signup-post.cjs e2e/b-clubs-events.cjs e2e/c-messages-projects.cjs e2e/d-search-settings.cjs e2e/e-chat.cjs e2e/f-dock.cjs; do
+for spec in e2e/a-signup-post.cjs e2e/b-clubs-events.cjs e2e/c-messages-projects.cjs e2e/d-search-settings.cjs e2e/e-chat.cjs e2e/f-dock.cjs e2e/g-account.cjs; do
   echo "== $spec"; node "$spec" | tee /tmp/forge-e2e-out.txt; grep -q "^FAIL" /tmp/forge-e2e-out.txt && fail=1
 done
 echo; [ $fail = 0 ] && echo "All end-to-end checks passed." || { echo "Some checks failed: screenshots in e2e/.results/"; exit 1; }

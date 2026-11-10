@@ -60,6 +60,7 @@ The Vercel project lives in Ian's account, so these are his steps. It's already 
    17. `supabase/verification.sql`: verification made airtight: evidence required, no verifying your own team's work, 1–2 verifiers per club, revocation with a reason, disputes (club owner, then Forge admins), weekly limits per officer, an append-only log, and milestones private until the member shows them
    18. `supabase/club-handoff.sql`: officer handoff at the end of term (pass your role to a successor; the club and its history carry over)
    19. `supabase/public-stats.sql`: the landing page's live traction numbers (counts only, no names)
+   20. `supabase/account.sql`: members delete their own account (everything they authored goes; the verification log keeps anonymized records)
 2. **Vercel → Project → Settings → Environment Variables (Production):** these exact names must exist.
    - `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`. The old app also accepted `SUPABASE_URL` or a "publishable key", but the new app reads only these two names. If the project has them under other names, add these two with the same values, or the site loads but nobody can sign in.
    - `GITHUB_TOKEN` (optional): a GitHub token with no scopes. GitHub import works without it, but it raises GitHub's rate limit from 60 to 5,000 requests an hour.

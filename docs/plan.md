@@ -73,8 +73,8 @@ To build:
 
 - 🟡 School email allow-list (pattern only) → configurable list + "Request my school".
 - 🟡 Under-18 gate (app only) → database check + config for a future restricted mode.
-- ⬜ Privacy page: no school records, plainly.
-- ⬜ Data export (JSON + files) and account deletion.
+- 🟡 "Forge never pulls records from your school" stated next to Download my data; a full privacy page ⬜.
+- ✅ Data export (JSON with links to your files) and account deletion (`account.sql`, step 20; SQL and e2e tests).
 - 🟡 Reports (`reports.sql` exists for posts/replies/people/messages) → add projects/milestones; ⬜ admin queue.
 - ✅ Blocking (block_user); ⬜ blocked parties can't view private items.
 - ⬜ Rate limits on sign-ups, posts, messages, verification requests.
