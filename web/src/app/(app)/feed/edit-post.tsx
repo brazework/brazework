@@ -1,8 +1,8 @@
 "use client";
 import { Loader2, X } from "lucide-react";
 import { useEffect, useId, useRef, useState, useTransition } from "react";
-import { Button } from "@/components/ui";
-import { ALL_TOPICS, TOPICS, cn } from "@/lib/forge";
+import { Button, selectPillCls } from "@/components/ui";
+import { ALL_TOPICS, cn, TOPICS } from "@/lib/forge";
 import { editPost } from "@/lib/posts";
 
 const MAX = 3000;
@@ -65,7 +65,7 @@ export function EditPost({ postId, body, tags, onCancel, onSaved }: { postId: st
               id={`${id}-topic`}
               value=""
               onChange={(e) => { const t = e.target.value; if (t && !picked.includes(t)) setPicked([...picked, t]); }}
-              className="h-7 rounded-md border border-line bg-surface px-2 text-xs text-muted"
+              className={cn(selectPillCls, "h-8 text-xs")}
             >
               <option value="">Add a topic…</option>
               {TOPICS.map((g) => (

@@ -1,5 +1,6 @@
 "use client";
 import { ArrowRightLeft, Loader2 } from "lucide-react";
+import { inputCls } from "@/components/ui";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
 import { handOffRole } from "../../../communities/actions";
@@ -34,12 +35,12 @@ export function HandOff({ cid, role, candidates }: { cid: string; role: string; 
           });
         }}>
           <label className="text-sm font-medium" htmlFor="handoff-to">Successor</label>
-          <select id="handoff-to" value={to} onChange={(e) => setTo(e.target.value)} required className="h-11 rounded-2xl border border-line bg-surface-2 px-3 text-sm">
+          <select id="handoff-to" value={to} onChange={(e) => setTo(e.target.value)} required className={inputCls}>
             <option value="">Choose a member</option>
             {candidates.map((c) => <option key={c.uid} value={c.uid}>{c.name} ({c.role})</option>)}
           </select>
           <label className="text-sm font-medium" htmlFor="handoff-note">Note for the club (optional)</label>
-          <input id="handoff-note" value={note} onChange={(e) => setNote(e.target.value)} maxLength={300} placeholder="e.g. Graduating in May; Josh runs it next year" className="h-11 rounded-2xl border border-line bg-surface-2 px-3 text-sm" />
+          <input id="handoff-note" value={note} onChange={(e) => setNote(e.target.value)} maxLength={300} placeholder="e.g. Graduating in May; Josh runs it next year" className={inputCls} />
           {msg && <p role="status" className={msg.ok ? "text-sm text-ok" : "text-sm text-danger"}>{msg.text}</p>}
           <button type="submit" disabled={!to || pending || msg?.ok} className="bg-accent-grad inline-flex h-11 items-center justify-center gap-2 self-start rounded-full px-5 text-sm font-semibold text-on-accent disabled:opacity-50">
             {pending && <Loader2 className="size-4 animate-spin" />} Hand off

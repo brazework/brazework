@@ -1,5 +1,6 @@
 "use client";
 import { Bug, Heart, Lightbulb, Loader2, Send, Sparkles, Wrench } from "lucide-react";
+import { selectPillCls } from "@/components/ui";
 import { useId, useState, useTransition } from "react";
 import { cn } from "@/lib/forge";
 import { sendFeedback, type FeedbackKind } from "@/lib/feedback";
@@ -82,7 +83,7 @@ export function FeedbackForm({ compact = false }: { compact?: boolean }) {
       </div>
       <div className="flex flex-col gap-1">
         <label htmlFor={`${id}-area`} className="text-xs text-faint">About</label>
-        <select id={`${id}-area`} value={area} onChange={(e) => setArea(e.target.value)} className="h-9 rounded-xl border border-line bg-surface px-3 text-sm">
+        <select id={`${id}-area`} value={area} onChange={(e) => setArea(e.target.value)} className={selectPillCls}>
           {AREAS.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
         </select>
       </div>

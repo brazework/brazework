@@ -4,6 +4,8 @@ import { Building2, ChevronDown, Plus, Sparkles, UsersRound } from "lucide-react
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { menuCls, menuItemCls } from "@/components/ui";
+import { cn } from "@/lib/forge";
 
 // "Host an event": straight to the right place. Club officers host from their club's Events tab,
 // organization admins from /org, and Ember can draft the whole thing for an officer to approve.
@@ -24,7 +26,7 @@ export function HostMenu({ clubs, orgAdmin }: { clubs: { id: string; name: strin
     return () => { document.removeEventListener("mousedown", close); document.removeEventListener("keydown", close); window.removeEventListener("resize", shut); };
   }, [open]);
 
-  const item = "flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition hover:bg-hover";
+  const item = cn(menuItemCls, "gap-3 py-2.5");
   return (
     <div ref={ref} className="relative">
       <button
@@ -51,7 +53,7 @@ export function HostMenu({ clubs, orgAdmin }: { clubs: { id: string; name: strin
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -4, scale: 0.98 }}
             transition={{ duration: 0.14 }}
-            className="glass-card absolute z-50 w-72 max-w-[calc(100vw-32px)] rounded-2xl p-1.5 shadow-[var(--shadow)]"
+            className={cn(menuCls, "absolute z-50 w-72 max-w-[calc(100vw-32px)]")}
           >
             {clubs.map((c) => (
               <Link key={c.id} role="menuitem" href={`/c/${c.id}?tab=events`} className={item} onClick={() => setOpen(false)}>

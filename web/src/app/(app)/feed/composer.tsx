@@ -295,7 +295,7 @@ function ProjectPicker({ projects, clubs, projectId, setProjectId, shareTo, setS
   projects: { id: string; title: string }[]; clubs: { id: string; name: string }[];
   projectId: string; setProjectId: (v: string) => void; shareTo: string; setShareTo: (v: string) => void;
 }) {
-  const pill = "h-8 max-w-[11rem] truncate rounded-full border border-line bg-surface pr-7 pl-3 text-xs text-text-2 transition hover:border-line-strong focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]";
+  const pill = "h-8 max-w-[11rem] truncate rounded-full border border-line bg-surface pl-3 text-xs text-text-2 transition hover:border-line-strong focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]";
   if (!projects.length) {
     return <Link href="/profile#projects" className="inline-flex h-8 items-center gap-1 rounded-full border border-dashed border-line px-3 text-xs text-muted transition hover:border-line-strong hover:text-text">+ Add the project you&apos;re building</Link>;
   }

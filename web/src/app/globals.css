@@ -565,3 +565,21 @@ html { -webkit-tap-highlight-color: transparent; }
   .story-root { scroll-snap-type: y proximity; }
   .js-story .story-sec > *, .js-story #founding .grid.max-w-7xl > * > * { opacity: 1 !important; transform: none !important; transition: none !important; }
 }
+
+/* Dropdowns: every native <select> gets Forge's chevron and spacing instead of the browser's arrow,
+   so form fields, pills and filters all match. Unlayered on purpose: it must win over utility padding,
+   or the text runs under the chevron. The option list itself stays native (keyboard, screen readers,
+   phone pickers) and follows color-scheme in dark mode. */
+select:not([multiple]):not([size]) {
+  appearance: none;
+  -webkit-appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238a8a8a' stroke-width='2.25' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.7rem center;
+  background-size: 0.85rem;
+  padding-right: 2rem;
+  text-overflow: ellipsis;
+  cursor: pointer;
+}
+select:disabled { cursor: not-allowed; }
+select option { background-color: var(--surface); color: var(--text); }

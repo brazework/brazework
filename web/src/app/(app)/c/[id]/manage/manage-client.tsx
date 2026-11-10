@@ -1,7 +1,7 @@
 "use client";
 import { Loader2 } from "lucide-react";
 import { useActionState, useState, useTransition } from "react";
-import { Button, Field, inputCls } from "@/components/ui";
+import { Button, Field, inputCls, selectPillCls } from "@/components/ui";
 import { LIMITS, PRIVACY, ROLE_LABEL, type Role } from "@/lib/communities";
 import { cn } from "@/lib/forge";
 import { submitWithoutReset } from "@/lib/submit";
@@ -35,7 +35,7 @@ export function MemberActions({ cid, uid, name, current, assignable, canRemove }
         <label className="sr-only" htmlFor={`role-${uid}`}>Role for {name}</label>
       )}
       {assignable.length > 0 && (
-        <select id={`role-${uid}`} defaultValue={current} disabled={pending} onChange={(e) => run(() => setMemberRole(cid, uid, current, e.target.value as Role))} className="h-9 rounded-full border border-line bg-surface-2 px-3 text-sm">
+        <select id={`role-${uid}`} defaultValue={current} disabled={pending} onChange={(e) => run(() => setMemberRole(cid, uid, current, e.target.value as Role))} className={selectPillCls}>
           {assignable.map((r) => <option key={r} value={r}>{ROLE_LABEL[r]}</option>)}
         </select>
       )}

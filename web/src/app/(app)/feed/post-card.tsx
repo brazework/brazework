@@ -4,7 +4,7 @@ import { reportThis } from "@/components/report/report-dialog";
 import { ArrowUp, Bookmark, Check, FolderGit2, Heart, Link2, Loader2, Lock, MessageSquare, MoreHorizontal, Pencil, Sparkles, Trash2, Flag } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useOptimistic, useRef, useState, useTransition } from "react";
-import { Avatar } from "@/components/ui";
+import { Avatar, menuCls, menuItemCls } from "@/components/ui";
 import { POST_KINDS, cn, timeAgo, type Post, type PostProject } from "@/lib/forge";
 import { MediaGrid } from "@/components/media/media-grid";
 import { avatarSrc } from "@/lib/media";
@@ -267,9 +267,9 @@ function MoreMenu({ items }: { items: { label: string; icon: typeof Heart; onSel
       </button>
       <AnimatePresence>
         {open && (
-          <motion.div role="menu" initial={{ opacity: 0, y: 4, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 4, scale: 0.98 }} transition={{ duration: 0.12 }} className="absolute bottom-full left-0 z-30 mb-1 w-44 overflow-hidden rounded-2xl border border-line bg-surface p-1 shadow-[var(--shadow)]">
+          <motion.div role="menu" initial={{ opacity: 0, y: 4, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: 4, scale: 0.98 }} transition={{ duration: 0.12 }} className={cn(menuCls, "absolute bottom-full left-0 z-30 mb-1 w-48 overflow-hidden")}>
             {items.map((it) => (
-              <button key={it.label} role="menuitem" type="button" onClick={() => { it.onSelect(); if (it.label !== "Copy link") setOpen(false); }} className={cn("flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-sm transition hover:bg-hover", it.danger ? "text-danger" : "text-text-2")}>
+              <button key={it.label} role="menuitem" type="button" onClick={() => { it.onSelect(); if (it.label !== "Copy link") setOpen(false); }} className={cn(menuItemCls, it.danger && "text-danger hover:text-danger")}>
                 <it.icon className="size-4" /> {it.label}
               </button>
             ))}

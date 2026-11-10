@@ -73,5 +73,12 @@ export function Field({ label, hint, optional, error, count, max, children }: { 
   );
 }
 
+// Pop-up menus (a post's "...", Host an event): one surface and one item style everywhere.
+export const menuCls = "rounded-2xl border border-line bg-surface p-1.5 shadow-[0_18px_44px_-16px_rgb(0_0_0/0.4)]";
+export const menuItemCls = "flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-sm text-text-2 transition hover:bg-hover hover:text-text focus-visible:bg-hover focus-visible:outline-none";
+// Dropdowns: selectCls for form fields (same as inputs), selectPillCls for compact inline pickers.
+// The chevron and spacing come from globals.css, for every <select>.
+export const selectPillCls =
+  "h-9 max-w-full truncate rounded-full border border-line bg-surface pl-3.5 text-sm text-text-2 transition hover:border-line-strong hover:text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-50";
 export const inputCls =
   "h-11 w-full rounded-xl border border-line bg-surface/70 px-3.5 text-[15px] text-text shadow-[inset_0_1px_2px_rgba(0,0,0,0.04)] placeholder:text-faint outline-none transition hover:border-line-strong focus:border-text focus:bg-surface focus:ring-4 focus:ring-text/10 aria-[invalid=true]:border-danger aria-[invalid=true]:ring-danger/15 disabled:cursor-not-allowed disabled:opacity-60";

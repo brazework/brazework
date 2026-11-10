@@ -1,8 +1,9 @@
 "use client";
 import { Loader2, UserPlus, X } from "lucide-react";
+import { cn } from "@/lib/forge";
 import Link from "next/link";
 import { useState, useTransition } from "react";
-import { Avatar } from "@/components/ui";
+import { Avatar, selectPillCls } from "@/components/ui";
 import { addTeammate, removeTeammate } from "@/lib/project-team";
 
 type Person = { id: string; first: string; last: string; headline?: string };
@@ -33,7 +34,7 @@ export function TeamList({ projectId, team, candidates, own, me }: { projectId: 
       {own && (
         left.length ? (
           <div className="mt-1 flex items-center gap-2">
-            <select id="team-add" value={pick} onChange={(e) => setPick(e.target.value)} aria-label="Add a teammate" className="h-9 min-w-0 flex-1 rounded-full border border-line bg-surface px-3 text-sm">
+            <select id="team-add" value={pick} onChange={(e) => setPick(e.target.value)} aria-label="Add a teammate" className={cn(selectPillCls, "min-w-0 flex-1")}>
               <option value="">Add a teammate…</option>
               {left.map((c) => <option key={c.id} value={c.id}>{`${c.first} ${c.last}`.trim()}</option>)}
             </select>
