@@ -75,6 +75,10 @@ const { step, browser, as, go, summary } = require("./lib.cjs");
     await josh.getByText("Winners", { exact: true }).waitFor();
     await josh.getByRole("link", { name: "Recovery avionics" }).waitFor();
   }, josh);
+  await step("the win shows on Ben's profile", async () => {
+    await go(josh, "/u/" + process.env.BEN_ID);
+    await josh.locator('[aria-label="Challenge wins"]').getByText(/1st · Acme Aerospace challenge/).first().waitFor({ timeout: 15000 });
+  }, josh);
   summary();
   await b.close();
 })();

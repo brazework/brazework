@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { BadgeCheck, BarChart3, FileText, FolderGit2, Lock, MapPin, MessageSquare } from "lucide-react";
+import { BadgeCheck, BarChart3, FileText, FolderGit2, Lock, MapPin, MessageSquare, Trophy } from "lucide-react";
 import { CommunityBadge } from "../../communities/_components/badge";
 import { ActivityGrid } from "@/components/profile/activity";
 import { requestTime } from "@/lib/forge";
@@ -78,11 +78,15 @@ async function ProfileView({ params }: { params: PageProps<"/u/[id]">["params"] 
   const projectRows = (projectsRes.data ?? []) as unknown as (Omit<ProjectView, "details" | "link"> & { tools?: string[] })[];
   const following = ((myFollows.data ?? []) as { target: string }[]).map((r) => r.target).filter((t) => t !== id);
   // Second round: what depends on the first (your likes on these posts, project write-ups, mutual follows).
-  const [likesRes, detailsRes, mutualRes] = await Promise.all([
+  const [likesRes, detailsRes, mutualRes, winsRes] = await Promise.all([
     posts.length ? supabase.from("likes").select("post_id").eq("user_id", user.id).in("post_id", posts.map((x) => x.id)) : Promise.resolve({ data: [] }),
     projectRows.length ? supabase.from("project_details").select("project_id, details, link").in("project_id", projectRows.map((x) => x.id)) : Promise.resolve({ data: [] }),
     following.length ? supabase.from("follows").select("follower, follower_info", { count: "exact" }).eq("target", id).in("follower", following.slice(0, 300)).limit(2) : Promise.resolve({ data: [], count: 0 }),
+    // Challenge placements (supabase/challenges.sql): public once the sponsor announces winners.
+    f.challenges ? supabase.from("challenge_entries").select("challenge_id, placement, challenges(title, status, organizations(name))").eq("uid", id).not("placement", "is", null).limit(20) : Promise.resolve({ data: [] }),
   ]);
+  type Win = { challenge_id: string; placement: number; challenges: { title: string; status: string; organizations: { name: string } | null } | null };
+  const wins = ((winsRes.data ?? []) as unknown as Win[]).filter((w) => w.challenges?.status === "closed").sort((a, b) => a.placement - b.placement);
   const liked = new Set(((likesRes.data ?? []) as { post_id: string }[]).map((l) => l.post_id));
   const details = new Map(((detailsRes.data ?? []) as { project_id: string; details: string; link: string }[]).map((d) => [d.project_id, d]));
   const byId = Object.fromEntries(projectRows.map((r) => [r.id, r]));
@@ -172,6 +176,15 @@ async function ProfileView({ params }: { params: PageProps<"/u/[id]">["params"] 
                 </li>
               ))}
             </ul>
+            {wins.length > 0 && (
+              <div className="flex flex-wrap gap-1.5" aria-label="Challenge wins">
+                {wins.slice(0, 3).map((w) => (
+                  <Link key={w.challenge_id} href={`/challenges/${w.challenge_id}`} title={w.challenges?.title} className="inline-flex max-w-full items-center gap-1.5 rounded-full border border-line-strong bg-surface px-3 py-1 text-xs font-medium transition hover:bg-hover">
+                    <Trophy className="size-3.5 shrink-0" /> <span className="truncate">{["1st", "2nd", "3rd"][w.placement - 1]} · {w.challenges?.organizations?.name ?? "Sponsor"} challenge</span>
+                  </Link>
+                ))}
+              </div>
+            )}
             {verifiedBy.length > 0 && (
               <div className="flex flex-wrap gap-1.5" aria-label="Work verified by clubs">
                 {verifiedBy.slice(0, 3).map(([cid, v]) => (

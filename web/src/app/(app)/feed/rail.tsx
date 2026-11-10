@@ -1,5 +1,5 @@
-import { eventWithHost } from "@/lib/db-features";
-import { CalendarDays, Plus, Users } from "lucide-react";
+import { dbFeatures, eventWithHost } from "@/lib/db-features";
+import { CalendarDays, Plus, Trophy, Users } from "lucide-react";
 import Link from "next/link";
 import { DROP_AFTER_MS, dateParts, withHost, type HostedEvent } from "@/lib/events";
 import { requestTime } from "@/lib/forge";
@@ -28,13 +28,19 @@ export async function FeedRail() {
   const now = requestTime();
   const cutoff = new Date(now - DROP_AFTER_MS).toISOString();
   const since = new Date(now - 14 * 864e5).toISOString();
-  const [mine, ev, going, recent, pool] = await Promise.all([
+  const [mine, ev, going, recent, pool, ch] = await Promise.all([
     supabase.from("community_members").select("role, communities(id, name, member_count)").eq("uid", user.id).limit(6),
     supabase.from("events").select(await eventWithHost()).eq("status", "published").gt("ends_at", cutoff).order("starts_at", { ascending: true }).limit(4),
     supabase.from("event_rsvps").select("event_id").eq("user_id", user.id).limit(500),
     supabase.from("posts").select("tags").is("community_id", null).gt("created_at", since).limit(300),
     newsPool().catch(() => []),
+    // Open sponsored challenges (supabase/challenges.sql), soonest deadline first.
+    (await dbFeatures()).challenges
+      ? supabase.from("challenges").select("id, title, prize, deadline, organizations(name)").eq("status", "open").gt("deadline", new Date(now).toISOString()).order("deadline", { ascending: true }).limit(3)
+      : Promise.resolve({ data: [] }),
   ]);
+  const challenges: RailChallenge[] = ((ch.data ?? []) as unknown as { id: string; title: string; prize: string; deadline: string; organizations: { name: string } | null }[])
+    .map((c) => ({ id: c.id, title: c.title, sponsor: c.organizations?.name ?? "Sponsor", prize: c.prize, days: Math.max(0, Math.ceil((Date.parse(c.deadline) - now) / 864e5)) }));
   // STEM news from around the web, on your interests first.
   const news = pickNews(pool, profile.interests ?? [], profile.field ?? "", 6, now);
   type C = { id: string; name: string; member_count: number };
@@ -49,13 +55,14 @@ export async function FeedRail() {
   for (const r of (recent.data ?? []) as { tags: string[] }[]) for (const t of r.tags ?? []) counts.set(t, (counts.get(t) ?? 0) + 1);
   const trending = [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 6);
 
-  return <RailView trending={trending} news={news} hasInterests={(profile.interests ?? []).length > 0} clubs={clubs} events={events} going={goingSet} />;
+  return <RailView trending={trending} news={news} hasInterests={(profile.interests ?? []).length > 0} clubs={clubs} events={events} going={goingSet} challenges={challenges} />;
 }
 
 type Club = { id: string; name: string; member_count: number };
+type RailChallenge = { id: string; title: string; sponsor: string; prize: string; days: number };
 
 // The rail's markup, separate from its queries so it can be previewed with sample data.
-export function RailView({ trending, news = [], hasInterests = false, clubs, events, going: goingSet }: { trending: [string, number][]; news?: NewsPick[]; hasInterests?: boolean; clubs: Club[]; events: HostedEvent[]; going: Set<string> }) {
+export function RailView({ trending, news = [], hasInterests = false, clubs, events, going: goingSet, challenges = [] }: { trending: [string, number][]; news?: NewsPick[]; hasInterests?: boolean; clubs: Club[]; events: HostedEvent[]; going: Set<string>; challenges?: RailChallenge[] }) {
   return (
     <div className="sticky top-8 flex flex-col gap-4 min-[137.5rem]:grid min-[137.5rem]:grid-cols-2 min-[137.5rem]:items-start">
       <UpdatesPanel />
@@ -105,6 +112,22 @@ export function RailView({ trending, news = [], hasInterests = false, clubs, eve
         </ul>
         {!events.length && <p className="mt-2 text-sm text-muted">Nothing scheduled yet.</p>}
       </section>
+
+      {challenges.length > 0 && (
+        <section className={box}>
+          <Head icon={Trophy} title="Open challenges" href="/challenges" />
+          <ul className="mt-3 flex flex-col gap-1">
+            {challenges.map((c) => (
+              <li key={c.id}>
+                <Link href={`/challenges/${c.id}`} className="block rounded-xl p-1.5 transition hover:bg-hover">
+                  <span className="block truncate text-sm font-medium">{c.title}</span>
+                  <span className="block truncate text-xs text-faint">{c.sponsor}{c.prize ? ` · ${c.prize}` : ""} · {c.days} {c.days === 1 ? "day" : "days"} left</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { BadgeCheck, Building2, Search, Send, UsersRound } from "lucide-react";
+import { BadgeCheck, Building2, Search, Send, Trophy, UsersRound } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
@@ -67,6 +67,16 @@ async function Talent({ searchParams }: { searchParams: PageProps<"/talent">["se
     : { data: [] };
   const all = buildBuilders(rows, (peopleData ?? []) as unknown as Person[]);
   const list = rankBuilders(all, { q, club, openTo, min });
+  // Challenge wins (public once announced) next to the verified work.
+  const shownIds = list.slice(0, 60).map((b) => b.person.id);
+  const { data: winRows } = f.challenges && shownIds.length
+    ? await supabase.from("challenge_entries").select("uid, placement, challenges(status, organizations(name))").in("uid", shownIds).not("placement", "is", null).limit(300)
+    : { data: [] };
+  const wins = new Map<string, string[]>();
+  for (const w of (winRows ?? []) as unknown as { uid: string; placement: number; challenges: { status: string; organizations: { name: string } | null } | null }[]) {
+    if (w.challenges?.status !== "closed") continue;
+    wins.set(w.uid, [...(wins.get(w.uid) ?? []), `${["1st", "2nd", "3rd"][w.placement - 1]} · ${w.challenges.organizations?.name ?? "Sponsor"}`]);
+  }
   const clubs = [...new Map(all.flatMap((b) => b.clubs).map((c) => [c.id, c])).values()].sort((a, b) => a.name.localeCompare(b.name));
   const href = (o: Record<string, string>) => {
     const p = new URLSearchParams({ ...(q && { q }), ...(club && { club }), ...(openTo && { open: openTo }), ...(min > 1 && { min: String(min) }), ...o });
@@ -122,6 +132,7 @@ async function Talent({ searchParams }: { searchParams: PageProps<"/talent">["se
                   </li>
                 ))}
               </ul>
+              {wins.has(b.person.id) && <div className="flex flex-wrap gap-1">{wins.get(b.person.id)!.slice(0, 2).map((w) => <span key={w} className="inline-flex items-center gap-1 rounded-full border border-line-strong px-2.5 py-0.5 text-xs font-medium"><Trophy className="size-3" /> {w} challenge</span>)}</div>}
               {b.skills.length > 0 && <div className="flex flex-wrap gap-1">{b.skills.slice(0, 6).map((s) => <span key={s} className={chipCls}>{s}</span>)}</div>}
               <div className="mt-auto flex flex-wrap items-center gap-2 text-xs text-faint">
                 <span className="inline-flex min-w-0 flex-1 items-center gap-1 truncate"><UsersRound className="size-3.5 shrink-0" /> <span className="truncate">{b.clubs.map((c) => c.name).join(", ")}</span></span>
