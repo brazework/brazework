@@ -52,7 +52,7 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
     supabase.from("posts").select(await postSelect()).eq("community_id", id).eq("status", "visible").order("created_at", { ascending: false }).limit(60),
     isMod ? supabase.from("posts").select(await postSelect()).eq("community_id", id).eq("status", "held").order("created_at", { ascending: false }).limit(100) : Promise.resolve({ data: [] }),
   ]);
-  const { clubEvents, media: mediaEnabled, invites: invitesOn, groupChats } = await dbFeatures();
+  const { clubEvents, media: mediaEnabled, invites: invitesOn, groupChats, videoCaptions: captionsEnabled } = await dbFeatures();
   const { data: evRows } = clubEvents
     ? await supabase.from("events").select(await eventWithHost()).eq("community_id", id).order("starts_at", { ascending: true }).limit(100)
     : { data: [] };
@@ -192,7 +192,7 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
       <div className="mt-6 flex flex-col gap-4">
         {tab === "posts" && (
           <>
-            {me ? <CommunityComposer cid={c.id} first={profile.first_name} last={profile.last_name} interests={profile.interests ?? []} topics={c.topics ?? []} userId={user.id} mediaEnabled={mediaEnabled} avatarSrc={avatarSrc(profile)} /> : (
+            {me ? <CommunityComposer cid={c.id} first={profile.first_name} last={profile.last_name} interests={profile.interests ?? []} topics={c.topics ?? []} userId={user.id} mediaEnabled={mediaEnabled} captionsEnabled={captionsEnabled} avatarSrc={avatarSrc(profile)} /> : (
               <p className="rounded-2xl border border-dashed border-line px-4 py-3 text-sm text-muted">{c.privacy === "public" ? "Join to post and comment." : "Members can post here. Ask to join to take part."}</p>
             )}
             {posts.map((p, i) => (

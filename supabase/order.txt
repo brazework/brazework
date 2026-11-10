@@ -44,3 +44,4 @@ blocking-content
 admin-retention
 grad-year
 club-claims
+video-captions

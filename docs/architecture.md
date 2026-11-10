@@ -91,7 +91,7 @@ public/                 The original vanilla app, kept until production is confi
 
 ## Data and security model
 
-- **Schema:** 42 additive SQL files, run in `supabase/order.txt` order. Production still needs the newer ones: steps 5–35 in [next-migration.md](next-migration.md) (Linear FIX-25). Tables, who can do what, and known limits: [data-model.md](data-model.md).
+- **Schema:** 42 additive SQL files, run in `supabase/order.txt` order. Production still needs the newer ones: steps 5–36 in [next-migration.md](next-migration.md) (Linear FIX-25). Tables, who can do what, and known limits: [data-model.md](data-model.md).
 - **Row-level security on every table.** The health check fails loudly if one is missing.
 - **Column grants:** members can insert and update only the columns meant for them. For example, a post's author, counts and timestamps are set by the database, never by the client.
 - **Security-definer functions** for actions that need checks across tables: verifying a milestone, publishing a challenge, reports, blocking. Each starts by checking who's calling.

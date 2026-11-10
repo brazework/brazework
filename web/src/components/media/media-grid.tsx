@@ -1,8 +1,8 @@
 "use client";
 import { AnimatePresence, motion } from "motion/react";
-import { ChevronLeft, ChevronRight, ChevronsLeftRight, Crosshair, Flag, Gauge, Maximize, Minimize, Pause, Play, Repeat, Volume2, VolumeX, X } from "lucide-react";
+import { Captions, ChevronLeft, ChevronRight, ChevronsLeftRight, Crosshair, Flag, Gauge, Maximize, Minimize, Pause, Play, Repeat, Volume2, VolumeX, X } from "lucide-react";
 import Image from "next/image";
-import { useCallback, useEffect, useId, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/forge";
 import { mediaUrl, type MediaItem } from "@/lib/media";
 import { Pin, fmtTime } from "./annotate";
@@ -158,6 +158,11 @@ function TestRunPlayer({ v }: { v: MediaItem }) {
   const finished = useRef(false);
   const [muted, setMuted] = useState(true);
   const [blocked, setBlocked] = useState(false); // the browser refused sound; we're playing muted
+  // Captions (video-captions.sql): a track from the stored WebVTT, on by default (feeds start muted).
+  const ccUrl = useMemo(() => (v.cc ? URL.createObjectURL(new Blob([v.cc], { type: "text/vtt" })) : null), [v.cc]);
+  useEffect(() => () => { if (ccUrl) URL.revokeObjectURL(ccUrl); }, [ccUrl]);
+  const [ccOn, setCcOn] = useState(true);
+  useEffect(() => { const track = ref.current?.textTracks[0]; if (track) track.mode = ccOn ? "showing" : "hidden"; }, [ccOn, ccUrl]);
   const id = useRef(useId());
   const [flash, setFlash] = useState<{ n: number; play: boolean } | null>(null);
   // Speed and full screen show when *you* paused it, not on a video that just hasn't played yet.
@@ -259,7 +264,9 @@ function TestRunPlayer({ v }: { v: MediaItem }) {
           onDurationChange={(e) => { if (Number.isFinite(e.currentTarget.duration)) setDur(e.currentTarget.duration); }}
           className={full ? "h-full w-full bg-black object-contain" : cn("mx-auto block bg-black", portrait ? "max-h-[70svh] w-auto max-w-full" : "max-h-[560px] w-full")}
           style={!full && v.w && v.h ? { aspectRatio: `${v.w} / ${v.h}` } : undefined}
-        />
+        >
+          {ccUrl && <track kind="captions" srcLang="en" label="Captions" src={ccUrl} default />}
+        </video>
         {/* A quick play/pause pulse where you tapped. */}
         <AnimatePresence>
           {flash && (
@@ -269,6 +276,11 @@ function TestRunPlayer({ v }: { v: MediaItem }) {
           )}
         </AnimatePresence>
         {!playing && !flash && <span className="pointer-events-none absolute top-1/2 left-1/2 grid size-16 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-black shadow-2xl" aria-hidden="true"><Play className="ml-1 size-7 fill-current" /></span>}
+        {ccUrl && (
+          <button type="button" onClick={() => setCcOn((on) => !on)} aria-pressed={ccOn} aria-label={ccOn ? "Hide captions" : "Show captions"} className={cn("absolute bottom-4 left-3 z-10 grid size-8 place-items-center rounded-full backdrop-blur transition active:scale-90", ccOn ? "bg-white text-black" : "bg-black/55 text-white")}>
+            <Captions className="size-4" />
+          </button>
+        )}
         {/* Sound: always reachable, small. */}
         <button type="button" onClick={() => { const on = muted; const x = el(); if (x) { x.muted = !on; if (on && x.paused && !userPaused.current) void x.play(); } setMuted(!on); setBlocked(false); setSoundOn(on); }} aria-label={muted ? "Turn sound on" : "Mute"} className={cn("absolute right-3 bottom-4 z-10 inline-flex h-8 items-center gap-1.5 rounded-full bg-black/55 text-white backdrop-blur transition active:scale-90", blocked && muted ? "px-3 text-xs font-medium" : "w-8 justify-center")}>
           {muted ? <VolumeX className="size-4" /> : <Volume2 className="size-4" />}{blocked && muted && " Tap for sound"}
@@ -307,6 +319,12 @@ function TestRunPlayer({ v }: { v: MediaItem }) {
             );
           })}
         </ol>
+      )}
+      {v.tx && (
+        <details className="mt-3 rounded-2xl border border-line bg-surface-2/60 px-4 py-2.5 text-sm">
+          <summary className="cursor-pointer font-medium text-text-2">Transcript</summary>
+          <p className="mt-2 leading-relaxed whitespace-pre-wrap text-text-2">{v.tx}</p>
+        </details>
       )}
     </div>
   );

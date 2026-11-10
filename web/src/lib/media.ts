@@ -1,4 +1,5 @@
 import { env } from "@/lib/env";
+import { TRANSCRIPT_MAX, toVtt } from "@/lib/captions";
 
 // Photos and video (supabase/media.sql). Rows store a path inside the public "media" bucket,
 // always "<owner id>/<file>"; this turns it into a URL.
@@ -10,12 +11,13 @@ export type Marker = { s: number; t: string };
  * - notes: numbered callouts pinned on a photo, x/y as fractions of its size
  * - marks: labelled moments on a video (seconds), shown on its timeline
  * - cmp: set on both photos of a 2-photo post to show them as a before/after slider
+ * - cc: captions (WebVTT text) shown on a video; tx: a transcript shown under it (video-captions.sql)
  */
-export type MediaItem = { type: "image" | "video"; path: string; w?: number; h?: number; alt?: string; notes?: Callout[]; marks?: Marker[]; cmp?: boolean };
+export type MediaItem = { type: "image" | "video"; path: string; w?: number; h?: number; alt?: string; notes?: Callout[]; marks?: Marker[]; cmp?: boolean; cc?: string; tx?: string };
 
 export const MAX_CALLOUTS = 6;
 export const MAX_MARKERS = 8;
-const KEYS = new Set(["type", "path", "w", "h", "alt", "notes", "marks", "cmp"]);
+const KEYS = new Set(["type", "path", "w", "h", "alt", "notes", "marks", "cmp", "cc", "tx"]);
 
 export const MAX_IMAGES = 4;
 export const IMAGE_MAX_BYTES = 20 * 1024 * 1024; // before we shrink it in the browser
@@ -68,6 +70,17 @@ export function validMedia(value: unknown, ownerId: string): MediaItem[] | null 
         marks.push({ s: Math.round(m.s * 10) / 10, t });
       }
       if (marks.length) item.marks = marks.sort((a, b) => a.s - b.s);
+    }
+    // Captions (WebVTT, from a .vtt or .srt file) and a transcript, on videos only (video-captions.sql).
+    if (o.cc !== undefined && o.cc !== "") {
+      const cc = type === "video" ? toVtt(o.cc) : null;
+      if (!cc) return null;
+      item.cc = cc;
+    }
+    if (o.tx !== undefined && o.tx !== "") {
+      const tx = type === "video" ? text(o.tx, TRANSCRIPT_MAX) : null;
+      if (!tx) return null;
+      item.tx = tx;
     }
     if (o.cmp !== undefined) {
       if (typeof o.cmp !== "boolean") return null;

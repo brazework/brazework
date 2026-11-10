@@ -1,8 +1,9 @@
 "use client";
 import { AnimatePresence, motion } from "motion/react";
-import { Crosshair, Flag, Play, Trash2, X } from "lucide-react";
-import { useEffect, useRef, useState } from "react";
+import { Captions, Crosshair, Flag, Play, Trash2, X } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Button, inputCls } from "@/components/ui";
+import { CAPTIONS_MAX, TRANSCRIPT_MAX, cueTexts, toVtt } from "@/lib/captions";
 import { cn } from "@/lib/forge";
 import { MAX_CALLOUTS, MAX_MARKERS, type Callout, type MediaItem, type Marker } from "@/lib/media";
 
@@ -116,8 +117,23 @@ export function CalloutEditor({ src, item, onSave, onClose }: { src: string; ite
 }
 
 // Scrub to a moment, add a marker, name it: "0:03.2 Ignition".
-export function MarkerEditor({ src, item, onSave, onClose }: { src: string; item: MediaItem; onSave: (patch: Pick<MediaItem, "marks">) => void; onClose: () => void }) {
+// captions: offer captions and a transcript (once supabase/video-captions.sql has run).
+export function MarkerEditor({ src, item, onSave, onClose, captions = false }: { src: string; item: MediaItem; onSave: (patch: Pick<MediaItem, "marks" | "cc" | "tx">) => void; onClose: () => void; captions?: boolean }) {
   const [marks, setMarks] = useState<Marker[]>(item.marks ?? []);
+  const [cc, setCc] = useState<string | undefined>(item.cc);
+  const [tx, setTx] = useState(item.tx ?? "");
+  const [ccError, setCcError] = useState("");
+  // The preview plays with the captions on, so a member sees what viewers will.
+  const ccUrl = useMemo(() => (cc ? URL.createObjectURL(new Blob([cc], { type: "text/vtt" })) : null), [cc]);
+  useEffect(() => () => { if (ccUrl) URL.revokeObjectURL(ccUrl); }, [ccUrl]);
+  const readCaptions = async (file: File | undefined) => {
+    setCcError("");
+    if (!file) return;
+    if (file.size > CAPTIONS_MAX * 4) { setCcError("That file is too big for captions."); return; }
+    const vtt = toVtt(await file.text());
+    if (!vtt) { setCcError("That isn't a captions file. Use a .vtt or .srt file with timed lines."); return; }
+    setCc(vtt);
+  };
   const [now, setNow] = useState(0);
   const video = useRef<HTMLVideoElement>(null);
   const inputs = useRef<(HTMLInputElement | null)[]>([]);
@@ -132,9 +148,11 @@ export function MarkerEditor({ src, item, onSave, onClose }: { src: string; item
     requestAnimationFrame(() => inputs.current[i]?.focus());
   };
   return (
-    <Sheet title="Timeline markers" onClose={onClose}>
+    <Sheet title={captions ? "Markers and captions" : "Timeline markers"} onClose={onClose}>
       <p className="mb-3 flex items-center gap-2 text-sm text-muted"><Flag className="size-4" /> Scrub to a moment and add a marker ({marks.length}/{MAX_MARKERS}). Viewers can jump straight to it.</p>
-      <video ref={video} src={src} controls playsInline onTimeUpdate={(e) => setNow(e.currentTarget.currentTime)} className="max-h-[48vh] w-full rounded-2xl bg-black" />
+      <video ref={video} src={src} controls playsInline onTimeUpdate={(e) => setNow(e.currentTarget.currentTime)} className="max-h-[48vh] w-full rounded-2xl bg-black">
+        {ccUrl && <track kind="captions" srcLang="en" label="Captions" src={ccUrl} default />}
+      </video>
       <div className="mt-3 flex items-center gap-3">
         <Button type="button" onClick={add} disabled={full}><Flag className="size-4" /> Add marker at {fmtTime(now)}</Button>
       </div>
@@ -159,9 +177,29 @@ export function MarkerEditor({ src, item, onSave, onClose }: { src: string; item
           ))}
         </ol>
       )}
+      {captions && (
+        <section className="mt-6 border-t border-line pt-4" aria-label="Captions and transcript">
+          <p className="flex items-center gap-2 text-sm font-medium text-text-2"><Captions className="size-4" /> Captions and transcript</p>
+          <p className="mt-1 text-xs text-faint">For people who can&apos;t hear the video, or are watching with the sound off. Most editors and YouTube Studio export a .vtt or .srt file.</p>
+          {cc ? (
+            <div className="mt-3 flex items-start gap-2 rounded-2xl bg-surface-2 p-3 text-xs text-text-2">
+              <span className="min-w-0 flex-1"><span className="font-medium text-text">{cueTexts(cc).length} captions added.</span> {cueTexts(cc).slice(0, 2).join(" · ")}</span>
+              <button type="button" onClick={() => setCc(undefined)} className="shrink-0 text-faint hover:text-danger">Remove</button>
+            </div>
+          ) : (
+            <label className="mt-3 inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-full border border-line px-3 text-xs font-medium transition hover:bg-hover">
+              <Captions className="size-3.5" /> Add captions file (.vtt or .srt)
+              <input type="file" accept=".vtt,.srt,text/vtt,application/x-subrip" className="sr-only" onChange={(e) => { void readCaptions(e.target.files?.[0]); e.target.value = ""; }} />
+            </label>
+          )}
+          {ccError && <p role="alert" className="mt-2 text-xs text-danger">{ccError}</p>}
+          <label className="mt-4 block text-xs text-muted" htmlFor="video-transcript">Transcript (optional), shown under the video</label>
+          <textarea id="video-transcript" value={tx} onChange={(e) => setTx(e.target.value)} maxLength={TRANSCRIPT_MAX} rows={3} placeholder="What's said and what happens, in order." className={cn(inputCls, "mt-1 h-auto py-2.5")} />
+        </section>
+      )}
       <div className="mt-5 flex justify-end gap-2">
         <Button type="button" variant="ghost" onClick={onClose}>Cancel</Button>
-        <Button type="button" onClick={() => { onSave({ marks: marks.filter((m) => m.t.trim()).map((m) => ({ ...m, t: m.t.trim() })) }); onClose(); }}>Save</Button>
+        <Button type="button" onClick={() => { onSave({ marks: marks.filter((m) => m.t.trim()).map((m) => ({ ...m, t: m.t.trim() })), ...(captions ? { cc, tx: tx.trim() || undefined } : {}) }); onClose(); }}>Save</Button>
       </div>
     </Sheet>
   );

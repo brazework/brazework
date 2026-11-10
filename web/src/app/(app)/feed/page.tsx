@@ -76,7 +76,7 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
   let emptyTitle = "No posts yet";
   let emptyBody: React.ReactNode = "Be the first to share what you're building.";
   let emptyAction: React.ReactNode = null;
-  const { media: mediaEnabled, mentions: mentionsEnabled, milestones: proofOn } = await dbFeatures();
+  const { media: mediaEnabled, mentions: mentionsEnabled, milestones: proofOn, videoCaptions: captionsEnabled } = await dbFeatures();
   const cols = await postSelect();
   const base = () => {
     let q = supabase.from("posts").select(cols).order("created_at", { ascending: sort === "old" });
@@ -212,7 +212,7 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
           {SORTS.filter((x) => x.id !== "best" || tab === "for-you").map((x) => (
             <Link key={x.id} href={href({ sort: x.id })} aria-current={sort === x.id ? "true" : undefined} className={cn("rounded-full px-2.5 py-0.5 text-xs whitespace-nowrap transition", sort === x.id ? "bg-text text-surface" : "text-muted hover:text-text")}>{x.label}</Link>
           ))}
-        </span>} hero={<div id="composer" data-tour="composer" className="scroll-mt-24"><StartChecklist steps={guide?.loop ?? []} /><Composer first={profile.first_name} last={profile.last_name} interests={interests} userId={user.id} mediaEnabled={mediaEnabled} avatarSrc={avatarSrc(profile)} copilot={copilotOn} mentionsEnabled={mentionsEnabled} club={ledClub} next={nextStep && (guide?.loop ?? []).every((x) => x.done) ? { label: nextStep.label, href: nextStep.href } : null} projects={(myProjects ?? []) as { id: string; title: string }[]} clubs={composeClubs} initialProject={typeof sp.project === "string" ? sp.project : undefined} /></div>} />
+        </span>} hero={<div id="composer" data-tour="composer" className="scroll-mt-24"><StartChecklist steps={guide?.loop ?? []} /><Composer first={profile.first_name} last={profile.last_name} interests={interests} userId={user.id} mediaEnabled={mediaEnabled} captionsEnabled={captionsEnabled} avatarSrc={avatarSrc(profile)} copilot={copilotOn} mentionsEnabled={mentionsEnabled} club={ledClub} next={nextStep && (guide?.loop ?? []).every((x) => x.done) ? { label: nextStep.label, href: nextStep.href } : null} projects={(myProjects ?? []) as { id: string; title: string }[]} clubs={composeClubs} initialProject={typeof sp.project === "string" ? sp.project : undefined} /></div>} />
       {/* What kind of post, then your topics: one row, so filtering is one tap from anywhere in the feed. */}
       <nav data-tour="interests" aria-label="Filter the feed" className="no-scrollbar -mx-1 mt-4 flex items-center gap-1.5 overflow-x-auto px-1 pb-1">
         {KINDS.map((k) => (

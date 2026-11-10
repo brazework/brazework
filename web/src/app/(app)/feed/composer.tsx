@@ -20,7 +20,7 @@ const NO_ANSWER: EmberAnswerState = { q: "", text: "", tools: [], proposals: [] 
 // The top of the feed: one box to create and to ask. "Post" is the composer (photos and video by
 // pick, drop or paste; Ember can polish the draft in place). "Ask Ember" sends the same box to
 // Copilot, with answers and confirm cards right underneath.
-export function Composer({ first, last, interests, userId, mediaEnabled = false, avatarSrc, copilot = false, club = null, next = null, mentionsEnabled = false, projects = [], clubs = [], initialProject }: { first: string; last: string; interests: string[]; userId: string; mediaEnabled?: boolean; avatarSrc?: string | null; copilot?: boolean; club?: { id: string; name: string } | null; next?: { label: string; href: string } | null; projects?: { id: string; title: string }[]; clubs?: { id: string; name: string }[]; initialProject?: string; mentionsEnabled?: boolean }) {
+export function Composer({ first, last, interests, userId, mediaEnabled = false, captionsEnabled = false, avatarSrc, copilot = false, club = null, next = null, mentionsEnabled = false, projects = [], clubs = [], initialProject }: { first: string; last: string; interests: string[]; userId: string; mediaEnabled?: boolean; captionsEnabled?: boolean; avatarSrc?: string | null; copilot?: boolean; club?: { id: string; name: string } | null; next?: { label: string; href: string } | null; projects?: { id: string; title: string }[]; clubs?: { id: string; name: string }[]; initialProject?: string; mentionsEnabled?: boolean }) {
   const [mode, setMode] = useState<"post" | "ask">("post");
   const [state, action, pending] = useActionState<ComposeState, FormData>(createPost, { ok: false, message: "", nonce: 0 });
   const [kind, setKind] = useState<string>("update");
@@ -207,7 +207,7 @@ export function Composer({ first, last, interests, userId, mediaEnabled = false,
       <AnimatePresence initial={false}>
         {!asking && open && (
           <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25 }} className="overflow-hidden">
-            {mediaEnabled && <AttachmentTray slots={att.slots} onRemove={att.remove} onEdit={att.edit} compare={att.compare} onCompare={att.setCompare} />}
+            {mediaEnabled && <AttachmentTray slots={att.slots} onRemove={att.remove} onEdit={att.edit} compare={att.compare} onCompare={att.setCompare} captions={captionsEnabled} />}
 
             <div role="radiogroup" aria-label="Post type" className="mt-4 inline-flex flex-wrap gap-1 rounded-full bg-surface-2 p-1">
               {POST_KINDS.map((k) => {

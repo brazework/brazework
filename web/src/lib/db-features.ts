@@ -27,7 +27,7 @@ export const dbFeatures = cache(async (): Promise<Features> => {
 
 async function probe() {
   const supabase = await createClient();
-  const [ev, po, inv, cop, ms, intg, gc, st, cp, mn, cc, px, mcp, cx, pp, vf, ho, chl, spc, gy, clm] = await Promise.all([
+  const [ev, po, inv, cop, ms, intg, gc, st, cp, mn, cc, px, mcp, cx, pp, vf, ho, chl, spc, gy, clm, vc] = await Promise.all([
     supabase.from("events").select("community_id").limit(1),
     supabase.from("posts").select("media").limit(1),
     supabase.from("community_invites").select("code").limit(1),
@@ -49,8 +49,9 @@ async function probe() {
     supabase.from("project_details").select("specs").limit(1),
     supabase.from("profiles").select("grad_year").limit(1),
     supabase.from("club_claims").select("id").limit(1),
+    supabase.rpc("video_captions_ready"),
   ]);
-  return { clubEvents: !missing(ev.error), media: !missing(po.error), invites: !missing(inv.error), copilot: !missing(cop.error), milestones: !missing(ms.error), integrations: !missing(intg.error), groupChats: !missing(gc.error), projectTools: !missing(st.error), clubProfile: !missing(cp.error), mentions: !missing(mn.error), copilotChats: !missing(cc.error), profileExtras: !missing(px.error), mcp: !missing(mcp.error), chatExtras: !missing(cx.error), projectPosts: !missing(pp.error), verification: !missing(vf.error), handoff: !missing(ho.error), challenges: !missing(chl.error), projectSpecs: !missing(spc.error), gradYear: !missing(gy.error), clubClaims: !missing(clm.error) };
+  return { clubEvents: !missing(ev.error), media: !missing(po.error), invites: !missing(inv.error), copilot: !missing(cop.error), milestones: !missing(ms.error), integrations: !missing(intg.error), groupChats: !missing(gc.error), projectTools: !missing(st.error), clubProfile: !missing(cp.error), mentions: !missing(mn.error), copilotChats: !missing(cc.error), profileExtras: !missing(px.error), mcp: !missing(mcp.error), chatExtras: !missing(cx.error), projectPosts: !missing(pp.error), verification: !missing(vf.error), handoff: !missing(ho.error), challenges: !missing(chl.error), projectSpecs: !missing(spc.error), gradYear: !missing(gy.error), clubClaims: !missing(clm.error), videoCaptions: !missing(vc.error) };
 }
 
 export async function eventCols(): Promise<string> {

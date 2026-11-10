@@ -46,6 +46,12 @@ const pw = require("playwright-core");
     await josh.reload({ waitUntil: "networkidle" });
     if ((await josh.locator('input[name="headline"]').first().inputValue()) !== "Aero student, wind tunnels and rockets") throw new Error("headline not saved");
   }, josh);
+  await step("a video with captions shows a captions control and its transcript", async () => {
+    await go(josh, "/post/vidcap1");
+    await josh.getByRole("button", { name: "Hide captions" }).waitFor({ timeout: 10000 }); // on by default
+    await josh.getByText("Transcript", { exact: true }).click();
+    await josh.getByText("a clean two-second burn").waitFor();
+  }, josh);
   await step("settings: graduation year saves and shows on the profile", async () => {
     await go(josh, "/settings#profile");
     await josh.locator('select[name="grad_year"]').selectOption("2027");

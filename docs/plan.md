@@ -82,7 +82,7 @@ To build:
 - ✅ Blocking (block_user): stops messages, notifications and follows, and hides posts and replies both ways, even in a shared club (`blocking-content.sql`, step 32; SQL tests). Club moderators still see everything in their club.
 - ✅ Rate limits (`rate-limits.sql`, step 23) on posts, replies, messages, message requests and milestone submissions, tunable in `app_config`; SQL tests. Sign-ups are limited by Supabase Auth's own settings.
 - ✅ Plain-language privacy page (`/privacy`).
-- ✅ Accessibility: photos without a description get an "Add description" prompt before posting (screen-reader text). Video captions ⬜.
+- ✅ Accessibility: photos without a description get an "Add description" prompt before posting (screen-reader text). Videos take captions (a .vtt or .srt file, shown with a CC button, on by default) and a transcript (shown under the video) (`video-captions.sql`, step 36; SQL, unit and e2e tests).
 
 ## Phase 8: landing (after decision 1)
 

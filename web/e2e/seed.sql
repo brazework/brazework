@@ -25,6 +25,11 @@ insert into public.posts (author_id, body, kind, community_id, created_at) selec
 insert into public.organizations (type, name, domain) values ('company', 'Acme Aerospace', 'forge.test');
 insert into public.organization_admins (org_id, uid) select id, (select cara from u) from public.organizations where domain = 'forge.test';
 update public.milestones set private = false where id in ('m1', 'm2');
+-- A video with captions and a transcript (video-captions.sql). The local stack has no file storage,
+-- so the clip itself doesn't load; the captions control and the transcript still render.
+insert into public.posts (id, author_id, body, kind, media, created_at) select 'vidcap1', ben, 'Static fire #4, with captions.', 'result',
+  jsonb_build_array(jsonb_build_object('type', 'video', 'path', ben::text || '/static-fire-4.mp4', 'cc', E'WEBVTT\n\n00:00:01.000 --> 00:00:03.000\nIgnition.', 'tx', 'Countdown from three, ignition, a clean two-second burn.')),
+  now() - interval '3 days' from u;
 -- Clubs made in the app record their owner's name; the seed's direct inserts didn't.
 update public.communities c set owner_name = btrim(p.first_name || ' ' || p.last_name) from public.profiles p where p.id = c.owner_id and c.owner_name = '';
 -- Ben graduates in 2026 (Find builders' class-year filter, grad-year.sql).

@@ -1,6 +1,6 @@
 "use client";
 import { AnimatePresence, motion } from "motion/react";
-import { Columns2, Crosshair, Flag, ImagePlus, Loader2, TextQuote, Video, X } from "lucide-react";
+import { Captions, Columns2, Crosshair, Flag, ImagePlus, Loader2, TextQuote, Video, X } from "lucide-react";
 import Image from "next/image";
 import { useRef, useState } from "react";
 import { CalloutEditor, MarkerEditor } from "./annotate";
@@ -72,7 +72,7 @@ export function AttachButtons({ onPick, disabled }: { onPick: (files: FileList) 
   );
 }
 
-export function AttachmentTray({ slots, onRemove, onEdit, compare, onCompare }: { slots: Slot[]; onRemove: (id: string) => void; onEdit?: (id: string, patch: Partial<MediaItem>) => void; compare?: boolean; onCompare?: (on: boolean) => void }) {
+export function AttachmentTray({ slots, onRemove, onEdit, compare, onCompare, captions = false }: { captions?: boolean; slots: Slot[]; onRemove: (id: string) => void; onEdit?: (id: string, patch: Partial<MediaItem>) => void; compare?: boolean; onCompare?: (on: boolean) => void }) {
   const [editing, setEditing] = useState<string | null>(null);
   if (!slots.length) return null;
   const open = slots.find((s) => s.id === editing && s.item);
@@ -116,6 +116,12 @@ export function AttachmentTray({ slots, onRemove, onEdit, compare, onCompare }: 
               <TextQuote className="size-3.5" /> Add description
             </button>
           )}
+          {/* The same nudge for videos: captions, once video-captions.sql has run. */}
+          {onEdit && captions && s.status === "done" && s.kind === "video" && !s.item?.cc && !s.item?.tx && (
+            <button type="button" onClick={() => setEditing(s.id)} className="absolute bottom-2 left-2 inline-flex h-7 items-center gap-1 rounded-full bg-black/65 px-2.5 text-[11px] font-medium text-white ring-1 ring-white/40 backdrop-blur transition hover:bg-black/85 active:scale-95">
+              <Captions className="size-3.5" /> Add captions
+            </button>
+          )}
           {onEdit && s.status === "done" && (
             <button type="button" onClick={() => setEditing(s.id)} className="absolute right-2 bottom-2 inline-flex h-7 items-center gap-1 rounded-full bg-black/65 px-2.5 text-[11px] font-medium text-white backdrop-blur transition hover:bg-black/85 active:scale-95">
               {s.kind === "image" ? <><Crosshair className="size-3.5" /> {s.item?.notes?.length ? `${s.item.notes.length} callout${s.item.notes.length > 1 ? "s" : ""}` : "Callouts"}{s.item?.alt ? " · alt" : ""}</> : <><Flag className="size-3.5" /> {s.item?.marks?.length ? `${s.item.marks.length} marker${s.item.marks.length > 1 ? "s" : ""}` : "Markers"}</>}
@@ -127,7 +133,7 @@ export function AttachmentTray({ slots, onRemove, onEdit, compare, onCompare }: 
     </div>
     {open && onEdit && (open.kind === "image"
       ? <CalloutEditor src={open.preview} item={open.item!} onSave={(patch) => onEdit(open.id, patch)} onClose={() => setEditing(null)} />
-      : <MarkerEditor src={open.preview} item={open.item!} onSave={(patch) => onEdit(open.id, patch)} onClose={() => setEditing(null)} />)}
+      : <MarkerEditor src={open.preview} item={open.item!} captions={captions} onSave={(patch) => onEdit(open.id, patch)} onClose={() => setEditing(null)} />)}
     </>
   );
 }
