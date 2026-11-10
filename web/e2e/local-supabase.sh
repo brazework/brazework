@@ -16,18 +16,18 @@ docker network create forge-e2e >/dev/null 2>&1 || true
 docker run -d --name forge-e2e-db --network forge-e2e -e POSTGRES_PASSWORD=postgres "$PG" >/dev/null
 until docker exec forge-e2e-db pg_isready -U postgres -h localhost >/dev/null 2>&1; do sleep 1; done; sleep 4
 docker exec forge-e2e-db psql -U supabase_admin -h localhost -d postgres -qc "alter role authenticator with password 'postgres'; alter role supabase_auth_admin with password 'postgres';"
-docker run -d --name forge-e2e-auth --network forge-e2e -p 59999:9999 \
+docker run -d --name forge-e2e-auth --network forge-e2e -p 127.0.0.1:19999:9999 \
   -e GOTRUE_API_HOST=0.0.0.0 -e GOTRUE_API_PORT=9999 -e API_EXTERNAL_URL=http://localhost:54321/auth/v1 \
   -e GOTRUE_DB_DRIVER=postgres -e GOTRUE_DB_DATABASE_URL=postgres://supabase_auth_admin:postgres@forge-e2e-db:5432/postgres \
   -e GOTRUE_DB_MAX_POOL_SIZE=20 -e GOTRUE_DB_MAX_IDLE_POOL_SIZE=20 -e GOTRUE_DB_CONN_MAX_IDLE_TIME=60s \
   -e GOTRUE_SITE_URL=http://localhost:3200 -e 'GOTRUE_URI_ALLOW_LIST=http://localhost:3200/**' \
   -e GOTRUE_JWT_SECRET=$SECRET -e GOTRUE_JWT_EXP=3600 -e GOTRUE_JWT_AUD=authenticated -e GOTRUE_JWT_DEFAULT_GROUP_NAME=authenticated \
   -e GOTRUE_JWT_ADMIN_ROLES=service_role -e GOTRUE_MAILER_AUTOCONFIRM=true -e GOTRUE_EXTERNAL_EMAIL_ENABLED=true -e GOTRUE_DISABLE_SIGNUP=false "$AUTH" >/dev/null
-until curl -sf http://localhost:59999/health >/dev/null; do sleep 1; done
+until curl -sf http://localhost:19999/health >/dev/null; do sleep 1; done
 # Every SQL file, in order (supabase/order.txt is the one list; CI and production follow it too).
 FILES=$(grep -v '^#' ../supabase/order.txt | grep -v '^$')
 for f in $FILES; do docker exec -i forge-e2e-db psql -U postgres -h localhost -d postgres -v ON_ERROR_STOP=1 -q < "../supabase/$f.sql" >/dev/null; done
-docker run -d --name forge-e2e-rest --network forge-e2e -p 53000:3000 -e PGRST_DB_URI=postgres://authenticator:postgres@forge-e2e-db:5432/postgres \
+docker run -d --name forge-e2e-rest --network forge-e2e -p 127.0.0.1:13000:3000 -e PGRST_DB_URI=postgres://authenticator:postgres@forge-e2e-db:5432/postgres \
   -e PGRST_DB_SCHEMAS=public -e PGRST_DB_ANON_ROLE=anon -e PGRST_JWT_SECRET=$SECRET "$REST" >/dev/null
 GW_JWT_SECRET=$SECRET nohup node e2e/gateway.cjs > /tmp/forge-e2e-gateway.log 2>&1 &
 until curl -sf http://localhost:54321/rest/v1/ >/dev/null; do sleep 1; done

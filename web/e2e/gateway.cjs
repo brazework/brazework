@@ -1,6 +1,8 @@
 // Local stand-in for Supabase's API gateway: /auth/v1 -> GoTrue, /rest/v1 -> PostgREST.
 const http = require("http");
-const routes = [["/auth/v1", 59999], ["/rest/v1", 53000]];
+// Auth and REST listen below Linux's ephemeral port range (32768-60999), so a busy CI machine's
+// outgoing connections can't already hold them (that failed a run with "address already in use").
+const routes = [["/auth/v1", 19999], ["/rest/v1", 13000]];
 const fs = require("fs");
 const LOG = process.env.GW_LOG;
 const crypto = require("crypto");
