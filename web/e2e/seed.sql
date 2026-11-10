@@ -20,3 +20,7 @@ insert into public.posts (author_id, body, kind, tags, created_at) select ben, '
  union all select maya, 'Anyone tried Kalman filtering on a cheap IMU? Looking for tips.', 'question', '{Robotics}'::text[], now() - interval '3 hours' from u
  union all select cara, 'Hello Forge!', 'update', '{}'::text[], now() - interval '1 day' from u;
 insert into public.posts (author_id, body, kind, community_id, created_at) select ben, 'Launch day is Saturday. Who is driving?', 'update', 'rkt', now() - interval '5 hours' from u;
+-- A verified company (Cara is its admin) for Find builders; Ben made two verified milestones public.
+insert into public.organizations (type, name, domain) values ('company', 'Acme Aerospace', 'forge.test');
+insert into public.organization_admins (org_id, uid) select id, (select cara from u) from public.organizations where domain = 'forge.test';
+update public.milestones set private = false where id in ('m1', 'm2');

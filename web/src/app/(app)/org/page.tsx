@@ -1,6 +1,7 @@
 import { eventCols } from "@/lib/db-features";
 import type { Metadata } from "next";
-import { BadgeCheck } from "lucide-react";
+import { BadgeCheck, Search } from "lucide-react";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { EmptyState, PageHeader, Panel, Skeleton } from "@/components/app/page-ui";
@@ -45,7 +46,7 @@ async function Org() {
 
   return (
     <>
-      <PageHeader title={org.name} subtitle={<span className="inline-flex items-center gap-1.5"><BadgeCheck className="size-4" /> {ORG_LABEL[org.type]}{org.domain ? ` · ${org.domain}` : ""}</span>} actions={<EventEditor orgId={org.id} />} />
+      <PageHeader title={org.name} subtitle={<span className="inline-flex items-center gap-1.5"><BadgeCheck className="size-4" /> {ORG_LABEL[org.type]}{org.domain ? ` · ${org.domain}` : ""}</span>} actions={<>{org.verification_status === "verified" && <Link href="/talent" className="inline-flex h-10 items-center gap-1.5 rounded-full border border-line px-4 text-sm transition hover:border-line-strong hover:bg-hover"><Search className="size-4" /> Find builders</Link>}<EventEditor orgId={org.id} /></>} />
       <section className="mt-8">
         <Kicker>Upcoming</Kicker>
         <div className="mt-3 flex flex-col gap-3">

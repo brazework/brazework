@@ -37,9 +37,21 @@ const pw = require("playwright-core");
     await go(josh, "/feed");
     await josh.waitForURL(/\/login/, { timeout: 10000 });
   }, josh);
+  const cara = await as(b, "cara@forge.test");
+  await step("a verified company finds Ben by verified work, never his private milestone", async () => {
+    await go(cara, "/talent?q=labview");
+    const card = cara.locator("article").filter({ hasText: "Ben Cho" });
+    await card.getByText("Static fire at 1.2 kN").waitFor({ timeout: 15000 });
+    await card.getByText(/Verified by Maya Patel/).first().waitFor();
+    if (await cara.getByText("Private milestone").count()) throw new Error("private milestone shown");
+    await go(cara, "/talent?q=quantum");
+    await cara.getByText("No one matches that yet").waitFor();
+    await go(josh, "/talent");
+    await josh.getByRole("link", { name: "Register your organization" }).waitFor();
+  }, cara);
   await step("signed-out visitors can't open app pages", async () => {
     const ctx = await b.newContext(); const p = await ctx.newPage();
-    for (const path of ["/feed", "/messages", "/settings", "/u/00000000-0000-0000-0000-000000000000", "/copilot"]) {
+    for (const path of ["/feed", "/messages", "/settings", "/talent", "/u/00000000-0000-0000-0000-000000000000", "/copilot"]) {
       await p.goto(BASE + path, { waitUntil: "domcontentloaded" });
       if (!/\/login/.test(p.url())) throw new Error(`${path} -> ${p.url()}`);
     }
