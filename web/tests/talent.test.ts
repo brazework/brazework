@@ -2,7 +2,7 @@
 // verified work, then recency. Run: npm test
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { buildBuilders, rankBuilders, type Person, type VerifiedRow } from "@/lib/talent";
+import { buildBuilders, classYears, rankBuilders, type Person, type VerifiedRow } from "@/lib/talent";
 
 const people: Person[] = [
   { id: "a", first_name: "Ana", last_name: "Ruiz", headline: "Avionics", field: "Aerospace", open_to: ["internships"] },
@@ -42,4 +42,14 @@ test("filters: club, open to, minimum verified", () => {
   assert.deepEqual(rankBuilders(list, { club: "rob" }).map((b) => b.person.id), ["b"]);
   assert.deepEqual(rankBuilders(list, { openTo: "internships" }).map((b) => b.person.id), ["a"]);
   assert.deepEqual(rankBuilders(list, { min: 2 }).map((b) => b.person.id), ["b"]);
+});
+
+test("class year: filters to that year, and the chips offer only years someone has", () => {
+  const withYears: Person[] = [{ ...people[0], grad_year: 2027 }, { ...people[1], grad_year: 2026 }, people[2]];
+  const list = buildBuilders(rows, withYears);
+  assert.deepEqual(rankBuilders(list, { year: 2027 }).map((b) => b.person.id), ["a"]);
+  assert.deepEqual(rankBuilders(list, { year: 2030 }), []);
+  assert.deepEqual(classYears(list), [2026, 2027]);
+  // Nobody has set one yet: no chips at all.
+  assert.deepEqual(classYears(buildBuilders(rows, people)), []);
 });

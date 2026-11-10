@@ -3,6 +3,7 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { Logo } from "@/components/ui";
+import { dbFeatures } from "@/lib/db-features";
 import { getViewer } from "@/lib/supabase/server";
 import { OnboardingForm } from "./onboarding-form";
 
@@ -29,5 +30,8 @@ async function Onboarding() {
   const { user, profile } = await getViewer();
   if (!user) redirect("/login");
   if (profile?.onboarded) redirect("/feed");
-  return <OnboardingForm firstName={profile?.first_name ?? ""} student={profile?.account_type === "student"} />;
+  const student = profile?.account_type === "student";
+  // Graduation year is asked of students only, once supabase/grad-year.sql has run.
+  const askGradYear = student && (await dbFeatures()).gradYear;
+  return <OnboardingForm firstName={profile?.first_name ?? ""} student={student} askGradYear={askGradYear} />;
 }

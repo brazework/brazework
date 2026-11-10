@@ -2,6 +2,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { ALL_TOPICS, FIELDS, friendlyError } from "@/lib/forge";
+import { parseGradYear } from "@/lib/profile-meta";
 import { getViewer } from "@/lib/supabase/server";
 
 // Settings (public/js/views/settings.js). Messaging settings and blocks per supabase/messages.sql.
@@ -18,12 +19,21 @@ const profileSchema = z.object({
 export async function saveProfileSettings(_: SettingsState, form: FormData): Promise<SettingsState> {
   const parsed = profileSchema.safeParse({
     first_name: form.get("first_name"), last_name: form.get("last_name"), headline: form.get("headline") ?? "",
-    field: form.get("field"), interests: form.getAll("interests"),
+    // Topics get renamed and retired over time: drop ones that no longer exist instead of failing
+    // with "Invalid input", so the member sees the real rule (at least 3 current interests).
+    field: form.get("field") ?? "", interests: form.getAll("interests").map(String).filter((t) => ALL_TOPICS.includes(t)),
   });
   if (!parsed.success) return { ok: false, message: parsed.error.issues[0]?.message ?? "Check the form." };
+  // Graduation year: the form only sends it once supabase/grad-year.sql has run.
+  const row: Record<string, unknown> = { ...parsed.data };
+  if (form.has("grad_year")) {
+    const year = parseGradYear(form.get("grad_year"));
+    if (!year.ok) return { ok: false, message: "Pick a graduation year from the list." };
+    row.grad_year = year.value;
+  }
   const { supabase, user } = await getViewer();
   if (!user) return { ok: false, message: "Log in again." };
-  const { error } = await supabase.from("profiles").update(parsed.data).eq("id", user.id);
+  const { error } = await supabase.from("profiles").update(row).eq("id", user.id);
   if (error) return { ok: false, message: friendlyError(error) };
   revalidatePath("/", "layout");
   return { ok: true, message: "Profile saved." };

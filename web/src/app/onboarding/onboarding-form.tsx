@@ -6,8 +6,9 @@ import { Button, Field, inputCls } from "@/components/ui";
 import { TOPICS, cn } from "@/lib/forge";
 import { completeOnboarding, type OnboardState } from "./actions";
 import { submitWithoutReset } from "@/lib/submit";
+import { gradYearOptions } from "@/lib/profile-meta";
 
-export function OnboardingForm({ firstName, student }: { firstName: string; student: boolean }) {
+export function OnboardingForm({ firstName, student, askGradYear = false }: { firstName: string; student: boolean; askGradYear?: boolean }) {
   const [state, action, pending] = useActionState<OnboardState, FormData>(completeOnboarding, { message: "" });
   const [field, setField] = useState<string>(TOPICS[0].name);
   const [picked, setPicked] = useState<string[]>([]);
@@ -24,6 +25,15 @@ export function OnboardingForm({ firstName, student }: { firstName: string; stud
           Welcome{firstName ? `, ${firstName}` : ""}. <span className="text-shine">What do you build?</span>
         </h1>
       </div>
+
+      {askGradYear && (
+        <Field label="When do you graduate?" optional hint="Companies looking for interns filter by class year. You can change it in Settings.">
+          <select name="grad_year" defaultValue="" className={inputCls}>
+            <option value="">Not sure yet</option>
+            {gradYearOptions().map((y) => <option key={y} value={y}>{y}</option>)}
+          </select>
+        </Field>
+      )}
 
       <Field label={student ? "Your major" : "Your profession"} optional count={headline.length} max={200} hint="Shown under your name. You can change it any time.">
         <input name="headline" maxLength={200} value={headline} onChange={(e) => setHeadline(e.target.value)} placeholder={student ? "e.g. Mechanical Engineering, junior" : "e.g. Embedded Engineer at a robotics startup"} className={inputCls} />

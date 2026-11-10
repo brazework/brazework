@@ -4,7 +4,7 @@ What has to happen, in order, before the first real club uses Forge. Everything 
 
 ## 1. Database (Supabase → SQL Editor)
 
-Run each file in [next-migration.md](next-migration.md)'s order, one at a time, and check it says "Success". Steps 5–33 are new since the last production update. Each one is additive: the app works before and after each step, so a pause halfway is safe.
+Run each file in [next-migration.md](next-migration.md)'s order, one at a time, and check it says "Success". Steps 5–34 are new since the last production update. Each one is additive: the app works before and after each step, so a pause halfway is safe.
 
 Before and after, run `supabase/maintenance/health-check.sql` (read-only): it lists which steps are applied or missing, any table without row-level security, foreign keys without an index, the biggest tables and Storage files, and leftover test accounts. Also check Supabase → Advisors (Security and Performance).
 

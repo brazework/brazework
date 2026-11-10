@@ -37,3 +37,21 @@ export function linkName(l: ProfileLink) {
     return path && path.length < 24 ? `${host}${path}` : host;
   } catch { return l.url; }
 }
+
+// Graduation year (supabase/grad-year.sql): optional. The choices run from ten years back (recent
+// alumni) to six ahead (an incoming first-year), counted from this year.
+export function gradYearOptions(now = new Date()): number[] {
+  const y = now.getFullYear();
+  return Array.from({ length: 17 }, (_, i) => y + 6 - i);
+}
+
+// "" clears it; anything else must be a whole year the database accepts (it checks again).
+export function parseGradYear(raw: FormDataEntryValue | null): { ok: true; value: number | null } | { ok: false } {
+  const s = String(raw ?? "").trim();
+  if (!s) return { ok: true, value: null };
+  if (!/^\d{4}$/.test(s)) return { ok: false };
+  const n = Number(s);
+  return n >= 1960 && n <= 2045 ? { ok: true, value: n } : { ok: false };
+}
+
+export const classOf = (year: number | null | undefined) => (year ? `Class of ${year}` : "");

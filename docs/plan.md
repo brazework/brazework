@@ -60,7 +60,7 @@ To build:
 ## Phase 5: company flow
 
 - ✅ Organizations register by work email; free email domains are refused and the email domain must match the website (`create_organization()` in events.sql).
-- ✅ Find builders (`/talent`, verified companies and schools): search by skills and verified work, club, open-to and verified count; public verified milestones only, ranking tested (`web/tests/talent.test.ts`). Grad year ⬜ (not collected yet).
+- ✅ Find builders (`/talent`, verified companies and schools): search by skills and verified work, club, open-to and verified count; public verified milestones only, ranking tested (`web/tests/talent.test.ts`). Graduation year: optional, asked at onboarding and in Settings, shown on profiles, and a class-year filter (`grad-year.sql`, step 34).
 - ✅ Messages land in Requests; company and school admins have a weekly request cap (`limit_org_requests_per_week`). Tier limits ⬜.
 - ✅ Sponsored challenges end to end (`challenges.sql`, step 21): draft → sponsored (paid or Forge-approved pilot) → open → judging → winners; SQL tests and e2e `h-challenges.cjs`.
 - ✅ `web/src/lib/billing.ts`: provider interface, Stripe Checkout over REST (on only with `STRIPE_SECRET_KEY` + `STRIPE_PRICE_CHALLENGE`/`STRIPE_PRICE_TALENT`), otherwise a pilot request; tests in `web/tests/billing.test.ts`. Stripe webhook `/api/billing/webhook` (signature-checked, idempotent) marks sponsorships paid; needs `STRIPE_WEBHOOK_SECRET` and `SUPABASE_SERVICE_ROLE_KEY`.

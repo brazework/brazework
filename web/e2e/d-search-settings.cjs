@@ -40,9 +40,21 @@ const pw = require("playwright-core");
     const h = josh.locator('input[name="headline"]').first();
     await h.fill("Aero student, wind tunnels and rockets");
     await josh.getByRole("button", { name: "Save profile" }).click();
-    await josh.waitForLoadState("networkidle"); await josh.waitForTimeout(800);
-    await go(josh, "/settings#profile");
+    await josh.getByText("Profile saved.").waitFor({ timeout: 10000 });
+    // A real reload: going to the same URL with only a #hash change never reloads (that made this pass
+    // even when saving failed).
+    await josh.reload({ waitUntil: "networkidle" });
     if ((await josh.locator('input[name="headline"]').first().inputValue()) !== "Aero student, wind tunnels and rockets") throw new Error("headline not saved");
+  }, josh);
+  await step("settings: graduation year saves and shows on the profile", async () => {
+    await go(josh, "/settings#profile");
+    await josh.locator('select[name="grad_year"]').selectOption("2027");
+    await josh.getByRole("button", { name: "Save profile" }).click();
+    await josh.getByText("Profile saved.").waitFor({ timeout: 10000 });
+    await josh.reload({ waitUntil: "networkidle" });
+    if ((await josh.locator('select[name="grad_year"]').inputValue()) !== "2027") throw new Error("graduation year not saved");
+    await go(josh, "/profile");
+    await josh.getByText("Class of 2027").first().waitFor({ timeout: 10000 });
   }, josh);
   await step("Ember & your data section is there", async () => {
     await go(josh, "/settings#ember");
@@ -62,6 +74,13 @@ const pw = require("playwright-core");
     await card.getByText("Static fire at 1.2 kN").waitFor({ timeout: 15000 });
     await card.getByText(/Verified by Maya Patel/).first().waitFor();
     if (await cara.getByText("Private milestone").count()) throw new Error("private milestone shown");
+    // Class year: Ben's card says it, the chip filters to it, and another year finds no one.
+    await card.getByText(/Class of 2026/).waitFor();
+    await cara.getByRole("link", { name: "Class of 2026" }).click();
+    await cara.waitForURL(/year=2026/);
+    await cara.locator("article").filter({ hasText: "Ben Cho" }).waitFor();
+    await go(cara, "/talent?year=2031");
+    await cara.getByText("No one matches that yet").waitFor();
     await go(cara, "/talent?q=quantum");
     await cara.getByText("No one matches that yet").waitFor();
     // Josh logged out in the step before; a fresh session for him.

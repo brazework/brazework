@@ -14,7 +14,7 @@ export type VerifiedRow = {
   projects: { title: string; tags: string[] | null; tools: string[] | null } | null;
 };
 
-export type Person = { id: string; first_name: string; last_name: string; headline: string; field: string; open_to?: string[] | null };
+export type Person = { id: string; first_name: string; last_name: string; headline: string; field: string; open_to?: string[] | null; grad_year?: number | null };
 
 export type Builder = {
   person: Person;
@@ -25,7 +25,7 @@ export type Builder = {
   lastVerifiedAt: number;
 };
 
-export type TalentFilters = { q?: string; club?: string; openTo?: string; min?: number };
+export type TalentFilters = { q?: string; club?: string; openTo?: string; min?: number; year?: number };
 
 const norm = (s: string) => s.toLowerCase().normalize("NFKD").replace(/[̀-ͯ]/g, "");
 
@@ -55,6 +55,7 @@ export function matches(b: Builder, f: TalentFilters): boolean {
   if (f.min && b.verified < f.min) return false;
   if (f.club && !b.clubs.some((c) => c.id === f.club)) return false;
   if (f.openTo && !(b.person.open_to ?? []).includes(f.openTo)) return false;
+  if (f.year && b.person.grad_year !== f.year) return false;
   const words = norm(f.q ?? "").split(/\s+/).filter(Boolean);
   if (!words.length) return true;
   const hay = norm([
@@ -67,4 +68,9 @@ export function matches(b: Builder, f: TalentFilters): boolean {
 // Most verified work first; ties go to whoever was verified most recently.
 export function rankBuilders(list: Builder[], f: TalentFilters): Builder[] {
   return list.filter((b) => matches(b, f)).sort((a, b) => b.verified - a.verified || b.lastVerifiedAt - a.lastVerifiedAt);
+}
+
+// The class years to offer as filters: only years someone in the list has, soonest first.
+export function classYears(list: Builder[]): number[] {
+  return [...new Set(list.map((b) => b.person.grad_year).filter((y): y is number => typeof y === "number"))].sort((a, b) => a - b);
 }

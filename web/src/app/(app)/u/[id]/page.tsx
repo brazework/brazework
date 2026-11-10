@@ -12,7 +12,7 @@ import { CopyLink } from "@/components/app/copy-link";
 import { CountUp } from "@/components/app/count-up";
 import { EmptyState, Panel, Skeleton } from "@/components/app/page-ui";
 import { MemberFaces } from "@/components/network/member-faces";
-import { openToLabel, type ProfileLink } from "@/lib/profile-meta";
+import { classOf, openToLabel, type ProfileLink } from "@/lib/profile-meta";
 import { ExtrasCard } from "./extras-client";
 import { ProfileStrength, ProofTimeline, SharedContext, SideCard, type ProofItem, type Step } from "./profile-parts";
 import { SwitchTabs } from "@/components/app/switch-tabs";
@@ -57,7 +57,7 @@ async function ProfileView({ params }: { params: PageProps<"/u/[id]">["params"] 
 
   // Everything that only needs the profile's id, at once (one round of requests, not seven).
   const [pr, rel, counts, postsRes, projectsRes, msRes, theirClubs, followRows, myClubRows, myFollows, , copilotOn] = await Promise.all([
-    supabase.from("profiles").select(`id, first_name, last_name, account_type, headline, bio, field, interests, onboarded, created_at${f.media ? ", avatar_path, cover_path" : ""}${extrasOn ? ", open_to, links, location" : ""}`).eq("id", id).maybeSingle(),
+    supabase.from("profiles").select(`id, first_name, last_name, account_type, headline, bio, field, interests, onboarded, created_at${f.media ? ", avatar_path, cover_path" : ""}${extrasOn ? ", open_to, links, location" : ""}${f.gradYear ? ", grad_year" : ""}`).eq("id", id).maybeSingle(),
     own ? Promise.resolve(null) : getRelationship(id),
     getNetworkCounts(id),
     supabase.from("posts").select(await postSelect()).eq("author_id", id).is("community_id", null).order("created_at", { ascending: false }).limit(50),
@@ -72,7 +72,7 @@ async function ProfileView({ params }: { params: PageProps<"/u/[id]">["params"] 
     own ? copilotEnabled() : Promise.resolve(false),
   ]);
   if (!pr.data) notFound();
-  const p = pr.data as unknown as Profile & { open_to?: string[]; links?: ProfileLink[]; location?: string };
+  const p = pr.data as unknown as Profile & { open_to?: string[]; links?: ProfileLink[]; location?: string; grad_year?: number | null };
   const mediaOn = f.media;
 
   const posts = (postsRes.data ?? []) as unknown as Post[];
@@ -155,6 +155,7 @@ async function ProfileView({ params }: { params: PageProps<"/u/[id]">["params"] 
           {p.headline && <p className="mt-1 text-lg text-text-2">{p.headline}</p>}
           <p className="mt-2 flex flex-wrap items-center gap-x-1.5 text-sm text-muted">
             {p.account_type === "student" ? "Student" : "Professional"}
+            {p.grad_year && <> · {classOf(p.grad_year)}</>}
             {p.field && <> · {p.field}</>}
             {p.location && <> · <MapPin className="size-3.5" /> {p.location}</>}
             <> · Joined {joined}</>

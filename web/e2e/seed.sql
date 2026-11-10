@@ -1,7 +1,8 @@
 -- Seed data for the end-to-end tests (after the test members sign up): two clubs, follows,
 -- Ben's projects with club-verified milestones (one on a private project), and a few posts.
 create temp table u as select (select id from auth.users where email='josh@forge.test') josh, (select id from auth.users where email='maya@forge.test') maya, (select id from auth.users where email='ben@forge.test') ben, (select id from auth.users where email='cara@forge.test') cara;
-update public.profiles set onboarded = true, field = 'Aerospace Engineering', interests = '{Rocketry,Robotics}';
+-- A field and interests from the app's current lists (lib/forge.ts), like a real member's.
+update public.profiles set onboarded = true, field = 'Engineering', interests = '{Aerospace,Embedded Systems,Robotics & Autonomy}';
 update public.profiles set headline = 'Propulsion lead, Rocketry Club', bio = 'I build liquid engines and the test stands that keep them honest.', open_to = '{internships,research}', location = 'Boston, MA', links = '[{"label":"GitHub","url":"https://github.com/bencho"},{"url":"https://bencho.dev"}]' where id = (select ben from u);
 update public.profiles set headline = 'Avionics, flight software' where id = (select maya from u);
 insert into public.communities (id, name, type, privacy, owner_id, about, topics) select 'rkt', 'Rocketry Club', 'project', 'public', ben, 'We design, build and fly high-power rockets.', '{Rocketry}' from u;
@@ -24,6 +25,8 @@ insert into public.posts (author_id, body, kind, community_id, created_at) selec
 insert into public.organizations (type, name, domain) values ('company', 'Acme Aerospace', 'forge.test');
 insert into public.organization_admins (org_id, uid) select id, (select cara from u) from public.organizations where domain = 'forge.test';
 update public.milestones set private = false where id in ('m1', 'm2');
+-- Ben graduates in 2026 (Find builders' class-year filter, grad-year.sql).
+update public.profiles set grad_year = 2026 where id = (select ben from u);
 -- Maya is a Forge admin (approves sponsorship pilots on /admin).
 insert into public.forge_admins (uid) select maya from u;
 -- The test members are returning members: they've seen the welcome tour (new sign-ups still get it).

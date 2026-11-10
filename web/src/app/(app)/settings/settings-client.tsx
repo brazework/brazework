@@ -4,7 +4,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useActionState, useState, useSyncExternalStore, useTransition } from "react";
 import { Button, Field, inputCls } from "@/components/ui";
-import { FIELDS, TOPICS, cn, type Profile } from "@/lib/forge";
+import { ALL_TOPICS, FIELDS, TOPICS, cn, type Profile } from "@/lib/forge";
+import { gradYearOptions } from "@/lib/profile-meta";
 import { deleteAllChats } from "@/lib/copilot-chats";
 import { createApiToken, listApiTokens, revokeApiToken, type ApiToken } from "@/lib/api-tokens";
 import { changePassword, deleteAccount, saveEmailPrefs, saveMessageSettings, saveProfileSettings, type SettingsState, unblockPerson } from "@/lib/settings";
@@ -17,9 +18,12 @@ function Status({ state }: { state: SettingsState }) {
   return <p role={state.ok ? "status" : "alert"} className={cn("text-sm", state.ok ? "text-ok" : "text-danger")}>{state.message}</p>;
 }
 
-export function ProfileSettings({ profile }: { profile: Profile }) {
+// gradYear: undefined until supabase/grad-year.sql has run (the field stays hidden); null = not set.
+export function ProfileSettings({ profile, gradYear }: { profile: Profile; gradYear?: number | null }) {
   const [state, action, pending] = useActionState(saveProfileSettings, init);
-  const [picked, setPicked] = useState<string[]>(profile.interests ?? []);
+  // Only current topics count (renamed or retired ones would be invisible yet still submitted).
+  const [picked, setPicked] = useState<string[]>((profile.interests ?? []).filter((t) => ALL_TOPICS.includes(t)));
+  const fieldKnown = FIELDS.includes(profile.field);
   const [group, setGroup] = useState<string>(TOPICS.find((t) => t.name === profile.field)?.name ?? TOPICS[0].name);
   const topics = TOPICS.find((t) => t.name === group)?.topics ?? [];
   return (
@@ -30,7 +34,15 @@ export function ProfileSettings({ profile }: { profile: Profile }) {
         <Field label="Last name"><input name="last_name" defaultValue={profile.last_name} maxLength={80} className={inputCls} /></Field>
       </div>
       <Field label="Headline"><input name="headline" defaultValue={profile.headline} maxLength={200} className={inputCls} /></Field>
-      <Field label="Field"><select name="field" defaultValue={profile.field} className={inputCls}>{FIELDS.map((f) => <option key={f}>{f}</option>)}</select></Field>
+      <Field label="Field"><select name="field" defaultValue={fieldKnown ? profile.field : ""} className={inputCls}>{!fieldKnown && <option value="" disabled>Pick your field</option>}{FIELDS.map((f) => <option key={f}>{f}</option>)}</select></Field>
+      {gradYear !== undefined && (
+        <Field label="Graduation year" optional hint="Companies on Find builders can filter by class year.">
+          <select name="grad_year" defaultValue={gradYear ?? ""} aria-label="Graduation year" className={inputCls}>
+            <option value="">Not set</option>
+            {gradYearOptions().map((y) => <option key={y} value={y}>{y}</option>)}
+          </select>
+        </Field>
+      )}
       <div>
         <div className="mb-2 flex items-baseline justify-between text-sm">
           <span className="font-medium text-text-2">Interests</span>

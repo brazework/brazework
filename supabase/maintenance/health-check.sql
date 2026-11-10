@@ -30,7 +30,8 @@ from (values
   (30, 'email-digest',    to_regclass('public.email_prefs') is not null),
   (31, 'indexes',         to_regclass('public.comments_author_id_fk_idx') is not null),
   (32, 'blocking-content', to_regprocedure('public.blocked_between(uuid,uuid)') is not null),
-  (33, 'admin-retention', to_regprocedure('public.admin_retention()') is not null)
+  (33, 'admin-retention', to_regprocedure('public.admin_retention()') is not null),
+  (34, 'grad-year',       exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'profiles' and column_name = 'grad_year'))
 ) as s(step, file, present)
 order by step;
 

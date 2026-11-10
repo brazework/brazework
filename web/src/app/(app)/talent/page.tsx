@@ -6,9 +6,9 @@ import { Suspense } from "react";
 import { EmptyState, PageHeader, Panel, Skeleton, chipCls } from "@/components/app/page-ui";
 import { Avatar, Button } from "@/components/ui";
 import { dbFeatures } from "@/lib/db-features";
-import { OPEN_TO, openToLabel } from "@/lib/profile-meta";
+import { OPEN_TO, classOf, openToLabel } from "@/lib/profile-meta";
 import { getViewer } from "@/lib/supabase/server";
-import { buildBuilders, rankBuilders, type Person, type VerifiedRow } from "@/lib/talent";
+import { buildBuilders, classYears, rankBuilders, type Person, type VerifiedRow } from "@/lib/talent";
 
 export const metadata: Metadata = { title: "Find builders" };
 
@@ -53,6 +53,7 @@ async function Talent({ searchParams }: { searchParams: PageProps<"/talent">["se
   const club = typeof sp.club === "string" ? sp.club : "";
   const openTo = typeof sp.open === "string" && OPEN_TO.some((o) => o.id === sp.open) ? sp.open : "";
   const min = MINS.find((m) => String(m) === sp.min) ?? 1;
+  const year = f.gradYear && typeof sp.year === "string" && /^\d{4}$/.test(sp.year) ? Number(sp.year) : 0;
 
   // Only verified work the member made public (the database enforces this for everyone).
   let mq = supabase.from("milestones")
@@ -63,10 +64,12 @@ async function Talent({ searchParams }: { searchParams: PageProps<"/talent">["se
   const rows = (rowsData ?? []) as unknown as VerifiedRow[];
   const ids = [...new Set(rows.map((r) => r.owner_id))];
   const { data: peopleData } = ids.length
-    ? await supabase.from("profiles").select(`id, first_name, last_name, headline, field${f.profileExtras ? ", open_to" : ""}`).in("id", ids)
+    ? await supabase.from("profiles").select(`id, first_name, last_name, headline, field${f.profileExtras ? ", open_to" : ""}${f.gradYear ? ", grad_year" : ""}`).in("id", ids)
     : { data: [] };
   const all = buildBuilders(rows, (peopleData ?? []) as unknown as Person[]);
-  const list = rankBuilders(all, { q, club, openTo, min });
+  const list = rankBuilders(all, { q, club, openTo, min, year });
+  // Class-year chips: the years present among everyone else's filters, so a chip never leads nowhere.
+  const years = classYears(rankBuilders(all, { q, club, openTo, min }));
   // Challenge wins (public once announced) next to the verified work.
   const shownIds = list.slice(0, 60).map((b) => b.person.id);
   const { data: winRows } = f.challenges && shownIds.length
@@ -79,7 +82,7 @@ async function Talent({ searchParams }: { searchParams: PageProps<"/talent">["se
   }
   const clubs = [...new Map(all.flatMap((b) => b.clubs).map((c) => [c.id, c])).values()].sort((a, b) => a.name.localeCompare(b.name));
   const href = (o: Record<string, string>) => {
-    const p = new URLSearchParams({ ...(q && { q }), ...(club && { club }), ...(openTo && { open: openTo }), ...(min > 1 && { min: String(min) }), ...o });
+    const p = new URLSearchParams({ ...(q && { q }), ...(club && { club }), ...(openTo && { open: openTo }), ...(min > 1 && { min: String(min) }), ...(year && { year: String(year) }), ...o });
     for (const [k, v] of [...p]) if (!v) p.delete(k);
     return `/talent${p.size ? `?${p}` : ""}`;
   };
@@ -97,6 +100,7 @@ async function Talent({ searchParams }: { searchParams: PageProps<"/talent">["se
         {club && <input type="hidden" name="club" value={club} />}
         {openTo && <input type="hidden" name="open" value={openTo} />}
         {min > 1 && <input type="hidden" name="min" value={min} />}
+        {!!year && <input type="hidden" name="year" value={year} />}
         <button className="h-8 rounded-full bg-accent px-3 text-xs font-medium text-on-accent">Search</button>
       </form>
       <div className="no-scrollbar mt-3 flex gap-1.5 overflow-x-auto" aria-label="Open to">
@@ -109,6 +113,13 @@ async function Talent({ searchParams }: { searchParams: PageProps<"/talent">["se
         {clubs.length > 1 && clubs.map((c) => <Link key={c.id} href={href({ club: club === c.id ? "" : c.id })} className={chip(club === c.id)}>{c.name}</Link>)}
       </div>
 
+      {(years.length > 0 || !!year) && (
+        <div className="no-scrollbar mt-2 flex gap-1.5 overflow-x-auto" aria-label="Class year">
+          <Link href={href({ year: "" })} className={chip(!year)}>Any year</Link>
+          {years.map((y) => <Link key={y} href={href({ year: year === y ? "" : String(y) })} className={chip(year === y)}>{classOf(y)}</Link>)}
+        </div>
+      )}
+
       <p className="mt-6 text-xs text-faint">{list.length} {list.length === 1 ? "person" : "people"} with verified work{q ? ` matching "${q}"` : ""}</p>
       <div className="mt-3 grid grid-cols-1 gap-3 xl:grid-cols-2">
         {list.slice(0, 60).map((b) => {
@@ -119,7 +130,7 @@ async function Talent({ searchParams }: { searchParams: PageProps<"/talent">["se
                 <Avatar first={b.person.first_name} last={b.person.last_name} size={44} />
                 <div className="min-w-0 flex-1">
                   <Link href={`/u/${b.person.id}`} className="block truncate font-semibold hover:underline">{name}</Link>
-                  <p className="truncate text-sm text-muted">{b.person.headline || b.person.field || "Builder"}</p>
+                  <p className="truncate text-sm text-muted">{b.person.headline || b.person.field || "Builder"}{b.person.grad_year ? ` · ${classOf(b.person.grad_year)}` : ""}</p>
                   {!!b.person.open_to?.length && <p className="mt-0.5 truncate text-xs text-text-2">Open to {b.person.open_to.map(openToLabel).join(", ").toLowerCase()}</p>}
                 </div>
                 <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-ok/12 px-2.5 py-1 text-xs font-medium text-ok"><BadgeCheck className="size-3.5" /> {b.verified}<span className="hidden sm:inline"> verified</span></span>
