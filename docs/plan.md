@@ -44,7 +44,7 @@ To build:
 - ✅ Per-officer weekly limit (config) and an outlier flag to an admin queue.
 - ✅ Revocation with a reason; disputes → club owner → Forge admin.
 - ✅ Verified milestones survive the author leaving the club; officers lose verifying power when the role ends.
-- ✅ Verified-club badge on club pages (`club_is_verified()`: a school-email officer and enough members with verified work). Duplicate-claim review ⬜.
+- ✅ Verified-club badge on club pages (`club_is_verified()`: a school-email officer and enough members with verified work). Possible duplicate clubs are flagged to `/admin`'s review queue (`club-duplicates.sql`, step 27).
 - ✅ Tests for every rule.
 
 ## Phase 4: club leader flow
