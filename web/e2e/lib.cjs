@@ -9,7 +9,18 @@ async function step(name, fn, page) {
   catch (e) { results.push(["FAIL", name, Date.now() - t, e.message.split("\n")[0]]); console.log("FAIL", name, "→", e.message.split("\n")[0].slice(0, 160)); if (page) await page.screenshot({ path: `${OUT}/fail-${name.replace(/\W+/g, "-").slice(0, 40)}.png` }).catch(() => {}); }
 }
 // Uses your installed Chrome (no browser download). Set E2E_BROWSER=chromium to use Playwright's.
-async function browser() { return chromium.launch(process.env.E2E_BROWSER === "chromium" ? {} : { channel: "chrome" }); }
+// Every page in every spec is watched for Content-Security-Policy violations (something the policy in
+// next.config.ts blocked); summary() fails the spec if there were any, so a too-strict policy can't ship.
+const cspViolations = [];
+function watchCsp(page) {
+  page.on("console", (m) => { if (m.type() === "error" && /Content Security Policy|Refused to (load|connect|frame|execute|apply)/i.test(m.text())) cspViolations.push(`${new URL(page.url() || "about:blank").pathname}: ${m.text().slice(0, 220)}`); });
+}
+async function browser() {
+  const b = await chromium.launch(process.env.E2E_BROWSER === "chromium" ? {} : { channel: "chrome" });
+  const newContext = b.newContext.bind(b);
+  b.newContext = async (opts) => { const ctx = await newContext(opts); ctx.on("page", watchCsp); return ctx; };
+  return b;
+}
 // Logging in happens outside any step, so a slow sign-in on a busy CI machine would end the whole spec:
 // try twice, and if both fail, say what the login page showed.
 async function as(b, email, viewport = { width: 1440, height: 950 }) {
@@ -43,5 +54,11 @@ async function hydrated(locator) {
   await locator.waitFor();
   await locator.evaluate((el) => new Promise((ok) => { const t = setInterval(() => { if (Object.keys(el).some((k) => k.startsWith("__reactProps"))) { clearInterval(t); ok(); } }, 50); }));
 }
-function summary() { const f = results.filter((r) => r[0] === "FAIL"); console.log(`\n${results.length - f.length}/${results.length} passed`); for (const r of f) console.log("  FAIL", r[1], "→", (r[3] || "").slice(0, 200)); }
+function summary() {
+  if (cspViolations.length) {
+    const seen = [...new Set(cspViolations)];
+    results.push(["FAIL", "no Content-Security-Policy violations", 0, seen[0]]);
+    console.log(`FAIL no Content-Security-Policy violations → ${seen.length} blocked:\n  ${seen.slice(0, 8).join("\n  ")}`);
+  }
+  const f = results.filter((r) => r[0] === "FAIL"); console.log(`\n${results.length - f.length}/${results.length} passed`); for (const r of f) console.log("  FAIL", r[1], "→", (r[3] || "").slice(0, 200)); }
 module.exports = { BASE, step, browser, as, go, closeTour, hydrated, summary, results };
