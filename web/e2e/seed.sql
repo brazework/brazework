@@ -26,3 +26,5 @@ insert into public.organization_admins (org_id, uid) select id, (select cara fro
 update public.milestones set private = false where id in ('m1', 'm2');
 -- Maya is a Forge admin (approves sponsorship pilots on /admin).
 insert into public.forge_admins (uid) select maya from u;
+-- The test members are returning members: they've seen the welcome tour (new sign-ups still get it).
+insert into public.seen_tours (user_id, key) select id, 'welcome' from public.profiles on conflict do nothing;
