@@ -1,5 +1,6 @@
 "use client";
 import { Check, Loader2, Monitor, Moon, Sun } from "lucide-react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useActionState, useState, useSyncExternalStore, useTransition } from "react";
 import { Button, Field, inputCls } from "@/components/ui";
@@ -294,7 +295,7 @@ export function YourDataSettings() {
     <div className="flex flex-col gap-6">
       <div>
         <a href="/api/export" download className="inline-flex h-10 items-center rounded-full border border-line px-4 text-sm font-medium transition hover:bg-hover">Download my data</a>
-        <p className="mt-2 text-xs text-muted">A JSON file with your profile, posts, replies, projects, milestones, messages you sent, clubs, follows and saved posts, plus links to your files. Forge never pulls records from your school.</p>
+        <p className="mt-2 text-xs text-muted">A JSON file with your profile, posts, replies, projects, milestones, messages you sent, clubs, follows and saved posts, plus links to your files. Forge never pulls records from your school. <Link href="/privacy" className="underline hover:text-text">How Forge handles your data</Link></p>
       </div>
       <form className="border-t border-line pt-6" onSubmit={(e) => { e.preventDefault(); start(async () => { const r = await deleteAccount(confirm); setState(r); if (r.ok) { router.replace("/"); router.refresh(); } }); }}>
         <div className="text-sm font-medium text-danger">Delete my account</div>
