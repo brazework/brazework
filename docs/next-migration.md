@@ -57,6 +57,7 @@ The Vercel project lives in Ian's account, so these are his steps. It's already 
    14. `supabase/chat-extras.sql`: reactions, replies and unsend in messages and group chats
    15. `supabase/reports.sql`: report a post, reply, person or message, and block someone from anywhere (the iPhone app needs both for App Store review)
    16. `supabase/project-posts.sql`: project updates can also go to one of your clubs, and keep their kind (update, result, question)
+   17. `supabase/verification.sql`: verification made airtight: evidence required, no verifying your own team's work, 1–2 verifiers per club, revocation with a reason, disputes (club owner, then Forge admins), weekly limits per officer, an append-only log, and milestones private until the member shows them
 2. **Vercel → Project → Settings → Environment Variables (Production):** these exact names must exist.
    - `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`. The old app also accepted `SUPABASE_URL` or a "publishable key", but the new app reads only these two names. If the project has them under other names, add these two with the same values, or the site loads but nobody can sign in.
    - `GITHUB_TOKEN` (optional): a GitHub token with no scopes. GitHub import works without it, but it raises GitHub's rate limit from 60 to 5,000 requests an hour.
