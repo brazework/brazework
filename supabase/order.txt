@@ -39,3 +39,4 @@ club-duplicates
 club-reports
 project-specs
 email-digest
+indexes
