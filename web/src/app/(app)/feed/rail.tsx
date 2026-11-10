@@ -4,22 +4,12 @@ import Link from "next/link";
 import { DROP_AFTER_MS, dateParts, withHost, type HostedEvent } from "@/lib/events";
 import { requestTime } from "@/lib/forge";
 import { getViewer } from "@/lib/supabase/server";
+import { RailCard } from "@/components/app/rail-card";
+import { MessageDock } from "@/components/messages/dock";
 import { CommunityBadge } from "../communities/_components/badge";
 import { UpdatesPanel } from "@/components/tour/updates-panel";
 import { newsPool, pickNews, type NewsPick } from "@/lib/news";
 import { TrendingNews } from "./trending-news";
-
-const box = "glass-card rounded-3xl p-4";
-
-function Head({ icon: Icon, title, href }: { icon: typeof Users; title: string; href?: string }) {
-  return (
-    <div className="flex items-center gap-2">
-      <span className="grid size-7 place-items-center rounded-lg bg-accent-grad text-on-accent"><Icon className="size-3.5" /></span>
-      <h2 className="text-sm font-semibold">{title}</h2>
-      {href && <Link href={href} className="ml-auto text-xs text-muted hover:text-text">See all</Link>}
-    </div>
-  );
-}
 
 // The feed's right rail (wide screens): Forge updates (recent and coming next), what's trending, your clubs and what's coming up, so the rest of Forge is one glance away.
 export async function FeedRail() {
@@ -64,12 +54,11 @@ type RailChallenge = { id: string; title: string; sponsor: string; prize: string
 // The rail's markup, separate from its queries so it can be previewed with sample data.
 export function RailView({ trending, news = [], hasInterests = false, clubs, events, going: goingSet, challenges = [] }: { trending: [string, number][]; news?: NewsPick[]; hasInterests?: boolean; clubs: Club[]; events: HostedEvent[]; going: Set<string>; challenges?: RailChallenge[] }) {
   return (
-    <div className="sticky top-8 flex flex-col gap-4 min-[137.5rem]:grid min-[137.5rem]:grid-cols-2 min-[137.5rem]:items-start">
+    <div className="no-scrollbar sticky top-8 flex max-h-[calc(100dvh-4rem)] flex-col gap-4 [&>*]:shrink-0 overflow-y-auto overscroll-contain pb-2 min-[137.5rem]:grid min-[137.5rem]:grid-cols-2 min-[137.5rem]:items-start">
       <UpdatesPanel />
       <TrendingNews trending={trending} news={news} hasInterests={hasInterests} />
 
-      <section className={box}>
-        <Head icon={Users} title="Your clubs" href="/communities" />
+      <RailCard id="clubs" title="Your clubs" icon={<Users className="size-3.5" />} href="/communities" summary={clubs.length ? clubs.map((c) => c.name).join(", ") : "Join your club"}>
         <ul className="mt-3 flex flex-col gap-1">
           {clubs.map((cl) => (
             <li key={cl.id}>
@@ -87,10 +76,9 @@ export function RailView({ trending, news = [], hasInterests = false, clubs, eve
         <Link href={clubs.length ? "/communities?tab=discover" : "/communities?tab=create"} className="mt-2 flex items-center gap-2 rounded-xl px-1.5 py-1.5 text-sm text-muted transition hover:bg-hover hover:text-text">
           <Plus className="size-4" /> {clubs.length ? "Find more clubs" : "Start your club"}
         </Link>
-      </section>
+      </RailCard>
 
-      <section className={box}>
-        <Head icon={CalendarDays} title="Coming up" href="/events" />
+      <RailCard id="events" title="Coming up" icon={<CalendarDays className="size-3.5" />} href="/events" summary={events[0] ? `Next: ${events[0].title}` : "Nothing scheduled yet"}>
         <ul className="mt-3 flex flex-col gap-2">
           {events.map((e) => {
             const d = dateParts(e.starts_at, "UTC");
@@ -111,11 +99,10 @@ export function RailView({ trending, news = [], hasInterests = false, clubs, eve
           })}
         </ul>
         {!events.length && <p className="mt-2 text-sm text-muted">Nothing scheduled yet.</p>}
-      </section>
+      </RailCard>
 
       {challenges.length > 0 && (
-        <section className={box}>
-          <Head icon={Trophy} title="Open challenges" href="/challenges" />
+        <RailCard id="challenges" title="Open challenges" icon={<Trophy className="size-3.5" />} href="/challenges" summary={`${challenges.length} open · next deadline in ${challenges[0]?.days ?? 0} ${challenges[0]?.days === 1 ? "day" : "days"}`}>
           <ul className="mt-3 flex flex-col gap-1">
             {challenges.map((c) => (
               <li key={c.id}>
@@ -126,8 +113,10 @@ export function RailView({ trending, news = [], hasInterests = false, clubs, eve
               </li>
             ))}
           </ul>
-        </section>
+        </RailCard>
       )}
+
+      <MessageDock variant="rail" />
     </div>
   );
 }

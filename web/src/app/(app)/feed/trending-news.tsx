@@ -1,7 +1,9 @@
 "use client";
-import { ArrowUpRight, Flame, Newspaper } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
+import { ArrowUpRight, ChevronDown, Flame, Newspaper } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { foldMotion, useFold } from "@/components/app/rail-card";
 import { cn, timeAgo } from "@/lib/forge";
 import type { NewsPick } from "@/lib/news";
 
@@ -12,6 +14,7 @@ const KEY = "forge.rail.tab";
 // interests. Flip between them with the tabs; Forge remembers which one you looked at last.
 export function TrendingNews({ trending, news, hasInterests }: { trending: [string, number][]; news: NewsPick[]; hasInterests: boolean }) {
   const [tab, setTab] = useState<Tab>(trending.length ? "trending" : "news");
+  const [folded, setFolded] = useFold("news");
   useEffect(() => {
     try {
       const saved = localStorage.getItem(KEY);
@@ -27,10 +30,19 @@ export function TrendingNews({ trending, news, hasInterests }: { trending: [stri
   return (
     <section data-tour="news" aria-label="Trending and news" className="glass-card rounded-3xl p-4">
       <div className="flex items-center gap-2">
-        <span className="grid size-7 place-items-center rounded-lg bg-accent-grad text-on-accent">
-          {tab === "trending" ? <Flame className="size-3.5" /> : <Newspaper className="size-3.5" />}
-        </span>
-        <div role="tablist" aria-label="Show" className="ml-auto grid grid-cols-2 gap-1 rounded-xl bg-surface-2 p-1">
+        <button type="button" onClick={() => setFolded(!folded)} aria-expanded={!folded} aria-controls="rail-news-body" className="group -m-1 flex min-w-0 flex-1 items-center gap-2 rounded-xl p-1 text-left">
+          <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-accent-grad text-on-accent">
+            {tab === "trending" ? <Flame className="size-3.5" /> : <Newspaper className="size-3.5" />}
+          </span>
+          <span className="min-w-0"><h2 className="text-sm font-semibold">Trending &amp; news</h2>{folded && trending[0] && <span className="block truncate text-xs text-muted">Top: #{trending[0][0]}</span>}</span>
+          <ChevronDown className={cn("ml-auto size-4 shrink-0 text-faint transition group-hover:text-text", !folded && "rotate-180")} />
+        </button>
+      </div>
+
+      <AnimatePresence initial={false}>
+      {!folded && (
+      <motion.div id="rail-news-body" {...foldMotion} className="overflow-hidden">
+      <div role="tablist" aria-label="Show" className="mt-3 grid grid-cols-2 gap-1 rounded-xl bg-surface-2 p-1">
           {([["trending", "Trending"], ["news", "News"]] as const).map(([t, label]) => (
             <button
               key={t}
@@ -45,8 +57,6 @@ export function TrendingNews({ trending, news, hasInterests }: { trending: [stri
             </button>
           ))}
         </div>
-      </div>
-
       {tab === "trending" ? (
         <div id="rail-trending" role="tabpanel" aria-label="Trending on Forge">
           <h2 className="mt-3 text-sm font-semibold">Trending on Forge</h2>
@@ -98,6 +108,9 @@ export function TrendingNews({ trending, news, hasInterests }: { trending: [stri
           </p>
         </div>
       )}
+      </motion.div>
+      )}
+      </AnimatePresence>
     </section>
   );
 }

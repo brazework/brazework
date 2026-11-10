@@ -1,4 +1,5 @@
-// The feed's message dock (desktop): unread count, requests stay read-only, reply in place.
+// The feed's message dock (a card in the right rail on wide screens, a corner bar below that):
+// unread count, requests stay read-only, reply in place.
 const { step, browser, as, go, summary, closeTour } = require("./lib.cjs");
 (async () => {
   const JOSH = process.env.JOSH_ID;
@@ -21,7 +22,8 @@ const { step, browser, as, go, summary, closeTour } = require("./lib.cjs");
     if (!/\d/.test(t)) throw new Error("bar says: " + t);
   }, josh);
   await step("open the dock: Maya's conversation is listed, unread", async () => {
-    await josh.getByRole("button", { name: /Messages/ }).last().click();
+    // Wide screens show Messages as a rail card (open by default); narrower ones as a corner bar.
+    if (!(await josh.getByRole("region", { name: "Messages" }).isVisible())) await josh.getByRole("button", { name: /Messages/ }).last().click();
     await josh.getByRole("region", { name: "Messages" }).getByText(`Launch Saturday? ${stamp}`).waitFor({ timeout: 10000 });
   }, josh);
   await step("a request opens read-only, pointing to Messages to accept", async () => {

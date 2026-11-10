@@ -2,7 +2,8 @@
 import { AnimatePresence, motion } from "motion/react";
 import { ArrowLeft, ArrowUp, ChevronDown, ExternalLink, Loader2, MessageSquare, Users } from "lucide-react";
 import Link from "next/link";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
+import { foldMotion, useFold } from "@/components/app/rail-card";
 import { Avatar } from "@/components/ui";
 import { cn, timeAgo } from "@/lib/forge";
 import { sendChatMessage, markChatRead } from "@/lib/chats";
@@ -14,8 +15,27 @@ const KEY = "forge-dock";
 
 // Messages without leaving the feed (desktop): a bar in the corner that opens into your recent
 // conversations and group chats; open one to read and answer it right here.
-export function MessageDock() {
-  const [open, setOpen] = useState(false);
+// Wide screens (the feed's right rail is showing): Messages lives in the rail instead of the corner.
+const WIDE = "(min-width: 80rem)";
+function useWide() {
+  return useSyncExternalStore(
+    (f) => { const m = matchMedia(WIDE); m.addEventListener("change", f); return () => m.removeEventListener("change", f); },
+    () => matchMedia(WIDE).matches,
+    () => false,
+  );
+}
+
+export function MessageDock({ variant = "float" }: { variant?: "float" | "rail" }) {
+  const wide = useWide();
+  // Only one copy is live at a time: the rail card on wide screens, the corner bar below that.
+  if (variant === "rail" ? !wide : wide) return null;
+  return <Dock variant={variant} />;
+}
+
+function Dock({ variant }: { variant: "float" | "rail" }) {
+  const [floatOpen, setOpen] = useState(false);
+  const [folded, setFolded] = useFold("messages");
+  const open = variant === "rail" ? !folded : floatOpen;
   const [items, setItems] = useState<DockItem[] | null>(null);
   const [unread, setUnread] = useState(0);
   const [thread, setThread] = useState<DockItem | null>(null);
@@ -26,7 +46,7 @@ export function MessageDock() {
   const [error, setError] = useState("");
   const end = useRef<HTMLDivElement>(null);
 
-  useEffect(() => { const t = setTimeout(() => { try { setOpen(localStorage.getItem(KEY) === "open"); } catch {} }, 0); return () => clearTimeout(t); }, []);
+  useEffect(() => { if (variant !== "float") return; const t = setTimeout(() => { try { setOpen(localStorage.getItem(KEY) === "open"); } catch {} }, 0); return () => clearTimeout(t); }, [variant]);
   const toggle = () => setOpen((o) => { try { localStorage.setItem(KEY, o ? "closed" : "open"); } catch {} return !o; });
 
   const refreshInbox = useCallback(async () => { const r = await dockInbox().catch(() => null); if (r) { setItems(r.items); setUnread(r.unread); } }, []);
@@ -67,12 +87,8 @@ export function MessageDock() {
     void refreshThread(thread); void refreshInbox();
   };
 
-  return (
-    // Steps aside while the welcome tour's card is in the same corner.
-    <div className="fixed right-6 bottom-6 z-40 hidden w-[340px] lg:block [html[data-tour=on]_&]:!hidden">
-      <AnimatePresence initial={false}>
-        {open && (
-          <motion.section aria-label="Messages" initial={{ opacity: 0, y: 12, height: 0 }} animate={{ opacity: 1, y: 0, height: 460 }} exit={{ opacity: 0, y: 12, height: 0 }} transition={{ type: "spring", stiffness: 380, damping: 34 }} className="mb-2 flex flex-col overflow-hidden rounded-3xl border border-line bg-surface shadow-[0_24px_60px_-20px_rgb(0_0_0/0.45)]">
+  const panel = (
+    <>
             {thread ? (
               <>
                 <header className="flex items-center gap-2 border-b border-line px-3 py-2.5">
@@ -106,7 +122,7 @@ export function MessageDock() {
             ) : (
               <>
                 <header className="flex items-center justify-between border-b border-line px-4 py-3">
-                  <span className="text-sm font-semibold">Messages</span>
+                  <span className="text-sm font-semibold">{variant === "rail" ? "Recent" : "Messages"}</span>
                   <Link href="/messages" className="text-xs text-muted hover:text-text">Open all</Link>
                 </header>
                 <ul className="min-h-0 flex-1 overflow-y-auto p-1.5">
@@ -127,6 +143,38 @@ export function MessageDock() {
                 </ul>
               </>
             )}
+    </>
+  );
+
+  if (variant === "rail") {
+    return (
+      <div className="glass-card rounded-3xl p-4">
+        <button type="button" onClick={() => setFolded(!folded)} aria-expanded={!folded} aria-controls="rail-messages-body" className="group -m-1 flex w-[calc(100%+0.5rem)] min-w-0 items-center gap-2 rounded-xl p-1 text-left">
+          <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-accent-grad text-on-accent"><MessageSquare className="size-3.5" /></span>
+          <span className="min-w-0">
+            <h2 id="rail-messages-title" className="flex items-center gap-1.5 text-sm font-semibold">Messages{unread > 0 && <span className="rounded-full bg-accent px-1.5 text-[11px] font-semibold text-on-accent tabular-nums">{unread}</span>}</h2>
+            {folded && <span className="block truncate text-xs text-muted">{items?.[0] ? `${items[0].title}: ${items[0].preview || "No messages yet"}` : "Your conversations and club chats"}</span>}
+          </span>
+          <ChevronDown className={cn("ml-auto size-4 shrink-0 text-faint transition group-hover:text-text", !folded && "rotate-180")} />
+        </button>
+        <AnimatePresence initial={false}>
+          {!folded && (
+            <motion.div id="rail-messages-body" {...foldMotion} className="overflow-hidden">
+              <div role="region" aria-label="Messages" className="-mx-1 mt-3 flex h-[420px] flex-col overflow-hidden rounded-2xl border border-line bg-surface">{panel}</div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    );
+  }
+
+  return (
+    // Steps aside while the welcome tour's card is in the same corner.
+    <div className="fixed right-6 bottom-6 z-40 hidden w-[340px] lg:block xl:hidden [html[data-tour=on]_&]:!hidden">
+      <AnimatePresence initial={false}>
+        {open && (
+          <motion.section aria-label="Messages" initial={{ opacity: 0, y: 12, height: 0 }} animate={{ opacity: 1, y: 0, height: 460 }} exit={{ opacity: 0, y: 12, height: 0 }} transition={{ type: "spring", stiffness: 380, damping: 34 }} className="mb-2 flex flex-col overflow-hidden rounded-3xl border border-line bg-surface shadow-[0_24px_60px_-20px_rgb(0_0_0/0.45)]">
+            {panel}
           </motion.section>
         )}
       </AnimatePresence>
