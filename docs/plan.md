@@ -59,9 +59,9 @@ To build:
 
 - ✅ Organizations register by work email; free email domains are refused and the email domain must match the website (`create_organization()` in events.sql).
 - ✅ Find builders (`/talent`, verified companies and schools): search by skills and verified work, club, open-to and verified count; public verified milestones only, ranking tested (`web/tests/talent.test.ts`). Grad year ⬜ (not collected yet).
-- 🟡 Messages land in Requests ✅; per-company weekly cap and tier limits ⬜.
+- ✅ Messages land in Requests; company and school admins have a weekly request cap (`limit_org_requests_per_week`). Tier limits ⬜.
 - ✅ Sponsored challenges end to end (`challenges.sql`, step 21): draft → sponsored (paid or Forge-approved pilot) → open → judging → winners; SQL tests and e2e `h-challenges.cjs`.
-- ✅ `web/src/lib/billing.ts`: provider interface, Stripe Checkout over REST (on only with `STRIPE_SECRET_KEY` + `STRIPE_PRICE_CHALLENGE`/`STRIPE_PRICE_TALENT`), otherwise a pilot request; tests in `web/tests/billing.test.ts`. Webhook to mark payments ⬜.
+- ✅ `web/src/lib/billing.ts`: provider interface, Stripe Checkout over REST (on only with `STRIPE_SECRET_KEY` + `STRIPE_PRICE_CHALLENGE`/`STRIPE_PRICE_TALENT`), otherwise a pilot request; tests in `web/tests/billing.test.ts`. Stripe webhook `/api/billing/webhook` (signature-checked, idempotent) marks sponsorships paid; needs `STRIPE_WEBHOOK_SECRET` and `SUPABASE_SERVICE_ROLE_KEY`.
 - 🟡 Company events beside club events (exists; label clearly).
 
 ## Phase 6: Ember
@@ -74,11 +74,12 @@ To build:
 
 - 🟡 School email allow-list (pattern only) → configurable list + "Request my school".
 - 🟡 Under-18 gate (app only) → database check + config for a future restricted mode.
-- 🟡 "Forge never pulls records from your school" stated next to Download my data; a full privacy page ⬜.
+- ✅ "Forge never pulls records from your school" stated next to Download my data and on the privacy page.
 - ✅ Data export (JSON with links to your files) and account deletion (`account.sql`, step 20; SQL and e2e tests).
 - 🟡 Reports (`reports.sql` exists for posts/replies/people/messages) → add projects/milestones; ⬜ admin queue.
 - ✅ Blocking (block_user); ⬜ blocked parties can't view private items.
-- ⬜ Rate limits on sign-ups, posts, messages, verification requests.
+- ✅ Rate limits (`rate-limits.sql`, step 23) on posts, replies, messages, message requests and milestone submissions, tunable in `app_config`; SQL tests. Sign-ups are limited by Supabase Auth's own settings.
+- ✅ Plain-language privacy page (`/privacy`).
 - 🟡 Accessibility: alt text exists on photos; prompts and captions ⬜.
 
 ## Phase 8: landing (after decision 1)
