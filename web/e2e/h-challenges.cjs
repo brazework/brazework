@@ -132,6 +132,24 @@ const { step, browser, as, go, summary } = require("./lib.cjs");
     await row.getByRole("button", { name: "Add school" }).click();
     await list.getByText("@" + domain).waitFor({ state: "detached", timeout: 15000 });
   }, maya);
+  await step("an officer claims a club someone else started; a Forge admin approves; they own it", async () => {
+    // Robotics Society was started by Maya; Josh, not a member, says he's its real president.
+    await go(josh, "/c/rob?tab=about");
+    await josh.getByRole("link", { name: "Claim this club" }).click();
+    await josh.waitForURL(/\/c\/rob\/claim/);
+    await josh.fill('input[name="role"]', "President");
+    await josh.fill('textarea[name="evidence"]', "The engineering school's club directory lists me as president: https://example.edu/clubs/robotics");
+    await josh.getByRole("button", { name: "Send claim" }).click();
+    // Once sent, the page re-renders into the claim's status (the form and its message go away).
+    await josh.getByText(/is with the Forge team/).waitFor({ timeout: 15000 });
+    await go(maya, "/admin");
+    const claims = maya.getByRole("region", { name: "Club claims" });
+    const row = claims.locator("div").filter({ hasText: "President of" }).filter({ has: maya.getByRole("button", { name: "Approve" }) }).last();
+    await row.getByRole("button", { name: "Approve" }).click();
+    await claims.getByText("No claims waiting.").waitFor({ timeout: 15000 });
+    await go(josh, "/c/rob/claim");
+    await josh.getByText("You already own this club.").waitFor({ timeout: 15000 });
+  }, josh);
   summary();
   await b.close();
 })();

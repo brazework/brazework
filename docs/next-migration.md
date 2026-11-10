@@ -75,6 +75,7 @@ The Vercel project lives in Ian's account, so these are his steps. It's already 
    32. `supabase/blocking-content.sql`: blocking hides posts and replies both ways, even in a club you share (club moderators still see everything in their club)
    33. `supabase/admin-retention.sql`: retention by weekly sign-up cohort and the company reply rate, on `/admin` (Forge admins only)
    34. `supabase/grad-year.sql`: an optional graduation year on profiles; a class-year filter on Find builders
+   35. `supabase/club-claims.sql`: an officer claims a club someone else started; a Forge admin decides on /admin
 2. **Vercel → Project → Settings → Environment Variables (Production):** these exact names must exist.
    - `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`. The old app also accepted `SUPABASE_URL` or a "publishable key", but the new app reads only these two names. If the project has them under other names, add these two with the same values, or the site loads but nobody can sign in.
    - `GITHUB_TOKEN` (optional): a GitHub token with no scopes. GitHub import works without it, but it raises GitHub's rate limit from 60 to 5,000 requests an hour.

@@ -8,6 +8,7 @@ import { getViewer } from "@/lib/supabase/server";
 import { SponsorshipDecision } from "../challenges/challenge-client";
 import { ResolveReport } from "@/components/report/report-dialog";
 import { SchoolDecision } from "../../request-school/form";
+import { ClaimDecision } from "@/components/clubs/claim";
 
 export const metadata: Metadata = { title: "Forge admin" };
 
@@ -40,7 +41,7 @@ async function Admin() {
   if (!user) redirect("/login");
   const { data: isAdmin } = await supabase.rpc("is_forge_admin");
   if (!isAdmin) notFound();
-  const [{ data: m }, { data: requests }, { data: queue }, { data: reportRows }, { data: schoolRows }, { data: ret }] = await Promise.all([
+  const [{ data: m }, { data: requests }, { data: queue }, { data: reportRows }, { data: schoolRows }, { data: ret }, { data: claimRows }] = await Promise.all([
     supabase.rpc("admin_metrics"),
     supabase.from("challenges").select("id, title, prize, deadline, organizations(name)").eq("sponsorship", "requested").order("created_at", { ascending: true }).limit(50),
     supabase.from("admin_queue").select("id, kind, subject_id, detail, created_at").eq("status", "open").order("created_at", { ascending: true }).limit(50),
@@ -48,7 +49,11 @@ async function Admin() {
     supabase.from("school_requests").select("id, domain, school, contact, asks, created_at").eq("status", "open").order("asks", { ascending: false }).limit(50),
     // Until step 33 runs, this errors and the retention section stays hidden.
     supabase.rpc("admin_retention"),
+    // Until step 35 runs, this errors and the section stays hidden. Two links to profiles: name the claimant's.
+    supabase.from("club_claims").select("id, community_id, role_title, evidence, created_at, communities(name, owner_name), profiles!club_claims_claimant_fkey(first_name, last_name)").eq("status", "open").order("created_at", { ascending: true }).limit(50),
   ]);
+  type Claim = { id: number; community_id: string; role_title: string; evidence: string; created_at: string; communities: { name: string; owner_name: string } | null; profiles: { first_name: string; last_name: string } | null };
+  const claims = claimRows as unknown as Claim[] | null;
   const r = ret as Retention | null;
   const schools = (schoolRows ?? []) as { id: number; domain: string; school: string; contact: string; asks: number; created_at: string }[];
   type Report = { id: number; kind: string; target_id: string; reason: string; detail: string; reported: string | null; created_at: string };
@@ -127,6 +132,29 @@ async function Admin() {
           {!reqs.length && <p className="text-sm text-muted">Nothing waiting.</p>}
         </div>
       </section>
+
+      {claims && (
+        <section className="mt-8" aria-label="Club claims">
+          <Kicker>Club claims · {claims.length}</Kicker>
+          <p className="mt-1 text-xs text-faint">Check the proof before approving: the claimant becomes the owner and the current owner becomes a member.</p>
+          <div className="mt-3 flex flex-col gap-2">
+            {claims.map((c) => (
+              <Panel key={c.id} className="flex flex-wrap items-start gap-3 p-4 text-sm">
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium">
+                    {`${c.profiles?.first_name ?? ""} ${c.profiles?.last_name ?? ""}`.trim() || "A member"} · {c.role_title} of{" "}
+                    <Link href={`/c/${c.community_id}`} className="hover:underline">{c.communities?.name ?? "a club"}</Link>
+                  </p>
+                  <p className="mt-0.5 text-xs text-faint">Owner now: {c.communities?.owner_name || "unknown"}</p>
+                  <p className="mt-1.5 text-sm break-words whitespace-pre-wrap text-text-2">{c.evidence}</p>
+                </div>
+                <ClaimDecision id={c.id} />
+              </Panel>
+            ))}
+            {!claims.length && <p className="text-sm text-muted">No claims waiting.</p>}
+          </div>
+        </section>
+      )}
 
       <section className="mt-8" aria-label="School requests">
         <Kicker>School requests · {schools.length}</Kicker>

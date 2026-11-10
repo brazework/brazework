@@ -49,7 +49,7 @@ To build:
 
 ## Phase 4: club leader flow
 
-- 🟡 Create/claim club, roles (owner/admin/moderator/helper/member exist), invite links ✅.
+- ✅ Create and claim a club: roles (owner/admin/moderator/helper/member), invite links, and claiming a club someone else started (role + proof, decided by a Forge admin on `/admin`; the old owner stays a member) (`club-claims.sql`, step 35; SQL and e2e tests).
 - ✅ Import events from Google Calendar, Outlook or Apple Calendar (`.ics` file, parsed in the browser with time zones and all-day events; pick which to bring; same checks as a hand-made event). Tests: `web/tests/ics.test.ts`, e2e step in `b-clubs-events.cjs`.
 - ⬜ Import members (CSV/email list): needs an email sender for invitations.
 - ✅ Club home as a to-do list for officers (verify queue incl. disputes, join requests, held posts, next event).

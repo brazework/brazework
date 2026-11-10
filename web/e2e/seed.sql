@@ -25,6 +25,8 @@ insert into public.posts (author_id, body, kind, community_id, created_at) selec
 insert into public.organizations (type, name, domain) values ('company', 'Acme Aerospace', 'forge.test');
 insert into public.organization_admins (org_id, uid) select id, (select cara from u) from public.organizations where domain = 'forge.test';
 update public.milestones set private = false where id in ('m1', 'm2');
+-- Clubs made in the app record their owner's name; the seed's direct inserts didn't.
+update public.communities c set owner_name = btrim(p.first_name || ' ' || p.last_name) from public.profiles p where p.id = c.owner_id and c.owner_name = '';
 -- Ben graduates in 2026 (Find builders' class-year filter, grad-year.sql).
 update public.profiles set grad_year = 2026 where id = (select ben from u);
 -- Maya is a Forge admin (approves sponsorship pilots on /admin).

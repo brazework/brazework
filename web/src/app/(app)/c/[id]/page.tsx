@@ -60,7 +60,7 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
   const events = ((evRows ?? []) as unknown as Parameters<typeof withHost>[0][]).map(withHost) as HostedEvent[];
   // Officers: what's waiting on them, at the top of the club.
   const officer = rank(role) >= 3;
-  const { milestones: msOn, verification: verifyOn } = await dbFeatures();
+  const { milestones: msOn, verification: verifyOn, clubClaims: claimsOn } = await dbFeatures();
   // A verified club has a school-email officer and enough members with club-verified work (verification.sql).
   const { data: clubVerified } = verifyOn ? await supabase.rpc("club_is_verified", { p_cid: id }) : { data: false };
   const [toVerify, joinReqs] = officer ? await Promise.all([
@@ -253,6 +253,9 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
               ))}
             </ol>
             <p className="mt-6 text-xs text-faint">Started by {c.owner_name || "a Forge member"}.</p>
+            {claimsOn && role !== "owner" && (
+              <p className="mt-1 text-xs text-faint">Are you this organization&apos;s officer, and someone else started it on Forge? <Link href={`/c/${c.id}/claim`} className="font-medium text-text-2 underline-offset-2 hover:underline">Claim this club</Link></p>
+            )}
           </Panel>
         )}
       </div>
