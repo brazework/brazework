@@ -34,8 +34,6 @@ const signUpSchema = z
     const age = ageFrom(v.birthday);
     if (age < 0) ctx.addIssue({ code: "custom", message: "Enter your birthday." });
     else if (age < 18) ctx.addIssue({ code: "custom", message: "You must be at least 18 to create an account." });
-    if (v.accountType === "student" && !ACADEMIC_RE.test(v.email))
-      ctx.addIssue({ code: "custom", message: "Use your university email (for example, ending in .edu or .ac.uk)." });
   });
 
 export async function signUp(_: AuthState, form: FormData): Promise<AuthState> {
@@ -44,6 +42,12 @@ export async function signUp(_: AuthState, form: FormData): Promise<AuthState> {
   const { email, password, firstName, lastName, birthday, accountType } = parsed.data;
 
   const supabase = await createClient();
+  // Students sign up with a school email: an academic domain, or a school Forge has listed
+  // (is_school_email in signup-rules.sql; the database enforces the same rule).
+  if (accountType === "student" && !ACADEMIC_RE.test(email)) {
+    const { data: listed } = await supabase.rpc("is_school_email", { p_email: email });
+    if (listed !== true) return { message: "Use your university email (for example, ending in .edu or .ac.uk)." };
+  }
   // The database's handle_new_user trigger makes the profile from this metadata.
   const { data, error } = await supabase.auth.signUp({
     email,

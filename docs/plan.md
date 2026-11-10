@@ -24,7 +24,7 @@ Based on [current-state.md](current-state.md) (the map of what exists). Work goe
 
 ## Phase 2: the student flow
 
-- 🟡 Sign-up with school email + fields (exists; rules only in the app → add a database check).
+- ✅ Sign-up with school email + fields, enforced in the database too (`signup-rules.sql`, step 25).
 - ✅ Onboarding checklist on Home until done: club → project → first update → request verification → verified (c6abefa).
 - 🟡 "Find your club" before the feed (search exists; invite links exist).
 - 🟡 Projects with photos/specs/team, GitHub import via Ember (exists; add hardware fields: specs, team list).
@@ -74,11 +74,11 @@ To build:
 
 ## Phase 7: trust and safety
 
-- 🟡 School email allow-list (pattern only) → configurable list + "Request my school".
-- 🟡 Under-18 gate (app only) → database check + config for a future restricted mode.
+- ✅ School emails: academic domains plus a `school_domains` list Forge admins extend. "Request my school" form ⬜.
+- ✅ Minimum age enforced in the database (`min_age` in `app_config`, 18 by default).
 - ✅ "Forge never pulls records from your school" stated next to Download my data and on the privacy page.
 - ✅ Data export (JSON with links to your files) and account deletion (`account.sql`, step 20; SQL and e2e tests).
-- 🟡 Reports (`reports.sql` exists for posts/replies/people/messages) → add projects/milestones; ⬜ admin queue.
+- ✅ Reports: posts, people, projects and challenges from the app (one Report dialog; the reported member never learns who reported); milestones, replies and messages in the database. Forge admins resolve them on `/admin` (`reports-more.sql`, step 24; SQL tests and e2e).
 - ✅ Blocking (block_user); ⬜ blocked parties can't view private items.
 - ✅ Rate limits (`rate-limits.sql`, step 23) on posts, replies, messages, message requests and milestone submissions, tunable in `app_config`; SQL tests. Sign-ups are limited by Supabase Auth's own settings.
 - ✅ Plain-language privacy page (`/privacy`).
