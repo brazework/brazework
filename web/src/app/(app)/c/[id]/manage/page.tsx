@@ -18,6 +18,7 @@ import type { Invite } from "../../../communities/actions";
 import { BanRow, MemberActions, RequestActions, SettingsForm } from "./manage-client";
 import { RecentReviews, VerifyQueue, type QueueItem } from "./verify";
 import { ReportView } from "./report";
+import { HandOff } from "./handoff";
 import { Integrations } from "./integrations";
 import { loadClubReport } from "@/lib/club-report";
 import { copilotEnabled } from "@/lib/copilot";
@@ -57,6 +58,7 @@ async function Manage({ params, searchParams }: { params: PageProps<"/c/[id]/man
     { id: "bans", label: "Bans", show: can(role, "removeMembers") },
     { id: "settings", label: "Settings", show: can(role, "editInfo") },
     { id: "roles", label: "Roles", show: true },
+    { id: "handoff", label: "Hand off", show: rank(role) >= 3 && features.handoff },
   ].filter((t) => t.show);
   const tab = tabs.find((t) => t.id === sp.tab)?.id ?? (rank(role) >= 3 ? "report" : c.privacy === "approval" && can(role, "approve") ? "requests" : "members");
   // The webhook is a secret: only a masked tail goes to the browser.
@@ -67,7 +69,7 @@ async function Manage({ params, searchParams }: { params: PageProps<"/c/[id]/man
   const MS_COLS = ((await dbFeatures()).verification ? "dispute_note, escalated, revoked_reason, " : "") + "id, owner_id, title, detail, evidence, achieved_on, created_at, status, reviewer_name, review_note, project:projects(title, summary), owner:profiles!milestones_owner_id_fkey(first_name, last_name, headline)";
   const [reqs, members, bans, invites, queue, reviewed] = await Promise.all([
     tab === "requests" ? supabase.from("community_requests").select("*").eq("community_id", id).order("at", { ascending: true }).limit(100) : Promise.resolve({ data: [] }),
-    tab === "members" ? supabase.from("community_members").select("*").eq("community_id", id).limit(500) : Promise.resolve({ data: [] }),
+    tab === "members" || tab === "handoff" ? supabase.from("community_members").select("*").eq("community_id", id).limit(500) : Promise.resolve({ data: [] }),
     tab === "bans" ? supabase.from("community_bans").select("*").eq("community_id", id) : Promise.resolve({ data: [] }),
     tab === "invite" ? supabase.from("community_invites").select("*").eq("community_id", id).order("created_at", { ascending: false }).limit(50) : Promise.resolve({ data: [] }),
     tab === "verify" ? supabase.from("milestones").select(MS_COLS).eq("community_id", id).eq("status", "pending").order("created_at", { ascending: true }).limit(100) : Promise.resolve({ data: [] }),
@@ -126,6 +128,9 @@ async function Manage({ params, searchParams }: { params: PageProps<"/c/[id]/man
         {tab === "settings" && features.media && <Panel className="mb-4 p-6"><ClubCoverUpload cid={id} path={c.cover_path} userId={user.id} /></Panel>}
         {tab === "settings" && <Panel className="p-6"><SettingsForm cid={id} about={c.about} rules={c.rules} privacy={c.privacy} words={(c.automod?.words ?? []).join("\n")} holdNewLinks={!!c.automod?.holdNewLinks} canAutomod={can(role, "automod")} /></Panel>}
 
+        {tab === "handoff" && (
+          <HandOff cid={id} role={role ?? "member"} candidates={((members.data ?? []) as Member[]).filter((m) => rank(m.role) < rank(role)).map((m) => ({ uid: m.uid, name: `${m.first_name} ${m.last_name}`.trim() || "Member", role: m.role }))} />
+        )}
         {tab === "roles" && (
           <Panel className="overflow-x-auto p-0">
             <table className="w-full text-sm">

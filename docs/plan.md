@@ -25,7 +25,7 @@ Based on [current-state.md](current-state.md) (the map of what exists). Work goe
 ## Phase 2: the student flow
 
 - 🟡 Sign-up with school email + fields (exists; rules only in the app → add a database check).
-- ⬜ Onboarding checklist on Home until done: club → project → first update → request verification.
+- ✅ Onboarding checklist on Home until done: club → project → first update → request verification → verified (c6abefa).
 - 🟡 "Find your club" before the feed (search exists; invite links exist).
 - 🟡 Projects with photos/specs/team, GitHub import via Ember (exists; add hardware fields: specs, team list).
 - ⬜ Weekly nudges (in-app + email digest, both can be turned off).
@@ -36,15 +36,15 @@ Based on [current-state.md](current-state.md) (the map of what exists). Work goe
 Exists: officer-only `review_milestone()`, no self-verification, optional single https link, pending → verified/declined.
 
 To build:
-- ⬜ Statuses `draft | pending | verified | refused | revoked | disputed`; append-only `verification_events` log.
-- ⬜ Evidence required (photo, video, file, commit link or a club event); no evidence, no badge.
-- ⬜ Verifier can't be on the project team; 1–2 verifiers per club (config).
-- ⬜ Badge shows verifier, role, club, date.
-- ⬜ Per-officer weekly limit (config) and an outlier flag to an admin queue.
-- ⬜ Revocation with a reason; disputes → club owner → Forge admin.
-- ⬜ Verified milestones survive the author leaving the club; officers lose verifying power when the role ends.
-- ⬜ Verified-club mark (school-email officer + N verified members); duplicate claims → manual review.
-- ⬜ Tests for every rule.
+- ✅ Statuses `draft | pending | verified | refused | revoked | disputed`; append-only `verification_events` log.
+- ✅ Evidence required (photo, video, file, commit link or a club event); no evidence, no badge.
+- ✅ Verifier can't be on the project team; 1–2 verifiers per club (config).
+- ✅ Badge shows verifier, role, club, date.
+- ✅ Per-officer weekly limit (config) and an outlier flag to an admin queue.
+- ✅ Revocation with a reason; disputes → club owner → Forge admin.
+- ✅ Verified milestones survive the author leaving the club; officers lose verifying power when the role ends.
+- 🟡 Verified-club check `club_is_verified()` exists; badge in the UI and duplicate-claim review ⬜.
+- ✅ Tests for every rule.
 
 ## Phase 4: club leader flow
 
@@ -53,7 +53,7 @@ To build:
 - ⬜ Club home as a to-do list (verify queue, join requests, held posts, upcoming events).
 - 🟡 Discord bridge (announcements exist; add Discord → Forge post via bot/webhook, stubbed without credentials).
 - 🟡 Weekly club report by Ember (exists, manual; add a shareable link).
-- ⬜ Officer handoff at end of term.
+- ✅ Officer handoff at end of term: `club-handoff.sql` (step 18), "Hand off" tab, SQL and e2e tests.
 
 ## Phase 5: company flow
 
@@ -67,7 +67,7 @@ To build:
 
 - ✅ Approve-first cards (`propose_*`), tool calls shown, facts from tools.
 - ⬜ Ember as contextual buttons + command palette (replaces the page).
-- ⬜ Tests proving Ember can't verify/message/join/post without an Approve tap; Ember can never verify at all.
+- ✅ Tests proving Ember can't write without an Approve tap and can never verify (web/tests, `npm test`).
 
 ## Phase 7: trust and safety
 

@@ -334,3 +334,14 @@ export async function revokeInvite(cid: string, code: string): Promise<Result> {
   revalidatePath(`/c/${cid}/manage`);
   return { ok: true, message: "Link turned off." };
 }
+
+// Officer handoff (supabase/club-handoff.sql): pass your role to a member; you become a member.
+export async function handOffRole(cid: string, to: string, note = ""): Promise<{ ok: boolean; message: string }> {
+  if (!/^[A-Za-z0-9-]{1,64}$/.test(cid) || !/^[0-9a-f-]{36}$/i.test(to)) return { ok: false, message: "Pick a member of the club." };
+  const { supabase, user } = await getViewer();
+  if (!user) return { ok: false, message: "Log in again." };
+  const { error } = await supabase.rpc("hand_off_role", { p_cid: cid, p_to: to, p_note: note.trim().slice(0, 300) });
+  if (error) return { ok: false, message: error.code === "P0001" || error.code === "42501" ? error.message : communityError(error) };
+  revalidatePath(`/c/${cid}`, "layout");
+  return { ok: true, message: "Done. They're in charge now, and you're a member." };
+}

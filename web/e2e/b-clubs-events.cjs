@@ -82,6 +82,22 @@ const { BASE, step, browser, as, go, summary } = require("./lib.cjs");
     await josh.waitForURL(/\/messages\/g\//, { timeout: 20000 });
     await josh.getByText(/Event chat · everyone going/).waitFor();
   }, josh);
+  await step("Cara hands the club off to Josh at the end of term", async () => {
+    cara.on("dialog", (d) => d.accept());
+    await go(cara, `${clubUrl}/manage?tab=handoff`);
+    const joshOption = await cara.locator("#handoff-to option", { hasText: "Josh" }).first().getAttribute("value");
+    await cara.locator("#handoff-to").selectOption(joshOption);
+    await cara.fill("#handoff-note", "Graduating; Josh runs it next year");
+    await cara.getByRole("button", { name: "Hand off" }).click();
+    await cara.waitForURL((u) => !u.pathname.includes("/manage"), { timeout: 15000 });
+  }, cara);
+  await step("Josh is the owner now; Cara stays as a member", async () => {
+    await go(josh, `${clubUrl}/manage?tab=handoff`);
+    await josh.getByText("Hand off your role").waitFor({ timeout: 15000 });
+    if (!(await josh.getByText(/as owner/i).count()) && !(await josh.locator("b", { hasText: "owner" }).count())) throw new Error("Josh should hand off as owner");
+    await go(cara, `${clubUrl}/manage?tab=handoff`);
+    if (await cara.getByText("Hand off your role").count()) throw new Error("Cara should no longer be an officer");
+  }, josh);
   console.log("page errors:", [...cara.errs, ...josh.errs].slice(0, 5));
   summary();
   await b.close();
