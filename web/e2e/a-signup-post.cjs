@@ -134,6 +134,15 @@ const { BASE, step, browser, as, go, closeTour, summary } = require("./lib.cjs")
     await prompt.waitFor({ state: "detached", timeout: 10000 });
     await page.getByText(/· alt/).first().waitFor();
   }, page);
+  await step("the photo post saves and shows in the feed (the database accepts what the upload records)", async () => {
+    const text = `Gradient test card ${Date.now() % 100000}`;
+    await page.locator("#create-box").fill(text);
+    await page.getByRole("button", { name: "Post", exact: true }).click();
+    await page.waitForFunction(() => document.querySelector("#create-box")?.value === "", null, { timeout: 30000 });
+    const card = page.locator("article").filter({ hasText: text }).first();
+    await card.waitFor({ timeout: 15000 });
+    if (!(await card.locator("img").count())) throw new Error("the post saved without its photo");
+  }, page);
   summary();
   await b.close();
 })();
