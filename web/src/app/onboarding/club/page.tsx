@@ -8,6 +8,7 @@ import { Logo } from "@/components/ui";
 import { COMMUNITY_COLS, type Community } from "@/lib/communities";
 import { getViewer } from "@/lib/supabase/server";
 import { CommunityCard } from "../../(app)/communities/community-grid";
+import { StartChapterCard } from "@/components/app/start-chapter";
 
 export const metadata: Metadata = { title: "Find your club" };
 
@@ -59,6 +60,7 @@ async function FindYourClub() {
       ) : (
         <p className="mt-8 rounded-3xl border border-dashed border-line p-6 text-sm text-muted">No clubs yet at your school. Start yours: it takes a minute, and you can invite members with a link.</p>
       )}
+      <StartChapterCard className="mt-4" />
       <div className="mt-8 flex flex-wrap items-center gap-3">
         <Link href="/communities?tab=discover" className="inline-flex h-10 items-center gap-1.5 rounded-full border border-line px-4 text-sm transition hover:bg-hover"><Search className="size-4" /> Search all clubs</Link>
         <Link href="/communities?tab=create" className="inline-flex h-10 items-center gap-1.5 rounded-full border border-line px-4 text-sm transition hover:bg-hover"><Plus className="size-4" /> Start your club</Link>

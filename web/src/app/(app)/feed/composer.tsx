@@ -22,7 +22,7 @@ const NO_ANSWER: EmberAnswerState = { q: "", text: "", tools: [], proposals: [] 
 // The top of the feed: one box to create and to ask. "Post" is the composer (photos and video by
 // pick, drop or paste; Ember can polish the draft in place). "Ask Ember" sends the same box to
 // Copilot, with answers and confirm cards right underneath.
-export function Composer({ first, last, interests, userId, mediaEnabled = false, captionsEnabled = false, avatarSrc, copilot = false, club = null, next = null, mentionsEnabled = false, projects = [], clubs = [], initialProject }: { first: string; last: string; interests: string[]; userId: string; mediaEnabled?: boolean; captionsEnabled?: boolean; avatarSrc?: string | null; copilot?: boolean; club?: { id: string; name: string } | null; next?: { label: string; href: string } | null; projects?: { id: string; title: string }[]; clubs?: { id: string; name: string }[]; initialProject?: string; mentionsEnabled?: boolean }) {
+export function Composer({ first, last, interests, userId, mediaEnabled = false, captionsEnabled = false, avatarSrc, copilot = false, club = null, next = null, mentionsEnabled = false, projects = [], clubs = [], initialProject, defaultShareTo }: { first: string; last: string; interests: string[]; userId: string; mediaEnabled?: boolean; captionsEnabled?: boolean; avatarSrc?: string | null; copilot?: boolean; club?: { id: string; name: string } | null; next?: { label: string; href: string } | null; projects?: { id: string; title: string }[]; clubs?: { id: string; name: string }[]; initialProject?: string; mentionsEnabled?: boolean; defaultShareTo?: string }) {
   const [mode, setMode] = useState<"post" | "ask">("post");
   // Posting awaits the action itself rather than going through useActionState: that state only
   // lands when its transition commits, and a response that carries a re-rendered page (a session
@@ -38,8 +38,12 @@ export function Composer({ first, last, interests, userId, mediaEnabled = false,
   };
   const [kind, setKind] = useState<string>("update");
   // Which project it's about comes first (your latest one); "general update" is allowed, not the default.
-  const [projectId, setProjectId] = useState<string>(projects.find((p) => p.id === initialProject)?.id ?? projects[0]?.id ?? "");
-  const [shareTo, setShareTo] = useState<string>("");
+  // null = automatic (your latest project, even one started a moment ago); a string = what you chose
+  // ("" = no project, after the chip's ×).
+  const [chosenProject, setProjectId] = useState<string | null>(projects.find((p) => p.id === initialProject)?.id ?? null);
+  const projectId = chosenProject ?? projects[0]?.id ?? "";
+  // Who sees it: your chapter by default when you have one (Linear FIX-71), else your feed.
+  const [shareTo, setShareTo] = useState<string>(clubs.some((c) => c.id === defaultShareTo) ? defaultShareTo! : "");
   const [body, setBody] = useState("");
   const [dragging, setDragging] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);

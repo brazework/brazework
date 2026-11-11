@@ -65,6 +65,25 @@ export async function saveProject(_: ProjectState, form: FormData): Promise<Proj
   return { ok: true, message: v.id ? "Project saved." : "Project added." };
 }
 
+// "What are you building this semester?" (Linear FIX-71): one answer starts your first project, so
+// nobody faces a blank form. The answer is its title (and summary); everything else can come later.
+export async function startProject(text: string): Promise<ProjectState & { id?: string }> {
+  const answer = String(text ?? "").replace(/\s+/g, " ").trim();
+  if (answer.length < 3) return { ok: false, message: "Say what you're building, in a few words." };
+  if (answer.length > 300) return { ok: false, message: "Keep it short: a sentence is plenty." };
+  const { supabase, user } = await getViewer();
+  if (!user) return { ok: false, message: "Log in again to save." };
+  const title = answer.length <= 120 ? answer : `${answer.slice(0, 117).replace(/\s+\S*$/, "")}...`;
+  const { data, error } = await supabase.from("projects").insert({ title, summary: answer, status: "in_progress", year: null, tags: [], private: false }).select("id");
+  if (error) return { ok: false, message: friendlyError(error) };
+  const id = data?.[0]?.id as string | undefined;
+  if (!id) return { ok: false, message: "You don't have permission to do that." };
+  await supabase.from("project_details").insert({ project_id: id, details: "", link: "" });
+  revalidatePath(`/u/${user.id}`);
+  revalidatePath("/feed");
+  return { ok: true, message: "Project started.", id };
+}
+
 export async function deleteProject(id: string): Promise<ProjectState> {
   const { supabase, user } = await getViewer();
   if (!user) return { ok: false, message: "Log in again." };

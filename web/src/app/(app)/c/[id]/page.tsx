@@ -24,6 +24,7 @@ import { dbFeatures, eventWithHost, postSelect } from "@/lib/db-features";
 import Image from "next/image";
 import { avatarSrc, mediaUrl } from "@/lib/media";
 import { loadCommunity } from "./data";
+import { ChapterInvite, ChapterLine } from "./chapter";
 import { MemberFaces, type Face } from "@/components/network/member-faces";
 
 export const metadata: Metadata = { title: "Community" };
@@ -116,6 +117,7 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
               {role && role !== "member" && <RoleChip role={role} />}
             </div>
             {c.tagline && <p className="mt-0.5 text-[15px] text-text-2">{c.tagline}</p>}
+            <Suspense fallback={null}><div><ChapterLine cid={c.id} /></div></Suspense>
             <MetaLine parts={[membersLabel(c.member_count), PRIVACY_LABEL[c.privacy], c.field, TYPE_LABEL[c.type]]} />
             {c.website && /^https?:\/\/\S+$/i.test(c.website) && <a href={c.website} target="_blank" rel="noopener noreferrer nofollow" className="mt-1 inline-flex items-center gap-1 text-xs text-text-2 hover:text-text hover:underline"><Globe className="size-3.5" /> {c.website.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "")}</a>}
             <MemberFaces faces={faces} ids={members.map((m) => m.uid)} total={c.member_count} className="mt-3" />
@@ -182,6 +184,7 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
             <Celebrate /> <PartyPopper className="size-4 text-accent" /> Welcome to {c.name}. Say hello in the club feed below.
           </p>
         )}
+        {sp.created === "chapter" && officer && <ChapterInvite cid={c.id} name={c.name} code={typeof sp.invite === "string" ? sp.invite : null} />}
         {sp.created === "1" && <p className="relative mt-4 flex items-center gap-2 rounded-2xl border border-line bg-surface-2 px-4 py-3 text-sm"><Celebrate /> <PartyPopper className="size-4 text-accent" /> Your community is live. Invite your club: share this page&apos;s link.</p>}
         </div>
       </Panel>

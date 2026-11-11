@@ -105,9 +105,11 @@ export function cInitials(name: string) {
     String(name || "")
       .trim()
       .split(/\s+/)
+      // Words only: "NSBE - Hartford" is "NH", not "N-".
+      .map((w) => w.match(/[\p{L}\p{N}]/u)?.[0] ?? "")
       .filter(Boolean)
       .slice(0, 2)
-      .map((w) => w[0]!.toUpperCase())
+      .map((c) => c.toUpperCase())
       .join("") || "C"
   );
 }

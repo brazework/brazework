@@ -22,6 +22,7 @@ import { ShareReport } from "./report-client";
 import { HandOff } from "./handoff";
 import { Integrations } from "./integrations";
 import { loadClubReport } from "@/lib/club-report";
+import { Roster } from "./roster";
 import { copilotEnabled } from "@/lib/copilot";
 import { BadgeCheck } from "lucide-react";
 
@@ -86,10 +87,11 @@ async function Manage({ params, searchParams }: { params: PageProps<"/c/[id]/man
     <>
       <Link href={`/c/${id}`} className="mb-5 inline-flex items-center gap-1.5 text-sm text-muted hover:text-text"><ArrowLeft className="size-4" /> {c.name}</Link>
       <h1 className="text-3xl font-semibold tracking-tight">Manage</h1>
-      <p className="mt-1.5 text-sm text-muted">You&apos;re {role === "admin" ? "an" : "a"} {ROLE_LABEL[role!].toLowerCase()}. You can act on people below your own role.</p>
+      <p className="mt-1.5 text-sm text-muted">You&apos;re {/^[aeiou]/i.test(ROLE_LABEL[role!]) ? "an" : "a"} {ROLE_LABEL[role!].toLowerCase()}. You can act on people below your own role.</p>
       <div className="mt-6"><Tabs active={tab} tabs={tabs.map((t) => ({ id: t.id, label: t.label, href: `/c/${id}/manage?tab=${t.id}`, count: "count" in t ? (t.count as number) : undefined }))} /></div>
       <div className="mt-6">
         {tab === "integrations" && <Integrations cid={id} discord={discord} available={features.integrations} />}
+        {tab === "report" && <Suspense fallback={<div className="mb-6 h-64 shimmer rounded-3xl" />}><Roster cid={id} /></Suspense>}
         {tab === "report" && report && <ReportView r={report} clubId={id} copilot={copilotOn} />}
         {tab === "report" && rank(role) >= 4 && <div className="mt-4"><ShareReport clubId={id} token={shareToken} /></div>}
         {tab === "verify" && (((queue.data ?? []) as unknown as QueueItem[]).length ? <VerifyQueue items={(queue.data ?? []) as unknown as QueueItem[]} /> : (

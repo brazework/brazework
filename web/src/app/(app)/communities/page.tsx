@@ -10,6 +10,7 @@ import { requestTime } from "@/lib/forge";
 import { CommunityCard, CommunityGrid, type Pulse } from "./community-grid";
 import { Carousel } from "@/components/app/carousel";
 import { CreateCommunity } from "./create-form";
+import { StartChapterCard } from "@/components/app/start-chapter";
 
 export const metadata: Metadata = { title: "Communities" };
 
@@ -92,6 +93,7 @@ async function Communities({ searchParams }: { searchParams: PageProps<"/communi
             empty={<EmptyState icon={<Users className="size-6" />} title="No other communities yet" body="Start the one your field is missing." action={<Link href="/communities?tab=create" className="text-sm underline underline-offset-4">Create a community</Link>} />}
           />
         )}
+        {tab === "create" && <Suspense fallback={null}><StartChapterCard className="mb-4" /></Suspense>}
         {tab === "create" && <Panel className="p-6"><CreateCommunity interests={profile.interests ?? []} field={profile.field} /></Panel>}
       </div>
     </>

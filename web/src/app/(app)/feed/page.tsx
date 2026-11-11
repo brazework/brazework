@@ -15,6 +15,7 @@ import { copilotEnabled } from "@/lib/copilot";
 import { loadGuide } from "@/lib/guide";
 import { StartChecklist } from "./start-checklist";
 import { WeekLoop } from "./week-loop";
+import { FirstBuild } from "./first-build";
 import { cookies } from "next/headers";
 import { DISMISS_PREFIX } from "@/lib/dismiss";
 import { Composer } from "./composer";
@@ -66,11 +67,9 @@ type Item = { type: "post"; post: Post; reason: string; at: number; score: numbe
 
 async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["searchParams"] }) {
   const sp = await searchParams;
-  const tab: TabId = TABS.find((t) => t.id === sp.tab)?.id ?? "for-you";
+  const asked: TabId | undefined = TABS.find((t) => t.id === sp.tab)?.id;
   const tag = typeof sp.tag === "string" ? sp.tag : "";
   const kind: Kind = KINDS.find((k) => k.id === sp.kind)?.id ?? "";
-  // For you is ranked ("Best") unless you pick a time order; the other tabs are newest first.
-  const sort: Sort = SORTS.find((x) => x.id === sp.sort && (x.id !== "best" || tab === "for-you"))?.id ?? (tab === "for-you" ? "best" : "new");
   const { supabase, user, profile } = await getViewer();
   if (!user || !profile) redirect("/login");
   const interests: string[] = profile.interests ?? [];
@@ -81,7 +80,7 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
   let emptyTitle = "No posts yet";
   let emptyBody: React.ReactNode = "Be the first to share what you're building.";
   let emptyAction: React.ReactNode = null;
-  const { media: mediaEnabled, mentions: mentionsEnabled, milestones: proofOn, videoCaptions: captionsEnabled } = await dbFeatures();
+  const { media: mediaEnabled, mentions: mentionsEnabled, milestones: proofOn, videoCaptions: captionsEnabled, chapters: chaptersOn } = await dbFeatures();
   const cols = await postSelect();
   const base = () => {
     let q = supabase.from("posts").select(cols).order("created_at", { ascending: sort === "old" });
@@ -94,12 +93,23 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
   const rows = (r: { data: unknown }) => (r.data ?? []) as Post[];
 
   // Who and what you're connected to: your clubs, and the people you follow or are connected with.
-  const [joined, fg, conn] = await Promise.all([
+  const [joined, fg, conn, chapterRow] = await Promise.all([
     supabase.from("community_members").select("community_id").eq("uid", user.id).limit(200),
     supabase.from("follows").select("target").eq("follower", user.id).limit(500),
     supabase.from("connections").select("users").contains("users", [user.id]).eq("status", "accepted").limit(500),
+    // Your chapter (supabase/chapters.sql): the one you joined most recently.
+    chaptersOn ? supabase.from("community_members").select("joined_at, communities!inner(id, name, network_id)").eq("uid", user.id).not("communities.network_id", "is", null).order("joined_at", { ascending: false }).limit(1) : Promise.resolve({ data: [] }),
   ]);
   const cids = (joined.data ?? []).map((j) => j.community_id as string);
+  type ChapterRef = { id: string; name: string };
+  const chapterJoin = ((chapterRow.data ?? []) as unknown as { communities: ChapterRef | ChapterRef[] | null }[])[0]?.communities;
+  const chapter: ChapterRef | null = (Array.isArray(chapterJoin) ? chapterJoin[0] : chapterJoin) ?? null;
+  // A chapter member's home is their chapter (Linear FIX-71): it opens on "My chapter" unless they pick
+  // another tab. Everyone else opens on For you.
+  const home: TabId = chapter ? "chapter" : "for-you";
+  const tab: TabId = asked === "chapter" && !chapter ? "for-you" : asked ?? home;
+  // For you is ranked ("Best") unless you pick a time order; the other tabs are newest first.
+  const sort: Sort = SORTS.find((x) => x.id === sp.sort && (x.id !== "best" || tab === "for-you"))?.id ?? (tab === "for-you" ? "best" : "new");
   const people = [...new Set([...(fg.data ?? []).map((f) => f.target as string), ...(conn.data ?? []).flatMap((c) => (c.users as string[]).filter((u) => u !== user.id))])];
 
   // Proof: club-verified milestones (supabase/milestones.sql), in every tab but Latest. Milestones
@@ -110,6 +120,7 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
     if (!proofOn || tag || (kind !== "" && kind !== "result") || tab === "latest") return [];
     let q = supabase.from("milestones").select(`id, title, detail, reviewed_at, community_id, community_name, reviewer_name, owner_id, project:projects(id, title, private), owner:profiles!milestones_owner_id_fkey(id, first_name, last_name${mediaEnabled ? ", avatar_path" : ""})`).eq("status", "verified").order("reviewed_at", { ascending: false }).limit(12);
     if (tab === "communities") q = cids.length ? q.in("community_id", cids) : q.eq("community_id", "none");
+    if (tab === "chapter") q = q.eq("community_id", chapter?.id ?? "none");
     if (tab === "following") q = people.length ? q.in("owner_id", people.slice(0, 300)) : q.eq("owner_id", user.id);
     const { data } = await q;
     return (data ?? []) as unknown as M[];
@@ -134,6 +145,12 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
     emptyTitle = kind || tag ? "Nothing here yet" : "Your feed is waiting for its first post";
     emptyBody = kind === "question" ? "No open questions right now. Ask one: clubs on Brazework answer fast." : "Share what you're building, or join a club to fill your feed.";
     emptyAction = <Link href="/communities?tab=discover" className="text-sm underline underline-offset-4">Find clubs to join</Link>;
+  } else if (tab === "chapter" && chapter) {
+    // Your chapter's own feed: its people and builds first, always.
+    items = rows(await base().eq("community_id", chapter.id).eq("status", "visible").limit(60)).map((p) => asPost(p));
+    emptyTitle = kind || tag ? "Nothing here yet" : `${chapter.name} is just getting started`;
+    emptyBody = "Post what you're building this week. Your chapter sees it first, and your officers can verify your milestones.";
+    emptyAction = <Link href={`/c/${chapter.id}`} className="text-sm underline underline-offset-4">Open the chapter page</Link>;
   } else if (tab === "latest") {
     items = rows(await base().is("community_id", null).limit(60)).map((p) => asPost(p));
   } else if (tab === "following") {
@@ -177,6 +194,8 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
     supabase.from("projects").select("id, title").eq("owner_id", user.id).order("updated_at", { ascending: false }).limit(20),
     supabase.from("community_members").select("communities(id, name)").eq("uid", user.id).limit(50),
   ]);
+  // No project yet: Home asks what you're building this semester (Linear FIX-71).
+  const noProjects = !(myProjects ?? []).length;
   type ClubRef = { id: string; name: string };
   const composeClubs = ((clubRows ?? []) as unknown as { communities: ClubRef | ClubRef[] | null }[])
     .flatMap((r) => (Array.isArray(r.communities) ? r.communities : r.communities ? [r.communities] : []))
@@ -203,7 +222,7 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
     const q = new URLSearchParams();
     const t = patch.tab ?? tab, k = patch.kind ?? kind, g = patch.tag ?? tag;
     const o = patch.sort ?? (patch.tab && patch.tab !== tab ? "" : sort);
-    if (t !== "for-you") q.set("tab", t);
+    if (t !== home) q.set("tab", t);
     if (k) q.set("kind", k);
     if (g) q.set("tag", g);
     if (o && o !== (t === "for-you" ? "best" : "new")) q.set("sort", o);
@@ -215,11 +234,11 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
     <>
       <NewPosts me={user.id} />
       <MessageDock />
-      <FeedHeader tab={tab} hrefFor={(t) => href({ tab: t })} sort={/* Order: ranked, newest or oldest first. */ <span className="mr-1 hidden shrink-0 sm:inline-flex items-center gap-0.5 rounded-full border border-line bg-surface p-0.5" role="group" aria-label="Sort posts">
+      <FeedHeader tab={tab} chapter={Boolean(chapter)} hrefFor={(t) => href({ tab: t })} sort={/* Order: ranked, newest or oldest first. */ <span className="mr-1 hidden shrink-0 sm:inline-flex items-center gap-0.5 rounded-full border border-line bg-surface p-0.5" role="group" aria-label="Sort posts">
           {SORTS.filter((x) => x.id !== "best" || tab === "for-you").map((x) => (
             <Link key={x.id} href={href({ sort: x.id })} aria-current={sort === x.id ? "true" : undefined} className={cn("rounded-full px-2.5 py-0.5 text-xs whitespace-nowrap transition", sort === x.id ? "bg-text text-surface" : "text-muted hover:text-text")}>{x.label}</Link>
           ))}
-        </span>} hero={<>{startOpen ? <StartChecklist steps={guide?.loop ?? []} /> : <Suspense fallback={null}><WeekLoop first={profile.first_name} /></Suspense>}<div id="composer" data-tour="composer" className="scroll-mt-24"><Composer first={profile.first_name} last={profile.last_name} interests={interests} userId={user.id} mediaEnabled={mediaEnabled} captionsEnabled={captionsEnabled} avatarSrc={avatarSrc(profile)} copilot={copilotOn} mentionsEnabled={mentionsEnabled} club={ledClub} next={null} projects={(myProjects ?? []) as { id: string; title: string }[]} clubs={composeClubs} initialProject={typeof sp.project === "string" ? sp.project : undefined} /></div></>} />
+        </span>} hero={<>{noProjects && <FirstBuild first={profile.first_name} chapter={chapter?.name} />}{startOpen ? <StartChecklist steps={guide?.loop ?? []} /> : noProjects ? null : <Suspense fallback={null}><WeekLoop first={profile.first_name} /></Suspense>}<div id="composer" data-tour="composer" className="scroll-mt-24"><Composer first={profile.first_name} last={profile.last_name} interests={interests} userId={user.id} mediaEnabled={mediaEnabled} captionsEnabled={captionsEnabled} avatarSrc={avatarSrc(profile)} copilot={copilotOn} mentionsEnabled={mentionsEnabled} club={ledClub} next={null} projects={(myProjects ?? []) as { id: string; title: string }[]} clubs={composeClubs} defaultShareTo={chapter?.id} initialProject={typeof sp.project === "string" ? sp.project : undefined} /></div></>} />
       {/* What kind of post (a quiet segmented control), and your topics in one chip: one calm row on a
           wide screen; on a phone it is one row: the kinds scroll, and one button holds topics and sort. */}
       <nav data-tour="interests" aria-label="Filter the feed" className="mt-4 flex flex-nowrap items-center gap-2 sm:flex-wrap">
