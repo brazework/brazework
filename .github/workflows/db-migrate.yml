@@ -1,0 +1,77 @@
+name: Database steps (production)
+
+# Applies the database steps production is missing, so nobody pastes SQL by hand. After every merge to
+# main that touches supabase/ (and from Run workflow), it asks production which steps it has (block 1
+# of supabase/maintenance/health-check.sql, read-only), applies each missing one in step order with
+# the Supabase CLI, stopping at the first error, then checks again. Steps are additive and safe to
+# re-run, and every one has already passed CI (the e2e job builds a fresh database from
+# supabase/order.txt and runs supabase/tests/*.test.sql) before it could merge.
+#
+# Needs one repository secret: SUPABASE_ACCESS_TOKEN, a Supabase personal access token
+# (supabase.com/dashboard/account/tokens) for an account in the FORGE project's organization.
+on:
+  push:
+    branches: [main]
+    paths: ["supabase/**", ".github/workflows/db-migrate.yml"]
+  workflow_dispatch:
+
+# One at a time: a second merge waits for the first to finish rather than racing it.
+concurrency:
+  group: db-migrate-production
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+env:
+  PROJECT_REF: uwiwkjoonculpxjmzsfj
+  SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+  SUPABASE_YES: "1"
+
+jobs:
+  migrate:
+    name: Apply missing steps to production
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v7
+      - name: Check the token is set
+        run: |
+          if [ -z "$SUPABASE_ACCESS_TOKEN" ]; then
+            echo "::error::Add the SUPABASE_ACCESS_TOKEN repository secret (Settings → Secrets and variables → Actions), then Run workflow again."
+            exit 1
+          fi
+      - uses: supabase/setup-cli@v1
+        with:
+          version: latest
+      - name: Which steps production has
+        id: before
+        run: |
+          # Block 1 of the health check: one row per step, "applied" or "missing".
+          awk '/^select step, file/{on=1} on{print} /order by step;/{if(on) exit}' supabase/maintenance/health-check.sql > /tmp/steps.sql
+          grep -q "order by step;" /tmp/steps.sql || { echo "::error::Couldn't find the step list in health-check.sql"; exit 1; }
+          # The newest step in order.txt has to be in the health check, or it would never be applied.
+          newest=$(grep -v '^\s*$' supabase/order.txt | tail -1)
+          grep -q "'$newest'" /tmp/steps.sql || { echo "::error::Step '$newest' (last in supabase/order.txt) isn't in supabase/maintenance/health-check.sql. Add its row there."; exit 1; }
+          supabase db query --remote="$PROJECT_REF" --read-only -f /tmp/steps.sql --output-format json > /tmp/before.json
+          jq -r '(.rows // .) | .[] | select(.status != "applied") | "\(.step) \(.file)"' /tmp/before.json | sort -n > /tmp/missing.txt
+          echo "Missing in production:"; cat /tmp/missing.txt || true
+          echo "count=$(wc -l < /tmp/missing.txt | tr -d ' ')" >> "$GITHUB_OUTPUT"
+      - name: Apply them, in order
+        if: steps.before.outputs.count != '0'
+        run: |
+          while read -r step file; do
+            [ -f "supabase/$file.sql" ] || { echo "::error::Step $step: supabase/$file.sql doesn't exist"; exit 1; }
+            echo "::group::Step $step: supabase/$file.sql"
+            supabase db query --remote="$PROJECT_REF" --yes -f "supabase/$file.sql" > /dev/null
+            echo "::endgroup::"
+            echo "Applied step $step ($file)"
+          done < /tmp/missing.txt
+      - name: Check again
+        run: |
+          supabase db query --remote="$PROJECT_REF" --read-only -f /tmp/steps.sql --output-format json > /tmp/after.json
+          left=$(jq -r '(.rows // .) | .[] | select(.status != "applied") | "\(.step) \(.file)"' /tmp/after.json)
+          total=$(jq -r '(.rows // .) | length' /tmp/after.json)
+          if [ -n "$left" ]; then echo "::error::Still missing after applying: $left"; exit 1; fi
+          echo "Production has all $total steps." >> "$GITHUB_STEP_SUMMARY"
+          echo "Production has all $total steps."

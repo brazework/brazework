@@ -11,4 +11,4 @@
 ## Database
 
 - [ ] No database change
-- [ ] New `supabase/*.sql` file: additive, appended to `supabase/order.txt`, with tests in `supabase/tests/`, and a line in `docs/next-migration.md`
+- [ ] New `supabase/*.sql` file: additive, appended to `supabase/order.txt`, with tests in `supabase/tests/`, a row in block 1 of `supabase/maintenance/health-check.sql`, and a line in `docs/next-migration.md`. Production applies it by itself after the merge.

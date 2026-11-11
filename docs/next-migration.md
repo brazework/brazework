@@ -40,7 +40,7 @@
 
 The Vercel project lives in Ian's account, so these are his steps. It's already connected to GitHub: every push to `main` deploys production, and step 3 makes it build `web/`. Rolling back is one click (step 6).
 
-1. **Database:** Supabase → SQL Editor → run these files, in this order. Each should say "Success. No rows returned." They only add things: the live app keeps working before and after.
+1. **Database:** these files, in this order. They only add things: the live app keeps working before and after. **Since FIX-74 production applies them by itself**: after each merge to `main`, `.github/workflows/db-migrate.yml` applies whichever of these production is missing (it needs the `SUPABASE_ACCESS_TOKEN` repository secret). For a brand-new database, or by hand: Supabase → SQL Editor → run each file; each should say "Success. No rows returned."
    1. `supabase/club-events.sql`: clubs host events
    2. `supabase/media.sql`: photos and video on posts (callouts, before/after, timeline markers), profile and club covers; it also creates the `media` Storage bucket
    3. `supabase/invites.sql`: club invite links
