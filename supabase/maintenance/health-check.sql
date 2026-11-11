@@ -38,7 +38,8 @@ from (values
   (38, 'project-files',   to_regprocedure('public.project_files_ready()') is not null),
   (39, 'project-update-files', to_regprocedure('public.project_update_files_ready()') is not null),
   (40, 'project-files-access', to_regprocedure('public.project_files_access_ready()') is not null),
-  (41, 'chapters',        to_regprocedure('public.chapters_ready()') is not null)
+  (41, 'chapters',        to_regprocedure('public.chapters_ready()') is not null),
+  (42, 'pro-verification', to_regprocedure('public.pro_verification_ready()') is not null)
 ) as s(step, file, present)
 order by step;
 

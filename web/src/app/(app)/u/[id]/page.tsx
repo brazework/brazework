@@ -105,7 +105,14 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
   const projects: ProjectView[] = projectRows.map((r) => ({ ...r, details: details.get(r.id)?.details ?? null, link: details.get(r.id)?.link ?? null, specs: details.get(r.id)?.specs ?? [], milestones: msOn && (own || !r.private) ? ms.filter((m) => m.project_id === r.id) : undefined }));
   // Proof shows work on public projects (and your own private ones, to you), like the feed and résumé.
   const titles = new Map(projectRows.filter((r) => mine || !r.private).map((r) => [r.id, r.title]));
-  const proof: ProofItem[] = ms.filter((m) => m.status === "verified" && titles.has(m.project_id)).map((m) => ({ id: m.id, title: m.title, detail: m.detail, achieved_on: m.achieved_on, community_id: m.community_id, community_name: m.community_name, reviewer_name: m.reviewer_name, project: { id: m.project_id, title: titles.get(m.project_id)! } }));
+  const proofBase: ProofItem[] = ms.filter((m) => m.status === "verified" && titles.has(m.project_id)).map((m) => ({ id: m.id, title: m.title, detail: m.detail, achieved_on: m.achieved_on, community_id: m.community_id, community_name: m.community_name, reviewer_name: m.reviewer_name, project: { id: m.project_id, title: titles.get(m.project_id)! } }));
+  // Pro sign-offs (supabase/pro-verification.sql): an engineer's name, title, employer and note. Work
+  // they signed comes first: Pro-verified, then club-verified (Linear FIX-72).
+  type ProRow = { milestone_id: string; reviewer_name: string; reviewer_title: string; employer_name: string; note: string; created_at: string };
+  const { data: proRows } = f.proVerification && proofBase.length ? await supabase.from("pro_reviews").select("milestone_id, reviewer_name, reviewer_title, employer_name, note, created_at").in("milestone_id", proofBase.map((m) => m.id)).order("created_at", { ascending: true }).limit(200) : { data: [] };
+  const proBy = new Map<string, ProofItem["pro"]>();
+  for (const r of (proRows ?? []) as ProRow[]) proBy.set(r.milestone_id, [...(proBy.get(r.milestone_id) ?? []), { name: r.reviewer_name, title: r.reviewer_title, employer: r.employer_name, note: r.note, at: r.created_at }]);
+  const proof: ProofItem[] = proofBase.map((m) => ({ ...m, pro: proBy.get(m.id) })).sort((a, b) => Number(Boolean(b.pro?.length)) - Number(Boolean(a.pro?.length)));
   const verifiedBy = [...proof.reduce((acc, m) => acc.set(m.community_id, { name: m.community_name, n: (acc.get(m.community_id)?.n ?? 0) + 1 }), new Map<string, { name: string; n: number }>())].sort((a, b) => b[1].n - a[1].n);
 
   const name = `${p.first_name} ${p.last_name}`.trim();
