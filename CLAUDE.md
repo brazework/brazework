@@ -7,7 +7,7 @@ How we work is in [CONTRIBUTING.md](CONTRIBUTING.md); the docs index is [docs/RE
 The Linear connection is in `.mcp.json`; the first use asks each person to sign in to Linear once. Three skills run the workflow:
 
 - `/next` works the next issue end to end: it picks the lowest open step whose blockers are done, builds, tests, ships, updates and closes it. `/next FIX-30` works that issue.
-- `/ship` does the safe release path: checks, a commit with the issue ID, rebase, push to main, watch CI, report on the issue.
+- `/ship` does the safe release path: checks, a commit with the issue ID on a branch, a pull request with auto-merge, watch CI until it merges, report on the issue.
 - `/standup` reports shipped, in progress, next, blocked and CI. `/standup post` also writes each project's weekly update.
 
 ## Keep Linear in step (team Forge, key `FIX`)
@@ -20,5 +20,6 @@ The Linear connection is in `.mcp.json`; the first use asks each person to sign 
 ## Ground rules
 
 - `web/.env.local` points at production. Never run tests or scripts that write against it; use the local stack (`web/e2e/local-supabase.sh up`, `npm run e2e`, `npm run quality`).
-- Push to `main` only after the local checks pass, and confirm the CI run on your commit is green before calling it done.
+- `main` is protected: changes go in through a pull request that merges itself when the required checks pass (`CONTRIBUTING.md`). Open it only after the local checks pass, and call it done when it has merged and CI on `main` is green.
+- Database steps reach production by themselves after the merge (`.github/workflows/db-migrate.yml`). Never run SQL against production by hand from a session.
 - Never commit `public/js/supabase-config.local.bak` or `scripts/check.mjs`.

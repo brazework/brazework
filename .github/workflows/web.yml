@@ -11,9 +11,11 @@ name: Web (Next.js)
 #   quality  - Lighthouse budgets (speed, accessibility, best practices) on public and logged-in
 #              pages, and an OWASP ZAP baseline scan of the running app (fails on High risk).
 #              Locally: npm run quality.
+# Every pull request starts this workflow (main requires its checks), and the "changes" job skips
+# the heavy jobs when no app or database file changed: a skipped required check counts as passing,
+# so a docs-only pull request isn't left waiting for checks that never start.
 on:
   pull_request:
-    paths: ["web/**", "supabase/**", ".github/workflows/web.yml"]
   push:
     branches: [main]
     paths: ["web/**", "supabase/**", ".github/workflows/web.yml"]
@@ -28,8 +30,25 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  changes:
+    name: What changed
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    outputs:
+      app: ${{ steps.f.outputs.app }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - id: f
+        run: |
+          if [ "${{ github.event_name }}" != "pull_request" ]; then echo "app=true" >> "$GITHUB_OUTPUT"; exit 0; fi
+          if git diff --name-only "origin/${{ github.base_ref }}...HEAD" | grep -qE '^(web/|supabase/|\.github/workflows/web\.yml)'; then echo "app=true" >> "$GITHUB_OUTPUT"; else echo "app=false" >> "$GITHUB_OUTPUT"; fi
+
   checks:
     name: Typecheck, lint, unit tests, build
+    needs: changes
+    if: needs.changes.outputs.app == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 15
     defaults:
@@ -67,6 +86,8 @@ jobs:
 
   e2e:
     name: End-to-end (database rules + browser journeys)
+    needs: changes
+    if: needs.changes.outputs.app == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 35
     defaults:
@@ -95,7 +116,8 @@ jobs:
 
   quality:
     name: Speed, accessibility and security scan
-    if: github.event_name != 'push'
+    needs: changes
+    if: github.event_name != 'push' && needs.changes.outputs.app == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     defaults:

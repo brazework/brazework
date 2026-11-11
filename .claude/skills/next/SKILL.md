@@ -31,7 +31,7 @@ The Linear team is **Forge** (team ID `e9a4549f-0bad-4ef4-a105-e907d69ab2ca`; ke
 
 ## 4. Ship
 
-Use the `/ship` skill, with the issue ID. It commits with `FIX-n:` in the subject and `Fixes FIX-n` in the body, pushes to main, watches CI and reports.
+Use the `/ship` skill, with the issue ID. It commits with `FIX-n:` in the subject and `Fixes FIX-n` in the body, opens a pull request with auto-merge, watches CI until it merges into main, and reports.
 
 ## 5. Close the loop in Linear
 
