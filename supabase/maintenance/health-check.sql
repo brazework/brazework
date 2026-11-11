@@ -34,7 +34,8 @@ from (values
   (34, 'grad-year',       exists (select 1 from information_schema.columns where table_schema = 'public' and table_name = 'profiles' and column_name = 'grad_year')),
   (35, 'club-claims',     to_regclass('public.club_claims') is not null),
   (36, 'video-captions',  to_regprocedure('public.video_captions_ready()') is not null),
-  (37, 'weekly-loop',     to_regprocedure('public.weekly_loop_ready()') is not null)
+  (37, 'weekly-loop',     to_regprocedure('public.weekly_loop_ready()') is not null),
+  (38, 'project-files',   to_regprocedure('public.project_files_ready()') is not null)
 ) as s(step, file, present)
 order by step;
 

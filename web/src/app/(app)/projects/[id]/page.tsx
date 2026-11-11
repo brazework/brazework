@@ -23,6 +23,8 @@ import { BuiltWith } from "@/components/projects/built-with";
 import { TeamList } from "./team";
 import { OrganizeWithEmber } from "./organize";
 import { copilotEnabled } from "@/lib/copilot";
+import { ProjectFiles, type ProjectFileItem } from "@/components/projects/project-files";
+import { kindOfFile } from "@/lib/project-file-types";
 
 export const metadata: Metadata = { title: "Project" };
 
@@ -45,20 +47,29 @@ async function ProjectView({ params }: { params: PageProps<"/projects/[id]">["pa
   const { id } = await params;
   const { supabase, user } = await getViewer();
   if (!user) redirect("/login");
-  const { milestones: msOn, projectTools: stackOn, projectSpecs: specsOn } = await dbFeatures();
+  const { milestones: msOn, projectTools: stackOn, projectSpecs: specsOn, projectFiles: filesOn } = await dbFeatures();
   const { data } = await supabase.from("projects").select(`id, title, summary, status, year, tags, private, updated_at, created_at, owner_id, profiles!projects_owner_id_fkey(first_name, last_name, headline, field)${stackOn ? ", tools" : ""}`).eq("id", id).maybeSingle();
   const p = data as unknown as Project | null;
   const own = p?.owner_id === user.id;
   if (!p || (p.private && !own)) return <EmptyState title="This project isn't available" body="It may be private, or it was removed." />;
 
-  const [det, ms, ups, more, teamRes, clubRes] = await Promise.all([
+  const [det, ms, ups, more, teamRes, clubRes, filesRes] = await Promise.all([
     supabase.from("project_details").select(specsOn ? "details, link, specs" : "details, link").eq("project_id", id).maybeSingle(),
     msOn ? supabase.from("milestones").select(await milestoneCols()).eq("project_id", id).order("achieved_on", { ascending: false }).limit(100) : Promise.resolve({ data: [] }),
     supabase.from("posts").select(await postSelect()).eq("project_id", id).eq("status", "visible").order("created_at", { ascending: false }).limit(30),
     supabase.from("projects").select("id, title, status").eq("owner_id", p.owner_id).eq("private", false).neq("id", id).order("updated_at", { ascending: false }).limit(4),
     (await dbFeatures()).verification ? supabase.from("project_members").select("uid, profiles(first_name, last_name, headline)").eq("project_id", id).order("added_at", { ascending: true }).limit(20) : Promise.resolve({ data: [] }),
     own ? supabase.from("community_members").select("community_id").eq("uid", user.id).limit(50) : Promise.resolve({ data: [] }),
+    filesOn ? supabase.from("project_files").select("id, kind, name, path, size, url, added_by, created_at").eq("project_id", id).order("created_at", { ascending: false }).limit(100) : Promise.resolve({ data: [] }),
   ]);
+  // The files folder: photos, videos and 3D models get a signed link up front for their previews
+  // (the bucket is private; links last an hour). Other files get one when opened.
+  type FileRow = Omit<ProjectFileItem, "src"> & { path: string | null };
+  const fileRows = (filesRes.data ?? []) as FileRow[];
+  const previewPaths = fileRows.filter((f) => f.path && ["image", "video", "model"].includes(kindOfFile(f.name) ?? "")).map((f) => f.path!);
+  const { data: signed } = previewPaths.length ? await supabase.storage.from("project-files").createSignedUrls(previewPaths, 60 * 60) : { data: [] };
+  const srcByPath = new Map((signed ?? []).filter((s) => s.signedUrl && s.path).map((s) => [s.path!, s.signedUrl]));
+  const files: ProjectFileItem[] = fileRows.map(({ path, ...f }) => ({ ...f, src: path ? srcByPath.get(path) ?? null : null }));
   type TM = { uid: string; profiles: { first_name: string; last_name: string; headline: string } | null };
   const team = ((teamRes.data ?? []) as unknown as TM[]).map((t) => ({ id: t.uid, first: t.profiles?.first_name ?? "", last: t.profiles?.last_name ?? "", headline: t.profiles?.headline ?? "" }));
   // Who the owner can add: people in their clubs.
@@ -166,6 +177,9 @@ async function ProjectView({ params }: { params: PageProps<"/projects/[id]">["pa
             )}
           </Panel>
         )}
+
+        {/* The project's folder: documents, CAD, 3D models (rotatable), code and links. */}
+        {filesOn && <ProjectFiles projectId={p.id} items={files} canAdd={own || team.some((t) => t.id === user.id)} me={user.id} ownerId={p.owner_id} />}
 
         {/* Every photo and video from its updates, in one place. */}
         {gallery.length > 0 && (
