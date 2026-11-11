@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { ReportLink } from "@/components/report/report-dialog";
-import { ArrowLeft, ArrowRight, BadgeCheck, CalendarDays, CheckCircle2, ExternalLink, Images, Megaphone, Pencil, Users } from "lucide-react";
+import { ArrowLeft, ArrowRight, BadgeCheck, CalendarDays, CheckCircle2, ExternalLink, Images, Megaphone, Pencil, Play, Users } from "lucide-react";
 import Image from "next/image";
 import { Schematic } from "@/components/landing/schematics";
 import { MediaGrid } from "@/components/media/media-grid";
@@ -135,7 +135,9 @@ async function ProjectView({ params }: { params: PageProps<"/projects/[id]">["pa
               ))}
             </ul>
             <div className="mt-5 flex flex-wrap items-center gap-2">
-              {link && <a href={link} target="_blank" rel="noopener noreferrer nofollow" className="bg-accent-grad inline-flex h-10 items-center gap-1.5 rounded-full px-4 text-sm font-medium text-on-accent"><ExternalLink className="size-4" /> {new URL(link).host.replace(/^www\./, "")}</a>}
+              {/* The reel: this build as a short story, from its real photos, specs and proof. */}
+              <Link href={`/projects/${p.id}/reel`} className="bg-accent-grad inline-flex h-10 items-center gap-2 rounded-full pr-4 pl-3 text-sm font-semibold text-on-accent shadow-[0_8px_20px_-10px_var(--accent)] transition hover:-translate-y-px active:scale-95"><span className="grid size-6 place-items-center rounded-full bg-white/20"><Play className="size-3 fill-current" /></span> Play reel</Link>
+              {link && <a href={link} target="_blank" rel="noopener noreferrer nofollow" className="inline-flex h-10 items-center gap-1.5 rounded-full border border-line px-4 text-sm font-medium transition hover:bg-hover"><ExternalLink className="size-4" /> {new URL(link).host.replace(/^www\./, "")}</a>}
               <SendPost projectId={p.id} compact={false} />
               <CopyLink path={`/projects/${p.id}`} label="Share" />
               {!own && <ReportLink kind="project" id={p.id} label="this project" className="ml-auto" />}

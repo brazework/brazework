@@ -144,6 +144,18 @@ const pw = require("playwright-core");
     await go(ben, "/c/rkt");
     await ben.getByRole("region", { name: "Builders this term" }).getByText("Ben Cho").first().waitFor({ timeout: 15000 });
   }, ben);
+  await step("project reel: Play reel tells the build as a story, with the club's proof, and closes back to the project", async () => {
+    await go(ben, "/projects/p1");
+    await ben.getByRole("link", { name: "Play reel" }).click();
+    const reel = ben.getByRole("dialog", { name: "Project reel" });
+    await reel.waitFor({ timeout: 15000 });
+    await reel.getByText("Liquid engine test stand").first().waitFor();
+    // Step through to the proof: the officer's name is stamped on it.
+    for (let n = 0; n < 8 && !(await reel.getByText(/Signed by Maya Patel/).count()); n++) await ben.keyboard.press("ArrowRight");
+    await reel.getByText(/Signed by Maya Patel/).first().waitFor({ timeout: 5000 });
+    await ben.keyboard.press("Escape");
+    await ben.waitForURL(/\/projects\/p1$/, { timeout: 10000 });
+  }, ben);
   await step("the uptime check (/api/health) says the app and database are up, signed out, uncached", async () => {
     const res = await fetch(BASE + "/api/health");
     const body = await res.json();
