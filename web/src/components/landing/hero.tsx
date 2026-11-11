@@ -52,15 +52,15 @@ export function Hero() {
             <ArrowRight className="size-3.5 shrink-0" />
           </a>
           <h1 className="focus-in mt-7 text-[clamp(2.7rem,6.2vw,5rem)] leading-[0.98] font-semibold tracking-[-0.045em]">
-            <span className="text-grad">Verified work,</span>
+            Build it. <span className="text-grad">Prove it.</span>
             <br />
-            not résumés.
+            Get found.
           </h1>
           <p className="m-hide focus-in mt-6 max-w-xl text-lg leading-relaxed text-muted" style={{ ["--delay" as string]: "0.1s" }}>
-            Your club&apos;s officers saw you build it. On Brazework they vouch for it, and companies hire on that proof, not on a résumé anyone can write. Clubs run on it, and Ember, the built-in AI agent, does the busywork.
+            The network where STEM builders show what they&apos;ve made, the club officers who watched it happen sign off on it, and companies recruit from that proof. Clubs run on it, and Ember, the built-in AI agent, does the busywork.
           </p>
           {/* Phones: the same idea, short enough to read in full. */}
-          <p className="m-only focus-in mt-5 text-base leading-relaxed text-muted">Your club vouches for what you build. Companies hire on that proof, not a résumé.</p>
+          <p className="m-only focus-in mt-5 text-base leading-relaxed text-muted">Show what you build. Your club signs off on it. Companies find you by it.</p>
 
           <div className="rise-in mt-8" style={{ ["--delay" as string]: "0.2s" }}>
             <div role="tablist" aria-label="Who Brazework is for" className="flex flex-wrap gap-2">

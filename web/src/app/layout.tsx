@@ -9,7 +9,7 @@ const mono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 export const metadata: Metadata = {
   metadataBase: new URL(env.siteUrl),
-  title: { default: "Brazework: verified work, not résumés", template: "%s · Brazework" },
+  title: { default: "Brazework: build it, prove it, get found", template: "%s · Brazework" },
   description:
     "Brazework is the network for STEM organizations and the people who hire from them. Organizations run on it, members prove what they've built, and Ember, the AI agent built in, does the busywork.",
   applicationName: "Brazework",
@@ -17,8 +17,8 @@ export const metadata: Metadata = {
   appleWebApp: { capable: true, title: "Brazework", statusBarStyle: "default" },
   icons: { apple: [{ url: "/app-icon/180", sizes: "180x180" }] },
   openGraph: {
-    title: "Brazework: verified work, not résumés",
-    description: "The network for STEM organizations and the people who hire from them. Verified work, not résumés, and an AI agent that does the busywork.",
+    title: "Brazework: build it, prove it, get found",
+    description: "The network where STEM builders show what they've made, their club's officers verify it, and companies recruit from the proof. With an AI agent that does the busywork.",
     type: "website",
   },
 };

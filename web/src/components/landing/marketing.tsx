@@ -39,7 +39,7 @@ export function Problem() {
   return (
     <section id="why" data-story="Why now" className="story-sec bg-surface-2/50 py-24 sm:py-32">
       <div className="mx-auto max-w-7xl px-6">
-        <Head eyebrow="Why now" title="AI made résumés free." accent="Proof is what's scarce now." body="Anyone can generate a polished résumé or profile in seconds. What still cuts through is work someone else saw happen, and today that proof is buried in group chats, lab notebooks and slide decks nobody outside ever sees." />
+        <Head eyebrow="Why now" title="AI made claims free." accent="Proof is what's scarce now." body="Anyone can generate a polished résumé or profile in seconds. What still cuts through is work someone else saw happen, and today that proof is buried in group chats, lab notebooks and slide decks nobody outside ever sees." />
         <div className="m-cards mt-12 grid grid-cols-1 gap-4 md:grid-cols-3">
           {FACTS.map((f, i) => (
             <Reveal key={f.src} delay={i * 0.08} className="spotlight flex flex-col rounded-3xl border border-line bg-surface p-7">

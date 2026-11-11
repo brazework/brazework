@@ -131,9 +131,11 @@ const pw = require("playwright-core");
     await go(ben, "/feed");
     const hide = ben.getByRole("button", { name: "Hide your first five minutes" });
     if (await hide.count()) await hide.click();
-    const loop = ben.getByRole("region", { name: "This week's goal", exact: true });
+    const loop = ben.getByRole("region", { name: "Your build loop" });
     await loop.waitFor({ timeout: 15000 });
-    await loop.getByText(/build streak/).waitFor();
+    await loop.getByText(/-week streak|No streak yet/).waitFor();
+    // The three steps are tabs; Get found shows who looked.
+    await loop.getByRole("tab", { name: /Get found/ }).click();
     await loop.getByText("Acme Aerospace viewed your profile").waitFor({ timeout: 10000 });
     // Hidden for good: a reload keeps the checklist away.
     await ben.reload({ waitUntil: "networkidle" });

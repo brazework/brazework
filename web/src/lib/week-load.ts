@@ -3,7 +3,7 @@ import { rank } from "@/lib/communities";
 import { dbFeatures } from "@/lib/db-features";
 import type { HostedEvent } from "@/lib/events";
 import { buildStreak, weekStart, type Streak } from "@/lib/streak";
-import { buildWeek, weekGoal, type WeekGoal, type WeekInput, type WeekItem } from "@/lib/week";
+import { buildLoopSteps, buildWeek, weekGoal, type LoopStep, type WeekGoal, type WeekInput, type WeekItem } from "@/lib/week";
 
 // The data behind "Your week": counts from the last seven days in your clubs, what's waiting on you,
 // and your quietest active project. Row-level security limits every count to what you can see.
@@ -83,20 +83,22 @@ async function loadWeekInputFor(supabase: SupabaseClient, me: string, now: numbe
 
 // The weekly loop on Home (Linear FIX-67): this week's goal, your build streak (weeks in a row with a
 // post or a milestone, from your own rows), the last eight weeks for the streak bar, and who looked.
-export type Loop = { goal: WeekGoal; streak: Streak; recent: boolean[]; viewers: WeekInput["viewers"] };
+export type Loop = { goal: WeekGoal; streak: Streak; recent: boolean[]; viewers: WeekInput["viewers"]; steps: LoopStep[]; toVerify: WeekInput["toVerify"] };
 
 export async function loadLoop(supabase: SupabaseClient, me: string, now: number): Promise<Loop> {
   const f = await dbFeatures();
   const since = new Date(weekStart(now) - 26 * 7 * 864e5).toISOString();
   const none = Promise.resolve({ data: [] as never[] });
-  const [input, posts, milestones] = await Promise.all([
+  const [input, posts, milestones, verified] = await Promise.all([
     loadWeekInputFor(supabase, me, now),
     supabase.from("posts").select("created_at").eq("author_id", me).gt("created_at", since).order("created_at", { ascending: false }).limit(500),
     f.milestones ? supabase.from("milestones").select("created_at").eq("owner_id", me).gt("created_at", since).limit(500) : none,
+    f.milestones ? supabase.from("milestones").select("id", { count: "exact", head: true }).eq("owner_id", me).eq("status", "verified") : Promise.resolve({ count: 0 }),
   ]);
   const times = [...((posts.data ?? []) as { created_at: string }[]), ...((milestones.data ?? []) as { created_at: string }[])].map((r) => Date.parse(r.created_at));
   const streak = buildStreak(times, now);
   const active = new Set(times.map(weekStart));
   const recent = Array.from({ length: 8 }, (_, i) => active.has(weekStart(now) - (7 - i) * 7 * 864e5));
-  return { goal: weekGoal(input, streak.thisWeek), streak, recent, viewers: input.viewers };
+  const steps = buildLoopSteps(input, { shownThisWeek: streak.thisWeek, verified: verified.count ?? 0, me });
+  return { goal: weekGoal(input, streak.thisWeek), streak, recent, viewers: input.viewers, steps, toVerify: input.toVerify };
 }

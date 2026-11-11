@@ -2,7 +2,7 @@
 // step. Run: npm test
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { buildWeek, weekGoal, type WeekInput } from "@/lib/week";
+import { buildLoopSteps, buildWeek, weekGoal, type WeekInput } from "@/lib/week";
 
 const quiet: WeekInput = { clubPosts: 0, verifiedInClubs: [], myPending: 0, toVerify: null, quietProject: null, nextEvent: null, hasClub: true, hasProject: true };
 
@@ -49,4 +49,20 @@ test("the week's goal: others first, then what makes your work verifiable, then 
   assert.deepEqual(weekGoal(base, true), { id: "done", text: "You've shown your work this week", href: "/profile", action: "", done: true });
   assert.equal(weekGoal({ ...base, quietProject: { id: "p1", title: "Test stand", days: 9 } }, false).text, "Post an update on Test stand");
   assert.equal(weekGoal(base, false).href, "/feed#composer");
+});
+
+test("the build loop: done, now and next from real state, with one action each", () => {
+  const base = { ...quiet, hasMilestone: true };
+  const fresh = buildLoopSteps(base, { shownThisWeek: false, verified: 0, me: "u1" });
+  assert.deepEqual(fresh.map((x) => x.state), ["now", "next", "next"]);
+  assert.equal(fresh[0].line, "Share what you built this week");
+  assert.equal(fresh[2].cta?.href, "/u/u1?view=visitor");
+  const going = buildLoopSteps({ ...base, myPending: 1, viewers: { total: 3, companies: ["Acme Aerospace"] } }, { shownThisWeek: true, verified: 2, me: "u1" });
+  assert.deepEqual(going.map((x) => x.state), ["done", "done", "done"]);
+  assert.equal(going[1].line, "2 milestones verified by your club · 1 waiting");
+  assert.equal(going[2].line, "Acme Aerospace viewed your profile");
+  assert.equal(going[0].cta, null);
+  const noClub = buildLoopSteps({ ...base, hasClub: false }, { shownThisWeek: true, verified: 0, me: "u1" });
+  assert.deepEqual(noClub.map((x) => x.state), ["done", "now", "next"]);
+  assert.equal(noClub[1].cta?.href, "/communities?tab=discover");
 });

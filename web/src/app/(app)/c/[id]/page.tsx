@@ -3,7 +3,7 @@ import { CalendarDays, Globe, MessagesSquare, PartyPopper, Settings, UserPlus, B
 import { accentTint } from "@/lib/club-look";
 import { openClubChat } from "@/lib/chats";
 import Link from "next/link";
-import { BuildersThisTerm } from "./builders";
+import { BuildersThisTerm, termStart } from "./builders";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { LiveRefresh } from "@/components/app/live-refresh";
@@ -62,6 +62,10 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
   // Officers: what's waiting on them, at the top of the club.
   const officer = rank(role) >= 3;
   const { milestones: msOn, verification: verifyOn, clubClaims: claimsOn } = await dbFeatures();
+  // The headline number: work this club signed off on this term.
+  const { count: verifiedTerm } = msOn
+    ? await supabase.from("milestones").select("id", { count: "exact", head: true }).eq("community_id", id).eq("status", "verified").gte("reviewed_at", termStart(now).toISOString())
+    : { count: 0 };
   // A verified club has a school-email officer and enough members with club-verified work (verification.sql).
   const { data: clubVerified } = verifyOn ? await supabase.rpc("club_is_verified", { p_cid: id }) : { data: false };
   const [toVerify, joinReqs] = officer ? await Promise.all([
@@ -137,7 +141,7 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
           {[
             { n: c.member_count, label: c.member_count === 1 ? "Member" : "Members" },
             { n: thisWeek, label: "Posts this week" },
-            { n: posts.length, label: posts.length === 1 ? "Post" : "Posts" },
+            ...(msOn ? [{ n: verifiedTerm ?? 0, label: "Verified this term" }] : [{ n: posts.length, label: posts.length === 1 ? "Post" : "Posts" }]),
             { n: upcomingEvents.length, label: "Upcoming" },
           ].map((st) => (
             <li key={st.label} className="glass-card rounded-2xl px-3 py-3 text-center">
