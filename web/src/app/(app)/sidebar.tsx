@@ -84,7 +84,7 @@ export function Sidebar({ first, last, userId, badges, avatar, initialCollapsed 
     document.cookie = `${SIDEBAR_COOKIE}=${next ? "collapsed" : "open"}; path=/; max-age=31536000; samesite=lax`;
   };
   return (
-    <aside aria-label="Sidebar" className={cn("sticky top-0 isolate hidden h-dvh shrink-0 p-3 transition-[width] duration-300 ease-out motion-reduce:transition-none md:block", collapsed ? "w-[88px]" : "w-[264px]")}>
+    <motion.aside layoutRoot aria-label="Sidebar" className={cn("sticky top-0 isolate hidden h-dvh shrink-0 p-3 transition-[width] duration-300 ease-out motion-reduce:transition-none md:block", collapsed ? "w-[88px]" : "w-[264px]")}>
       {/* Soft light behind the glass, in Ember's colours, so the frosting has something to catch. */}
       <div aria-hidden="true" className="pointer-events-none absolute inset-3 -z-10 overflow-hidden rounded-3xl">
         <div className="absolute -top-16 -left-20 size-56 rounded-full bg-[var(--ember-a)] opacity-30 blur-3xl" />
@@ -180,7 +180,7 @@ export function Sidebar({ first, last, userId, badges, avatar, initialCollapsed 
         </form>
       </div>
       </div>
-    </aside>
+    </motion.aside>
   );
 }
 
@@ -244,11 +244,11 @@ export function MobileBar({ first, last, badges, avatar }: { first: string; last
       </header>
 
       {/* Floating tab bar above the home indicator: the five places. */}
-      <nav aria-label="Main" className="fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+0.5rem)] z-40 md:hidden">
+      <motion.nav layoutRoot aria-label="Main" className="fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+0.5rem)] z-40 md:hidden">
         <div className="glass grid grid-cols-5 items-center rounded-[26px] border border-line p-1 shadow-[0_18px_40px_-18px_rgb(0_0_0/0.45)]">
           {TABS.map(tab)}
         </div>
-      </nav>
+      </motion.nav>
 
       <Sheet open={sheet === "create"} title="Create" onClose={() => setSheet(null)}>
         <div className="grid grid-cols-2 gap-2">

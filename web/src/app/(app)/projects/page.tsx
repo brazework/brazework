@@ -75,15 +75,21 @@ async function Explore({ searchParams }: { searchParams: PageProps<"/projects">[
   const myIds = ((myRows ?? []) as { id: string }[]).map((r) => r.id);
   const [myMs, myUps] = myIds.length ? await Promise.all([
     msOn ? supabase.from("milestones").select("project_id, status").in("project_id", myIds).limit(2000) : Promise.resolve({ data: [] }),
-    supabase.from("posts").select("project_id").in("project_id", myIds).limit(2000),
+    supabase.from("posts").select("id, project_id, body, status, created_at").in("project_id", myIds).order("created_at", { ascending: false }).limit(2000),
   ]) : [{ data: [] }, { data: [] }];
   const msRows = (myMs.data ?? []) as { project_id: string; status: string }[];
-  const bench: BenchProject[] = ((myRows ?? []) as Omit<BenchProject, "verified" | "waiting" | "updates">[]).map((r) => ({
-    ...r,
-    verified: msRows.filter((m) => m.project_id === r.id && m.status === "verified").length,
-    waiting: msRows.filter((m) => m.project_id === r.id && (m.status === "pending" || m.status === "disputed")).length,
-    updates: ((myUps.data ?? []) as { project_id: string }[]).filter((u) => u.project_id === r.id).length,
-  }));
+  const upRows = (myUps.data ?? []) as (BenchProject["log"][number] & { project_id: string })[];
+  const bench: BenchProject[] = ((myRows ?? []) as Omit<BenchProject, "verified" | "waiting" | "updates" | "log">[]).map((r) => {
+    const mine = upRows.filter((u) => u.project_id === r.id);
+    return {
+      ...r,
+      verified: msRows.filter((m) => m.project_id === r.id && m.status === "verified").length,
+      waiting: msRows.filter((m) => m.project_id === r.id && (m.status === "pending" || m.status === "disputed")).length,
+      updates: mine.length,
+      // The update log under each card: the newest few, newest first.
+      log: mine.slice(0, 8).map(({ id, body, status, created_at }) => ({ id, body, status, created_at })),
+    };
+  });
   const href = (patch: Record<string, string>) => {
     const p = new URLSearchParams({ ...(q && { q }), ...(topic && { topic }), ...(tool && { tool }), ...(status && { status }), ...(verifiedOnly && { verified: "1" }), ...(mine && { mine: "1" }), ...patch });
     for (const [k, v] of [...p.entries()]) if (!v) p.delete(k);

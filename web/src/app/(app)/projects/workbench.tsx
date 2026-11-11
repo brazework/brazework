@@ -1,9 +1,9 @@
-import { BadgeCheck, Clock, Cpu, FlaskConical, GitBranch, Megaphone, ShieldCheck, Wrench } from "lucide-react";
+import { Cpu, FlaskConical, GitBranch, Wrench } from "lucide-react";
 import Link from "next/link";
 import { ProjectEditor } from "../u/[id]/profile-client";
-import { QuickUpdate } from "./quick-update";
+import { BenchCard } from "./bench-card";
 
-export type BenchProject = { id: string; title: string; summary: string; status: string; private: boolean; updated_at: string; verified: number; waiting: number; updates: number };
+export type BenchProject = { id: string; title: string; summary: string; status: string; private: boolean; updated_at: string; verified: number; waiting: number; updates: number; log: { id: string; body: string; status: string; created_at: string }[] };
 
 // Your projects first: where each one stands on the way to proof, and the next thing to do.
 export function Workbench({ projects, interests, copilot, stack, specsOn = false }: { projects: BenchProject[]; interests: string[]; copilot: boolean; stack: boolean; specsOn?: boolean }) {
@@ -40,28 +40,8 @@ export function Workbench({ projects, interests, copilot, stack, specsOn = false
           <ProjectEditor interests={interests} copilot={copilot} stack={stack} specsOn={specsOn} />
         </div>
       </div>
-      <ul className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
-        {projects.map((p) => (
-          <li key={p.id} className="glass-card flex flex-col rounded-3xl p-5">
-            <div className="flex items-start gap-3">
-              <Link href={`/projects/${p.id}`} className="min-w-0 flex-1">
-                <div className="truncate font-semibold hover:underline">{p.title}</div>
-                <p className="mt-0.5 line-clamp-2 text-xs text-muted">{p.summary}</p>
-              </Link>
-              {p.private && <span className="shrink-0 rounded-full bg-surface-2 px-2 py-0.5 text-[10px] text-muted">Private</span>}
-            </div>
-            {/* Where it stands on the way to proof. */}
-            <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1 text-xs">
-              <span className={p.verified ? "inline-flex items-center gap-1 font-medium text-ok" : "inline-flex items-center gap-1 text-faint"}><BadgeCheck className="size-3.5" /> {p.verified} verified</span>
-              <span className={p.waiting ? "inline-flex items-center gap-1 text-text-2" : "inline-flex items-center gap-1 text-faint"}><Clock className="size-3.5" /> {p.waiting} waiting</span>
-              <span className="inline-flex items-center gap-1 text-faint"><Megaphone className="size-3.5" /> {p.updates} update{p.updates === 1 ? "" : "s"}</span>
-            </div>
-            <div className="mt-4 flex flex-wrap gap-2">
-              <QuickUpdate projectId={p.id} title={p.title} />
-              <Link href={`/projects/${p.id}#milestones`} className="inline-flex h-9 items-center gap-1.5 rounded-full border border-line px-4 text-xs font-medium transition hover:bg-hover"><ShieldCheck className="size-3.5" /> {p.verified || p.waiting ? "Milestones" : "Ask to verify"}</Link>
-            </div>
-          </li>
-        ))}
+      <ul className="mt-3 grid grid-cols-1 items-start gap-3 md:grid-cols-2">
+        {projects.map((p) => <BenchCard key={p.id} p={p} />)}
       </ul>
       <h2 className="mt-10 text-sm font-semibold">Explore what people are building</h2>
     </section>
