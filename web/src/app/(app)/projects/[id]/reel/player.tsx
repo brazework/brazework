@@ -202,7 +202,7 @@ function SceneView({ scene, reel, reduce, paused, onVideoEnd }: { scene: Scene; 
       return scene.item ? (
         <div className="absolute inset-0 bg-black">
           {scene.item.type === "video"
-            ? <video ref={video} src={mediaUrl(scene.item.path)} className="absolute inset-0 h-full w-full object-contain" autoPlay muted playsInline onEnded={onVideoEnd} />
+            ? <video ref={video} src={mediaUrl(scene.item.path)} className="absolute inset-0 h-full w-full object-contain" autoPlay muted playsInline preload="metadata" onEnded={onVideoEnd} />
             : <motion.div className="absolute inset-0" {...drift}><Image src={mediaUrl(scene.item.path)} alt={scene.item.alt || scene.text} fill sizes="100vw" className="object-cover" /></motion.div>}
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/10 to-transparent" />
           <div className={bottom}>

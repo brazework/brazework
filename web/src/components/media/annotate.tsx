@@ -150,7 +150,7 @@ export function MarkerEditor({ src, item, onSave, onClose, captions = false }: {
   return (
     <Sheet title={captions ? "Markers and captions" : "Timeline markers"} onClose={onClose}>
       <p className="mb-3 flex items-center gap-2 text-sm text-muted"><Flag className="size-4" /> Scrub to a moment and add a marker ({marks.length}/{MAX_MARKERS}). Viewers can jump straight to it.</p>
-      <video ref={video} src={src} controls playsInline onTimeUpdate={(e) => setNow(e.currentTarget.currentTime)} className="max-h-[48vh] w-full rounded-2xl bg-black">
+      <video ref={video} src={src} controls playsInline preload="metadata" onTimeUpdate={(e) => setNow(e.currentTarget.currentTime)} className="max-h-[48vh] w-full rounded-2xl bg-black">
         {ccUrl && <track kind="captions" srcLang="en" label="Captions" src={ccUrl} default />}
       </video>
       <div className="mt-3 flex items-center gap-3">

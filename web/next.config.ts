@@ -48,9 +48,16 @@ const nextConfig: NextConfig = {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
   images: {
-    remotePatterns: supabase ? [new URL(`${supabase.origin}/storage/v1/object/public/media/**`)] : [],
+    // Public media, and project files' signed links (private bucket; the token is in the query), so
+    // Files thumbnails are small resized copies rather than full originals (Linear FIX-75).
+    remotePatterns: supabase
+      ? [
+          new URL(`${supabase.origin}/storage/v1/object/public/media/**`),
+          { protocol: supabase.protocol.replace(":", "") as "http" | "https", hostname: supabase.hostname, port: supabase.port, pathname: "/storage/v1/object/sign/project-files/**" },
+        ]
+      : [],
     // The local test stack serves photos from localhost, which the optimizer refuses by default (an
-    // SSRF guard). Allowed only when Supabase itself is local; remotePatterns still limits it to media.
+    // SSRF guard). Allowed only when Supabase itself is local; remotePatterns still limits it to these.
     dangerouslyAllowLocalIP: isLocal,
   },
   partialPrefetching: true,

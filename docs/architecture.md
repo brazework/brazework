@@ -101,6 +101,17 @@ public/                 The original vanilla app, kept until production is confi
 - **Secrets:** server keys live in Vercel environment variables, never in the repo. The service-role key is used only by the Stripe webhook and the digest cron (`lib/supabase/admin.ts`).
 - **Headers:** a Content-Security-Policy plus HSTS, nosniff, no framing, a referrer policy and a permissions policy on every response (`next.config.ts`).
 
+## How files load (keep Supabase bandwidth low)
+
+Supabase charges for every byte its CDN serves ("cached egress"). In November 2026, 5 members used 9 GB in three days, almost all of it from a few large videos autoplaying in full for everyone who scrolled past them (Linear FIX-75). The rules, checked in CI by `web/tests/egress-guard.test.ts`:
+
+- **Photos go through `next/image`**, never a raw `<img>`, so Vercel serves a resized copy and Supabase is only asked once per size. Uploads are already shrunk to WebP in the browser (`lib/upload.ts`).
+- **Videos autoplay only when small.** `autoplays()` in `lib/media.ts`: a saved size under 8 MB. Bigger videos, and older ones with no saved size, show their first frame (`preload="metadata"`, a few hundred KB) and play on a tap, with their size on the play button. Every `<video>` sets `preload`, never `"auto"`; only the reel autoplays, because opening a reel is asking to watch. A video already playing elsewhere on the page doesn't autoplay twice (`<MediaGrid autoplay={false}>`).
+- **Uploads never change.** Each one gets a new random path and `cacheControl: "31536000"` (a year), so browsers and the CDN keep their copy.
+- **Signed links stay the same between renders.** Private files (the `project-files` bucket) get their links from `signedUrls()` in `lib/signed-urls.ts`, which reuses a link while it has 30+ minutes left. A link minted on every render is a new URL each time, and the whole file downloads again. Files opened on click get a short link in `lib/project-files.ts`. Privacy is unchanged: the bucket stays private and RLS decides who gets a link.
+- **3D models load only when opened**, once, not again when scrolled back into view (`components/projects/model-viewer.tsx`).
+- **Budget:** a member who scrolls Home daily and opens a few projects should cost well under 100 MB a month. Supabase's usage page (Cached egress) is the number to watch.
+
 ## Environments
 
 | | Web | Database | Who it's for |

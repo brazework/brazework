@@ -61,7 +61,7 @@ export function PostUpdate({ projectId, title, className, autoFocus = false, att
     for (const [i, p] of files.entries()) {
       setStep(`Uploading ${i + 1} of ${files.length}…`);
       const path = `${projectId}/${p.key}.${extOf(p.name)}`;
-      const { error } = await sb.storage.from("project-files").upload(path, p.file, { contentType: storedType(p.name), upsert: false });
+      const { error } = await sb.storage.from("project-files").upload(path, p.file, { contentType: storedType(p.name), cacheControl: "31536000", upsert: false });
       const rec = error ? { ok: false } : await recordProjectFile(projectId, path, p.name, p.file.size, r.postId);
       if (!rec.ok) failed.push(p.name);
     }

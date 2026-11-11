@@ -1,5 +1,6 @@
 "use client";
 import { Box, Download, FileArchive, FileCode2, FileImage, FileSpreadsheet, FileText, FileVideo, FolderOpen, GitBranch, Link2, Presentation, Ruler, Trash2 } from "lucide-react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { ModelViewer } from "@/components/projects/model-viewer";
@@ -18,8 +19,9 @@ export function ProjectFiles({ projectId, items, me, ownerId, variant = "folder"
   const router = useRouter();
   const [note, setNote] = useState<string | null>(null);
   const models = items.filter((i) => i.kind === "file" && kindOfFile(i.name) === "model");
-  // Under an update its model opens straight away; in Files you pick one (one viewer at a time).
-  const [shown, setShown] = useState<number | null>(variant === "update" ? models[0]?.id ?? null : null);
+  // Models open when you tap them (one viewer at a time): a 3D file can be tens of megabytes, so it
+  // isn't downloaded for everyone who scrolls past an update (FIX-75).
+  const [shown, setShown] = useState<number | null>(null);
   const featured = models.find((m) => m.id === shown);
   const media = items.filter((i) => i.kind === "file" && (kindOfFile(i.name) === "image" || kindOfFile(i.name) === "video"));
   const docs = items.filter((i) => i.kind === "file" && !["model", "image", "video"].includes(kindOfFile(i.name) ?? ""));
@@ -66,8 +68,8 @@ export function ProjectFiles({ projectId, items, me, ownerId, variant = "folder"
           {media.map((m) => (
             <li key={m.id} className="group relative aspect-square overflow-hidden rounded-2xl border border-line bg-surface-2">
               {m.src && kindOfFile(m.name) === "image" ? (
-                // eslint-disable-next-line @next/next/no-img-element -- short-lived signed link from a private bucket
-                <button type="button" onClick={() => open(m)} className="size-full"><img src={m.src} alt={m.name} loading="lazy" className="size-full object-cover" /></button>
+                // A small resized copy through the image optimizer, not the full original (FIX-75).
+                <button type="button" onClick={() => open(m)} className="relative size-full"><Image src={m.src} alt={m.name} fill sizes="(min-width: 640px) 160px, 33vw" className="object-cover" /></button>
               ) : m.src ? (
                 <video src={m.src} controls preload="none" className="size-full bg-black object-cover" aria-label={m.name} />
               ) : (
