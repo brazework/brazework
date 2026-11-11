@@ -52,14 +52,14 @@ export async function uploadMedia(file: File, ownerId: string, opts: { maxSide?:
     const path = `${ownerId}/${id}.${img.ext}`;
     const { error } = await sb.storage.from("media").upload(path, img.blob, { contentType: img.type, cacheControl: "31536000", upsert: false });
     if (error) throw new UploadError(error.message || "Upload failed. Try again.");
-    return { type: "image", path, w: img.w, h: img.h };
+    return { type: "image", path, w: img.w, h: img.h, bytes: img.blob.size };
   }
   const { w, h } = await videoSize(file);
   const ext = file.type === "video/webm" ? "webm" : file.type === "video/quicktime" ? "mov" : "mp4";
   const path = `${ownerId}/${id}.${ext}`;
   const { error } = await sb.storage.from("media").upload(path, file, { contentType: file.type, cacheControl: "31536000", upsert: false });
   if (error) throw new UploadError(error.message || "Upload failed. Try again.");
-  return { type: "video", path, w: w || undefined, h: h || undefined };
+  return { type: "video", path, w: w || undefined, h: h || undefined, bytes: file.size };
 }
 
 // Best effort: tidy up a file someone removed before posting.

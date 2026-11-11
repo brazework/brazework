@@ -18,10 +18,9 @@ export function ModelViewer({ url, name, className }: { url: string; name: strin
   useEffect(() => {
     const el = box.current;
     if (!el) return;
-    const io = new IntersectionObserver(([e]) => {
-      setNear(e.isIntersecting);
-      if (!e.isIntersecting) { setState((s) => (s === "error" ? s : "loading")); setSpinning(true); }
-    }, { rootMargin: "300px 0px" });
+    // Load once, the first time it comes near the screen, and keep it: scrolling away and back must not
+    // download the model again (FIX-75).
+    const io = new IntersectionObserver(([e]) => { if (e.isIntersecting) { setNear(true); io.disconnect(); } }, { rootMargin: "300px 0px" });
     io.observe(el);
     return () => io.disconnect();
   }, []);

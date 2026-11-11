@@ -13,11 +13,17 @@ export type Marker = { s: number; t: string };
  * - cmp: set on both photos of a 2-photo post to show them as a before/after slider
  * - cc: captions (WebVTT text) shown on a video; tx: a transcript shown under it (video-captions.sql)
  */
-export type MediaItem = { type: "image" | "video"; path: string; w?: number; h?: number; alt?: string; notes?: Callout[]; marks?: Marker[]; cmp?: boolean; cc?: string; tx?: string };
+export type MediaItem = { type: "image" | "video"; path: string; w?: number; h?: number; bytes?: number; alt?: string; notes?: Callout[]; marks?: Marker[]; cmp?: boolean; cc?: string; tx?: string };
 
 export const MAX_CALLOUTS = 6;
 export const MAX_MARKERS = 8;
-const KEYS = new Set(["type", "path", "w", "h", "alt", "notes", "marks", "cmp", "cc", "tx"]);
+const KEYS = new Set(["type", "path", "w", "h", "bytes", "alt", "notes", "marks", "cmp", "cc", "tx"]);
+
+// Videos play by themselves only up to this size (the file's size, saved at upload). Bigger ones, and
+// older ones uploaded before sizes were saved, wait for a tap: autoplay downloads the whole file for
+// everyone who scrolls past it, which is most of our Storage bandwidth (Linear FIX-75).
+export const AUTOPLAY_MAX_BYTES = 8 * 1024 * 1024;
+export const autoplays = (m: MediaItem) => m.type === "video" && typeof m.bytes === "number" && m.bytes <= AUTOPLAY_MAX_BYTES;
 
 export const MAX_IMAGES = 4;
 export const IMAGE_MAX_BYTES = 20 * 1024 * 1024; // before we shrink it in the browser
@@ -44,6 +50,10 @@ export function validMedia(value: unknown, ownerId: string): MediaItem[] | null 
     if ((type !== "image" && type !== "video") || typeof path !== "string" || !PATH_RE.test(path) || !path.startsWith(`${ownerId}/`)) return null;
     const dim = (n: unknown) => (typeof n === "number" && Number.isFinite(n) && n > 0 && n < 20000 ? Math.round(n) : undefined);
     const item: MediaItem = { type, path, w: dim(w), h: dim(h) };
+    if (o.bytes !== undefined) {
+      if (typeof o.bytes !== "number" || !Number.isInteger(o.bytes) || o.bytes <= 0 || o.bytes > 52428800) return null;
+      item.bytes = o.bytes;
+    }
     if (o.alt !== undefined && o.alt !== "") {
       const alt = text(o.alt, 200);
       if (alt === null) return null;

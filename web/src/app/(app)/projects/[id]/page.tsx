@@ -5,6 +5,7 @@ import Image from "next/image";
 import { Schematic } from "@/components/landing/schematics";
 import { schematicFor } from "@/lib/schematic-field";
 import { MediaGrid } from "@/components/media/media-grid";
+import { signedUrls } from "@/lib/signed-urls";
 import { mediaUrl, type MediaItem } from "@/lib/media";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -64,12 +65,12 @@ async function ProjectView({ params }: { params: PageProps<"/projects/[id]">["pa
     filesOn ? supabase.from("project_files").select(updFilesOn ? "id, kind, name, path, size, url, added_by, created_at, post_id" : "id, kind, name, path, size, url, added_by, created_at").eq("project_id", id).order("created_at", { ascending: false }).limit(100) : Promise.resolve({ data: [] }),
   ]);
   // The files folder: photos, videos and 3D models get a signed link up front for their previews
-  // (the bucket is private; links last an hour). Other files get one when opened.
+  // (the bucket is private). Other files get one when opened.
   type FileRow = Omit<ProjectFileItem, "src"> & { path: string | null };
   const fileRows = (filesRes.data ?? []) as unknown as FileRow[];
   const previewPaths = fileRows.filter((f) => f.path && ["image", "video", "model"].includes(kindOfFile(f.name) ?? "")).map((f) => f.path!);
-  const { data: signed } = previewPaths.length ? await supabase.storage.from("project-files").createSignedUrls(previewPaths, 60 * 60) : { data: [] };
-  const srcByPath = new Map((signed ?? []).filter((s) => s.signedUrl && s.path).map((s) => [s.path!, s.signedUrl]));
+  // Reused between renders (lib/signed-urls.ts), so the browser and the image cache keep their copies.
+  const srcByPath = previewPaths.length ? await signedUrls(supabase, "project-files", previewPaths) : new Map<string, string>();
   const files: ProjectFileItem[] = fileRows.map(({ path, ...f }) => ({ ...f, src: path ? srcByPath.get(path) ?? null : null }));
   const filesByPost = files.reduce((m, f) => (f.post_id ? m.set(f.post_id, [...(m.get(f.post_id) ?? []), f]) : m), new Map<string, ProjectFileItem[]>());
   type TM = { uid: string; profiles: { first_name: string; last_name: string; headline: string } | null };
@@ -187,7 +188,7 @@ async function ProjectView({ params }: { params: PageProps<"/projects/[id]">["pa
         {gallery.length > 0 && (
           <Panel className="p-6">
             <h2 className="inline-flex items-center gap-2 text-lg font-semibold tracking-tight"><Images className="size-5 text-muted" /> Gallery</h2>
-            <MediaGrid media={gallery} alt={`From ${p.title}`} />
+            <MediaGrid media={gallery} alt={`From ${p.title}`} autoplay={false} />
           </Panel>
         )}
 

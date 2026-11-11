@@ -4,7 +4,7 @@ import { Captions, ChevronLeft, ChevronRight, ChevronsLeftRight, Crosshair, Flag
 import Image from "next/image";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { cn } from "@/lib/forge";
-import { mediaUrl, type MediaItem } from "@/lib/media";
+import { autoplays, mediaUrl, type MediaItem } from "@/lib/media";
 import { Pin, fmtTime } from "./annotate";
 
 // Photos or a video on a post:
@@ -12,10 +12,11 @@ import { Pin, fmtTime } from "./annotate";
 // - 2–4 photos tile, and tapping one opens a full-screen viewer (arrow keys, Escape) with its callouts
 // - a before/after pair becomes a slider
 // - a video gets the test-run player: speed, loop, frame steps and timeline markers
-export function MediaGrid({ media, alt }: { media: MediaItem[]; alt: string }) {
+// autoplay={false} where the same video already plays elsewhere on the page (the project gallery).
+export function MediaGrid({ media, alt, autoplay = true }: { media: MediaItem[]; alt: string; autoplay?: boolean }) {
   const [open, setOpen] = useState<number | null>(null);
   if (!media.length) return null;
-  if (media[0].type === "video") return <TestRunPlayer v={media[0]} />;
+  if (media[0].type === "video") return <TestRunPlayer v={media[0]} autoplay={autoplay} />;
   if (media.length === 2 && media.every((m) => m.cmp)) return <CompareSlider before={media[0]} after={media[1]} alt={alt} />;
 
   const images = media.filter((m) => m.type === "image");
@@ -144,7 +145,9 @@ const setSoundOn = (on: boolean) => { try { localStorage.setItem(SOUND_KEY, on ?
 // screen and pauses when you scroll past. Tap to pause or play. While playing only the scrubber
 // shows; pausing brings up speed (slow-mo for test runs) and full screen. Keys while focused:
 // space/k play, ←/→ 5 s, , and . one frame, f full screen.
-function TestRunPlayer({ v }: { v: MediaItem }) {
+function TestRunPlayer({ v, autoplay = true }: { v: MediaItem; autoplay?: boolean }) {
+  // Small clips play by themselves; big ones (and ones with no saved size) wait for a tap (FIX-75).
+  const auto = autoplay && autoplays(v);
   const ref = useRef<HTMLVideoElement>(null);
   const box = useRef<HTMLDivElement>(null);
   const userPaused = useRef(false);
@@ -198,7 +201,7 @@ function TestRunPlayer({ v }: { v: MediaItem }) {
     const io = new IntersectionObserver(([en]) => {
       // Autoplay only until it has played through once, and never with the phone's Data Saver on.
       const saveData = !!(navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData;
-      if (en.intersectionRatio >= 0.6) { if (!userPaused.current && node.paused && !finished.current && !saveData) start(node); }
+      if (en.intersectionRatio >= 0.6) { if (auto && !userPaused.current && node.paused && !finished.current && !saveData) start(node); }
       else if (!node.paused) node.pause();
     }, { threshold: [0, 0.6] });
     io.observe(node);
@@ -209,7 +212,7 @@ function TestRunPlayer({ v }: { v: MediaItem }) {
     window.addEventListener(PLAYING_EVENT, onOther);
     window.addEventListener(SOUND_EVENT, onSound);
     return () => { io.disconnect(); window.removeEventListener(PLAYING_EVENT, onOther); window.removeEventListener(SOUND_EVENT, onSound); };
-  }, [start]);
+  }, [start, auto]);
   const toggleFull = () => {
     if (document.fullscreenElement) { void document.exitFullscreen(); return; }
     const b = box.current, x = ref.current as (HTMLVideoElement & { webkitEnterFullscreen?: () => void }) | null;
@@ -285,6 +288,8 @@ function TestRunPlayer({ v }: { v: MediaItem }) {
           )}
         </AnimatePresence>
         {!playing && !flash && <span className="pointer-events-none absolute top-1/2 left-1/2 grid size-16 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-black shadow-2xl" aria-hidden="true"><Play className="ml-1 size-7 fill-current" /></span>}
+        {/* Tap-to-play videos say how big they are, so nobody pulls 40 MB on a phone by surprise. */}
+        {!playing && !flash && !auto && v.bytes && <span className="pointer-events-none absolute top-[calc(50%+2.75rem)] left-1/2 -translate-x-1/2 rounded-full bg-black/60 px-2.5 py-0.5 text-[11px] font-medium text-white backdrop-blur">{Math.max(1, Math.round(v.bytes / 1048576))} MB</span>}
         {/* Captions and sound: always reachable, bottom right (grows left when it asks for a tap). */}
         <div className="absolute right-3 bottom-3 z-10 flex items-center gap-1.5">
         {hasCc && (
