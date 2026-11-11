@@ -5,7 +5,7 @@ import { PostUpdate } from "./[id]/post-update";
 
 // "Post update" on a workbench card: opens the update box right in the card, so you stay on
 // Projects. The update still goes to the feed as a project post.
-export function QuickUpdate({ projectId, title }: { projectId: string; title: string }) {
+export function QuickUpdate({ projectId, title, attach = false }: { projectId: string; title: string; attach?: boolean }) {
   const [open, setOpen] = useState(false);
   return (
     <>
@@ -20,7 +20,7 @@ export function QuickUpdate({ projectId, title }: { projectId: string; title: st
       </button>
       {open && (
         <div id={`qu-${projectId}`} className="order-last w-full">
-          <PostUpdate projectId={projectId} title={title} autoFocus className="mt-1 rounded-2xl border border-line bg-surface/60 p-3" />
+          <PostUpdate projectId={projectId} title={title} attach={attach} autoFocus className="mt-1 rounded-2xl border border-line bg-surface/60 p-3" />
         </div>
       )}
     </>

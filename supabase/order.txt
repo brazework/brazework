@@ -47,3 +47,4 @@ club-claims
 video-captions
 weekly-loop
 project-files
+project-update-files

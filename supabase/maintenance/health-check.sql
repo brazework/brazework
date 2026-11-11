@@ -35,7 +35,8 @@ from (values
   (35, 'club-claims',     to_regclass('public.club_claims') is not null),
   (36, 'video-captions',  to_regprocedure('public.video_captions_ready()') is not null),
   (37, 'weekly-loop',     to_regprocedure('public.weekly_loop_ready()') is not null),
-  (38, 'project-files',   to_regprocedure('public.project_files_ready()') is not null)
+  (38, 'project-files',   to_regprocedure('public.project_files_ready()') is not null),
+  (39, 'project-update-files', to_regprocedure('public.project_update_files_ready()') is not null)
 ) as s(step, file, present)
 order by step;
 

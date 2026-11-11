@@ -35,7 +35,7 @@ async function Explore({ searchParams }: { searchParams: PageProps<"/projects">[
   const verifiedOnly = sp.verified === "1";
   const mine = sp.mine === "1";
   const tool = typeof sp.tool === "string" ? sp.tool.slice(0, 40) : "";
-  const { milestones: msOn, projectTools: stackOn, projectSpecs: specsOn } = await dbFeatures();
+  const { milestones: msOn, projectTools: stackOn, projectSpecs: specsOn, projectFiles: filesOn } = await dbFeatures();
 
   let req = supabase.from("projects").select(`id, title, summary, status, year, tags, updated_at, owner_id, profiles!projects_owner_id_fkey(first_name, last_name, field)${stackOn ? ", tools" : ""}`).eq("private", false).order("updated_at", { ascending: false }).limit(120);
   if (mine) req = req.eq("owner_id", user.id);
@@ -101,7 +101,7 @@ async function Explore({ searchParams }: { searchParams: PageProps<"/projects">[
   return (
     <>
       <PageHeader title="Projects" subtitle="What you're building, and what people across Brazework have built and had verified." />
-      {!q && !topic && !tool && !status && !verifiedOnly && !mine && <Workbench projects={bench} interests={profile.interests ?? []} copilot={copilot} stack={stackOn} specsOn={specsOn} />}
+      {!q && !topic && !tool && !status && !verifiedOnly && !mine && <Workbench projects={bench} interests={profile.interests ?? []} copilot={copilot} stack={stackOn} specsOn={specsOn} filesOn={filesOn} />}
       <form action="/projects" className="relative mt-6">
         {topic && <input type="hidden" name="topic" value={topic} />}
         {tool && <input type="hidden" name="tool" value={tool} />}

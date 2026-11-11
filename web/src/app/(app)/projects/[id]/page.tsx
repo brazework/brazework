@@ -47,7 +47,7 @@ async function ProjectView({ params }: { params: PageProps<"/projects/[id]">["pa
   const { id } = await params;
   const { supabase, user } = await getViewer();
   if (!user) redirect("/login");
-  const { milestones: msOn, projectTools: stackOn, projectSpecs: specsOn, projectFiles: filesOn } = await dbFeatures();
+  const { milestones: msOn, projectTools: stackOn, projectSpecs: specsOn, projectFiles: filesOn, updateFiles: updFilesOn } = await dbFeatures();
   const { data } = await supabase.from("projects").select(`id, title, summary, status, year, tags, private, updated_at, created_at, owner_id, profiles!projects_owner_id_fkey(first_name, last_name, headline, field)${stackOn ? ", tools" : ""}`).eq("id", id).maybeSingle();
   const p = data as unknown as Project | null;
   const own = p?.owner_id === user.id;
@@ -60,16 +60,17 @@ async function ProjectView({ params }: { params: PageProps<"/projects/[id]">["pa
     supabase.from("projects").select("id, title, status").eq("owner_id", p.owner_id).eq("private", false).neq("id", id).order("updated_at", { ascending: false }).limit(4),
     (await dbFeatures()).verification ? supabase.from("project_members").select("uid, profiles(first_name, last_name, headline)").eq("project_id", id).order("added_at", { ascending: true }).limit(20) : Promise.resolve({ data: [] }),
     own ? supabase.from("community_members").select("community_id").eq("uid", user.id).limit(50) : Promise.resolve({ data: [] }),
-    filesOn ? supabase.from("project_files").select("id, kind, name, path, size, url, added_by, created_at").eq("project_id", id).order("created_at", { ascending: false }).limit(100) : Promise.resolve({ data: [] }),
+    filesOn ? supabase.from("project_files").select(updFilesOn ? "id, kind, name, path, size, url, added_by, created_at, post_id" : "id, kind, name, path, size, url, added_by, created_at").eq("project_id", id).order("created_at", { ascending: false }).limit(100) : Promise.resolve({ data: [] }),
   ]);
   // The files folder: photos, videos and 3D models get a signed link up front for their previews
   // (the bucket is private; links last an hour). Other files get one when opened.
   type FileRow = Omit<ProjectFileItem, "src"> & { path: string | null };
-  const fileRows = (filesRes.data ?? []) as FileRow[];
+  const fileRows = (filesRes.data ?? []) as unknown as FileRow[];
   const previewPaths = fileRows.filter((f) => f.path && ["image", "video", "model"].includes(kindOfFile(f.name) ?? "")).map((f) => f.path!);
   const { data: signed } = previewPaths.length ? await supabase.storage.from("project-files").createSignedUrls(previewPaths, 60 * 60) : { data: [] };
   const srcByPath = new Map((signed ?? []).filter((s) => s.signedUrl && s.path).map((s) => [s.path!, s.signedUrl]));
   const files: ProjectFileItem[] = fileRows.map(({ path, ...f }) => ({ ...f, src: path ? srcByPath.get(path) ?? null : null }));
+  const filesByPost = files.reduce((m, f) => (f.post_id ? m.set(f.post_id, [...(m.get(f.post_id) ?? []), f]) : m), new Map<string, ProjectFileItem[]>());
   type TM = { uid: string; profiles: { first_name: string; last_name: string; headline: string } | null };
   const team = ((teamRes.data ?? []) as unknown as TM[]).map((t) => ({ id: t.uid, first: t.profiles?.first_name ?? "", last: t.profiles?.last_name ?? "", headline: t.profiles?.headline ?? "" }));
   // Who the owner can add: people in their clubs.
@@ -179,7 +180,7 @@ async function ProjectView({ params }: { params: PageProps<"/projects/[id]">["pa
         )}
 
         {/* The project's folder: documents, CAD, 3D models (rotatable), code and links. */}
-        {filesOn && <ProjectFiles projectId={p.id} items={files} canAdd={own || team.some((t) => t.id === user.id)} me={user.id} ownerId={p.owner_id} />}
+        {filesOn && <ProjectFiles projectId={p.id} items={files} me={user.id} ownerId={p.owner_id} />}
 
         {/* Every photo and video from its updates, in one place. */}
         {gallery.length > 0 && (
@@ -220,8 +221,14 @@ async function ProjectView({ params }: { params: PageProps<"/projects/[id]">["pa
 
         <section className="flex flex-col gap-4">
           <h2 className="text-lg font-semibold tracking-tight">Updates</h2>
-          {own && <PostUpdate projectId={p.id} title={p.title} />}
-          {posts.map((x, i) => <PostCard key={x.id} post={x} liked={liked.has(x.id)} saved={saved.has(x.id)} own={x.author_id === user.id} index={i} />)}
+          {own && <PostUpdate projectId={p.id} title={p.title} attach={filesOn} />}
+          {/* Each update, with the files, 3D models and links it was posted with. */}
+          {posts.map((x, i) => (
+            <div key={x.id} className="flex flex-col gap-3">
+              <PostCard post={x} liked={liked.has(x.id)} saved={saved.has(x.id)} own={x.author_id === user.id} index={i} />
+              {filesByPost.has(x.id) && <ProjectFiles projectId={p.id} items={filesByPost.get(x.id)!} me={user.id} ownerId={p.owner_id} variant="update" />}
+            </div>
+          ))}
           {!posts.length && !own && <p className="text-sm text-muted">No updates yet.</p>}
         </section>
       </div>

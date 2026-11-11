@@ -6,7 +6,7 @@ import { BenchCard } from "./bench-card";
 export type BenchProject = { id: string; title: string; summary: string; status: string; private: boolean; updated_at: string; verified: number; waiting: number; updates: number; log: { id: string; body: string; status: string; created_at: string }[] };
 
 // Your projects first: where each one stands on the way to proof, and the next thing to do.
-export function Workbench({ projects, interests, copilot, stack, specsOn = false }: { projects: BenchProject[]; interests: string[]; copilot: boolean; stack: boolean; specsOn?: boolean }) {
+export function Workbench({ projects, interests, copilot, stack, specsOn = false, filesOn = false }: { projects: BenchProject[]; interests: string[]; copilot: boolean; stack: boolean; specsOn?: boolean; filesOn?: boolean }) {
   if (!projects.length) {
     return (
       <section aria-label="Your workbench" className="glass-card mt-6 rounded-3xl p-6">
@@ -41,7 +41,7 @@ export function Workbench({ projects, interests, copilot, stack, specsOn = false
         </div>
       </div>
       <ul className="mt-3 grid grid-cols-1 items-start gap-3 md:grid-cols-2">
-        {projects.map((p) => <BenchCard key={p.id} p={p} />)}
+        {projects.map((p) => <BenchCard key={p.id} p={p} attach={filesOn} />)}
       </ul>
       <h2 className="mt-10 text-sm font-semibold">Explore what people are building</h2>
     </section>

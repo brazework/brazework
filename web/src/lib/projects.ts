@@ -85,7 +85,7 @@ export async function setProjectPrivate(id: string, value: boolean): Promise<Pro
 }
 
 // A feed post about your project. Its topics come from the project.
-export async function shareProject(id: string, body: string): Promise<ProjectState> {
+export async function shareProject(id: string, body: string): Promise<ProjectState & { postId?: string }> {
   const text = body.trim();
   if (!text) return { ok: false, message: "Write something about it first." };
   if (text.length > 3000) return { ok: false, message: "Posts can be up to 3,000 characters." };
@@ -93,13 +93,13 @@ export async function shareProject(id: string, body: string): Promise<ProjectSta
   if (!user) return { ok: false, message: "Log in again." };
   const { data: pr } = await supabase.from("projects").select("tags").eq("id", id).eq("owner_id", user.id).maybeSingle();
   if (!pr) return { ok: false, message: "That project couldn't be found." };
-  const { error } = await supabase.from("posts").insert({ body: text, project_id: id, kind: "project", tags: ((pr.tags as string[]) ?? []).slice(0, 3) });
+  const { data: post, error } = await supabase.from("posts").insert({ body: text, project_id: id, kind: "project", tags: ((pr.tags as string[]) ?? []).slice(0, 3) }).select("id").single();
   if (error) return { ok: false, message: friendlyError(error) };
   revalidatePath("/feed");
   revalidatePath("/projects");
   revalidatePath(`/projects/${id}`);
   revalidatePath(`/u/${user.id}`);
-  return { ok: true, message: "Posted. It's in your followers' feeds too." };
+  return { ok: true, message: "Posted. It's in your followers' feeds too.", postId: (post as { id: string }).id };
 }
 
 export async function updateProfileBasics(_: ProjectState, form: FormData): Promise<ProjectState> {

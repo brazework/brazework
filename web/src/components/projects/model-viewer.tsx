@@ -5,16 +5,30 @@ import { extOf } from "@/lib/project-file-types";
 
 // An interactive 3D preview: drag to rotate, scroll or pinch to zoom, right-drag to pan. Reads STL,
 // OBJ, GLB/glTF (single file) and 3MF. three.js loads only when a model is opened, so pages that
-// never show one don't pay for it.
+// never show one don't pay for it. It only runs while it's on (or near) the screen: browsers allow a
+// limited number of 3D views at once, and a project's updates can carry several models.
 export function ModelViewer({ url, name, className }: { url: string; name: string; className?: string }) {
+  const box = useRef<HTMLDivElement>(null);
   const host = useRef<HTMLDivElement>(null);
   const api = useRef<{ reset: () => void; spin: (on: boolean) => void } | null>(null);
   const [state, setState] = useState<"loading" | "ready" | "error">("loading");
   const [spinning, setSpinning] = useState(true);
+  const [near, setNear] = useState(false);
+
+  useEffect(() => {
+    const el = box.current;
+    if (!el) return;
+    const io = new IntersectionObserver(([e]) => {
+      setNear(e.isIntersecting);
+      if (!e.isIntersecting) { setState((s) => (s === "error" ? s : "loading")); setSpinning(true); }
+    }, { rootMargin: "300px 0px" });
+    io.observe(el);
+    return () => io.disconnect();
+  }, []);
 
   useEffect(() => {
     const el = host.current;
-    if (!el) return;
+    if (!el || !near) return;
     let disposed = false;
     let frame = 0;
     let cleanup = () => {};
@@ -125,10 +139,10 @@ export function ModelViewer({ url, name, className }: { url: string; name: strin
     })().catch(() => { if (!disposed) setState("error"); });
 
     return () => { disposed = true; cleanup(); api.current = null; };
-  }, [url, name]);
+  }, [url, name, near]);
 
   return (
-    <div className={className ?? "relative aspect-[4/3] w-full overflow-hidden rounded-2xl bg-[radial-gradient(120%_90%_at_50%_0%,#1e2a4a,#070a12)]"}>
+    <div ref={box} className={className ?? "relative aspect-[4/3] w-full overflow-hidden rounded-2xl bg-[radial-gradient(120%_90%_at_50%_0%,#1e2a4a,#070a12)]"}>
       <div ref={host} className="absolute inset-0" role="img" aria-label={`3D model: ${name}. Drag to rotate, scroll to zoom.`} />
       {state === "loading" && <div className="absolute inset-0 grid place-items-center text-sm text-white/70"><span className="inline-flex items-center gap-2"><Loader2 className="size-4 animate-spin" /> Loading model…</span></div>}
       {state === "error" && <div className="absolute inset-0 grid place-items-center p-6 text-center text-sm text-white/70">This model couldn&apos;t be previewed. Download it to open it in your CAD tool.</div>}

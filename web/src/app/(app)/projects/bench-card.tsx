@@ -9,7 +9,7 @@ import type { BenchProject } from "./workbench";
 
 // One project on your workbench. Click it to open its update log: every update you've posted,
 // newest first, as a timeline under the card. The arrow opens the full project page.
-export function BenchCard({ p }: { p: BenchProject }) {
+export function BenchCard({ p, attach = false }: { p: BenchProject; attach?: boolean }) {
   const [open, setOpen] = useState(false);
   const logId = `log-${p.id}`;
   return (
@@ -65,7 +65,7 @@ export function BenchCard({ p }: { p: BenchProject }) {
       </AnimatePresence>
 
       <div className="mt-4 flex flex-wrap gap-2">
-        <QuickUpdate projectId={p.id} title={p.title} />
+        <QuickUpdate projectId={p.id} title={p.title} attach={attach} />
         <Link href={`/projects/${p.id}#milestones`} className="inline-flex h-9 items-center gap-1.5 rounded-full border border-line px-4 text-xs font-medium transition hover:bg-hover"><ShieldCheck className="size-3.5" /> {p.verified || p.waiting ? "Milestones" : "Ask to verify"}</Link>
       </div>
     </li>

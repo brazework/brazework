@@ -1,25 +1,28 @@
 "use server";
 import { revalidatePath } from "next/cache";
+import { dbFeatures } from "@/lib/db-features";
 import { friendlyError } from "@/lib/forge";
 import { cleanUrl, githubRepo, kindOfFile } from "@/lib/project-file-types";
 import { getViewer } from "@/lib/supabase/server";
 
-// A project's files folder (supabase/project-files.sql). Files go from the browser straight to the
-// private "project-files" bucket; these record them, add links, and remove items. Row-level security
-// decides who may do each (the owner and the team add; the uploader or the owner removes).
+// Files and links attached to project updates (supabase/project-files.sql, project-update-files.sql).
+// Files go from the browser straight to the private "project-files" bucket; these record them
+// against the update they came with, and remove them. Row-level security decides who may do each.
 
 export type FileState = { ok: boolean; message: string };
 
 const BUCKET = "project-files";
 const done = (projectId: string) => revalidatePath(`/projects/${projectId}`);
+// The update a file belongs to, once step 39 has run.
+const withPost = async (postId?: string) => (postId && (await dbFeatures()).updateFiles ? { post_id: postId } : {});
 
-// After the browser uploaded a file to "<project id>/<random>.<ext>", record it in the folder.
-export async function recordProjectFile(projectId: string, path: string, name: string, size: number): Promise<FileState> {
+// After the browser uploaded a file to "<project id>/<random>.<ext>", record it.
+export async function recordProjectFile(projectId: string, path: string, name: string, size: number, postId?: string): Promise<FileState> {
   const { supabase, user } = await getViewer();
   if (!user) return { ok: false, message: "Log in again." };
   const cleanName = name.trim().slice(0, 200) || "File";
   if (!kindOfFile(cleanName) || !path.startsWith(`${projectId}/`)) return { ok: false, message: "That file type can't be added." };
-  const { error } = await supabase.from("project_files").insert({ project_id: projectId, kind: "file", name: cleanName, path, size: Math.max(0, Math.round(size)) });
+  const { error } = await supabase.from("project_files").insert({ project_id: projectId, kind: "file", name: cleanName, path, size: Math.max(0, Math.round(size)), ...(await withPost(postId)) });
   if (error) {
     // Don't leave an orphaned upload behind.
     await supabase.storage.from(BUCKET).remove([path]);
@@ -30,13 +33,14 @@ export async function recordProjectFile(projectId: string, path: string, name: s
 }
 
 // A link: a GitHub repo, a CAD share, a Drive folder, a demo. GitHub links are named after the repo.
-export async function addProjectLink(projectId: string, raw: string, label = ""): Promise<FileState> {
+export async function addProjectLink(projectId: string, raw: string, postId?: string): Promise<FileState> {
   const url = cleanUrl(raw);
   if (!url) return { ok: false, message: "That doesn't look like a link. Paste a full address, like github.com/you/repo." };
   const { supabase, user } = await getViewer();
   if (!user) return { ok: false, message: "Log in again." };
-  const name = (label.trim() || githubRepo(url) || new URL(url).host.replace(/^www\./, "") + new URL(url).pathname.replace(/\/$/, "")).slice(0, 200);
-  const { error } = await supabase.from("project_files").insert({ project_id: projectId, kind: "link", name, url });
+  const u = new URL(url);
+  const name = (githubRepo(url) || u.host.replace(/^www\./, "") + u.pathname.replace(/\/$/, "")).slice(0, 200);
+  const { error } = await supabase.from("project_files").insert({ project_id: projectId, kind: "link", name, url, ...(await withPost(postId)) });
   if (error) return { ok: false, message: friendlyError(error) };
   done(projectId);
   return { ok: true, message: "Link added." };
