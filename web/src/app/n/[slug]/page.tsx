@@ -5,6 +5,7 @@ import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Logo } from "@/components/ui";
+import { VerifiedStamp } from "@/components/app/verified-seal";
 import { cn, timeAgo } from "@/lib/forge";
 import { createClient } from "@/lib/supabase/server";
 
@@ -103,7 +104,7 @@ async function Network({ params }: { params: PageProps<"/n/[slug]">["params"] })
           <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {n.recent.map((r, i) => (
               <li key={i} className="glass-card rounded-2xl p-4">
-                <p className="flex items-center gap-1.5 text-[11px] font-medium text-ok"><BadgeCheck className="size-3.5" /> Verified by {r.chapter}</p>
+                <VerifiedStamp club={r.chapter} clubId={r.chapter_id} size="sm" />
                 <p className="mt-1.5 line-clamp-2 font-medium">{r.title}</p>
                 <p className="mt-1 text-xs text-faint">{r.by} · {timeAgo(r.at)}</p>
               </li>
