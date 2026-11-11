@@ -1,4 +1,4 @@
-const { BASE, step, browser, as, go, summary } = require("./lib.cjs");
+const { BASE, step, browser, as, go, hydrated, summary } = require("./lib.cjs");
 const pw = require("playwright-core");
 (async () => {
   const b = await browser();
@@ -147,6 +147,23 @@ const pw = require("playwright-core");
     // The club's leaderboard: verified milestones this term, from real rows.
     await go(ben, "/c/rkt");
     await ben.getByRole("region", { name: "Builders this term" }).getByText("Ben Cho").first().waitFor({ timeout: 15000 });
+  }, ben);
+  await step("composer: typing @ links another of your projects (no dropdown), and the menu draws above the feed tabs", async () => {
+    await go(ben, "/feed");
+    const box = ben.locator("#create-box");
+    await hydrated(box);
+    await box.click();
+    await box.pressSequentially("Parachute deploy test with @Recov", { delay: 10 });
+    const option = ben.getByRole("option", { name: /Recovery avionics/ });
+    await option.waitFor({ timeout: 10000 });
+    await ben.waitForTimeout(600); // the menu scrolls itself into view
+    // The topmost element where the option sits must be the option itself (not the pinned tabs).
+    const onTop = await option.evaluate((el) => { const r = el.getBoundingClientRect(); const top = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); return el.contains(top); });
+    if (!onTop) throw new Error("the @ menu is drawn under something else");
+    await option.click();
+    await ben.getByRole("group", { name: "Linked project" }).getByText("Recovery avionics").waitFor({ timeout: 5000 });
+    if (!(await box.inputValue()).includes("@Recovery avionics")) throw new Error("the project wasn't written into the post");
+    await box.fill("");
   }, ben);
   await step("project reel: Play reel tells the build as a story, with the club's proof, and closes back to the project", async () => {
     await go(ben, "/projects/p1");

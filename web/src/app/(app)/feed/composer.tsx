@@ -1,6 +1,6 @@
 "use client";
 import { AnimatePresence, motion } from "motion/react";
-import { ArrowRight, ArrowUp, AtSign, Check, FlaskConical, FolderGit2, Hash, HelpCircle, ImagePlus, Loader2, Megaphone, PenLine, Plus, Rocket, Square, Undo2, Upload, Users, Video, Wand2 } from "lucide-react";
+import { ArrowRight, ArrowUp, AtSign, Check, FlaskConical, FolderGit2, Hash, HelpCircle, ImagePlus, Loader2, Megaphone, PenLine, Plus, Rocket, Square, Undo2, Upload, Users, Video, Wand2, X } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -49,7 +49,10 @@ export function Composer({ first, last, interests, userId, mediaEnabled = false,
   const videoRef = useRef<HTMLInputElement>(null);
   const att = useAttachments(userId);
   const ai = useCopilot();
-  const at = useMentions({ text: body, setText: (v) => { setBody(v.slice(0, MAX)); setBefore(null); }, ref: textRef, enabled: mentionsEnabled });
+  const at = useMentions({ text: body, setText: (v) => { setBody(v.slice(0, MAX)); setBefore(null); }, ref: textRef, enabled: mentionsEnabled, projects, onProject: (p) => setProjectId(p.id) });
+  // The project this post is about: picked automatically (the one you came from, else your latest),
+  // switched by typing @ and its name, or dropped with the chip's ×. No dropdown.
+  const linked = projects.find((p) => p.id === projectId) ?? null;
 
   // Ask Ember.
   const [question, setQuestion] = useState("");
@@ -140,7 +143,9 @@ export function Composer({ first, last, interests, userId, mediaEnabled = false,
       onDragOver={(e) => { if (mediaEnabled && e.dataTransfer.types.includes("Files")) { e.preventDefault(); setDragging(true); } }}
       onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setDragging(false); }}
       onDrop={(e) => { if (!mediaEnabled) return; e.preventDefault(); setDragging(false); pickFiles(e.dataTransfer.files); }}
-      className={cn("relative rounded-3xl p-4 transition", asking ? "ai-border shadow-[var(--shadow)]" : "glass-card", dragging && "scale-[1.01]")}
+      // While you type or a menu is open, the box sits above the pinned feed tabs, so the @ list and the
+      // tool menus are never drawn under them (its glass makes it a layer of its own).
+      className={cn("relative rounded-3xl p-4 transition focus-within:z-30 has-[[aria-expanded=true]]:z-30 has-[[role=listbox]]:z-30", asking ? "ai-border shadow-[var(--shadow)]" : "glass-card", dragging && "scale-[1.01]")}
     >
       {!asking && <input type="hidden" name="kind" value={kind} />}
       {!asking && projectId && <input type="hidden" name="project_id" value={projectId} />}
@@ -150,16 +155,15 @@ export function Composer({ first, last, interests, userId, mediaEnabled = false,
       <input ref={photoRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple hidden onChange={(e) => { if (e.target.files) pickFiles(e.target.files); e.target.value = ""; }} />
       <input ref={videoRef} type="file" accept="video/mp4,video/webm,video/quicktime" hidden onChange={(e) => { if (e.target.files) pickFiles(e.target.files); e.target.value = ""; }} />
 
-      {/* One row: you (or Ember), the one choice that matters before writing (which project this is
-          about), and the orb, which turns this same box into a question for Ember. Everything else
-          (media, @, #, post type, audience) is a tool under the box. */}
+      {/* One row: you (or Ember), and the orb, which turns this same box into a question for Ember.
+          Everything else (media, @ people and projects, #, post type, audience) is a tool under the box. */}
       <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3">
         {asking
           ? <Ember size={40} mood={ai.busy ? "thinking" : answer.text ? "happy" : "idle"} />
           : <span className="rounded-full bg-accent-grad p-[2px]"><Avatar first={first} last={last} size={40} src={avatarSrc} className="border-2 border-surface" /></span>}
         {asking
           ? <p className="min-w-0 text-sm font-medium">Ask Ember <span className="font-normal text-muted">· it checks real Brazework data first</span></p>
-          : <ProjectPicker projects={projects} projectId={projectId} setProjectId={setProjectId} />}
+          : <p className="min-w-0"><span className="block truncate text-sm font-medium">{first} {last}</span><span className="block truncate text-xs text-faint">Share what you built</span></p>}
         {/* The orb, on the first row's centre line: ask Ember in this same box, and back to writing. */}
         <button type="button" onClick={() => { setMode(asking ? "post" : "ask"); requestAnimationFrame(() => textRef.current?.focus()); }} aria-pressed={asking}
           aria-label={asking ? "Back to writing a post" : "Ask Ember"} title={asking ? "Back to writing a post" : "Ask Ember"}
@@ -175,7 +179,7 @@ export function Composer({ first, last, interests, userId, mediaEnabled = false,
             carry colour. Same font, padding and wrapping; only colours differ, so the caret lines up. */}
         {!asking && (
           <div ref={mirrorRef} aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden px-4 py-3 text-[16px] leading-relaxed break-words whitespace-pre-wrap text-text">
-            {mentionParts(body, at.mentions).map((p, i) =>
+            {mentionParts(body, linked ? [...at.mentions, { id: `project:${linked.id}`, name: linked.title }] : at.mentions).map((p, i) =>
               typeof p === "string"
                 ? hashtagParts(p).map((h, j) => typeof h === "string" ? h : <span key={`${i}-${j}`} className={tags.includes(h.tag) ? "text-[var(--tag)]" : "text-faint"}>{h.written}</span>)
                 : <span key={i} className="rounded-[3px] bg-[color-mix(in_oklab,var(--text)_9%,transparent)]">@{p.name}</span>)}
@@ -200,7 +204,7 @@ export function Composer({ first, last, interests, userId, mediaEnabled = false,
           }}
           maxLength={asking ? 4000 : MAX}
           rows={asking ? 2 : 3}
-          placeholder={asking ? typed || "Ask Ember anything" : mentionsEnabled ? `What are you building, ${first}? Type @ to mention someone.` : `What are you building, ${first}?`}
+          placeholder={asking ? typed || "Ask Ember anything" : `What are you building, ${first}?${mentionsEnabled ? " Type @ for people or a project." : projects.length ? " Type @ for a project." : ""}`}
           onScroll={(e) => { if (mirrorRef.current) mirrorRef.current.scrollTop = e.currentTarget.scrollTop; }}
           style={{ outline: "none" }}
           className={cn("relative block max-h-80 w-full resize-none bg-transparent px-4 py-3 text-[16px] leading-relaxed placeholder:text-faint", asking ? "min-h-[4.5rem] pr-14 text-text" : "no-scrollbar min-h-[6rem] text-transparent caret-[var(--text)] selection:bg-[color-mix(in_oklab,var(--accent)_22%,transparent)]")}
@@ -234,13 +238,28 @@ export function Composer({ first, last, interests, userId, mediaEnabled = false,
       {/* Posting: what you've attached, then one toolbar (add media, polish with Ember, post). */}
       {!asking && (
         <>
+          <div role="group" aria-label="Linked project" className="mt-2 flex min-w-0 items-center gap-1.5 px-1 text-xs">
+            {!projects.length ? (
+              <Link href="/profile#projects" className="text-muted transition hover:text-text">+ Add the project you&apos;re building</Link>
+            ) : linked ? (
+              <>
+                <span className="inline-flex min-w-0 items-center gap-1.5 rounded-full bg-surface-2 py-1 pr-1 pl-2.5 text-text-2">
+                  <FolderGit2 className="size-3.5 shrink-0 text-faint" /><span className="truncate">{linked.title}</span>
+                  <button type="button" onClick={() => setProjectId("")} aria-label="Post without a project" title="Post without a project" className="grid size-5 shrink-0 place-items-center rounded-full text-faint transition hover:bg-hover hover:text-text"><X className="size-3" /></button>
+                </span>
+                <span className="hidden shrink-0 text-faint sm:inline">Type @ to link another</span>
+              </>
+            ) : (
+              <span className="text-faint">General update · type @ to link a project</span>
+            )}
+          </div>
           {extraTags > 0 && <p className="mt-1.5 px-1 text-[11px] text-faint">Only the first {MAX_TAGS} tags count; the grey ones won&apos;t be added.</p>}
           {mediaEnabled && <AttachmentTray slots={att.slots} onRemove={att.remove} onEdit={att.edit} compare={att.compare} onCompare={att.setCompare} captions={captionsEnabled} />}
           {/* The tools, in one row that fits a phone: icons there, names on wider screens. */}
           <div className="mt-2.5 flex items-center gap-0.5">
             <IconTool label="Add a photo" disabled={!mediaEnabled || att.full} onClick={() => photoRef.current?.click()}><ImagePlus className="size-[18px]" /></IconTool>
             <IconTool label="Add a video" disabled={!mediaEnabled || att.full} onClick={() => videoRef.current?.click()}><Video className="size-[18px]" /></IconTool>
-            {mentionsEnabled && <IconTool label="Mention someone" onClick={() => insert("@")}><AtSign className="size-[18px]" /></IconTool>}
+            {(mentionsEnabled || projects.length > 0) && <IconTool label={mentionsEnabled ? "Mention someone or link a project" : "Link a project"} onClick={() => insert("@")}><AtSign className="size-[18px]" /></IconTool>}
             <TagTool interests={interests} tags={tags} onPick={(t) => insert(`${t} `)} />
             <KindMenu kind={kind} setKind={setKind} />
             {clubs.length > 0 && <AudienceTool clubs={clubs} shareTo={shareTo} setShareTo={setShareTo} />}
@@ -410,20 +429,3 @@ function CharRing({ used, max }: { used: number; max: number }) {
   );
 }
 
-// "Which project is this about?": the one choice before writing, as a full-width pill.
-function ProjectPicker({ projects, projectId, setProjectId }: { projects: { id: string; title: string }[]; projectId: string; setProjectId: (v: string) => void }) {
-  if (!projects.length) {
-    return <Link href="/profile#projects" className="inline-flex h-9 max-w-max items-center gap-1 rounded-full border border-dashed border-line px-3.5 text-sm text-muted transition hover:border-line-strong hover:text-text">+ Add the project you&apos;re building</Link>;
-  }
-  return (
-    <span className="relative flex min-w-0 sm:max-w-sm">
-      <label className="sr-only" htmlFor="compose-project">Which project?</label>
-      <FolderGit2 className="pointer-events-none absolute top-1/2 left-3.5 size-4 -translate-y-1/2 text-faint" />
-      <select id="compose-project" value={projectId} onChange={(e) => setProjectId(e.target.value)} title="Which project?"
-        className="h-10 w-full min-w-0 appearance-none truncate rounded-full border border-line bg-surface pr-9 pl-10 text-sm font-medium text-text transition hover:border-line-strong focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]">
-        {projects.map((p) => <option key={p.id} value={p.id}>{p.title}</option>)}
-        <option value="">General update (no project)</option>
-      </select>
-    </span>
-  );
-}

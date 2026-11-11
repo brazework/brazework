@@ -75,9 +75,11 @@ async function saved(page, path, text) {
   await step("Josh posts an update about the project, shared with Rocketry Club", async () => {
     const stamp = Date.now() % 100000;
     await go(josh, "/feed");
-    await josh.locator("#compose-project").waitFor({ timeout: 15000 });
-    const picked = await josh.locator("#compose-project option:checked").textContent();
-    if (picked !== title) throw new Error(`"Which project?" should default to the latest project, got ${picked}`);
+    // No dropdown: the post links to your latest project on its own, shown as a chip under the box.
+    const linked = josh.getByRole("group", { name: "Linked project" });
+    await linked.waitFor({ timeout: 15000 });
+    const picked = (await linked.innerText()).trim();
+    if (!picked.startsWith(title)) throw new Error(`the post should link the latest project, got ${picked}`);
     await closeTour(josh); // a "What's new" card can open over the composer
     // The composer streams in after the page: typing before React owns these fields gets wiped when it hydrates.
     await hydrated(josh.locator("#create-box"));
