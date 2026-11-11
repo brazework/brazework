@@ -3,7 +3,7 @@ import { NextResponse, type NextRequest } from "next/server";
 import { env } from "@/lib/env";
 import { isTemporaryAuthError } from "@/lib/supabase/auth-errors";
 
-const APP_PATHS = ["/feed", "/search", "/onboarding", "/post/", "/communities", "/c/", "/network", "/messages", "/events", "/org", "/notifications", "/saved", "/profile", "/u/", "/analytics", "/dashboard", "/projects", "/settings", "/copilot", "/talent", "/challenges", "/chapters", "/admin"];
+const APP_PATHS = ["/feed", "/search", "/onboarding", "/post/", "/communities", "/c/", "/network", "/messages", "/events", "/org", "/notifications", "/saved", "/profile", "/u/", "/analytics", "/dashboard", "/projects", "/settings", "/copilot", "/talent", "/challenges", "/chapters", "/pro", "/admin"];
 const AUTH_PATHS = ["/login", "/signup", "/forgot"];
 
 // Refreshes the Supabase session cookie on every request and does optimistic redirects.

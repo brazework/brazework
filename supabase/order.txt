@@ -50,3 +50,4 @@ project-files
 project-update-files
 project-files-access
 chapters
+pro-verification

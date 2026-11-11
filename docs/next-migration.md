@@ -82,6 +82,7 @@ The Vercel project lives in Ian's account, so these are his steps. It's already 
    39. `supabase/project-update-files.sql`: files ride along with project updates: the update box takes text plus files, 3D models and links, posted together as one update
    40. `supabase/project-files-access.sql`: **urgent fix**: after step 38, every upload (photos, video, club logos) failed with "permission denied for function on_project_team"; this points the policies at a helper members may call
    41. `supabase/chapters.sql`: chapters: a national network (NSBE National) with chapters at schools ("NSBE - University of Hartford"); a lead starts one from their school email, the network page ranks chapters (totals only), and officers get a weekly roster
+   42. `supabase/pro-verification.sql`: Pro verification: engineers at a verified company sign off club-verified public milestones with a written note (40+ characters), recorded with their name, title and employer and never edited; a review queue in their areas
 2. **Vercel → Project → Settings → Environment Variables (Production):** these exact names must exist.
    - `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY`. The old app also accepted `SUPABASE_URL` or a "publishable key", but the new app reads only these two names. If the project has them under other names, add these two with the same values, or the site loads but nobody can sign in.
    - `GITHUB_TOKEN` (optional): a GitHub token with no scopes. GitHub import works without it, but it raises GitHub's rate limit from 60 to 5,000 requests an hour.

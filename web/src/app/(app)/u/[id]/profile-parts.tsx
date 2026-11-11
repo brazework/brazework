@@ -1,6 +1,6 @@
 import { ArrowRight, BadgeCheck, Check, Users } from "lucide-react";
 import Link from "next/link";
-import { Seal, VerifiedStamp } from "@/components/app/verified-seal";
+import { ProStamp, Seal, VerifiedStamp } from "@/components/app/verified-seal";
 import { CommunityBadge } from "../../communities/_components/badge";
 import { DismissButton } from "@/components/app/dismiss";
 import { cn } from "@/lib/forge";
@@ -51,7 +51,7 @@ export function ProfileStrength({ steps }: { steps: Step[] }) {
   );
 }
 
-export type ProofItem = { id: string; title: string; detail: string; achieved_on: string; community_id: string; community_name: string; reviewer_name: string; project: { id: string; title: string } };
+export type ProofItem = { id: string; title: string; detail: string; achieved_on: string; community_id: string; community_name: string; reviewer_name: string; project: { id: string; title: string }; pro?: { name: string; title: string; employer: string; note: string; at: string }[] };
 
 // Club-verified milestones, newest first: the strongest thing on a profile.
 export function ProofTimeline({ items, own }: { items: ProofItem[]; own: boolean }) {
@@ -73,6 +73,7 @@ export function ProofTimeline({ items, own }: { items: ProofItem[]; own: boolean
             <CommunityBadge id={m.community_id} name={m.community_name} size={32} className="relative shrink-0 rounded-full ring-4 ring-surface" />
             <div className="min-w-0">
               <p className="font-medium leading-snug">{m.title}</p>
+              {m.pro?.map((r) => <ProStamp key={r.name + r.at} name={r.name} title={r.title} employer={r.employer} note={r.note} className="mt-1.5" />)}
               <p className="mt-1"><VerifiedStamp club={m.community_name} clubId={m.community_id} by={m.reviewer_name} when={day(m.achieved_on)} size="sm" /></p>
               <p className="mt-1 text-xs text-muted">On <Link href={`/projects/${m.project.id}`} className="hover:text-text hover:underline">{m.project.title}</Link></p>
               {m.detail && <p className="mt-1 line-clamp-2 text-sm text-text-2">{m.detail}</p>}
