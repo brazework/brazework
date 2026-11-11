@@ -1,3 +1,4 @@
+import { cache } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { rank } from "@/lib/communities";
 import { dbFeatures } from "@/lib/db-features";
@@ -85,7 +86,16 @@ async function loadWeekInputFor(supabase: SupabaseClient, me: string, now: numbe
 // post or a milestone, from your own rows), the last eight weeks for the streak bar, and who looked.
 export type Loop = { goal: WeekGoal; streak: Streak; recent: boolean[]; viewers: WeekInput["viewers"]; steps: LoopStep[]; toVerify: WeekInput["toVerify"]; verified: number };
 
-export async function loadLoop(supabase: SupabaseClient, me: string, now: number): Promise<Loop> {
+// Remembered for one render (React cache): Home asks twice, the phone's streak line and the laptop's
+// rail card (CSS picks which shows), and each ask was ~10 queries (Linear FIX-77). Keyed by who's
+// asking, not the time (each caller's Date.now() differs by a few ms); the first ask's time is used.
+// (The arguments are only the cache key.)
+const loopSlot = cache((supabase: SupabaseClient, me: string): { p?: Promise<Loop>; key: string } => ({ key: `${me}:${Boolean(supabase)}` }));
+export function loadLoop(supabase: SupabaseClient, me: string, now: number): Promise<Loop> {
+  const slot = loopSlot(supabase, me);
+  return (slot.p ??= loadLoopOnce(supabase, me, now));
+}
+async function loadLoopOnce(supabase: SupabaseClient, me: string, now: number): Promise<Loop> {
   const f = await dbFeatures();
   const since = new Date(weekStart(now) - 26 * 7 * 864e5).toISOString();
   const none = Promise.resolve({ data: [] as never[] });

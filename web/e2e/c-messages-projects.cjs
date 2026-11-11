@@ -42,7 +42,11 @@ async function saved(page, path, text) {
   }, josh);
   await step("Josh sends a post to Ben", async () => {
     await go(josh, "/feed?tab=latest");
+    // The feed comes in pages (FIX-77): scroll down to it, as a person would.
     const post = josh.locator("article").filter({ hasText: "Static fire #3" }).first();
+    // (Scroll the page itself: a wheel at the pointer's spot would scroll the sidebar on a laptop.)
+    for (let i = 0; i < 40 && !(await post.count()); i++) { await josh.evaluate(() => window.scrollBy(0, 900)); await josh.waitForTimeout(250); }
+    await post.evaluate((el) => el.scrollIntoView({ block: "center" }));
     await post.getByRole("button", { name: "Send post to people" }).click();
     await josh.getByPlaceholder("People and group chats").waitFor();
     await josh.locator("button[aria-pressed]", { hasText: "Ben Cho" }).first().click();

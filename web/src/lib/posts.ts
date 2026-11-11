@@ -9,8 +9,9 @@ import { getViewer } from "@/lib/supabase/server";
 type R = { ok: boolean; message: string };
 const pid = z.string().min(1).max(64);
 
+// Not /feed: re-rendering the whole feed for one save or reply cost ~100 database requests. The card
+// keeps what you did (lib/card-marks.ts), and the feed's next page load is fresh (Linear FIX-77).
 function touch(postId?: string) {
-  revalidatePath("/feed");
   revalidatePath("/saved");
   if (postId) revalidatePath(`/post/${postId}`);
 }

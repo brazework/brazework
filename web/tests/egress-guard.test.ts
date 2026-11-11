@@ -67,3 +67,26 @@ test("a video's poster: a WebP in your own folder, on videos only", () => {
   assert.equal(validMedia([{ type: "image", path: poster, poster }], me), null, "posters are for videos");
   assert.equal(validMedia([{ type: "video", path }], me)?.[0].poster, undefined, "older videos without a poster still validate");
 });
+
+// The feed in pages (Linear FIX-77).
+test("a post's tiny placeholder: a small WebP or PNG data: URI only", () => {
+  const me = "a06de495-4f6b-4649-8878-77f8b718e0ea";
+  const path = `${me}/5746fbce-5cfb-4849-8302-0123456789ab.webp`;
+  const ok = "data:image/webp;base64,UklGRhIAAABXRUJQVlA4TAYAAAAvAAAAAAfQ//73v/+BiOh/AAA=";
+  assert.equal(validMedia([{ type: "image", path, lq: ok }], me)?.[0].lq, ok);
+  assert.ok(validMedia([{ type: "image", path, lq: "data:image/png;base64,iVBORw0KGgo=" }], me), "PNG (Safari can't write WebP)");
+  assert.equal(validMedia([{ type: "image", path, lq: "https://evil.example/x.webp" }], me), null, "never a link");
+  assert.equal(validMedia([{ type: "image", path, lq: "data:image/svg+xml;base64,PHN2Zz48L3N2Zz4=" }], me), null, "never SVG");
+  assert.equal(validMedia([{ type: "image", path, lq: `data:image/webp;base64,${"A".repeat(2000)}` }], me), null, "stays tiny");
+});
+
+test("links inside feed cards and strips don't prefetch (each one scrolling past cost a server render and a sign-in check)", () => {
+  const feed = ["app/(app)/feed/post-card.tsx", "app/(app)/feed/proof-card.tsx", "app/(app)/feed/discover.tsx", "components/app/discover-cards.tsx", "components/mentions/mention-text.tsx", "components/app/verified-seal.tsx", "components/network/person-card.tsx", "components/app/carousel.tsx"];
+  const bad = all.filter((f) => feed.includes(f.path)).flatMap((f) => (f.text.match(/<Link\b[^>]*>/g) ?? []).filter((tag) => !/prefetch=\{false\}/.test(tag)).map(() => f.path));
+  assert.deepEqual(bad, [], "add prefetch={false}");
+});
+
+test("liking, saving or replying doesn't re-render the whole feed on the server", () => {
+  const bad = all.filter((f) => f.path === "app/(app)/feed/actions.ts" || f.path === "lib/posts.ts").filter((f) => /revalidatePath\("\/feed"\)/.test(f.text)).map((f) => f.path);
+  assert.deepEqual(bad, [], "the card keeps your change (lib/card-marks.ts); don't revalidate /feed");
+});

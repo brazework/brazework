@@ -12,8 +12,8 @@ export function MentionText({ body, mentions, tags, project }: { body: string; m
     <>
       {mentionParts(body, list).map((p, i) =>
         typeof p === "string"
-          ? hashtagParts(p).map((h, j) => typeof h === "string" ? h : tags && !tags.includes(h.tag) ? h.written : <Link key={`${i}-${j}`} href={`/feed?tag=${encodeURIComponent(h.tag)}`} className="font-medium text-[var(--tag)] hover:underline">{h.written}</Link>)
-          : <Link key={i} href={p === projectRef ? `/projects/${project!.id}` : `/u/${p.id}`} className="font-medium text-text hover:underline">@{p.name}</Link>)}
+          ? hashtagParts(p).map((h, j) => typeof h === "string" ? h : tags && !tags.includes(h.tag) ? h.written : <Link prefetch={false} key={`${i}-${j}`} href={`/feed?tag=${encodeURIComponent(h.tag)}`} className="font-medium text-[var(--tag)] hover:underline">{h.written}</Link>)
+          : <Link prefetch={false} key={i} href={p === projectRef ? `/projects/${project!.id}` : `/u/${p.id}`} className="font-medium text-text hover:underline">@{p.name}</Link>)}
     </>
   );
 }

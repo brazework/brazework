@@ -79,7 +79,7 @@ export async function PeopleStrip({ field, interests, exclude = [], title = "Bui
       <section className="glass-card rounded-3xl p-4">
         <div className="mb-1 flex items-center justify-between px-2">
           <h2 className="flex items-center gap-2 text-sm font-semibold"><UserPlus className="size-4" /> {title}</h2>
-          <Link href="/network?tab=suggested" className="text-xs text-muted hover:text-text">See all</Link>
+          <Link prefetch={false} href="/network?tab=suggested" className="text-xs text-muted hover:text-text">See all</Link>
         </div>
         <ul>{people.slice(0, 4).map((p) => <PersonRow key={p.id} p={p} />)}</ul>
       </section>

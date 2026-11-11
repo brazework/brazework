@@ -61,6 +61,8 @@ const nextConfig: NextConfig = {
     // The local test stack serves photos from localhost, which the optimizer refuses by default (an
     // SSRF guard). Allowed only when Supabase itself is local; remotePatterns still limits it to these.
     dangerouslyAllowLocalIP: isLocal,
+    // 1280 added so a 640 px feed photo on a 2x laptop gets exactly 2x, not 1920 (Linear FIX-77).
+    deviceSizes: [640, 750, 828, 1080, 1280, 1920, 2048],
   },
   partialPrefetching: true,
   turbopack: {

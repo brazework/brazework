@@ -13,7 +13,7 @@ export function SpotlightCard({ post }: { post: Post }) {
   const k = KIND[post.kind] ?? KIND.update;
   const photo = post.media?.find((m) => m.type === "image");
   return (
-    <Link href={`/post/${post.id}`} className="grad-edge group flex w-[280px] flex-col overflow-hidden rounded-3xl border shadow-[var(--shadow)] transition duration-300 hover:-translate-y-1">
+    <Link prefetch={false} href={`/post/${post.id}`} className="grad-edge group flex w-[280px] flex-col overflow-hidden rounded-3xl border shadow-[var(--shadow)] transition duration-300 hover:-translate-y-1">
       <div className="relative h-40 overflow-hidden">
         {photo ? (
           <Image src={mediaUrl(photo.path)} alt={photo.alt || ""} fill sizes="280px" className="object-cover transition duration-700 group-hover:scale-110" />
@@ -41,7 +41,7 @@ export function SpotlightCard({ post }: { post: Post }) {
 export function EventMiniCard({ e, going }: { e: HostedEvent; going?: boolean }) {
   const d = dateParts(e.starts_at, "UTC");
   return (
-    <Link href={`/events/${e.id}`} className="grad-edge group flex w-[250px] gap-3 rounded-3xl border p-4 shadow-[var(--shadow)] transition duration-300 hover:-translate-y-1">
+    <Link prefetch={false} href={`/events/${e.id}`} className="grad-edge group flex w-[250px] gap-3 rounded-3xl border p-4 shadow-[var(--shadow)] transition duration-300 hover:-translate-y-1">
       <span className="flex w-14 shrink-0 flex-col items-center overflow-hidden rounded-2xl border border-line bg-surface transition duration-300 group-hover:-rotate-3">
         <span className="bg-accent-grad w-full py-1 text-center text-[10px] font-bold text-on-accent uppercase">{d.mon}</span>
         <span className="py-1.5 text-xl leading-none font-semibold">{d.day}</span>

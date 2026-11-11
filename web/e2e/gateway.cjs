@@ -108,7 +108,11 @@ function append(req, res, up, key, code, extra) {
 
 http.createServer((req, res) => {
   const t0 = process.hrtime.bigint();
-  res.on("finish", () => { if (LOG) fs.appendFileSync(LOG, `${Date.now()}\t${Number(process.hrtime.bigint() - t0) / 1e6}\t${req.method}\t${req.url.split("?")[0]}\n`); });
+  // GW_LOG: one line per request (time, ms, method, path, response bytes, server or browser), so a test can
+  // total what one session costs in Supabase requests and egress.
+  let bytes = 0;
+  if (LOG) { const w = res.write.bind(res), e = res.end.bind(res); res.write = (c, ...a) => { if (c && typeof c !== "function") bytes += Buffer.byteLength(c); return w(c, ...a); }; res.end = (c, ...a) => { if (c && typeof c !== "function") bytes += Buffer.byteLength(c); return e(c, ...a); }; }
+  res.on("finish", () => { if (LOG) fs.appendFileSync(LOG, `${Date.now()}\t${Number(process.hrtime.bigint() - t0) / 1e6}\t${req.method}\t${req.url.split("?")[0]}\t${bytes}\t${/Mozilla/.test(req.headers["user-agent"] || "") ? "browser" : "server"}\n`); });
   const url = req.url.split("?")[0];
   if (url.startsWith("/storage/v1/upload/resumable") && req.method === "OPTIONS") { res.writeHead(204, { ...TUS, "access-control-allow-headers": req.headers["access-control-request-headers"] || "*", "access-control-allow-methods": "POST, HEAD, PATCH, OPTIONS", "access-control-max-age": "600" }); return res.end(); }
   if (url.startsWith("/storage/v1/upload/resumable")) return resumable(req, res, url);

@@ -27,7 +27,7 @@ export function Carousel({ title, icon, href, hrefLabel = "See all", children, c
         {icon && <span className="bg-accent-grad grid size-7 place-items-center rounded-lg text-on-accent">{icon}</span>}
         <h2 className="font-semibold tracking-tight">{title}</h2>
         <span className="ml-auto flex items-center gap-1">
-          {href && <Link href={href} className="mr-1 inline-flex items-center gap-1 text-xs text-muted hover:text-text">{hrefLabel} <ArrowRight className="size-3.5" /></Link>}
+          {href && <Link prefetch={false} href={href} className="mr-1 inline-flex items-center gap-1 text-xs text-muted hover:text-text">{hrefLabel} <ArrowRight className="size-3.5" /></Link>}
           <button type="button" onClick={() => by(-1)} disabled={edge.start} aria-label="Scroll back" className="hidden size-8 place-items-center rounded-full border border-line bg-surface text-muted transition hover:text-text active:scale-90 disabled:opacity-30 sm:grid"><ChevronLeft className="size-4" /></button>
           <button type="button" onClick={() => by(1)} disabled={edge.end} aria-label="Scroll forward" className="hidden size-8 place-items-center rounded-full border border-line bg-surface text-muted transition hover:text-text active:scale-90 disabled:opacity-30 sm:grid"><ChevronRight className="size-4" /></button>
         </span>

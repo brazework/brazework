@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { LiveRefresh } from "@/components/app/live-refresh";
+import { QueryProvider } from "@/components/app/query-provider";
 import { GlobalSearch } from "@/components/search/global-search";
 import { TourMount } from "@/components/tour/tour-mount";
 import { PresenceMount } from "@/components/presence/presence";
@@ -25,7 +26,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <main className="min-w-0 flex-1 px-4 pt-[var(--m-top)] pb-[calc(var(--m-bottom)+1rem)] sm:px-6 md:py-6 lg:px-8 2xl:px-12">
         {/* One search for people and communities, above every page. On the feed it lines up with the posts column (globals.css). */}
         <div className="search-row mx-auto mb-6 hidden max-w-3xl md:block xl:max-w-4xl"><Suspense fallback={<div className="h-12 rounded-2xl border border-line bg-surface/60" aria-hidden="true" />}><GlobalSearch /></Suspense></div>
-        {children}
+        <QueryProvider>{children}</QueryProvider>
       </main>
     </div>
     </div>
@@ -58,7 +59,7 @@ async function SignedInShell() {
   return (
     <>
       {/* Badges stay current as things arrive; row-level security limits these to your own rows. */}
-      <LiveRefresh tables={["notifications", "conversations", "connections", "chats"]} delay={800} />
+      <LiveRefresh tables={["notifications", "conversations", "connections", "chats"]} delay={800} quietOn={["/feed"]} />
       {/* Online status: who has Brazework open right now. */}
       <PresenceMount userId={user.id} />
       <Sidebar first={profile.first_name} last={profile.last_name} userId={user.id} badges={badges} avatar={avatarSrc(profile)} initialCollapsed={collapsed} clubs={myClubs} />
