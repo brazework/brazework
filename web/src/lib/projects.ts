@@ -96,8 +96,10 @@ export async function shareProject(id: string, body: string): Promise<ProjectSta
   const { error } = await supabase.from("posts").insert({ body: text, project_id: id, kind: "project", tags: ((pr.tags as string[]) ?? []).slice(0, 3) });
   if (error) return { ok: false, message: friendlyError(error) };
   revalidatePath("/feed");
+  revalidatePath("/projects");
+  revalidatePath(`/projects/${id}`);
   revalidatePath(`/u/${user.id}`);
-  return { ok: true, message: "Shared to your feed." };
+  return { ok: true, message: "Posted. It's in your followers' feeds too." };
 }
 
 export async function updateProfileBasics(_: ProjectState, form: FormData): Promise<ProjectState> {

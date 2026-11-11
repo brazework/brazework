@@ -1,6 +1,7 @@
-import { BadgeCheck, Clock, Cpu, FlaskConical, GitBranch, Megaphone, Plus, ShieldCheck, Wrench } from "lucide-react";
+import { BadgeCheck, Clock, Cpu, FlaskConical, GitBranch, Megaphone, ShieldCheck, Wrench } from "lucide-react";
 import Link from "next/link";
 import { ProjectEditor } from "../u/[id]/profile-client";
+import { QuickUpdate } from "./quick-update";
 
 export type BenchProject = { id: string; title: string; summary: string; status: string; private: boolean; updated_at: string; verified: number; waiting: number; updates: number };
 
@@ -56,7 +57,7 @@ export function Workbench({ projects, interests, copilot, stack, specsOn = false
               <span className="inline-flex items-center gap-1 text-faint"><Megaphone className="size-3.5" /> {p.updates} update{p.updates === 1 ? "" : "s"}</span>
             </div>
             <div className="mt-4 flex flex-wrap gap-2">
-              <Link href={`/feed?project=${p.id}#composer`} className="bg-accent-grad inline-flex h-9 items-center gap-1.5 rounded-full px-4 text-xs font-semibold text-on-accent"><Plus className="size-3.5" /> Post update</Link>
+              <QuickUpdate projectId={p.id} title={p.title} />
               <Link href={`/projects/${p.id}#milestones`} className="inline-flex h-9 items-center gap-1.5 rounded-full border border-line px-4 text-xs font-medium transition hover:bg-hover"><ShieldCheck className="size-3.5" /> {p.verified || p.waiting ? "Milestones" : "Ask to verify"}</Link>
             </div>
           </li>
