@@ -36,7 +36,9 @@ from (values
   (36, 'video-captions',  to_regprocedure('public.video_captions_ready()') is not null),
   (37, 'weekly-loop',     to_regprocedure('public.weekly_loop_ready()') is not null),
   (38, 'project-files',   to_regprocedure('public.project_files_ready()') is not null),
-  (39, 'project-update-files', to_regprocedure('public.project_update_files_ready()') is not null)
+  (39, 'project-update-files', to_regprocedure('public.project_update_files_ready()') is not null),
+  (40, 'project-files-access', to_regprocedure('public.project_files_access_ready()') is not null),
+  (41, 'chapters',        to_regprocedure('public.chapters_ready()') is not null)
 ) as s(step, file, present)
 order by step;
 

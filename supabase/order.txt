@@ -48,3 +48,5 @@ video-captions
 weekly-loop
 project-files
 project-update-files
+project-files-access
+chapters
