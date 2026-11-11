@@ -258,7 +258,7 @@ export function Composer({ first, last, interests, userId, mediaEnabled = false,
             )}
           </div>
           {extraTags > 0 && <p className="mt-1.5 px-1 text-[11px] text-faint">Only the first {MAX_TAGS} tags count; the grey ones won&apos;t be added.</p>}
-          {mediaEnabled && <AttachmentTray slots={att.slots} onRemove={att.remove} onEdit={att.edit} compare={att.compare} onCompare={att.setCompare} captions={captionsEnabled} />}
+          {mediaEnabled && <AttachmentTray slots={att.slots} onRemove={att.remove} onRetry={att.retry} onEdit={att.edit} compare={att.compare} onCompare={att.setCompare} captions={captionsEnabled} />}
           {/* The tools, in one row that fits a phone: icons there, names on wider screens. */}
           <div className="mt-2.5 flex items-center gap-0.5">
             <IconTool label="Add a photo" disabled={!mediaEnabled || att.full} onClick={() => photoRef.current?.click()}><ImagePlus className="size-[18px]" /></IconTool>

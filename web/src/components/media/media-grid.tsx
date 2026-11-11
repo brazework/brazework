@@ -1,10 +1,10 @@
 "use client";
 import { AnimatePresence, motion } from "motion/react";
-import { Captions, ChevronLeft, ChevronRight, ChevronsLeftRight, Crosshair, Flag, Gauge, Maximize, Minimize, Pause, Play, Repeat, Volume2, VolumeX, X } from "lucide-react";
-import Image from "next/image";
+import { Captions, ChevronLeft, Film, ChevronRight, ChevronsLeftRight, Crosshair, Flag, Gauge, Maximize, Minimize, Pause, Play, Repeat, Volume2, VolumeX, X } from "lucide-react";
+import Image, { getImageProps } from "next/image";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { cn } from "@/lib/forge";
-import { autoplays, mediaUrl, type MediaItem } from "@/lib/media";
+import { mediaUrl, type MediaItem } from "@/lib/media";
 import { Pin, fmtTime } from "./annotate";
 
 // Photos or a video on a post:
@@ -12,11 +12,10 @@ import { Pin, fmtTime } from "./annotate";
 // - 2–4 photos tile, and tapping one opens a full-screen viewer (arrow keys, Escape) with its callouts
 // - a before/after pair becomes a slider
 // - a video gets the test-run player: speed, loop, frame steps and timeline markers
-// autoplay={false} where the same video already plays elsewhere on the page (the project gallery).
-export function MediaGrid({ media, alt, autoplay = true }: { media: MediaItem[]; alt: string; autoplay?: boolean }) {
+export function MediaGrid({ media, alt }: { media: MediaItem[]; alt: string }) {
   const [open, setOpen] = useState<number | null>(null);
   if (!media.length) return null;
-  if (media[0].type === "video") return <TestRunPlayer v={media[0]} autoplay={autoplay} />;
+  if (media[0].type === "video") return <TestRunPlayer v={media[0]} />;
   if (media.length === 2 && media.every((m) => m.cmp)) return <CompareSlider before={media[0]} after={media[1]} alt={alt} />;
 
   const images = media.filter((m) => m.type === "image");
@@ -145,9 +144,10 @@ const setSoundOn = (on: boolean) => { try { localStorage.setItem(SOUND_KEY, on ?
 // screen and pauses when you scroll past. Tap to pause or play. While playing only the scrubber
 // shows; pausing brings up speed (slow-mo for test runs) and full screen. Keys while focused:
 // space/k play, ←/→ 5 s, , and . one frame, f full screen.
-function TestRunPlayer({ v, autoplay = true }: { v: MediaItem; autoplay?: boolean }) {
-  // Small clips play by themselves; big ones (and ones with no saved size) wait for a tap (FIX-75).
-  const auto = autoplay && autoplays(v);
+function TestRunPlayer({ v }: { v: MediaItem }) {
+  // The poster frame, as a resized copy through the image optimizer (Supabase serves it once per size).
+  const poster = v.poster ? getImageProps({ src: mediaUrl(v.poster), alt: "", width: 1280, height: v.w && v.h ? Math.round((1280 * v.h) / v.w) : 720, quality: 70 }).props.src : undefined;
+  const [started, setStarted] = useState(false);
   const ref = useRef<HTMLVideoElement>(null);
   const box = useRef<HTMLDivElement>(null);
   const userPaused = useRef(false);
@@ -183,26 +183,13 @@ function TestRunPlayer({ v, autoplay = true }: { v: MediaItem; autoplay?: boolea
     document.addEventListener("fullscreenchange", sync);
     return () => document.removeEventListener("fullscreenchange", sync);
   }, []);
-  // Plays (muted, as browsers require for autoplay) when 60% is on screen; pauses when it leaves.
-  // A video you paused yourself stays paused. (iOS Low Power Mode blocks autoplay; tap still plays.)
-  // Try with sound (your setting); if the browser says no, play muted and offer "Tap for sound".
-  const start = useCallback((node: HTMLVideoElement) => {
-    node.muted = !soundOn();
-    setMuted(node.muted);
-    node.play().catch(() => {
-      if (node.muted) return; // not even muted autoplay (iOS Low Power Mode): the tap still plays
-      node.muted = true; setMuted(true); setBlocked(true);
-      void node.play().catch(() => {});
-    });
-  }, []);
+  // Videos never start by themselves (FIX-10): nothing downloads until a tap. Scrolling past one that's
+  // playing pauses it.
   useEffect(() => {
     const node = ref.current;
     if (!node) return;
     const io = new IntersectionObserver(([en]) => {
-      // Autoplay only until it has played through once, and never with the phone's Data Saver on.
-      const saveData = !!(navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData;
-      if (en.intersectionRatio >= 0.6) { if (auto && !userPaused.current && node.paused && !finished.current && !saveData) start(node); }
-      else if (!node.paused) node.pause();
+      if (en.intersectionRatio < 0.6 && !node.paused) node.pause();
     }, { threshold: [0, 0.6] });
     io.observe(node);
     // One video at a time: another one starting pauses this one.
@@ -212,7 +199,7 @@ function TestRunPlayer({ v, autoplay = true }: { v: MediaItem; autoplay?: boolea
     window.addEventListener(PLAYING_EVENT, onOther);
     window.addEventListener(SOUND_EVENT, onSound);
     return () => { io.disconnect(); window.removeEventListener(PLAYING_EVENT, onOther); window.removeEventListener(SOUND_EVENT, onSound); };
-  }, [start, auto]);
+  }, []);
   const toggleFull = () => {
     if (document.fullscreenElement) { void document.exitFullscreen(); return; }
     const b = box.current, x = ref.current as (HTMLVideoElement & { webkitEnterFullscreen?: () => void }) | null;
@@ -260,15 +247,16 @@ function TestRunPlayer({ v, autoplay = true }: { v: MediaItem; autoplay?: boolea
       >
         <video
           ref={attach}
-          // #t=0.1: iPhone Safari shows that frame as the cover instead of a black box.
-          src={`${mediaUrl(v.path)}#t=0.1`}
+          src={mediaUrl(v.path)}
+          // Nothing downloads until a tap; the poster frame (a small resized copy) shows meanwhile.
+          poster={poster}
           playsInline
           muted
           loop={looping}
-          preload="metadata"
+          preload="none"
           onEnded={() => { finished.current = true; setPlaying(false); }}
           onClick={toggle}
-          onPlay={() => { setPlaying(true); window.dispatchEvent(new CustomEvent(PLAYING_EVENT, { detail: id.current })); }}
+          onPlay={() => { setPlaying(true); setStarted(true); window.dispatchEvent(new CustomEvent(PLAYING_EVENT, { detail: id.current })); }}
           onPause={() => setPlaying(false)}
           onTimeUpdate={(e) => setT(e.currentTarget.currentTime)}
           onProgress={(e) => { const b = e.currentTarget.buffered; if (b.length) setBuffered(b.end(b.length - 1)); }}
@@ -287,9 +275,11 @@ function TestRunPlayer({ v, autoplay = true }: { v: MediaItem; autoplay?: boolea
             </motion.span>
           )}
         </AnimatePresence>
+        {/* Older videos have no poster frame: a quiet cover instead of a black box, until it plays. */}
+        {!poster && !started && <span aria-hidden="true" className="pointer-events-none absolute inset-0 grid place-items-center bg-[radial-gradient(120%_80%_at_50%_0%,#27272a,#09090b)]"><Film className="size-10 text-white/25" /></span>}
         {!playing && !flash && <span className="pointer-events-none absolute top-1/2 left-1/2 grid size-16 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-black shadow-2xl" aria-hidden="true"><Play className="ml-1 size-7 fill-current" /></span>}
-        {/* Tap-to-play videos say how big they are, so nobody pulls 40 MB on a phone by surprise. */}
-        {!playing && !flash && !auto && v.bytes && <span className="pointer-events-none absolute top-[calc(50%+2.75rem)] left-1/2 -translate-x-1/2 rounded-full bg-black/60 px-2.5 py-0.5 text-[11px] font-medium text-white backdrop-blur">{Math.max(1, Math.round(v.bytes / 1048576))} MB</span>}
+        {/* Every video is tap-to-play, and says how big it is, so nobody pulls 40 MB on a phone by surprise. */}
+        {!playing && !flash && v.bytes && <span className="pointer-events-none absolute top-[calc(50%+2.75rem)] left-1/2 -translate-x-1/2 rounded-full bg-black/60 px-2.5 py-0.5 text-[11px] font-medium text-white backdrop-blur">{Math.max(1, Math.round(v.bytes / 1048576))} MB</span>}
         {/* Captions and sound: always reachable, bottom right (grows left when it asks for a tap). */}
         <div className="absolute right-3 bottom-3 z-10 flex items-center gap-1.5">
         {hasCc && (
@@ -313,9 +303,10 @@ function TestRunPlayer({ v, autoplay = true }: { v: MediaItem; autoplay?: boolea
         </AnimatePresence>
         {full && playing && <button type="button" onClick={toggleFull} aria-label="Close full screen" className="absolute top-4 right-4 z-10 grid size-11 place-items-center rounded-full bg-black/55 text-white backdrop-blur"><X className="size-5" /></button>}
         {speed !== 1 && playing && <span className="pointer-events-none absolute top-3 left-3 rounded-full bg-black/55 px-2.5 py-1 font-mono text-[11px] text-white backdrop-blur">{speed}×</span>}
-        {/* The scrubber: buffered, played, chapter markers, a thumb and a hover time; a slim line while playing. */}
-        <Scrubber t={t} dur={dur} buffered={buffered} marks={marks} visible={!playing || hover || scrubbing}
-          onSeek={seek} onScrub={setScrubbing} reserve={cn(hasCc ? "pr-24" : "pr-14", blocked && muted && (hasCc ? "sm:pr-52" : "sm:pr-40"))} />
+        {/* The scrubber: buffered, played, chapter markers, a thumb and a hover time; a slim line while playing.
+            Not before the first play: nothing has loaded (preload="none"), so there's no length to show. */}
+        {(started || dur > 0) && <Scrubber t={t} dur={dur} buffered={buffered} marks={marks} visible={!playing || hover || scrubbing}
+          onSeek={seek} onScrub={setScrubbing} reserve={cn(hasCc ? "pr-24" : "pr-14", blocked && muted && (hasCc ? "sm:pr-52" : "sm:pr-40"))} />}
       </div>
       {marks.length > 0 && (
         <ol className="no-scrollbar mt-3 flex flex-wrap gap-1.5">

@@ -166,7 +166,7 @@ const pw = require("playwright-core");
     if (!(await box.inputValue()).includes("@Recovery avionics")) throw new Error("the project wasn't written into the post");
     await box.fill("");
   }, ben);
-  await step("bandwidth: a video with no saved size doesn't autoplay when it scrolls into view (FIX-75)", async () => {
+  await step("bandwidth: a feed video doesn't autoplay or preload when it scrolls into view (FIX-75, FIX-10)", async () => {
     await go(ben, "/projects/p1");
     const v = ben.locator("video").first();
     await v.waitFor({ timeout: 15000 });
@@ -174,7 +174,7 @@ const pw = require("playwright-core");
     await ben.waitForTimeout(2500);
     const st = await v.evaluate((el) => ({ paused: el.paused, preload: el.getAttribute("preload") }));
     if (!st.paused) throw new Error("a large or unsized video started by itself");
-    if (st.preload !== "metadata") throw new Error(`preload should be metadata, got ${st.preload}`);
+    if (st.preload !== "none") throw new Error(`preload should be none, got ${st.preload}`);
   }, ben);
   await step("project reel: Play reel tells the build as a timeline; tapping the verified seal jumps to the club's stamp; Esc closes", async () => {
     await go(ben, "/projects/p1");

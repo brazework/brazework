@@ -17,6 +17,7 @@ What runs by itself, what still needs a person, and what to add next. The goal: 
 | **Preview deploy** to forge-preview-eight.vercel.app | Every push to `main`, **once its three Vercel secrets are set**. Until then it skips itself (and still shows green); see docs/github-org-move.md | `.github/workflows/preview-deploy.yml` |
 | **Member feedback → Linear:** themes, grades, a weekly review issue | As feedback arrives | In the database (pg_cron), `supabase/feedback*.sql` |
 | **The app adapts to the database:** features whose step hasn't run stay hidden instead of breaking | Every request | `web/src/lib/db-features.ts` |
+| **Database backups**, kept 7 days (Storage files aren't included). How to restore: [accounts.md](accounts.md#restoring-the-database-from-a-backup-supabase-pro) | Daily | Supabase Pro → Database → Backups |
 
 ## Runs by itself once a key or setting is in ⏳
 
@@ -27,7 +28,6 @@ What runs by itself, what still needs a person, and what to add next. The goal: 
 | **Weekly email digest** to members | Resend keys + a Vercel Cron job | FIX-27 |
 | **Sign-up and password emails** without Supabase's few-per-hour cap | The company Gmail's SMTP now (free, steps on FIX-1); Resend once we have the domain | FIX-1 |
 | **Uptime alerts:** a text or email if the site or its database goes down | A free UptimeRobot monitor on `/api/health` (200 = app and database up, 503 = not), every 5 minutes | FIX-55 |
-| **Daily database backups** | Supabase Pro | FIX-10 |
 
 ## Done by a person, on purpose 👤
 

@@ -188,7 +188,7 @@ async function ProjectView({ params }: { params: PageProps<"/projects/[id]">["pa
         {gallery.length > 0 && (
           <Panel className="p-6">
             <h2 className="inline-flex items-center gap-2 text-lg font-semibold tracking-tight"><Images className="size-5 text-muted" /> Gallery</h2>
-            <MediaGrid media={gallery} alt={`From ${p.title}`} autoplay={false} />
+            <MediaGrid media={gallery} alt={`From ${p.title}`} />
           </Panel>
         )}
 

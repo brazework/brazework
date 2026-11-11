@@ -3,10 +3,10 @@ import { Box, FileText, Link2, Loader2, Megaphone, Paperclip, X } from "lucide-r
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { cn } from "@/lib/forge";
-import { ACCEPT_ATTR, PROJECT_FILE_MAX_BYTES, cleanUrl, extOf, githubRepo, kindOfFile, sizeLabel, storedType } from "@/lib/project-file-types";
+import { ACCEPT_ATTR, cleanUrl, extOf, githubRepo, kindOfFile, maxBytesFor, sizeLabel, storedType } from "@/lib/project-file-types";
+import { storageUpload } from "@/lib/storage-upload";
 import { addProjectLink, recordProjectFile } from "@/lib/project-files";
 import { shareProject } from "@/lib/projects";
-import { getBrowserClient } from "@/lib/supabase/client";
 
 type Pending = { key: string; file: File; name: string };
 
@@ -34,7 +34,7 @@ export function PostUpdate({ projectId, title, className, autoFocus = false, att
     for (const file of list) {
       const name = file.name || `pasted-${new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-")}.${file.type.split("/")[1] || "png"}`;
       if (!kindOfFile(name)) { setMsg({ ok: false, text: `${name}: that file type isn't supported. Try PDF, Office, images, video, STL/OBJ/GLB/3MF, STEP or ZIP.` }); continue; }
-      if (file.size > PROJECT_FILE_MAX_BYTES) { setMsg({ ok: false, text: `${name} is over 50 MB.` }); continue; }
+      if (file.size > maxBytesFor(name)) { setMsg({ ok: false, text: `${name} is over ${kindOfFile(name) === "video" ? 250 : 50} MB.` }); continue; }
       ok.push({ key: crypto.randomUUID(), file, name });
     }
     if (ok.length) setFiles((f) => [...f, ...ok].slice(0, 10));
@@ -57,12 +57,13 @@ export function PostUpdate({ projectId, title, className, autoFocus = false, att
     if (!r.ok) { setStep(""); setMsg({ ok: false, text: r.message }); return; }
     // The update is up; now its files and links, each tied to it.
     const failed: string[] = [];
-    const sb = getBrowserClient();
     for (const [i, p] of files.entries()) {
-      setStep(`Uploading ${i + 1} of ${files.length}…`);
+      const label = `Uploading ${i + 1} of ${files.length}`;
+      setStep(`${label}…`);
       const path = `${projectId}/${p.key}.${extOf(p.name)}`;
-      const { error } = await sb.storage.from("project-files").upload(path, p.file, { contentType: storedType(p.name), cacheControl: "31536000", upsert: false });
-      const rec = error ? { ok: false } : await recordProjectFile(projectId, path, p.name, p.file.size, r.postId);
+      // Big files go up resumably in 6 MB pieces, with progress (lib/storage-upload.ts).
+      const up = await storageUpload({ bucket: "project-files", path, file: p.file, contentType: storedType(p.name), onProgress: (f) => setStep(`${label}: ${Math.round(f * 100)}%`) }).then(() => true, () => false);
+      const rec = up ? await recordProjectFile(projectId, path, p.name, p.file.size, r.postId) : { ok: false };
       if (!rec.ok) failed.push(p.name);
     }
     for (const l of links) { const a = await addProjectLink(projectId, l, r.postId); if (!a.ok) failed.push(l); }
