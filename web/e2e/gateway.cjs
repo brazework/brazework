@@ -58,10 +58,60 @@ function upload(req, res, rel) {
   });
 }
 
+// Resumable (TUS) uploads, like Storage's /storage/v1/upload/resumable (lib/storage-upload.ts sends
+// files over 6 MB this way): POST creates an upload (it may carry the first piece), HEAD says how much
+// has arrived, PATCH appends the next piece. Same rules as media.sql: your own folder, an allowed type,
+// up to 250 MB (Pro). Only the media bucket is stored here; others are accepted and dropped.
+const VIDEO_MAX = 250 * 1024 * 1024;
+const uploads = new Map();
+const TUS = { "tus-resumable": "1.0.0", "access-control-allow-origin": "*", "access-control-expose-headers": "Location, Upload-Offset, Upload-Length, Tus-Resumable" };
+function resumable(req, res, url) {
+  const id = url.slice("/storage/v1/upload/resumable".length).replace(/^\//, "");
+  if (req.method === "POST" && !id) {
+    const who = claims(req.headers.authorization);
+    if (!who) return json(res, 401, { message: "Invalid JWT" });
+    const meta = Object.fromEntries(String(req.headers["upload-metadata"] || "").split(",").filter(Boolean).map((kv) => { const [k, v] = kv.trim().split(" "); return [k, v ? Buffer.from(v, "base64").toString() : ""]; }));
+    const length = Number(req.headers["upload-length"]);
+    if (!Number.isFinite(length) || length <= 0) return json(res, 400, { message: "Upload-Length required" });
+    if (length > VIDEO_MAX) return json(res, 413, { message: "The object exceeded the maximum allowed size" });
+    if (meta.bucketName === "media") {
+      if (String(meta.objectName || "").split("/")[0] !== who.sub || !/^[0-9a-f-]{36}\/[A-Za-z0-9._-]+$/.test(meta.objectName || "")) return json(res, 403, { message: "new row violates row-level security policy" });
+      if (!TYPES[meta.contentType]) return json(res, 415, { message: `mime type ${meta.contentType} is not supported` });
+    }
+    const up = { bucket: meta.bucketName, rel: meta.objectName, length, offset: 0, chunks: [] };
+    const key = crypto.randomUUID();
+    uploads.set(key, up);
+    const loc = `http://${req.headers.host}/storage/v1/upload/resumable/${key}`;
+    return append(req, res, up, key, 201, { location: loc });
+  }
+  const up = uploads.get(id);
+  if (!up) return json(res, 404, { message: "Upload not found" });
+  if (req.method === "HEAD") { res.writeHead(200, { ...TUS, "upload-offset": String(up.offset), "upload-length": String(up.length), "cache-control": "no-store" }); return res.end(); }
+  if (req.method === "PATCH") {
+    if (Number(req.headers["upload-offset"]) !== up.offset) return json(res, 409, { message: "Offset mismatch" });
+    return append(req, res, up, id, 204, {});
+  }
+  json(res, 405, { message: "Method not allowed" });
+}
+function append(req, res, up, key, code, extra) {
+  req.on("data", (c) => { if (up.offset + c.length <= up.length) { up.chunks.push(c); up.offset += c.length; } });
+  req.on("end", () => {
+    if (up.offset === up.length) {
+      if (up.bucket === "media") { const file = path.join(MEDIA, up.rel.replace(/\.\./g, "")); fs.mkdirSync(path.dirname(file), { recursive: true }); fs.writeFileSync(file, Buffer.concat(up.chunks)); }
+      up.chunks = [];
+      uploads.delete(key);
+    }
+    res.writeHead(code, { ...TUS, ...extra, "upload-offset": String(up.offset) });
+    res.end();
+  });
+}
+
 http.createServer((req, res) => {
   const t0 = process.hrtime.bigint();
   res.on("finish", () => { if (LOG) fs.appendFileSync(LOG, `${Date.now()}\t${Number(process.hrtime.bigint() - t0) / 1e6}\t${req.method}\t${req.url.split("?")[0]}\n`); });
   const url = req.url.split("?")[0];
+  if (url.startsWith("/storage/v1/upload/resumable") && req.method === "OPTIONS") { res.writeHead(204, { ...TUS, "access-control-allow-headers": req.headers["access-control-request-headers"] || "*", "access-control-allow-methods": "POST, HEAD, PATCH, OPTIONS", "access-control-max-age": "600" }); return res.end(); }
+  if (url.startsWith("/storage/v1/upload/resumable")) return resumable(req, res, url);
   if (req.method === "OPTIONS" && url.startsWith("/storage/")) { res.writeHead(204, { "access-control-allow-origin": req.headers.origin || "*", "access-control-allow-headers": req.headers["access-control-request-headers"] || "*", "access-control-allow-methods": "GET,POST,PUT,DELETE,OPTIONS" }); return res.end(); }
   if ((req.method === "POST" || req.method === "PUT") && url.startsWith("/storage/v1/object/media/")) return upload(req, res, decodeURIComponent(url.slice("/storage/v1/object/media/".length)));
   // Public Storage files.

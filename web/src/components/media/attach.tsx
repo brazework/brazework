@@ -8,7 +8,8 @@ import { cn } from "@/lib/forge";
 import { MAX_IMAGES, mediaUrl, type MediaItem } from "@/lib/media";
 import { UploadError, kindOf, removeUploaded, uploadMedia } from "@/lib/upload";
 
-type Slot = { id: string; status: "uploading" | "done"; item?: MediaItem; preview: string; kind: "image" | "video" };
+// A failed upload keeps its file, so Retry needs no re-pick (FIX-10). progress is 0 to 1.
+type Slot = { id: string; status: "uploading" | "done" | "failed"; item?: MediaItem; preview: string; kind: "image" | "video"; file?: File; progress?: number };
 
 // Photo/video attachments for a composer: up to 4 photos or 1 video, uploaded as soon as they're
 // picked so posting is instant. `media` is what goes into the post; `busy` blocks posting meanwhile.
@@ -16,7 +17,20 @@ export function useAttachments(ownerId: string) {
   const [slots, setSlots] = useState<Slot[]>([]);
   const [error, setError] = useState("");
   const media = slots.filter((s) => s.status === "done" && s.item).map((s) => s.item!) as MediaItem[];
-  const busy = slots.some((s) => s.status === "uploading");
+  // A failed upload also blocks posting until it's retried or removed (so nothing goes out half-attached).
+  const busy = slots.some((s) => s.status !== "done");
+
+  const run = async (id: string, file: File) => {
+    setSlots((s) => s.map((x) => (x.id === id ? { ...x, status: "uploading", progress: 0 } : x)));
+    try {
+      const item = await uploadMedia(file, ownerId, { onProgress: (p) => setSlots((s) => s.map((x) => (x.id === id ? { ...x, progress: p } : x))) });
+      setSlots((s) => s.map((x) => (x.id === id ? { ...x, status: "done", item, file: undefined, progress: 1 } : x)));
+    } catch (e) {
+      setSlots((s) => s.map((x) => (x.id === id ? { ...x, status: "failed" } : x)));
+      setError(e instanceof UploadError ? e.message : "Upload failed. Check your connection and try again.");
+    }
+  };
+  const retry = (id: string) => { const slot = slots.find((x) => x.id === id); if (slot?.file) { setError(""); void run(id, slot.file); } };
 
   const add = async (files: FileList | File[]) => {
     setError("");
@@ -29,14 +43,8 @@ export function useAttachments(ownerId: string) {
       if (!kind) { setError("Use a JPEG, PNG, WebP or GIF photo, or an MP4, WebM or MOV video."); continue; }
       const id = crypto.randomUUID();
       const preview = URL.createObjectURL(file);
-      setSlots((s) => [...s, { id, status: "uploading", preview, kind }]);
-      try {
-        const item = await uploadMedia(file, ownerId);
-        setSlots((s) => s.map((x) => (x.id === id ? { ...x, status: "done", item } : x)));
-      } catch (e) {
-        setSlots((s) => s.filter((x) => x.id !== id));
-        setError(e instanceof UploadError ? e.message : "Upload failed. Check your connection and try again.");
-      }
+      setSlots((s) => [...s, { id, status: "uploading", preview, kind, file, progress: 0 }]);
+      await run(id, file);
     }
   };
 
@@ -55,7 +63,7 @@ export function useAttachments(ownerId: string) {
   const setCompare = (on: boolean) => setSlots((s) => s.map((x) => (x.item ? { ...x, item: { ...x.item, cmp: on || undefined } } : x)));
   const clear = () => setSlots([]);
   // If a before/after pair loses a photo, the one left drops the flag (the database needs both).
-  return { slots, media: media.map((m) => (compare ? m : { ...m, cmp: undefined })), busy, error, add, remove, clear, edit, compare, setCompare, full: slots.length >= MAX_IMAGES || slots.some((s) => s.kind === "video") };
+  return { slots, media: media.map((m) => (compare ? m : { ...m, cmp: undefined })), busy, error, add, remove, retry, clear, edit, compare, setCompare, full: slots.length >= MAX_IMAGES || slots.some((s) => s.kind === "video") };
 }
 
 export function AttachButtons({ onPick, disabled }: { onPick: (files: FileList) => void; disabled?: boolean }) {
@@ -72,7 +80,7 @@ export function AttachButtons({ onPick, disabled }: { onPick: (files: FileList) 
   );
 }
 
-export function AttachmentTray({ slots, onRemove, onEdit, compare, onCompare, captions = false }: { captions?: boolean; slots: Slot[]; onRemove: (id: string) => void; onEdit?: (id: string, patch: Partial<MediaItem>) => void; compare?: boolean; onCompare?: (on: boolean) => void }) {
+export function AttachmentTray({ slots, onRemove, onRetry, onEdit, compare, onCompare, captions = false }: { captions?: boolean; slots: Slot[]; onRemove: (id: string) => void; onRetry?: (id: string) => void; onEdit?: (id: string, patch: Partial<MediaItem>) => void; compare?: boolean; onCompare?: (on: boolean) => void }) {
   const [editing, setEditing] = useState<string | null>(null);
   if (!slots.length) return null;
   const open = slots.find((s) => s.id === editing && s.item);
@@ -102,7 +110,20 @@ export function AttachmentTray({ slots, onRemove, onEdit, compare, onCompare, ca
               <video src={`${s.preview}#t=0.1`} playsInline controls preload="metadata" aria-label="Preview your video" className="size-full bg-black object-contain" />
             </>
           )}
-          {s.status === "uploading" && <span className="absolute inset-0 grid place-items-center bg-bg/50 backdrop-blur-[2px]"><span className="flex items-center gap-2 rounded-full bg-surface/90 px-3 py-1.5 text-xs font-medium shadow"><Loader2 className="size-4 animate-spin" /> Uploading</span></span>}
+          {/* Uploading: a real progress bar (big videos go up in 6 MB pieces); failed: Retry, no re-pick. */}
+          {s.status === "uploading" && (
+            <span className="absolute inset-0 grid place-items-center bg-bg/50 backdrop-blur-[2px]" role="status" aria-label={`Uploading ${Math.round((s.progress ?? 0) * 100)}%`}>
+              <span className="flex w-3/4 max-w-48 flex-col items-center gap-2 rounded-2xl bg-surface/90 px-3 py-2 text-xs font-medium shadow">
+                <span className="flex items-center gap-1.5"><Loader2 className="size-3.5 animate-spin" /> Uploading {Math.round((s.progress ?? 0) * 100)}%</span>
+                <span className="h-1 w-full overflow-hidden rounded-full bg-line"><span className="block h-full rounded-full bg-text transition-[width] duration-300" style={{ width: `${Math.round((s.progress ?? 0) * 100)}%` }} /></span>
+              </span>
+            </span>
+          )}
+          {s.status === "failed" && (
+            <span className="absolute inset-0 grid place-items-center bg-bg/60 backdrop-blur-[2px]">
+              <button type="button" onClick={() => onRetry?.(s.id)} className="inline-flex items-center gap-1.5 rounded-full bg-text px-3 py-1.5 text-xs font-semibold text-surface shadow">Upload failed · Retry</button>
+            </span>
+          )}
           <button type="button" onClick={() => onRemove(s.id)} aria-label="Remove attachment" className="absolute top-2 right-2 grid size-7 place-items-center rounded-full bg-black/60 text-white backdrop-blur transition hover:scale-110 hover:bg-black/80">
             <X className="size-3.5" />
           </button>

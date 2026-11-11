@@ -40,7 +40,8 @@ from (values
   (40, 'project-files-access', to_regprocedure('public.project_files_access_ready()') is not null),
   (41, 'chapters',        to_regprocedure('public.chapters_ready()') is not null),
   (42, 'pro-verification', to_regprocedure('public.pro_verification_ready()') is not null),
-  (43, 'media-keys',      to_regprocedure('public.media_keys_ready()') is not null)
+  (43, 'media-keys',      to_regprocedure('public.media_keys_ready()') is not null),
+  (44, 'pro-storage',     to_regprocedure('public.pro_storage_ready()') is not null)
 ) as s(step, file, present)
 order by step;
 

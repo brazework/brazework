@@ -65,7 +65,7 @@ export function CommunityComposer({ cid, first, last, interests, topics, userId,
         <label htmlFor="c-body" className="sr-only">Post to this community</label>
         <textarea id="c-body" value={body} onChange={(e) => setBody(e.target.value)} maxLength={3000} rows={body ? 4 : 2} onPaste={(e) => { const f = [...e.clipboardData.files]; if (f.length && mediaEnabled) { e.preventDefault(); pick(f); } }} placeholder="Share with the club: a build update, a photo, a question" className="flex-1 resize-none rounded-2xl bg-surface-2/60 px-4 py-2.5 text-[15px] leading-relaxed outline-none transition placeholder:text-faint focus:bg-transparent" />
       </div>
-      {mediaEnabled && <AttachmentTray slots={att.slots} onRemove={att.remove} onEdit={att.edit} compare={att.compare} onCompare={att.setCompare} captions={captionsEnabled} />}
+      {mediaEnabled && <AttachmentTray slots={att.slots} onRemove={att.remove} onRetry={att.retry} onEdit={att.edit} compare={att.compare} onCompare={att.setCompare} captions={captionsEnabled} />}
       <div role="radiogroup" aria-label="Post type" className="mt-3 inline-flex flex-wrap gap-1 rounded-full bg-surface-2 p-1">
         {POST_KINDS.map((k) => (
           <button key={k.id} type="button" role="radio" aria-checked={kind === k.id} onClick={() => setKind(k.id)} className={cn("relative rounded-full px-3 py-1.5 text-xs font-medium transition", kind === k.id ? "text-on-accent" : "text-muted hover:text-text")}>

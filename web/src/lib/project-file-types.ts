@@ -2,6 +2,8 @@
 // same extension list; the database is the gate, this is for clear messages and the right preview).
 
 export const PROJECT_FILE_MAX_BYTES = 50 * 1024 * 1024;
+// Videos can be bigger (phone videos, Pro; project_files and the bucket allow it, step 44).
+export const PROJECT_VIDEO_MAX_BYTES = 250 * 1024 * 1024;
 export const PROJECT_FILES_MAX = 100;
 
 export type FileKind = "image" | "video" | "model" | "pdf" | "doc" | "sheet" | "slides" | "cad" | "code" | "archive" | "text";
@@ -70,3 +72,6 @@ export function cleanUrl(raw: string): string | null {
     return null;
   }
 }
+
+// The size limit for a file, by its kind: 250 MB for video, 50 MB for everything else.
+export const maxBytesFor = (name: string) => (kindOfFile(name) === "video" ? PROJECT_VIDEO_MAX_BYTES : PROJECT_FILE_MAX_BYTES);

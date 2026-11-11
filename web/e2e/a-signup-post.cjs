@@ -143,6 +143,36 @@ const { BASE, step, browser, as, go, closeTour, summary } = require("./lib.cjs")
     await card.waitFor({ timeout: 15000 });
     if (!(await card.locator("img").count())) throw new Error("the post saved without its photo");
   }, page);
+  await step("a 7 MB video uploads resumably (TUS, with progress), posts with a poster frame, and doesn't preload (FIX-10)", async () => {
+    // The 2-second test clip padded with an MP4 "free" box to 7 MB, so it takes the resumable path (over 6 MB).
+    const fs = require("fs"), path = require("path");
+    const clip = fs.readFileSync(path.join(__dirname, "fixtures", "test-run.mp4"));
+    const pad = Buffer.alloc(7 * 1024 * 1024 - clip.length); pad.writeUInt32BE(pad.length, 0); pad.write("free", 4);
+    const file = path.join(require("os").tmpdir(), "forge-e2e-run.mp4");
+    fs.writeFileSync(file, Buffer.concat([clip, pad]));
+    const resumable = [];
+    page.on("request", (r) => { if (r.url().includes("/storage/v1/upload/resumable")) resumable.push(r.method()); });
+    await go(page, "/feed");
+    await page.locator('input[type="file"][accept^="video"]').first().setInputFiles(file);
+    const text = `Static fire clip ${Date.now() % 100000}`;
+    await page.locator("#create-box").fill(text);
+    const post = page.getByRole("button", { name: "Post", exact: true });
+    await page.waitForFunction(() => { const b = [...document.querySelectorAll("button")].find((x) => x.textContent?.trim() === "Post"); return b && !b.disabled; }, null, { timeout: 60000 });
+    if (!resumable.includes("POST")) throw new Error(`a 7 MB video didn't use the resumable upload (saw: ${resumable.join(",") || "nothing"})`);
+    await post.click();
+    await page.waitForFunction(() => document.querySelector("#create-box")?.value === "", null, { timeout: 30000 });
+    const card = page.locator("article").filter({ hasText: text }).first();
+    await card.waitFor({ timeout: 15000 });
+    const v = card.locator("video").first();
+    await v.waitFor({ timeout: 15000 });
+    const st = await v.evaluate((el) => ({ poster: el.getAttribute("poster"), preload: el.getAttribute("preload"), paused: el.paused, src: el.currentSrc || el.getAttribute("src") }));
+    if (!st.poster) throw new Error("the video posted without a poster frame");
+    if (st.preload !== "none" || !st.paused) throw new Error(`the video should wait for a tap: ${JSON.stringify(st)}`);
+    const size = await page.evaluate(async (u) => Number((await fetch(u, { method: "HEAD" })).headers.get("content-length")), st.src);
+    if (size !== 7 * 1024 * 1024) throw new Error(`the stored video is ${size} bytes, not the 7 MB uploaded`);
+    const poster = await page.evaluate(async (u) => (await fetch(u)).status, st.poster);
+    if (poster !== 200) throw new Error(`the poster doesn't load (${poster})`);
+  }, page);
   summary();
   await b.close();
 })();

@@ -9,7 +9,9 @@ const supabase = process.env.NEXT_PUBLIC_SUPABASE_URL ? new URL(process.env.NEXT
 // scripts, frames and plugins from other sites, <base> hijacking, and forms posting elsewhere.
 // Inline scripts stay allowed for now (Linear FIX-46: hash-based SRI is the next step).
 const isLocal = !!supabase && ["localhost", "127.0.0.1"].includes(supabase.hostname);
-const supabaseOrigins = supabase ? [supabase.origin, supabase.origin.replace(/^http/, "ws")] : [];
+// Big uploads go to the project's direct storage host (resumable, lib/storage-upload.ts, FIX-10).
+const storageHost = supabase?.hostname.endsWith(".supabase.co") ? `${supabase.protocol}//${supabase.hostname.split(".")[0]}.storage.supabase.co` : null;
+const supabaseOrigins = supabase ? [supabase.origin, supabase.origin.replace(/^http/, "ws"), ...(storageHost ? [storageHost] : [])] : [];
 const csp = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""}`,

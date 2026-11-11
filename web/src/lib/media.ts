@@ -13,21 +13,19 @@ export type Marker = { s: number; t: string };
  * - cmp: set on both photos of a 2-photo post to show them as a before/after slider
  * - cc: captions (WebVTT text) shown on a video; tx: a transcript shown under it (video-captions.sql)
  */
-export type MediaItem = { type: "image" | "video"; path: string; w?: number; h?: number; bytes?: number; alt?: string; notes?: Callout[]; marks?: Marker[]; cmp?: boolean; cc?: string; tx?: string };
+export type MediaItem = { type: "image" | "video"; path: string; w?: number; h?: number; bytes?: number; poster?: string; alt?: string; notes?: Callout[]; marks?: Marker[]; cmp?: boolean; cc?: string; tx?: string };
 
 export const MAX_CALLOUTS = 6;
 export const MAX_MARKERS = 8;
-const KEYS = new Set(["type", "path", "w", "h", "bytes", "alt", "notes", "marks", "cmp", "cc", "tx"]);
+const KEYS = new Set(["type", "path", "w", "h", "bytes", "poster", "alt", "notes", "marks", "cmp", "cc", "tx"]);
 
-// Videos play by themselves only up to this size (the file's size, saved at upload). Bigger ones, and
-// older ones uploaded before sizes were saved, wait for a tap: autoplay downloads the whole file for
-// everyone who scrolls past it, which is most of our Storage bandwidth (Linear FIX-75).
-export const AUTOPLAY_MAX_BYTES = 8 * 1024 * 1024;
-export const autoplays = (m: MediaItem) => m.type === "video" && typeof m.bytes === "number" && m.bytes <= AUTOPLAY_MAX_BYTES;
+// Videos never play by themselves and download nothing until tapped (Linear FIX-75, FIX-10): they show
+// a poster frame (saved at upload) instead. Autoplay downloads the whole file for everyone who scrolls
+// past it, which was most of our Storage bandwidth.
 
 export const MAX_IMAGES = 4;
 export const IMAGE_MAX_BYTES = 20 * 1024 * 1024; // before we shrink it in the browser
-export const VIDEO_MAX_BYTES = 50 * 1024 * 1024; // the bucket's own limit
+export const VIDEO_MAX_BYTES = 250 * 1024 * 1024; // phone videos (Pro; the media bucket's limit, step 44)
 export const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"];
 export const VIDEO_TYPES = ["video/mp4", "video/webm", "video/quicktime"];
 
@@ -51,8 +49,13 @@ export function validMedia(value: unknown, ownerId: string): MediaItem[] | null 
     const dim = (n: unknown) => (typeof n === "number" && Number.isFinite(n) && n > 0 && n < 20000 ? Math.round(n) : undefined);
     const item: MediaItem = { type, path, w: dim(w), h: dim(h) };
     if (o.bytes !== undefined) {
-      if (typeof o.bytes !== "number" || !Number.isInteger(o.bytes) || o.bytes <= 0 || o.bytes > 52428800) return null;
+      if (typeof o.bytes !== "number" || !Number.isInteger(o.bytes) || o.bytes <= 0 || o.bytes > (type === "video" ? VIDEO_MAX_BYTES : 52428800)) return null;
       item.bytes = o.bytes;
+    }
+    // A video's poster frame: a WebP the same member uploaded (post_media_ok() checks it too).
+    if (o.poster !== undefined) {
+      if (type !== "video" || typeof o.poster !== "string" || !PATH_RE.test(o.poster) || !o.poster.startsWith(`${ownerId}/`) || !o.poster.endsWith(".webp")) return null;
+      item.poster = o.poster;
     }
     if (o.alt !== undefined && o.alt !== "") {
       const alt = text(o.alt, 200);

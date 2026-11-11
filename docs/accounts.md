@@ -2,7 +2,7 @@
 
 Every account Brazework runs on: who owns it, what it costs, and what's still missing. Keep this current when anything changes. **Never put a password or key in this file or anywhere in the repo**; keys live in Vercel, GitHub secrets or a shared password manager.
 
-Status as of 2026-11-10. Linear issue IDs say what's open; the order to set everything up in is the company setup checklist, **FIX-57**. Every company account should be owned by a company email (`@brazework.com`), not a personal one.
+Status as of 2026-11-11. Linear issue IDs say what's open; the order to set everything up in is the company setup checklist, **FIX-57**. Every company account should be owned by a company email (`@brazework.com`), not a personal one.
 
 ## In use today
 
@@ -10,7 +10,7 @@ Status as of 2026-11-10. Linear issue IDs say what's open; the order to set ever
 |---|---|---|---|---|
 | **GitHub** | The code, CI (GitHub Actions), Dependabot, CodeQL | Repo `forge-app` on **Ian's personal account**; Josh has write | Free | Personal repos allow **one admin only**, so move it to the organization **`brazework`** with both founders as owners. Create it now; transfer after the production switch-over (FIX-54) |
 | **Vercel** | Hosting: builds and deploys `web/` from `main` | Team **FORGE DEV** (production project `forge-app`), owned by Ian; Josh is a Developer | **Pro** (checked 2026-11-10), paid by Ian | Josh → Member (FIX-6); add the company email (FIX-63); previews on staging data (FIX-2) |
-| **Supabase** | Database, sign-in, file storage, live updates | Org **Forge DEV**: project **FORGE** (production) and **forge-staging** (testing). Ian is Owner; Josh and the company email are Administrators | Free, **over its quota** (Cached Egress 6.6 of 5 GB, cycle ends Nov 18). Pro is $25/month and adds daily backups | Upgrade (FIX-10); database steps (FIX-25); signing keys (FIX-53); real email (FIX-1); rotate the staging password (FIX-12) |
+| **Supabase** | Database, sign-in, file storage, live updates | Org **Forge DEV**: project **FORGE** (production, `uwiwkjoonculpxjmzsfj`) and **brazework-staging** (testing; **paused**, don't unpause or point anything at it). Ian is Owner; Josh and the company email are Administrators | **Pro**, $25/month; Josh and Ian pay alternate months. **Spend cap on**, so usage over the quota is never billed: 8 GB database, 100 GB storage, 250 GB cached + 250 GB uncached egress, 100 image transformations, daily backups kept 7 days. Global file size limit 250 MB (Storage → Settings) | Database steps (FIX-25); signing keys (FIX-53); real email (FIX-1); rotate the staging password (FIX-12) |
 | **Linear** | What we're building, in order; member feedback lands here | Workspace **Josh-Products**, team **Forge** (key `FIX`); both founders and the company email are admins | Free. **Limit: 250 open issues** (archived ones don't count) | Auto-archive closed issues after a month so the Free plan lasts (FIX-5); the sync's API key (FIX-5) |
 | **Anthropic** (via Claude Code) | Building Brazework: Claude Code sessions | Each founder's own Claude subscription | Per person | None |
 | **Company Gmail** | `brazeworkhq@gmail.com`: the owner and contact email for company accounts until we have the domain | Both founders (password and backup codes in Bitwarden) | Free | 2-step verification on both founders' phones (FIX-59) |
@@ -61,3 +61,13 @@ Needed before taking real money or raising, and asked for by YC:
 | `linear_api_key` | Supabase Vault | The in-app feedback sync to Linear |
 
 If a key ever leaks (pasted in a chat, committed, shown on screen): rotate it at the provider first, then update it where it lives. The CI secret scan catches keys committed to git, not keys pasted elsewhere.
+
+## Restoring the database from a backup (Supabase Pro)
+
+Pro keeps a **daily backup for 7 days**. A restore **replaces the whole production database** with that day's copy: everything since is lost, and the site is down while it runs (minutes to an hour). **Storage files (photos, videos, project files) are not in the backup**; they stay as they are. Only Ian (Owner) or an Administrator can restore. Agree on it together first; never restore to undo one bad row.
+
+1. **Look first (read only).** Dashboard → project FORGE → **Database → Backups → Scheduled backups**: each day's backup and its time. From a terminal: `npx supabase backups list --remote=uwiwkjoonculpxjmzsfj` (lists them, changes nothing). The first one appears the day after the upgrade.
+2. **Is a restore really needed?** A few wrong rows are usually better fixed with a database step through a pull request. Restore only for real loss (a bad step dropped data, mass deletion).
+3. **Keep what's there now:** `npx supabase db dump --remote=uwiwkjoonculpxjmzsfj -f before-restore.sql` (schema) and `--data-only -f before-restore-data.sql` (rows). Keep both outside the repo; they hold member data.
+4. **Restore:** Database → Backups → pick the day → **Restore** → confirm. The project is unavailable until it finishes.
+5. **After:** open `/api/health` (the version and every database step should be OK), run `supabase/maintenance/health-check.sql` read-only, and re-apply any database steps added since that day (`db-migrate.yml` → Run workflow).
