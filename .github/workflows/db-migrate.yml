@@ -54,7 +54,7 @@ jobs:
           newest=$(grep -v '^\s*$' supabase/order.txt | tail -1)
           grep -q "'$newest'" /tmp/steps.sql || { echo "::error::Step '$newest' (last in supabase/order.txt) isn't in supabase/maintenance/health-check.sql. Add its row there."; exit 1; }
           supabase db query --remote="$PROJECT_REF" --read-only -f /tmp/steps.sql --output-format json > /tmp/before.json
-          jq -r '(.rows // .) | .[] | select(.status != "applied") | "\(.step) \(.file)"' /tmp/before.json | sort -n > /tmp/missing.txt
+          jq -r '(.rows? // .) | .[] | select(.status != "applied") | "\(.step) \(.file)"' /tmp/before.json | sort -n > /tmp/missing.txt
           echo "Missing in production:"; cat /tmp/missing.txt || true
           echo "count=$(wc -l < /tmp/missing.txt | tr -d ' ')" >> "$GITHUB_OUTPUT"
       - name: Apply them, in order
@@ -70,8 +70,8 @@ jobs:
       - name: Check again
         run: |
           supabase db query --remote="$PROJECT_REF" --read-only -f /tmp/steps.sql --output-format json > /tmp/after.json
-          left=$(jq -r '(.rows // .) | .[] | select(.status != "applied") | "\(.step) \(.file)"' /tmp/after.json)
-          total=$(jq -r '(.rows // .) | length' /tmp/after.json)
+          left=$(jq -r '(.rows? // .) | .[] | select(.status != "applied") | "\(.step) \(.file)"' /tmp/after.json)
+          total=$(jq -r '(.rows? // .) | length' /tmp/after.json)
           if [ -n "$left" ]; then echo "::error::Still missing after applying: $left"; exit 1; fi
           echo "Production has all $total steps." >> "$GITHUB_STEP_SUMMARY"
           echo "Production has all $total steps."
