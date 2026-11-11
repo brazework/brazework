@@ -23,9 +23,9 @@ async function browser() {
 }
 // Logging in happens outside any step, so a slow sign-in on a busy CI machine would end the whole spec:
 // try twice, and if both fail, say what the login page showed.
-async function as(b, email, viewport = { width: 1440, height: 950 }) {
+async function as(b, email, viewport = { width: 1440, height: 950 }, opts = {}) {
   for (let attempt = 1; ; attempt++) {
-    const ctx = await b.newContext({ viewport });
+    const ctx = await b.newContext({ viewport, ...opts });
     const page = await ctx.newPage();
     page.errs = []; page.on("pageerror", (e) => page.errs.push(e.message));
     try {

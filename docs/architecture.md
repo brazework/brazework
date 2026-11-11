@@ -114,6 +114,22 @@ Supabase charges for every byte its CDN serves ("cached egress"). In November 20
 - **3D models load only when opened**, once, not again when scrolled back into view (`components/projects/model-viewer.tsx`).
 - **Budget:** Pro includes 250 GB cached egress a month. Photos and posters cost almost nothing (resized once, then cached by Vercel). Videos are the cost: a member who taps about 15 videos a month and watches 40% of a 30 MB clip uses about 180 MB, so 1,000 active members is about 180 GB. That fits, but not by a wide margin, so watch **Usage → Cached egress** monthly; the next lever is compressing videos at upload. The spend cap means going over slows things down rather than costing money.
 
+## How the feed loads (Linear FIX-77)
+
+Home scrolls without end, shows posts at once, and costs one small database call per dozen posts.
+
+- **Pages, not the whole feed.** `feed_page()` (`supabase/feed-pages.sql`) returns about 12 complete cards per call: the post, the author's photo, whether you liked or saved it, its latest two replies, why it's in your feed, and the project box. One call per page, never a query per post. Pages continue from a cursor on `(created_at, id)` (keyset, never OFFSET), so page 40 costs what page 1 does (about 1 ms; For you about 10 ms, at 5,000 posts).
+- **Row-level security is unchanged.** `feed_page()` runs as the caller (SECURITY INVOKER), so every table it reads applies the same policies the app's own queries did. Its tests check that paging through everything returns exactly what a direct read would, with blocked, held and private-club posts left out.
+- **For you** ranks a bounded pool (the newest 200 posts from the last 30 days, plus the newest from your clubs, people you follow and your topics) with the same scoring as `lib/feed-rank.ts`, then carries on newest first. Each source is read through its own index, newest first, so nothing scans the whole table.
+- **Page 1 comes with the page** (server-rendered, so posts show before any script runs); the browser asks `feed_page()` for the next one while you're still two screens from the end, so there's no spinner. One client cache (`components/app/query-provider.tsx`, TanStack Query): nothing refetches on focus, and coming back to Home reuses the pages you scrolled.
+- **Only the cards near the screen are in the page** (`feed-list.tsx`, TanStack Virtual), so memory stays flat however far you scroll. What you did to a card (liked, saved, replied, edited) is kept in `lib/card-marks.ts`, so it comes back as you left it; liking or saving never re-renders the feed on the server (that cost ~100 requests per heart).
+- **New posts** come as the "N new posts" pill (one Realtime channel); the feed never refetches itself. The app-wide live refresh stays quiet on Home for the same reason.
+- **Photos** are drawn at the card's width, about 2x on 3x phone screens (`SIZES_ONE` in `media-grid.tsx`), lazy-loaded, with a 16 px blurred placeholder saved with the post (`lq`, made in the browser at upload), so nothing jumps.
+- **Links in cards don't prefetch:** each one scrolling past was a server render and a sign-in check.
+- **Budget, enforced in CI** (`e2e/k-feed-budget.cjs`): the first page plus the photos above the fold under 300 KB; no video bytes before a tap, and a tapped video streams in ranges; at most 2 Supabase requests per page while scrolling and none per post; the page holds no more than 16 cards; coming back doesn't refetch.
+- **Egress per active member per month (estimate):** the feed's data, about 3 MB (30 visits at roughly 100 KB each, uncached egress); photos close to nothing per viewer (Vercel serves resized copies; Supabase sends each original once per size); videos about 180 MB (above). So about 190 MB, or 190 GB at 1,000 active members, nearly all of it video.
+- **Still to do:** every page view also pays about 25 Supabase Auth calls for the links Next prefetches (the proxy checks the session on each, and with the project's shared-secret JWTs that check goes over the network). Moving to asymmetric signing keys (FIX-53) makes those checks local, app-wide.
+
 ## Environments
 
 | | Web | Database | Who it's for |

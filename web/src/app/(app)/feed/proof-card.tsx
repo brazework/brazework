@@ -18,11 +18,11 @@ export function ProofCard({ p, reason = "" }: { p: Proof; reason?: string }) {
       <VerifiedStamp club={p.community_name} clubId={p.community_id} by={p.reviewer_name} when={timeAgo(p.reviewed_at)} />
 
       <div className="mt-4 flex items-start gap-3">
-        <Link href={`/u/${p.owner.id}`} tabIndex={-1} aria-hidden="true" className="shrink-0"><Avatar first={p.owner.first} last={p.owner.last} size={40} src={p.owner.avatar} /></Link>
+        <Link prefetch={false} href={`/u/${p.owner.id}`} tabIndex={-1} aria-hidden="true" className="shrink-0"><Avatar first={p.owner.first} last={p.owner.last} size={40} src={p.owner.avatar} /></Link>
         <div className="min-w-0">
           <p className="text-[15px] leading-snug text-text-2">
-            <Link href={`/u/${p.owner.id}`} className="font-medium text-text hover:underline">{`${p.owner.first} ${p.owner.last}`.trim()}</Link> hit a milestone on{" "}
-            <Link href={`/projects/${p.project.id}`} className="font-medium text-text hover:underline">{p.project.title}</Link>
+            <Link prefetch={false} href={`/u/${p.owner.id}`} className="font-medium text-text hover:underline">{`${p.owner.first} ${p.owner.last}`.trim()}</Link> hit a milestone on{" "}
+            <Link prefetch={false} href={`/projects/${p.project.id}`} className="font-medium text-text hover:underline">{p.project.title}</Link>
           </p>
           <p className="mt-2 text-lg font-semibold tracking-tight">{p.title}</p>
           {p.detail && <p className="mt-1 line-clamp-3 text-sm leading-relaxed text-muted">{p.detail}</p>}
@@ -30,7 +30,7 @@ export function ProofCard({ p, reason = "" }: { p: Proof; reason?: string }) {
       </div>
       <div className="mt-4 flex items-center justify-between border-t border-line pt-3 text-xs text-faint">
         <span>Club-verified milestone</span>
-        <Link href={`/projects/${p.project.id}`} className="font-medium text-text hover:underline">See the project →</Link>
+        <Link prefetch={false} href={`/projects/${p.project.id}`} className="font-medium text-text hover:underline">See the project →</Link>
       </div>
     </article>
   );

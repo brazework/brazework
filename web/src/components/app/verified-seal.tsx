@@ -25,13 +25,14 @@ export function Seal({ size = 20, className, tone = "club" }: { size?: number; c
 
 // The full stamp: the seal, "Verified by <club>", and who checked it, when.
 export function VerifiedStamp({ club, clubId, by, when, size = "md", className }: { club: string; clubId?: string; by?: string | null; when?: string | null; size?: "sm" | "md"; className?: string }) {
-  const name = clubId ? <Link href={`/c/${clubId}`} className="hover:underline">{club}</Link> : club;
+  const name = clubId ? <Link prefetch={false} href={`/c/${clubId}`} className="hover:underline">{club}</Link> : club;
   return (
     <span className={cn("inline-flex min-w-0 items-center gap-2", className)}>
       <Seal size={size === "sm" ? 18 : 28} />
       <span className="min-w-0 leading-tight">
         <span className={cn("block truncate font-semibold text-text", size === "sm" ? "text-xs" : "text-sm")}>Verified by {name}</span>
-        {(by || when) && <span className="block truncate text-[11px] text-faint">{by ? `Checked by ${by}` : "Checked by an officer"}{when ? ` · ${when}` : ""}</span>}
+        {/* "· 1m" can tick over between the server render and the browser's: not a real mismatch. */}
+        {(by || when) && <span suppressHydrationWarning className="block truncate text-[11px] text-faint">{by ? `Checked by ${by}` : "Checked by an officer"}{when ? ` · ${when}` : ""}</span>}
       </span>
     </span>
   );
@@ -44,7 +45,7 @@ export function ProStamp({ name, title, employer, note, when, className }: { nam
       <Seal size={26} tone="pro" />
       <div className="min-w-0 leading-tight">
         <p className="text-sm font-semibold text-text">Pro-verified by {name}</p>
-        <p className="text-[11px] text-faint">{title} at {employer}{when ? ` · ${when}` : ""}</p>
+        <p suppressHydrationWarning className="text-[11px] text-faint">{title} at {employer}{when ? ` · ${when}` : ""}</p>
         {note && <p className="mt-1 text-xs leading-relaxed text-text-2">&ldquo;{note}&rdquo;</p>}
       </div>
     </div>

@@ -13,11 +13,12 @@ export type Marker = { s: number; t: string };
  * - cmp: set on both photos of a 2-photo post to show them as a before/after slider
  * - cc: captions (WebVTT text) shown on a video; tx: a transcript shown under it (video-captions.sql)
  */
-export type MediaItem = { type: "image" | "video"; path: string; w?: number; h?: number; bytes?: number; poster?: string; alt?: string; notes?: Callout[]; marks?: Marker[]; cmp?: boolean; cc?: string; tx?: string };
+export type MediaItem = { type: "image" | "video"; path: string; w?: number; h?: number; bytes?: number; poster?: string; lq?: string; alt?: string; notes?: Callout[]; marks?: Marker[]; cmp?: boolean; cc?: string; tx?: string };
 
 export const MAX_CALLOUTS = 6;
 export const MAX_MARKERS = 8;
-const KEYS = new Set(["type", "path", "w", "h", "bytes", "poster", "alt", "notes", "marks", "cmp", "cc", "tx"]);
+export const LQ_RE = /^data:image\/(webp|png);base64,[A-Za-z0-9+/]+={0,2}$/;
+const KEYS = new Set(["type", "path", "w", "h", "bytes", "poster", "lq", "alt", "notes", "marks", "cmp", "cc", "tx"]);
 
 // Videos never play by themselves and download nothing until tapped (Linear FIX-75, FIX-10): they show
 // a poster frame (saved at upload) instead. Autoplay downloads the whole file for everyone who scrolls
@@ -56,6 +57,11 @@ export function validMedia(value: unknown, ownerId: string): MediaItem[] | null 
     if (o.poster !== undefined) {
       if (type !== "video" || typeof o.poster !== "string" || !PATH_RE.test(o.poster) || !o.poster.startsWith(`${ownerId}/`) || !o.poster.endsWith(".webp")) return null;
       item.poster = o.poster;
+    }
+    // The tiny blurred stand-in: a small WebP or PNG data: URI only (post_media_ok() checks it too).
+    if (o.lq !== undefined) {
+      if (typeof o.lq !== "string" || o.lq.length > 1500 || !LQ_RE.test(o.lq)) return null;
+      item.lq = o.lq;
     }
     if (o.alt !== undefined && o.alt !== "") {
       const alt = text(o.alt, 200);

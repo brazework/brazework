@@ -1,5 +1,4 @@
 "use server";
-import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { friendlyError } from "@/lib/forge";
 import { hashtagsIn } from "@/lib/hashtags";
@@ -74,7 +73,7 @@ export async function toggleLike(postId: string, like: boolean) {
     : await supabase.from("likes").delete().eq("post_id", postId).eq("user_id", user.id);
   // A duplicate like (double click across tabs) is fine.
   if (error && error.code !== "23505") return { ok: false, message: friendlyError(error) };
-  // Re-render the feed in the same response, so the optimistic heart and count don't flick back.
-  revalidatePath("/feed");
+  // No feed re-render: the card holds your like (lib/card-marks.ts); re-rendering the whole feed for
+  // one heart cost ~100 database requests (Linear FIX-77).
   return { ok: true, message: "" };
 }

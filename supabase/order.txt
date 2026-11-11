@@ -53,3 +53,4 @@ chapters
 pro-verification
 media-keys
 pro-storage
+feed-pages

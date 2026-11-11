@@ -40,7 +40,8 @@ export function MediaGrid({ media, alt }: { media: MediaItem[]; alt: string }) {
               src={mediaUrl(m.path)}
               alt={m.alt || (n === 1 ? alt : `${alt} (photo ${i + 1} of ${n})`)}
               fill
-              sizes={n === 1 ? "(min-width: 768px) 640px, 100vw" : "(min-width: 768px) 320px, 50vw"}
+              sizes={n === 1 ? SIZES_ONE : SIZES_HALF}
+              {...blur(m)}
               className="object-cover transition duration-500 group-hover:scale-[1.03]"
             />
             {!!m.notes?.length && (
@@ -54,12 +55,21 @@ export function MediaGrid({ media, alt }: { media: MediaItem[]; alt: string }) {
   );
 }
 
+// The width a photo is drawn at, so the browser picks the right file from the srcset: the feed column
+// is 640 px on a laptop, the screen less the card's padding on a phone. Phones with 3x screens ask
+// for about 2x (sharp to the eye, a third of the bytes of 3x): Linear FIX-77.
+const SIZES_ONE = "(min-width: 768px) 640px, (min-resolution: 2.5dppx) calc((100vw - 72px) * 0.67), calc(100vw - 72px)";
+const SIZES_HALF = "(min-width: 768px) 320px, (min-resolution: 2.5dppx) calc((50vw - 40px) * 0.67), calc(50vw - 40px)";
+// The tiny blurred stand-in saved with the post, shown until the photo arrives (nothing jumps: the box
+// already has the photo's shape).
+const blur = (m: MediaItem) => (m.lq ? { placeholder: "blur" as const, blurDataURL: m.lq } : {});
+
 // A box with the photo's exact shape (never cropped), so callout positions match the editor.
 function PhotoBox({ m, alt, sizes, maxH, active, onPin, className }: { m: MediaItem; alt: string; sizes: string; maxH: string; active?: number | null; onPin?: (i: number) => void; className?: string }) {
   const r = m.w && m.h ? m.w / m.h : 4 / 3;
   return (
     <div className={cn("relative mx-auto overflow-hidden bg-raised", className)} style={{ aspectRatio: r, width: `min(100%, calc(${maxH} * ${r}))` }}>
-      <Image src={mediaUrl(m.path)} alt={alt} fill sizes={sizes} className="object-cover" />
+      <Image src={mediaUrl(m.path)} alt={alt} fill sizes={sizes} {...blur(m)} className="object-cover" />
       {m.notes?.map((c, i) => <Pin key={i} n={i + 1} x={c.x} y={c.y} label={c.t} active={active === i} onClick={onPin ? () => onPin(i) : undefined} />)}
     </div>
   );
@@ -93,7 +103,7 @@ function NotedPhoto({ m, alt }: { m: MediaItem; alt: string }) {
   const [active, setActive] = useState<number | null>(null);
   return (
     <div className="mt-4">
-      <PhotoBox m={m} alt={alt} sizes="(min-width: 768px) 640px, 100vw" maxH="560px" active={active} onPin={(i) => setActive(active === i ? null : i)} className="rounded-2xl border border-line" />
+      <PhotoBox m={m} alt={alt} sizes={SIZES_ONE} maxH="560px" active={active} onPin={(i) => setActive(active === i ? null : i)} className="rounded-2xl border border-line" />
       <Legend m={m} active={active} onActive={setActive} />
     </div>
   );
@@ -106,9 +116,9 @@ function CompareSlider({ before, after, alt }: { before: MediaItem; after: Media
   const r = before.w && before.h ? Math.min(2, Math.max(0.8, before.w / before.h)) : 4 / 3;
   return (
     <div className="relative mt-4 overflow-hidden rounded-2xl border border-line bg-raised select-none" style={{ aspectRatio: r }}>
-      <Image src={mediaUrl(after.path)} alt={after.alt || `${alt}: after`} fill sizes="(min-width: 768px) 640px, 100vw" className="object-cover" />
+      <Image src={mediaUrl(after.path)} alt={after.alt || `${alt}: after`} fill sizes={SIZES_ONE} {...blur(after)} className="object-cover" />
       <div className="absolute inset-0" style={{ clipPath: `inset(0 ${100 - pos}% 0 0)` }}>
-        <Image src={mediaUrl(before.path)} alt={before.alt || `${alt}: before`} fill sizes="(min-width: 768px) 640px, 100vw" className="object-cover" />
+        <Image src={mediaUrl(before.path)} alt={before.alt || `${alt}: before`} fill sizes={SIZES_ONE} {...blur(before)} className="object-cover" />
       </div>
       <span className="pointer-events-none absolute top-3 left-3 rounded-full bg-black/65 px-2.5 py-1 text-[11px] font-semibold tracking-wide text-white uppercase backdrop-blur">Before</span>
       <span className="pointer-events-none absolute top-3 right-3 rounded-full bg-black/65 px-2.5 py-1 text-[11px] font-semibold tracking-wide text-white uppercase backdrop-blur">After</span>
@@ -263,7 +273,8 @@ function TestRunPlayer({ v }: { v: MediaItem }) {
           onLoadedMetadata={(e) => setDur(e.currentTarget.duration)}
           onDurationChange={(e) => { if (Number.isFinite(e.currentTarget.duration)) setDur(e.currentTarget.duration); }}
           className={full ? "h-full w-full bg-black object-contain" : cn("mx-auto block bg-black", portrait ? "max-h-[70svh] w-auto max-w-full" : "max-h-[560px] w-full")}
-          style={!full && v.w && v.h ? { aspectRatio: `${v.w} / ${v.h}` } : undefined}
+          // The tiny blurred stand-in under the poster until it loads (Linear FIX-77).
+          style={{ ...(!full && v.w && v.h ? { aspectRatio: `${v.w} / ${v.h}` } : {}), ...(v.lq ? { backgroundImage: `url(${v.lq})`, backgroundSize: "cover", backgroundPosition: "center" } : {}) }}
         >
           {ccUrl && <track kind="captions" srcLang="en" label="Captions" src={ccUrl} default />}
         </video>
