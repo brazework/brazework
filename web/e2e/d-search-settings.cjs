@@ -165,15 +165,19 @@ const pw = require("playwright-core");
     if (!(await box.inputValue()).includes("@Recovery avionics")) throw new Error("the project wasn't written into the post");
     await box.fill("");
   }, ben);
-  await step("project reel: Play reel tells the build as a story, with the club's proof, and closes back to the project", async () => {
+  await step("project reel: Play reel tells the build as a timeline; tapping the verified seal jumps to the club's stamp; Esc closes", async () => {
     await go(ben, "/projects/p1");
     await ben.getByRole("link", { name: "Play reel" }).click();
     const reel = ben.getByRole("dialog", { name: "Project reel" });
     await reel.waitFor({ timeout: 15000 });
     await reel.getByText("Liquid engine test stand").first().waitFor();
-    // Step through to the proof: the officer's name is stamped on it.
-    for (let n = 0; n < 8 && !(await reel.getByText(/Signed by Maya Patel/).count()); n++) await ben.keyboard.press("ArrowRight");
+    // The timeline: every update a point, the verified milestone a seal. Tapping the seal jumps to it.
+    const timeline = reel.getByRole("navigation", { name: "Build timeline" });
+    await timeline.waitFor();
+    if ((await timeline.getByRole("button", { name: /^Update / }).count()) < 1) throw new Error("no updates on the timeline");
+    await timeline.getByRole("button", { name: /^Verified: Static fire at 1\.2 kN/ }).click();
     await reel.getByText(/Signed by Maya Patel/).first().waitFor({ timeout: 5000 });
+    await reel.getByText(/Week \d+ · Club-verified/).first().waitFor();
     await ben.keyboard.press("Escape");
     await ben.waitForURL(/\/projects\/p1$/, { timeout: 10000 });
   }, ben);
