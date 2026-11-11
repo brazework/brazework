@@ -83,7 +83,7 @@ async function loadWeekInputFor(supabase: SupabaseClient, me: string, now: numbe
 
 // The weekly loop on Home (Linear FIX-67): this week's goal, your build streak (weeks in a row with a
 // post or a milestone, from your own rows), the last eight weeks for the streak bar, and who looked.
-export type Loop = { goal: WeekGoal; streak: Streak; recent: boolean[]; viewers: WeekInput["viewers"]; steps: LoopStep[]; toVerify: WeekInput["toVerify"] };
+export type Loop = { goal: WeekGoal; streak: Streak; recent: boolean[]; viewers: WeekInput["viewers"]; steps: LoopStep[]; toVerify: WeekInput["toVerify"]; verified: number };
 
 export async function loadLoop(supabase: SupabaseClient, me: string, now: number): Promise<Loop> {
   const f = await dbFeatures();
@@ -100,5 +100,5 @@ export async function loadLoop(supabase: SupabaseClient, me: string, now: number
   const active = new Set(times.map(weekStart));
   const recent = Array.from({ length: 8 }, (_, i) => active.has(weekStart(now) - (7 - i) * 7 * 864e5));
   const steps = buildLoopSteps(input, { shownThisWeek: streak.thisWeek, verified: verified.count ?? 0, me });
-  return { goal: weekGoal(input, streak.thisWeek), streak, recent, viewers: input.viewers, steps, toVerify: input.toVerify };
+  return { goal: weekGoal(input, streak.thisWeek), streak, recent, viewers: input.viewers, steps, toVerify: input.toVerify, verified: verified.count ?? 0 };
 }

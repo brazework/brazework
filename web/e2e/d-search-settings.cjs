@@ -126,17 +126,21 @@ const pw = require("playwright-core");
     await ben.waitForURL((u) => !/view=visitor/.test(u.toString()));
     await ben.getByRole("link", { name: "Dashboard" }).waitFor({ timeout: 15000 });
   }, ben);
-  await step("the weekly loop: a company looks at Ben; once he hides the checklist, Home shows his goal, streak and who looked", async () => {
+  await step("the weekly loop: a company looks at Ben; once he hides the checklist, Home shows his progress, who looked and his builds", async () => {
     await go(cara, `/u/${process.env.BEN_ID}`); // Cara is an admin of Acme Aerospace, a verified company
     await go(ben, "/feed");
     const hide = ben.getByRole("button", { name: "Hide your first five minutes" });
     if (await hide.count()) await hide.click();
-    const loop = ben.getByRole("region", { name: "Your build loop" });
-    await loop.waitFor({ timeout: 15000 });
-    await loop.getByText(/-week streak|No streak yet/).waitFor();
-    // The three steps are tabs; Get found shows who looked.
-    await loop.getByRole("tab", { name: /Get found/ }).click();
-    await loop.getByText("Acme Aerospace viewed your profile").waitFor({ timeout: 10000 });
+    const hero = ben.getByRole("region", { name: "Your progress" });
+    await hero.waitFor({ timeout: 15000 });
+    await hero.getByRole("heading", { name: "Welcome back, Ben" }).waitFor();
+    await hero.getByText("week streak", { exact: true }).waitFor();
+    // One sentence about him, from real rows: the company that looked.
+    await hero.getByText(/Acme Aerospace looked at your profile/).waitFor({ timeout: 10000 });
+    // His builds as cards, each with a one-tap reel.
+    const builds = ben.getByRole("region", { name: "Your builds" });
+    await builds.getByRole("link", { name: "Start a new build" }).waitFor();
+    if (!(await builds.getByRole("link", { name: "Reel" }).count())) throw new Error("no build cards on Home");
     // Hidden for good: a reload keeps the checklist away.
     await ben.reload({ waitUntil: "networkidle" });
     if (await ben.getByRole("button", { name: "Hide your first five minutes" }).count()) throw new Error("the checklist came back after a reload");

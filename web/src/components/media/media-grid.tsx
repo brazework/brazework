@@ -2,7 +2,7 @@
 import { AnimatePresence, motion } from "motion/react";
 import { Captions, ChevronLeft, ChevronRight, ChevronsLeftRight, Crosshair, Flag, Gauge, Maximize, Minimize, Pause, Play, Repeat, Volume2, VolumeX, X } from "lucide-react";
 import Image from "next/image";
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { cn } from "@/lib/forge";
 import { mediaUrl, type MediaItem } from "@/lib/media";
 import { Pin, fmtTime } from "./annotate";
@@ -159,8 +159,10 @@ function TestRunPlayer({ v }: { v: MediaItem }) {
   const [muted, setMuted] = useState(true);
   const [blocked, setBlocked] = useState(false); // the browser refused sound; we're playing muted
   // Captions (video-captions.sql): a track from the stored WebVTT, on by default (feeds start muted).
-  const ccUrl = useMemo(() => (v.cc ? URL.createObjectURL(new Blob([v.cc], { type: "text/vtt" })) : null), [v.cc]);
-  useEffect(() => () => { if (ccUrl) URL.revokeObjectURL(ccUrl); }, [ccUrl]);
+  // The captions file as a data URL: the same text gives the same URL on the server and in the
+  // browser (a blob URL is invented fresh on each side, a hydration mismatch on every captioned video).
+  const hasCc = Boolean(v.cc);
+  const ccUrl = v.cc ? `data:text/vtt;charset=utf-8,${encodeURIComponent(v.cc)}` : null;
   const [ccOn, setCcOn] = useState(true);
   useEffect(() => { const track = ref.current?.textTracks[0]; if (track) track.mode = ccOn ? "showing" : "hidden"; }, [ccOn, ccUrl]);
   const id = useRef(useId());
@@ -285,7 +287,7 @@ function TestRunPlayer({ v }: { v: MediaItem }) {
         {!playing && !flash && <span className="pointer-events-none absolute top-1/2 left-1/2 grid size-16 -translate-x-1/2 -translate-y-1/2 place-items-center rounded-full bg-white/90 text-black shadow-2xl" aria-hidden="true"><Play className="ml-1 size-7 fill-current" /></span>}
         {/* Captions and sound: always reachable, bottom right (grows left when it asks for a tap). */}
         <div className="absolute right-3 bottom-3 z-10 flex items-center gap-1.5">
-        {ccUrl && (
+        {hasCc && (
           <button type="button" onClick={() => setCcOn((on) => !on)} aria-pressed={ccOn} aria-label={ccOn ? "Hide captions" : "Show captions"} className={cn("grid size-8 place-items-center rounded-full backdrop-blur transition active:scale-90", ccOn ? "bg-white text-black" : "bg-black/55 text-white")}>
             <Captions className="size-4" />
           </button>
@@ -308,7 +310,7 @@ function TestRunPlayer({ v }: { v: MediaItem }) {
         {speed !== 1 && playing && <span className="pointer-events-none absolute top-3 left-3 rounded-full bg-black/55 px-2.5 py-1 font-mono text-[11px] text-white backdrop-blur">{speed}×</span>}
         {/* The scrubber: buffered, played, chapter markers, a thumb and a hover time; a slim line while playing. */}
         <Scrubber t={t} dur={dur} buffered={buffered} marks={marks} visible={!playing || hover || scrubbing}
-          onSeek={seek} onScrub={setScrubbing} reserve={cn(ccUrl ? "pr-24" : "pr-14", blocked && muted && (ccUrl ? "sm:pr-52" : "sm:pr-40"))} />
+          onSeek={seek} onScrub={setScrubbing} reserve={cn(hasCc ? "pr-24" : "pr-14", blocked && muted && (hasCc ? "sm:pr-52" : "sm:pr-40"))} />
       </div>
       {marks.length > 0 && (
         <ol className="no-scrollbar mt-3 flex flex-wrap gap-1.5">

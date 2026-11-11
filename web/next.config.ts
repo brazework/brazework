@@ -15,7 +15,7 @@ const csp = [
   `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""}`,
   "style-src 'self' 'unsafe-inline'",
   `img-src 'self' blob: data: ${supabase?.origin ?? ""}`,
-  `media-src 'self' blob: ${supabase?.origin ?? ""}`,
+  `media-src 'self' blob: data: ${supabase?.origin ?? ""}`,
   "font-src 'self' data:",
   `connect-src 'self' ${supabaseOrigins.join(" ")}`,
   // The event page embeds a Google map.

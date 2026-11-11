@@ -3,6 +3,7 @@ import { ReportLink } from "@/components/report/report-dialog";
 import { ArrowLeft, ArrowRight, BadgeCheck, CalendarDays, CheckCircle2, ExternalLink, Images, Megaphone, Pencil, Play, Users } from "lucide-react";
 import Image from "next/image";
 import { Schematic } from "@/components/landing/schematics";
+import { schematicFor } from "@/lib/schematic-field";
 import { MediaGrid } from "@/components/media/media-grid";
 import { mediaUrl, type MediaItem } from "@/lib/media";
 import Link from "next/link";
@@ -262,18 +263,3 @@ async function ProjectView({ params }: { params: PageProps<"/projects/[id]">["pa
   );
 }
 
-// The drawing behind a project with no photo yet: its field, guessed from its tags and tools.
-const FIELDS: [RegExp, string][] = [
-  [/rocket|aero|flight|drone|uav|space|satellite|wind tunnel/i, "aerospace"],
-  [/circuit|pcb|embedded|electr|stm32|arduino|kicad|fpga|power/i, "electrical"],
-  [/bio|med|crispr|cell|protein/i, "biomedical"],
-  [/chem|reaction|polymer/i, "chemical"],
-  [/civil|bridge|struct|concrete/i, "civil"],
-  [/\bai\b|\bml\b|machine learning|neural|model/i, "ai"],
-  [/software|web|app|code|python|react|rust|typescript/i, "cs"],
-  [/physics|optic|laser|quantum/i, "physics"],
-];
-function schematicFor(tags: string[], tools: string[]): string {
-  const text = [...tags, ...tools].join(" ");
-  return FIELDS.find(([re]) => re.test(text))?.[1] ?? "mechanical";
-}
