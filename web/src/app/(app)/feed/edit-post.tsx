@@ -2,7 +2,8 @@
 import { Loader2, X } from "lucide-react";
 import { useEffect, useId, useRef, useState, useTransition } from "react";
 import { Button, selectPillCls } from "@/components/ui";
-import { ALL_TOPICS, cn, TOPICS } from "@/lib/forge";
+import { cn, TOPICS } from "@/lib/forge";
+import { MAX_TAGS, hashtagsIn } from "@/lib/hashtags";
 import { editPost } from "@/lib/posts";
 
 const MAX = 3000;
@@ -10,7 +11,7 @@ const MAX = 3000;
 // Edit your own post in place: its text and up to 3 topics. Escape cancels, Ctrl/⌘+Enter saves.
 export function EditPost({ postId, body, tags, onCancel, onSaved }: { postId: string; body: string; tags: string[]; onCancel: () => void; onSaved: (next: { body: string; tags: string[] }) => void }) {
   const [text, setText] = useState(body);
-  const [picked, setPicked] = useState<string[]>(tags.filter((t) => ALL_TOPICS.includes(t)));
+  const [picked, setPicked] = useState<string[]>(tags);
   const [error, setError] = useState("");
   const [pending, start] = useTransition();
   const area = useRef<HTMLTextAreaElement>(null);
@@ -28,7 +29,8 @@ export function EditPost({ postId, body, tags, onCancel, onSaved }: { postId: st
     start(async () => {
       setError("");
       const r = await editPost(postId, text, picked).catch(() => ({ ok: false, message: "Couldn't save. Check your connection." }));
-      if (r.ok) onSaved({ body: text.trim(), tags: picked });
+      // The server adds any #tags written in the text (same rule, lib/hashtags.ts).
+      if (r.ok) onSaved({ body: text.trim(), tags: [...new Set([...picked, ...hashtagsIn(text)])].slice(0, MAX_TAGS) });
       else setError(r.message);
     });
 

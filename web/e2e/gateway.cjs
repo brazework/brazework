@@ -83,7 +83,8 @@ http.createServer((req, res) => {
     res.writeHead(u.statusCode, { ...u.headers, "access-control-allow-origin": req.headers.origin || "*", "access-control-allow-credentials": "true", "access-control-allow-headers": "*", "access-control-allow-methods": "*", "access-control-expose-headers": "*" });
     u.pipe(res);
   });
-  up.on("error", () => { res.writeHead(502); res.end(); });
+  // An upstream that drops mid-response (a browser closing on a long request) must not take the gateway down.
+  up.on("error", () => { if (res.headersSent) res.destroy(); else { res.writeHead(502); res.end(); } });
   if (req.method === "OPTIONS") { res.writeHead(204, { "access-control-allow-origin": req.headers.origin || "*", "access-control-allow-credentials": "true", "access-control-allow-headers": req.headers["access-control-request-headers"] || "*", "access-control-allow-methods": "GET,POST,PATCH,PUT,DELETE,OPTIONS" }); return res.end(); }
   req.pipe(up);
 }).listen(54321, () => console.log("gateway on 54321"));

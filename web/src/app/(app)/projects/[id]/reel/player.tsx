@@ -185,7 +185,7 @@ function SceneView({ scene, reduce, paused, onVideoEnd }: { scene: Scene; reduce
       );
     case "end":
       return (
-        <div className={cn("absolute inset-0 flex flex-col items-center justify-center bg-[radial-gradient(90%_60%_at_50%_30%,#1b2440,#05070d)] px-7 text-center")}>
+        <div className={cn("absolute inset-0 flex flex-col items-center justify-center bg-[radial-gradient(90%_60%_at_50%_30%,#27272a,#050505)] px-7 text-center")}>
           <motion.div {...stagger(0)}><Kicker>Built by</Kicker></motion.div>
           <motion.p {...stagger(1)} className="mt-4 text-2xl leading-snug font-semibold">{scene.team.join(", ")}</motion.p>
           {scene.verified > 0 && (

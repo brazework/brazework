@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { ChevronDown, Hash } from "lucide-react";
+import { ChevronDown, Hash, SlidersHorizontal } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
@@ -171,7 +171,6 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
   const hideStart = (await cookies()).has(`${DISMISS_PREFIX}feed-start`);
   // New members get the first-five-minutes checklist; once it's done (or hidden), the weekly loop.
   const startOpen = !hideStart && (guide?.loop ?? []).some((s) => !s.done);
-  const nextStep = guide?.member.find((s) => !s.done) ?? null;
   const ledClub = guide?.clubs[0] ? { id: guide.clubs[0].id, name: guide.clubs[0].name } : null;
   // For the composer: "Which project?" (latest first) and the clubs it can also go to.
   const [{ data: myProjects }, { data: clubRows }] = await Promise.all([
@@ -220,11 +219,11 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
           {SORTS.filter((x) => x.id !== "best" || tab === "for-you").map((x) => (
             <Link key={x.id} href={href({ sort: x.id })} aria-current={sort === x.id ? "true" : undefined} className={cn("rounded-full px-2.5 py-0.5 text-xs whitespace-nowrap transition", sort === x.id ? "bg-text text-surface" : "text-muted hover:text-text")}>{x.label}</Link>
           ))}
-        </span>} hero={<>{startOpen ? <StartChecklist steps={guide?.loop ?? []} /> : <Suspense fallback={null}><WeekLoop first={profile.first_name} /></Suspense>}<div id="composer" data-tour="composer" className="scroll-mt-24"><Composer first={profile.first_name} last={profile.last_name} interests={interests} userId={user.id} mediaEnabled={mediaEnabled} captionsEnabled={captionsEnabled} avatarSrc={avatarSrc(profile)} copilot={copilotOn} mentionsEnabled={mentionsEnabled} club={ledClub} next={nextStep && (guide?.loop ?? []).every((x) => x.done) ? { label: nextStep.label, href: nextStep.href } : null} projects={(myProjects ?? []) as { id: string; title: string }[]} clubs={composeClubs} initialProject={typeof sp.project === "string" ? sp.project : undefined} /></div></>} />
+        </span>} hero={<>{startOpen ? <StartChecklist steps={guide?.loop ?? []} /> : <Suspense fallback={null}><WeekLoop first={profile.first_name} /></Suspense>}<div id="composer" data-tour="composer" className="scroll-mt-24"><Composer first={profile.first_name} last={profile.last_name} interests={interests} userId={user.id} mediaEnabled={mediaEnabled} captionsEnabled={captionsEnabled} avatarSrc={avatarSrc(profile)} copilot={copilotOn} mentionsEnabled={mentionsEnabled} club={ledClub} next={null} projects={(myProjects ?? []) as { id: string; title: string }[]} clubs={composeClubs} initialProject={typeof sp.project === "string" ? sp.project : undefined} /></div></>} />
       {/* What kind of post (a quiet segmented control), and your topics in one chip: one calm row on a
-          wide screen; on a phone the kinds get a full-width row of their own (it scrolls if it must). */}
-      <nav data-tour="interests" aria-label="Filter the feed" className="mt-4 flex flex-wrap items-center gap-2">
-        <div className="no-scrollbar flex w-full min-w-0 items-center gap-0.5 overflow-x-auto rounded-full bg-surface-2/80 p-1 sm:w-auto">
+          wide screen; on a phone it is one row: the kinds scroll, and one button holds topics and sort. */}
+      <nav data-tour="interests" aria-label="Filter the feed" className="mt-4 flex flex-nowrap items-center gap-2 sm:flex-wrap">
+        <div className="no-scrollbar flex min-w-0 flex-1 items-center gap-0.5 overflow-x-auto rounded-full bg-surface-2/80 p-1 sm:w-auto sm:flex-none">
           {KINDS.map((k) => (
             <Link key={k.id || "all"} href={href({ kind: k.id })} aria-current={kind === k.id ? "true" : undefined}
               className={cn("shrink-0 rounded-full px-3 py-1 text-xs font-medium whitespace-nowrap transition active:scale-95", kind === k.id ? "bg-surface text-text shadow-[0_1px_2px_rgb(0_0_0/0.08),0_0_0_1px_var(--border)]" : "text-muted hover:text-text")}>
@@ -232,13 +231,21 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
             </Link>
           ))}
         </div>
-        {interests.length > 0 && (
-          <details className="group relative shrink-0">
-            <summary className={cn("flex h-8 cursor-pointer list-none items-center gap-1.5 rounded-full border px-3 text-xs font-medium transition [&::-webkit-details-marker]:hidden", tag ? "bg-accent-grad border-transparent text-on-accent" : "border-line bg-surface text-text-2 hover:border-line-strong hover:text-text")}>
-              <Hash className="size-3.5" />{tag || "Topics"}
-              <ChevronDown className="size-3 transition group-open:rotate-180" />
-            </summary>
-            <div className={cn(menuCls, "absolute top-full right-0 z-30 mt-1.5 w-64 p-2")}>
+        {/* Topics, and on phones the sort too, in one compact menu so the row never wraps. */}
+        <details className={cn("group relative shrink-0", !interests.length && "sm:hidden")}>
+          <summary aria-label={tag ? `Topic: ${tag}` : "Topics and sort"} className={cn("flex size-9 cursor-pointer list-none items-center justify-center gap-1.5 rounded-full border text-xs font-medium transition sm:h-8 sm:w-auto sm:px-3 [&::-webkit-details-marker]:hidden", tag ? "bg-accent-grad border-transparent text-on-accent" : "border-line bg-surface text-text-2 hover:border-line-strong hover:text-text")}>
+            <SlidersHorizontal className="size-4 sm:hidden" />
+            <Hash className="hidden size-3.5 sm:block" /><span className="hidden sm:inline">{tag || "Topics"}</span>
+            <ChevronDown className="hidden size-3 transition group-open:rotate-180 sm:block" />
+          </summary>
+          <div className={cn(menuCls, "absolute top-full right-0 z-30 mt-1.5 w-64 p-2")}>
+            {/* Phones: the sort lives here (the tabs row is too narrow for it). */}
+            <div className="mb-2 flex items-center gap-0.5 rounded-full bg-surface-2 p-0.5 sm:hidden" role="group" aria-label="Sort posts">
+              {SORTS.filter((x) => x.id !== "best" || tab === "for-you").map((x) => (
+                <Link key={x.id} href={href({ sort: x.id })} aria-current={sort === x.id ? "true" : undefined} className={cn("flex-1 rounded-full px-2.5 py-1 text-center text-xs whitespace-nowrap transition", sort === x.id ? "bg-text text-surface" : "text-muted hover:text-text")}>{x.label}</Link>
+              ))}
+            </div>
+            {interests.length > 0 && <>
               <div className="flex flex-wrap gap-1.5">
                 {interests.map((t) => (
                   <Link key={t} href={href({ tag: tag === t ? "" : t })} aria-current={tag === t ? "true" : undefined}
@@ -251,15 +258,9 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
                 {tag ? <Link href={href({ tag: "" })} className="text-muted hover:text-text">All topics</Link> : <span className="text-faint">Your interests</span>}
                 <Link href="/settings#profile" className="text-muted hover:text-text">Edit</Link>
               </div>
-            </div>
-          </details>
-        )}
-        {/* Phones: sort lives at the end of this row (the tabs row is too narrow there). */}
-        <span className="ml-auto inline-flex shrink-0 items-center gap-0.5 rounded-full border border-line bg-surface p-0.5 sm:hidden" role="group" aria-label="Sort posts">
-          {SORTS.filter((x) => x.id !== "best" || tab === "for-you").map((x) => (
-            <Link key={x.id} href={href({ sort: x.id })} aria-current={sort === x.id ? "true" : undefined} className={cn("rounded-full px-2.5 py-0.5 text-xs whitespace-nowrap transition", sort === x.id ? "bg-text text-surface" : "text-muted hover:text-text")}>{x.label}</Link>
-          ))}
-        </span>
+            </>}
+          </div>
+        </details>
       </nav>
       {(tag || kind) && (
         <div className="mt-3 flex items-center justify-between rounded-2xl border border-line bg-surface-2 px-4 py-2.5 text-sm">

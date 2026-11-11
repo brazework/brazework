@@ -1,7 +1,8 @@
 "use server";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { ALL_TOPICS, friendlyError } from "@/lib/forge";
+import { friendlyError } from "@/lib/forge";
+import { hashtagsIn } from "@/lib/hashtags";
 import { dbFeatures } from "@/lib/db-features";
 import { validMedia } from "@/lib/media";
 import { keepMentioned, type Mention } from "@/lib/mention-text";
@@ -14,12 +15,11 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const postSchema = z.object({
   body: z.string().trim().min(1, "Write something first.").max(3000, "Posts can be up to 3,000 characters."),
   kind: z.enum(["update", "question", "result", "project"]),
-  tags: z.array(z.string().refine((t) => ALL_TOPICS.includes(t))).max(3, "Pick up to 3 topics."),
 });
 
 // Same table and rules as public/js/posts.js. The database fills in author, counts and time.
 export async function createPost(prev: ComposeState, form: FormData): Promise<ComposeState> {
-  const parsed = postSchema.safeParse({ body: form.get("body"), kind: form.get("kind"), tags: form.getAll("tags") });
+  const parsed = postSchema.safeParse({ body: form.get("body"), kind: form.get("kind") });
   if (!parsed.success) return { ok: false, message: parsed.error.issues[0]?.message ?? "Check your post.", nonce: prev.nonce };
   const { supabase, user } = await getViewer();
   if (!user) return { ok: false, message: "Log in again to post.", nonce: prev.nonce };
@@ -31,7 +31,8 @@ export async function createPost(prev: ComposeState, form: FormData): Promise<Co
     try { media = validMedia(JSON.parse(rawMedia), user.id); } catch { media = null; }
     if (!media) return { ok: false, message: "Something's wrong with those attachments. Remove them and try again.", nonce: prev.nonce };
   }
-  const row: Record<string, unknown> = { ...parsed.data };
+  // Its tags are the #tags written in it (lib/hashtags.ts): what the composer coloured.
+  const row: Record<string, unknown> = { ...parsed.data, tags: hashtagsIn(parsed.data.body) };
   if (media && media.length) row.media = media;
   // @mentions (supabase/mentions.sql): the database re-checks each one and notifies them.
   const rawMentions = String(form.get("mentions") ?? "[]");

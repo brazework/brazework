@@ -21,19 +21,15 @@ export function YourBuilds({ builds }: { builds: Build[] }) {
         {builds.map((b) => (
           <li key={b.id} className="w-[15.5rem] shrink-0 snap-start">
             <div className="group glass-card relative flex h-full flex-col overflow-hidden rounded-3xl transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_20px_50px_-28px_rgb(0_0_0/0.45)]">
-              <Link href={`/projects/${b.id}`} className="relative block aspect-[16/10] overflow-hidden bg-[linear-gradient(135deg,#0b1020,#1b2440_55%,#0b1020)]" aria-label={b.title}>
+              <Link href={`/projects/${b.id}`} className="cover-empty relative block aspect-[16/10] overflow-hidden" aria-label={b.title}>
                 {b.cover ? (
                   <Image src={mediaUrl(b.cover)} alt="" fill sizes="248px" className="object-cover transition duration-500 group-hover:scale-[1.04]" />
                 ) : (
-                  <>
-                    <div aria-hidden className="absolute inset-0 bg-[linear-gradient(rgb(255_255_255/0.05)_1px,transparent_1px),linear-gradient(90deg,rgb(255_255_255/0.05)_1px,transparent_1px)] bg-[size:18px_18px]" />
-                    <Schematic id={b.field} className="absolute top-1/2 left-1/2 w-[62%] -translate-x-1/2 -translate-y-1/2 text-white/55 transition duration-500 group-hover:scale-105" />
-                  </>
+                  <Schematic id={b.field} className="absolute top-1/2 left-1/2 w-[62%] -translate-x-1/2 -translate-y-1/2 text-text/45 transition duration-500 group-hover:scale-105" />
                 )}
-                <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
                 <div className="absolute top-2.5 left-2.5 flex gap-1.5">
-                  {b.verified > 0 && <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/90 px-2 py-0.5 text-[11px] font-semibold text-white"><BadgeCheck className="size-3" /> {b.verified}</span>}
-                  {b.private && <span className="inline-flex items-center gap-1 rounded-full bg-black/50 px-2 py-0.5 text-[11px] text-white backdrop-blur"><Lock className="size-3" /> Private</span>}
+                  {b.verified > 0 && <span className="inline-flex items-center gap-1 rounded-full bg-ok px-2 py-0.5 text-[11px] font-semibold text-surface"><BadgeCheck className="size-3" /> {b.verified}</span>}
+                  {b.private && <span className="inline-flex items-center gap-1 rounded-full bg-surface/85 px-2 py-0.5 text-[11px] text-text ring-1 ring-line backdrop-blur"><Lock className="size-3" /> Private</span>}
                 </div>
               </Link>
               <div className="flex flex-1 flex-col p-3.5">

@@ -1,7 +1,8 @@
 "use server";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { ALL_TOPICS, friendlyError } from "@/lib/forge";
+import { friendlyError } from "@/lib/forge";
+import { MAX_TAGS, hashtagsIn, validTag } from "@/lib/hashtags";
 import { getViewer } from "@/lib/supabase/server";
 
 // Saving, deleting and commenting (public/js/posts.js). The database fills in names and counts.
@@ -30,7 +31,7 @@ export async function toggleSave(postId: string, save: boolean): Promise<R> {
 // edited_at, so readers see it was edited). Photos and video stay as they were posted.
 const editSchema = z.object({
   body: z.string().trim().min(1, "Write something first.").max(3000, "Posts can be up to 3,000 characters."),
-  tags: z.array(z.string().refine((t) => ALL_TOPICS.includes(t), "Pick topics from the list.")).max(3, "Pick up to 3 topics.").transform((t) => [...new Set(t)]),
+  tags: z.array(z.string().refine(validTag, "That tag can't be used.")).max(3, "Pick up to 3 topics."),
 });
 
 export async function editPost(postId: string, body: string, tags: string[]): Promise<R> {
@@ -39,7 +40,7 @@ export async function editPost(postId: string, body: string, tags: string[]): Pr
   if (!parsed.success) return { ok: false, message: parsed.error.issues[0]?.message ?? "Check the post." };
   const { supabase, user } = await getViewer();
   if (!user) return { ok: false, message: "Log in again." };
-  const { data, error } = await supabase.from("posts").update({ body: parsed.data.body, tags: parsed.data.tags }).eq("id", postId).eq("author_id", user.id).select("id");
+  const { data, error } = await supabase.from("posts").update({ body: parsed.data.body, tags: [...new Set([...parsed.data.tags, ...hashtagsIn(parsed.data.body)])].slice(0, MAX_TAGS) }).eq("id", postId).eq("author_id", user.id).select("id");
   if (error) return { ok: false, message: friendlyError(error) };
   if (!data?.length) return { ok: false, message: "You can only edit your own posts." };
   touch(postId);

@@ -50,7 +50,7 @@ export function ProjectShowcase() {
         {/* The project page, as it looks in the product. */}
         <Reveal delay={0.1} className="relative">
           <div className="glass-card overflow-hidden rounded-[28px] shadow-[0_40px_120px_-40px_rgb(0_0_0/0.45)]">
-            <div className="relative aspect-[16/8] overflow-hidden bg-[linear-gradient(135deg,#0b1020,#1b2440_55%,#0b1020)] text-white/80 sm:aspect-[16/7]">
+            <div className="relative aspect-[16/8] overflow-hidden bg-[linear-gradient(135deg,#09090b,#1f1f22_55%,#09090b)] text-white/80 sm:aspect-[16/7]">
               <div aria-hidden className="absolute inset-0 bg-[linear-gradient(rgb(255_255_255/0.05)_1px,transparent_1px),linear-gradient(90deg,rgb(255_255_255/0.05)_1px,transparent_1px)] bg-[size:22px_22px]" />
               <Schematic id="aerospace" className="absolute top-1/2 left-1/2 w-[62%] -translate-x-1/2 -translate-y-1/2 text-white/70" />
               {/* Callouts pinned on the photo. */}

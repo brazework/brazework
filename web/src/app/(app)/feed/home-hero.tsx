@@ -27,42 +27,40 @@ export function HomeHero({ first, steps, streak, recent, verified, viewers, veri
   ].filter(Boolean).join(" ");
 
   return (
-    <section aria-label="Your progress" className="relative mb-4 overflow-hidden rounded-[28px] bg-[#0a0f1e] text-white shadow-[0_30px_80px_-36px_rgb(10_15_30/0.75)]">
-      {/* Depth: two soft glows and a faint engineering grid. */}
-      <div aria-hidden className="pointer-events-none absolute -top-32 -left-24 size-[26rem] rounded-full bg-[radial-gradient(closest-side,rgb(99_102_241/0.35),transparent)]" />
-      <div aria-hidden className="pointer-events-none absolute -right-20 -bottom-40 size-[24rem] rounded-full bg-[radial-gradient(closest-side,rgb(249_115_22/0.22),transparent)]" />
-      <div aria-hidden className="pointer-events-none absolute inset-0 bg-[linear-gradient(rgb(255_255_255/0.035)_1px,transparent_1px),linear-gradient(90deg,rgb(255_255_255/0.035)_1px,transparent_1px)] bg-[size:28px_28px] [mask-image:linear-gradient(to_bottom,black,transparent)]" />
+    <section aria-label="Your progress" className="glass-card relative mb-4 overflow-hidden rounded-[28px]">
+      {/* Depth in the theme's own colours (any skin): the engineering grid and soft light used for empty covers. */}
+      <div aria-hidden className="cover-empty pointer-events-none absolute inset-0 opacity-80 [mask-image:linear-gradient(to_bottom,black,transparent_85%)]" />
 
       <div className="relative p-5 sm:p-7">
         {verifyQueue && (
-          <Link href={verifyQueue.href} className="mb-4 inline-flex max-w-full items-center gap-2 rounded-full bg-amber-400/15 px-3.5 py-1.5 text-xs font-medium text-amber-200 ring-1 ring-amber-300/25 transition hover:bg-amber-400/25">
-            <ShieldCheck className="size-3.5 shrink-0" />
+          <Link href={verifyQueue.href} className="mb-4 inline-flex max-w-full items-center gap-2 rounded-full bg-surface px-3.5 py-1.5 text-xs font-medium text-text ring-1 ring-line transition hover:bg-hover">
+            <ShieldCheck className="size-3.5 shrink-0 text-amber-500" />
             <span className="truncate">{verifyQueue.n} {verifyQueue.n === 1 ? "milestone is" : "milestones are"} waiting for you to verify</span>
             <ArrowRight className="size-3.5 shrink-0" />
           </Link>
         )}
         <h1 className="text-[1.65rem] leading-tight font-semibold tracking-tight sm:text-[2rem]">Welcome back, {first}</h1>
-        <p className="mt-1.5 max-w-xl text-[15px] leading-relaxed text-white/70">{sentence}</p>
+        <p className="mt-1.5 max-w-xl text-[15px] leading-relaxed text-muted">{sentence}</p>
 
         {/* The three numbers. */}
         <ul className="mt-5 grid grid-cols-3 gap-2 sm:gap-3">
-          <li className="rounded-2xl bg-white/[0.06] p-3 ring-1 ring-white/10 backdrop-blur-sm sm:p-4">
-            <div className="flex items-center justify-between"><Flame className={cn("size-4", streak.weeks ? "fill-orange-400/30 text-orange-400" : "text-white/40")} /></div>
+          <li className="rounded-2xl bg-surface/80 p-3 ring-1 ring-line sm:p-4">
+            <div className="flex items-center justify-between"><Flame className={cn("size-4", streak.weeks ? "fill-orange-500/25 text-orange-500" : "text-faint")} /></div>
             <div className="mt-2 text-2xl font-semibold tracking-tight tabular-nums sm:text-3xl">{streak.weeks}</div>
-            <div className="text-[11px] leading-tight text-white/60 sm:text-xs">week streak</div>
+            <div className="text-[11px] leading-tight text-faint sm:text-xs">week streak</div>
             <div className="mt-2 flex gap-[3px]" aria-hidden="true">
-              {recent.map((on, i) => <span key={i} className={cn("h-1.5 flex-1 rounded-full", on ? "bg-gradient-to-r from-orange-400 to-amber-300" : "bg-white/12")} />)}
+              {recent.map((on, i) => <span key={i} className={cn("h-1.5 flex-1 rounded-full", on ? "bg-text" : "bg-line")} />)}
             </div>
           </li>
-          <li className="rounded-2xl bg-white/[0.06] p-3 ring-1 ring-white/10 backdrop-blur-sm sm:p-4">
-            <BadgeCheck className="size-4 text-emerald-400" />
+          <li className="rounded-2xl bg-surface/80 p-3 ring-1 ring-line sm:p-4">
+            <BadgeCheck className="size-4 text-ok" />
             <div className="mt-2 text-2xl font-semibold tracking-tight tabular-nums sm:text-3xl">{verified}</div>
-            <div className="text-[11px] leading-tight text-white/60 sm:text-xs">club-verified</div>
+            <div className="text-[11px] leading-tight text-faint sm:text-xs">club-verified</div>
           </li>
-          <li className="rounded-2xl bg-white/[0.06] p-3 ring-1 ring-white/10 backdrop-blur-sm sm:p-4">
-            <Eye className="size-4 text-sky-400" />
+          <li className="rounded-2xl bg-surface/80 p-3 ring-1 ring-line sm:p-4">
+            <Eye className="size-4 text-muted" />
             <div className="mt-2 text-2xl font-semibold tracking-tight tabular-nums sm:text-3xl">{views}</div>
-            <div className="text-[11px] leading-tight text-white/60 sm:text-xs">profile views this week</div>
+            <div className="text-[11px] leading-tight text-faint sm:text-xs">profile views this week</div>
           </li>
         </ul>
 
@@ -73,9 +71,9 @@ export function HomeHero({ first, steps, streak, recent, verified, viewers, veri
               const Icon = STEP_ICON[s.id];
               return (
                 <li key={s.id} className="flex items-center gap-1.5">
-                  {i > 0 && <span aria-hidden className={cn("h-px w-3 sm:w-5", s.state === "done" ? "bg-emerald-400/60" : "bg-white/20")} />}
+                  {i > 0 && <span aria-hidden className={cn("h-px w-3 sm:w-5", s.state === "done" ? "bg-ok/50" : "bg-line-strong")} />}
                   <span className={cn("inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium",
-                    s.state === "done" ? "bg-emerald-400/15 text-emerald-200" : s.state === "now" ? "bg-white text-[#0a0f1e]" : "bg-white/[0.07] text-white/60")}
+                    s.state === "done" ? "bg-ok/10 text-ok" : s.state === "now" ? "bg-text text-surface" : "bg-surface-2 text-faint")}
                     title={s.line}>
                     {s.state === "done" ? <Check className="size-3.5" /> : <Icon className="size-3.5" />} {s.title}
                     <span className="sr-only">: {s.state === "done" ? "done" : s.state === "now" ? "next" : "later"}. {s.line}</span>
@@ -85,11 +83,11 @@ export function HomeHero({ first, steps, streak, recent, verified, viewers, veri
             })}
           </ol>
           {now?.cta ? (
-            <Link href={now.cta.href} className="inline-flex h-10 items-center gap-2 rounded-full bg-white px-4 text-sm font-semibold text-[#0a0f1e] shadow-[0_10px_30px_-12px_rgb(255_255_255/0.5)] transition hover:-translate-y-px hover:bg-white/90 active:scale-95">
+            <Link href={now.cta.href} className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-full bg-text px-5 text-sm font-semibold text-surface shadow-[var(--shadow)] transition hover:-translate-y-px hover:opacity-90 active:scale-[0.98] sm:h-10 sm:w-auto">
               {now.cta.label} <ArrowRight className="size-4" />
             </Link>
           ) : (
-            <span className="inline-flex items-center gap-1.5 text-sm font-medium text-emerald-300"><Check className="size-4" /> All three this week</span>
+            <span className="inline-flex items-center gap-1.5 text-sm font-medium text-ok"><Check className="size-4" /> All three this week</span>
           )}
         </div>
       </div>

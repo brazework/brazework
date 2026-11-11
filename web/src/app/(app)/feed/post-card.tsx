@@ -12,6 +12,7 @@ import { addComment, deletePost, toggleSave } from "@/lib/posts";
 import { EditPost } from "./edit-post";
 import { SendPost } from "@/components/share/send-post";
 import { MentionText } from "@/components/mentions/mention-text";
+import { hashtagParts } from "@/lib/hashtags";
 import { toggleLike } from "./actions";
 
 type Opt = { liked: boolean; count: number; saved: boolean };
@@ -28,6 +29,8 @@ export function PostCard({ post, liked, saved = false, own = false, index, proje
   const [edited, setEdited] = useState<{ body: string; tags: string[] } | null>(null);
   const body = edited?.body ?? post.body;
   const tags = edited?.tags ?? post.tags;
+  const inline = new Set(hashtagParts(body).flatMap((p) => (typeof p === "string" ? [] : [p.tag])));
+  const extraTags = tags.filter((t) => !inline.has(t));
   const [opt, setOpt] = useOptimistic<Opt, Partial<Opt>>({ liked, count: post.like_count, saved }, (cur, next) => ({ ...cur, ...next }));
   const kind = POST_KINDS.find((k) => k.id === post.kind)?.label ?? "Update";
   const question = post.kind === "question";
@@ -152,12 +155,13 @@ export function PostCard({ post, liked, saved = false, own = false, index, proje
           onSaved={(next) => { setEdited(next); setEditing(false); }}
         />
       ) : (
-        <p className={cn("mt-3 text-[15px] leading-relaxed whitespace-pre-wrap text-text-2", long && !expanded && "line-clamp-6")}><MentionText body={body} mentions={post.mentions} /></p>
+        <p className={cn("mt-3 text-[15px] leading-relaxed whitespace-pre-wrap text-text-2", long && !expanded && "line-clamp-6")}><MentionText body={body} mentions={post.mentions} tags={tags} /></p>
       )}
       {!editing && long && <button type="button" onClick={() => setExpanded((v) => !v)} className="mt-1 text-sm font-medium text-text hover:underline">{expanded ? "Show less" : "Show more"}</button>}
-      {!editing && tags.length > 0 && (
+      {/* Tags written inline are already coloured in the text; only the rest get a line of their own. */}
+      {!editing && extraTags.length > 0 && (
         <p className="mt-2 flex flex-wrap gap-x-2.5 gap-y-1 text-[13px]">
-          {tags.map((t) => <Link key={t} href={`/feed?tag=${encodeURIComponent(t)}`} className="text-muted transition hover:text-text">#{t}</Link>)}
+          {extraTags.map((t) => <Link key={t} href={`/feed?tag=${encodeURIComponent(t)}`} className="text-muted transition hover:text-text">#{t}</Link>)}
         </p>
       )}
       {post.media && post.media.length > 0 && <MediaGrid media={post.media} alt={`Shared by ${post.author_first} ${post.author_last}`} />}

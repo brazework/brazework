@@ -108,7 +108,7 @@ async function ProjectView({ params }: { params: PageProps<"/projects/[id]">["pa
     <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
       <div className="flex min-w-0 flex-col gap-6">
         <section aria-label="Project" className="glass-card overflow-hidden rounded-[28px]">
-          <div className="relative aspect-[16/8] min-h-48 overflow-hidden bg-[linear-gradient(135deg,#0b1020,#1b2440_55%,#0b1020)] sm:aspect-[16/6]">
+          <div className="relative aspect-[16/8] min-h-48 overflow-hidden bg-[linear-gradient(135deg,#09090b,#1f1f22_55%,#09090b)] sm:aspect-[16/6]">
             {cover ? (
               <Image src={mediaUrl(cover.path)} alt={cover.alt || ""} fill priority sizes="(min-width: 1280px) 900px, 100vw" className="object-cover" />
             ) : (
