@@ -38,17 +38,20 @@ async function SignedInShell() {
   if (!profile?.onboarded) redirect("/onboarding");
 
   // What's waiting for you, shown as badges across the app (supabase/activity.sql, messages.sql).
-  const groupChats = (await dbFeatures()).groupChats;
+  const { groupChats, clubProfile, media } = await dbFeatures();
   const [n, m, i, g, cl] = await Promise.all([
     supabase.rpc("unread_notifications"),
     supabase.rpc("unread_conversations"),
     supabase.from("connections").select("*", { count: "exact", head: true }).eq("to_id", user.id).eq("status", "pending"),
     groupChats ? supabase.rpc("unread_chats") : Promise.resolve({ data: 0 }),
     // Your clubs, as shortcuts in the sidebar.
-    supabase.from("community_members").select("communities(id, name)").eq("uid", user.id).order("joined_at", { ascending: false }).limit(5),
+    // With their logo (or cover) where they have one.
+    supabase.from("community_members").select(`communities(id, name${clubProfile ? ", logo_path" : ""}${media ? ", cover_path" : ""})`).eq("uid", user.id).order("joined_at", { ascending: false }).limit(5),
   ]);
-  type ClubRef = { id: string; name: string };
-  const myClubs = ((cl.data ?? []) as unknown as { communities: ClubRef | ClubRef[] | null }[]).flatMap((r) => (Array.isArray(r.communities) ? r.communities : r.communities ? [r.communities] : []));
+  type ClubRef = { id: string; name: string; logo_path?: string | null; cover_path?: string | null };
+  const myClubs = ((cl.data ?? []) as unknown as { communities: ClubRef | ClubRef[] | null }[])
+    .flatMap((r) => (Array.isArray(r.communities) ? r.communities : r.communities ? [r.communities] : []))
+    .map((c) => ({ id: c.id, name: c.name, image: c.logo_path ?? c.cover_path ?? null }));
   const badges: Badges = { notifications: Number(n.data) || 0, messages: (Number(m.data) || 0) + (Number(g.data) || 0), invites: i.count ?? 0 };
   const collapsed = (await cookies()).get(SIDEBAR_COOKIE)?.value === "collapsed";
 

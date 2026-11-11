@@ -12,6 +12,8 @@ import { CommunityBadge } from "../communities/_components/badge";
 import { UpdatesPanel } from "@/components/tour/updates-panel";
 import { newsPool, pickNews, type NewsPick } from "@/lib/news";
 import { TrendingNews } from "./trending-news";
+import { StreakCard } from "./streak";
+import { Suspense } from "react";
 
 // The feed's right rail (wide screens): Brazework updates (recent and coming next), what's trending, your clubs and what's coming up, so the rest of Brazework is one glance away.
 export async function FeedRail() {
@@ -49,16 +51,18 @@ export async function FeedRail() {
 
   const week = await loadWeek(supabase, user.id, (mine.data ?? []) as unknown as { role: string; communities: C | null }[], events, goingSet, now);
 
-  return <RailView trending={trending} news={news} hasInterests={(profile.interests ?? []).length > 0} clubs={clubs} events={events} going={goingSet} challenges={challenges} week={week} />;
+  // Your streak tops the rail (FIX-67): the weekly loop as a side card, not a banner over Home.
+  return <RailView top={<Suspense fallback={null}><StreakCard /></Suspense>} trending={trending} news={news} hasInterests={(profile.interests ?? []).length > 0} clubs={clubs} events={events} going={goingSet} challenges={challenges} week={week} />;
 }
 
 type Club = { id: string; name: string; member_count: number };
 type RailChallenge = { id: string; title: string; sponsor: string; prize: string; days: number };
 
 // The rail's markup, separate from its queries so it can be previewed with sample data.
-export function RailView({ trending, news = [], hasInterests = false, clubs, events, going: goingSet, challenges = [], week = [] }: { trending: [string, number][]; news?: NewsPick[]; hasInterests?: boolean; clubs: Club[]; events: HostedEvent[]; going: Set<string>; challenges?: RailChallenge[]; week?: WeekItem[] }) {
+export function RailView({ trending, news = [], hasInterests = false, clubs, events, going: goingSet, challenges = [], week = [], top }: { trending: [string, number][]; news?: NewsPick[]; hasInterests?: boolean; clubs: Club[]; events: HostedEvent[]; going: Set<string>; challenges?: RailChallenge[]; week?: WeekItem[]; top?: React.ReactNode }) {
   return (
     <div className="no-scrollbar sticky top-8 flex max-h-[calc(100dvh-4rem)] flex-col gap-4 [&>*]:shrink-0 overflow-y-auto overscroll-contain pb-2 min-[137.5rem]:grid min-[137.5rem]:grid-cols-2 min-[137.5rem]:items-start">
+      {top}
       {week.length > 0 && (
         <RailCard id="week" title="Your week" icon={<Sparkles className="size-3.5" />} summary={week[0].text} badge={week.filter((w) => w.tone === "todo").length || undefined}>
           <ul className="mt-3 flex flex-col gap-1">

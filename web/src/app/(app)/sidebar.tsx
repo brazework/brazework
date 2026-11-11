@@ -75,7 +75,7 @@ export function SidebarSkeleton() {
 // Remembered in a cookie (not localStorage) so the server draws it at the right width: no jump on load.
 export const SIDEBAR_COOKIE = "forge-sidebar";
 
-export function Sidebar({ first, last, userId, badges, avatar, initialCollapsed = false, clubs = [] }: { first: string; last: string; userId: string; badges: Badges; avatar?: string | null; clubs?: { id: string; name: string }[]; initialCollapsed?: boolean }) {
+export function Sidebar({ first, last, userId, badges, avatar, initialCollapsed = false, clubs = [] }: { first: string; last: string; userId: string; badges: Badges; avatar?: string | null; clubs?: { id: string; name: string; image?: string | null }[]; initialCollapsed?: boolean }) {
   const path = usePathname();
   const onProfile = path.startsWith("/profile") || path === `/u/${userId}`;
   const [collapsed, setCollapsed] = useState(initialCollapsed);
@@ -157,7 +157,7 @@ export function Sidebar({ first, last, userId, badges, avatar, initialCollapsed 
               <Link key={c.id} href={`/c/${c.id}`} title={collapsed ? c.name : undefined} aria-current={active ? "page" : undefined}
                 className={cn(ROW, collapsed ? "justify-center px-0" : "px-1.5", active ? "font-medium text-text" : "text-text-2 hover:bg-hover/70 hover:text-text")}>
                 {active && <motion.span layoutId="club-active" className="nav-pill absolute inset-0 rounded-2xl" transition={{ type: "spring", stiffness: 400, damping: 34 }} />}
-                <NavTile letter={c.name} active={active} />
+                <NavTile letter={c.name} image={c.image} active={active} />
                 {!collapsed && <span className="relative truncate">{c.name}</span>}
               </Link>
             );
