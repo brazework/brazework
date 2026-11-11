@@ -147,6 +147,8 @@ const pw = require("playwright-core");
     // The club's leaderboard: verified milestones this term, from real rows.
     await go(ben, "/c/rkt");
     await ben.getByRole("region", { name: "Builders this term" }).getByText("Ben Cho").first().waitFor({ timeout: 15000 });
+    // Who's building this week: Ben posted in the club today.
+    await ben.getByRole("region", { name: "Who's building this week" }).getByText("Ben").first().waitFor({ timeout: 15000 });
   }, ben);
   await step("composer: typing @ links another of your projects (no dropdown), and the menu draws above the feed tabs", async () => {
     await go(ben, "/feed");

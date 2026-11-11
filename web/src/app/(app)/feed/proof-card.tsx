@@ -1,4 +1,5 @@
-import { BadgeCheck, Sparkles } from "lucide-react";
+import { Sparkles } from "lucide-react";
+import { VerifiedStamp } from "@/components/app/verified-seal";
 import Link from "next/link";
 import { Avatar } from "@/components/ui";
 import { timeAgo } from "@/lib/forge";
@@ -14,11 +15,7 @@ export function ProofCard({ p, reason = "" }: { p: Proof; reason?: string }) {
   return (
     <article className="glass-card rounded-3xl p-5">
       {reason && <p className="mb-3 flex items-center gap-1.5 text-xs text-faint"><Sparkles className="size-3.5 shrink-0" /> {reason}</p>}
-      <div className="flex items-center gap-2 text-xs font-medium text-text">
-        <span className="grid size-6 place-items-center rounded-full bg-accent-grad text-on-accent"><BadgeCheck className="size-3.5" /></span>
-        Verified by <Link href={`/c/${p.community_id}`} className="hover:underline">{p.community_name}</Link>
-        <span className="font-normal text-faint">· {timeAgo(p.reviewed_at)}</span>
-      </div>
+      <VerifiedStamp club={p.community_name} clubId={p.community_id} by={p.reviewer_name} when={timeAgo(p.reviewed_at)} />
 
       <div className="mt-4 flex items-start gap-3">
         <Link href={`/u/${p.owner.id}`} tabIndex={-1} aria-hidden="true" className="shrink-0"><Avatar first={p.owner.first} last={p.owner.last} size={40} src={p.owner.avatar} /></Link>
@@ -32,7 +29,7 @@ export function ProofCard({ p, reason = "" }: { p: Proof; reason?: string }) {
         </div>
       </div>
       <div className="mt-4 flex items-center justify-between border-t border-line pt-3 text-xs text-faint">
-        <span>{p.reviewer_name ? `Checked by ${p.reviewer_name}` : "Checked by the club"}</span>
+        <span>Club-verified milestone</span>
         <Link href={`/projects/${p.project.id}`} className="font-medium text-text hover:underline">See the project →</Link>
       </div>
     </article>
