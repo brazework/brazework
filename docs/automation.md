@@ -18,6 +18,7 @@ What runs by itself, what still needs a person, and what to add next. The goal: 
 | **Member feedback → Linear:** themes, grades, a weekly review issue | As feedback arrives | In the database (pg_cron), `supabase/feedback*.sql` |
 | **The app adapts to the database:** features whose step hasn't run stay hidden instead of breaking | Every request | `web/src/lib/db-features.ts` |
 | **Weekly digest email** ("Your week") to every member who hasn't turned it off; never twice in a week (`digest_sends`). Check a run: Vercel → forge-app → Cron Jobs → logs, and Resend → Emails | Mondays 14:00 UTC | `web/vercel.json` → `/api/cron/digest` (needs `CRON_SECRET`, Linear FIX-86) |
+| **Email alerts** for new messages, connection requests and comments on your posts, batched: at most one email a run per member, only for what's still unread 10 minutes after it arrived; a switch per kind in Settings → Email. Check a run: Vercel → forge-app → Cron Jobs → logs, and Resend → Emails | Every hour at :07 | `web/vercel.json` → `/api/cron/alerts` (needs `CRON_SECRET`, Linear FIX-18) |
 | **Database backups**, kept 7 days (Storage files aren't included). How to restore: [accounts.md](accounts.md#restoring-the-database-from-a-backup-supabase-pro) | Daily | Supabase Pro → Database → Backups |
 
 ## Runs by itself once a key or setting is in ⏳

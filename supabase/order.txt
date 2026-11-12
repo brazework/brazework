@@ -56,3 +56,4 @@ pro-storage
 feed-pages
 mcp-writes
 mcp-milestones
+email-alerts
