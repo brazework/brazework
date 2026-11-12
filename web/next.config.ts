@@ -1,4 +1,5 @@
 import type { NextConfig } from "next";
+import { withSentryConfig } from "@sentry/nextjs/config";
 
 // Photos are served from this project's public Storage bucket only (supabase/media.sql).
 const supabase = process.env.NEXT_PUBLIC_SUPABASE_URL ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL) : null;
@@ -12,6 +13,8 @@ const isLocal = !!supabase && ["localhost", "127.0.0.1"].includes(supabase.hostn
 // Big uploads go to the project's direct storage host (resumable, lib/storage-upload.ts, FIX-10).
 const storageHost = supabase?.hostname.endsWith(".supabase.co") ? `${supabase.protocol}//${supabase.hostname.split(".")[0]}.storage.supabase.co` : null;
 const supabaseOrigins = supabase ? [supabase.origin, supabase.origin.replace(/^http/, "ws"), ...(storageHost ? [storageHost] : [])] : [];
+// Error reports go straight to Sentry's ingest host, named by the DSN (lib/sentry.ts, FIX-55); none without one.
+const sentryOrigin = process.env.NEXT_PUBLIC_SENTRY_DSN ? new URL(process.env.NEXT_PUBLIC_SENTRY_DSN).origin : null;
 const csp = [
   "default-src 'self'",
   `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""}`,
@@ -19,7 +22,7 @@ const csp = [
   `img-src 'self' blob: data: ${supabase?.origin ?? ""}`,
   `media-src 'self' blob: data: ${supabase?.origin ?? ""}`,
   "font-src 'self' data:",
-  `connect-src 'self' ${supabaseOrigins.join(" ")}`,
+  `connect-src 'self' ${[...supabaseOrigins, ...(sentryOrigin ? [sentryOrigin] : [])].join(" ")}`,
   // The event page embeds a Google map.
   "frame-src https://maps.google.com https://www.google.com",
   "object-src 'none'",
@@ -75,4 +78,17 @@ const nextConfig: NextConfig = {
   },
 };
 
-export default nextConfig;
+// Readable stack traces (FIX-55): with a Sentry auth token, the build uploads its source maps to Sentry
+// and deletes them, so they're never served publicly. Without one (local, CI, previews) the build is
+// unchanged.
+export default process.env.SENTRY_AUTH_TOKEN
+  ? withSentryConfig(nextConfig, {
+      org: process.env.SENTRY_ORG,
+      project: process.env.SENTRY_PROJECT,
+      authToken: process.env.SENTRY_AUTH_TOKEN,
+      silent: true,
+      telemetry: false,
+      widenClientFileUpload: true,
+      sourcemaps: { deleteSourcemapsAfterUpload: true },
+    })
+  : nextConfig;

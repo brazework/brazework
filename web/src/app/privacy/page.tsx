@@ -32,7 +32,7 @@ const SECTIONS: { h: string; items: string[] }[] = [
     items: [
       "Ember drafts; you approve. It never posts, sends, verifies or saves anything without your tap.",
       "When you ask Ember something, your request and the Brazework data it needs to answer are sent to Anthropic's API to generate the reply.",
-      "If you connect an AI tool to your Brazework (Settings), its access is read-only and you can revoke it at any time.",
+      "If you connect an AI tool to your Brazework (Settings → Your tools), it can read but not change anything, unless you turn on \"Can post\" for it. Then it can post build updates and send milestones to your club to verify, and each one shows which tool sent it. It never edits or deletes anything, and you can revoke it at any time.",
     ],
   },
   {
@@ -47,6 +47,16 @@ const SECTIONS: { h: string; items: string[] }[] = [
     h: "Payments",
     items: ["Members and student clubs never pay. When companies pay for sponsorships, payment is handled by Stripe; Brazework doesn't store card details."],
   },
+  // Only while error monitoring is switched on (lib/sentry.ts, FIX-55): the page stays true to the code.
+  ...(process.env.NEXT_PUBLIC_SENTRY_DSN
+    ? [{
+        h: "When something breaks",
+        items: [
+          "If a page fails, Brazework sends an error report to Sentry so we can fix it: what failed and where in our code, the page's address without anything after the ?, your browser, and your member ID.",
+          "Never your email, your messages, what you typed, or your cookies.",
+        ],
+      }]
+    : []),
 ];
 
 export default function PrivacyPage() {
