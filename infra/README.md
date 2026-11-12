@@ -45,3 +45,15 @@ On 2026-11-12 we changed production by hand: the site URL, the redirect list, SM
 
 1. **Nightly in CI:** a read-only drift check using scoped tokens stored as GitHub secrets, which opens a Linear issue on drift.
 2. **Apply from the repo:** a reviewed change to `desired.json` is applied after merge, as `db-migrate.yml` does for SQL. Each apply changes only the keys the repo owns.
+
+## The GitHub App (FIX-92)
+
+`github-app.json` is Brazework's GitHub App, as code: it brings a member's repo activity (merged pull requests, releases, CI results, deploys) into their project's build log. Every permission is read-only, and installing asks the member to sign in with GitHub, which is how Brazework knows they really have access to the repo. `web/tests/github-app-manifest.test.ts` holds it to that.
+
+| Step | Command | What happens |
+|---|---|---|
+| Create it (once, an owner of the brazework GitHub org) | `node infra/github-app.mjs create` | Opens GitHub's Create page pre-filled from the manifest. After you click Create, GitHub sends a one-time code back to the script on `localhost`; it swaps it for the App's keys and saves them to your macOS Keychain ("Brazework GitHub App"). No key is printed or stored in the repo. |
+| Check | `node infra/github-app.mjs status` | The App's id and name, and which keys are saved (never their values) |
+| Put the keys in Vercel | `node infra/github-app.mjs push-to-vercel --dir <a folder linked to forge-app>` | Adds `GITHUB_APP_ID`, `_SLUG`, `_CLIENT_ID`, `_CLIENT_SECRET`, `_WEBHOOK_SECRET` and `_PRIVATE_KEY` (base64) to Production, values on stdin. Existing ones are left alone unless you pass `--replace`. Then redeploy. |
+
+**How it breaks:** the App's name is taken on GitHub (edit the name on GitHub's page before creating); the code expires after an hour (run `create` again); a key leaks (regenerate it in the App's settings on GitHub, save it to the Keychain, `push-to-vercel --replace`).
