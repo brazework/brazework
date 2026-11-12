@@ -20,9 +20,6 @@ echo "   org Owners: ${owners:-unknown}"
 # Only admins can read secret names; for anyone else the list just comes back empty.
 if [ "$admin" = "true" ]; then
   secrets=$(gh secret list -R "$REPO" --json name -q '.[].name' 2>/dev/null)
-  for s in VERCEL_TOKEN VERCEL_ORG_ID VERCEL_PROJECT_ID; do
-    echo "$secrets" | grep -qx "$s" && ok "secret $s" || bad "secret $s is missing: the preview deploy skips without it (the Secrets step in docs/github-org-move.md)"
-  done
   echo "$secrets" | grep -qx LINEAR_API_KEY && ok "secret LINEAR_API_KEY" || wait_ "LINEAR_API_KEY isn't set yet (FIX-5)"
 else
   wait_ "can't read secret names without admin access"
@@ -41,12 +38,6 @@ while IFS='|' read -r name status concl; do
   elif [ "$concl" = "success" ]; then ok "$name passed on $short"
   else bad "$name: $concl on $short"; fi
 done <<< "$runs"
-
-# The preview deploy skips itself (and passes) when its secrets are missing, so look for the notice.
-prev=$(gh run list -R "$REPO" --workflow preview-deploy.yml --branch main --limit 1 --json databaseId -q '.[0].databaseId' 2>/dev/null)
-if [ -n "$prev" ]; then
-  gh run view "$prev" -R "$REPO" --log 2>/dev/null | grep -q "Preview deploy skipped" && bad "the last preview deploy skipped itself: its Vercel secrets aren't set (the Secrets step in docs/github-org-move.md)" || ok "the last preview deploy actually deployed"
-fi
 
 vercel=$(gh api "repos/$REPO/commits/$sha/status" -q '.statuses[] | select(.context | test("Vercel")) | .state' 2>/dev/null | head -1)
 case "$vercel" in

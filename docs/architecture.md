@@ -135,7 +135,7 @@ Home scrolls without end, shows posts at once, and costs one small database call
 | | Web | Database | Who it's for |
 |---|---|---|---|
 | **Production** | Vercel project `forge-app` (Ian's team), from `main` | Supabase project **FORGE** | Members |
-| **Preview** | `forge-preview-eight.vercel.app`, deployed from `main` by `.github/workflows/preview-deploy.yml` | Production today; moving to **forge-staging** (Linear FIX-2) | Testing a build before production picks it up |
+| **Preview** | A Vercel preview of each pull request (project `forge-app`), linked on the PR | Production today; moving to **forge-staging** (Linear FIX-2) | Checking a change before it merges |
 | **Local** | `npm run dev`, or the production build on `:3200` in tests | `web/e2e/local-supabase.sh`: a private Supabase in Docker, with seed data | Development and every automated test |
 
 `web/.env.local` points at **production**: never run tests or scripts that write against it.
@@ -144,7 +144,7 @@ Home scrolls without end, shows posts at once, and costs one small database call
 
 1. Push to `main` (two founders; see [CONTRIBUTING.md](../CONTRIBUTING.md)).
 2. GitHub Actions runs the quality gates below. A red run stops everything until it's fixed.
-3. Vercel builds and deploys `main` to production. The preview workflow deploys the same commit to the preview URL.
+3. Vercel builds and deploys `main` to production. (Each pull request already had its own Vercel preview before it merged.)
 4. Database changes ship separately: a new step file in `supabase/` runs in the Supabase SQL Editor after it lands, in `order.txt` order; the health check confirms it.
 5. The Linear sync links, closes or logs the commit on the board.
 

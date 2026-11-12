@@ -116,6 +116,6 @@ The Vercel project lives in Ian's account, so these are his steps. It's already 
 
 **The app adapts to the database.** Until each SQL file has run, the new app hides that feature (club events, photos and video, invite links, Copilot, verified milestones) instead of failing (`web/src/lib/db-features.ts`). They switch on by themselves once the SQL runs; no redeploy needed. Copilot also needs `ANTHROPIC_API_KEY`, which does need a redeploy.
 
-## Preview link (until production runs web/)
+## Preview link (retired 2026-11-12)
 
-`.github/workflows/preview-deploy.yml` redeploys https://forge-preview-eight.vercel.app on every push to `main` that touches `web/`. It needs three repo secrets (a repo admin adds them under Settings → Secrets and variables → Actions): `VERCEL_TOKEN` (from the preview project owner's Vercel account), `VERCEL_ORG_ID` and `VERCEL_PROJECT_ID` (both in `web/.vercel/project.json` on the owner's machine). Without them the workflow skips.
+Until the switch-over, `.github/workflows/preview-deploy.yml` redeployed https://forge-preview-eight.vercel.app from `main`, so there was somewhere to see `web/` running. Production runs `web/` now, so the workflow is gone. Its repo secrets were never set, and it had skipped itself since at least Nov 9. Each pull request still gets its own Vercel preview link.
