@@ -1,0 +1,18 @@
+{
+  "name": "Brazework",
+  "description": "Brings a member's repo activity into their project's build log on Brazework: merged pull requests, releases, CI results and deploys. Read-only.",
+  "url": "https://brazework.com",
+  "hook_attributes": { "url": "https://brazework.com/api/github/webhook", "active": true },
+  "callback_urls": ["https://brazework.com/api/github/callback"],
+  "request_oauth_on_install": true,
+  "setup_on_update": true,
+  "public": true,
+  "default_permissions": {
+    "metadata": "read",
+    "contents": "read",
+    "pull_requests": "read",
+    "checks": "read",
+    "deployments": "read"
+  },
+  "default_events": ["pull_request", "release", "check_suite", "deployment_status", "push"]
+}
