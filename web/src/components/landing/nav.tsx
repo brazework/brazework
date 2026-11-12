@@ -43,7 +43,7 @@ export function Nav() {
       <nav
         aria-label="Main"
         className={cn(
-          "relative flex w-full max-w-6xl flex-wrap items-center gap-6 rounded-2xl px-4 py-2.5 transition-all duration-500",
+          "relative flex w-full max-w-6xl flex-wrap items-center gap-x-3 gap-y-0 rounded-2xl sm:gap-x-6 px-4 py-2.5 transition-all duration-500",
           scrolled || open ? "glass shadow-[var(--shadow-float)]" : "border border-transparent",
         )}
       >
@@ -51,12 +51,12 @@ export function Nav() {
         <ul className="ml-4 hidden items-center gap-1 md:flex">
           {LINKS.map((l) => (
             <li key={l.href}>
-              <a href={l.href} className="rounded-full px-3 py-1.5 text-sm text-muted transition hover:bg-hover hover:text-text">{l.label}</a>
+              <a href={l.href} className="rounded-md px-3 py-1.5 text-sm text-muted transition hover:bg-hover hover:text-text">{l.label}</a>
             </li>
           ))}
         </ul>
         <div className="ml-auto flex items-center gap-1">
-          <ThemeToggle />
+          <span className="hidden sm:contents"><ThemeToggle /></span>
           <Button href="/login" variant="ghost" className="hidden sm:inline-flex">Log in</Button>
           <Button href="/signup">Get started</Button>
           <button
@@ -65,7 +65,7 @@ export function Nav() {
             aria-expanded={open}
             aria-controls="mobile-menu"
             aria-label={open ? "Close menu" : "Open menu"}
-            className="ml-1 grid size-10 place-items-center rounded-full text-muted transition hover:bg-hover hover:text-text md:hidden"
+            className="grid size-10 place-items-center rounded-lg text-muted transition hover:bg-hover hover:text-text md:hidden"
           >
             {open ? <X className="size-5" /> : <Menu className="size-5" />}
           </button>
@@ -87,6 +87,8 @@ export function Nav() {
                   </a>
                 </li>
               ))}
+
+              <li className="flex items-center justify-between px-2 py-2 text-[15px] text-text-2">Theme <ThemeToggle /></li>
             </motion.ul>
           )}
         </AnimatePresence>

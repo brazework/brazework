@@ -70,7 +70,7 @@ export function Organizations() {
                   <input type="hidden" name="type" value={type} />
                   <div role="group" aria-label="Organization type" className="flex flex-wrap gap-2">
                     {TYPES.map((t) => (
-                      <button key={t.id} type="button" aria-pressed={type === t.id} onClick={() => setType(t.id)} className="rounded-full border border-line px-4 py-1.5 text-sm text-muted transition aria-pressed:border-transparent aria-pressed:bg-accent-grad aria-pressed:text-on-accent">
+                      <button key={t.id} type="button" aria-pressed={type === t.id} onClick={() => setType(t.id)} className="rounded-lg border border-line px-4 py-1.5 text-sm text-muted transition aria-pressed:border-transparent aria-pressed:bg-accent-grad aria-pressed:text-on-accent">
                         {t.label}
                       </button>
                     ))}

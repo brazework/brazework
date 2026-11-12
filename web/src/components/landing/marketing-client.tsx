@@ -40,7 +40,7 @@ export function AudienceTabs() {
       <div role="tablist" aria-label="Who it's for" className="no-scrollbar -mx-6 flex gap-2 overflow-x-auto px-6 sm:mx-0 sm:px-0">
         {AUDIENCES.map((x) => (
           <button key={x.id} role="tab" aria-selected={active === x.id} aria-controls="audience-panel" onClick={() => setActive(x.id)} className="relative inline-flex shrink-0 items-center gap-2 rounded-lg border border-line bg-surface px-4 py-2 text-sm whitespace-nowrap text-muted transition hover:text-text aria-selected:border-transparent aria-selected:text-on-accent">
-            {active === x.id && <motion.span layoutId="aud-pill" className="bg-accent-grad absolute inset-0 rounded-full" transition={{ type: "spring", stiffness: 380, damping: 32 }} />}
+            {active === x.id && <motion.span layoutId="aud-pill" className="bg-accent-grad absolute inset-0 rounded-lg" transition={{ type: "spring", stiffness: 380, damping: 32 }} />}
             <x.icon className="relative size-4" /> <span className="relative">{x.label}</span>
           </button>
         ))}
