@@ -1,0 +1,142 @@
+{
+  "supabase": {
+    "auth": {
+      "site_url": "https://brazework.com",
+      "uri_allow_list": [
+        "https://brazework.com/**",
+        "https://www.brazework.com/**",
+        "https://forge-app-eight-alpha.vercel.app/**",
+        "https://forge-app-ixcoleman123.vercel.app/**",
+        "https://forge-preview-eight.vercel.app/**",
+        "http://localhost:3000/**"
+      ],
+      "disable_signup": false,
+      "external_email_enabled": true,
+      "mailer_autoconfirm": false,
+      "mailer_secure_email_change_enabled": true,
+      "password_min_length": 8,
+      "rate_limit_email_sent": 100,
+      "smtp_host": "smtp.resend.com",
+      "smtp_port": "465",
+      "smtp_user": "resend",
+      "smtp_admin_email": "hello@brazework.com",
+      "smtp_sender_name": "Brazework",
+      "smtp_max_frequency": 60
+    },
+    "storage": {
+      "fileSizeLimit": 262144000
+    }
+  },
+  "vercel": {
+    "rootDirectory": "web",
+    "crons": [
+      {
+        "path": "/api/cron/digest",
+        "schedule": "0 14 * * 1"
+      }
+    ],
+    "domains": [
+      {
+        "name": "www.brazework.com",
+        "redirect": "brazework.com",
+        "redirectStatusCode": 308
+      },
+      {
+        "name": "brazework.com",
+        "redirect": null,
+        "redirectStatusCode": null
+      },
+      {
+        "name": "forge-app-eight-alpha.vercel.app",
+        "redirect": null,
+        "redirectStatusCode": null
+      }
+    ],
+    "env": [
+      {
+        "key": "CRON_SECRET",
+        "target": [
+          "production"
+        ]
+      },
+      {
+        "key": "RESEND_API_KEY",
+        "target": [
+          "production"
+        ]
+      },
+      {
+        "key": "FORGE_EMAIL_FROM",
+        "target": [
+          "production"
+        ]
+      },
+      {
+        "key": "NEXT_PUBLIC_SITE_URL",
+        "target": [
+          "production"
+        ]
+      },
+      {
+        "key": "SUPABASE_SERVICE_ROLE_KEY",
+        "target": [
+          "production"
+        ]
+      },
+      {
+        "key": "NEXT_PUBLIC_SUPABASE_URL",
+        "target": [
+          "development",
+          "preview",
+          "production"
+        ]
+      },
+      {
+        "key": "NEXT_PUBLIC_SUPABASE_ANON_KEY",
+        "target": [
+          "development",
+          "preview",
+          "production"
+        ]
+      },
+      {
+        "key": "SUPABASE_URL",
+        "target": [
+          "development",
+          "preview",
+          "production"
+        ]
+      },
+      {
+        "key": "SUPABASE_ANON_KEY",
+        "target": [
+          "development",
+          "preview",
+          "production"
+        ]
+      }
+    ]
+  },
+  "dns": [
+    {
+      "type": "TXT",
+      "name": "_dmarc",
+      "value": "v=DMARC1; p=none;"
+    },
+    {
+      "type": "TXT",
+      "name": "resend._domainkey",
+      "value": "p=MIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCvkRmOH7L+tMCG8lFHnIgsc3uC558h/LYmuog1gqy/SbEHxazQe1riJrOkz1C6QfSYrBIwJzBAbjHpI+YtVZM1ysUTjKe0az9C7vFB6Sn+ZPUbOH2gATZ0wIhr8uUsCeTc4gs7ffbVhR6wZr1BTT2AXxXF3bOYLrIc8us2sNOODQIDAQAB"
+    },
+    {
+      "type": "CNAME",
+      "name": "rsend",
+      "value": "rsend.forge.rmta.net."
+    },
+    {
+      "type": "CNAME",
+      "name": "send",
+      "value": "send.forge.rmta.net."
+    }
+  ]
+}
