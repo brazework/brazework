@@ -56,7 +56,7 @@ export async function POST(req: Request) {
       if (tool.name === "search" && String(input.query ?? "").trim().length < 2) return rpc(msg.id, { result: { content: [{ type: "text", text: "Give at least 2 characters to search for." }], isError: true } });
       const { data, error } = await db.rpc(tool.rpc, { p_hash: hash, ...tool.args(input) });
       // A rule the member's post broke (P0001: not your project, too fast, …) is said as it is.
-      if (error) return rpc(msg.id, { result: { content: [{ type: "text", text: error.code === "P0001" ? error.message : "Brazework couldn't answer that right now. Try again." }], isError: true } });
+      if (error) return rpc(msg.id, { result: { content: [{ type: "text", text: error.code === "P0001" ? error.message : error.code === "PGRST202" ? "That isn't switched on on Brazework yet. Try again in a few minutes." : "Brazework couldn't answer that right now. Try again." }], isError: true } });
       const out = absolutize(data, env.siteUrl);
       const structured = Array.isArray(out) ? { items: out } : out;
       return rpc(msg.id, { result: { content: [{ type: "text", text: JSON.stringify(out, null, 2) }], structuredContent: structured } });

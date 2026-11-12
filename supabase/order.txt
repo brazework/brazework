@@ -55,3 +55,4 @@ media-keys
 pro-storage
 feed-pages
 mcp-writes
+mcp-milestones

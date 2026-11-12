@@ -40,6 +40,30 @@ export const MCP_TOOLS: Tool[] = [
   },
 ];
 
+// Step 47 (supabase/mcp-milestones.sql): log a milestone for the club to verify, and the officer's list.
+MCP_TOOLS.push(
+  {
+    name: "log_milestone", writes: true, title: "Log a milestone for your club to verify",
+    description: "Record a milestone on one of the member's projects (ids from my_projects) and ask one of their clubs (ids from my_clubs) to verify it. It needs evidence: 1 to 8 https links such as the commit, the pull request, a test run, a video or a doc. The club's officers verify or decline it; it shows on the member's profile only once verified. Write the title as what was achieved, with numbers where possible; ask the member before submitting.",
+    inputSchema: {
+      type: "object",
+      properties: {
+        project_id: { type: "string", description: "One of the member's projects, from my_projects." },
+        club_id: { type: "string", description: "The club to verify it, one the member is in, from my_clubs." },
+        title: { type: "string", minLength: 1, maxLength: 120, description: "What was achieved, e.g. \"Static fire at 1.2 kN, clean shutdown\"." },
+        detail: { type: "string", maxLength: 600, description: "How it was done and measured, briefly." },
+        evidence: { type: "array", items: { type: "string", format: "uri", pattern: "^https://" }, minItems: 1, maxItems: 8, description: "https links: commit, pull request, test output, video, doc." },
+        achieved_on: { type: "string", format: "date", description: "When (YYYY-MM-DD); today if left out." },
+      },
+      required: ["project_id", "club_id", "title", "evidence"],
+      additionalProperties: false,
+    },
+    rpc: "mcp_log_milestone",
+    args: (i) => ({ p_project: String(i.project_id ?? ""), p_club: String(i.club_id ?? ""), p_title: String(i.title ?? ""), p_detail: typeof i.detail === "string" ? i.detail : "", p_evidence: Array.isArray(i.evidence) ? i.evidence.filter((u) => typeof u === "string").slice(0, 8) : [], p_achieved_on: typeof i.achieved_on === "string" && /^\d{4}-\d{2}-\d{2}$/.test(i.achieved_on) ? i.achieved_on : null }),
+  },
+  { name: "my_review_requests", title: "Milestones waiting for my review", description: "As a club officer (moderator or above): the milestones members have asked the member's clubs to verify, oldest first, with their evidence and where to review them in Brazework.", inputSchema: none, rpc: "mcp_review_requests", args: () => ({}) },
+);
+
 // What each tool may do, for the client's approval prompts: reads change nothing; post_update adds a
 // post (it doesn't change or remove anything), so it isn't destructive, but it isn't read-only either.
 export const annotationsFor = (t: Tool) => (t.writes ? { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false } : { readOnlyHint: true, openWorldHint: false });

@@ -12,6 +12,8 @@ export type QueueItem = {
   id: string; owner_id: string; title: string; detail: string; evidence: string; achieved_on: string; created_at: string;
   status: "pending" | "verified" | "declined" | "refused" | "revoked" | "disputed" | "draft"; reviewer_name: string; review_note: string;
   dispute_note?: string; escalated?: boolean; revoked_reason?: string;
+  // More evidence (verification.sql), and the AI tool that logged it (mcp-milestones.sql), if any.
+  evidence_items?: { type: string; url?: string; path?: string; event_id?: string }[]; via?: string | null;
   project: { title: string; summary: string } | null;
   owner: { first_name: string; last_name: string; headline: string } | null;
 };
@@ -50,7 +52,7 @@ function QueueCard({ m, result, onDone }: { m: QueueItem; result?: "verified" | 
         <Avatar first={m.owner?.first_name ?? "?"} last={m.owner?.last_name ?? ""} size={40} />
         <div className="min-w-0 flex-1">
           <div className="text-sm"><Link href={`/u/${m.owner_id}`} className="font-medium hover:underline">{name}</Link> <span className="text-muted">asks the club to verify</span></div>
-          <div className="text-xs text-faint">{m.owner?.headline}</div>
+          <div className="text-xs text-faint">{m.owner?.headline}{m.via && <span title={`${m.owner?.first_name ?? "They"} logged this from ${m.via}, connected in Settings → Your tools`}> · via {m.via}</span>}</div>
         </div>
         <span className="shrink-0 text-xs text-faint">{day(m.achieved_on)}</span>
       </div>
@@ -58,7 +60,17 @@ function QueueCard({ m, result, onDone }: { m: QueueItem; result?: "verified" | 
         <div className="text-[11px] font-medium tracking-wide text-faint uppercase">{m.project?.title ?? "Project"}</div>
         <div className="mt-1 font-semibold">{m.title}</div>
         {m.detail && <p className="mt-1 text-sm leading-relaxed text-text-2">{m.detail}</p>}
-        {m.evidence && <a href={m.evidence} target="_blank" rel="noopener noreferrer nofollow" className="mt-2 inline-flex items-center gap-1 text-xs font-medium text-text underline underline-offset-4"><ExternalLink className="size-3.5" /> Open the evidence</a>}
+        {/* Every link: the main one, then the rest (commits, pull requests, videos, docs). */}
+        {(() => {
+          const links = [...new Set([m.evidence, ...(m.evidence_items ?? []).map((e) => e.url ?? "")].filter((u) => /^https?:\/\//.test(u)))];
+          return links.length > 0 && (
+            <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
+              {links.map((u, i) => (
+                <li key={u}><a href={u} target="_blank" rel="noopener noreferrer nofollow" className="inline-flex items-center gap-1 text-xs font-medium text-text underline underline-offset-4"><ExternalLink className="size-3.5" /> {links.length === 1 ? "Open the evidence" : evidenceLabel(u, i)}</a></li>
+              ))}
+            </ul>
+          );
+        })()}
       </div>
       {result ? (
         <p className={cn("mt-4 inline-flex items-center gap-1.5 text-sm font-medium", result === "verified" ? "text-ok" : "text-muted")}>
@@ -154,4 +166,13 @@ export function RecentReviews({ items, isOwner = false }: { items: QueueItem[]; 
       </section>
     </>
   );
+}
+
+// A short name for an evidence link: "Commit abc1234", "Pull request #7", or the site.
+function evidenceLabel(u: string, i: number): string {
+  const c = /\/commits?\/([0-9a-f]{7})/i.exec(u);
+  if (c) return `Commit ${c[1]}`;
+  const pr = /\/(pull|merge_requests)\/(\d+)/.exec(u);
+  if (pr) return `Pull request #${pr[2]}`;
+  try { return new URL(u).hostname.replace(/^www\./, ""); } catch { return `Evidence ${i + 1}`; }
 }

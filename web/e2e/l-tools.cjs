@@ -100,6 +100,35 @@ const { step, browser, as, go, summary, BASE } = require("./lib.cjs");
     await ben.waitForFunction(() => [...document.querySelectorAll('[role="switch"]')].some((x) => x.getAttribute("aria-label")?.startsWith("Codex") && x.getAttribute("aria-checked") === "false"), null, { timeout: 10000 });
   }, ben);
 
+  await step("FIX-80: Claude Code logs a milestone with a commit for Rocketry Club; Maya (an officer) sees it 'via Claude Code' with the commit, and verifies it", async () => {
+    await go(ben, "/settings/tools");
+    await ben.getByRole("button", { name: "Connect Claude Code" }).click();
+    const sheet = ben.getByRole("dialog", { name: "Connect Claude Code" });
+    await sheet.getByRole("switch", { name: "Claude Code can post updates for me" }).click();
+    await sheet.getByRole("button", { name: "Make token" }).click();
+    const cc = /Bearer (forge_[A-Za-z0-9_-]+)/.exec((await sheet.locator("pre").first().textContent({ timeout: 15000 })) ?? "")?.[1];
+    if (!cc) throw new Error("no token");
+    await ben.keyboard.press("Escape");
+    const title = `Gimbal mount held 1.4 kN ${Date.now() % 100000}`;
+    const r = await (await mcp("tools/call", { name: "log_milestone", arguments: { project_id: "p1", club_id: "rkt", title, detail: "Static load test, three runs, no yield.", evidence: ["https://github.com/acme/rig/commit/abc1234def", "https://youtu.be/loadtest"] } }, cc)).json();
+    if (r.result?.isError || r.result?.structuredContent?.status !== "pending") throw new Error(`log_milestone: ${JSON.stringify(r).slice(0, 200)}`);
+    const noEvidence = await (await mcp("tools/call", { name: "log_milestone", arguments: { project_id: "p1", club_id: "rkt", title: "No proof", evidence: ["http://insecure.example"] } }, cc)).json();
+    if (!noEvidence.result?.isError || !/evidence/.test(noEvidence.result.content[0].text)) throw new Error("a milestone without https evidence wasn't refused clearly");
+    const maya = await as(b, "maya@forge.test");
+    await go(maya, "/c/rkt/manage?tab=verify");
+    const card = maya.locator("article").filter({ hasText: title }).first();
+    await card.waitFor({ timeout: 15000 });
+    await card.getByText("via Claude Code").waitFor();
+    await card.getByRole("link", { name: /Commit abc1234/ }).waitFor();
+    await card.getByRole("link", { name: /youtu\.be/ }).waitFor();
+    await card.getByRole("button", { name: /^Verify/ }).first().click();
+    // The card leaves the queue for "Recently reviewed" once the page refreshes; the database says what happened.
+    const status = () => require("child_process").execSync("docker exec -i forge-e2e-db psql -U postgres -h localhost -d postgres -tA", { input: `select status || '|' || coalesce(via, '') from public.milestones where title = '${title}'` }).toString().trim();
+    for (let i = 0; i < 30 && !status().startsWith("verified"); i++) await maya.waitForTimeout(500);
+    if (status() !== "verified|Claude Code") throw new Error(`after Verify the milestone is ${status()}`);
+    await maya.context().close();
+  }, ben);
+
   summary();
   await b.close();
 })();

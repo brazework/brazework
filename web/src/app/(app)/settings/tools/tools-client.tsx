@@ -52,7 +52,7 @@ export function ToolsHub({ tokens, endpoint, writes = false }: { tokens: ApiToke
           </div>
         </div>
         {writes && (
-          <p className="relative mt-4 flex items-start gap-2 rounded-2xl bg-surface-2 px-3.5 py-3 text-sm text-text-2"><PenLine className="mt-0.5 size-4 shrink-0 text-muted" /><span><strong className="font-medium text-text">If you let it,</strong> it can also post a build update for you from what you just shipped. It asks you first, and the post says which tool made it.</span></p>
+          <p className="relative mt-4 flex items-start gap-2 rounded-2xl bg-surface-2 px-3.5 py-3 text-sm text-text-2"><PenLine className="mt-0.5 size-4 shrink-0 text-muted" /><span><strong className="font-medium text-text">If you let it,</strong> it can also post a build update for you, or log a milestone with its evidence for your club to verify. It asks you first, and the post or milestone says which tool made it.</span></p>
         )}
         <p className="relative mt-5 flex items-center gap-2 border-t border-line pt-4 text-xs text-muted"><ShieldCheck className="size-3.5 shrink-0" /> {writes ? "Read-only unless you turn on posting for a tool. Nothing is ever changed or deleted." : "Read-only: it can't post or change anything."} Each tool gets its own token you can revoke here.</p>
       </section>
@@ -269,7 +269,7 @@ function PostSwitch({ on, onChange, tool, compact, disabled, className }: { on: 
         <span className={cn("absolute top-0.5 left-0.5 size-5 rounded-full bg-surface shadow transition", on && "translate-x-4")} />
       </button>
       {compact ? <span className="hidden text-xs text-muted sm:inline">Can post</span> : (
-        <span className="text-sm"><span className="font-medium">Let it post updates for me</span><span className="block text-xs text-muted">It asks before posting, and the post says &ldquo;via {tool}&rdquo;.</span></span>
+        <span className="text-sm"><span className="font-medium">Let it post updates for me</span><span className="block text-xs text-muted">Updates and milestones for your club to verify. It asks first, and they say &ldquo;via {tool}&rdquo;.</span></span>
       )}
     </label>
   );
