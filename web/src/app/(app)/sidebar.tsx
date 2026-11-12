@@ -9,6 +9,7 @@ import { UpdatesButton } from "@/components/tour/tour-mount";
 import { Avatar, Logo } from "@/components/ui";
 import { MyStatus, WithPresence } from "@/components/presence/presence";
 import { cn } from "@/lib/forge";
+import { onPage } from "@/lib/nav-match";
 import { NavTile, TILE } from "@/components/app/nav-tile";
 import { Ember } from "@/components/ember/ember";
 import { foldMotion, useFold } from "@/components/app/rail-card";
@@ -43,7 +44,7 @@ const MORE: { href: string; label: string; icon: typeof Home; badge?: BadgeKey }
 const isActive = (path: string, match: string[]) => match.some((m) => path.startsWith(m));
 
 // One row, one tile, one group card for every part of the sidebar, so the icons line up and match.
-const ROW = "group relative flex items-center gap-3 rounded-2xl py-1 text-sm transition";
+const ROW = "group relative flex items-center gap-2.5 rounded-md py-1 text-sm transition";
 // Sections are separated by a hairline and a small label, not boxed in cards.
 const GROUP = "border-t border-line/70 pt-3";
 const GROUP_LABEL = "px-2 py-1.5 text-[11px] font-medium tracking-[0.12em] text-faint uppercase";
@@ -60,8 +61,8 @@ function Count({ n, className }: { n: number; className?: string }) {
 
 export function SidebarSkeleton() {
   return (
-    <aside className="sticky top-0 hidden h-dvh w-[264px] shrink-0 p-3 md:block" aria-busy="true">
-      <div className="glass-panel flex h-full flex-col rounded-3xl p-3">
+    <aside className="sticky top-0 hidden h-dvh w-[248px] shrink-0 md:block" aria-busy="true">
+      <div className="flex h-full flex-col border-r border-line bg-surface-2/70 p-3">
       <div className="px-2 pt-2"><Logo /></div>
       <div className="mt-10 flex flex-col gap-2">
         {NAV.map((n) => <div key={n.label} className="h-10 animate-pulse rounded-xl bg-surface/60" />)}
@@ -85,14 +86,9 @@ export function Sidebar({ first, last, userId, badges, avatar, initialCollapsed 
     document.cookie = `${SIDEBAR_COOKIE}=${next ? "collapsed" : "open"}; path=/; max-age=31536000; samesite=lax`;
   };
   return (
-    <motion.aside layoutRoot aria-label="Sidebar" className={cn("sticky top-0 isolate hidden h-dvh shrink-0 p-3 transition-[width] duration-300 ease-out motion-reduce:transition-none md:block", collapsed ? "w-[88px]" : "w-[264px]")}>
-      {/* Soft light behind the glass, in Ember's colours, so the frosting has something to catch. */}
-      <div aria-hidden="true" className="pointer-events-none absolute inset-3 -z-10 overflow-hidden rounded-3xl">
-        <div className="absolute -top-16 -left-20 size-56 rounded-full bg-[var(--ember-a)] opacity-30 blur-3xl" />
-        <div className="absolute top-1/2 -right-28 size-48 rounded-full bg-[var(--ember-c)] opacity-20 blur-3xl" />
-        <div className="absolute -bottom-16 -left-16 size-52 rounded-full bg-[var(--ember-b)] opacity-20 blur-3xl" />
-      </div>
-      <div className="glass-panel flex h-full flex-col rounded-3xl px-2 py-4">
+    <motion.aside layoutRoot aria-label="Sidebar" className={cn("sticky top-0 isolate hidden h-dvh shrink-0 transition-[width] duration-300 ease-out motion-reduce:transition-none md:block", collapsed ? "w-16" : "w-[248px]")}>
+      {/* A flush, calm column (redesign 2026-11): a hairline edge on a soft tint, no floating glass. */}
+      <div className="flex h-full flex-col border-r border-line bg-surface-2/70 px-2 py-3">
       <div className={cn("flex items-center gap-1", collapsed ? "flex-col" : "justify-between pr-1 pl-2")}>
         <Link href="/feed" aria-label="Brazework feed" className={cn(collapsed && "mb-2")}><Logo withWord={!collapsed} /></Link>
         <div className={cn("flex items-center gap-1", collapsed && "flex-col")}>
@@ -113,12 +109,12 @@ export function Sidebar({ first, last, userId, badges, avatar, initialCollapsed 
       {/* The two things you do most: post what you're building, and ask Ember (⌘K from anywhere). */}
       <div className={cn("mt-6 flex gap-1.5", collapsed ? "flex-col items-center" : "px-1")}>
         <Link href="/feed#composer" onClick={(e) => { if (path === "/feed") { e.preventDefault(); window.dispatchEvent(new Event("forge:compose")); } }} title={collapsed ? "New post" : undefined} aria-label="New post"
-          className={cn("bg-accent-grad inline-flex h-10 items-center justify-center gap-2 rounded-2xl text-sm font-semibold text-on-accent shadow-[0_8px_20px_-10px_rgb(0_0_0/0.5)] transition hover:opacity-90", collapsed ? "w-10" : "flex-1")}>
+          className={cn("bg-accent-grad inline-flex h-9 items-center justify-center gap-2 rounded-lg text-sm font-medium text-on-accent transition hover:opacity-90", collapsed ? "w-9" : "flex-1")}>
           <PenLine className="size-4" />{!collapsed && "New post"}
         </Link>
         {/* Ember, the orb: ask anything or jump anywhere (also ⌘K from any page). */}
         <button type="button" onClick={() => window.dispatchEvent(new Event("forge:palette"))} title="Ask Ember (⌘K)" aria-label="Ask Ember, or jump anywhere (Command K)"
-          className="nav-tile group grid size-10 shrink-0 place-items-center rounded-2xl transition hover:-translate-y-px">
+          className="nav-tile group grid size-9 shrink-0 place-items-center rounded-lg transition">
           {/* The orb takes the theme's Ember colours (globals.css --ember-*), like Ember everywhere else. */}
           <span className="transition duration-300 group-hover:scale-110"><Ember size={28} /></span>
         </button>
@@ -137,7 +133,7 @@ export function Sidebar({ first, last, userId, badges, avatar, initialCollapsed 
               title={collapsed ? n.label : undefined}
               className={cn(ROW, collapsed ? "justify-center px-0" : "px-2", active ? "font-medium text-text" : "text-text-2 hover:bg-hover/60 hover:text-text")}
             >
-              {active && <motion.span layoutId="nav-active" className="nav-pill absolute inset-0 rounded-2xl" transition={{ type: "spring", stiffness: 400, damping: 34 }} />}
+              {active && <motion.span layoutId="nav-active" className="nav-pill absolute inset-0 rounded-md" transition={{ type: "spring", stiffness: 400, damping: 34 }} />}
               <NavTile icon={n.icon} active={active} ember={n.href === "/copilot"} />
               {!collapsed && <span className="relative">{n.label}</span>}
               <Count n={count} className={collapsed ? "absolute top-0 right-2.5" : "relative ml-auto"} />
@@ -156,7 +152,7 @@ export function Sidebar({ first, last, userId, badges, avatar, initialCollapsed 
             return (
               <Link key={c.id} href={`/c/${c.id}`} title={collapsed ? c.name : undefined} aria-current={active ? "page" : undefined}
                 className={cn(ROW, collapsed ? "justify-center px-0" : "px-1.5", active ? "font-medium text-text" : "text-text-2 hover:bg-hover/70 hover:text-text")}>
-                {active && <motion.span layoutId="club-active" className="nav-pill absolute inset-0 rounded-2xl" transition={{ type: "spring", stiffness: 400, damping: 34 }} />}
+                {active && <motion.span layoutId="club-active" className="nav-pill absolute inset-0 rounded-md" transition={{ type: "spring", stiffness: 400, damping: 34 }} />}
                 <NavTile letter={c.name} image={c.image} active={active} />
                 {!collapsed && <span className="relative truncate">{c.name}</span>}
               </Link>
@@ -168,8 +164,8 @@ export function Sidebar({ first, last, userId, badges, avatar, initialCollapsed 
       <MoreGroup collapsed={collapsed} path={path} badges={badges} />
       </div>
       {/* You: your profile lives here (photo and name open it), with your online status and log out. */}
-      <div className={cn("mt-2 flex shrink-0 items-center gap-3 rounded-2xl transition", onProfile ? "nav-pill" : "hover:bg-hover/60", collapsed ? "flex-col p-1.5" : "p-2.5")}>
-        <Link href="/profile" aria-label="Your profile" aria-current={onProfile ? "page" : undefined} title={collapsed ? `${first} ${last} · Profile` : undefined}><WithPresence id={userId} dot="size-2.5"><Avatar first={first} last={last} size={collapsed ? 32 : 36} src={avatar} /></WithPresence></Link>
+      <div className={cn("mt-2 flex shrink-0 items-center gap-2.5 rounded-lg transition", onProfile ? "nav-pill" : "hover:bg-hover/60", collapsed ? "flex-col p-1.5" : "p-2")}>
+        <Link href="/profile" aria-label="Your profile" aria-current={onProfile ? "page" : undefined} title={collapsed ? `${first} ${last} · Profile` : undefined}><WithPresence id={userId} dot="size-2.5"><Avatar first={first} last={last} size={collapsed ? 28 : 32} src={avatar} /></WithPresence></Link>
         {!collapsed && (
           <div className="min-w-0 flex-1">
             <Link href="/profile" className="block truncate text-sm font-medium hover:underline">{first} {last}</Link>
@@ -211,7 +207,7 @@ export function MobileBar({ first, last, badges, avatar }: { first: string; last
     const count = t.badge ? badges[t.badge] : 0;
     return (
       <Link key={t.href} href={t.href} aria-current={active ? "page" : undefined} aria-label={count ? `${t.label}, ${count} new` : t.label} className={cn("relative flex h-14 flex-col items-center justify-center gap-0.5 rounded-[20px] text-[10px] font-medium transition active:scale-90", active ? "text-text" : "text-faint")}>
-        {active && <motion.span layoutId="tab-pill" className="absolute inset-0.5 rounded-[18px] bg-hover" transition={{ type: "spring", stiffness: 500, damping: 38 }} />}
+        {active && <motion.span layoutId="tab-pill" className="absolute inset-0.5 rounded-xl bg-hover" transition={{ type: "spring", stiffness: 500, damping: 38 }} />}
         <span className="relative">
           <t.icon className="size-[22px]" strokeWidth={active ? 2.2 : 1.8} />
           <Count n={count} className="absolute -top-1.5 -right-2.5" />
@@ -246,7 +242,7 @@ export function MobileBar({ first, last, badges, avatar }: { first: string; last
 
       {/* Floating tab bar above the home indicator: the five places. */}
       <motion.nav layoutRoot aria-label="Main" className="fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+0.5rem)] z-40 md:hidden">
-        <div className="glass grid grid-cols-5 items-center rounded-[26px] border border-line p-1 shadow-[0_18px_40px_-18px_rgb(0_0_0/0.45)]">
+        <div className="glass grid grid-cols-5 items-center rounded-2xl border border-line p-1 shadow-[var(--shadow-float)]">
           {TABS.map(tab)}
         </div>
       </motion.nav>
@@ -336,13 +332,13 @@ function MoreGroup({ collapsed, path, badges }: { collapsed: boolean; path: stri
   const [folded, setFolded] = useFold("sidebar-more");
   const waiting = MORE.reduce((n, m) => n + (m.badge ? badges[m.badge] ?? 0 : 0), 0);
   const items = MORE.map((n) => {
-    const active = path.startsWith(n.href);
+    const active = onPage(path, n.href);
     const count = n.badge ? badges[n.badge] : 0;
     return (
       <Link key={n.href} href={n.href} data-tour={n.href === "/notifications" ? "bell" : undefined} aria-current={active ? "page" : undefined}
         aria-label={count ? `${n.label}, ${count} new` : collapsed ? n.label : undefined} title={collapsed ? n.label : undefined}
         className={cn(ROW, collapsed ? "justify-center px-0" : "px-1.5", active ? "font-medium text-text" : "text-text-2 hover:bg-hover/70 hover:text-text")}>
-        {active && <motion.span layoutId="more-active" className="nav-pill absolute inset-0 rounded-2xl" transition={{ type: "spring", stiffness: 400, damping: 34 }} />}
+        {active && <motion.span layoutId="more-active" className="nav-pill absolute inset-0 rounded-md" transition={{ type: "spring", stiffness: 400, damping: 34 }} />}
         <NavTile icon={n.icon} active={active} />
         {!collapsed && <span className="relative truncate">{n.label}</span>}
         <Count n={count} className={collapsed ? "absolute -top-0.5 right-0.5" : "relative ml-auto"} />

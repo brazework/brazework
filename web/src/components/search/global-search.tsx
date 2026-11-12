@@ -76,7 +76,7 @@ export function GlobalSearch() {
   const cur = res && res.query === query ? res : null;
   const nothing = cur && !cur.people.length && !cur.communities.length && !cur.projects.length && !cur.events.length && !cur.posts.length;
   const askRow = cur && (
-    <Link data-result href={`/copilot?q=${encodeURIComponent(query)}`} className="flex items-center gap-3 rounded-2xl px-3 py-2.5 text-sm transition hover:bg-hover focus:bg-hover focus:outline-none">
+    <Link data-result href={`/copilot?q=${encodeURIComponent(query)}`} className="flex items-center gap-3 rounded-lg px-2.5 py-2.5 text-sm transition hover:bg-hover focus:bg-hover focus:outline-none">
       <span className="bg-accent-grad grid size-9 shrink-0 place-items-center rounded-xl text-on-accent"><Sparkles className="size-4" /></span>
       <span className="min-w-0"><span className="block truncate font-medium">Ask Copilot: &ldquo;{query}&rdquo;</span><span className="block text-xs text-faint">Answers with clubs, events and people from Brazework</span></span>
     </Link>
@@ -88,7 +88,7 @@ export function GlobalSearch() {
         role="search"
         aria-label="Search Brazework"
         onSubmit={(e) => { e.preventDefault(); if (query) { setOpen(false); router.push(`/search?q=${encodeURIComponent(query)}`); } }}
-        className="glass flex h-12 items-center gap-3 rounded-2xl border border-line px-4 shadow-[var(--shadow)] transition focus-within:border-line-strong"
+        className="flex h-10 items-center gap-2.5 rounded-lg border border-line bg-surface px-3 transition hover:border-line-strong focus-within:border-line-strong focus-within:ring-[3px] focus-within:ring-text/8"
       >
         {loading ? <Loader2 className="size-[18px] shrink-0 animate-spin text-faint" /> : <Search className="size-[18px] shrink-0 text-faint" />}
         <label htmlFor="forge-search" className="sr-only">Search Brazework</label>
@@ -120,7 +120,7 @@ export function GlobalSearch() {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -6 }}
             transition={{ duration: 0.15 }}
-            className="absolute inset-x-0 top-[calc(100%+8px)] z-50 max-h-[70dvh] overflow-y-auto rounded-3xl border border-line bg-surface p-2 shadow-[var(--shadow)]"
+            className="absolute inset-x-0 top-[calc(100%+6px)] z-50 max-h-[70dvh] overflow-y-auto rounded-xl border border-line bg-surface p-1 shadow-[var(--shadow-float)]"
           >
             <p className="sr-only" aria-live="polite">
               {cur ? `${cur.people.length} people, ${cur.communities.length} communities, ${cur.projects.length} projects, ${cur.events.length} events, ${cur.posts.length} posts` : "Searching"}
@@ -149,7 +149,7 @@ export function GlobalSearch() {
               <section aria-label="Projects">
                 <h3 className="px-3 pt-3 pb-1 font-mono text-[10px] tracking-wide text-faint uppercase">Projects</h3>
                 <ul>{cur.projects.map((x) => (
-                  <li key={x.id}><Link data-result href={`/u/${x.ownerId}#projects`} className="flex items-center gap-3 rounded-2xl px-3 py-2 transition hover:bg-hover focus:bg-hover focus:outline-none">
+                  <li key={x.id}><Link data-result href={`/u/${x.ownerId}#projects`} className="flex items-center gap-3 rounded-lg px-2.5 py-2 transition hover:bg-hover focus:bg-hover focus:outline-none">
                     <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-surface-2 text-muted"><FolderGit2 className="size-4" /></span>
                     <span className="min-w-0"><span className="block truncate text-sm font-medium">{x.title}</span><span className="block truncate text-xs text-faint">{x.owner}{x.status === "completed" ? " · Completed" : " · In progress"}</span></span>
                   </Link></li>
@@ -160,7 +160,7 @@ export function GlobalSearch() {
               <section aria-label="Events">
                 <h3 className="px-3 pt-3 pb-1 font-mono text-[10px] tracking-wide text-faint uppercase">Events</h3>
                 <ul>{cur.events.map((x) => (
-                  <li key={x.id}><Link data-result href={`/events/${x.id}`} className="flex items-center gap-3 rounded-2xl px-3 py-2 transition hover:bg-hover focus:bg-hover focus:outline-none">
+                  <li key={x.id}><Link data-result href={`/events/${x.id}`} className="flex items-center gap-3 rounded-lg px-2.5 py-2 transition hover:bg-hover focus:bg-hover focus:outline-none">
                     <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-surface-2 text-muted"><CalendarDays className="size-4" /></span>
                     <span className="min-w-0"><span className="block truncate text-sm font-medium">{x.title}</span><span className="block truncate text-xs text-faint">{new Date(x.starts_at).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })} · {x.type} · {x.format}</span></span>
                   </Link></li>
@@ -171,7 +171,7 @@ export function GlobalSearch() {
               <section aria-label="Posts">
                 <h3 className="px-3 pt-3 pb-1 font-mono text-[10px] tracking-wide text-faint uppercase">Posts</h3>
                 <ul>{cur.posts.map((x) => (
-                  <li key={x.id}><Link data-result href={`/post/${x.id}`} className="flex items-center gap-3 rounded-2xl px-3 py-2 transition hover:bg-hover focus:bg-hover focus:outline-none">
+                  <li key={x.id}><Link data-result href={`/post/${x.id}`} className="flex items-center gap-3 rounded-lg px-2.5 py-2 transition hover:bg-hover focus:bg-hover focus:outline-none">
                     <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-surface-2 text-muted"><MessageSquare className="size-4" /></span>
                     <span className="min-w-0"><span className="block truncate text-sm">{x.body}</span><span className="block truncate text-xs text-faint">{x.author}</span></span>
                   </Link></li>
@@ -180,7 +180,7 @@ export function GlobalSearch() {
             )}
             {cur && !cur.question && askRow}
             {cur && !nothing && (
-              <Link data-result href={`/search?q=${encodeURIComponent(query)}`} className="mt-1 flex items-center justify-center gap-2 rounded-2xl px-3 py-2.5 text-sm text-muted transition hover:bg-hover hover:text-text focus:bg-hover focus:outline-none">
+              <Link data-result href={`/search?q=${encodeURIComponent(query)}`} className="mt-1 flex items-center justify-center gap-2 rounded-lg px-2.5 py-2.5 text-sm text-muted transition hover:bg-hover hover:text-text focus:bg-hover focus:outline-none">
                 <Search className="size-4" /> See all results for &ldquo;{query}&rdquo;
               </Link>
             )}
@@ -212,7 +212,7 @@ function PersonResult({ p }: { p: PersonHit }) {
   const sub = p.shared.length ? `Shares ${p.shared.slice(0, 2).join(", ")}` : p.headline || p.field;
 
   return (
-    <li className="flex items-center gap-3 rounded-2xl px-3 py-2 transition hover:bg-hover">
+    <li className="flex items-center gap-3 rounded-lg px-2.5 py-2 transition hover:bg-hover">
       <Link data-result href={`/u/${p.id}`} className="flex min-w-0 flex-1 items-center gap-3 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-text">
         <Avatar first={p.firstName} last={p.lastName} size={36} src={p.avatar} />
         <span className="min-w-0">
@@ -245,7 +245,7 @@ function CommunityResult({ hit }: { hit: CommunityHit }) {
   const sub = hit.shared.length ? `Matches ${hit.shared.slice(0, 2).join(", ")}` : `${membersLabel(c.member_count)} · ${PRIVACY_LABEL[c.privacy]}`;
 
   return (
-    <li className="flex items-center gap-3 rounded-2xl px-3 py-2 transition hover:bg-hover">
+    <li className="flex items-center gap-3 rounded-lg px-2.5 py-2 transition hover:bg-hover">
       <Link data-result href={`/c/${c.id}`} className="flex min-w-0 flex-1 items-center gap-3 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-text">
         <CommunityBadge id={c.id} name={c.name} size={36} />
         <span className="min-w-0">
