@@ -146,6 +146,7 @@ Storage: one public bucket `media`, paths must be under `<uid>/` (`media_path_ok
 | `/copilot` | Ember chat with saved chats rail |
 | `/search` | Full results: people, clubs, projects, events, main-feed posts (`lib/search.ts`, ilike + topic overlap) |
 | `/settings` | Profile, Appearance, Messaging and privacy, Blocked people, Ember and your data, AI tools (MCP), Help, Account (password change only) |
+| `/settings/tools` | Your tools (FIX-78): connect Claude Code, Cursor, VS Code, Codex, Windsurf or Zed to Brazework's MCP server. Pick a tool, make its token, follow its steps (one-tap install links for Cursor and VS Code, a command for Claude Code and Codex, a config snippet for Windsurf and Zed), and the page shows it connected after its first call. Tokens are listed with last use and Revoke. Formats are unit-tested in `tests/tool-setup.test.ts` |
 | `/profile` | Redirects to `/u/<me>` |
 | `/u/[id]` | Profile: projects, verified milestones ("proof"), posts, activity, clubs; add project / import from GitHub / add milestone |
 | `/u/[id]/resume` | Printable proof résumé (verified milestones first) |
@@ -170,7 +171,7 @@ Storage: one public bucket `media`, paths must be under `<uid>/` (`media_path_ok
 - **Approval cards**: `propose_*` tools never write. They validate (ownership, membership, rank) and emit a `Proposal`; `components/copilot/proposal-card.tsx` renders an editable card and, on confirm, calls the same server action the UI uses (`createPost`, `addMilestone`, `joinCommunity`, `toggleFollow`, `saveProject`, `postInCommunity`, `reviewMilestone`, `toggleRsvp`, `messagePerson`, `saveEvent`). Club-post cards can also be shared to Discord. Saved chats keep drafts only as labels, never re-confirmable cards (`copilot-chats.sql`).
 - `propose_milestone` has **no evidence field**; milestones drafted by Ember are sent without evidence.
 - **Limits**: 25 requests per user per day (`copilot_take()`, `copilot.sql`), shared with `@Ember` in group chats (`lib/chat-ember.ts`, posts via `post_ember_reply()`). 429 when used up.
-- **MCP** (`/api/mcp`, `lib/mcp.ts`): read-only tools `me`, `my_clubs`, `upcoming_events`, `my_projects`, `search`, `notifications` via Bearer `forge_…` tokens from Settings → AI tools.
+- **MCP** (`/api/mcp`, `lib/mcp.ts`): read-only tools `me`, `my_clubs`, `upcoming_events`, `my_projects`, `search`, `notifications` via Bearer `forge_…` tokens from Settings → Your tools (`/settings/tools`).
 
 ---
 

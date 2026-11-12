@@ -2,7 +2,7 @@ import { MCP_PROTOCOLS, MCP_TOOLS, absolutize, mcpDb, tokenHash } from "@/lib/mc
 import { env } from "@/lib/env";
 
 // POST /api/mcp: Brazework's MCP server (Streamable HTTP, JSON responses, no session state).
-// Clients send "Authorization: Bearer forge_…", a personal token from Settings → AI tools.
+// Clients send "Authorization: Bearer forge_…", a personal token from Settings → Your tools (/settings/tools).
 type Msg = { jsonrpc?: string; id?: string | number | null; method?: string; params?: Record<string, unknown> };
 const rpc = (id: Msg["id"], body: { result?: unknown; error?: { code: number; message: string } }, status = 200) =>
   Response.json({ jsonrpc: "2.0", id: id ?? null, ...body }, { status, headers: { "Cache-Control": "no-store" } });
@@ -10,7 +10,7 @@ const unauthorized = (message: string) =>
   Response.json({ jsonrpc: "2.0", id: null, error: { code: -32001, message } }, { status: 401, headers: { "WWW-Authenticate": 'Bearer realm="Brazework", error="invalid_token"' } });
 
 export async function GET() {
-  return new Response("Brazework's MCP server takes POST requests. Create a token in Brazework → Settings → AI tools.", { status: 405, headers: { Allow: "POST" } });
+  return new Response("Brazework's MCP server takes POST requests. Connect a tool in Brazework → Settings → Your tools.", { status: 405, headers: { Allow: "POST" } });
 }
 
 export async function POST(req: Request) {
@@ -20,7 +20,7 @@ export async function POST(req: Request) {
   const db = mcpDb();
   const who = await db.rpc("mcp_user", { p_hash: hash });
   if (who.error) return rpc(null, { error: { code: -32603, message: who.error.code === "PGRST202" ? "AI tools aren't switched on on Brazework yet." : "Brazework couldn't check that token." } }, 503);
-  if (!who.data) return unauthorized("That token isn't valid any more. Create a new one in Brazework → Settings → AI tools.");
+  if (!who.data) return unauthorized("That token isn't valid any more. Make a new one in Brazework → Settings → Your tools.");
 
   let msg: Msg;
   try { msg = (await req.json()) as Msg; } catch { return rpc(null, { error: { code: -32700, message: "Parse error" } }, 400); }
@@ -34,7 +34,7 @@ export async function POST(req: Request) {
       return rpc(msg.id, { result: {
         protocolVersion: MCP_PROTOCOLS.includes(asked) ? asked : MCP_PROTOCOLS[1],
         capabilities: { tools: { listChanged: false } },
-        serverInfo: { name: "forge", title: "Brazework", version: "0.1.0" },
+        serverInfo: { name: "brazework", title: "Brazework", version: "0.2.0" },
         instructions: "Brazework is home base for university STEM clubs. These tools read the signed-in member's Brazework: their profile and club-verified work, clubs, upcoming events, projects, notifications, and search across clubs and people. Results include links to open in Brazework.",
       } });
     }

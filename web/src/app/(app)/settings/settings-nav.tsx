@@ -12,7 +12,7 @@ export const SECTIONS = [
   { id: "messaging", label: "Messaging and privacy", icon: MessageSquare },
   { id: "blocked", label: "Blocked people", icon: Ban },
   { id: "ember", label: "Ember and your data", icon: Sparkles },
-  { id: "ai-tools", label: "AI tools (MCP)", icon: Plug },
+  { id: "ai-tools", label: "Your tools", icon: Plug },
   { id: "data", label: "Your data", icon: Download },
   { id: "help", label: "Help", icon: HelpCircle },
   { id: "account", label: "Account", icon: KeyRound },

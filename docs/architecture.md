@@ -128,7 +128,7 @@ Home scrolls without end, shows posts at once, and costs one small database call
 - **Links in cards don't prefetch:** each one scrolling past was a server render and a sign-in check.
 - **Budget, enforced in CI** (`e2e/k-feed-budget.cjs`): the first page plus the photos above the fold under 300 KB; no video bytes before a tap, and a tapped video streams in ranges; at most 2 Supabase requests per page while scrolling and none per post; the page holds no more than 16 cards; coming back doesn't refetch.
 - **Egress per active member per month (estimate):** the feed's data, about 3 MB (30 visits at roughly 100 KB each, uncached egress); photos close to nothing per viewer (Vercel serves resized copies; Supabase sends each original once per size); videos about 180 MB (above). So about 190 MB, or 190 GB at 1,000 active members, nearly all of it video.
-- **Still to do:** every page view also pays about 25 Supabase Auth calls for the links Next prefetches (the proxy checks the session on each, and with the project's shared-secret JWTs that check goes over the network). Moving to asymmetric signing keys (FIX-53) makes those checks local, app-wide.
+- **Sign-in checks are local.** Production signs sessions with an asymmetric key (ES256, since 2026-10-18), so `getClaims()` verifies them in the app with no call to Supabase Auth, even for the links Next prefetches. The local test stack still uses a shared secret, so there each check does call Auth (the ~25 per page view seen in `k-feed-budget.cjs`'s logs); that cost is local only.
 
 ## Environments
 
