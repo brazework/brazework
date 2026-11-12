@@ -23,6 +23,7 @@ import { PostUpdate } from "./post-update";
 import { buildLog, inThirtySeconds, lastActivity, liveStatus, weeklyActivity, type BuildEvent } from "@/lib/build-log";
 import { AboutBuild, ActivityStrip, BuildLogTimeline, ThirtySeconds } from "./build-log-view";
 import { TeamList } from "./team";
+import { GitHubConnect } from "./github-connect";
 import { OrganizeWithEmber } from "./organize";
 import { copilotEnabled } from "@/lib/copilot";
 import { ProjectFiles, type ProjectFileItem } from "@/components/projects/project-files";
@@ -30,12 +31,12 @@ import { kindOfFile } from "@/lib/project-file-types";
 
 export const metadata: Metadata = { title: "Project" };
 
-export default function ProjectPage({ params }: PageProps<"/projects/[id]">) {
+export default function ProjectPage({ params, searchParams }: PageProps<"/projects/[id]">) {
   return (
     <div className="mx-auto max-w-3xl xl:max-w-6xl">
       <Link href="/projects" className="mb-5 inline-flex items-center gap-1.5 text-sm text-muted hover:text-text"><ArrowLeft className="size-4" /> Projects</Link>
       <Suspense fallback={<Skeleton className="h-96" />}>
-        <ProjectView params={params} />
+        <ProjectView params={params} searchParams={searchParams} />
       </Suspense>
     </div>
   );
@@ -45,8 +46,9 @@ type Project = { tools?: string[]; id: string; title: string; summary: string; s
 
 // A project's home: what it is, the write-up, what its club has verified, its updates over time,
 // and who built it. The owner posts updates here; anyone can send it on or ask Ember about it.
-async function ProjectView({ params }: { params: PageProps<"/projects/[id]">["params"] }) {
+async function ProjectView({ params, searchParams }: { params: PageProps<"/projects/[id]">["params"]; searchParams: PageProps<"/projects/[id]">["searchParams"] }) {
   const { id } = await params;
+  const ghNote = (await searchParams).github;
   const { supabase, user } = await getViewer();
   if (!user) redirect("/login");
   const { milestones: msOn, projectTools: stackOn, projectSpecs: specsOn, projectFiles: filesOn, updateFiles: updFilesOn, github: ghOn } = await dbFeatures();
@@ -65,10 +67,10 @@ async function ProjectView({ params }: { params: PageProps<"/projects/[id]">["pa
     filesOn ? supabase.from("project_files").select(updFilesOn ? "id, kind, name, path, size, url, added_by, created_at, post_id" : "id, kind, name, path, size, url, added_by, created_at").eq("project_id", id).order("created_at", { ascending: false }).limit(100) : Promise.resolve({ data: [] }),
     // Live from GitHub (supabase/github.sql, FIX-92 phase 3): what happened on its linked repos.
     ghOn ? supabase.from("build_events").select("id, kind, title, url, actor, state, occurred_at").eq("project_id", id).order("occurred_at", { ascending: false }).limit(60) : Promise.resolve({ data: [] }),
-    ghOn ? supabase.from("project_repos").select("full_name, html_url").eq("project_id", id).limit(5) : Promise.resolve({ data: [] }),
+    ghOn ? supabase.from("project_repos").select("repo_id, full_name, html_url").eq("project_id", id).limit(5) : Promise.resolve({ data: [] }),
   ]);
   const events = (ghEvents.data ?? []) as BuildEvent[];
-  const repos = (ghRepos.data ?? []) as { full_name: string; html_url: string }[];
+  const repos = (ghRepos.data ?? []) as { repo_id: number; full_name: string; html_url: string }[];
   // The files folder: photos, videos and 3D models get a signed link up front for their previews
   // (the bucket is private). Other files get one when opened.
   type FileRow = Omit<ProjectFileItem, "src"> & { path: string | null };
@@ -221,6 +223,7 @@ async function ProjectView({ params }: { params: PageProps<"/projects/[id]">["pa
               {repos.map((r) => <a key={r.full_name} href={r.html_url} target="_blank" rel="noopener noreferrer nofollow" className="ml-2 inline-flex items-center gap-1 rounded-md border border-line px-1.5 py-0.5 font-medium text-text-2 hover:text-text"><span className="size-1.5 rounded-full bg-ok" aria-hidden="true" /> Live from {r.full_name}</a>)}
             </span>
           </div>
+          {own && ghOn && <GitHubConnect supabase={supabase} projectId={p.id} linked={repos} note={typeof ghNote === "string" ? ghNote : undefined} />}
           {own && <PostUpdate projectId={p.id} title={p.title} attach={filesOn} />}
           {log.length > 0 && <BuildLogTimeline entries={log} liked={liked} saved={saved} me={user.id} projectId={p.id} ownerId={p.owner_id} filesByPost={filesByPost} />}
           {!log.length && (own ? (
