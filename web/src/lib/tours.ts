@@ -53,11 +53,10 @@ export const UPDATES: ForgeUpdate[] = [
   },
   {
     id: "2026-11-09-connectors", date: "2026-11-09", kind: "New",
-    title: "Connect GitHub and Discord",
-    summary: "Import projects from GitHub, and let your club's Discord hear about new events and verified milestones.",
+    title: "Import projects from GitHub",
+    summary: "Paste a repo link and Brazework fills in the project for you.",
     points: [
       "Adding a project? Paste a public GitHub repo link and Brazework fills in the title, summary, write-up, link and topics. Releases become milestones your club can verify.",
-      "Club admins connect a Discord channel under Manage → Integrations. New club events, verified milestones and weekly updates are announced there, and Brazework never pings @everyone.",
       "Copilot can read public GitHub repos and draft a project from one, for you to confirm.",
     ],
   },

@@ -63,9 +63,6 @@ async function Manage({ params, searchParams }: { params: PageProps<"/c/[id]/man
     { id: "handoff", label: "Hand off", show: rank(role) >= 3 && features.handoff },
   ].filter((t) => t.show);
   const tab = tabs.find((t) => t.id === sp.tab)?.id ?? (rank(role) >= 3 ? "report" : c.privacy === "approval" && can(role, "approve") ? "requests" : "members");
-  // The webhook is a secret: only a masked tail goes to the browser.
-  const intg = tab === "integrations" && features.integrations ? (await supabase.from("club_integrations").select("discord_webhook, discord_events, discord_milestones, discord_updates").eq("community_id", id).maybeSingle()).data : null;
-  const discord = { connected: !!intg?.discord_webhook, masked: intg?.discord_webhook ? `••••${intg.discord_webhook.slice(-6)}` : "", events: intg?.discord_events ?? true, milestones: intg?.discord_milestones ?? true, updates: intg?.discord_updates ?? true };
   const [report, copilotOn] = tab === "report" ? await Promise.all([loadClubReport(supabase, id, features), copilotEnabled()]) : [null, false];
   // The live share link, for owners and admins (club-reports.sql; absent before that step).
   const shareToken = tab === "report" && rank(role) >= 4
@@ -91,7 +88,7 @@ async function Manage({ params, searchParams }: { params: PageProps<"/c/[id]/man
       <p className="mt-1.5 text-sm text-muted">You&apos;re {/^[aeiou]/i.test(ROLE_LABEL[role!]) ? "an" : "a"} {ROLE_LABEL[role!].toLowerCase()}. You can act on people below your own role.</p>
       <div className="mt-6"><Tabs active={tab} tabs={tabs.map((t) => ({ id: t.id, label: t.label, href: `/c/${id}/manage?tab=${t.id}`, count: "count" in t ? (t.count as number) : undefined }))} /></div>
       <div className="mt-6">
-        {tab === "integrations" && <Integrations cid={id} discord={discord} available={features.integrations} />}
+        {tab === "integrations" && <Integrations />}
         {tab === "report" && <Suspense fallback={<div className="mb-6 h-64 shimmer rounded-3xl" />}><Roster cid={id} /></Suspense>}
         {tab === "report" && report && <ReportView r={report} clubId={id} copilot={copilotOn} />}
         {tab === "report" && rank(role) >= 4 && <div className="mt-4"><ShareReport clubId={id} token={shareToken} /></div>}

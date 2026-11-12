@@ -1,4 +1,4 @@
-import { ArrowUpRight, BadgeCheck, CalendarDays, Check, Clock3, Eye, FileText, GitCommitHorizontal, Hash, Link2, MessageSquare, Play, ShieldCheck, Sparkles, Trophy, Users } from "lucide-react";
+import { ArrowUpRight, BadgeCheck, CalendarDays, Check, Clock3, Eye, FileText, GitBranch, GitCommitHorizontal, Link2, MessageSquare, Play, ShieldCheck, Sparkles, Trophy, Users } from "lucide-react";
 import { cn } from "@/lib/forge";
 import { Eyebrow, H2 } from "./marketing";
 import { Reveal } from "./reveal";
@@ -129,7 +129,7 @@ export function ClubShowcase() {
               <div className="flex items-center gap-2 text-sm font-semibold"><Sparkles className="size-4 text-accent" /> Your week, from Ember</div>
               <ul className="mt-3 space-y-2 text-sm">
                 <li className="flex items-center justify-between gap-3"><span className="min-w-0 truncate">3 milestones waiting for you to verify</span><span className="shrink-0 rounded-full bg-accent-grad px-2.5 py-1 text-xs font-medium text-on-accent">Review</span></li>
-                <li className="flex items-center justify-between gap-3"><span className="min-w-0 truncate">Weekly update drafted for Discord</span><span className="shrink-0 rounded-full border border-line px-2.5 py-1 text-xs font-medium">Approve</span></li>
+                <li className="flex items-center justify-between gap-3"><span className="min-w-0 truncate">Weekly update drafted for the club</span><span className="shrink-0 rounded-full border border-line px-2.5 py-1 text-xs font-medium">Approve</span></li>
                 <li className="m-hide flex items-center justify-between gap-3"><span className="min-w-0 truncate">Launch day Saturday: 18 going</span><span className="shrink-0 rounded-full border border-line px-2.5 py-1 text-xs font-medium">Message</span></li>
               </ul>
             </div>
@@ -151,7 +151,7 @@ export function ClubShowcase() {
             <div className="m-hide mt-4 grid grid-cols-3 gap-2 text-center">
               <div className="rounded-xl bg-surface-2/70 px-2 py-2.5"><CalendarDays className="mx-auto size-4 text-muted" /><div className="mt-1 text-sm font-semibold">Thu 7pm</div><div className="text-[11px] text-faint">Static fire night</div></div>
               <div className="rounded-xl bg-surface-2/70 px-2 py-2.5"><MessageSquare className="mx-auto size-4 text-muted" /><div className="mt-1 text-sm font-semibold">#general</div><div className="text-[11px] text-faint">Club chat</div></div>
-              <div className="rounded-xl bg-surface-2/70 px-2 py-2.5"><Hash className="mx-auto size-4 text-muted" /><div className="mt-1 text-sm font-semibold">Discord</div><div className="text-[11px] text-faint">Connected</div></div>
+              <div className="rounded-xl bg-surface-2/70 px-2 py-2.5"><GitBranch className="mx-auto size-4 text-muted" /><div className="mt-1 text-sm font-semibold">GitHub</div><div className="text-[11px] text-faint">Repos imported</div></div>
             </div>
             {/* The record the club builds up, term after term. */}
             <div className="m-hide mt-4 rounded-2xl border border-line bg-surface/80 p-4">
@@ -175,7 +175,7 @@ export function ClubShowcase() {
           <ul className="m-hide mt-8 grid gap-5">
             <Point icon={ShieldCheck} title="Verify in one tap" body="The evidence is right there: a commit, a dataset, a video. Verified milestones carry the officer's name, and they can be revoked with a reason." />
             <Point icon={Sparkles} title="Ember does the busywork" body="It drafts the weekly update, plans the meeting and nudges the members who need it. Officers approve every action." />
-            <Point icon={Users} title="A term that keeps its momentum" body="Events with RSVPs and chats, Discord and GitHub connected, officer handoff at the end of term, and a sponsor report you can send." />
+            <Point icon={Users} title="A term that keeps its momentum" body="Events with RSVPs and chats, members' GitHub and AI tools connected, officer handoff at the end of term, and a sponsor report you can send." />
           </ul>
           <a href="#founding" className="mt-8 inline-flex items-center gap-1.5 text-sm font-medium hover:underline">Bring your club as a founding club <ArrowUpRight className="size-4" /></a>
         </Reveal>

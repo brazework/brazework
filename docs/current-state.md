@@ -48,7 +48,7 @@ Checked against the code on branch `josh/next-redesign` (HEAD `69be8fe`). SQL in
 | Action | Min rank |
 |---|---|
 | Approve join requests, create/revoke invite links | helper (2) |
-| Remove posts/comments, review held posts, **verify milestones**, remove/ban members below them, see "This week" report, post chat announcements, read Discord webhook | moderator (3) |
+| Remove posts/comments, review held posts, **verify milestones**, remove/ban members below them, see "This week" report, post chat announcements | moderator (3) |
 | Assign roles below own, edit club info/look/automod, **host club events**, manage integrations | admin (4) |
 | Can't leave the club | owner (5) |
 
@@ -90,7 +90,7 @@ Checked against the code on branch `josh/next-redesign` (HEAD `69be8fe`). SQL in
 | `copilot_usage` | copilot | (user, day, uses); no policies |
 | `milestones` | milestones | See §7 |
 | `feedback_settings`, `feedback_themes`, `feedback`, `feedback_sync_requests` | feedback (+feedback-review) | Member feedback → grouped ideas → Linear sync + weekly review (pg_cron) |
-| `club_integrations` | integrations | Per-club Discord webhook + toggles (events/milestones/updates), `updated_by` |
+| `club_integrations` | integrations | **Unused since FIX-92** (Discord removed). Per-club Discord webhook + toggles; kept until a cleanup step drops it |
 | `chats`, `chat_members`, `chat_messages`, `chat_reads` | group-chats (+chat-extras) | Group chats: `kind` club (one per club, all members) / event (one per event, RSVPs + hosts) / team (≤50 picked club members). Messages have `announcement`, `ember`, `reply_to` |
 | `copilot_chats`, `copilot_ratings` | copilot-chats | Private saved Ember chats (expire after 180 days); thumbs up/down |
 | `api_tokens` | mcp | Personal MCP tokens: SHA-256 `token_hash`, `prefix`, `revoked_at`; ≤5 active |
@@ -168,7 +168,7 @@ Storage: one public bucket `media`, paths must be under `<uid>/` (`media_path_ok
 - **Tools** (`lib/copilot-tools.ts`, 19):
   - Read: `search_clubs`, `upcoming_events`, `find_people`, `my_profile`, `club_overview`, `club_report` (mod+), `verify_queue` (mod+), `github_repo`, `github_user`.
   - Propose: `propose_post`, `propose_milestone`, `propose_join_club`, `propose_rsvp`, `propose_message`, `propose_follow`, `propose_event` (admin+), `propose_club_post`, `propose_review` (mod+, not own), `propose_project`.
-- **Approval cards**: `propose_*` tools never write. They validate (ownership, membership, rank) and emit a `Proposal`; `components/copilot/proposal-card.tsx` renders an editable card and, on confirm, calls the same server action the UI uses (`createPost`, `addMilestone`, `joinCommunity`, `toggleFollow`, `saveProject`, `postInCommunity`, `reviewMilestone`, `toggleRsvp`, `messagePerson`, `saveEvent`). Club-post cards can also be shared to Discord. Saved chats keep drafts only as labels, never re-confirmable cards (`copilot-chats.sql`).
+- **Approval cards**: `propose_*` tools never write. They validate (ownership, membership, rank) and emit a `Proposal`; `components/copilot/proposal-card.tsx` renders an editable card and, on confirm, calls the same server action the UI uses (`createPost`, `addMilestone`, `joinCommunity`, `toggleFollow`, `saveProject`, `postInCommunity`, `reviewMilestone`, `toggleRsvp`, `messagePerson`, `saveEvent`). Saved chats keep drafts only as labels, never re-confirmable cards (`copilot-chats.sql`).
 - `propose_milestone` has **no evidence field**; milestones drafted by Ember are sent without evidence.
 - **Limits**: 25 requests per user per day (`copilot_take()`, `copilot.sql`), shared with `@Ember` in group chats (`lib/chat-ember.ts`, posts via `post_ember_reply()`). 429 when used up.
 - **MCP** (`/api/mcp`, `lib/mcp.ts`): read tools `me`, `my_clubs`, `upcoming_events`, `my_projects`, `search`, `notifications`, `my_review_requests` (step 47, for club officers), and for tokens allowed to post: `post_update` (step 46: posts as the member, shown "via <tool>") and `log_milestone` (step 47: asks the member's club to verify a milestone with its evidence; the club's officers still decide), via Bearer `forge_…` tokens from Settings → Your tools (`/settings/tools`). Tools are annotated (`readOnlyHint` / `destructiveHint`) so clients ask before posting.
@@ -177,7 +177,7 @@ Storage: one public bucket `media`, paths must be under `<uid>/` (`media_path_ok
 
 ## 6. Integrations
 
-- **Discord** (`supabase/integrations.sql`, `lib/connectors/discord.ts`, `announce.ts`, `club-actions.ts`): admins paste a webhook (regex-checked, test message sent before save); mods+ can read it (masked in UI). Auto-announces new club events (`org/actions.ts` → `announceEvent`) and verified milestones (`reviewMilestone` → `announceMilestone`), via `after()`. "Weekly updates" are **manual**: an officer shares a post with `shareToDiscord()`; no scheduler. Mentions always disabled.
+- **Discord: removed (FIX-92).** Announcements happen on Brazework, where verified work lives. The connector code is gone; `club_integrations` stays unused until a cleanup step drops it. Manage → Integrations now shows how members' work comes in: GitHub import and their AI tools (MCP).
 - **GitHub** (`lib/connectors/github.ts`, `actions.ts`): public REST API (optional `GITHUB_TOKEN`). "Import from GitHub" on the profile fills a project draft (title, summary, README write-up, link, topics, tools) and suggests up to 4 releases as milestones (with release URL as evidence). **No check that the member owns or contributed to the repo.**
 - **Club report** (`lib/club-report.ts`): computed on demand for mod+: members/new joiners, posts this week vs last, top post/posters, upcoming events + RSVPs, milestones verified this week / waiting / oldest wait, join requests. Shown in Manage → This week and Ember's `club_report`; can draft a weekly post.
 - **Linear** (feedback only, DB-side via pg_cron; needs `linear_api_key` in Vault).
@@ -203,7 +203,7 @@ Implementation: `supabase/milestones.sql`, `web/src/lib/milestones.ts`, queue UI
 | Disputes / reporting | **None.** `content_reports.kind` excludes milestones and projects |
 | Log | Only the reviewer fields on the row. No separate audit table; deleting the milestone erases the record. No history of edits (milestones aren't editable) |
 | Limits | 20 pending per owner (`milestones_before_insert`). **No per-officer, per-club or rate limits on verifying** |
-| Notifications | Request → up to 25 officers (`milestone_request`); result → owner (`milestone_verified`/`milestone_declined`). Verified → Discord if connected |
+| Notifications | Request → up to 25 officers (`milestone_request`); result → owner (`milestone_verified`/`milestone_declined`). |
 | Visibility | Verified: readable by every signed-in member via RLS (even on private projects; the app filters private projects out of feed/profile/résumé). Pending/declined: owner + club mod+ |
 | After leaving the club / reviewer demoted | Status unchanged |
 

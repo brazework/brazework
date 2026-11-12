@@ -12,7 +12,6 @@ import { EVENT_FORMATS, EVENT_TYPES } from "@/lib/events";
 import { cn } from "@/lib/forge";
 import { addMilestone, reviewMilestone } from "@/lib/milestones";
 import { saveProject } from "@/lib/projects";
-import { shareToDiscord } from "@/lib/connectors/club-actions";
 import { toggleFollow } from "@/lib/network";
 import { toggleRsvp } from "@/app/(app)/events/actions";
 import { messagePerson } from "@/lib/messages";
@@ -104,7 +103,6 @@ export function ProposalCard({ p: initial }: { p: Proposal }) {
       {state === "done" ? (
         <>
           {held && <p className="mt-2 text-xs text-muted">{held}</p>}
-          {p.kind === "club_post" && !held && <DiscordShare clubId={p.club_id} text={p.body} />}
           <Link href={href} className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-text hover:underline">{h.go} <ArrowRight className="size-4" /></Link>
         </>
       ) : (
@@ -193,14 +191,3 @@ export function ProposalCard({ p: initial }: { p: Proposal }) {
   );
 }
 
-// After a club post goes up, officers can send it to the club's Discord too.
-function DiscordShare({ clubId, text }: { clubId: string; text: string }) {
-  const [res, setRes] = useState<{ ok: boolean; message: string } | null>(null);
-  const [pending, start] = useTransition();
-  return (
-    <div className="mt-2 flex flex-wrap items-center gap-2">
-      {!res?.ok && <button type="button" disabled={pending} onClick={() => start(async () => setRes(await shareToDiscord(clubId, text)))} className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-line px-3 text-xs font-medium text-text-2 hover:bg-hover disabled:opacity-50">{pending ? <Loader2 className="size-3.5 animate-spin" /> : <Sparkles className="size-3.5" />} Also post in Discord</button>}
-      {res && <span role={res.ok ? "status" : "alert"} className={cn("text-xs", res.ok ? "text-ok" : "text-muted")}>{res.message}</span>}
-    </div>
-  );
-}

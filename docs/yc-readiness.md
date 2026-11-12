@@ -26,7 +26,7 @@ Every row runs in `npm run e2e` (a fresh local Supabase, real sign-ups, Chrome) 
 ## Not built yet
 
 - **Email:** weekly digest and member invites by email list need an email provider (e.g. Resend). In-app nudges exist.
-- **Discord → Brazework posts:** Brazework → Discord announcements exist; the reverse needs a bot (credentials).
+- **Discord:** removed (FIX-92). Work flows in from GitHub (import today, live sync next) and members' AI tools (MCP).
 - **Duplicate-club review:** the admin queue has the kind; nothing raises it yet.
 - **Push notifications and TestFlight** for the iPhone app (need an APNs key and an App Store Connect record).
 
