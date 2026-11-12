@@ -23,7 +23,7 @@ Status as of 2026-11-11. Linear issue IDs say what's open; the order to set ever
 |---|---|---|---|---|
 | **Anthropic API** | Ember, the AI helper in the app | Ian (Vercel env `ANTHROPIC_API_KEY`) | Pay per use. Ember is capped at 25 requests per member per day; **set a monthly spend limit** in the Anthropic console | FIX-15 |
 | **Resend** | Email: sign-up and password emails (via Supabase SMTP) and the weekly digest | Either founder; needs the domain | Free up to 3,000 emails a month, then from $20/month | FIX-1, FIX-27 |
-| **Domain** | Our own address instead of `*.vercel.app`, and the email sender | brazework.com and brazework.app at Cloudflare Registrar, after the trademark check (FIX-26) | About $25 a year for both | FIX-58 |
+| **Domain** | Our own address instead of `*.vercel.app`, and the email sender | **brazework.com, bought at Vercel** in team FORGE DEV (Ian), so DNS lives next to the project. Setup with Resend, step by step: FIX-1 | $12.03 a year (Vercel's price, checked 2026-11-12) | FIX-58 |
 | **Stripe** | Companies paying for challenge sponsorships | When a company is ready to pay. Live mode needs a legal entity and a bank account (below) | 2.9% + 30¢ per card payment | FIX-28 |
 
 ## Recommended next (none exist yet)
