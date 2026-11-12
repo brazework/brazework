@@ -1,4 +1,4 @@
-import { ArrowUpRight, BadgeCheck, CalendarDays, Check, Eye, FileText, GitBranch, GitCommitHorizontal, MessageSquare, Play, ShieldCheck, Sparkles, Trophy, Users } from "lucide-react";
+import { ArrowUpRight, Flame, BadgeCheck, CalendarDays, Check, Eye, FileText, GitBranch, GitCommitHorizontal, MessageSquare, Play, ShieldCheck, Sparkles, Trophy, Users } from "lucide-react";
 import { cn } from "@/lib/forge";
 import { Eyebrow, H2 } from "./marketing";
 import { Reveal } from "./reveal";
@@ -57,7 +57,7 @@ export function ClubShowcase() {
         <Reveal delay={0.1} className="order-2 lg:order-1">
           <div className="glass-card overflow-hidden rounded-[28px] p-5 shadow-[0_40px_120px_-40px_rgb(0_0_0/0.45)] sm:p-6">
             <div className="flex items-center gap-3">
-              <span className="grid size-11 place-items-center rounded-2xl bg-[linear-gradient(135deg,#ef4444,#f97316)] text-base font-bold text-white">R</span>
+              <span className="grid size-11 place-items-center rounded-2xl bg-text text-base font-bold text-bg">R</span>
               <div className="min-w-0 flex-1">
                 <div className="flex items-center gap-1.5 font-semibold">Rocketry Club <BadgeCheck className="size-4 text-ok" /></div>
                 <div className="text-xs text-faint">48 members · 12 verified this term · UHart</div>
@@ -66,7 +66,7 @@ export function ClubShowcase() {
             </div>
             {/* Ember's Monday brief: what needs you, ready to approve. */}
             <div className="ai-border mt-5 rounded-2xl p-4">
-              <div className="flex items-center gap-2 text-sm font-semibold"><Sparkles className="size-4 text-accent" /> Your week, from Ember</div>
+              <div className="flex items-center gap-2 text-sm font-semibold"><Flame className="size-4 text-[#f28c28]" /> Your week, from Ember</div>
               <ul className="mt-3 space-y-2 text-sm">
                 <li className="flex items-center justify-between gap-3"><span className="min-w-0 truncate">3 milestones waiting for you to verify</span><span className="shrink-0 rounded-full bg-accent-grad px-2.5 py-1 text-xs font-medium text-on-accent">Review</span></li>
                 <li className="flex items-center justify-between gap-3"><span className="min-w-0 truncate">Weekly update drafted for the club</span><span className="shrink-0 rounded-full border border-line px-2.5 py-1 text-xs font-medium">Approve</span></li>
@@ -95,7 +95,7 @@ export function ClubShowcase() {
             </div>
             {/* The record the club builds up, term after term. */}
             <div className="m-hide mt-4 rounded-2xl border border-line bg-surface/80 p-4">
-              <div className="flex items-center justify-between text-sm font-semibold"><span className="inline-flex items-center gap-1.5"><Trophy className="size-4 text-amber-500" /> Recently verified</span><span className="text-xs font-normal text-faint">by your officers</span></div>
+              <div className="flex items-center justify-between text-sm font-semibold"><span className="inline-flex items-center gap-1.5"><Trophy className="size-4" /> Recently verified</span><span className="text-xs font-normal text-faint">by your officers</span></div>
               {[["Ben Cho", "Static fire at 1.2 kN", "Maya Patel"], ["Maya Patel", "Flight computer passed vibration test", "Ben Cho"], ["Josh Menzies", "Wind tunnel rig sealed", "Maya Patel"]].map(([who, what, by]) => (
                 <div key={what} className="mt-2.5 flex items-center gap-2.5 text-sm">
                   <span className="grid size-5 shrink-0 place-items-center rounded-full bg-ok text-white"><Check className="size-3" /></span>

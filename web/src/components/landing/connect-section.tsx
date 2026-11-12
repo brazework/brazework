@@ -78,7 +78,7 @@ export function ConnectSection() {
       <div className="flex items-center max-md:min-h-full md:sticky md:top-0 md:h-screen md:pt-16">
         <div className="mx-auto grid w-full max-w-7xl grid-cols-1 items-center gap-6 px-6 md:gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
           <div>
-            <p className="inline-flex items-center gap-2 rounded-md border border-white/10 px-2.5 py-1 text-xs font-medium text-[#c8c8cc]"><span className="size-1.5 rounded-full bg-[#f28c28]" /> Ember + your own agent</p>
+            <p className="inline-flex items-center gap-2 rounded-md border border-white/10 px-2.5 py-1 text-xs font-medium text-[#c8c8cc]"><span className="size-1.5 rounded-full bg-white" /> Ember + your own agent</p>
             <h2 className="mt-4 text-[2rem] leading-[1.05] font-semibold tracking-tight sm:text-[2.6rem] xl:text-[2.75rem]">Everything you build flows into one log.</h2>
             <p className="mt-4 hidden max-w-lg text-base text-[#b4b4bb] [@media(min-height:1000px)]:md:block xl:text-lg">GitHub, Ember, the AI you already code with, your club and the people hiring, connected in one place, so your progress is recorded as it happens and proven by people who saw it.</p>
 
@@ -88,13 +88,13 @@ export function ConnectSection() {
                   <button type="button" role="tab" aria-selected={step === i} onClick={() => go(i)}
                     className={cn("group relative w-full overflow-hidden rounded-lg text-left transition md:px-4 md:py-2.5", step === i ? "md:bg-white/[0.06]" : "hover:bg-white/[0.04]")}>
                     <span className="flex items-baseline gap-3">
-                      <span className={cn("hidden font-mono text-xs tabular-nums md:inline", step === i ? "text-[#f28c28]" : "text-[#8b8b93]")}>0{i + 1}</span>
+                      <span className={cn("hidden font-mono text-xs tabular-nums md:inline", step === i ? (c.sources[0] === "ember" ? "text-[#f28c28]" : "text-white") : "text-[#8b8b93]")}>0{i + 1}</span>
                       <span className={cn("hidden text-[15px] font-medium md:inline", step === i ? "text-white" : "text-[#9d9da5]")}>{c.title}</span>
                     </span>
                     {step === i && <span className="mt-1 hidden pl-7 text-sm leading-relaxed text-[#b4b4bb] md:block">{c.body}</span>}
                     {/* Phones: five bars, the current one filling up. Wide screens: a thin line under the open chapter. */}
                     <span className="block h-1 overflow-hidden rounded-full bg-white/10 md:mt-3 md:h-px">
-                      <span className="block h-full origin-left rounded-full bg-[#f28c28]"
+                      <span className={cn("block h-full origin-left rounded-full", c.sources[0] === "ember" ? "bg-[#f28c28]" : "bg-white")}
                         style={wide ? { transform: `scaleX(${step === i ? fill : step > i ? 1 : 0})` } : { transform: `scaleX(${step > i ? 1 : 0})`, ...(step === i && !reduce ? { animation: "agent-fill 5.2s linear forwards" } : step === i ? { transform: "scaleX(1)" } : {}) }} />
                     </span>
                     <span className="sr-only">{c.title}: {c.body}</span>
@@ -111,13 +111,13 @@ export function ConnectSection() {
               the stage's foot on wide screens; under it on phones, so it hides no source). */}
           <div className="relative mx-auto w-full max-w-[min(100%,34rem)]" aria-hidden="true">
           <div className="relative mx-auto aspect-square w-full max-md:max-h-[34dvh] max-md:max-w-[34dvh]">
-            <Orb pulse={step} className="absolute inset-0 size-full" />
+            <Orb pulse={step} ember={CHAPTERS[step].sources[0] === "ember"} className="absolute inset-0 size-full" />
             <svg viewBox="0 0 100 100" className="absolute inset-0 size-full" preserveAspectRatio="none">
               {SOURCES.map((s) => (
                 <g key={s.id}>
                   <line x1={s.x} y1={s.y} x2="50" y2="50" stroke="white" strokeOpacity={active.has(s.id) ? 0.28 : 0.07} strokeWidth="0.25" strokeDasharray="0.8 1.2" vectorEffect="non-scaling-stroke" />
                   {active.has(s.id) && !reduce && (
-                    <circle r="0.9" fill="#ffd479">
+                    <circle r="0.9" fill={s.id === "ember" ? "#f28c28" : "#fff"}>
                       <animateMotion dur="1.4s" repeatCount="indefinite" path={`M${s.x} ${s.y} L50 50`} />
                     </circle>
                   )}
@@ -127,7 +127,7 @@ export function ConnectSection() {
             {SOURCES.map((s) => (
               <span key={s.id} style={{ left: `${s.x}%`, top: `${s.y}%` }}
                 className={cn("absolute -translate-x-1/2 -translate-y-1/2 rounded-md border px-2 py-1 text-[11px] font-medium whitespace-nowrap transition duration-500 sm:text-xs",
-                  active.has(s.id) ? "border-[#f28c28]/60 bg-[#1a1410] text-white" : "border-white/10 bg-[#141416] text-[#8b8b93]")}>
+                  active.has(s.id) ? (s.id === "ember" ? "border-[#f28c28]/60 bg-[#1a1410] text-white" : "border-white/50 bg-white/10 text-white") : "border-white/10 bg-[#141416] text-[#8b8b93]")}>
                 {s.id === "ember" && <Flame className="mr-1 inline size-3 -translate-y-px text-[#f28c28]" />}{s.label}
               </span>
             ))}
@@ -197,16 +197,16 @@ function Demo({ step, play }: { step: number; play: boolean }) {
       <p className="mb-2 flex justify-between text-[11px] text-[#8b8b93]"><span>Build log · Liquid engine test stand</span><span>Example</span></p>
       {[[GitMerge, "Merged #42: Add igniter sequencing"], [CircleCheck, "CI passed on main"], [Tag, "Released v1.0 · First hot fire"]].map(([Icon, t], i) => {
         const I = Icon as typeof GitMerge;
-        return <motion.p key={t as string} {...row(i)} className="flex items-center gap-2 py-1 text-[#e4e4e7]"><I className={cn("size-3.5", i === 1 ? "text-[#4ade80]" : "text-[#f28c28]")} /> {t as string}<span className="ml-auto text-[11px] text-[#8b8b93]">GitHub</span></motion.p>;
+        return <motion.p key={t as string} {...row(i)} className="flex items-center gap-2 py-1 text-[#e4e4e7]"><I className={cn("size-3.5", i === 1 ? "text-[#4ade80]" : "text-white")} /> {t as string}<span className="ml-auto text-[11px] text-[#8b8b93]">GitHub</span></motion.p>;
       })}
     </div>
   );
   if (step === 1) return (
     <div className={card}>
       <p className="mb-2 flex justify-between text-[11px] text-[#8b8b93]"><span className="inline-flex items-center gap-1.5"><MessageSquare className="size-3" /> Rocketry Club · #propulsion</span><span>Example</span></p>
-      <p className="ml-auto w-fit max-w-[85%] rounded-lg rounded-br-sm bg-white/[0.08] px-2.5 py-1.5 text-[#e4e4e7]"><span className="text-[#f6b26b]">@Ember</span> draft my update from this week</p>
+      <p className="ml-auto w-fit max-w-[85%] rounded-lg rounded-br-sm bg-white/[0.08] px-2.5 py-1.5 text-[#e4e4e7]"><span className="text-[#f28c28]">@Ember</span> draft my update from this week</p>
       <motion.div {...row(1)} className="mt-2 rounded-lg border border-white/10 bg-[#0e0e10] p-2.5">
-        <p className="flex items-center gap-1.5 text-[11px] font-medium text-[#f6b26b]"><Flame className="size-3" /> Ember · draft update</p>
+        <p className="flex items-center gap-1.5 text-[11px] font-medium text-[#f28c28]"><Flame className="size-3" /> Ember · draft update</p>
         <p className="mt-1 text-[#e4e4e7]">Igniter sequencing merged; the cold-flow test held 300 psi for 30 s.</p>
         <p className="mt-2 flex gap-1.5 text-[11px]"><span className="rounded-md bg-white px-2 py-0.5 font-medium text-[#0b0b0c]">Post</span><span className="rounded-md border border-white/15 px-2 py-0.5 text-[#b4b4bb]">Edit</span><span className="ml-auto self-center text-[#8b8b93]">You confirm</span></p>
       </motion.div>
@@ -229,7 +229,7 @@ function Demo({ step, play }: { step: number; play: boolean }) {
   );
   return (
     <div className={card}>
-      <motion.p {...row(0)} className="flex items-center gap-2 text-[#e4e4e7]"><Building2 className="size-4 text-[#f28c28]" /> <span><b className="font-medium text-white">Acme Aerospace</b> looked at your profile</span></motion.p>
+      <motion.p {...row(0)} className="flex items-center gap-2 text-[#e4e4e7]"><Building2 className="size-4 text-white" /> <span><b className="font-medium text-white">Acme Aerospace</b> looked at your profile</span></motion.p>
       <motion.p {...row(1)} className="mt-2 flex items-center gap-2 text-[12px] text-[#b4b4bb]"><Users className="size-3.5" /> 2 milestones verified · active 7 of 12 weeks</motion.p>
     </div>
   );

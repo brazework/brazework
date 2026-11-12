@@ -4,6 +4,7 @@ import { Disciplines } from "@/components/landing/disciplines";
 import { Hero } from "@/components/landing/hero";
 import { Founders } from "@/components/landing/founders";
 import { SpotlightTracker } from "@/components/landing/interactive";
+import { SmoothScroll } from "@/components/landing/smooth-scroll";
 import { LegacyLinks } from "@/components/landing/legacy-links";
 import { Audiences, FaqSection, Features, How, Pricing, Problem } from "@/components/landing/marketing";
 import { Nav } from "@/components/landing/nav";
@@ -19,6 +20,7 @@ export default function Landing() {
     <div className="story-root min-h-dvh">
       <LegacyLinks />
       <SpotlightTracker />
+      <SmoothScroll />
       <Nav />
       <ThemeChrome landing />
       <StoryRail />
