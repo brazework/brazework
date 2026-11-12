@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { AtSign, BadgeCheck, Bell, Heart, MessageSquare, UserPlus, Users } from "lucide-react";
+import { AtSign, BadgeCheck, Bell, Building2, Heart, MessageSquare, UserPlus, Users } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
@@ -13,7 +13,7 @@ export const metadata: Metadata = { title: "Notifications" };
 
 type N = {
   id: number; actor_id: string | null; actor_first: string; actor_last: string;
-  kind: "like" | "comment" | "follow" | "connect_request" | "connect_accepted" | "community_request" | "community_approved" | "milestone_request" | "milestone_verified" | "milestone_declined" | "mention";
+  kind: "like" | "comment" | "follow" | "connect_request" | "connect_accepted" | "community_request" | "community_approved" | "milestone_request" | "milestone_verified" | "milestone_declined" | "mention" | "company_view";
   post_id: string | null; community_id: string | null; community_name: string; snippet: string; read: boolean; created_at: string;
 };
 
@@ -61,6 +61,8 @@ function describe(items: N[]) {
     case "milestone_verified": return { icon: BadgeCheck, href: "/profile#projects", text: <><strong className="font-medium text-text">{n.community_name}</strong> verified your milestone</>, quote: n.snippet };
     case "milestone_declined": return { icon: BadgeCheck, href: "/profile#projects", text: <><strong className="font-medium text-text">{n.community_name}</strong> didn&apos;t verify your milestone. See why</>, quote: n.snippet };
     case "community_approved": return { icon: Users, href: `/c/${n.community_id}`, text: <>You&apos;re in: your request to join <strong className="font-medium text-text">{n.community_name}</strong> was approved</> };
+    // A verified company looked at your profile (who-looked.sql): named by company, never by person.
+    case "company_view": return { icon: Building2, href: "/dashboard", text: <><strong className="font-medium text-text">{n.community_name}</strong> looked at your profile</>, cta: "See who looked" };
   }
 }
 
