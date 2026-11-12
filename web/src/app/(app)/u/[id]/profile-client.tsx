@@ -66,7 +66,7 @@ export function EditBasics({ headline, bio }: { headline: string; bio: string })
 const meta = (p: ProjectView) => (p.status === "completed" ? `Completed${p.year ? ` ${p.year}` : ""}` : `In progress · updated ${timeAgo(p.updated_at)}`);
 const safeLink = (l: string | null) => (l && /^https?:\/\/\S+$/i.test(l) ? l : null);
 
-export function ProjectCard({ project, own, interests, copilot = false, clubs, stack = false, specsOn = false }: { project: ProjectView; own: boolean; interests: string[]; copilot?: boolean; clubs?: Club[]; stack?: boolean; specsOn?: boolean }) {
+export function ProjectCard({ project, own, interests, copilot = false, clubs, vouches = false, stack = false, specsOn = false }: { project: ProjectView; own: boolean; interests: string[]; copilot?: boolean; clubs?: Club[]; vouches?: boolean; stack?: boolean; specsOn?: boolean }) {
   const verified = (project.milestones ?? []).filter((m) => m.status === "verified").length;
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -91,7 +91,7 @@ export function ProjectCard({ project, own, interests, copilot = false, clubs, s
       {project.tags.length > 0 && <div className="mt-3 flex flex-wrap gap-1.5">{project.tags.map((t) => <span key={t} className="rounded-full bg-surface-2 px-2.5 py-0.5 text-xs text-text-2">#{t}</span>)}</div>}
       {!!project.tools?.length && <p className="mt-2 truncate text-xs text-muted"><span className="text-faint">Built with</span> {project.tools.slice(0, 5).join(" · ")}{project.tools.length > 5 ? ` +${project.tools.length - 5}` : ""}</p>}
       {project.milestones && <MilestoneTimeline items={project.milestones} own={own} />}
-      {own && clubs && <div className="mt-3"><AddMilestone projectId={project.id} projectTitle={project.title} clubs={clubs} /></div>}
+      {own && clubs && <div className="mt-3"><AddMilestone projectId={project.id} projectTitle={project.title} clubs={clubs} vouches={vouches} /></div>}
       {(project.details || link) && (
         <button onClick={() => setOpen((v) => !v)} aria-expanded={open} className="mt-4 inline-flex items-center gap-1.5 self-start rounded-full bg-surface-2 px-3 py-1.5 text-xs font-medium text-text-2 transition hover:bg-hover hover:text-text">
           {open ? "Hide write-up" : "Read the write-up"}
@@ -130,7 +130,7 @@ const FILTERS = [
 ] as const;
 
 // The project grid with All / In progress / Completed filters; cards glide into their new spots.
-export function ProjectGrid({ projects, own, interests, copilot = false, clubs, stack = false, specsOn = false }: { projects: ProjectView[]; own: boolean; interests: string[]; copilot?: boolean; clubs?: Club[]; stack?: boolean; specsOn?: boolean }) {
+export function ProjectGrid({ projects, own, interests, copilot = false, clubs, vouches = false, stack = false, specsOn = false }: { projects: ProjectView[]; own: boolean; interests: string[]; copilot?: boolean; clubs?: Club[]; vouches?: boolean; stack?: boolean; specsOn?: boolean }) {
   const [filter, setFilter] = useState<(typeof FILTERS)[number]["id"]>("all");
   const shown = filter === "all" ? projects : projects.filter((p) => p.status === filter);
   const count = (id: string) => (id === "all" ? projects.length : projects.filter((p) => p.status === id).length);
@@ -150,7 +150,7 @@ export function ProjectGrid({ projects, own, interests, copilot = false, clubs, 
         <AnimatePresence mode="popLayout" initial={false}>
           {shown.map((pr) => (
             <motion.div key={pr.id} layout initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} transition={{ duration: 0.25 }}>
-              <ProjectCard project={pr} own={own} interests={interests} copilot={copilot} clubs={clubs} stack={stack} specsOn={specsOn} />
+              <ProjectCard project={pr} own={own} interests={interests} copilot={copilot} clubs={clubs} vouches={vouches} stack={stack} specsOn={specsOn} />
             </motion.div>
           ))}
         </AnimatePresence>

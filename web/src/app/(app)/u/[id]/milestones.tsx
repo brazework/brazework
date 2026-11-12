@@ -101,7 +101,8 @@ export function MilestoneTimeline({ items, own }: { items: Milestone[]; own: boo
 const initial: MilestoneState = { ok: false, message: "" };
 
 // "Add milestone": what happened, when, a link to the evidence, and the club that saw it.
-export function AddMilestone({ projectId, projectTitle, clubs }: { projectId: string; projectTitle: string; clubs: Club[] }) {
+// `vouches`: whether the database has vouches (supabase/vouches.sql); until then it's clubs only.
+export function AddMilestone({ projectId, projectTitle, clubs, vouches = false }: { projectId: string; projectTitle: string; clubs: Club[]; vouches?: boolean }) {
   const [open, setOpen] = useState(false);
   const [sent, setSent] = useState(false);
   return (
@@ -110,15 +111,15 @@ export function AddMilestone({ projectId, projectTitle, clubs }: { projectId: st
         {sent && <Celebrate pieces={16} />}
         <Flag className="size-3.5" /> Add milestone
       </button>
-      {open && <MilestoneDialog projectId={projectId} projectTitle={projectTitle} clubs={clubs} onClose={() => setOpen(false)} onSent={() => setSent(true)} />}
+      {open && <MilestoneDialog projectId={projectId} projectTitle={projectTitle} clubs={clubs} vouches={vouches} onClose={() => setOpen(false)} onSent={() => setSent(true)} />}
     </>
   );
 }
 
-function MilestoneDialog({ projectId, projectTitle, clubs, onClose, onSent }: { projectId: string; projectTitle: string; clubs: Club[]; onClose: () => void; onSent: () => void }) {
+function MilestoneDialog({ projectId, projectTitle, clubs, vouches, onClose, onSent }: { projectId: string; projectTitle: string; clubs: Club[]; vouches: boolean; onClose: () => void; onSent: () => void }) {
   const ref = useRef<HTMLDialogElement>(null);
   const [state, action, pending] = useActionState(addMilestone, initial);
-  const [by, setBy] = useState<"club" | "vouch">(clubs.length ? "club" : "vouch");
+  const [by, setBy] = useState<"club" | "vouch">(clubs.length || !vouches ? "club" : "vouch");
   useEffect(() => { ref.current?.showModal(); }, []);
   useEffect(() => { if (state.ok) { onSent(); onClose(); } }, [state.ok, onSent, onClose]);
   const today = new Date().toISOString().slice(0, 10);
@@ -139,7 +140,8 @@ function MilestoneDialog({ projectId, projectTitle, clubs, onClose, onSent }: { 
           <Field label="When"><input name="achievedOn" type="date" max={today} defaultValue={today} required className={inputCls} /></Field>
           <Field label="Evidence" hint="A photo, video, file, commit or the event page."><input name="evidence" type="url" required maxLength={300} placeholder="https://…" className={inputCls} /></Field>
         </div>
-        <fieldset>
+        {!vouches && !clubs.length && <p className="rounded-2xl border border-dashed border-line p-4 text-sm text-muted">Milestones are verified by a club you belong to. <Link href="/communities?tab=discover" className="font-medium text-text underline underline-offset-4">Join your club</Link> first.</p>}
+        {vouches && <fieldset>
           <legend className="text-sm font-medium">Who confirms it?</legend>
           <input type="hidden" name="verifyBy" value={by} />
           <div role="radiogroup" className="mt-2 grid grid-cols-2 gap-2">
@@ -151,14 +153,14 @@ function MilestoneDialog({ projectId, projectTitle, clubs, onClose, onSent }: { 
               </button>
             ))}
           </div>
-        </fieldset>
-        {by === "club" ? (
+        </fieldset>}
+        {by === "club" ? (clubs.length > 0 && (
           <Field label="Which club saw it happen?">
             <select name="communityId" required defaultValue={clubs[0]?.id} className={inputCls}>
               {clubs.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
           </Field>
-        ) : (
+        )) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_auto]">
             <Field label="Their email" hint="Their university or company address. We email them a link; they don't need an account.">
               <input name="vouchEmail" type="email" required maxLength={254} autoComplete="off" placeholder="name@university.edu" className={inputCls} />
@@ -177,7 +179,7 @@ function MilestoneDialog({ projectId, projectTitle, clubs, onClose, onSent }: { 
         {state.message && !state.ok && <p role="alert" className="text-sm text-danger">{state.message}</p>}
         <div className="flex justify-end gap-2">
           <Button type="button" variant="ghost" onClick={onClose}>Cancel</Button>
-          <Button type="submit" disabled={pending}>{pending ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />} {by === "club" ? "Ask for verification" : "Ask them to vouch"}</Button>
+          <Button type="submit" disabled={pending || (by === "club" && !clubs.length)}>{pending ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />} {by === "club" ? "Ask for verification" : "Ask them to vouch"}</Button>
         </div>
       </form>
     </dialog>

@@ -5,7 +5,7 @@ import { useEffect, useRef, useState, type RefObject } from "react";
 // A pinned story section (Linear FIX-92): on wide screens the section is several screens tall with
 // its content held in place (sticky), and how far you've scrolled through it picks the step. `at` is
 // the step, `fill` how far through it (0–1), `goTo(i)` scrolls to a step (tabs and arrows use it).
-// The section carries data-chapters={n} so smooth-scroll.tsx snaps to each step. Phones have their
+// The section carries data-chapters={n}, the step count. Phones have their
 // own one-screen pages, so there `wide` is false and the component runs its own clock instead.
 // onStep(next, prev) is called from the scroll itself when the step changes.
 export function usePinned(ref: RefObject<HTMLElement | null>, n: number, onStep?: (next: number, prev: number) => void) {
