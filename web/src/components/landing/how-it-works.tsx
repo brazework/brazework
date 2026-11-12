@@ -1,6 +1,6 @@
 "use client";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { BadgeCheck, Building2, CalendarDays, Check, Heart, MessageSquare, Users } from "lucide-react";
+import { BadgeCheck, Building2, CalendarDays, Check, Heart, Lock, MessageSquare, RefreshCw, Users } from "lucide-react";
 import { useEffect, useState } from "react";
 import { cn } from "@/lib/forge";
 import { CountUp } from "./count-up";
@@ -14,8 +14,11 @@ const STEPS = [
 // The brass of the logo's seam (the landing keeps its colour, FIX-92).
 const BRASS = "linear-gradient(135deg,#ea580c,#d97706)";
 
-// Three steps on the left, a live mock of the app for the active step on the right. Steps advance on
-// their own (the bar under the active step) until someone picks one. Each mock plays its moment
+const URLS = ["brazework.com/c/robotics-team", "brazework.com/projects/rover-nav", "brazework.com/inbox"];
+
+// Three steps on the left, joined by a rail that fills as the loop goes round; a live mock of the app
+// for the active step on the right, in a browser frame whose address follows the step. Steps advance
+// on their own (the bar under the active step) until someone picks one. Each mock plays its moment
 // (FIX-92): someone joins, a milestone gets verified, a company reaches out. Reduced motion: still.
 export function HowItWorks() {
   const [step, setStep] = useState(0);
@@ -23,39 +26,61 @@ export function HowItWorks() {
   const reduce = useReducedMotion();
   return (
     <div className="grid grid-cols-1 gap-8 lg:grid-cols-[1fr_1.15fr] lg:items-center [&>*]:min-w-0">
-      <ol className="flex flex-col gap-3">
-        {STEPS.map((s, n) => (
-          <li key={s.title}>
-            <button
-              type="button"
-              aria-pressed={n === step}
-              onClick={() => { setAuto(false); setStep(n); }}
-              className={cn(
-                "relative w-full overflow-hidden rounded-2xl border p-6 text-left transition duration-300",
-                n === step ? "border-line-strong bg-surface shadow-[var(--shadow)]" : "border-transparent hover:bg-surface/70",
-              )}
-            >
-              <div className="flex items-start gap-4">
-                <span className={cn("grid size-9 shrink-0 place-items-center rounded-full text-sm font-semibold transition", n === step ? "text-white" : "bg-surface-2 text-muted")} style={n === step ? { background: BRASS } : undefined}>{n + 1}</span>
-                <div>
-                  <h3 className="text-lg font-semibold tracking-tight">{s.title}</h3>
-                  <p className="mt-1 text-sm leading-relaxed text-muted">{s.body}</p>
+      <div>
+        <ol className="relative flex flex-col gap-2">
+          {/* The rail behind the step numbers, filled up to the active step. */}
+          <span aria-hidden="true" className="absolute top-10 bottom-10 left-[2.6rem] w-px bg-line">
+            <span className="absolute inset-x-0 top-0 block origin-top transition-[height] duration-700 ease-out" style={{ height: `${(step / (STEPS.length - 1)) * 100}%`, background: BRASS }} />
+          </span>
+          {STEPS.map((s, n) => (
+            <li key={s.title} className="relative">
+              <button
+                type="button"
+                aria-pressed={n === step}
+                onClick={() => { setAuto(false); setStep(n); }}
+                className={cn(
+                  "relative w-full overflow-hidden rounded-2xl border p-6 text-left transition duration-300",
+                  n === step ? "border-line-strong bg-surface shadow-[var(--shadow)]" : "border-transparent hover:bg-surface/70",
+                )}
+              >
+                <div className="flex items-start gap-4">
+                  <span className={cn("relative grid size-9 shrink-0 place-items-center rounded-full text-sm font-semibold ring-4 ring-bg transition", n === step ? "text-white" : n < step ? "bg-text text-bg" : "bg-surface-2 text-muted")} style={n === step ? { background: BRASS } : undefined}>
+                    {n < step ? <Check className="size-4" /> : n + 1}
+                  </span>
+                  <div>
+                    <h3 className={cn("text-lg font-semibold tracking-tight transition", n !== step && "text-text-2")}>{s.title}</h3>
+                    <p className="mt-1 text-sm leading-relaxed text-muted">{s.body}</p>
+                  </div>
                 </div>
-              </div>
-              {n === step && auto && !reduce && (
-                <span key={`bar-${step}`} className="step-progress absolute inset-x-0 bottom-0 h-0.5 origin-left" style={{ background: BRASS }} onAnimationEnd={() => setStep((v) => (v + 1) % STEPS.length)} aria-hidden="true" />
-              )}
-            </button>
-          </li>
-        ))}
-      </ol>
+                {n === step && auto && !reduce && (
+                  <span key={`bar-${step}`} className="step-progress absolute inset-x-0 bottom-0 h-0.5 origin-left" style={{ background: BRASS }} onAnimationEnd={() => setStep((v) => (v + 1) % STEPS.length)} aria-hidden="true" />
+                )}
+              </button>
+            </li>
+          ))}
+        </ol>
+        <p className="m-hide mt-4 flex items-center gap-2 pl-6 text-sm text-muted"><RefreshCw className="size-4 shrink-0" /> Then sponsors back the club behind the work, and the loop starts again.</p>
+      </div>
 
-      <div className="relative min-h-[420px] rounded-2xl border border-line bg-surface-2/60 p-4 sm:p-6" aria-live="polite">
-        <AnimatePresence mode="wait">
-          <motion.div key={step} initial={{ opacity: 0, y: 16, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -12, scale: 0.98 }} transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}>
-            {step === 0 ? <ClubMock play={!reduce} /> : step === 1 ? <ProjectMock play={!reduce} /> : <InboxMock play={!reduce} />}
-          </motion.div>
-        </AnimatePresence>
+      {/* The product, in a browser frame. */}
+      <div className="relative overflow-hidden rounded-2xl border border-line bg-surface shadow-[0_40px_100px_-50px_rgb(0_0_0/0.45)]">
+        <div className="flex items-center gap-3 border-b border-line bg-surface-2/70 px-4 py-2.5" aria-hidden="true">
+          <span className="flex gap-1.5">{[0, 1, 2].map((i) => <span key={i} className="size-2.5 rounded-full bg-line-strong" />)}</span>
+          <span className="flex min-w-0 flex-1 items-center justify-center gap-1.5 truncate rounded-md bg-bg/70 px-3 py-1 font-mono text-[11px] text-muted">
+            <Lock className="size-3 shrink-0" />
+            <AnimatePresence mode="wait" initial={false}>
+              <motion.span key={step} className="truncate" initial={{ opacity: 0, y: 4 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -4 }} transition={{ duration: 0.2 }}>{URLS[step]}</motion.span>
+            </AnimatePresence>
+          </span>
+          <span className="w-[42px]" />
+        </div>
+        <div className="relative min-h-[420px] bg-[radial-gradient(var(--line)_1px,transparent_1px)] bg-[size:16px_16px] p-4 sm:p-6" aria-live="polite">
+          <AnimatePresence mode="wait">
+            <motion.div key={step} initial={{ opacity: 0, y: 16, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -12, scale: 0.98 }} transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}>
+              {step === 0 ? <ClubMock play={!reduce} /> : step === 1 ? <ProjectMock play={!reduce} /> : <InboxMock play={!reduce} />}
+            </motion.div>
+          </AnimatePresence>
+        </div>
       </div>
     </div>
   );
