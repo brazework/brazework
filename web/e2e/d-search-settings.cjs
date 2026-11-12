@@ -35,6 +35,26 @@ const pw = require("playwright-core");
     await box.check();
     await josh.getByText("You'll get your week by email.").waitFor({ timeout: 10000 });
   }, josh);
+  await step("email alerts: the cron needs its secret, does a dry run, and each kind has a switch that sticks", async () => {
+    const url = BASE + "/api/cron/alerts?grace=0";
+    const secret = process.env.CRON_SECRET || "cron_forge_e2e";
+    const anon = await fetch(url);
+    if (anon.status !== 401) throw new Error("no secret should be refused, got " + anon.status);
+    const r = await fetch(url, { headers: { authorization: `Bearer ${secret}` } });
+    if (r.status !== 200) throw new Error("alerts " + r.status + " " + (await r.text()));
+    const out = await r.json();
+    if (out.emailOn !== false || out.dry !== true || out.sent !== 0) throw new Error("without a key it should be a dry run: " + JSON.stringify(out));
+    await go(josh, "/settings#email");
+    const box = josh.locator("#email-alert-messages");
+    if (!(await box.isChecked())) throw new Error("message emails should be on by default");
+    await box.uncheck();
+    await josh.getByText("Email alerts saved.").waitFor({ timeout: 10000 });
+    await josh.reload(); await josh.locator("#email-alert-messages").waitFor();
+    if (await josh.locator("#email-alert-messages").isChecked()) throw new Error("turning message emails off did not stick");
+    if (!(await josh.locator("#email-alert-requests").isChecked())) throw new Error("the other kinds should stay on");
+    await josh.locator("#email-alert-messages").check();
+    await josh.getByText("Email alerts saved.").waitFor({ timeout: 10000 });
+  }, josh);
   await step("settings: profile headline saves", async () => {
     await go(josh, "/settings#profile");
     const h = josh.locator('input[name="headline"]').first();
