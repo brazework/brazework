@@ -20,7 +20,7 @@ import { requestTime, timeAgo, type Post } from "@/lib/forge";
 import { getViewer } from "@/lib/supabase/server";
 import { MilestoneTimeline, type Milestone } from "../../u/[id]/milestones";
 import { PostUpdate } from "./post-update";
-import { buildLog, inThirtySeconds, lastActivity, liveStatus, weeklyActivity } from "@/lib/build-log";
+import { buildLog, inThirtySeconds, lastActivity, liveStatus, weeklyActivity, type BuildEvent } from "@/lib/build-log";
 import { AboutBuild, ActivityStrip, BuildLogTimeline, ThirtySeconds } from "./build-log-view";
 import { TeamList } from "./team";
 import { OrganizeWithEmber } from "./organize";
@@ -49,13 +49,13 @@ async function ProjectView({ params }: { params: PageProps<"/projects/[id]">["pa
   const { id } = await params;
   const { supabase, user } = await getViewer();
   if (!user) redirect("/login");
-  const { milestones: msOn, projectTools: stackOn, projectSpecs: specsOn, projectFiles: filesOn, updateFiles: updFilesOn } = await dbFeatures();
+  const { milestones: msOn, projectTools: stackOn, projectSpecs: specsOn, projectFiles: filesOn, updateFiles: updFilesOn, github: ghOn } = await dbFeatures();
   const { data } = await supabase.from("projects").select(`id, title, summary, status, year, tags, private, updated_at, created_at, owner_id, profiles!projects_owner_id_fkey(first_name, last_name, headline, field)${stackOn ? ", tools" : ""}`).eq("id", id).maybeSingle();
   const p = data as unknown as Project | null;
   const own = p?.owner_id === user.id;
   if (!p || (p.private && !own)) return <EmptyState title="This project isn't available" body="It may be private, or it was removed." />;
 
-  const [det, ms, ups, more, teamRes, clubRes, filesRes] = await Promise.all([
+  const [det, ms, ups, more, teamRes, clubRes, filesRes, ghEvents, ghRepos] = await Promise.all([
     supabase.from("project_details").select(specsOn ? "details, link, specs" : "details, link").eq("project_id", id).maybeSingle(),
     msOn ? supabase.from("milestones").select(await milestoneCols()).eq("project_id", id).order("achieved_on", { ascending: false }).limit(100) : Promise.resolve({ data: [] }),
     supabase.from("posts").select(await postSelect()).eq("project_id", id).eq("status", "visible").order("created_at", { ascending: false }).limit(30),
@@ -63,7 +63,12 @@ async function ProjectView({ params }: { params: PageProps<"/projects/[id]">["pa
     (await dbFeatures()).verification ? supabase.from("project_members").select("uid, profiles(first_name, last_name, headline)").eq("project_id", id).order("added_at", { ascending: true }).limit(20) : Promise.resolve({ data: [] }),
     own ? supabase.from("community_members").select("community_id").eq("uid", user.id).limit(50) : Promise.resolve({ data: [] }),
     filesOn ? supabase.from("project_files").select(updFilesOn ? "id, kind, name, path, size, url, added_by, created_at, post_id" : "id, kind, name, path, size, url, added_by, created_at").eq("project_id", id).order("created_at", { ascending: false }).limit(100) : Promise.resolve({ data: [] }),
+    // Live from GitHub (supabase/github.sql, FIX-92 phase 3): what happened on its linked repos.
+    ghOn ? supabase.from("build_events").select("id, kind, title, url, actor, state, occurred_at").eq("project_id", id).order("occurred_at", { ascending: false }).limit(60) : Promise.resolve({ data: [] }),
+    ghOn ? supabase.from("project_repos").select("full_name, html_url").eq("project_id", id).limit(5) : Promise.resolve({ data: [] }),
   ]);
+  const events = (ghEvents.data ?? []) as BuildEvent[];
+  const repos = (ghRepos.data ?? []) as { full_name: string; html_url: string }[];
   // The files folder: photos, videos and 3D models get a signed link up front for their previews
   // (the bucket is private). Other files get one when opened.
   type FileRow = Omit<ProjectFileItem, "src"> & { path: string | null };
@@ -110,10 +115,11 @@ async function ProjectView({ params }: { params: PageProps<"/projects/[id]">["pa
   const now = requestTime();
   const verifiedAt = verified.map((m) => Date.parse(m.reviewed_at || m.achieved_on));
   const postAt = posts.map((x) => Date.parse(x.created_at));
-  const weeks = weeklyActivity([...postAt, ...verifiedAt], now, 12);
-  const last = lastActivity([...postAt, ...verifiedAt, Date.parse(p.updated_at)]);
+  const githubAt = events.map((e) => Date.parse(e.occurred_at));
+  const weeks = weeklyActivity([...postAt, ...verifiedAt, ...githubAt], now, 12);
+  const last = lastActivity([...postAt, ...verifiedAt, ...githubAt, Date.parse(p.updated_at)]);
   const live = liveStatus(p.status, last, now);
-  const log = buildLog(posts, milestones);
+  const log = buildLog(posts, milestones, events);
   const summary = inThirtySeconds({
     owner: ownerName, title: p.title, summary: p.summary, status: p.status, teamSize: team.length + 1,
     verified: verified.map((m) => ({ title: m.title, reviewer: m.reviewer_name, club: m.community_name })),
@@ -210,7 +216,10 @@ async function ProjectView({ params }: { params: PageProps<"/projects/[id]">["pa
         <section id="log" aria-label="Build log" className="flex scroll-mt-24 flex-col gap-4">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
             <h2 className="text-lg font-semibold tracking-tight">Build log</h2>
-            <span className="text-xs text-muted">{log.length ? `${posts.length} ${posts.length === 1 ? "update" : "updates"} · ${verified.length} verified` : "Updates and verified milestones, as they happen"}</span>
+            <span className="text-xs text-muted">
+              {log.length ? `${posts.length} ${posts.length === 1 ? "update" : "updates"} · ${verified.length} verified` : "Updates and verified milestones, as they happen"}
+              {repos.map((r) => <a key={r.full_name} href={r.html_url} target="_blank" rel="noopener noreferrer nofollow" className="ml-2 inline-flex items-center gap-1 rounded-md border border-line px-1.5 py-0.5 font-medium text-text-2 hover:text-text"><span className="size-1.5 rounded-full bg-ok" aria-hidden="true" /> Live from {r.full_name}</a>)}
+            </span>
           </div>
           {own && <PostUpdate projectId={p.id} title={p.title} attach={filesOn} />}
           {log.length > 0 && <BuildLogTimeline entries={log} liked={liked} saved={saved} me={user.id} projectId={p.id} ownerId={p.owner_id} filesByPost={filesByPost} />}

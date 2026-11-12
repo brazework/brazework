@@ -58,3 +58,4 @@ mcp-writes
 mcp-milestones
 email-alerts
 who-looked
+github

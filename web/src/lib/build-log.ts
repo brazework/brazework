@@ -27,15 +27,19 @@ export function liveStatus(status: "in_progress" | "completed", last: number | n
 }
 
 export type LogMilestone = { id: string; title: string; reviewer_name: string; community_name: string; reviewed_at?: string | null; achieved_on: string; status: string };
-export type LogEntry<P> = { kind: "post"; at: number; post: P } | { kind: "verified"; at: number; milestone: LogMilestone };
+// From GitHub (supabase/github.sql, FIX-92 phase 3): merged pull requests, releases, CI, deploys, pushes.
+export type BuildEvent = { id: number; kind: "pr_merged" | "release" | "ci" | "deploy" | "push"; title: string; url: string; actor: string; state: string; occurred_at: string };
+export type LogEntry<P> = { kind: "post"; at: number; post: P } | { kind: "verified"; at: number; milestone: LogMilestone } | { kind: "github"; at: number; event: BuildEvent };
 
-/** One timeline, newest first: the project's updates, and the moments its club verified a milestone. */
-export function buildLog<P extends { id: string; created_at: string }>(posts: P[], milestones: LogMilestone[]): LogEntry<P>[] {
+/** One timeline, newest first: the project's updates, the moments its club verified a milestone, and
+ *  what happened on its GitHub repo. */
+export function buildLog<P extends { id: string; created_at: string }>(posts: P[], milestones: LogMilestone[], events: BuildEvent[] = []): LogEntry<P>[] {
   const entries: LogEntry<P>[] = [
     ...posts.map((post) => ({ kind: "post" as const, at: Date.parse(post.created_at), post })),
     ...milestones
       .filter((m) => m.status === "verified")
       .map((milestone) => ({ kind: "verified" as const, at: Date.parse(milestone.reviewed_at || milestone.achieved_on), milestone })),
+    ...events.map((event) => ({ kind: "github" as const, at: Date.parse(event.occurred_at), event })),
   ];
   return entries.filter((e) => Number.isFinite(e.at)).sort((a, b) => b.at - a.at);
 }

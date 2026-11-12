@@ -1,10 +1,10 @@
-import { BadgeCheck, ExternalLink, Timer } from "lucide-react";
+import { BadgeCheck, CircleCheck, CircleX, ExternalLink, GitCommitHorizontal, GitMerge, Rocket, Tag, Timer } from "lucide-react";
 import Link from "next/link";
 import { BuiltWith } from "@/components/projects/built-with";
 import { ProjectFiles, type ProjectFileItem } from "@/components/projects/project-files";
 import { Kicker } from "@/components/ui";
 import { cn, timeAgo, type Post } from "@/lib/forge";
-import type { LogEntry } from "@/lib/build-log";
+import type { BuildEvent, LogEntry } from "@/lib/build-log";
 import { PostCard } from "../../feed/post-card";
 
 // The project page as a live build log (Linear FIX-92): the pieces, kept out of page.tsx.
@@ -25,16 +25,19 @@ export function ActivityStrip({ weeks }: { weeks: number[] }) {
   );
 }
 
-/** One timeline, newest first: updates (with what was posted with them) and verified milestones. */
+/** One timeline, newest first: updates (with what was posted with them), verified milestones, and
+ *  what happened on the project's GitHub repo (FIX-92 phase 3). */
 export function BuildLogTimeline({ entries, liked, saved, me, projectId, ownerId, filesByPost }: {
   entries: LogEntry<Post>[]; liked: Set<string>; saved: Set<string>; me: string; projectId: string; ownerId: string; filesByPost: Map<string, ProjectFileItem[]>;
 }) {
   return (
     <ol className="relative flex flex-col gap-4 before:absolute before:top-2 before:bottom-2 before:left-[11px] before:w-px before:bg-line sm:gap-5">
       {entries.map((e, i) => (
-        <li key={e.kind === "post" ? `p-${e.post.id}` : `m-${e.milestone.id}`} className="relative pl-9">
-          <span aria-hidden="true" className={cn("absolute top-3 left-[5px] grid size-[13px] place-items-center rounded-full ring-4 ring-bg", e.kind === "verified" ? "bg-ok" : "bg-text/70")} />
-          {e.kind === "verified" ? (
+        <li key={e.kind === "post" ? `p-${e.post.id}` : e.kind === "verified" ? `m-${e.milestone.id}` : `g-${e.event.id}`} className="relative pl-9">
+          <span aria-hidden="true" className={cn("absolute left-[5px] grid size-[13px] place-items-center rounded-full ring-4 ring-bg", e.kind === "github" ? "top-2 size-[11px] bg-line-strong" : "top-3", e.kind === "verified" ? "bg-ok" : e.kind === "post" && "bg-text/70")} />
+          {e.kind === "github" ? (
+            <GitHubRow event={e.event} />
+          ) : e.kind === "verified" ? (
             <div className="rounded-xl border border-[color-mix(in_oklab,var(--ok)_30%,var(--border))] bg-[color-mix(in_oklab,var(--ok)_6%,var(--surface))] px-4 py-3">
               <p className="flex items-start gap-2 text-sm"><BadgeCheck className="mt-0.5 size-4 shrink-0 text-ok" /><span><span className="font-medium">Verified: {e.milestone.title}</span><span className="block text-xs text-muted">by {e.milestone.reviewer_name || "an officer"}, {e.milestone.community_name} · {timeAgo(new Date(e.at).toISOString())}</span></span></p>
             </div>
@@ -99,5 +102,21 @@ export function ThirtySeconds({ lines, ownerId }: { lines: string[]; ownerId: st
       </ul>
       <Link href={`/u/${ownerId}#proof`} className="mt-3 inline-block text-sm font-medium hover:underline">See their verified work →</Link>
     </section>
+  );
+}
+
+// One line per thing that happened on GitHub: quieter than an update, linked to it on GitHub.
+const GITHUB_ICON = { pr_merged: GitMerge, release: Tag, deploy: Rocket, push: GitCommitHorizontal, ci: CircleCheck } as const;
+function GitHubRow({ event: g }: { event: BuildEvent }) {
+  const Icon = g.kind === "ci" && g.state === "failure" ? CircleX : GITHUB_ICON[g.kind];
+  return (
+    <a href={g.url} target="_blank" rel="noopener noreferrer nofollow" className="group flex items-start gap-2.5 rounded-lg px-1 py-0.5 text-sm transition hover:bg-hover">
+      <Icon className={cn("mt-0.5 size-4 shrink-0", g.kind === "ci" ? (g.state === "failure" ? "text-danger" : "text-ok") : g.kind === "release" ? "text-accent" : "text-muted")} />
+      <span className="min-w-0 flex-1">
+        <span className="text-text-2 group-hover:text-text">{g.title}</span>
+        <span className="block text-xs text-faint">GitHub{g.actor ? ` · ${g.actor}` : ""} · {timeAgo(g.occurred_at)}</span>
+      </span>
+      <ExternalLink className="mt-1 size-3.5 shrink-0 text-faint opacity-0 transition group-hover:opacity-100" />
+    </a>
   );
 }
