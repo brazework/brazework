@@ -4,6 +4,7 @@ import { ArrowRight, BadgeCheck, Building2, CalendarDays, GraduationCap, Megapho
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui";
 import { cn } from "@/lib/forge";
+import { Orb } from "./orb";
 
 // The hero: one clear line, then the four groups Brazework serves. Each one shows what Brazework does for
 // them in a small live preview (example data, labelled as such). It cycles until you pick one.
@@ -41,6 +42,9 @@ export function Hero() {
 
   return (
     <section id="top" data-story="Brazework" className="story-sec relative isolate overflow-hidden pt-32 pb-20 sm:pt-40">
+      {/* The orb (FIX-92): everything you build flows into one place. Phones: a soft backdrop at the top
+          (the preview card is hidden there). Wide screens: it rises behind the preview card's top corner, half showing. */}
+      <Orb tone="auto" className="pointer-events-none absolute -top-6 -right-24 -z-10 size-80 opacity-90 md:hidden" />
       <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-14 px-6 lg:grid-cols-[1.05fr_1fr] [&>*]:min-w-0">
         <div>
           <a href="#founding" className="rise-in inline-flex max-w-full items-center gap-2 rounded-full border border-line bg-surface px-3 py-1.5 text-xs text-text-2 shadow-sm transition hover:border-line-strong">
@@ -92,6 +96,7 @@ export function Hero() {
         </div>
 
         <div id="hero-preview" role="tabpanel" className="relative mx-auto w-full max-w-[440px]">
+          <Orb tone="auto" className="pointer-events-none absolute top-0 right-0 -z-10 hidden aspect-square w-[118%] translate-x-[42%] -translate-y-[38%] md:block" />
           <AnimatePresence mode="popLayout" initial={false}>
             <motion.div key={a.id} initial={{ opacity: 0, y: 30, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -20, scale: 0.98 }} transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}>
               <Preview id={a.id} />

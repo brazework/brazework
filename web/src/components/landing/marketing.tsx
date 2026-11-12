@@ -19,7 +19,7 @@ export function Eyebrow({ children, className }: { children: React.ReactNode; cl
   );
 }
 
-function Head({ eyebrow, title, accent, body, center }: { eyebrow: string; title: string; accent?: string; body?: string; center?: boolean }) {
+export function Head({ eyebrow, title, accent, body, center }: { eyebrow: string; title: string; accent?: string; body?: string; center?: boolean }) {
   return (
     <Reveal className={cn("max-w-3xl", center && "mx-auto text-center")}>
       <Eyebrow>{eyebrow}</Eyebrow>

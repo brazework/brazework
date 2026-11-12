@@ -11,6 +11,7 @@ import { UpdatesPanel } from "@/components/tour/updates-panel";
 import { newsPool, pickNews, type NewsPick } from "@/lib/news";
 import { TrendingNews } from "./trending-news";
 import { YourWeekCard } from "./streak";
+import { ConnectAgentCard } from "./connect-agent";
 import { Suspense } from "react";
 
 // The feed's right rail (wide screens): your week, what's coming up, your clubs and open challenges, then what's trending and Brazework's own updates, so the rest of Brazework is one glance away.
@@ -20,16 +21,19 @@ export async function FeedRail() {
   const now = requestTime();
   const cutoff = new Date(now - DROP_AFTER_MS).toISOString();
   const since = new Date(now - 14 * 864e5).toISOString();
-  const [mine, ev, going, recent, pool, ch] = await Promise.all([
+  const f = await dbFeatures();
+  const [mine, ev, going, recent, pool, ch, tokens] = await Promise.all([
     supabase.from("community_members").select("role, communities(id, name, member_count)").eq("uid", user.id).limit(50),
     supabase.from("events").select(await eventWithHost()).eq("status", "published").gt("ends_at", cutoff).order("starts_at", { ascending: true }).limit(4),
     supabase.from("event_rsvps").select("event_id").eq("user_id", user.id).limit(500),
     supabase.from("posts").select("tags").is("community_id", null).gt("created_at", since).limit(300),
     newsPool().catch(() => []),
     // Open sponsored challenges (supabase/challenges.sql), soonest deadline first.
-    (await dbFeatures()).challenges
+    f.challenges
       ? supabase.from("challenges").select("id, title, prize, deadline, organizations(name)").eq("status", "open").gt("deadline", new Date(now).toISOString()).order("deadline", { ascending: true }).limit(3)
       : Promise.resolve({ data: [] }),
+    // Has this member connected an AI tool yet (supabase/mcp.sql)? If not, Home suggests it.
+    f.mcp ? supabase.from("api_tokens").select("id", { count: "exact", head: true }).is("revoked_at", null) : Promise.resolve({ count: 1 }),
   ]);
   const challenges: RailChallenge[] = ((ch.data ?? []) as unknown as { id: string; title: string; prize: string; deadline: string; organizations: { name: string } | null }[])
     .map((c) => ({ id: c.id, title: c.title, sponsor: c.organizations?.name ?? "Sponsor", prize: c.prize, days: Math.max(0, Math.ceil((Date.parse(c.deadline) - now) / 864e5)) }));
@@ -48,7 +52,7 @@ export async function FeedRail() {
   const trending = [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 6);
 
   // Your week tops the rail (FIX-67, FIX-92): streak, proof, views and to-dos in one card.
-  return <RailView top={<Suspense fallback={null}><YourWeekCard /></Suspense>} trending={trending} news={news} hasInterests={(profile.interests ?? []).length > 0} clubs={clubs} events={events} going={goingSet} challenges={challenges} />;
+  return <RailView top={<><Suspense fallback={null}><YourWeekCard /></Suspense>{(tokens.count ?? 1) === 0 && <ConnectAgentCard />}</>} trending={trending} news={news} hasInterests={(profile.interests ?? []).length > 0} clubs={clubs} events={events} going={goingSet} challenges={challenges} />;
 }
 
 type Club = { id: string; name: string; member_count: number };

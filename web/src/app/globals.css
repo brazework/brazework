@@ -607,3 +607,26 @@ select option { background-color: var(--surface); color: var(--text); }
 /* The landing's agent section (components/landing/connect-section.tsx): on phones, the current
    chapter's bar fills while it plays, then the next chapter starts. */
 @keyframes agent-fill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+/* The landing page keeps its colour (FIX-92): headline accents in the brass of the logo's seam,
+   deep enough to read on the light page (about 5:1), brighter on the dark one. The app stays calm. */
+.story { --text-grad: linear-gradient(90deg, #c2410c, #d97706 55%, #b45309); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .story { --text-grad: linear-gradient(90deg, #fb923c, #fbbf24 55%, #f59e0b); } }
+:root[data-theme="dark"] .story { --text-grad: linear-gradient(90deg, #fb923c, #fbbf24 55%, #f59e0b); }
+
+/* Every kind of engineering (components/landing/disciplines.tsx): quiet, looping drawings of real
+   work. The global reduced-motion rule above stops them. */
+@keyframes dz-spin { to { transform: rotate(360deg); } }
+@keyframes dz-spin-back { to { transform: rotate(-360deg); } }
+@keyframes dz-scroll { to { transform: translateX(-60px); } }
+@keyframes dz-draw { 0% { stroke-dashoffset: 400; } 55%, 85% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: 0; opacity: 0; } }
+@keyframes dz-sweep { from { stroke-dashoffset: 300; } to { stroke-dashoffset: 0; } }
+@keyframes dz-flex { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(5px); } }
+@keyframes dz-blink { 0%, 60%, 100% { opacity: 0.25; } 70%, 90% { opacity: 1; } }
+.dz-gear { transform-box: fill-box; transform-origin: center; animation: dz-spin 9s linear infinite; }
+.dz-gear-back { transform-box: fill-box; transform-origin: center; animation: dz-spin-back 6.75s linear infinite; }
+.dz-scroll { animation: dz-scroll 2.4s linear infinite; }
+.dz-draw { stroke-dasharray: 400; animation: dz-draw 5s ease-out infinite; }
+.dz-sweep { stroke-dasharray: 60 240; animation: dz-sweep 2.6s linear infinite; }
+.dz-flex { animation: dz-flex 3.2s ease-in-out infinite; }
+.dz-blink { animation: dz-blink 4s ease-in-out infinite; }
