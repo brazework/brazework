@@ -8,6 +8,10 @@ import { loadWeekFor } from "@/lib/week-load";
 // The weekly email digest. Run it once a week (Vercel Cron sends "Authorization: Bearer $CRON_SECRET").
 // Each member gets "Your week" by email, unless it's empty or they turned it off; a member is never
 // emailed twice in a week. Without RESEND_API_KEY it only counts who would get one (?dry=1 does too).
+// Vercel Cron calls this every Monday at 14:00 UTC (web/vercel.json, Linear FIX-86). It sends one
+// member at a time, so give it time: a run cut off halfway would leave the rest for next week.
+export const maxDuration = 300;
+
 export async function GET(req: Request) {
   const secret = process.env.CRON_SECRET ?? "";
   if (!secret) return NextResponse.json({ error: "Set CRON_SECRET to run the digest." }, { status: 503 });
