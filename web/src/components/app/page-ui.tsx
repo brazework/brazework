@@ -6,28 +6,27 @@ import { Ember, type EmberMood } from "@/components/ember/ember";
 
 export function PageHeader({ title, subtitle, actions }: { title: string; subtitle?: React.ReactNode; actions?: React.ReactNode }) {
   return (
-    <header className="relative flex flex-wrap items-end justify-between gap-4 overflow-hidden rounded-3xl border border-line bg-surface px-5 py-4 shadow-[var(--shadow)] sm:px-6 sm:py-5">
-      <div className="bg-accent-grad pointer-events-none absolute -top-24 -right-16 size-64 rounded-full banner-glow blur-3xl" aria-hidden="true" />
-      <div className="relative min-w-0">
-        <h1 className="text-grad text-2xl font-semibold tracking-tight sm:text-[1.7rem]">{title}</h1>
-        {subtitle && <p className="mt-1.5 max-w-xl text-sm text-muted">{subtitle}</p>}
+    // Redesign 2026-11: a title on the page, not a card. Notion-style: big, calm, left-aligned.
+    <header className="flex flex-wrap items-end justify-between gap-4 pt-2 pb-1">
+      <div className="min-w-0">
+        <h1 className="text-[1.75rem] leading-tight font-semibold tracking-[-0.02em] text-text sm:text-[2rem]">{title}</h1>
+        {subtitle && <p className="mt-1.5 max-w-2xl text-[15px] text-muted">{subtitle}</p>}
       </div>
-      {actions && <div className="relative flex items-center gap-2">{actions}</div>}
+      {actions && <div className="flex items-center gap-2">{actions}</div>}
     </header>
   );
 }
 
 export function Panel({ className, children }: { className?: string; children: React.ReactNode }) {
-  return <section className={cn("glass-card rounded-3xl p-5", className)}>{children}</section>;
+  return <section className={cn("glass-card rounded-xl p-5", className)}>{children}</section>;
 }
 
 export function EmptyState({ icon, title, body, action, mood = "idle" }: { icon?: React.ReactNode; title: string; body?: React.ReactNode; action?: React.ReactNode; mood?: EmberMood }) {
   return (
-    <div className="relative flex flex-col items-center overflow-hidden rounded-3xl border border-dashed border-line-strong bg-surface/60 px-6 py-14 text-center">
-      <div className="bg-accent-grad pointer-events-none absolute top-6 left-1/2 size-40 -translate-x-1/2 rounded-full banner-glow blur-3xl" aria-hidden="true" />
+    <div className="relative flex flex-col items-center rounded-xl border border-dashed border-line-strong px-6 py-14 text-center">
       <div className="relative mb-3">
         <Ember size={68} mood={mood} />
-        {icon && <span className="absolute -right-2 -bottom-1 grid size-7 place-items-center rounded-full border-2 border-surface bg-accent-grad text-on-accent shadow-md [&_svg]:size-3.5">{icon}</span>}
+        {icon && <span className="absolute -right-2 -bottom-1 grid size-7 place-items-center rounded-full border-2 border-bg bg-accent-grad text-on-accent [&_svg]:size-3.5">{icon}</span>}
       </div>
       <div className="relative font-semibold">{title}</div>
       {body && <p className="relative mt-1.5 max-w-sm text-sm text-muted">{body}</p>}
@@ -39,19 +38,20 @@ export function EmptyState({ icon, title, body, action, mood = "idle" }: { icon?
 // Link-based tabs: the active tab lives in the URL (?tab=), so it survives refresh and sharing.
 export function Tabs({ tabs, active }: { tabs: { id: string; label: string; href: string; count?: number }[]; active: string }) {
   return (
-    <nav className="no-scrollbar -mx-1 flex gap-1 overflow-x-auto px-1">
+    // Redesign 2026-11: underline tabs (Linear/Vercel style): a hairline row, the current tab marked in ink.
+    <nav className="no-scrollbar flex gap-5 overflow-x-auto border-b border-line">
       {tabs.map((t) => (
         <Link
           key={t.id}
           href={t.href}
           aria-current={t.id === active ? "page" : undefined}
           className={cn(
-            "inline-flex shrink-0 items-center gap-2 rounded-full px-4 py-1.5 text-sm whitespace-nowrap transition active:scale-95",
-            t.id === active ? "bg-accent-grad text-on-accent shadow-[0_6px_18px_-8px_var(--accent)]" : "text-muted hover:bg-hover hover:text-text",
+            "relative -mb-px inline-flex shrink-0 items-center gap-2 border-b-2 py-2.5 text-sm whitespace-nowrap transition-colors",
+            t.id === active ? "border-text font-medium text-text" : "border-transparent text-muted hover:text-text",
           )}
         >
           {t.label}
-          {t.count ? <span className={cn("rounded-full px-1.5 font-mono text-[10px]", t.id === active ? "bg-on-accent/15" : "bg-raised")}>{t.count}</span> : null}
+          {t.count ? <span className="rounded bg-raised px-1.5 font-mono text-[10px] text-text-2">{t.count}</span> : null}
         </Link>
       ))}
     </nav>
@@ -59,7 +59,7 @@ export function Tabs({ tabs, active }: { tabs: { id: string; label: string; href
 }
 
 export function Skeleton({ className }: { className?: string }) {
-  return <div className={cn("shimmer rounded-3xl", className)} aria-hidden="true" />;
+  return <div className={cn("shimmer rounded-xl", className)} aria-hidden="true" />;
 }
 
 export const chipCls = "rounded-md border border-line px-2 py-0.5 font-mono text-[11px] text-muted";
