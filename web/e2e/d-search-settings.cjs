@@ -151,12 +151,12 @@ const pw = require("playwright-core");
     await go(ben, "/feed");
     const hide = ben.getByRole("button", { name: "Hide your first five minutes" });
     if (await hide.count()) await hide.click();
-    // Your streak, as a side card on wide screens (no banner over Home): weeks, verified, who looked.
-    const streak = ben.getByRole("region", { name: "Your streak" });
-    await streak.waitFor({ timeout: 15000 });
-    await streak.getByText(/-week streak|No streak yet/).waitFor();
-    await streak.getByText(/Acme Aerospace looked at your profile/).waitFor({ timeout: 10000 });
-    // His builds as cards, each with a one-tap reel.
+    // Your week (FIX-92): one card on wide screens (no banner over Home): streak, verified, who looked.
+    const week = ben.getByRole("region", { name: "Your week" });
+    await week.waitFor({ timeout: 15000 });
+    await week.getByText(/-week streak|No streak yet/).waitFor();
+    await week.getByText(/Acme Aerospace viewed your profile/).waitFor({ timeout: 10000 });
+    // His builds as roomy cards, each with one next step and a one-tap reel.
     const builds = ben.getByRole("region", { name: "Your builds" });
     await builds.getByRole("link", { name: "Start a new build" }).waitFor();
     if (!(await builds.getByRole("link", { name: "Reel" }).count())) throw new Error("no build cards on Home");

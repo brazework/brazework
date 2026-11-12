@@ -39,7 +39,7 @@ export default function FeedPage({ searchParams }: PageProps<"/feed">) {
           <Feed searchParams={searchParams} />
         </Suspense>
       </div>
-      <aside aria-label="Brazework updates, your clubs and upcoming events" className="hidden xl:block">
+      <aside aria-label="Your week, what's coming up and your clubs" className="hidden xl:block">
         <Suspense fallback={<div className="h-96 shimmer rounded-3xl" />}>
           <FeedRail />
         </Suspense>

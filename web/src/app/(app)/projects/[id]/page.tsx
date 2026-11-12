@@ -162,6 +162,7 @@ async function ProjectView({ params }: { params: PageProps<"/projects/[id]">["pa
 
         {/* Proof first: what the club verified, signed by the officer who saw it. */}
         {(milestones.length > 0 || own) && (
+          <div id="proof" className="scroll-mt-24">
           <Panel className="p-6">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <h2 className="inline-flex items-center gap-2 text-lg font-semibold tracking-tight"><BadgeCheck className="size-5 text-ok" /> Proof</h2>
@@ -179,6 +180,7 @@ async function ProjectView({ params }: { params: PageProps<"/projects/[id]">["pa
               </Link>
             )}
           </Panel>
+          </div>
         )}
 
         {/* The project's folder: documents, CAD, 3D models (rotatable), code and links. */}
