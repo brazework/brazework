@@ -169,6 +169,15 @@ const pw = require("playwright-core");
     // Who's building this week: Ben posted in the club today.
     await ben.getByRole("region", { name: "Who's building this week" }).getByText("Ben").first().waitFor({ timeout: 15000 });
   }, ben);
+  await step("who looked, as a notification: Ben is told Acme Aerospace looked, and never which person (FIX-67)", async () => {
+    await go(ben, "/notifications");
+    const row = ben.locator("main div.group", { hasText: "Acme Aerospace looked at your profile" });
+    await row.first().waitFor({ timeout: 15000 });
+    if ((await row.count()) !== 1) throw new Error(`expected one company-view notification, got ${await row.count()}`);
+    if (/Cara/.test(await row.first().innerText())) throw new Error("the notification names the person who looked");
+    await row.getByRole("link").first().click();
+    await ben.waitForURL((u) => u.pathname === "/dashboard", { timeout: 15000 });
+  }, ben);
   await step("composer: typing @ links another of your projects (no dropdown), and the menu draws above the feed tabs", async () => {
     await go(ben, "/feed");
     const box = ben.locator("#create-box");

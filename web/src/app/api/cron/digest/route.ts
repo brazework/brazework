@@ -34,7 +34,7 @@ export async function GET(req: Request) {
     const rows = (data ?? []) as { user_id: string; email: string; first_name: string }[];
     if (!rows.length) break;
     for (const r of rows) {
-      const digest = buildDigest(r.first_name, await loadWeekFor(db, r.user_id, now), env.siteUrl);
+      const digest = buildDigest(r.first_name, await loadWeekFor(db, r.user_id, now, true), env.siteUrl);
       if (!digest) { counts.quiet++; continue; }
       if (dry) { counts.wouldSend++; continue; }
       const res = await mail.send({ to: r.email, ...digest });

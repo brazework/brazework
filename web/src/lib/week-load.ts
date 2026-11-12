@@ -15,9 +15,12 @@ export async function loadWeek(
   return buildWeek(await loadWeekInput(supabase, me, memberships, events, going, now));
 }
 
+// asService: the digest, run with the service key, where auth.uid() is null: who looked comes from
+// viewers_for(member) instead of my_viewers() (who-looked.sql), or it would always be nobody.
 async function loadWeekInput(
   supabase: SupabaseClient, me: string,
   memberships: { role: string; communities: { id: string; name: string } | null }[], events: HostedEvent[], going: Set<string>, now: number,
+  asService = false,
 ): Promise<WeekInput> {
   const f = await dbFeatures();
   const weekAgo = new Date(now - 7 * 864e5).toISOString();
@@ -30,7 +33,9 @@ async function loadWeekInput(
     f.milestones ? supabase.from("milestones").select("id", { count: "exact", head: true }).eq("owner_id", me).eq("status", "pending") : none,
     f.milestones && officerOf.length ? supabase.from("milestones").select("community_id").eq("status", "pending").in("community_id", officerOf).neq("owner_id", me).limit(200) : none,
     supabase.from("projects").select("id, title, status, updated_at").eq("owner_id", me).order("updated_at", { ascending: false }).limit(5),
-    f.weeklyLoop ? supabase.rpc("my_viewers", { p_days: 7 }) : Promise.resolve({ data: null }),
+    !f.weeklyLoop ? Promise.resolve({ data: null })
+      : asService ? (f.whoLooked ? supabase.rpc("viewers_for", { p_user: me, p_days: 7 }) : Promise.resolve({ data: null }))
+      : supabase.rpc("my_viewers", { p_days: 7 }),
     f.milestones ? supabase.from("milestones").select("id", { count: "exact", head: true }).eq("owner_id", me) : none,
   ]);
   const byClub = new Map<string, number>();
@@ -64,13 +69,14 @@ async function loadWeekInput(
   };
 }
 
-// The same, for code that doesn't already have the member's clubs and RSVPs at hand (the weekly
-// email digest).
-export async function loadWeekFor(supabase: SupabaseClient, me: string, now: number): Promise<WeekItem[]> {
-  return buildWeek(await loadWeekInputFor(supabase, me, now));
+// The same, for code that doesn't already have the member's clubs and RSVPs at hand: Home's weekly
+// loop (signed in as the member) and the weekly email digest. Only the digest, which runs with the
+// service key, passes asService.
+export async function loadWeekFor(supabase: SupabaseClient, me: string, now: number, asService = false): Promise<WeekItem[]> {
+  return buildWeek(await loadWeekInputFor(supabase, me, now, asService));
 }
 
-async function loadWeekInputFor(supabase: SupabaseClient, me: string, now: number): Promise<WeekInput> {
+async function loadWeekInputFor(supabase: SupabaseClient, me: string, now: number, asService = false): Promise<WeekInput> {
   const [mine, rsvps] = await Promise.all([
     supabase.from("community_members").select("role, communities(id, name)").eq("uid", me).limit(50),
     supabase.from("event_rsvps").select("event_id").eq("user_id", me).limit(200),
@@ -79,7 +85,7 @@ async function loadWeekInputFor(supabase: SupabaseClient, me: string, now: numbe
   const { data: evs } = going.size
     ? await supabase.from("events").select("id, title, starts_at, ends_at").in("id", [...going]).gt("starts_at", new Date(now).toISOString()).order("starts_at").limit(5)
     : { data: [] };
-  return loadWeekInput(supabase, me, (mine.data ?? []) as unknown as { role: string; communities: { id: string; name: string } | null }[], (evs ?? []) as unknown as HostedEvent[], going, now);
+  return loadWeekInput(supabase, me, (mine.data ?? []) as unknown as { role: string; communities: { id: string; name: string } | null }[], (evs ?? []) as unknown as HostedEvent[], going, now, asService);
 }
 
 // The weekly loop on Home (Linear FIX-67): this week's goal, your build streak (weeks in a row with a
