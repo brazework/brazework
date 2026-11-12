@@ -17,16 +17,17 @@ export async function listApiTokens(): Promise<ApiToken[]> {
   return (data ?? []) as ApiToken[];
 }
 
-export async function createApiToken(name: string): Promise<{ ok: boolean; message: string; token?: string }> {
+export async function createApiToken(name: string): Promise<{ ok: boolean; message: string; token?: string; id?: string }> {
   const label = name.replace(/[<>]/g, "").trim().slice(0, 60);
   if (!label) return { ok: false, message: "Give the token a name, like the app you'll use it in." };
   const { supabase, user } = await getViewer();
   if (!user) return { ok: false, message: "Log in again." };
   const token = `forge_${randomBytes(30).toString("base64url")}`;
-  const { error } = await supabase.rpc("create_api_token", { p_name: label, p_hash: tokenHash(token), p_prefix: token.slice(0, 12) });
+  const { data, error } = await supabase.rpc("create_api_token", { p_name: label, p_hash: tokenHash(token), p_prefix: token.slice(0, 12) });
   if (error) return { ok: false, message: error.code === "P0001" ? error.message : friendlyError(error) };
   revalidatePath("/settings");
-  return { ok: true, message: "", token };
+  revalidatePath("/settings/tools");
+  return { ok: true, message: "", token, id: (data as string | null) ?? undefined };
 }
 
 export async function revokeApiToken(id: string): Promise<{ ok: boolean }> {

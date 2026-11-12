@@ -1,5 +1,5 @@
 "use client";
-import { Check, Loader2, Monitor, Moon, Sun } from "lucide-react";
+import { Check, ChevronRight, Loader2, Monitor, Moon, Plug, Sun } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useActionState, useState, useSyncExternalStore, useTransition } from "react";
@@ -7,7 +7,6 @@ import { Button, Field, inputCls } from "@/components/ui";
 import { ALL_TOPICS, FIELDS, TOPICS, cn, type Profile } from "@/lib/forge";
 import { gradYearOptions } from "@/lib/profile-meta";
 import { deleteAllChats } from "@/lib/copilot-chats";
-import { createApiToken, listApiTokens, revokeApiToken, type ApiToken } from "@/lib/api-tokens";
 import { changePassword, deleteAccount, saveEmailPrefs, saveMessageSettings, saveProfileSettings, type SettingsState, unblockPerson } from "@/lib/settings";
 import { submitWithoutReset } from "@/lib/submit";
 
@@ -244,58 +243,20 @@ export function EmberSettings({ saving, chats }: { saving: boolean; chats: numbe
   );
 }
 
-// Settings → AI tools: personal tokens for Brazework's MCP server (supabase/mcp.sql, /api/mcp).
-export function AiToolsSettings({ tokens, endpoint }: { tokens: ApiToken[]; endpoint: string }) {
-  const [list, setList] = useState(tokens);
-  const [name, setName] = useState("Claude");
-  const [fresh, setFresh] = useState<string | null>(null);
-  const [msg, setMsg] = useState("");
-  const [copied, setCopied] = useState("");
-  const [pending, start] = useTransition();
-  const active = list.filter((t) => !t.revoked_at);
-  const copy = (label: string, text: string) => { void navigator.clipboard?.writeText(text).then(() => { setCopied(label); setTimeout(() => setCopied(""), 1500); }); };
-  const cli = fresh ? `claude mcp add --transport http forge ${endpoint} --header "Authorization: Bearer ${fresh}"` : "";
-  const json = fresh ? JSON.stringify({ mcpServers: { forge: { url: endpoint, headers: { Authorization: `Bearer ${fresh}` } } } }, null, 2) : "";
-  const when = (iso: string | null) => (iso ? new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : "never");
+// Settings → AI tools: the way into Settings → Your tools (Linear FIX-78), with how many are connected.
+export function AiToolsSettings({ connected, total }: { connected: number; total: number }) {
   return (
-    <div className="space-y-5 text-sm">
-      <p className="leading-relaxed text-text-2">Use Brazework from Claude, Cursor or any MCP-compatible assistant: ask it what&apos;s on in your clubs this week, what you&apos;re missing, or to find people in your field. It can <strong className="font-medium text-text">read</strong> your Brazework (profile, clubs, events, projects, notifications, search); it can&apos;t post or change anything.</p>
-      {fresh ? (
-        <div className="space-y-3 rounded-2xl border border-line bg-surface-2/60 p-4">
-          <p className="font-medium text-text">Your new token. Copy it now: it won&apos;t be shown again.</p>
-          <div className="flex items-center gap-2"><code className="min-w-0 flex-1 truncate rounded-lg bg-surface px-3 py-2 font-mono text-xs">{fresh}</code><button type="button" onClick={() => copy("token", fresh)} className="inline-flex h-9 items-center gap-1.5 rounded-full border border-line px-3 text-xs font-medium">{copied === "token" ? <Check className="size-3.5" /> : null}{copied === "token" ? "Copied" : "Copy"}</button></div>
-          <p className="pt-1 text-xs font-medium text-muted">Claude Code (terminal)</p>
-          <div className="flex items-start gap-2"><code className="min-w-0 flex-1 rounded-lg bg-surface px-3 py-2 font-mono text-[11px] leading-relaxed break-all">{cli}</code><button type="button" onClick={() => copy("cli", cli)} className="h-9 shrink-0 rounded-full border border-line px-3 text-xs font-medium">{copied === "cli" ? "Copied" : "Copy"}</button></div>
-          <p className="pt-1 text-xs font-medium text-muted">Claude Desktop, Cursor and other apps (MCP config)</p>
-          <div className="flex items-start gap-2"><pre className="min-w-0 flex-1 overflow-x-auto rounded-lg bg-surface px-3 py-2 font-mono text-[11px] leading-relaxed">{json}</pre><button type="button" onClick={() => copy("json", json)} className="h-9 shrink-0 rounded-full border border-line px-3 text-xs font-medium">{copied === "json" ? "Copied" : "Copy"}</button></div>
-          <button type="button" onClick={() => setFresh(null)} className="text-xs text-muted underline underline-offset-2 hover:text-text">Done</button>
-        </div>
-      ) : (
-        <form onSubmit={(e) => { e.preventDefault(); start(async () => { setMsg(""); const r = await createApiToken(name); if (r.ok && r.token) { setFresh(r.token); setList(await listApiTokens()); } else setMsg(r.message); }); }} className="flex flex-wrap items-end gap-2">
-          <Field label="Token name"><input value={name} onChange={(e) => setName(e.target.value)} maxLength={60} placeholder="e.g. Claude Code on my laptop" className={cn(inputCls, "w-64")} /></Field>
-          <Button type="submit" disabled={pending || !name.trim() || active.length >= 5}>{pending && <Loader2 className="size-4 animate-spin" />} Create token</Button>
-          {msg && <p role="alert" className="w-full text-xs text-danger">{msg}</p>}
-        </form>
-      )}
-      {list.length > 0 && (
-        <ul className="divide-y divide-line rounded-2xl border border-line">
-          {list.map((t) => (
-            <li key={t.id} className="flex items-center gap-3 px-4 py-3">
-              <span className="min-w-0 flex-1">
-                <span className={cn("block truncate font-medium", t.revoked_at && "text-faint line-through")}>{t.name}</span>
-                <span className="block text-xs text-faint"><code className="font-mono">{t.prefix}…</code> · created {when(t.created_at)} · last used {when(t.last_used_at)}</span>
-              </span>
-              {t.revoked_at ? <span className="text-xs text-faint">Revoked</span> : (
-                <button type="button" disabled={pending} onClick={() => { if (!confirm(`Revoke "${t.name}"? Apps using it stop working right away.`)) return; start(async () => { await revokeApiToken(t.id); setList(await listApiTokens()); }); }} className="inline-flex h-8 items-center rounded-full border border-line px-3 text-xs font-medium transition hover:border-danger hover:text-danger">Revoke</button>
-              )}
-            </li>
-          ))}
-        </ul>
-      )}
-      <p className="text-xs text-faint">Tokens act as you, read-only. Only a fingerprint of each token is stored. Up to 5 active.</p>
-    </div>
+    <Link href="/settings/tools" className="group -m-2 flex items-center gap-4 rounded-2xl p-2 transition hover:bg-hover">
+      <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-text text-surface"><Plug className="size-5" /></span>
+      <span className="min-w-0 flex-1">
+        <span className="block font-medium">Connect Claude Code, Cursor, VS Code, Codex…</span>
+        <span className="block text-sm text-muted">{total ? `${connected} of ${total} ${total === 1 ? "tool" : "tools"} connected` : "Bring your Brazework into the agent you build with. Read-only."}</span>
+      </span>
+      <ChevronRight className="size-4 shrink-0 text-faint transition group-hover:translate-x-0.5 group-hover:text-text" />
+    </Link>
   );
 }
+
 
 // Your data: download it all, or delete your account.
 export function YourDataSettings() {
