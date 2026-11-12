@@ -20,7 +20,7 @@ const MOMENTS = [
 ];
 const TO: Place[] = MOMENTS.map((m) => m.place);
 
-export function ReachGlobe() {
+export function ReachGlobe({ head }: { head: React.ReactNode }) {
   const [at, setAt] = useState(0);
   const [auto, setAuto] = useState(true);
   const reduce = useReducedMotion();
@@ -34,13 +34,14 @@ export function ReachGlobe() {
   const m = MOMENTS[at];
 
   return (
-    <div ref={ref} className="grid grid-cols-1 items-center gap-6 md:gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
-      <div className="order-2 lg:order-1">
-        <ol className="m-hide flex flex-col gap-1">
+    <div ref={ref} className="grid grid-cols-1 items-center gap-6 md:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] md:gap-x-12">
+      <div className="md:col-start-1">
+        {head}
+        <ol className="m-hide mt-8 flex flex-col gap-0.5">
           {MOMENTS.map((x, i) => (
             <li key={x.verb}>
               <button type="button" aria-pressed={i === at} onClick={() => { setAuto(false); setAt(i); }}
-                className={cn("flex w-full items-start gap-3.5 rounded-xl border px-4 py-3 text-left transition", i === at ? "border-line-strong bg-surface shadow-[var(--shadow)]" : "border-transparent hover:bg-surface/70")}>
+                className={cn("flex w-full items-start gap-3.5 rounded-xl border px-4 py-2.5 text-left transition", i === at ? "border-line-strong bg-surface shadow-[var(--shadow)]" : "border-transparent hover:bg-surface/70")}>
                 <span className={cn("grid size-8 shrink-0 place-items-center rounded-lg transition", i === at ? "bg-text text-bg" : "bg-surface-2 text-muted")}><x.icon className="size-4" /></span>
                 <span className="min-w-0">
                   <span className={cn("block text-sm font-semibold", i !== at && "text-text-2")}>{x.verb}</span>
@@ -50,12 +51,14 @@ export function ReachGlobe() {
             </li>
           ))}
         </ol>
-        {/* Phones: one moment at a time, under the globe. */}
-        <p className="m-only text-[15px] leading-relaxed text-text-2" aria-live="polite"><b className="font-semibold text-text">{m.verb}.</b> {m.text}</p>
-        <p className="mt-3 text-xs text-faint">Example · drag the globe to turn it</p>
       </div>
-      <div className="relative order-1 mx-auto aspect-square w-full max-w-[min(100%,36rem)] max-md:max-h-[44dvh] max-md:max-w-[44dvh] lg:order-2">
+      <div className="relative mx-auto aspect-square w-full max-w-[min(100%,40rem)] max-md:max-h-[40dvh] max-md:max-w-[40dvh] md:col-start-2 md:row-span-2 md:row-start-1">
         <Globe from={FROM} to={TO} active={at} className="absolute inset-0 size-full" />
+      </div>
+      <div className="md:col-start-1 md:row-start-2">
+        {/* Phones: one moment at a time, under the globe. */}
+        <p className="m-only mt-4 text-[15px] leading-relaxed text-text-2" aria-live="polite"><b className="font-semibold text-text">{m.verb}.</b> {m.text}</p>
+        <p className="mt-3 text-xs text-faint">Example · drag the globe to turn it</p>
       </div>
     </div>
   );

@@ -52,7 +52,7 @@ export function Hero() {
             <span className="truncate">Founding clubs program is open</span>
             <ArrowRight className="size-3.5 shrink-0" />
           </a>
-          <h1 className="focus-in mt-7 text-[clamp(2.7rem,6.2vw,5rem)] leading-[0.98] font-semibold tracking-[-0.045em]">
+          <h1 className="focus-in mt-7 text-[clamp(2.6rem,5.4vw,4.6rem)] leading-[0.98] font-semibold tracking-[-0.045em] text-balance">
             Build with AI.
             <br />
             <span className="text-grad">Get credit for the work.</span>

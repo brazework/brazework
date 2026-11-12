@@ -127,7 +127,7 @@ const DISCIPLINES: Discipline[] = [
   },
 ];
 
-export function DisciplineSheet() {
+export function DisciplineSheet({ head }: { head: React.ReactNode }) {
   const [at, setAt] = useState(0);
   const [auto, setAuto] = useState(true);
   const [hold, setHold] = useState(false);
@@ -172,8 +172,12 @@ export function DisciplineSheet() {
   }, [playing, at, n]);
 
   return (
-    <div ref={ref} className="mt-10 md:mt-8" onPointerEnter={(e) => e.pointerType === "mouse" && setHold(true)} onPointerLeave={() => setHold(false)}>
-      <div role="tablist" aria-label="Kinds of engineering" className="no-scrollbar -mx-6 flex gap-1 overflow-x-auto border-b border-line px-6 sm:mx-0 sm:px-0">
+    <div ref={ref} onPointerEnter={(e) => e.pointerType === "mouse" && setHold(true)} onPointerLeave={() => setHold(false)}
+      className="grid grid-cols-1 gap-y-6 md:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] md:gap-x-14 md:gap-y-7">
+      {/* Wide screens: the heading, the fields and what this one records on the left; the drawing on the right. */}
+      <div className="md:col-start-1">{head}</div>
+
+      <div role="tablist" aria-label="Fields in STEM" className="no-scrollbar -mx-6 flex gap-1 overflow-x-auto border-b border-line px-6 md:col-start-1 md:mx-0 md:flex-wrap md:px-0">
         {DISCIPLINES.map((x, i) => (
           <button key={x.id} type="button" role="tab" id={`dz-tab-${x.id}`} aria-selected={i === at} aria-controls="dz-panel"
             onClick={() => pick(i)}
@@ -189,38 +193,34 @@ export function DisciplineSheet() {
         ))}
       </div>
 
-      <div id="dz-panel" role="tabpanel" aria-labelledby={`dz-tab-${d.id}`}
-        className="mt-6 grid overflow-hidden rounded-2xl border border-line bg-surface shadow-[var(--shadow)] md:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
-        {/* The drawing, on a dot grid, with corner ticks like a drafting sheet. */}
-        <div className="relative h-48 border-b border-line bg-[radial-gradient(var(--line)_1px,transparent_1px)] bg-[size:16px_16px] text-text sm:h-64 md:h-[min(20rem,42vh)] md:border-r md:border-b-0" aria-hidden="true">
-          {["top-3 left-3 border-t border-l", "top-3 right-3 border-t border-r", "bottom-3 left-3 border-b border-l", "bottom-3 right-3 border-b border-r"].map((c) => (
-            <span key={c} className={cn("absolute size-3 border-line-strong", c)} />
-          ))}
-          <span className="absolute bottom-3 left-7 font-mono text-[11px] text-faint">FIG. {String(at + 1).padStart(2, "0")} · {d.name.toUpperCase()}</span>
-          <AnimatePresence mode="wait" initial={false}>
-            <motion.svg key={d.id} viewBox="0 0 240 120" preserveAspectRatio="xMidYMid meet" className="absolute inset-x-6 inset-y-8 size-[calc(100%-3rem)] sm:inset-x-10 sm:size-[calc(100%-5rem)]"
-              initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.97 }} transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}>
-              {d.art}
-            </motion.svg>
-          </AnimatePresence>
-        </div>
-
-        <div className="flex flex-col justify-center p-5 sm:p-8" aria-live="polite">
-          <AnimatePresence mode="wait" initial={false}>
-            <motion.div key={d.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.3 }}>
-              <p className="font-mono text-[11px] tracking-[0.14em] text-faint uppercase">{String(at + 1).padStart(2, "0")} / {String(DISCIPLINES.length).padStart(2, "0")} · {d.name}</p>
-              <h3 className="mt-3 text-2xl font-semibold tracking-tight sm:text-[1.7rem]">{d.line}</h3>
-              <ol className="mt-5 flex flex-col gap-2.5 text-[15px] text-text-2">
-                {d.steps.map((s, n) => (
-                  <li key={s} className="flex items-center gap-3"><span className="font-mono text-[11px] text-faint">0{n + 1}</span> {s}</li>
-                ))}
-              </ol>
-              <p className="mt-6 flex items-center gap-2 border-t border-line pt-4 text-[15px] font-medium"><BadgeCheck className="size-4 shrink-0" /> Verified by your club</p>
-            </motion.div>
-          </AnimatePresence>
-        </div>
+      {/* The drawing, on a dot grid, with corner ticks like a drafting sheet. */}
+      <div className="relative h-48 overflow-hidden rounded-2xl border border-line bg-surface bg-[radial-gradient(var(--line)_1px,transparent_1px)] bg-[size:16px_16px] text-text shadow-[var(--shadow)] sm:h-64 md:col-start-2 md:row-span-3 md:row-start-1 md:h-[min(34rem,64vh)] md:self-center" aria-hidden="true">
+        {["top-3 left-3 border-t border-l", "top-3 right-3 border-t border-r", "bottom-3 left-3 border-b border-l", "bottom-3 right-3 border-b border-r"].map((c) => (
+          <span key={c} className={cn("absolute size-3 border-line-strong", c)} />
+        ))}
+        <span className="absolute bottom-3 left-7 font-mono text-[11px] text-faint">FIG. {String(at + 1).padStart(2, "0")} · {d.name.toUpperCase()}</span>
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.svg key={d.id} viewBox="0 0 240 120" preserveAspectRatio="xMidYMid meet" className="absolute inset-x-6 inset-y-8 size-[calc(100%-3rem)] sm:inset-x-10 sm:size-[calc(100%-5rem)]"
+            initial={{ opacity: 0, scale: 0.97 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.97 }} transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}>
+            {d.art}
+          </motion.svg>
+        </AnimatePresence>
       </div>
-      <p className="mt-3 text-xs text-faint">Example results</p>
+
+      <div id="dz-panel" role="tabpanel" aria-labelledby={`dz-tab-${d.id}`} aria-live="polite" className="md:col-start-1">
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div key={d.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.3 }}>
+            <p className="font-mono text-[11px] tracking-[0.14em] text-faint uppercase">{String(at + 1).padStart(2, "0")} / {String(DISCIPLINES.length).padStart(2, "0")} · {d.name} · example</p>
+            <h3 className="mt-2 text-xl font-semibold tracking-tight sm:text-2xl">{d.line}</h3>
+            <ol className="mt-3 flex flex-wrap gap-x-5 gap-y-1.5 text-[15px] text-text-2">
+              {d.steps.map((s, n) => (
+                <li key={s} className="flex items-center gap-2"><span className="font-mono text-[11px] text-faint">0{n + 1}</span> {s}</li>
+              ))}
+              <li className="flex items-center gap-2 font-medium text-text"><BadgeCheck className="size-4 shrink-0" /> Verified by your club</li>
+            </ol>
+          </motion.div>
+        </AnimatePresence>
+      </div>
     </div>
   );
 }

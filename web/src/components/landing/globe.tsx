@@ -50,7 +50,7 @@ export function Globe({ from, to, active, className }: { from: Place; to: Place[
       const B = vec(p.lat, p.lon);
       const dot = Math.max(-1, Math.min(1, A[0] * B[0] + A[1] * B[1] + A[2] * B[2])), om = Math.acos(dot), so = Math.sin(om) || 1;
       return Array.from({ length: 61 }, (_, k) => {
-        const t = k / 60, a = Math.sin((1 - t) * om) / so, b = Math.sin(t * om) / so, lift = 1 + 0.18 * Math.sin(Math.PI * t) * Math.min(1, om / 1.2);
+        const t = k / 60, a = Math.sin((1 - t) * om) / so, b = Math.sin(t * om) / so, lift = 1 + 0.1 * Math.sin(Math.PI * t) * Math.min(1, om / 1.2);
         return [(a * A[0] + b * B[0]) * lift, (a * A[1] + b * B[1]) * lift, (a * A[2] + b * B[2]) * lift] as const;
       });
     });
@@ -112,13 +112,13 @@ export function Globe({ from, to, active, className }: { from: Place; to: Place[
         for (let k = 0; k < upto; k++) {
           const p = P(...pts[k]), q = P(...pts[k + 1]);
           const front = Math.min(p[2], q[2]);
-          if (front < -0.15) continue;
-          ctx.strokeStyle = `rgba(${ink},${(isOn ? 0.9 : 0.16) * (front < 0 ? 0.35 : 1)})`;
+          if (front < 0.04) continue; // the near side only, so no arc loops out past the edge
+          ctx.strokeStyle = `rgba(${ink},${(isOn ? 0.9 : 0.16) * Math.min(1, front * 4)})`;
           ctx.beginPath(); ctx.moveTo(p[0], p[1]); ctx.lineTo(q[0], q[1]); ctx.stroke();
         }
         if (isOn && !reduce && reach >= 1) {
           const u = ((since - 1.1) * 0.55) % 1, j = Math.floor(u * (pts.length - 1)), p = P(...pts[j]);
-          if (p[2] > -0.1) { ctx.fillStyle = `rgba(${ink},1)`; ctx.beginPath(); ctx.arc(p[0], p[1], 2.4, 0, Math.PI * 2); ctx.fill(); }
+          if (p[2] > 0.04) { ctx.fillStyle = `rgba(${ink},1)`; ctx.beginPath(); ctx.arc(p[0], p[1], 2.4, 0, Math.PI * 2); ctx.fill(); }
         }
       });
       // Places: your club pulses; where it reached gets a ring and, when active, its name.
