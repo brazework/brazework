@@ -1,5 +1,6 @@
 "use client";
-import { ArrowLeft, ArrowUpRight, Check, CircleDot, Copy, FileCode2, KeyRound, Loader2, Lock, PenLine, Plug, ShieldCheck, Sparkles, Terminal, X } from "lucide-react";
+import { Orb } from "@/components/landing/orb";
+import { ArrowLeft, ArrowUpRight, Check, CircleDot, Copy, FileCode2, KeyRound, Loader2, Lock, PenLine, ShieldCheck, Sparkles, Terminal, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useState, useTransition } from "react";
 import { Button } from "@/components/ui";
@@ -30,7 +31,8 @@ export function ToolsHub({ tokens, endpoint, writes = false }: { tokens: ApiToke
       {/* What it is, in one card: your agent reads your Brazework, safely. */}
       <section className="glass-card relative overflow-hidden rounded-3xl p-6 sm:p-7">
         <div className="relative flex items-start gap-4">
-          <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-text text-surface"><Plug className="size-5" /></span>
+          {/* The orb from the landing page (FIX-92): your agent and Brazework, connected. */}
+          <Orb tone="auto" className="size-14 shrink-0" />
           <div className="min-w-0">
             <h2 className="text-lg font-semibold tracking-tight">Brazework, inside your agent</h2>
             <p className="mt-1 text-sm leading-relaxed text-text-2">Connect once and your coding agent knows what you&apos;re building, which clubs you&apos;re in and what&apos;s due this week, while you work.</p>

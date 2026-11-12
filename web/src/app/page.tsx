@@ -1,6 +1,7 @@
 import { Suspense } from "react";
 import { FinalCta, Footer } from "@/components/landing/closing";
 import { ConnectSection } from "@/components/landing/connect-section";
+import { Disciplines } from "@/components/landing/disciplines";
 import { Hero } from "@/components/landing/hero";
 import { Founders } from "@/components/landing/founders";
 import { Traction } from "@/components/landing/traction";
@@ -29,6 +30,7 @@ export default function Landing() {
         <Suspense fallback={null}><Traction /></Suspense>
         <Problem />
         <How />
+        <Disciplines />
         <ProjectShowcase />
         <ClubShowcase />
         <ConnectSection />
