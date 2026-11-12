@@ -603,3 +603,7 @@ select:not([multiple]):not([size]) {
 }
 select:disabled { cursor: not-allowed; }
 select option { background-color: var(--surface); color: var(--text); }
+
+/* The landing's agent section (components/landing/connect-section.tsx): on phones, the current
+   chapter's bar fills while it plays, then the next chapter starts. */
+@keyframes agent-fill { from { transform: scaleX(0); } to { transform: scaleX(1); } }

@@ -11,7 +11,7 @@ const LINKS = [
   { href: "#how", label: "How it works" },
   { href: "#projects", label: "Projects" },
   { href: "#clubs", label: "Clubs" },
-  { href: "#copilot", label: "Ember" },
+  { href: "#agents", label: "Your agent" },
   { href: "#pricing", label: "Pricing" },
   { href: "#faq", label: "FAQ" },
 ];
