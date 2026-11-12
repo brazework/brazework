@@ -134,6 +134,7 @@ export function PostCard({ post, liked, saved = false, own = false, index, proje
             {post.author_headline}{post.author_headline && " · "}
             <Link prefetch={false} suppressHydrationWarning href={`/post/${post.id}`} className="-my-1 inline-block min-w-6 py-1 text-center hover:underline">{timeAgo(post.created_at)}</Link>
             {(edited || post.edited_at) && <span title={post.edited_at ? `Edited ${new Date(post.edited_at).toLocaleString()}` : "Edited just now"}> · Edited</span>}
+            {post.via && <span title={`Posted for ${post.author_first} by ${post.via}, which they connected in Settings → Your tools`}> · via {post.via}</span>}
             {post.community_name && <> · {post.community_name}</>}
           </div>
         </div>

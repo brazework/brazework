@@ -42,7 +42,8 @@ from (values
   (42, 'pro-verification', to_regprocedure('public.pro_verification_ready()') is not null),
   (43, 'media-keys',      to_regprocedure('public.media_keys_ready()') is not null),
   (44, 'pro-storage',     to_regprocedure('public.pro_storage_ready()') is not null),
-  (45, 'feed-pages',      to_regprocedure('public.feed_pages_ready()') is not null)
+  (45, 'feed-pages',      to_regprocedure('public.feed_pages_ready()') is not null),
+  (46, 'mcp-writes',      to_regprocedure('public.mcp_writes_ready()') is not null)
 ) as s(step, file, present)
 order by step;
 

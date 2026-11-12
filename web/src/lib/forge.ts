@@ -74,6 +74,8 @@ export type Post = {
   comment_count: number;
   created_at: string;
   edited_at?: string | null;
+  // The AI tool that posted it for its author (supabase/mcp-writes.sql), e.g. "Claude Code".
+  via?: string | null;
   project_id?: string | null;
   community_id?: string | null;
   community_name?: string | null;
