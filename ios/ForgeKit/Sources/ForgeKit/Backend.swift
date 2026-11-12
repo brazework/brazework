@@ -6,7 +6,7 @@ import Supabase
 enum Env {
   static let supabaseURL = URL(string: info("ForgeSupabaseURL") ?? "") ?? URL(string: "http://localhost:54321")!
   static let anonKey = info("ForgeSupabaseAnonKey") ?? ""
-  static let webURL = URL(string: info("ForgeWebURL") ?? "") ?? URL(string: "https://forge-preview-eight.vercel.app")!
+  static let webURL = URL(string: info("ForgeWebURL") ?? "") ?? URL(string: "https://brazework.com")!
 
   // Environment first (swift test on the Mac: FORGE_SUPABASE_URL, …), then the app's Info.plist.
   private static func info(_ key: String) -> String? {

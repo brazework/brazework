@@ -56,7 +56,6 @@ Needed before taking real money or raising, and asked for by YC:
 | `ANTHROPIC_API_KEY`, `COPILOT_MODEL` | Vercel env | Ember |
 | `RESEND_API_KEY`, `FORGE_EMAIL_FROM`, `CRON_SECRET` | Vercel env | The weekly digest |
 | `STRIPE_SECRET_KEY`, `STRIPE_PRICE_CHALLENGE`, `STRIPE_PRICE_TALENT`, `STRIPE_WEBHOOK_SECRET` | Vercel env | Sponsorship payments |
-| `VERCEL_TOKEN`, `VERCEL_ORG_ID`, `VERCEL_PROJECT_ID` | GitHub Actions secrets | The preview deploy workflow |
 | `LINEAR_API_KEY` | GitHub Actions secret (not set yet) | The Linear sync workflow |
 | `linear_api_key` | Supabase Vault | The in-app feedback sync to Linear |
 

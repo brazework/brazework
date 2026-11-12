@@ -22,7 +22,7 @@ Checked against the code on branch `josh/next-redesign` (HEAD `69be8fe`). SQL in
 | Legacy app | `public/` | Original vanilla JS app, kept until production is confirmed on `web/` (`README.md`) |
 | iOS | `ios/` | SwiftUI app (`ios/Brazework/Features/{Feed,Clubs,Events,Messages,Alerts,Profile,Me,Search,Settings,Auth}`) on `ios/ForgeKit` (data layer: `API.swift`, `FeedRank.swift`, `SignUp.swift`…). Same Supabase + RLS. **No projects, milestones or verification on iOS**; Ember opens on the web |
 | E2E | `web/e2e/` | Playwright-core journeys `a-…f-*.cjs` against a throwaway local Supabase in Docker (`local-supabase.sh`, `seed.sql`, `gateway.cjs`). Phase `c` covers "add project → ask club to verify → owner verifies → proof on profile and feed" |
-| CI | `.github/workflows/web.yml` | Lint, typecheck, build, smoke test; and applies every SQL file in order to a fresh Supabase Postgres. `preview-deploy.yml` redeploys `forge-preview-eight.vercel.app` from `main`. (`web.yml` mentions a `ci.yml` for the vanilla app; that file no longer exists) |
+| CI | `.github/workflows/web.yml` | Lint, typecheck, build, smoke test; and applies every SQL file in order to a fresh Supabase Postgres. (`web.yml` mentions a `ci.yml` for the vanilla app; that file no longer exists) |
 
 **SQL apply order** (`web.yml`): `schema, messages, events, activity, projects, tours, club-events, media, invites, post-edits, copilot, milestones, feedback, feedback-review, integrations, group-chats, project-stack, club-profile, mentions, copilot-chats, profile-extras, mcp, chat-extras, reports`. `supabase/maintenance/remove-test-data.sql` is outside the order (manual).
 

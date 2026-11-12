@@ -32,7 +32,7 @@ Students post what they build. Their club's officers, who saw the work happen, v
 
 - **Built and tested:** the full loop above, plus clubs, events, messages, challenges and sponsorships, Ember, an admin dashboard with retention, and trust and safety. The details are in [docs/plan.md](docs/plan.md).
 - **Next:** switch production on (database upgrades, email, AI and payment keys: the *Launch* project in Linear), confirm the name, then pilot with clubs.
-- **Preview:** https://forge-preview-eight.vercel.app
+- **Site:** https://brazework.com
 
 ---
 

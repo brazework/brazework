@@ -9,10 +9,10 @@ Nothing in the code points at the old address, so no code changes. GitHub redire
 - [ ] **Ian is an Owner of the organization.** Accept the invite at github.com/orgs/brazework/invitation. Only someone who can create repos in the organization can transfer one into it.
 - [ ] **main is green, and no PRs are open.** Nobody pushes during the move.
 - [ ] **Write down the repo's secret and variable names**, if any (forge-app → Settings → Secrets and variables → Actions). The workflows use these:
-  - **secrets:** `VERCEL_TOKEN`, `VERCEL_ORG_ID` and `VERCEL_PROJECT_ID` for the preview deploy, and `LINEAR_API_KEY` for the Linear sync;
+  - **secrets:** `LINEAR_API_KEY` for the Linear sync;
   - **variables:** `LINEAR_LINK_COMMITS`.
 
-  As of 2026-11-10 none of the preview secrets seem to be set. **The preview deploy has skipped itself on every run since at least Nov 9** (its log says "Preview deploy skipped"), so forge-preview-eight.vercel.app isn't updated by CI. Production isn't affected: Vercel's GitHub app deploys it. After the move Josh is an Owner and adds them in step 3.
+  (The preview deploy and its three Vercel secrets were retired on 2026-11-12: production runs `web/` now. See docs/next-migration.md.)
 - [ ] **CI fits the free organization's Actions minutes** (2,000 a month for private repos). Done in commit 83d02a0: a push costs about 12 minutes.
 
 ## 2. The move (Ian, about 10 minutes)
@@ -25,10 +25,7 @@ Nothing in the code points at the old address, so no code changes. GitHub redire
      2. When GitHub asks, install the **Vercel** app on the `brazework` organization, with access to **only** `forge-app`.
      3. Pick `brazework/forge-app` and keep **Production Branch: `main`**.
      4. Root Directory stays `web`.
-3. **Secrets:** brazework/forge-app → Settings → Secrets and variables → Actions. Anything from step 1 should have come across. Josh (now an Owner) adds the preview's three:
-   - `VERCEL_ORG_ID` = `team_207x62MUAiJcoGe88BduMqkq` and `VERCEL_PROJECT_ID` = `prj_n2GVu4ZFBawo9NA0y6eWSoThtZyD`. These are the preview project's IDs from `web/.vercel/project.json`. They're IDs, not secrets.
-   - `VERCEL_TOKEN`: Josh makes a new one at vercel.com/account/tokens (scope: his team), then pastes it straight into the secret.
-   - Never paste a token into a chat.
+3. **Secrets:** brazework/forge-app → Settings → Secrets and variables → Actions. Anything from step 1 should have come across. Never paste a token into a chat.
 
 ## 3. After (Josh runs the check)
 
@@ -40,9 +37,9 @@ bash .github/scripts/check-org-move.sh
 The script checks five things:
 - the repo is at `brazework/forge-app`;
 - you're an admin;
-- the secrets are present;
+- the `LINEAR_API_KEY` secret is present;
 - your remote points at the new place;
-- the latest push to `main` ran CI and the preview deploy (and didn't skip it), and Vercel deployed production.
+- the latest push to `main` ran CI, and Vercel deployed production.
 
 Anything marked ❌ says what to fix. Then:
 

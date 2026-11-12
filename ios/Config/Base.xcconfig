@@ -4,5 +4,5 @@
 // "//" starts a comment in xcconfig files, hence the $() in URLs.
 FORGE_SUPABASE_URL = http:/$()/localhost:54321
 FORGE_SUPABASE_ANON_KEY =
-FORGE_WEB_URL = https:/$()/forge-preview-eight.vercel.app
+FORGE_WEB_URL = https:/$()/brazework.com
 #include? "Local.xcconfig"
