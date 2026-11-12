@@ -25,8 +25,10 @@ export function Seal({ size = 20, className, tone = "club" }: { size?: number; c
 
 // Vouched for instead of club-verified (supabase/vouches.sql): "Name, Role · domain", when.
 export function VouchStamp({ by, when, className }: { by: string; when?: string | null; className?: string }) {
+  // Block-level and capped at its container, so a long "Name, Role · domain" truncates on a phone
+  // instead of widening the page (an inline-flex grows to fit its text).
   return (
-    <span className={cn("inline-flex min-w-0 items-center gap-2", className)}>
+    <span className={cn("flex max-w-full min-w-0 items-center gap-2", className)}>
       <Seal size={18} />
       <span className="min-w-0 leading-tight">
         <span className="block truncate text-xs font-semibold text-text">Vouched for by {by}</span>
