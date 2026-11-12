@@ -4,6 +4,7 @@ import { RotateCcw } from "lucide-react";
 import { useEffect } from "react";
 import { Button, Logo } from "@/components/ui";
 import { Ember } from "@/components/ember/ember";
+import { reportError } from "@/lib/sentry";
 
 // Any unexpected error below the root layout lands here instead of a blank page.
 // A new version deployed while this tab was open: its old script files are gone, so the first
@@ -19,6 +20,7 @@ export default function ErrorPage({ error, reset }: { error: Error & { digest?: 
       } catch {}
     }
     console.error(error);
+    reportError(error);
   }, [error]);
   return (
     <main className="relative isolate grid min-h-dvh place-items-center px-6 text-center">
