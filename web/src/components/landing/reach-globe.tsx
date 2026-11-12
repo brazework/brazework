@@ -4,9 +4,11 @@ import { Eye, GraduationCap, HandCoins, Heart, MailOpen, Users } from "lucide-re
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/forge";
 import { Globe, type Place } from "./globe";
+import { usePinned } from "./use-pinned";
 
 // Where verified work goes (Linear FIX-92): the globe, and beside it what each arc stands for. They
-// move together: the list advances on its own while on screen, and picking a row lights its arc.
+// move together. Wide screens: the section is pinned and the scroll walks through the moments while
+// the globe turns to each one (use-pinned.ts). Phones: the moments advance on their own.
 // Example data. Module-level so the globe's canvas set-up runs once.
 
 const FROM: Place = { lat: 30.27, lon: -97.74, label: "Your club · Austin" };
@@ -21,16 +23,18 @@ const MOMENTS = [
 const TO: Place[] = MOMENTS.map((m) => m.place);
 
 export function ReachGlobe({ head }: { head: React.ReactNode }) {
-  const [at, setAt] = useState(0);
+  const [own, setAt] = useState(0);
   const [auto, setAuto] = useState(true);
   const reduce = useReducedMotion();
   const ref = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { amount: 0.35 });
+  const pin = usePinned(ref, MOMENTS.length);
+  const at = pin.wide ? pin.at : own;
   useEffect(() => {
-    if (!auto || reduce || !inView) return;
+    if (pin.wide || !auto || reduce || !inView) return;
     const t = setTimeout(() => setAt((v) => (v + 1) % MOMENTS.length), 3600);
     return () => clearTimeout(t);
-  }, [at, auto, reduce, inView]);
+  }, [own, auto, reduce, inView, pin.wide]);
   const m = MOMENTS[at];
 
   return (
@@ -40,12 +44,13 @@ export function ReachGlobe({ head }: { head: React.ReactNode }) {
         <ol className="m-hide mt-8 flex flex-col gap-0.5">
           {MOMENTS.map((x, i) => (
             <li key={x.verb}>
-              <button type="button" aria-pressed={i === at} onClick={() => { setAuto(false); setAt(i); }}
+              <button type="button" aria-pressed={i === at} onClick={() => { if (pin.wide) pin.goTo(i); else { setAuto(false); setAt(i); } }}
                 className={cn("flex w-full items-start gap-3.5 rounded-xl border px-4 py-2.5 text-left transition", i === at ? "border-line-strong bg-surface shadow-[var(--shadow)]" : "border-transparent hover:bg-surface/70")}>
                 <span className={cn("grid size-8 shrink-0 place-items-center rounded-lg transition", i === at ? "bg-text text-bg" : "bg-surface-2 text-muted")}><x.icon className="size-4" /></span>
-                <span className="min-w-0">
+                <span className="min-w-0 flex-1">
                   <span className={cn("block text-sm font-semibold", i !== at && "text-text-2")}>{x.verb}</span>
                   <span className="block text-sm leading-relaxed text-muted">{x.text}</span>
+                  {pin.wide && i === at && <span aria-hidden="true" className="mt-2 block h-px bg-line"><span className="block h-full origin-left bg-text" style={{ transform: `scaleX(${Math.max(0.04, pin.fill)})` }} /></span>}
                 </span>
               </button>
             </li>

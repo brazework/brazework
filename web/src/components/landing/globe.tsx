@@ -5,8 +5,9 @@ import { useEffect, useRef } from "react";
 // 144 x 72 bitmask of Natural Earth's 1:110m land, public domain, baked in below), the oceans in a
 // faint lattice, and arcs run from your club to the places that notice. Same family as the orb:
 // plain 2D canvas, black and white (white on dark, graphite on light), decorative (aria-hidden; the
-// section says the same in words). Drag to turn it (horizontal drags only on touch, so the page still
-// scrolls); it turns slowly on its own and a little with the page. Draws only while on screen;
+// section says the same in words). It turns to face the active journey (centred on the arc's
+// midpoint), and you can drag it to look around (horizontal drags only on touch, so the page still
+// scrolls); let go and it eases back. Draws only while on screen;
 // holds still for reduced motion, though you can still turn it.
 
 const MASK = "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAPCf//8HAAAAAAAAAAAAAAAAyPzz//8A4AAAAAADAAAAAACAlAnw//8AAAAAB4AfAAAAAADAAywA/P8AAABgAP4fAAEAAQIAPvYH+H8AAABguP//7x8A4P//K9wc+B8AgH+g1///////z////z98+AMC4L/8////////AP///684+AAB8P7///////9/wP///wMGcAAAfP7//////38fgAf+/wd+AAAAfP7//////wEBAAH4/x9+AABAKP//////f8ABAADw/3//AQCw+P///////8AAAADg////AwDA/////////wAAAADA//8vBwDA/////////wAAAADA//8/AACA/6/v////fwAAAADA//8PAACA1wf3////PwIAAADA//8HAADwYW/P////DwEAAACA//8DAADwQPnP//9/BAEAAACA//8DAAAAD+D/////yAAAAAAA/v8BAADgD8D/////IAAAAAAA+n8AAADwf9f/////AQAAAAAA/IMAAADw///3////AQAAAAAA8IEAAAD8/7/P////AAAAAAAA4AEAAAD8/79/+P9/AQAAAAAAwBEAAAD+/3//8OcHAAAAAAAAwBsYAAD8/39/4MMLAAAAAAAAAB4AAAD+//8e4IEHAQAAAAAAAHAAAAD+//8HwIAPAwAAAAAAAAAUAAD8//8JwIAGAAAAAAAAAID+AAD4//8PAIAABAAAAAAAAAD+AQDw/f8PAAEBAAAAAAAAAAD+DwAA8P8HAIBhAAAAAAAAAAD/DwAA8P8DAABzAAAAAAAAAAD/PwAA8P8BAABzMQAAAAAAAAD//wEA8P8AAAACwQMAAAAAAAD//wMA4P8AAAAEgAcAAAAAAAD//wMA4P8AAACABQEAAAAAAAD+/wEA4P8AAAAAAAAAAAAAAAD+/wAA4P8IAAAAMAAAAAAAAAD4/wAA4P8MAAAAfgIAAAAAAADw/wAA4D8MAAAA/gcAAAAAAADw/wAA4D8GAADA/w8AAAAAAADwPwAAwD8GAADg/w8AAAAAAADwHwAAwB8AAADg/x8AAAAAAAD4DwAAgB8AAADA/x8AAAAAAAD4DwAAgA8AAADA/x8AAAAAAAD4BwAAgAMAAADAwx8AAAAAAAD4AQAAAAAAAAAAAA8AAAAAAAD4AAAAAAAAAAAAAARAAAAAAAA8AAAAAAAAAAAAAAQgAAAAAAA4AAAAAAAAAAAAAAAQAAAAAAAcAAAAAAAAAAAAAAAIAAAAAAAcAAAAAAAAAAAAAAAAAAAAAAAMAQAAAAAAAAAAAAAAAAAAAAAYAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAABAAAAAAABgAAAiAAAAAAAAAAAgAAAAACD+j////x8AAAAAAAB8AACg////5/////8PAACAgP/9AAD+//////////8HAMD///8PAMD///////////8BgPz///8BcPz///////////8HAPz///8fAP7///////////8AAPj///////////////////8P////////////////////////////////////////////////";
@@ -55,6 +56,14 @@ export function Globe({ from, to, active, className }: { from: Place; to: Place[
       });
     });
     const ends = to.map((p) => vec(p.lat, p.lon));
+    // Where to look for each journey: the midpoint of its great circle (yaw puts that longitude in the
+    // middle of the view; pitch tips the globe toward its latitude).
+    const looks = ends.map((B) => {
+      const m = [A[0] + B[0], A[1] + B[1], A[2] + B[2]], len = Math.hypot(m[0], m[1], m[2]) || 1;
+      const lat = Math.asin(m[1] / len), lon = Math.atan2(m[0] / len, m[2] / len);
+      return { yaw: -lon, pitch: Math.max(-0.4, Math.min(0.85, lat * 0.85)) };
+    });
+    const wrap = (d: number) => Math.atan2(Math.sin(d), Math.cos(d)); // shortest way round
 
     let light = false, checked = 0;
     const readTone = () => {
@@ -77,11 +86,17 @@ export function Globe({ from, to, active, className }: { from: Place; to: Place[
     const draw = (now: number) => {
       const dt = Math.min(0.05, (now - last) / 1000); last = now;
       if (now - checked > 1000) { readTone(); checked = now; }
-      if (!drag) { if (!reduce) yaw += 0.06 * dt; yaw += vel; vel *= 0.92; }
-      // A little turn with the page, so scrolling past it reads as moving around the world.
-      const rect = canvas.getBoundingClientRect();
-      const scrollTurn = reduce ? 0 : (1 - (rect.top + rect.height / 2) / window.innerHeight) * 0.5;
-      const a = yaw + scrollTurn, ca = Math.cos(a), sa = Math.sin(a), cp = Math.cos(pitch), sp = Math.sin(pitch);
+      if (!drag) {
+        yaw += vel; vel *= 0.92;
+        // Ease toward the active journey once any fling has settled.
+        const look = looks[act.current];
+        if (look && Math.abs(vel) < 0.002) {
+          const k = reduce ? 1 : 1 - Math.pow(0.04, dt);
+          yaw += wrap(look.yaw - yaw) * k;
+          pitch += (look.pitch - pitch) * k;
+        }
+      }
+      const a = yaw, ca = Math.cos(a), sa = Math.sin(a), cp = Math.cos(pitch), sp = Math.sin(pitch);
       const R = Math.min(w, h) * 0.42, cx = w / 2, cy = h / 2;
       const ink = light ? "24,24,27" : "250,250,250";
       const P = (x: number, y: number, z: number) => {
@@ -145,7 +160,7 @@ export function Globe({ from, to, active, className }: { from: Place; to: Place[
       };
       ends.forEach((v, i) => mark(v, i === on ? to[i].label : null, i === on, false));
       mark(A, from.label, true, true);
-      if (visible && (!reduce || drag || Math.abs(vel) > 0.0005)) raf = requestAnimationFrame(draw);
+      raf = visible ? requestAnimationFrame(draw) : 0;
     };
     const kick = () => { cancelAnimationFrame(raf); last = performance.now(); raf = requestAnimationFrame(draw); };
 

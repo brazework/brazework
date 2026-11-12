@@ -1,6 +1,7 @@
 import { FinalCta, Footer } from "@/components/landing/closing";
 import { ConnectSection } from "@/components/landing/connect-section";
 import { Disciplines } from "@/components/landing/disciplines";
+import { NoClub, OtherSide } from "@/components/landing/angles";
 import { Hero } from "@/components/landing/hero";
 import { Founders } from "@/components/landing/founders";
 import { SpotlightTracker } from "@/components/landing/interactive";
@@ -32,7 +33,9 @@ export default function Landing() {
         <Disciplines />
         <ProjectShowcase />
         <ClubShowcase />
+        <NoClub />
         <ConnectSection />
+        <OtherSide />
         <Reach />
         <Audiences />
         <Features />

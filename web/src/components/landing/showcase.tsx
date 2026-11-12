@@ -25,8 +25,9 @@ function Point({ icon: Icon, title, body }: { icon: typeof Check; title: string;
 
 export function ProjectShowcase() {
   return (
-    <section id="projects" data-story="Projects" className="story-sec relative overflow-hidden py-24 sm:py-32">
-      <div className="relative mx-auto grid max-w-7xl grid-cols-1 items-center gap-12 px-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] lg:gap-16">
+    <section id="projects" data-story="Projects" data-chapters="7" className="story-sec relative overflow-x-clip py-24 sm:py-32 md:h-[480vh] md:py-0">
+      {/* Wide screens: pinned while the scroll deals the deck (project-deck.tsx). */}
+      <div className="relative mx-auto grid max-w-7xl grid-cols-1 items-center gap-12 px-6 md:sticky md:top-0 md:h-screen md:content-center md:pt-16 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] lg:gap-16">
         <Reveal>
           <Eyebrow>Projects</Eyebrow>
           <h2 className={cn("mt-5", H2)}>Your project page is <span className="text-grad">your proof.</span></h2>

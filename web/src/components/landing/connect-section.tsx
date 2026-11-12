@@ -1,6 +1,6 @@
 "use client";
 import { AnimatePresence, motion, useInView, useMotionValueEvent, useReducedMotion, useScroll } from "motion/react";
-import { BadgeCheck, Building2, Check, CircleCheck, Copy, Flame, GitMerge, MessageSquare, Tag, Terminal, Users } from "lucide-react";
+import { BadgeCheck, Building2, Check, Copy, Flame, GitMerge, Terminal } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/forge";
@@ -15,11 +15,11 @@ import { Orb } from "./orb";
 // Example data throughout, labelled as such.
 
 const CHAPTERS = [
-  { title: "You build like you already do", body: "Connect a repo once. Merged pull requests, releases and CI land in your project's build log on their own.", sources: ["github"] },
-  { title: "Ember drafts it", body: "Ember, the agent built into Brazework, turns your week into an update, catches you up on your club's chats and answers @Ember. It drafts; you post.", sources: ["ember"] },
+  { title: "You build like you already do", body: "Connect GitHub once. Merged pull requests, releases and CI runs land in your project's build log by themselves.", sources: ["github"] },
+  { title: "Ember writes it up", body: "Ember, the agent built into Brazework, reads your week (commits, posts, your club's chats) and drafts the update. You approve it; it never posts on its own.", sources: ["ember"] },
   { title: "Or bring your own agent", body: "The AI you already work with (Claude Code, Cursor, Codex) logs today's progress from where you work, through Brazework's MCP server. Every post says which tool wrote it.", sources: ["claude", "cursor", "codex"] },
   { title: "Someone who saw it signs it", body: "Anything can be posted. Only a club officer, or a professor, PI or manager you ask, can verify it, by name. Agents never can.", sources: ["club"] },
-  { title: "Someone notices", body: "Companies search verified work, not résumés, and you see who looked.", sources: ["companies"] },
+  { title: "The right people notice", body: "Labs and companies search verified work, not résumés. Your build log is what they open, and you see who looked.", sources: ["companies"] },
 ] as const;
 
 // Around the orb, as percentages of the stage: in its upper part, clear of the demo card below.
@@ -132,12 +132,8 @@ export function ConnectSection() {
               </span>
             ))}
           </div>
-            <div className="mt-3 md:absolute md:inset-x-[8%] md:bottom-[2%] md:mt-0">
-              <AnimatePresence mode="wait">
-                <motion.div key={step} initial={reduce ? false : { opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.35 }}>
-                  <Demo step={step} play={!reduce} />
-                </motion.div>
-              </AnimatePresence>
+            <div className="mt-3 md:absolute md:inset-x-[4%] md:bottom-[-4%] md:mt-0">
+              <BuildLog step={step} play={!reduce} />
             </div>
           </div>
         </div>
@@ -188,49 +184,42 @@ function AgentPicker() {
   );
 }
 
-// What each chapter looks like, in miniature. Example data.
-function Demo({ step, play }: { step: number; play: boolean }) {
-  const card = "rounded-xl border border-white/10 bg-[#121214]/95 p-3.5 text-[13px] shadow-[0_20px_40px_-20px_rgb(0_0_0/0.8)]";
-  const row = (i: number) => ({ initial: play ? { opacity: 0, x: -6 } : false, animate: { opacity: 1, x: 0 }, transition: { delay: play ? 0.25 + i * 0.45 : 0 } }) as const;
-  if (step === 0) return (
-    <div className={card}>
-      <p className="mb-2 flex justify-between text-[11px] text-[#8b8b93]"><span>Build log · Liquid engine test stand</span><span>Example</span></p>
-      {[[GitMerge, "Merged #42: Add igniter sequencing"], [CircleCheck, "CI passed on main"], [Tag, "Released v1.0 · First hot fire"]].map(([Icon, t], i) => {
-        const I = Icon as typeof GitMerge;
-        return <motion.p key={t as string} {...row(i)} className="flex items-center gap-2 py-1 text-[#e4e4e7]"><I className={cn("size-3.5", i === 1 ? "text-[#4ade80]" : "text-white")} /> {t as string}<span className="ml-auto text-[11px] text-[#8b8b93]">GitHub</span></motion.p>;
-      })}
-    </div>
-  );
-  if (step === 1) return (
-    <div className={card}>
-      <p className="mb-2 flex justify-between text-[11px] text-[#8b8b93]"><span className="inline-flex items-center gap-1.5"><MessageSquare className="size-3" /> Rocketry Club · #propulsion</span><span>Example</span></p>
-      <p className="ml-auto w-fit max-w-[85%] rounded-lg rounded-br-sm bg-white/[0.08] px-2.5 py-1.5 text-[#e4e4e7]"><span className="text-[#f28c28]">@Ember</span> draft my update from this week</p>
-      <motion.div {...row(1)} className="mt-2 rounded-lg border border-white/10 bg-[#0e0e10] p-2.5">
-        <p className="flex items-center gap-1.5 text-[11px] font-medium text-[#f28c28]"><Flame className="size-3" /> Ember · draft update</p>
-        <p className="mt-1 text-[#e4e4e7]">Igniter sequencing merged; the cold-flow test held 300 psi for 30 s.</p>
-        <p className="mt-2 flex gap-1.5 text-[11px]"><span className="rounded-md bg-white px-2 py-0.5 font-medium text-[#0b0b0c]">Post</span><span className="rounded-md border border-white/15 px-2 py-0.5 text-[#b4b4bb]">Edit</span><span className="ml-auto self-center text-[#8b8b93]">You confirm</span></p>
-      </motion.div>
-    </div>
-  );
-  if (step === 2) return (
-    <div className={cn(card, "font-mono text-[12px]")}>
-      <p className="text-[#e4e4e7]"><span className="text-[#8b8b93]">$</span> claude &quot;log today&apos;s cold-flow test&quot;</p>
-      <motion.p {...row(0)} className="mt-1.5 text-[#8b8b93]">● brazework · my_projects</motion.p>
-      <motion.p {...row(1)} className="text-[#8b8b93]">● brazework · post_update</motion.p>
-      <motion.p {...row(2)} className="mt-1.5 text-[#4ade80]">✓ Posted to Liquid engine test stand · via Claude Code</motion.p>
-    </div>
-  );
-  if (step === 3) return (
-    <div className={card}>
-      <p className="mb-1 text-[11px] text-[#8b8b93]">Milestone · Rocketry Club · Example</p>
-      <p className="font-medium text-white">Static fire at 1.2 kN</p>
-      <motion.p {...row(1)} className="mt-2 inline-flex items-center gap-1.5 rounded-md bg-[#4ade80]/12 px-2 py-1 text-[12px] font-medium text-[#4ade80]"><BadgeCheck className="size-3.5" /> Verified by Maya Patel, Rocketry Club</motion.p>
-    </div>
-  );
+// The build log, growing one entry per chapter: everything ends up in one place. The newest entry
+// arrives with a little motion; the rest stay. Example data.
+const LOG = [
+  { icon: GitMerge, text: "Merged #42: igniter sequencing", by: "via GitHub", tone: "" },
+  { icon: Flame, text: "Cold-flow test held 300 psi for 30 s", by: "drafted by Ember · you approved", tone: "ember" },
+  { icon: Terminal, text: "Injector plate v3 machined to ±0.02 mm", by: "logged via Claude Code", tone: "" },
+  { icon: BadgeCheck, text: "Static fire at 1.2 kN", by: "Verified by Maya Patel, Rocketry Club", tone: "ok" },
+  { icon: Building2, text: "Acme Aerospace opened your build log", by: "2 milestones verified · active 7 of 12 weeks", tone: "" },
+] as const;
+
+function BuildLog({ step, play }: { step: number; play: boolean }) {
   return (
-    <div className={card}>
-      <motion.p {...row(0)} className="flex items-center gap-2 text-[#e4e4e7]"><Building2 className="size-4 text-white" /> <span><b className="font-medium text-white">Acme Aerospace</b> looked at your profile</span></motion.p>
-      <motion.p {...row(1)} className="mt-2 flex items-center gap-2 text-[12px] text-[#b4b4bb]"><Users className="size-3.5" /> 2 milestones verified · active 7 of 12 weeks</motion.p>
+    <div className="rounded-xl border border-white/10 bg-[#121214]/95 p-3.5 text-[13px] shadow-[0_20px_40px_-20px_rgb(0_0_0/0.8)]">
+      <p className="mb-2 flex items-center justify-between text-[11px] text-[#8b8b93]">
+        <span className="inline-flex items-center gap-1.5"><span className="relative flex size-1.5"><span className="absolute inset-0 animate-ping rounded-full bg-white/60" /><span className="relative size-1.5 rounded-full bg-white" /></span> Build log · Liquid engine test stand</span>
+        <span>Example</span>
+      </p>
+      <ol className="flex flex-col">
+        <AnimatePresence initial={false}>
+          {LOG.slice(0, step + 1).map((e, i) => {
+            const now = i === step;
+            return (
+              <motion.li key={e.text} layout={play} initial={play ? { opacity: 0, y: 12, height: 0 } : false} animate={{ opacity: 1, y: 0, height: "auto" }} exit={{ opacity: 0, height: 0 }} transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
+                className="overflow-hidden">
+                <div className={cn("flex items-start gap-2.5 rounded-lg px-2 py-1.5 transition-colors", now ? "bg-white/[0.06]" : "")}>
+                  <e.icon className={cn("mt-0.5 size-3.5 shrink-0", e.tone === "ember" ? "text-[#f28c28]" : e.tone === "ok" ? "text-[#4ade80]" : "text-white")} />
+                  <span className="min-w-0 flex-1">
+                    <span className={cn("block truncate", now ? "text-white" : "text-[#d4d4d8]")}>{e.text}</span>
+                    <span className={cn("block truncate text-[11px]", e.tone === "ember" ? "text-[#f28c28]" : e.tone === "ok" ? "text-[#4ade80]" : "text-[#8b8b93]")}>{e.by}</span>
+                  </span>
+                </div>
+              </motion.li>
+            );
+          })}
+        </AnimatePresence>
+      </ol>
     </div>
   );
 }
