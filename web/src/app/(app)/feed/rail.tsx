@@ -2,7 +2,7 @@ import { dbFeatures, eventWithHost } from "@/lib/db-features";
 import { CalendarDays, Plus, Trophy, Users } from "lucide-react";
 import Link from "next/link";
 import { DROP_AFTER_MS, dateParts, withHost, type HostedEvent } from "@/lib/events";
-import { cn, requestTime } from "@/lib/forge";
+import { requestTime } from "@/lib/forge";
 import { getViewer } from "@/lib/supabase/server";
 import { RailCard } from "@/components/app/rail-card";
 import { MessageDock } from "@/components/messages/dock";
@@ -13,7 +13,7 @@ import { TrendingNews } from "./trending-news";
 import { YourWeekCard } from "./streak";
 import { Suspense } from "react";
 
-// The feed's right rail (wide screens): Brazework updates (recent and coming next), what's trending, your clubs and what's coming up, so the rest of Brazework is one glance away.
+// The feed's right rail (wide screens): your week, what's coming up, your clubs and open challenges, then what's trending and Brazework's own updates, so the rest of Brazework is one glance away.
 export async function FeedRail() {
   const { supabase, user, profile } = await getViewer();
   if (!user || !profile) return null;

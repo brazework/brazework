@@ -179,7 +179,7 @@ export function PostCard({ post, liked, saved = false, own = false, index, proje
         </p>
       )}
       {post.media && post.media.length > 0 && <MediaGrid media={post.media} alt={`Shared by ${post.author_first} ${post.author_last}`} />}
-      {project && <BuildStrip project={project} authorId={post.author_id} own={own} />}
+      {project && <BuildStrip project={project} own={own} />}
       <footer className="mt-3 flex items-center gap-0.5 text-sm text-faint">
         <button onClick={() => like(!opt.liked)} aria-pressed={opt.liked} aria-label={opt.liked ? "Unlike" : "Like"} className="tap inline-flex h-9 items-center gap-1.5 rounded-lg px-3 transition hover:bg-hover hover:text-text active:scale-90">
           <motion.span className="relative" animate={opt.liked ? { scale: [1, 1.35, 1] } : {}} transition={{ duration: 0.35 }}>
@@ -291,7 +291,7 @@ function RollingCount({ n, className }: { n: number; className?: string }) {
 
 // Under the photos and video: the work itself. Which project, how far along, its club-verified proof,
 // what it's built with and its headline specs; the author gets a nudge to have it verified.
-function BuildStrip({ project, authorId, own }: { project: PostProject; authorId: string; own: boolean }) {
+function BuildStrip({ project, own }: { project: PostProject; own: boolean }) {
   const v = project.verified ?? { n: 0, clubs: [] };
   const tools = project.tools ?? [];
   const specs = project.specs ?? [];

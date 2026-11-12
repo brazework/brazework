@@ -16,12 +16,12 @@ import { Ember } from "@/components/ember/ember";
 import { SendPost } from "@/components/share/send-post";
 import { Avatar, Kicker } from "@/components/ui";
 import { dbFeatures, postSelect, milestoneCols } from "@/lib/db-features";
-import { timeAgo, type Post } from "@/lib/forge";
+import { requestTime, timeAgo, type Post } from "@/lib/forge";
 import { getViewer } from "@/lib/supabase/server";
-import { PostCard } from "../../feed/post-card";
 import { MilestoneTimeline, type Milestone } from "../../u/[id]/milestones";
 import { PostUpdate } from "./post-update";
-import { BuiltWith } from "@/components/projects/built-with";
+import { buildLog, inThirtySeconds, lastActivity, liveStatus, weeklyActivity } from "@/lib/build-log";
+import { AboutBuild, ActivityStrip, BuildLogTimeline, ThirtySeconds } from "./build-log-view";
 import { TeamList } from "./team";
 import { OrganizeWithEmber } from "./organize";
 import { copilotEnabled } from "@/lib/copilot";
@@ -105,6 +105,22 @@ async function ProjectView({ params }: { params: PageProps<"/projects/[id]">["pa
   const ownerName = `${owner?.first_name ?? ""} ${owner?.last_name ?? ""}`.trim() || "Brazework member";
   const ask = `Tell me about the project "${p.title}" by ${ownerName} on Brazework: what it is in plain words, what's impressive about it, and three good questions to ask the builder.`;
 
+  // The live build log (FIX-92): momentum over 12 weeks, where it stands now, one timeline, and the
+  // 30-second version for someone hiring (lib/build-log.ts).
+  const now = requestTime();
+  const verifiedAt = verified.map((m) => Date.parse(m.reviewed_at || m.achieved_on));
+  const postAt = posts.map((x) => Date.parse(x.created_at));
+  const weeks = weeklyActivity([...postAt, ...verifiedAt], now, 12);
+  const last = lastActivity([...postAt, ...verifiedAt, Date.parse(p.updated_at)]);
+  const live = liveStatus(p.status, last, now);
+  const log = buildLog(posts, milestones);
+  const summary = inThirtySeconds({
+    owner: ownerName, title: p.title, summary: p.summary, status: p.status, teamSize: team.length + 1,
+    verified: verified.map((m) => ({ title: m.title, reviewer: m.reviewer_name, club: m.community_name })),
+    activeWeeks: weeks.filter((n) => n > 0).length, weeks: weeks.length, updates: posts.length, tools,
+  });
+  const about = <AboutBuild link={link} specs={specs} tools={tools} uses={uses} details={details.details} ember={emberOn ? <OrganizeWithEmber projectId={p.id} /> : undefined} />;
+
   return (
     <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
       <div className="flex min-w-0 flex-col gap-6">
@@ -121,8 +137,11 @@ async function ProjectView({ params }: { params: PageProps<"/projects/[id]">["pa
             <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/15 to-transparent" />
             <div className="absolute inset-x-0 bottom-0 p-5 text-white sm:p-7">
               <div className="flex flex-wrap items-center gap-2 text-xs">
+                {/* Live status: shipped, building (active in the last 3 weeks) or quiet, from real activity. */}
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-2.5 py-1 font-medium backdrop-blur">
-                  {p.status === "completed" ? <><CheckCircle2 className="size-3.5" /> Completed{p.year ? ` ${p.year}` : ""}</> : <><span className="size-1.5 animate-pulse rounded-full bg-emerald-400" /> In progress · updated {timeAgo(p.updated_at)}</>}
+                  {live === "shipped" ? <><CheckCircle2 className="size-3.5" /> Shipped{p.year ? ` ${p.year}` : ""}</>
+                    : live === "building" ? <><span className="size-1.5 animate-pulse rounded-full bg-emerald-400" /> Building · last activity {timeAgo(new Date(last!).toISOString())}</>
+                    : <><span className="size-1.5 rounded-full bg-white/50" /> Quiet{last ? ` · last activity ${timeAgo(new Date(last).toISOString())}` : ""}</>}
                 </span>
                 {verified.length > 0 && <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/90 px-2.5 py-1 font-medium text-white"><BadgeCheck className="size-3.5" /> {verified.length} club-verified</span>}
                 {p.private && <span className="rounded-full bg-white/15 px-2.5 py-1 backdrop-blur">Private</span>}
@@ -148,9 +167,12 @@ async function ProjectView({ params }: { params: PageProps<"/projects/[id]">["pa
                 </li>
               ))}
             </ul>
+            <ActivityStrip weeks={weeks} />
             <div className="mt-5 flex flex-wrap items-center gap-2">
+              {own && <a href="#log" className="inline-flex h-10 items-center gap-1.5 rounded-lg bg-text px-4 text-sm font-semibold text-surface transition hover:opacity-90 active:scale-95"><Megaphone className="size-4" /> Post update</a>}
               {/* The reel: this build as a short story, from its real photos, specs and proof. */}
-              <Link href={`/projects/${p.id}/reel`} className="bg-accent-grad inline-flex h-10 items-center gap-2 rounded-lg pr-4 pl-3 text-sm font-semibold text-on-accent transition active:scale-95"><span className="grid size-6 place-items-center rounded-full bg-white/20"><Play className="size-3 fill-current" /></span> Play reel</Link>
+              {/* One primary action: for the owner it's Post update; for everyone else, the reel. */}
+              <Link href={`/projects/${p.id}/reel`} className={own ? "inline-flex h-10 items-center gap-1.5 rounded-lg border border-line px-4 text-sm font-medium transition hover:bg-hover" : "bg-accent-grad inline-flex h-10 items-center gap-2 rounded-lg pr-4 pl-3 text-sm font-semibold text-on-accent transition active:scale-95"}>{own ? <Play className="size-3.5 fill-current" /> : <span className="grid size-6 place-items-center rounded-full bg-white/20"><Play className="size-3 fill-current" /></span>} Play reel</Link>
               {link && <a href={link} target="_blank" rel="noopener noreferrer nofollow" className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-line px-4 text-sm font-medium transition hover:bg-hover"><ExternalLink className="size-4" /> {new URL(link).host.replace(/^www\./, "")}</a>}
               <SendPost projectId={p.id} compact={false} />
               <CopyLink path={`/projects/${p.id}`} label="Share" />
@@ -183,8 +205,21 @@ async function ProjectView({ params }: { params: PageProps<"/projects/[id]">["pa
           </div>
         )}
 
-        {/* The project's folder: documents, CAD, 3D models (rotatable), code and links. */}
-        {filesOn && <ProjectFiles projectId={p.id} items={files} me={user.id} ownerId={p.owner_id} />}
+        {/* The build log: every update and every verified milestone, newest first, on one line. Posts
+            made from a member's AI tool show "via Claude Code" etc. in their card. */}
+        <section id="log" aria-label="Build log" className="flex scroll-mt-24 flex-col gap-4">
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="text-lg font-semibold tracking-tight">Build log</h2>
+            <span className="text-xs text-muted">{log.length ? `${posts.length} ${posts.length === 1 ? "update" : "updates"} · ${verified.length} verified` : "Updates and verified milestones, as they happen"}</span>
+          </div>
+          {own && <PostUpdate projectId={p.id} title={p.title} attach={filesOn} />}
+          {log.length > 0 && <BuildLogTimeline entries={log} liked={liked} saved={saved} me={user.id} projectId={p.id} ownerId={p.owner_id} filesByPost={filesByPost} />}
+          {!log.length && (own ? (
+            <p className="rounded-xl border border-dashed border-line-strong px-4 py-3 text-sm text-muted">
+              Log what you did, what broke and what you learned: a few lines a week adds up to proof. Or let your AI tool do it as you work: <Link href="/settings/tools" className="font-medium text-text underline underline-offset-4">connect Claude Code, Cursor or Codex</Link>.
+            </p>
+          ) : <p className="text-sm text-muted">No updates yet.</p>)}
+        </section>
 
         {/* Every photo and video from its updates, in one place. */}
         {gallery.length > 0 && (
@@ -194,47 +229,8 @@ async function ProjectView({ params }: { params: PageProps<"/projects/[id]">["pa
           </Panel>
         )}
 
-        {specs.length > 0 && (
-          <Panel className="p-6">
-            <Kicker>Specs</Kicker>
-            <dl className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
-              {specs.map((sp, i) => (
-                <div key={i} className="rounded-2xl border border-line bg-surface/60 px-4 py-3">
-                  <dt className="truncate text-xs text-muted">{sp.label}</dt>
-                  <dd className="mt-0.5 truncate text-lg font-semibold tracking-tight tabular-nums">{sp.value}</dd>
-                </div>
-              ))}
-            </dl>
-          </Panel>
-        )}
-
-        {(tools.length > 0 || emberOn) && (
-          <Panel className="p-6">
-            <Kicker>Built with</Kicker>
-            {tools.length > 0 ? <BuiltWith tools={tools} uses={uses} /> : <p className="mt-2 text-sm text-muted">No tools listed yet.</p>}
-            {emberOn && <OrganizeWithEmber projectId={p.id} />}
-          </Panel>
-        )}
-
-        {details.details && (
-          <Panel className="p-6">
-            <Kicker>The write-up</Kicker>
-            <p className="mt-3 text-[15px] leading-relaxed whitespace-pre-wrap text-text-2">{details.details}</p>
-          </Panel>
-        )}
-
-        <section className="flex flex-col gap-4">
-          <h2 className="text-lg font-semibold tracking-tight">Updates</h2>
-          {own && <PostUpdate projectId={p.id} title={p.title} attach={filesOn} />}
-          {/* Each update, with the files, 3D models and links it was posted with. */}
-          {posts.map((x, i) => (
-            <div key={x.id} className="flex flex-col gap-3">
-              <PostCard post={x} liked={liked.has(x.id)} saved={saved.has(x.id)} own={x.author_id === user.id} index={i} />
-              {filesByPost.has(x.id) && <ProjectFiles projectId={p.id} items={filesByPost.get(x.id)!} me={user.id} ownerId={p.owner_id} variant="update" />}
-            </div>
-          ))}
-          {!posts.length && !own && <p className="text-sm text-muted">No updates yet.</p>}
-        </section>
+        {/* The project's folder: documents, CAD, 3D models (rotatable), code and links. */}
+        {filesOn && <ProjectFiles projectId={p.id} items={files} me={user.id} ownerId={p.owner_id} />}
       </div>
 
       <aside className="flex flex-col gap-4">
@@ -245,8 +241,11 @@ async function ProjectView({ params }: { params: PageProps<"/projects/[id]">["pa
             <span className="min-w-0"><span className="block truncate font-medium hover:underline">{ownerName}</span><span className="block truncate text-xs text-muted">{owner?.headline || owner?.field || "Brazework member"}</span></span>
           </Link>
           {(team.length > 0 || own) && <TeamList projectId={p.id} team={team} candidates={candidates} own={own} me={user.id} />}
-          {!own && <Link href={`/messages/new?to=${p.owner_id}`} className="mt-4 inline-flex h-9 w-full items-center justify-center rounded-full border border-line text-sm font-medium transition hover:bg-hover">Message {owner?.first_name || "them"}</Link>}
+          {!own && <Link href={`/messages/new?to=${p.owner_id}`} className="mt-4 inline-flex h-9 w-full items-center justify-center rounded-lg border border-line text-sm font-medium transition hover:bg-hover">Message {owner?.first_name || "them"}</Link>}
         </Panel>
+        <ThirtySeconds lines={summary} ownerId={p.owner_id} />
+        {/* Rendered once (no hidden copy for phones): the side column follows the log on a phone. */}
+        {about}
         <Link href={`/copilot?q=${encodeURIComponent(ask)}`} className="glass-card flex items-center gap-3 rounded-3xl p-4 transition">
           <Ember size={36} />
           <span className="min-w-0"><span className="block text-sm font-medium">Ask Ember about this project</span><span className="block text-xs text-muted">What it is, what&apos;s impressive, what to ask.</span></span>
