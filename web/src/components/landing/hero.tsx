@@ -6,12 +6,12 @@ import { Button } from "@/components/ui";
 import { cn } from "@/lib/forge";
 import { Orb } from "./orb";
 
-// The hero: one clear line, then the four groups Brazework serves. Each one shows what Brazework does for
+// The hero: one clear line (build with any tools, get credit for the work), then the four groups Brazework serves. Each one shows what Brazework does for
 // them in a small live preview (example data, labelled as such). It cycles until you pick one.
 const AUDIENCES = [
   {
     id: "students", label: "Students", short: "Students", icon: GraduationCap, cta: { label: "Create your profile", href: "/signup" },
-    line: "Post what you're building, get it verified by your club, and carry that proof into every application.",
+    line: "Post what you're building, in any field. Your club verifies what it saw, and that proof goes with you to every internship, lab and grad application.",
   },
   {
     id: "orgs", label: "Clubs", short: "Clubs", icon: Users, cta: { label: "Bring your club", href: "#founding" },
@@ -23,7 +23,7 @@ const AUDIENCES = [
   },
   {
     id: "pros", label: "Professionals", short: "Professionals", icon: UserRound, cta: { label: "Join free", href: "/signup" },
-    line: "Show work that's been vouched for, mentor the chapters in your field, and get found for what you've actually built.",
+    line: "Mentor the chapters in your field, show work that's been vouched for, and get found for what you've actually built.",
   },
 ] as const;
 type Id = (typeof AUDIENCES)[number]["id"];
@@ -52,16 +52,16 @@ export function Hero() {
             <span className="truncate">Founding clubs program is open</span>
             <ArrowRight className="size-3.5 shrink-0" />
           </a>
-          <h1 className="focus-in mt-7 text-[clamp(2.7rem,6.2vw,5rem)] leading-[0.98] font-semibold tracking-[-0.045em]">
-            Build it. <span className="text-grad">Prove it.</span>
+          <h1 className="focus-in mt-7 text-[clamp(2.6rem,5.4vw,4.6rem)] leading-[0.98] font-semibold tracking-[-0.045em]">
+            Build with AI.
             <br />
-            Get found.
+            <span className="text-grad">Get credit<br />for the work.</span>
           </h1>
           <p className="m-hide focus-in mt-6 max-w-xl text-lg leading-relaxed text-muted" style={{ ["--delay" as string]: "0.1s" }}>
-            The network where STEM builders show what they&apos;ve made, the club officers who watched it happen sign off on it, and companies recruit from that proof. Clubs run on it, and Ember, the built-in AI agent, does the busywork.
+            The record of what you build in STEM: code, circuits, experiments, models, proofs. Use any tools you like. Your club signs off on what it watched you do, and that signed record is what labs, companies and grad programs trust when every résumé reads the same.
           </p>
           {/* Phones: the same idea, short enough to read in full. */}
-          <p className="m-only focus-in mt-5 text-base leading-relaxed text-muted">Show what you build. Your club signs off on it. Companies find you by it.</p>
+          <p className="m-only focus-in mt-5 text-base leading-relaxed text-muted">Use any tools. Your club signs off on the work. Labs and companies find you by it.</p>
 
           <div className="rise-in mt-8" style={{ ["--delay" as string]: "0.2s" }}>
             <div role="tablist" aria-label="Who Brazework is for" className="flex flex-wrap gap-2">

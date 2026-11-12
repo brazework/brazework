@@ -11,8 +11,8 @@ const STEPS = [
   { title: "The right people find it", body: "Companies and alumni find people by verified work, sponsor the clubs behind it, and reach out through a respectful inbox." },
 ];
 
-// The brass of the logo's seam (the landing keeps its colour, FIX-92).
-const BRASS = "linear-gradient(135deg,#ea580c,#d97706)";
+// The landing is black and white (FIX-92): the active step, its bar and the buttons are the text colour.
+const BRASS = "var(--text)";
 
 const URLS = ["brazework.com/c/robotics-team", "brazework.com/projects/rover-nav", "brazework.com/inbox"];
 
@@ -44,7 +44,7 @@ export function HowItWorks() {
                 )}
               >
                 <div className="flex items-start gap-4">
-                  <span className={cn("relative grid size-9 shrink-0 place-items-center rounded-full text-sm font-semibold ring-4 ring-bg transition", n === step ? "text-white" : n < step ? "bg-text text-bg" : "bg-surface-2 text-muted")} style={n === step ? { background: BRASS } : undefined}>
+                  <span className={cn("relative grid size-9 shrink-0 place-items-center rounded-full text-sm font-semibold ring-4 ring-bg transition", n === step ? "text-bg" : n < step ? "bg-text text-bg" : "bg-surface-2 text-muted")} style={n === step ? { background: BRASS } : undefined}>
                     {n < step ? <Check className="size-4" /> : n + 1}
                   </span>
                   <div>
@@ -118,24 +118,24 @@ function ClubMock({ play }: { play: boolean }) {
   return (
     <motion.div {...stagger(play)} className="flex flex-col gap-3">
       <motion.div {...item} className="overflow-hidden rounded-xl border border-line bg-surface shadow-sm">
-        <div className="h-16" style={{ background: "linear-gradient(135deg,#f59e0b,#ef4444)" }} />
+        <div className="h-16" style={{ background: "linear-gradient(135deg,#18181b,#52525b)" }} />
         <div className="flex items-center gap-3 p-4">
           <span className="-mt-10 grid size-14 place-items-center rounded-xl border-4 border-surface bg-text text-lg font-semibold text-bg">RT</span>
           <div className="min-w-0 flex-1"><div className="font-semibold">Robotics Team</div><div className="text-xs text-muted">{joined ? <CountUp from={141} to={142} duration={500} /> : 141} members · Approval to join</div></div>
-          <motion.span animate={joined ? { scale: [1, 1.08, 1] } : {}} transition={{ duration: 0.4 }} className={cn("rounded-md px-3 py-1 text-xs font-medium transition-colors", joined ? "text-white" : "border border-line text-text")} style={joined ? { background: BRASS } : undefined}>
+          <motion.span animate={joined ? { scale: [1, 1.08, 1] } : {}} transition={{ duration: 0.4 }} className={cn("rounded-md px-3 py-1 text-xs font-medium transition-colors", joined ? "text-bg" : "border border-line text-text")} style={joined ? { background: BRASS } : undefined}>
             {joined ? "Joined" : "Join"}
           </motion.span>
         </div>
       </motion.div>
       <motion.div {...item} className={card}>
-        <div className="flex items-center gap-3"><Dot g="linear-gradient(135deg,#6366f1,#38bdf8)" t="PN" /><div className="text-sm"><b>Priya Nair</b> <span className="text-muted">· Captain</span></div></div>
+        <div className="flex items-center gap-3"><Dot g="linear-gradient(135deg,#3f3f46,#71717a)" t="PN" /><div className="text-sm"><b>Priya Nair</b> <span className="text-muted">· Captain</span></div></div>
         <p className="mt-2 min-h-[2.5rem] text-sm text-text-2"><Typed play={play} delay={700} text="Build night Thursday 7pm: drivetrain swap and the first autonomous run. Pizza on us." /></p>
       </motion.div>
       <motion.div {...item} className={cn(card, "flex items-center gap-3")}>
         <span className="grid size-10 place-items-center rounded-lg bg-surface-2"><CalendarDays className="size-5" /></span>
         <div className="flex-1 text-sm"><b>Competition prep</b><div className="text-xs text-muted">Sat 10:00 · Engineering lab</div></div>
         <span className="flex -space-x-2">
-          {["#f59e0b", "#8b5cf6", "#10b981"].map((c, i) => <motion.span key={c} initial={play ? { scale: 0 } : false} animate={{ scale: 1 }} transition={{ delay: 1 + i * 0.18, type: "spring", stiffness: 500, damping: 20 }} className="size-6 rounded-full border-2 border-surface" style={{ background: c }} />)}
+          {["#27272a", "#52525b", "#a1a1aa"].map((c, i) => <motion.span key={c} initial={play ? { scale: 0 } : false} animate={{ scale: 1 }} transition={{ delay: 1 + i * 0.18, type: "spring", stiffness: 500, damping: 20 }} className="size-6 rounded-full border-2 border-surface" style={{ background: c }} />)}
         </span>
         <span className="text-xs text-muted">+<CountUp from={30} to={38} duration={1400} /></span>
       </motion.div>
@@ -149,7 +149,7 @@ function ProjectMock({ play }: { play: boolean }) {
   return (
     <motion.div {...stagger(play)} className="flex flex-col gap-3">
       <motion.div {...item} className="overflow-hidden rounded-xl border border-line bg-surface shadow-sm">
-        <div className="relative grid h-40 place-items-center" style={{ background: "linear-gradient(135deg,#0f172a,#334155)" }}>
+        <div className="relative grid h-40 place-items-center" style={{ background: "linear-gradient(135deg,#09090b,#3f3f46)" }}>
           <span className="grid size-14 place-items-center rounded-full bg-white/90 text-slate-900 shadow-xl"><span className="ml-1 border-y-[9px] border-l-[14px] border-y-transparent border-l-current" /></span>
           <span className="absolute bottom-3 left-3 rounded-md bg-black/50 px-2 py-0.5 font-mono text-[11px] text-white">0:42 · autonomous run</span>
           {/* The video plays: its progress bar fills, then starts again. */}
@@ -194,7 +194,7 @@ function InboxMock({ play }: { play: boolean }) {
             : <Typed play={play} text="Hi Priya, we watched your rover's competition run. Our autonomy team would love to talk about a summer internship." speed={16} />}
         </p>
         <div className="mt-3 flex gap-2">
-          <motion.span animate={nudge && play ? { scale: [1, 1.06, 1] } : {}} transition={{ duration: 0.45 }} className="rounded-md px-3 py-1.5 text-xs font-medium text-white" style={{ background: BRASS }}>Accept</motion.span>
+          <motion.span animate={nudge && play ? { scale: [1, 1.06, 1] } : {}} transition={{ duration: 0.45 }} className="rounded-md px-3 py-1.5 text-xs font-medium text-bg" style={{ background: BRASS }}>Accept</motion.span>
           <span className="rounded-md border border-line px-3 py-1.5 text-xs text-muted">Decline</span>
         </div>
       </motion.div>

@@ -608,11 +608,9 @@ select option { background-color: var(--surface); color: var(--text); }
    chapter's bar fills while it plays, then the next chapter starts. */
 @keyframes agent-fill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 
-/* The landing page keeps its colour (FIX-92): headline accents in the brass of the logo's seam,
-   deep enough to read on the light page (about 5:1), brighter on the dark one. The app stays calm. */
-.story { --text-grad: linear-gradient(90deg, #c2410c, #d97706 55%, #b45309); }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .story { --text-grad: linear-gradient(90deg, #fb923c, #fbbf24 55%, #f59e0b); } }
-:root[data-theme="dark"] .story { --text-grad: linear-gradient(90deg, #fb923c, #fbbf24 55%, #f59e0b); }
+/* The landing page is black and white (FIX-92): headline accents are a sheen from the text colour to
+   muted grey, readable on both themes. */
+.story { --text-grad: linear-gradient(90deg, var(--text), var(--muted)); }
 
 /* Every kind of engineering (components/landing/disciplines.tsx): quiet, looping drawings of real
    work. The global reduced-motion rule above stops them. */
@@ -630,3 +628,12 @@ select option { background-color: var(--surface); color: var(--text); }
 .dz-sweep { stroke-dasharray: 60 240; animation: dz-sweep 2.6s linear infinite; }
 .dz-flex { animation: dz-flex 3.2s ease-in-out infinite; }
 .dz-blink { animation: dz-blink 4s ease-in-out infinite; }
+@keyframes dz-swing { 0%, 100% { transform: rotate(-16deg); } 50% { transform: rotate(16deg); } }
+.dz-swing { animation: dz-swing 2.2s ease-in-out infinite; }
+
+/* Smooth scrolling on the landing page (components/landing/smooth-scroll.tsx): Lenis's own rules. */
+html.lenis, html.lenis body { height: auto; }
+.lenis:not(.lenis-autoToggle).lenis-stopped { overflow: clip; }
+.lenis [data-lenis-prevent] { overscroll-behavior: contain; }
+.lenis.lenis-smooth iframe { pointer-events: none; }
+.lenis.lenis-smooth, .lenis.lenis-smooth * { scroll-behavior: auto !important; }
