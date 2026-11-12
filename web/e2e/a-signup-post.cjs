@@ -109,9 +109,13 @@ const { BASE, step, browser, as, go, closeTour, summary } = require("./lib.cjs")
     await q.getByPlaceholder("Write an answer…").press("Enter");
     await q.getByText("Start with a complementary filter.").waitFor({ timeout: 10000 });
     await ben.waitForLoadState("networkidle");
-    await go(ben, "/feed");
-    const again = ben.locator("article").filter({ hasText: "Kalman filtering" }).first();
-    if ((await again.getByText("Start with a complementary filter.").count()) !== 1) throw new Error("answer missing or duplicated after reload");
+    // Saved exactly once: checked on the post's own page. Home's feed is virtualized and ranked, so
+    // after the answer the question can sit below the cards that are rendered (CI saw exactly that).
+    const href = await q.locator('a[href^="/post/"]').first().getAttribute("href");
+    await go(ben, href);
+    const saved = ben.getByText("Start with a complementary filter.");
+    await saved.first().waitFor({ timeout: 15000 }).catch(() => { throw new Error("answer missing after reload"); });
+    if ((await saved.count()) !== 1) throw new Error(`answer shown ${await saved.count()} times after reload`);
   }, ben);
   console.log("page errors:", [...page.errs, ...ben.errs].slice(0, 5));
   await step("a photo without a description gets a prompt; describing it clears the prompt", async () => {
