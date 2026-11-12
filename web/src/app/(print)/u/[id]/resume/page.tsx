@@ -53,7 +53,7 @@ async function Resume({ params }: { params: PageProps<"/u/[id]/resume">["params"
   return (
     <>
       <div className="mx-auto mb-4 flex max-w-[816px] justify-end gap-2 px-4 print:hidden">
-        <a href={`/u/${id}`} className="rounded-full px-4 py-2 text-sm text-zinc-600 hover:bg-zinc-200">Back to profile</a>
+        <a href={`/u/${id}`} className="rounded-lg px-4 py-2 text-sm text-zinc-600 hover:bg-zinc-200">Back to profile</a>
         <PrintButton />
       </div>
       <article className="mx-auto max-w-[816px] bg-white px-14 py-12 text-[13px] leading-relaxed text-zinc-800 shadow-sm print:max-w-none print:px-0 print:py-0 print:shadow-none">

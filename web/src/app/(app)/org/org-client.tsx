@@ -64,7 +64,7 @@ export function EventRow({ event: e, editable }: { event: ForgeEvent; editable: 
       {editable && e.status !== "cancelled" && (
         <div className="flex gap-1">
           <button aria-label="Edit event" onClick={() => setEditing(true)} className="grid size-9 place-items-center rounded-full text-muted hover:bg-hover hover:text-text"><Pencil className="size-4" /></button>
-          <button disabled={pending} onClick={() => confirm("Cancel this event? Everyone who RSVP'd sees it's cancelled.") && start(async () => setMsg((await cancelEvent(e.id)).message))} className="inline-flex h-9 items-center rounded-full px-3 text-sm text-danger hover:bg-hover">Cancel</button>
+          <button disabled={pending} onClick={() => confirm("Cancel this event? Everyone who RSVP'd sees it's cancelled.") && start(async () => setMsg((await cancelEvent(e.id)).message))} className="inline-flex h-9 items-center rounded-lg px-3 text-sm text-danger hover:bg-hover">Cancel</button>
         </div>
       )}
       {editing && <EventDialog event={e} host={{ orgId: e.org_id, communityId: e.community_id }} onClose={() => setEditing(false)} />}
@@ -169,7 +169,7 @@ export function CalendarImport({ communityId }: { communityId: string }) {
 
   return (
     <>
-      <button type="button" onClick={() => { setOpen(true); setEvents(null); setMsg(init); }} className="inline-flex h-10 items-center gap-1.5 rounded-full border border-line px-4 text-sm transition hover:border-line-strong hover:bg-hover">
+      <button type="button" onClick={() => { setOpen(true); setEvents(null); setMsg(init); }} className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-line px-4 text-sm transition hover:border-line-strong hover:bg-hover">
         <CalendarPlus className="size-4" /> Import calendar
       </button>
       {open && (

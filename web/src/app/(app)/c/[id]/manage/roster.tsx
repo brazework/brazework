@@ -51,7 +51,7 @@ export async function Roster({ cid }: { cid: string }) {
               <ul className="flex flex-col gap-1">{waiting.slice(0, 6).map((p) => (
                 <li key={p.uid} className="flex items-center gap-2 text-sm"><span className="min-w-0 flex-1 truncate">{p.name}</span><span className="shrink-0 text-xs text-muted tabular-nums">{p.pending}</span></li>
               ))}</ul>
-              <Link href={`/c/${cid}/manage?tab=verify`} className="mt-2 inline-flex h-8 items-center rounded-full bg-text px-3 text-xs font-semibold text-surface">Review them</Link>
+              <Link href={`/c/${cid}/manage?tab=verify`} className="mt-2 inline-flex h-8 items-center rounded-lg bg-text px-3 text-xs font-semibold text-surface">Review them</Link>
             </>
           ) : none("Nothing waiting.")}
         </Block>

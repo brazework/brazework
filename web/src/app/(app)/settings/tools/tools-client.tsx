@@ -29,7 +29,6 @@ export function ToolsHub({ tokens, endpoint, writes = false }: { tokens: ApiToke
     <div className="mt-6 space-y-6">
       {/* What it is, in one card: your agent reads your Brazework, safely. */}
       <section className="glass-card relative overflow-hidden rounded-3xl p-6 sm:p-7">
-        <div aria-hidden className="pointer-events-none absolute -top-24 -right-24 size-64 rounded-full bg-[radial-gradient(closest-side,var(--accent),transparent)] opacity-[0.12]" />
         <div className="relative flex items-start gap-4">
           <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-text text-surface"><Plug className="size-5" /></span>
           <div className="min-w-0">
@@ -65,7 +64,7 @@ export function ToolsHub({ tokens, endpoint, writes = false }: { tokens: ApiToke
             return (
               <li key={t.id}>
                 <button type="button" onClick={() => setOpen(t)} aria-label={`Connect ${t.name}`}
-                  className="group glass-card flex h-full w-full items-start gap-3 rounded-3xl p-4 text-left transition hover:-translate-y-0.5 hover:shadow-[0_18px_40px_-24px_rgb(0_0_0/0.4)] active:scale-[0.99]">
+                  className="group glass-card flex h-full w-full items-start gap-3 rounded-3xl p-4 text-left transition hover:border-line-strong active:scale-[0.99]">
                   <span className="grid size-11 shrink-0 place-items-center rounded-2xl border border-line bg-surface-2 font-mono text-sm font-semibold tracking-tight">{t.monogram}</span>
                   <span className="min-w-0 flex-1">
                     {/* The status wraps under the name rather than squeezing it onto two lines. */}
@@ -206,7 +205,7 @@ function StepView({ step }: { step: Step }) {
   if (step.kind === "link") {
     return (
       <div>
-        <a href={step.href} className="bg-accent-grad inline-flex h-11 items-center gap-2 rounded-full px-5 text-sm font-medium text-on-accent shadow-[0_8px_24px_-10px_var(--accent)] transition hover:-translate-y-px active:translate-y-0">{step.label} <ArrowUpRight className="size-4" /></a>
+        <a href={step.href} className="bg-accent-grad inline-flex h-11 items-center gap-2 rounded-lg px-5 text-sm font-medium text-on-accent transition active:translate-y-0">{step.label} <ArrowUpRight className="size-4" /></a>
         {step.note && <p className="mt-2 text-xs text-muted">{step.note}</p>}
       </div>
     );
@@ -219,7 +218,7 @@ function StepView({ step }: { step: Step }) {
           {step.kind === "command" ? <Terminal className="size-3.5 shrink-0" /> : <FileCode2 className="size-3.5 shrink-0" />}
           <span className="truncate">{step.label}</span>
         </p>
-        <button type="button" onClick={() => copy(text)} aria-label={`Copy: ${step.label}`} className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border border-line px-3 text-xs font-medium transition hover:border-line-strong">
+        <button type="button" onClick={() => copy(text)} aria-label={`Copy: ${step.label}`} className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border border-line px-3 text-xs font-medium transition hover:border-line-strong">
           {copied ? <Check className="size-3.5 text-ok" /> : <Copy className="size-3.5" />}{copied ? "Copied" : "Copy"}
         </button>
       </div>
@@ -251,7 +250,7 @@ function Connected({ tokens, writes, onRevoke, onPost }: { tokens: ApiToken[]; w
               </div>
               {writes && <PostSwitch on={Boolean(t.scopes?.includes("post"))} onChange={(on) => start(() => onPost(t.id, on))} tool={t.name} compact disabled={pending} />}
               <button type="button" disabled={pending} onClick={() => { if (!confirm(`Revoke "${t.name}"? It stops working right away.`)) return; start(() => onRevoke(t.id)); }}
-                className="inline-flex h-8 shrink-0 items-center rounded-full border border-line px-3 text-xs font-medium transition hover:border-danger hover:text-danger">Revoke</button>
+                className="inline-flex h-8 shrink-0 items-center rounded-lg border border-line px-3 text-xs font-medium transition hover:border-danger hover:text-danger">Revoke</button>
             </li>
           );
         })}

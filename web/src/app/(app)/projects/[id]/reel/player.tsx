@@ -106,8 +106,8 @@ export function ReelPlayer({ reel, back }: { reel: Reel; back: string }) {
         <div className="pointer-events-none absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-black/85 via-black/50 to-transparent px-5 pt-12 pb-[calc(env(safe-area-inset-bottom)+1.1rem)]">
           {last && (
             <div className="pointer-events-auto mb-5 flex justify-center gap-2">
-              <button type="button" onClick={() => jump(0)} className="inline-flex h-11 items-center gap-2 rounded-full bg-white/12 px-5 text-sm font-semibold backdrop-blur transition hover:bg-white/20"><RotateCcw className="size-4" /> Replay</button>
-              <Link href={back} className="inline-flex h-11 items-center rounded-full bg-white px-5 text-sm font-semibold text-black transition hover:bg-white/90">See the project</Link>
+              <button type="button" onClick={() => jump(0)} className="inline-flex h-11 items-center gap-2 rounded-lg bg-white/12 px-5 text-sm font-semibold backdrop-blur transition hover:bg-white/20"><RotateCcw className="size-4" /> Replay</button>
+              <Link href={back} className="inline-flex h-11 items-center rounded-lg bg-white px-5 text-sm font-semibold text-black transition hover:bg-white/90">See the project</Link>
             </div>
           )}
           <Timeline reel={reel} pos={pos} at={i} head={head} onJump={jump} />

@@ -8,7 +8,7 @@ import { cn, ALL_TOPICS } from "@/lib/forge";
 import { closeChallenge, createChallenge, enterChallenge, placeEntry, publishChallenge, setSponsorship, sponsorChallenge, withdrawEntry, type ChallengeState } from "@/lib/challenges";
 
 const init: ChallengeState = { ok: false, message: "" };
-const btn = "inline-flex h-10 items-center justify-center gap-1.5 rounded-full px-4 text-sm font-medium transition disabled:opacity-50";
+const btn = "inline-flex h-10 items-center justify-center gap-1.5 rounded-lg px-4 text-sm font-medium transition disabled:opacity-50";
 const primary = cn(btn, "bg-accent text-on-accent shadow-[var(--shadow)] hover:opacity-90");
 const outline = cn(btn, "border border-line text-text hover:border-line-strong hover:bg-hover");
 const Note = ({ s }: { s: ChallengeState }) => s.message ? <p role={s.ok ? "status" : "alert"} className={cn("text-sm", s.ok ? "text-ok" : "text-danger")}>{s.message}</p> : null;
@@ -60,7 +60,7 @@ export function PlaceButtons({ challengeId, entryId, placement }: { challengeId:
             disabled={pending}
             aria-pressed={placement === p}
             onClick={() => start(async () => setS(await placeEntry(challengeId, entryId, placement === p ? null : p)))}
-            className={cn("h-8 rounded-full border px-3 text-xs font-medium transition", placement === p ? "border-text bg-text text-bg" : "border-line text-muted hover:text-text")}
+            className={cn("h-8 rounded-lg border px-3 text-xs font-medium transition", placement === p ? "border-text bg-text text-bg" : "border-line text-muted hover:text-text")}
           >
             {["1st", "2nd", "3rd"][p - 1]}
           </button>

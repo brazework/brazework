@@ -126,14 +126,14 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
             <CopyLink path={`/c/${c.id}`} label="Share" />
             {me && groupChats && (
               <form action={openClubChat.bind(null, c.id)}>
-                <button className="inline-flex h-10 items-center gap-1.5 rounded-full border border-line bg-surface px-4 text-sm font-medium transition hover:bg-hover active:scale-95"><MessagesSquare className="size-4" /> Club chat</button>
+                <button className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-line bg-surface px-4 text-sm font-medium transition hover:bg-hover active:scale-95"><MessagesSquare className="size-4" /> Club chat</button>
               </form>
             )}
             {rank(role) >= 2 && invitesOn && (
-              <Link href={`/c/${c.id}/manage?tab=invite`} className="bg-accent-grad inline-flex h-10 items-center gap-1.5 rounded-full px-4 text-sm font-medium text-on-accent shadow-[0_8px_20px_-10px_var(--accent)] transition hover:-translate-y-px active:scale-95"><UserPlus className="size-4" /> Invite</Link>
+              <Link href={`/c/${c.id}/manage?tab=invite`} className="bg-accent-grad inline-flex h-10 items-center gap-1.5 rounded-lg px-4 text-sm font-medium text-on-accent transition active:scale-95"><UserPlus className="size-4" /> Invite</Link>
             )}
             {rank(role) >= 2 && (
-              <Link href={`/c/${c.id}/manage`} className="inline-flex h-10 items-center gap-1.5 rounded-full border border-line px-4 text-sm transition hover:bg-hover"><Settings className="size-4" /> Manage</Link>
+              <Link href={`/c/${c.id}/manage`} className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-line px-4 text-sm transition hover:bg-hover"><Settings className="size-4" /> Manage</Link>
             )}
             <JoinButton cid={c.id} privacy={c.privacy} state={me ? "member" : requested ? "requested" : "none"} isOwner={role === "owner"} />
           </div>

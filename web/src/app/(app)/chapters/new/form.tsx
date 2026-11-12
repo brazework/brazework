@@ -55,7 +55,7 @@ export function ChapterForm({ school, networks }: { school: string; networks: Ne
           <p className="text-xs text-faint">Your chapter</p>
           <p className="truncate text-base font-semibold" aria-label="Chapter name">{name}</p>
         </div>
-        <button type="submit" disabled={pending} className="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-full bg-text px-5 text-sm font-semibold text-surface transition hover:opacity-90 active:scale-[0.98] disabled:opacity-50">
+        <button type="submit" disabled={pending} className="inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-lg bg-text px-5 text-sm font-semibold text-surface transition hover:opacity-90 active:scale-[0.98] disabled:opacity-50">
           {pending ? <Loader2 className="size-4 animate-spin" /> : null} Start the chapter <ArrowRight className="size-4" />
         </button>
       </Panel>

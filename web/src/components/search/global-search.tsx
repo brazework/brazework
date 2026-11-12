@@ -191,8 +191,8 @@ export function GlobalSearch() {
   );
 }
 
-const pill = "inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full px-3 text-xs font-medium transition disabled:opacity-60";
-const primaryPill = cn(pill, "bg-accent-grad text-on-accent hover:-translate-y-px active:scale-95");
+const pill = "inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg px-3 text-xs font-medium transition disabled:opacity-60";
+const primaryPill = cn(pill, "bg-accent-grad text-on-accent active:scale-95");
 const donePill = cn(pill, "border border-line text-muted");
 
 function PersonResult({ p }: { p: PersonHit }) {

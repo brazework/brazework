@@ -149,7 +149,7 @@ export function Composer({ first, last, interests, userId, mediaEnabled = false,
       onDrop={(e) => { if (!mediaEnabled) return; e.preventDefault(); setDragging(false); pickFiles(e.dataTransfer.files); }}
       // While you type or a menu is open, the box sits above the pinned feed tabs, so the @ list and the
       // tool menus are never drawn under them (its glass makes it a layer of its own).
-      className={cn("relative rounded-3xl p-4 transition focus-within:z-30 has-[[aria-expanded=true]]:z-30 has-[[role=listbox]]:z-30", asking ? "ai-border shadow-[var(--shadow)]" : "glass-card", dragging && "scale-[1.01]")}
+      className={cn("relative rounded-2xl p-4 transition focus-within:z-30 focus-within:border-line-strong has-[[aria-expanded=true]]:z-30 has-[[role=listbox]]:z-30", asking ? "ai-border shadow-[var(--shadow)]" : "glass-card", dragging && "scale-[1.01]")}
     >
       {!asking && <input type="hidden" name="kind" value={kind} />}
       {!asking && projectId && <input type="hidden" name="project_id" value={projectId} />}
@@ -164,25 +164,25 @@ export function Composer({ first, last, interests, userId, mediaEnabled = false,
       <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3">
         {asking
           ? <Ember size={40} mood={ai.busy ? "thinking" : answer.text ? "happy" : "idle"} />
-          : <span className="rounded-full bg-accent-grad p-[2px]"><Avatar first={first} last={last} size={40} src={avatarSrc} className="border-2 border-surface" /></span>}
+          : <Avatar first={first} last={last} size={40} src={avatarSrc} />}
         {asking
           ? <p className="min-w-0 text-sm font-medium">Ask Ember <span className="font-normal text-muted">· it checks real Brazework data first</span></p>
           : <p className="min-w-0"><span className="block truncate text-sm font-medium">{first} {last}</span><span className="block truncate text-xs text-faint">Share what you built</span></p>}
         {/* The orb, on the first row's centre line: ask Ember in this same box, and back to writing. */}
         <button type="button" onClick={() => { setMode(asking ? "post" : "ask"); requestAnimationFrame(() => textRef.current?.focus()); }} aria-pressed={asking}
           aria-label={asking ? "Back to writing a post" : "Ask Ember"} title={asking ? "Back to writing a post" : "Ask Ember"}
-          className={cn("group grid size-10 place-items-center rounded-2xl transition hover:-translate-y-px active:scale-95", asking ? "nav-tile-on" : "nav-tile")}>
+          className={cn("group grid size-10 place-items-center rounded-lg transition active:scale-95", asking ? "nav-tile-on" : "nav-tile")}>
           {asking ? <PenLine className="size-4" /> : <span className="transition duration-300 group-hover:scale-110"><Ember size={26} mood={ai.busy ? "thinking" : "idle"} /></span>}
         </button>
       </div>
 
       {/* The box itself: always open, three lines to start, growing with what you write. */}
       <label htmlFor="create-box" className="sr-only">{asking ? "Ask Ember" : `What are you building, ${first}?`}</label>
-      <div className={cn("relative mt-3 rounded-2xl border transition duration-200", focused ? "border-line-strong bg-surface shadow-[0_0_0_4px_color-mix(in_oklab,var(--accent)_9%,transparent)]" : "border-line bg-surface/70 hover:border-line-strong")}>
+      <div className="relative mt-2">
         {/* The words you type, drawn underneath the (transparent) text box so #tags and @mentions can
             carry colour. Same font, padding and wrapping; only colours differ, so the caret lines up. */}
         {!asking && (
-          <div ref={mirrorRef} aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden px-4 py-3 text-[16px] leading-relaxed break-words whitespace-pre-wrap text-text">
+          <div ref={mirrorRef} aria-hidden="true" className="pointer-events-none absolute inset-0 overflow-hidden px-0.5 py-2 text-[16px] leading-relaxed break-words whitespace-pre-wrap text-text">
             {mentionParts(body, linked ? [...at.mentions, { id: `project:${linked.id}`, name: linked.title }] : at.mentions).map((p, i) =>
               typeof p === "string"
                 ? hashtagParts(p).map((h, j) => typeof h === "string" ? h : <span key={`${i}-${j}`} className={tags.includes(h.tag) ? "text-[var(--tag)]" : "text-faint"}>{h.written}</span>)
@@ -211,7 +211,7 @@ export function Composer({ first, last, interests, userId, mediaEnabled = false,
           placeholder={asking ? typed || "Ask Ember anything" : `What are you building, ${first}?${mentionsEnabled ? " Type @ for people or a project." : projects.length ? " Type @ for a project." : ""}`}
           onScroll={(e) => { if (mirrorRef.current) mirrorRef.current.scrollTop = e.currentTarget.scrollTop; }}
           style={{ outline: "none" }}
-          className={cn("relative block max-h-80 w-full resize-none bg-transparent px-4 py-3 text-[16px] leading-relaxed placeholder:text-faint", asking ? "min-h-[4.5rem] pr-14 text-text" : "no-scrollbar min-h-[6rem] text-transparent caret-[var(--text)] selection:bg-[color-mix(in_oklab,var(--accent)_22%,transparent)]")}
+          className={cn("relative block max-h-80 w-full resize-none bg-transparent px-0.5 py-2 text-[16px] focus:outline-none leading-relaxed placeholder:text-faint", asking ? "min-h-[4.5rem] pr-14 text-text" : "no-scrollbar min-h-[6rem] text-transparent caret-[var(--text)] selection:bg-[color-mix(in_oklab,var(--accent)_22%,transparent)]")}
         />
         {!asking && at.menu}
         {asking && (
@@ -228,7 +228,7 @@ export function Composer({ first, last, interests, userId, mediaEnabled = false,
         <>
           <div className="no-scrollbar -mx-1 mt-3 flex gap-2 overflow-x-auto px-1 pb-1">
             {emberActions(club).map((a) => {
-              const cls = "inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-line bg-surface/80 px-3 py-1.5 text-xs font-medium text-text-2 transition hover:-translate-y-px hover:border-line-strong hover:text-text active:scale-95";
+              const cls = "inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-line bg-surface/80 px-3 py-1.5 text-xs font-medium text-text-2 transition hover:border-line-strong hover:text-text active:scale-95";
               return copilot
                 ? <button key={a.label} type="button" onClick={() => pickAction(a)} className={cls}><a.icon className="size-3.5 text-accent" /> {a.label}</button>
                 : <Link key={a.label} href={a.href} className={cls}><a.icon className="size-3.5 text-accent" /> {a.label}</Link>;
@@ -268,10 +268,10 @@ export function Composer({ first, last, interests, userId, mediaEnabled = false,
             <KindMenu kind={kind} setKind={setKind} />
             {clubs.length > 0 && <AudienceTool clubs={clubs} shareTo={shareTo} setShareTo={setShareTo} />}
             {copilot && (ai.busy
-              ? <button type="button" onClick={ai.stop} aria-label="Stop polishing" className="inline-flex h-9 items-center gap-1.5 rounded-full px-2.5 text-sm text-muted"><Loader2 className="size-4 animate-spin" /><span className="hidden sm:inline">Polishing…</span></button>
+              ? <button type="button" onClick={ai.stop} aria-label="Stop polishing" className="inline-flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-sm text-muted"><Loader2 className="size-4 animate-spin" /><span className="hidden sm:inline">Polishing…</span></button>
               : before !== null
-                ? <button type="button" onClick={() => { setBody(before); setBefore(null); }} aria-label="Undo polish" className="inline-flex h-9 items-center gap-1.5 rounded-full px-2.5 text-sm text-muted hover:bg-hover hover:text-text"><Undo2 className="size-4" /><span className="hidden sm:inline">Undo polish</span></button>
-                : <button type="button" onClick={() => void polish()} disabled={!body.trim()} aria-label="Polish with Ember" title="Polish with Ember" className="ai-chip inline-flex h-9 items-center gap-1.5 rounded-full px-2.5 text-sm font-medium text-text-2 transition hover:text-text active:scale-95 disabled:pointer-events-none disabled:opacity-40"><Wand2 className="size-4 text-accent" /><span className="hidden sm:inline">Polish</span></button>)}
+                ? <button type="button" onClick={() => { setBody(before); setBefore(null); }} aria-label="Undo polish" className="inline-flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-sm text-muted hover:bg-hover hover:text-text"><Undo2 className="size-4" /><span className="hidden sm:inline">Undo polish</span></button>
+                : <button type="button" onClick={() => void polish()} disabled={!body.trim()} aria-label="Polish with Ember" title="Polish with Ember" className="ai-chip inline-flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-sm font-medium text-text-2 transition hover:text-text active:scale-95 disabled:pointer-events-none disabled:opacity-40"><Wand2 className="size-4 text-accent" /><span className="hidden sm:inline">Polish</span></button>)}
             <span className="ml-auto flex shrink-0 items-center gap-2.5">
               <span className="hidden sm:block"><CharRing used={body.length} max={MAX} /></span>
               {remaining <= 200 && <span className={cn("text-xs tabular-nums", remaining < 0 ? "text-danger" : "text-faint")}>{remaining}</span>}
@@ -309,7 +309,7 @@ function IconTool({ label, onClick, disabled, children }: { label: string; onCli
 
 // A tool that opens a small menu (post type, tags); Escape or a click outside closes it. Icon-only
 // on a phone, with its name beside the icon on wider screens.
-const TOOL = "inline-flex h-9 min-w-9 items-center justify-center gap-1.5 rounded-full px-2.5 text-sm text-text-2 transition hover:bg-hover hover:text-text active:scale-95";
+const TOOL = "inline-flex h-9 min-w-9 items-center justify-center gap-1.5 rounded-lg px-2.5 text-sm text-text-2 transition hover:bg-hover hover:text-text active:scale-95";
 function ToolMenu({ icon, name, label, children, width = 224 }: { icon: React.ReactNode; name?: React.ReactNode; label: string; children: (close: () => void) => React.ReactNode; width?: number }) {
   const [open, setOpen] = useState(false);
   // Where the menu sits: under the tool, slid left or right just enough to stay 16px inside the screen.

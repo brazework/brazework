@@ -46,7 +46,7 @@ async function Invite({ params }: { params: PageProps<"/join/[code]">["params"] 
   const { user } = await getViewer();
   return (
     <div className="rounded-3xl border border-line bg-surface/80 p-8 shadow-[var(--shadow)] backdrop-blur">
-      <div className="font-mono text-[11px] tracking-[0.18em] text-faint uppercase">You&apos;re invited</div>
+      <div className="text-[11px] font-medium tracking-[0.06em] text-faint uppercase">You&apos;re invited</div>
       <div className="mt-5 flex items-center gap-4">
         <CommunityBadge id={c.community_id} name={c.name} size={64} />
         <div className="min-w-0">

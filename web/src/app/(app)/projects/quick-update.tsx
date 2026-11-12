@@ -14,7 +14,7 @@ export function QuickUpdate({ projectId, title, attach = false }: { projectId: s
         onClick={() => setOpen(!open)}
         aria-expanded={open}
         aria-controls={`qu-${projectId}`}
-        className="bg-accent-grad inline-flex h-9 items-center gap-1.5 rounded-full px-4 text-xs font-semibold text-on-accent"
+        className="bg-accent-grad inline-flex h-9 items-center gap-1.5 rounded-lg px-4 text-xs font-semibold text-on-accent"
       >
         {open ? <X className="size-3.5" /> : <Plus className="size-3.5" />} {open ? "Close" : "Post update"}
       </button>

@@ -101,7 +101,7 @@ async function Talent({ searchParams }: { searchParams: PageProps<"/talent">["se
         {openTo && <input type="hidden" name="open" value={openTo} />}
         {min > 1 && <input type="hidden" name="min" value={min} />}
         {!!year && <input type="hidden" name="year" value={year} />}
-        <button className="h-8 rounded-full bg-accent px-3 text-xs font-medium text-on-accent">Search</button>
+        <button className="h-8 rounded-lg bg-accent px-3 text-xs font-medium text-on-accent">Search</button>
       </form>
       <div className="no-scrollbar mt-3 flex gap-1.5 overflow-x-auto" aria-label="Open to">
         <Link href={href({ open: "" })} className={chip(!openTo)}>Anyone</Link>
@@ -147,7 +147,7 @@ async function Talent({ searchParams }: { searchParams: PageProps<"/talent">["se
               {b.skills.length > 0 && <div className="flex flex-wrap gap-1">{b.skills.slice(0, 6).map((s) => <span key={s} className={chipCls}>{s}</span>)}</div>}
               <div className="mt-auto flex flex-wrap items-center gap-2 text-xs text-faint">
                 <span className="inline-flex min-w-0 flex-1 items-center gap-1 truncate"><UsersRound className="size-3.5 shrink-0" /> <span className="truncate">{b.clubs.map((c) => c.name).join(", ")}</span></span>
-                <Link href={`/messages/new?to=${b.person.id}`} className="inline-flex h-9 items-center gap-1.5 rounded-full border border-line px-3.5 text-sm text-text transition hover:border-line-strong hover:bg-hover"><Send className="size-3.5" /> Message</Link>
+                <Link href={`/messages/new?to=${b.person.id}`} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-line px-3.5 text-sm text-text transition hover:border-line-strong hover:bg-hover"><Send className="size-3.5" /> Message</Link>
               </div>
             </article>
           );

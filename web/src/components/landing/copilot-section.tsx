@@ -185,8 +185,8 @@ function Run({ s, play, reduce }: { s: Scenario; play: boolean; reduce: boolean 
                 <div className="mt-3 flex items-center gap-2">
                   {choice === "none" ? (
                     <>
-                      <button type="button" onClick={() => setChoice("done")} className="bg-accent-grad inline-flex h-9 items-center gap-1.5 rounded-full px-4 text-sm font-medium text-on-accent transition active:scale-95"><Check className="size-4" /> {s.card.confirm}</button>
-                      <button type="button" onClick={() => setChoice("dismissed")} className="inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-sm text-muted transition hover:bg-hover hover:text-text"><X className="size-4" /> Dismiss</button>
+                      <button type="button" onClick={() => setChoice("done")} className="bg-accent-grad inline-flex h-9 items-center gap-1.5 rounded-lg px-4 text-sm font-medium text-on-accent transition active:scale-95"><Check className="size-4" /> {s.card.confirm}</button>
+                      <button type="button" onClick={() => setChoice("dismissed")} className="inline-flex h-9 items-center gap-1.5 rounded-lg px-3 text-sm text-muted transition hover:bg-hover hover:text-text"><X className="size-4" /> Dismiss</button>
                     </>
                   ) : (
                     <span role="status" className="text-sm text-muted">{choice === "done" ? "Done. In the app, this runs the same action as doing it yourself." : "Dismissed. Nothing changed."}</span>

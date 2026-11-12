@@ -108,7 +108,7 @@ export async function BuildersThisTerm({ cid }: { cid: string }) {
           <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
             {recent.map((m) => (
               <li key={m.id}>
-                <Link href={`/u/${m.owner_id}#proof`} className="group flex h-full gap-3 rounded-2xl border border-line bg-surface/70 p-3.5 transition hover:-translate-y-0.5 hover:border-line-strong hover:shadow-[0_14px_40px_-24px_rgb(0_0_0/0.35)]">
+                <Link href={`/u/${m.owner_id}#proof`} className="group flex h-full gap-3 rounded-2xl border border-line bg-surface/70 p-3.5 transition hover:border-line-strong">
                   <Seal size={30} />
                   <span className="min-w-0">
                     <span className="block truncate text-sm font-medium group-hover:underline">{m.title}</span>

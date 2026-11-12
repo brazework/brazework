@@ -37,7 +37,7 @@ export function OrganizeWithEmber({ projectId }: { projectId: string }) {
         <div className="flex flex-wrap items-center gap-3">
           <Ember size={32} mood={pending ? "thinking" : "idle"} />
           <span className="min-w-0 flex-1 text-sm"><span className="font-medium">Organize with Ember</span><span className="block text-xs text-muted">Ember reads your write-up and suggests the stack and topics.</span></span>
-          <button type="button" onClick={ask} disabled={pending} className="bg-accent-grad inline-flex h-9 items-center gap-1.5 rounded-full px-4 text-sm font-medium text-on-accent disabled:opacity-60">{pending && <Loader2 className="size-4 animate-spin" />} {pending ? "Reading…" : "Organize"}</button>
+          <button type="button" onClick={ask} disabled={pending} className="bg-accent-grad inline-flex h-9 items-center gap-1.5 rounded-lg px-4 text-sm font-medium text-on-accent disabled:opacity-60">{pending && <Loader2 className="size-4 animate-spin" />} {pending ? "Reading…" : "Organize"}</button>
         </div>
       ) : (
         <div>
@@ -46,8 +46,8 @@ export function OrganizeWithEmber({ projectId }: { projectId: string }) {
           <div className="mt-2 flex flex-wrap gap-1.5">{s.tools.map((t) => chip(t, t))}{s.topics.map((t) => chip(`#${t}`, `#${t}`))}</div>
           {!s.tools.length && !s.topics.length && <p className="mt-2 text-xs text-muted">Nothing to suggest yet. Add a write-up first.</p>}
           <div className="mt-3 flex items-center gap-2">
-            <button type="button" onClick={apply} disabled={pending || !keep.size} className="bg-accent-grad inline-flex h-9 items-center gap-1.5 rounded-full px-4 text-sm font-medium text-on-accent disabled:opacity-50">{pending && <Loader2 className="size-4 animate-spin" />} Apply</button>
-            <button type="button" onClick={() => setS(null)} className="h-9 rounded-full px-3 text-sm text-muted hover:text-text">Cancel</button>
+            <button type="button" onClick={apply} disabled={pending || !keep.size} className="bg-accent-grad inline-flex h-9 items-center gap-1.5 rounded-lg px-4 text-sm font-medium text-on-accent disabled:opacity-50">{pending && <Loader2 className="size-4 animate-spin" />} Apply</button>
+            <button type="button" onClick={() => setS(null)} className="h-9 rounded-lg px-3 text-sm text-muted hover:text-text">Cancel</button>
             <span className="text-[11px] text-faint">Tap a suggestion to drop it. Replaces the current stack.</span>
           </div>
         </div>

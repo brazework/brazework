@@ -8,7 +8,6 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
   return (
     <div className="relative isolate grid grid-cols-1 min-h-dvh lg:grid-cols-[1fr_1.1fr]">
       <aside className="relative hidden overflow-hidden border-r border-line bg-surface-2/60 lg:block">
-        <div className="pointer-events-none absolute top-1/3 left-1/2 -z-10 h-[460px] w-[460px] -translate-x-1/2 rounded-full opacity-25 blur-3xl" style={{ background: PROFESSIONS[0].grad }} aria-hidden="true" />
         <div className="flex h-full flex-col justify-between gap-10 p-12">
           <Link href="/" aria-label="Brazework home"><Logo /></Link>
           <div className="relative mx-auto w-full max-w-[340px]" aria-hidden="true">

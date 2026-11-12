@@ -33,7 +33,6 @@ export function UpdatesPanel() {
 
   return (
     <section data-tour="updates-panel" aria-labelledby="updates-panel-title" className="glass-card relative overflow-hidden rounded-3xl p-4">
-      <div className="bg-accent-grad pointer-events-none absolute -top-16 -right-10 size-36 rounded-full banner-glow blur-2xl" aria-hidden="true" />
       <div className="relative flex items-center gap-2">
         <button type="button" onClick={() => setFolded(!folded)} aria-expanded={!folded} aria-controls="updates-panel-body" className="group -m-1 flex min-w-0 flex-1 items-center gap-2 rounded-xl p-1 text-left">
           <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-accent-grad text-on-accent"><Sparkles className="size-3.5" /></span>

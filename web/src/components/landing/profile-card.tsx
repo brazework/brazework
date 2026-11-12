@@ -8,7 +8,7 @@ import { Schematic } from "./schematics";
 export function ProfileCard({ p, className }: { p: Profession; className?: string }) {
   const Icon = p.icon;
   return (
-    <article className={cn("w-full overflow-hidden rounded-3xl border border-line bg-surface text-left shadow-[0_30px_80px_-30px_rgba(0,0,0,0.35)]", className)}>
+    <article className={cn("w-full overflow-hidden rounded-3xl border border-line bg-surface text-left shadow-[var(--shadow-float)]", className)}>
       <div className="relative h-24 overflow-hidden" style={{ background: p.grad }}>
         <Schematic id={p.id} className="sch-draw absolute top-1.5 right-3 h-[86px] w-auto text-white/90 drop-shadow-sm" />
         <span className="absolute top-3 left-3 rounded-full bg-black/25 px-2.5 py-1 font-mono text-[10px] tracking-wide text-white uppercase backdrop-blur">Example</span>

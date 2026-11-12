@@ -108,7 +108,7 @@ async function ProjectView({ params }: { params: PageProps<"/projects/[id]">["pa
   return (
     <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
       <div className="flex min-w-0 flex-col gap-6">
-        <section aria-label="Project" className="glass-card overflow-hidden rounded-[28px]">
+        <section aria-label="Project" className="glass-card overflow-hidden rounded-2xl">
           <div className="relative aspect-[16/8] min-h-48 overflow-hidden bg-[linear-gradient(135deg,#09090b,#1f1f22_55%,#09090b)] sm:aspect-[16/6]">
             {cover ? (
               <Image src={mediaUrl(cover.path)} alt={cover.alt || ""} fill priority sizes="(min-width: 1280px) 900px, 100vw" className="object-cover" />
@@ -150,12 +150,12 @@ async function ProjectView({ params }: { params: PageProps<"/projects/[id]">["pa
             </ul>
             <div className="mt-5 flex flex-wrap items-center gap-2">
               {/* The reel: this build as a short story, from its real photos, specs and proof. */}
-              <Link href={`/projects/${p.id}/reel`} className="bg-accent-grad inline-flex h-10 items-center gap-2 rounded-full pr-4 pl-3 text-sm font-semibold text-on-accent shadow-[0_8px_20px_-10px_var(--accent)] transition hover:-translate-y-px active:scale-95"><span className="grid size-6 place-items-center rounded-full bg-white/20"><Play className="size-3 fill-current" /></span> Play reel</Link>
-              {link && <a href={link} target="_blank" rel="noopener noreferrer nofollow" className="inline-flex h-10 items-center gap-1.5 rounded-full border border-line px-4 text-sm font-medium transition hover:bg-hover"><ExternalLink className="size-4" /> {new URL(link).host.replace(/^www\./, "")}</a>}
+              <Link href={`/projects/${p.id}/reel`} className="bg-accent-grad inline-flex h-10 items-center gap-2 rounded-lg pr-4 pl-3 text-sm font-semibold text-on-accent transition active:scale-95"><span className="grid size-6 place-items-center rounded-full bg-white/20"><Play className="size-3 fill-current" /></span> Play reel</Link>
+              {link && <a href={link} target="_blank" rel="noopener noreferrer nofollow" className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-line px-4 text-sm font-medium transition hover:bg-hover"><ExternalLink className="size-4" /> {new URL(link).host.replace(/^www\./, "")}</a>}
               <SendPost projectId={p.id} compact={false} />
               <CopyLink path={`/projects/${p.id}`} label="Share" />
               {!own && <ReportLink kind="project" id={p.id} label="this project" className="ml-auto" />}
-              {own && <Link href={`/u/${user.id}#projects`} className="inline-flex h-10 items-center gap-1.5 rounded-full border border-line px-4 text-sm transition hover:bg-hover"><Pencil className="size-4" /> Edit</Link>}
+              {own && <Link href={`/u/${user.id}#projects`} className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-line px-4 text-sm transition hover:bg-hover"><Pencil className="size-4" /> Edit</Link>}
             </div>
           </div>
         </section>
@@ -245,7 +245,7 @@ async function ProjectView({ params }: { params: PageProps<"/projects/[id]">["pa
           {(team.length > 0 || own) && <TeamList projectId={p.id} team={team} candidates={candidates} own={own} me={user.id} />}
           {!own && <Link href={`/messages/new?to=${p.owner_id}`} className="mt-4 inline-flex h-9 w-full items-center justify-center rounded-full border border-line text-sm font-medium transition hover:bg-hover">Message {owner?.first_name || "them"}</Link>}
         </Panel>
-        <Link href={`/copilot?q=${encodeURIComponent(ask)}`} className="glass-card flex items-center gap-3 rounded-3xl p-4 transition hover:-translate-y-0.5">
+        <Link href={`/copilot?q=${encodeURIComponent(ask)}`} className="glass-card flex items-center gap-3 rounded-3xl p-4 transition">
           <Ember size={36} />
           <span className="min-w-0"><span className="block text-sm font-medium">Ask Ember about this project</span><span className="block text-xs text-muted">What it is, what&apos;s impressive, what to ask.</span></span>
         </Link>

@@ -41,7 +41,7 @@ export function ProSetup({ employer, groups }: { employer: string; groups: { nam
             ))}
           </div>
         </fieldset>
-        <button type="submit" disabled={pending || title.trim().length < 2 || !areas.length} className="mt-6 inline-flex h-11 items-center gap-2 rounded-full bg-text px-5 text-sm font-semibold text-surface transition hover:opacity-90 disabled:opacity-40">
+        <button type="submit" disabled={pending || title.trim().length < 2 || !areas.length} className="mt-6 inline-flex h-11 items-center gap-2 rounded-lg bg-text px-5 text-sm font-semibold text-surface transition hover:opacity-90 disabled:opacity-40">
           {pending && <Loader2 className="size-4 animate-spin" />} Start reviewing
         </button>
         {error && <p role="alert" className="mt-2 text-sm text-danger">{error}</p>}
@@ -79,7 +79,7 @@ export function ReviewCard({ m }: { m: QueueItem }) {
             placeholder="Watched the test video and checked the load cell log against the stated peak."
             className="mt-1.5 w-full resize-y rounded-2xl border border-line bg-surface px-4 py-3 text-[15px] outline-none focus:border-line-strong" />
           <div className="mt-2 flex items-center gap-3">
-            <button type="submit" disabled={pending || left > 0} className="inline-flex h-10 items-center gap-2 rounded-full bg-text px-4 text-sm font-semibold text-surface transition hover:opacity-90 disabled:opacity-40">
+            <button type="submit" disabled={pending || left > 0} className="inline-flex h-10 items-center gap-2 rounded-lg bg-text px-4 text-sm font-semibold text-surface transition hover:opacity-90 disabled:opacity-40">
               {pending ? <Loader2 className="size-4 animate-spin" /> : <Seal size={16} tone="pro" />} Pro-verify
             </button>
             <span className="text-xs text-faint">{left > 0 ? `${left} more characters: say what you checked` : "Ready to sign"}</span>

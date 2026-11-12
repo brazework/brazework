@@ -160,7 +160,7 @@ export function MarkerEditor({ src, item, onSave, onClose, captions = false }: {
         <ol className="mt-4 flex flex-col gap-2">
           {marks.map((m, i) => (
             <li key={`${m.s}-${i}`} className="flex items-center gap-2">
-              <button type="button" onClick={() => { if (video.current) { video.current.currentTime = m.s; void video.current.play(); } }} className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-full bg-surface-2 px-3 font-mono text-xs transition hover:bg-hover" aria-label={`Play from ${fmtTime(m.s)}`}>
+              <button type="button" onClick={() => { if (video.current) { video.current.currentTime = m.s; void video.current.play(); } }} className="inline-flex h-10 shrink-0 items-center gap-1.5 rounded-lg bg-surface-2 px-3 font-mono text-xs transition hover:bg-hover" aria-label={`Play from ${fmtTime(m.s)}`}>
                 <Play className="size-3" /> {fmtTime(m.s)}
               </button>
               <input
@@ -187,7 +187,7 @@ export function MarkerEditor({ src, item, onSave, onClose, captions = false }: {
               <button type="button" onClick={() => setCc(undefined)} className="shrink-0 text-faint hover:text-danger">Remove</button>
             </div>
           ) : (
-            <label className="mt-3 inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-full border border-line px-3 text-xs font-medium transition hover:bg-hover">
+            <label className="mt-3 inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-lg border border-line px-3 text-xs font-medium transition hover:bg-hover">
               <Captions className="size-3.5" /> Add captions file (.vtt or .srt)
               <input type="file" accept=".vtt,.srt,text/vtt,application/x-subrip" className="sr-only" onChange={(e) => { void readCaptions(e.target.files?.[0]); e.target.value = ""; }} />
             </label>

@@ -66,7 +66,7 @@ export function BenchCard({ p, attach = false }: { p: BenchProject; attach?: boo
 
       <div className="mt-4 flex flex-wrap gap-2">
         <QuickUpdate projectId={p.id} title={p.title} attach={attach} />
-        <Link href={`/projects/${p.id}#milestones`} className="inline-flex h-9 items-center gap-1.5 rounded-full border border-line px-4 text-xs font-medium transition hover:bg-hover"><ShieldCheck className="size-3.5" /> {p.verified || p.waiting ? "Milestones" : "Ask to verify"}</Link>
+        <Link href={`/projects/${p.id}#milestones`} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-line px-4 text-xs font-medium transition hover:bg-hover"><ShieldCheck className="size-3.5" /> {p.verified || p.waiting ? "Milestones" : "Ask to verify"}</Link>
       </div>
     </li>
   );

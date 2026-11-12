@@ -7,7 +7,7 @@ import { dbFeatures } from "@/lib/db-features";
 export async function StartChapterCard({ className = "" }: { className?: string }) {
   if (!(await dbFeatures()).chapters) return null;
   return (
-    <Link href="/chapters/new" className={`group flex items-center gap-3.5 rounded-3xl border border-line bg-surface p-4 transition hover:border-line-strong hover:shadow-[var(--shadow)] ${className}`}>
+    <Link href="/chapters/new" className={`group flex items-center gap-3.5 rounded-3xl border border-line bg-surface p-4 transition hover:border-line-strong ${className}`}>
       <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-text text-surface"><Landmark className="size-5" /></span>
       <span className="min-w-0 flex-1">
         <span className="block font-medium">Starting a chapter of a national org?</span>
