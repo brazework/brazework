@@ -56,3 +56,16 @@ test("connected means used since it was made", () => {
   assert.equal(isConnected({ created_at: "2026-11-11T10:00:00Z", last_used_at: null }), false);
   assert.equal(isConnected({ created_at: "2026-11-11T10:00:00Z", last_used_at: "2026-11-11T10:01:00Z" }), true);
 });
+
+// Phase 2: what each MCP tool tells the client about itself, so Claude, Codex and VS Code ask before
+// anything that writes (lib/mcp.ts).
+test("MCP tools are annotated honestly: reads are read-only; post_update writes but never destroys", async () => {
+  const { MCP_TOOLS, annotationsFor } = await import("@/lib/mcp");
+  for (const t of MCP_TOOLS.filter((x) => !x.writes)) assert.equal(annotationsFor(t).readOnlyHint, true, t.name);
+  const post = MCP_TOOLS.find((t) => t.name === "post_update");
+  assert.ok(post?.writes);
+  assert.deepEqual(annotationsFor(post!), { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false });
+  assert.deepEqual(post!.args({ body: "Hi", kind: "result", project_id: "p1", tags: ["a", "b", "c", "d", 5] }),
+    { p_body: "Hi", p_kind: "result", p_project: "p1", p_club: null, p_tags: ["a", "b", "c"] });
+  assert.deepEqual(post!.inputSchema.required, ["body"]);
+});

@@ -54,3 +54,4 @@ pro-verification
 media-keys
 pro-storage
 feed-pages
+mcp-writes

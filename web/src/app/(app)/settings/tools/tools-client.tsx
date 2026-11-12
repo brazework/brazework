@@ -1,9 +1,9 @@
 "use client";
-import { ArrowLeft, ArrowUpRight, Check, CircleDot, Copy, FileCode2, KeyRound, Loader2, Lock, Plug, ShieldCheck, Sparkles, Terminal, X } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, Check, CircleDot, Copy, FileCode2, KeyRound, Loader2, Lock, PenLine, Plug, ShieldCheck, Sparkles, Terminal, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useCallback, useEffect, useState, useTransition } from "react";
 import { Button } from "@/components/ui";
-import { createApiToken, listApiTokens, revokeApiToken, type ApiToken } from "@/lib/api-tokens";
+import { createApiToken, listApiTokens, revokeApiToken, setTokenCanPost, type ApiToken } from "@/lib/api-tokens";
 import { cn, timeAgo } from "@/lib/forge";
 import { TOOLS, isConnected, setupSteps, toolFor, type Step, type ToolInfo } from "@/lib/tool-setup";
 
@@ -11,7 +11,8 @@ import { TOOLS, isConnected, setupSteps, toolFor, type Step, type ToolInfo } fro
 const CAN = ["Your profile and club-verified work", "Your clubs and this week's events", "Your projects and their milestones", "Your notifications", "Search clubs and people"];
 const ASK = ["What's on in my clubs this week?", "Which of my projects still need a verified milestone?", "Find people in robotics I should meet."];
 
-export function ToolsHub({ tokens, endpoint }: { tokens: ApiToken[]; endpoint: string }) {
+// `writes`: tools may post for you once you allow it (supabase/mcp-writes.sql has run).
+export function ToolsHub({ tokens, endpoint, writes = false }: { tokens: ApiToken[]; endpoint: string; writes?: boolean }) {
   const [list, setList] = useState(tokens);
   const [open, setOpen] = useState<ToolInfo | null>(null);
   const active = list.filter((t) => !t.revoked_at);
@@ -50,7 +51,10 @@ export function ToolsHub({ tokens, endpoint }: { tokens: ApiToken[]; endpoint: s
             </ul>
           </div>
         </div>
-        <p className="relative mt-5 flex items-center gap-2 border-t border-line pt-4 text-xs text-muted"><ShieldCheck className="size-3.5 shrink-0" /> Read-only: it can&apos;t post or change anything. Each tool gets its own token you can revoke here.</p>
+        {writes && (
+          <p className="relative mt-4 flex items-start gap-2 rounded-2xl bg-surface-2 px-3.5 py-3 text-sm text-text-2"><PenLine className="mt-0.5 size-4 shrink-0 text-muted" /><span><strong className="font-medium text-text">If you let it,</strong> it can also post a build update for you from what you just shipped. It asks you first, and the post says which tool made it.</span></p>
+        )}
+        <p className="relative mt-5 flex items-center gap-2 border-t border-line pt-4 text-xs text-muted"><ShieldCheck className="size-3.5 shrink-0" /> {writes ? "Read-only unless you turn on posting for a tool. Nothing is ever changed or deleted." : "Read-only: it can't post or change anything."} Each tool gets its own token you can revoke here.</p>
       </section>
 
       {/* The tools. */}
@@ -64,8 +68,9 @@ export function ToolsHub({ tokens, endpoint }: { tokens: ApiToken[]; endpoint: s
                   className="group glass-card flex h-full w-full items-start gap-3 rounded-3xl p-4 text-left transition hover:-translate-y-0.5 hover:shadow-[0_18px_40px_-24px_rgb(0_0_0/0.4)] active:scale-[0.99]">
                   <span className="grid size-11 shrink-0 place-items-center rounded-2xl border border-line bg-surface-2 font-mono text-sm font-semibold tracking-tight">{t.monogram}</span>
                   <span className="min-w-0 flex-1">
-                    <span className="flex items-center gap-2">
-                      <span className="font-semibold tracking-tight">{t.name}</span>
+                    {/* The status wraps under the name rather than squeezing it onto two lines. */}
+                    <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
+                      <span className="font-semibold tracking-tight whitespace-nowrap">{t.name}</span>
                       {s === "connected" && <span className="inline-flex items-center gap-1 rounded-full bg-ok/12 px-2 py-0.5 text-[11px] font-medium text-ok"><Check className="size-3" />Connected</span>}
                       {s === "waiting" && <span className="inline-flex items-center gap-1 rounded-full bg-surface-2 px-2 py-0.5 text-[11px] font-medium text-muted"><CircleDot className="size-3" />Not used yet</span>}
                     </span>
@@ -90,17 +95,18 @@ export function ToolsHub({ tokens, endpoint }: { tokens: ApiToken[]; endpoint: s
         </ul>
       </section>
 
-      <Connected tokens={active} onRevoke={async (id) => { await revokeApiToken(id); await refresh(); }} />
+      <Connected tokens={active} writes={writes} onRevoke={async (id) => { await revokeApiToken(id); await refresh(); }} onPost={async (id, on) => { await setTokenCanPost(id, on); await refresh(); }} />
 
       <AnimatePresence>
-        {open && <SetupSheet key={open.id} tool={open} endpoint={endpoint} tokens={active} onClose={close} onChange={refresh} />}
+        {open && <SetupSheet key={open.id} tool={open} endpoint={endpoint} tokens={active} writes={writes} onClose={close} onChange={refresh} />}
       </AnimatePresence>
     </div>
   );
 }
 
 // Connecting one tool: make its token, follow its steps, and see it connect.
-function SetupSheet({ tool, endpoint, tokens, onClose, onChange }: { tool: ToolInfo; endpoint: string; tokens: ApiToken[]; onClose: () => void; onChange: () => Promise<void> }) {
+function SetupSheet({ tool, endpoint, tokens, writes, onClose, onChange }: { tool: ToolInfo; endpoint: string; tokens: ApiToken[]; writes: boolean; onClose: () => void; onChange: () => Promise<void> }) {
+  const [canPost, setCanPost] = useState(false);
   const [token, setToken] = useState<{ id: string; value: string } | null>(null);
   const [msg, setMsg] = useState("");
   const [pending, start] = useTransition();
@@ -130,7 +136,7 @@ function SetupSheet({ tool, endpoint, tokens, onClose, onChange }: { tool: ToolI
 
   const create = () => start(async () => {
     setMsg("");
-    const r = await createApiToken(tool.tokenName);
+    const r = await createApiToken(tool.tokenName, canPost);
     if (!r.ok || !r.token) { setMsg(r.message || "Couldn't make a token. Try again."); return; }
     setToken({ id: r.id ?? "", value: r.token });
     await onChange();
@@ -156,11 +162,12 @@ function SetupSheet({ tool, endpoint, tokens, onClose, onChange }: { tool: ToolI
             {!token ? (
               <>
                 <p className="text-sm text-text-2">A private key that lets {tool.name} read your Brazework. It&apos;s shown once; you can revoke it any time.</p>
+                {writes && <PostSwitch on={canPost} onChange={setCanPost} tool={tool.name} className="mt-3" />}
                 <Button onClick={create} disabled={pending || full} className="mt-3">{pending ? <Loader2 className="size-4 animate-spin" /> : <KeyRound className="size-4" />} Make token</Button>
                 {full && <p className="mt-2 text-xs text-muted">You have 5 active tokens. Revoke one below first.</p>}
                 {msg && <p role="alert" className="mt-2 text-xs text-danger">{msg}</p>}
               </>
-            ) : <p className="text-sm text-text-2">It&apos;s filled in below. This is the only time it&apos;s shown.</p>}
+            ) : <p className="text-sm text-text-2">It&apos;s filled in below. This is the only time it&apos;s shown.{canPost && <> {tool.name} can post updates for you; it asks first.</>}</p>}
           </StepRow>
 
           <StepRow n={2} done={connected} dim={!token} title={`Add Brazework to ${tool.name}`}>
@@ -170,7 +177,7 @@ function SetupSheet({ tool, endpoint, tokens, onClose, onChange }: { tool: ToolI
 
           <StepRow n={3} done={connected} dim={!token} title={connected ? `${tool.name} is connected` : "Check it works"}>
             {connected ? (
-              <p className="text-sm text-text-2">Try asking it: <span className="text-text">&ldquo;{ASK[0]}&rdquo;</span></p>
+              <p className="text-sm text-text-2">Try asking it: <span className="text-text">&ldquo;{canPost ? "Post an update about what I just shipped on my project." : ASK[0]}&rdquo;</span></p>
             ) : token ? (
               <p role="status" className="inline-flex items-center gap-2 text-sm text-muted"><Loader2 className="size-3.5 animate-spin" /> Waiting for {tool.name}&apos;s first request…</p>
             ) : <p className="text-sm text-muted">We&apos;ll show it here the moment {tool.name} connects.</p>}
@@ -225,7 +232,7 @@ function StepView({ step }: { step: Step }) {
 }
 
 // Your connected tools: which token, when it was last used, and revoke.
-function Connected({ tokens, onRevoke }: { tokens: ApiToken[]; onRevoke: (id: string) => Promise<void> }) {
+function Connected({ tokens, writes, onRevoke, onPost }: { tokens: ApiToken[]; writes: boolean; onRevoke: (id: string) => Promise<void>; onPost: (id: string, on: boolean) => Promise<void> }) {
   const [pending, start] = useTransition();
   if (!tokens.length) return null;
   return (
@@ -242,6 +249,7 @@ function Connected({ tokens, onRevoke }: { tokens: ApiToken[]; onRevoke: (id: st
                 <p className="truncate text-sm font-medium">{t.name}</p>
                 <p className="truncate text-xs text-faint"><span className="font-mono">{t.prefix}…</span> · {on ? <span className="text-ok">used {timeAgo(t.last_used_at!)}</span> : "not used yet"}</p>
               </div>
+              {writes && <PostSwitch on={Boolean(t.scopes?.includes("post"))} onChange={(on) => start(() => onPost(t.id, on))} tool={t.name} compact disabled={pending} />}
               <button type="button" disabled={pending} onClick={() => { if (!confirm(`Revoke "${t.name}"? It stops working right away.`)) return; start(() => onRevoke(t.id)); }}
                 className="inline-flex h-8 shrink-0 items-center rounded-full border border-line px-3 text-xs font-medium transition hover:border-danger hover:text-danger">Revoke</button>
             </li>
@@ -249,5 +257,20 @@ function Connected({ tokens, onRevoke }: { tokens: ApiToken[]; onRevoke: (id: st
         })}
       </ul>
     </section>
+  );
+}
+
+// "Can post": lets a tool post build updates as you (it still asks you first, in the tool).
+function PostSwitch({ on, onChange, tool, compact, disabled, className }: { on: boolean; onChange: (on: boolean) => void; tool: string; compact?: boolean; disabled?: boolean; className?: string }) {
+  return (
+    <label className={cn("flex cursor-pointer items-center gap-3", compact && "shrink-0", className)}>
+      <button type="button" role="switch" aria-checked={on} aria-label={`${tool} can post updates for me`} disabled={disabled} onClick={() => onChange(!on)}
+        className={cn("relative h-6 w-10 shrink-0 rounded-full transition", on ? "bg-text" : "bg-line-strong/60")}>
+        <span className={cn("absolute top-0.5 left-0.5 size-5 rounded-full bg-surface shadow transition", on && "translate-x-4")} />
+      </button>
+      {compact ? <span className="hidden text-xs text-muted sm:inline">Can post</span> : (
+        <span className="text-sm"><span className="font-medium">Let it post updates for me</span><span className="block text-xs text-muted">It asks before posting, and the post says &ldquo;via {tool}&rdquo;.</span></span>
+      )}
+    </label>
   );
 }

@@ -27,7 +27,7 @@ export const dbFeatures = cache(async (): Promise<Features> => {
 
 async function probe() {
   const supabase = await createClient();
-  const [ev, po, inv, cop, ms, intg, gc, st, cp, mn, cc, px, mcp, cx, pp, vf, ho, chl, spc, gy, clm, vc, wl, pf, puf, chp, prv, fpg] = await Promise.all([
+  const [ev, po, inv, cop, ms, intg, gc, st, cp, mn, cc, px, mcp, cx, pp, vf, ho, chl, spc, gy, clm, vc, wl, pf, puf, chp, prv, fpg, mcw] = await Promise.all([
     supabase.from("events").select("community_id").limit(1),
     supabase.from("posts").select("media").limit(1),
     supabase.from("community_invites").select("code").limit(1),
@@ -56,8 +56,9 @@ async function probe() {
     supabase.rpc("chapters_ready"),
     supabase.rpc("pro_verification_ready"),
     supabase.rpc("feed_pages_ready"),
+    supabase.rpc("mcp_writes_ready"),
   ]);
-  return { clubEvents: !missing(ev.error), media: !missing(po.error), invites: !missing(inv.error), copilot: !missing(cop.error), milestones: !missing(ms.error), integrations: !missing(intg.error), groupChats: !missing(gc.error), projectTools: !missing(st.error), clubProfile: !missing(cp.error), mentions: !missing(mn.error), copilotChats: !missing(cc.error), profileExtras: !missing(px.error), mcp: !missing(mcp.error), chatExtras: !missing(cx.error), projectPosts: !missing(pp.error), verification: !missing(vf.error), handoff: !missing(ho.error), challenges: !missing(chl.error), projectSpecs: !missing(spc.error), gradYear: !missing(gy.error), clubClaims: !missing(clm.error), videoCaptions: !missing(vc.error), weeklyLoop: !missing(wl.error), projectFiles: !missing(pf.error), updateFiles: !missing(puf.error), chapters: !missing(chp.error), proVerification: !missing(prv.error), feedPages: !missing(fpg.error) };
+  return { clubEvents: !missing(ev.error), media: !missing(po.error), invites: !missing(inv.error), copilot: !missing(cop.error), milestones: !missing(ms.error), integrations: !missing(intg.error), groupChats: !missing(gc.error), projectTools: !missing(st.error), clubProfile: !missing(cp.error), mentions: !missing(mn.error), copilotChats: !missing(cc.error), profileExtras: !missing(px.error), mcp: !missing(mcp.error), chatExtras: !missing(cx.error), projectPosts: !missing(pp.error), verification: !missing(vf.error), handoff: !missing(ho.error), challenges: !missing(chl.error), projectSpecs: !missing(spc.error), gradYear: !missing(gy.error), clubClaims: !missing(clm.error), videoCaptions: !missing(vc.error), weeklyLoop: !missing(wl.error), projectFiles: !missing(pf.error), updateFiles: !missing(puf.error), chapters: !missing(chp.error), proVerification: !missing(prv.error), feedPages: !missing(fpg.error), mcpWrites: !missing(mcw.error) };
 }
 
 export async function eventCols(): Promise<string> {

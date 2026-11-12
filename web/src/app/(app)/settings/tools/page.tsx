@@ -26,6 +26,7 @@ export default function ToolsPage() {
 async function Tools() {
   const { user } = await getViewer();
   if (!user) redirect("/login?next=/settings/tools");
-  if (!(await dbFeatures()).mcp) return <p className="mt-6 text-sm text-muted">Connecting tools isn&apos;t switched on yet.</p>;
-  return <ToolsHub tokens={await listApiTokens()} endpoint={`${env.siteUrl}/api/mcp`} />;
+  const f = await dbFeatures();
+  if (!f.mcp) return <p className="mt-6 text-sm text-muted">Connecting tools isn&apos;t switched on yet.</p>;
+  return <ToolsHub tokens={await listApiTokens()} endpoint={`${env.siteUrl}/api/mcp`} writes={f.mcpWrites} />;
 }

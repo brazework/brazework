@@ -7,23 +7,28 @@ import { tokenHash } from "@/lib/mcp";
 import { getViewer } from "@/lib/supabase/server";
 
 // Personal tokens for AI tools (supabase/mcp.sql). The token is shown once; only its hash is kept.
-export type ApiToken = { id: string; name: string; prefix: string; created_at: string; last_used_at: string | null; revoked_at: string | null };
+export type ApiToken = { id: string; name: string; prefix: string; created_at: string; last_used_at: string | null; revoked_at: string | null; scopes?: string[] };
 
 export async function listApiTokens(): Promise<ApiToken[]> {
-  if (!(await dbFeatures()).mcp) return [];
+  const f = await dbFeatures();
+  if (!f.mcp) return [];
   const { supabase, user } = await getViewer();
   if (!user) return [];
-  const { data } = await supabase.from("api_tokens").select("id, name, prefix, created_at, last_used_at, revoked_at").order("created_at", { ascending: false }).limit(20);
-  return (data ?? []) as ApiToken[];
+  // scopes: what a token may do (supabase/mcp-writes.sql); before that step, every token reads.
+  const { data } = await supabase.from("api_tokens").select(`id, name, prefix, created_at, last_used_at, revoked_at${f.mcpWrites ? ", scopes" : ""}`).order("created_at", { ascending: false }).limit(20);
+  return (data ?? []) as unknown as ApiToken[];
 }
 
-export async function createApiToken(name: string): Promise<{ ok: boolean; message: string; token?: string; id?: string }> {
+export async function createApiToken(name: string, canPost = false): Promise<{ ok: boolean; message: string; token?: string; id?: string }> {
   const label = name.replace(/[<>]/g, "").trim().slice(0, 60);
   if (!label) return { ok: false, message: "Give the token a name, like the app you'll use it in." };
   const { supabase, user } = await getViewer();
   if (!user) return { ok: false, message: "Log in again." };
   const token = `forge_${randomBytes(30).toString("base64url")}`;
-  const { data, error } = await supabase.rpc("create_api_token", { p_name: label, p_hash: tokenHash(token), p_prefix: token.slice(0, 12) });
+  const args = { p_name: label, p_hash: tokenHash(token), p_prefix: token.slice(0, 12) };
+  const { data, error } = canPost && (await dbFeatures()).mcpWrites
+    ? await supabase.rpc("create_api_token", { ...args, p_scopes: ["read", "post"] })
+    : await supabase.rpc("create_api_token", args);
   if (error) return { ok: false, message: error.code === "P0001" ? error.message : friendlyError(error) };
   revalidatePath("/settings");
   revalidatePath("/settings/tools");
@@ -36,4 +41,13 @@ export async function revokeApiToken(id: string): Promise<{ ok: boolean }> {
   const { error } = await supabase.rpc("revoke_api_token", { p_id: id });
   revalidatePath("/settings");
   return { ok: !error };
+}
+
+// Let one of your tools post for you, or stop it (supabase/mcp-writes.sql). Takes effect at once.
+export async function setTokenCanPost(id: string, on: boolean): Promise<{ ok: boolean }> {
+  if (!/^[0-9a-f-]{36}$/i.test(id) || !(await dbFeatures()).mcpWrites) return { ok: false };
+  const { supabase } = await getViewer();
+  const { data, error } = await supabase.rpc("set_api_token_post", { p_id: id, p_post: on });
+  revalidatePath("/settings/tools");
+  return { ok: !error && data === true };
 }
