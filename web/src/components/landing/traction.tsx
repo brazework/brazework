@@ -1,7 +1,9 @@
 import { createClient } from "@/lib/supabase/server";
+import { CountUp } from "./count-up";
 
 // Live traction from the database (supabase/public-stats.sql): counts only. Any number that's zero
-// is left out, and the strip disappears if they all are (or the function isn't there yet).
+// is left out, and the strip disappears if they all are (or the function isn't there yet). Each number
+// counts up the first time the strip comes into view (count-up.tsx); "Live" says they're real.
 export async function Traction() {
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("public_stats");
@@ -18,9 +20,10 @@ export async function Traction() {
   return (
     <section aria-label="Brazework today" className="border-y border-line">
       <ul className="mx-auto flex max-w-7xl flex-wrap items-center justify-center gap-x-10 gap-y-3 px-6 py-6">
+        <li className="flex items-center gap-2 text-xs font-medium text-muted"><span className="relative flex size-2"><span className="absolute inset-0 animate-ping rounded-full bg-ok opacity-60" /><span className="relative size-2 rounded-full bg-ok" /></span> Live</li>
         {items.map(([n, label]) => (
           <li key={label} className="flex items-baseline gap-2">
-            <span className="text-2xl font-semibold tracking-tight tabular-nums">{n.toLocaleString("en-US")}</span>
+            <CountUp to={Number(n)} className="text-2xl font-semibold tracking-tight" />
             <span className="text-sm text-muted">{label}</span>
           </li>
         ))}
