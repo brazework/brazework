@@ -8,42 +8,46 @@
   --m-bottom: calc(env(safe-area-inset-bottom, 0px) + 5.5rem);
 
   color-scheme: light;
-  --bg: #ffffff;
-  --surface: #fafafa;
-  --surface-2: #f4f4f5;
-  --raised: #ececee;
-  --hover: #f4f4f5;
-  --border: #e4e4e7;
-  --border-strong: #d4d4d8;
-  --text: #09090b;
-  --text-2: #27272a;
-  --muted: #52525b;
-  --faint: #71717a;
-  --accent: #09090b;
+  /* Redesign (2026-11): a calm, warm canvas with white surfaces and hairline borders; ink-like text.
+     Every text colour stays at 4.5:1 or better on --bg and --surface (the accessibility scan checks). */
+  --bg: #fbfbfa;
+  --surface: #ffffff;
+  --surface-2: #f6f6f4;
+  --raised: #efefed;
+  --hover: #f1f1ef;
+  --border: #e9e9e6;
+  --border-strong: #d9d9d5;
+  --text: #1f1f1d;
+  --text-2: #37352f;
+  --muted: #5f5e5a;
+  --faint: #73726e;
+  --accent: #1f1f1d;
   --on-accent: #ffffff;
   --ok: #15803d;
   --danger: #dc2626;
   --info: #2563eb;
   --tag: #7c3aed;
   --pro: #d97706;
-  --glow: rgba(9, 9, 11, 0.07);
-  --spark: 9, 9, 11;
-  --shadow: 0 1px 2px rgba(9, 9, 11, 0.06), 0 12px 32px -12px rgba(9, 9, 11, 0.18);
+  --glow: rgba(31, 31, 29, 0.05);
+  --spark: 31, 31, 29;
+  /* Shadows: almost none on cards (the border does the work); real depth only for what floats. */
+  --shadow: 0 1px 2px rgba(15, 15, 14, 0.04);
+  --shadow-float: 0 1px 2px rgba(15, 15, 14, 0.06), 0 12px 32px -12px rgba(15, 15, 14, 0.22);
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
-    --bg: #09090b;
-    --surface: #101012;
-    --surface-2: #161618;
-    --raised: #1f1f22;
-    --hover: #18181b;
-    --border: #232326;
-    --border-strong: #3a3a3f;
-    --text: #fafafa;
-    --text-2: #d4d4d8;
-    --muted: #a1a1aa;
-    --faint: #8b8b94;
+    --bg: #191919;
+    --surface: #202020;
+    --surface-2: #252525;
+    --raised: #2c2c2c;
+    --hover: #2a2a2a;
+    --border: #2f2f2f;
+    --border-strong: #3f3f3f;
+    --text: #ededeb;
+    --text-2: #d3d3d0;
+    --muted: #a3a29e;
+    --faint: #8d8c88;
     --accent: #fafafa;
     --on-accent: #09090b;
     --ok: #4ade80;
@@ -53,22 +57,23 @@
     --pro: #fbbf24;
     --glow: rgba(255, 255, 255, 0.09);
     --spark: 255, 255, 255;
-    --shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 16px 40px -16px rgba(0, 0, 0, 0.8);
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    --shadow-float: 0 1px 2px rgba(0, 0, 0, 0.4), 0 16px 40px -16px rgba(0, 0, 0, 0.75);
   }
 }
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --bg: #09090b;
-  --surface: #101012;
-  --surface-2: #161618;
-  --raised: #1f1f22;
-  --hover: #18181b;
-  --border: #232326;
-  --border-strong: #3a3a3f;
-  --text: #fafafa;
-  --text-2: #d4d4d8;
-  --muted: #a1a1aa;
-  --faint: #8b8b94;
+  --bg: #191919;
+  --surface: #202020;
+  --surface-2: #252525;
+  --raised: #2c2c2c;
+  --hover: #2a2a2a;
+  --border: #2f2f2f;
+  --border-strong: #3f3f3f;
+  --text: #ededeb;
+  --text-2: #d3d3d0;
+  --muted: #a3a29e;
+  --faint: #8d8c88;
   --accent: #fafafa;
   --on-accent: #09090b;
   --ok: #4ade80;
@@ -99,6 +104,15 @@
   --color-ok: var(--ok);
   --color-danger: var(--danger);
   --color-info: var(--info);
+
+  /* Corners (redesign 2026-11): crisper than Tailwind's defaults; one change for every rounded-*.
+     rounded-full stays a pill for avatars and chips. */
+  --radius-sm: 0.25rem;
+  --radius-md: 0.375rem;
+  --radius-lg: 0.5rem;
+  --radius-xl: 0.625rem;
+  --radius-2xl: 0.75rem;
+  --radius-3xl: 0.875rem;
 
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
@@ -148,10 +162,11 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity
   color: transparent;
 }
 
+/* Surfaces (redesign 2026-11): solid with a hairline border. No backdrop blur: it was the look's
+   main noise, and blurring what's behind on every scroll frame is expensive on phones. */
 @utility glass {
-  background: color-mix(in oklab, var(--surface) 80%, transparent);
-  backdrop-filter: blur(14px) saturate(140%);
-  border: 1px solid color-mix(in oklab, var(--text) 9%, transparent);
+  background: var(--surface);
+  border: 1px solid var(--border);
 }
 
 /* Entrance and scroll reveals are pure CSS, so text is visible before (and without) JavaScript. */
@@ -223,13 +238,11 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity
 @utility grad-edge {
   border-color: transparent;
   background: linear-gradient(var(--surface), var(--surface)) padding-box, linear-gradient(var(--border), var(--border)) border-box;
-  &:hover, &:focus-within { background: linear-gradient(var(--surface), var(--surface)) padding-box, var(--accent-grad) border-box; }
+  &:hover, &:focus-within { background: linear-gradient(var(--surface), var(--surface)) padding-box, linear-gradient(var(--border-strong), var(--border-strong)) border-box; }
 }
 /* The app's backdrop: the theme's glow from the top corners, fixed while content scrolls. */
 @utility app-backdrop {
   background-color: var(--bg);
-  background-image: radial-gradient(900px 520px at 85% -8%, var(--glow), transparent 65%), radial-gradient(700px 420px at -5% 5%, var(--glow), transparent 60%);
-  background-attachment: fixed;
 }
 
 /* A soft light that follows the cursor across a card (position set by SpotlightTracker). */
@@ -247,7 +260,8 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity
     transition: opacity 0.3s ease;
     background: radial-gradient(380px circle at var(--mx, 50%) var(--my, 50%), color-mix(in oklab, var(--accent) 13%, transparent), transparent 60%);
   }
-  &:hover::before { opacity: 1; }
+  /* Off in the redesign: the cursor light read as decoration. Kept as a no-op so markup needn't change. */
+  &:hover::before { opacity: 0; }
 }
 
 /* Progress bars that drive auto-advancing pickers (the hero's fields, the how-it-works steps):
@@ -333,11 +347,8 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity
 
 /* The sidebar: a floating frosted-glass panel over the page's glow. */
 @utility glass-panel {
-  background: linear-gradient(180deg, color-mix(in oklab, var(--surface) 62%, transparent), color-mix(in oklab, var(--surface) 38%, transparent));
-  backdrop-filter: blur(28px) saturate(180%);
-  -webkit-backdrop-filter: blur(28px) saturate(180%);
-  border: 1px solid color-mix(in oklab, var(--text) 9%, transparent);
-  box-shadow: inset 0 1px 0 var(--glass-hi), inset 0 0 0 1px color-mix(in oklab, white 4%, transparent), 0 24px 60px -30px rgba(0, 0, 0, 0.5);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
 }
 /* The feed's two columns (posts, then the rail), widening with the screen. The search row above the
    page takes the same frame on the feed, so the search bar lines up with the posts. */
@@ -356,12 +367,11 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity
 
 /* Cards in the same glass as the sidebar: translucent, a bright top edge, a slightly firmer edge on hover. */
 @utility glass-card {
-  background: linear-gradient(180deg, color-mix(in oklab, var(--surface) 82%, transparent), color-mix(in oklab, var(--surface) 64%, transparent));
-  backdrop-filter: blur(20px) saturate(170%);
-  -webkit-backdrop-filter: blur(20px) saturate(170%);
-  border: 1px solid color-mix(in oklab, var(--text) 9%, transparent);
-  box-shadow: inset 0 1px 0 var(--glass-hi), var(--shadow);
-  &:hover, &:focus-within { border-color: color-mix(in oklab, var(--text) 17%, transparent); }
+  background: var(--surface);
+  border: 1px solid var(--border);
+  box-shadow: var(--shadow);
+  transition: border-color 0.15s ease;
+  &:hover, &:focus-within { border-color: var(--border-strong); }
 }
 /* A profile with no cover yet: a faint engineering grid under a soft light, in the theme's own colours. */
 .cover-empty {
@@ -378,16 +388,13 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity
 :root[data-theme="dark"] { --glass-hi: rgba(255, 255, 255, 0.1); }
 
 /* Sidebar icons sit on small glass tiles; the current page's tile fills with the accent and glows. */
+/* Sidebar icons (redesign 2026-11): plain glyphs; the active row's soft background says where you are. */
 .nav-tile {
-  background: linear-gradient(180deg, color-mix(in oklab, var(--surface) 92%, transparent), color-mix(in oklab, var(--surface-2) 70%, transparent));
-  border: 1px solid color-mix(in oklab, var(--text) 8%, transparent);
-  box-shadow: inset 0 1px 0 var(--glass-hi), 0 1px 2px rgba(0, 0, 0, 0.06);
+  background: var(--surface);
+  border: 1px solid var(--border);
 }
 .nav-tile-on {
-  background: var(--accent-grad);
-  color: var(--on-accent);
-  border: 1px solid transparent;
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35), 0 6px 18px -6px var(--accent);
+  color: var(--text);
 }
 /* The selected sidebar tab: a soft tint in the theme's colour (no edge bar). */
 /* The current page's row: a faint wash (its glowing icon tile carries the emphasis). */
