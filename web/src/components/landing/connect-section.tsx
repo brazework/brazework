@@ -74,7 +74,7 @@ export function ConnectSection() {
   const active = new Set<string>(CHAPTERS[step].sources);
 
   return (
-    <section ref={ref} id="agents" data-story="Ember and your agent" aria-label="Ember and your own agent" className="story-sec relative overflow-x-clip bg-[#0b0b0c] text-[#f4f4f5] md:h-[500vh]">
+    <section ref={ref} id="agents" data-story="Ember and your agent" data-chapters={CHAPTERS.length} aria-label="Ember and your own agent" className="story-sec relative overflow-x-clip bg-[#0b0b0c] text-[#f4f4f5] md:h-[500vh]">
       <div className="flex items-center max-md:min-h-full md:sticky md:top-0 md:h-screen md:pt-16">
         <div className="mx-auto grid w-full max-w-7xl grid-cols-1 items-center gap-6 px-6 md:gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
           <div>

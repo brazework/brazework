@@ -82,7 +82,7 @@ export function ProjectDeck() {
   const current = PROJECTS[top];
 
   return (
-    <div ref={ref} onPointerEnter={(e) => e.pointerType === "mouse" && setPaused(true)} onPointerLeave={() => setPaused(false)}
+    <div ref={ref} data-noscene onPointerEnter={(e) => e.pointerType === "mouse" && setPaused(true)} onPointerLeave={() => setPaused(false)}
       onFocusCapture={() => setPaused(true)} onBlurCapture={() => setPaused(false)}>
       {/* Field picker: every kind of builder, one tap away. */}
       <div role="tablist" aria-label="Example projects by field" className="no-scrollbar -mx-6 mb-5 flex gap-1.5 overflow-x-auto px-6 sm:mx-0 sm:flex-wrap sm:px-0">
