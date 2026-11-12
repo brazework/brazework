@@ -81,6 +81,19 @@ async function check(page, vp, name) {
 
 (async () => {
   const b = await browser();
+  // The browser tab shows the Brazework logo, not a blank globe: setting metadata.icons by hand once
+  // dropped the tab icon's <link> entirely, and /favicon.ico was a 404.
+  await step("the tab shows the Brazework logo: pages link icon.svg, and /favicon.ico answers", async () => {
+    const html = await (await fetch(BASE + "/login")).text();
+    const icon = html.match(/<link[^>]*rel="icon"[^>]*href="([^"]+)"/)?.[1];
+    if (!icon) throw new Error("no <link rel=\"icon\"> in the page");
+    const svg = await fetch(BASE + icon);
+    if (!svg.ok || !/svg/.test(svg.headers.get("content-type") || "")) throw new Error(`${icon}: ${svg.status} ${svg.headers.get("content-type")}`);
+    if (!/<link[^>]*rel="apple-touch-icon"/.test(html)) throw new Error("no apple-touch-icon (Home Screen)");
+    const ico = await fetch(BASE + "/favicon.ico");
+    const bytes = Buffer.from(await ico.arrayBuffer());
+    if (!ico.ok || bytes.readUInt16LE(2) !== 1) throw new Error(`/favicon.ico: ${ico.status}, not an icon`);
+  });
   for (const [vp, size, opts] of VIEWPORTS) {
     const anon = await (await b.newContext({ viewport: size, ...opts, colorScheme: "light" })).newPage();
     for (const [name, p] of SIGNED_OUT) {

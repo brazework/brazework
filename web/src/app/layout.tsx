@@ -15,7 +15,6 @@ export const metadata: Metadata = {
   applicationName: "Brazework",
   // Installed from Safari's Share menu: full screen; the status bar takes the theme-color (ThemeChrome).
   appleWebApp: { capable: true, title: "Brazework", statusBarStyle: "default" },
-  icons: { apple: [{ url: "/app-icon/180", sizes: "180x180" }] },
   openGraph: {
     title: "Brazework: build it, prove it, get found",
     description: "The network where STEM builders show what they've made, their club's officers verify it, and companies recruit from the proof. With an AI agent that does the busywork.",
