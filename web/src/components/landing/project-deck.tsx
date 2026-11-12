@@ -3,12 +3,14 @@ import { AnimatePresence, motion, useInView, useReducedMotion, type PanInfo } fr
 import { BadgeCheck, ChevronLeft, ChevronRight, Clock3, Eye, Play, Sparkles } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/forge";
+import { usePinned } from "./use-pinned";
 import { Schematic } from "./schematics";
 
 // The landing page's project section (Linear FIX-92): one project page per kind of builder, stacked
-// like a deck. The top card is the one you read; the next ones peek out behind it. Every few seconds
-// the top card slides away and the next one rises into place; drag it, use the arrows, or pick a
-// field to jump. Pauses while the pointer is on it or it's off screen; holds still for reduced motion.
+// like a deck. The top card is the one you read; the next ones peek out behind it. Wide screens: the
+// section is pinned and scrolling deals the deck, one project per step (use-pinned.ts); the arrows and
+// field tabs scroll to theirs. Phones: every few seconds the top card slides away and the next rises
+// into place; drag it, use the arrows, or pick a field. Holds still for reduced motion.
 // Example data throughout.
 
 type Project = {
@@ -68,16 +70,20 @@ export function ProjectDeck() {
   const inView = useInView(ref, { amount: 0.4 });
   const n = PROJECTS.length;
   const go = (to: number, d: number) => { setDir(d); setTop(((to % n) + n) % n); };
+  // Wide screens: the scroll deals the deck.
+  const pin = usePinned(ref, n, (next, prev) => go(next, next > prev ? 1 : -1));
+  // Buttons, tabs and drags: on wide screens they scroll to the step, which moves the deck.
+  const pick = (to: number, d: number) => (pin.wide ? pin.goTo(((to % n) + n) % n) : go(to, d));
 
   useEffect(() => {
-    if (reduce || paused || !inView) return;
+    if (pin.wide || reduce || paused || !inView) return;
     const t = setTimeout(() => go(top + 1, 1), 4200);
     return () => clearTimeout(t);
-  }, [top, reduce, paused, inView]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [top, reduce, paused, inView, pin.wide]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const onDragEnd = (_: unknown, info: PanInfo) => {
-    if (info.offset.x < -70 || info.velocity.x < -400) go(top + 1, 1);
-    else if (info.offset.x > 70 || info.velocity.x > 400) go(top - 1, -1);
+    if (info.offset.x < -70 || info.velocity.x < -400) pick(top + 1, 1);
+    else if (info.offset.x > 70 || info.velocity.x > 400) pick(top - 1, -1);
   };
   const stack = Array.from({ length: VISIBLE }, (_, k) => ({ p: PROJECTS[(top + k) % n], k }));
   const current = PROJECTS[top];
@@ -88,7 +94,7 @@ export function ProjectDeck() {
       {/* Field picker: every kind of builder, one tap away. */}
       <div role="tablist" aria-label="Example projects by field" className="no-scrollbar -mx-6 mb-5 flex gap-1.5 overflow-x-auto px-6 sm:mx-0 sm:flex-wrap sm:px-0">
         {PROJECTS.map((p, i) => (
-          <button key={p.id} type="button" role="tab" aria-selected={i === top} onClick={() => go(i, i >= top ? 1 : -1)}
+          <button key={p.id} type="button" role="tab" aria-selected={i === top} onClick={() => pick(i, i >= top ? 1 : -1)}
             className={cn("shrink-0 rounded-md border px-2.5 py-1 text-xs font-medium transition", i === top ? "border-text bg-text text-bg" : "border-line text-muted hover:border-line-strong hover:text-text")}>
             {p.field}
           </button>
@@ -141,8 +147,8 @@ export function ProjectDeck() {
       <div className="mt-6 flex items-center justify-between gap-4 sm:mt-28 sm:pl-60">
         <p className="text-xs text-faint"><span className="font-medium text-text tabular-nums">{String(top + 1).padStart(2, "0")}</span> / {String(n).padStart(2, "0")} · Example data{!reduce && <span className="m-hide"> · drag to flip</span>}</p>
         <div className="flex gap-1.5">
-          <button type="button" onClick={() => go(top - 1, -1)} aria-label="Previous project" className="grid size-9 place-items-center rounded-lg border border-line text-muted transition hover:border-line-strong hover:text-text"><ChevronLeft className="size-4" /></button>
-          <button type="button" onClick={() => go(top + 1, 1)} aria-label="Next project" className="grid size-9 place-items-center rounded-lg border border-line text-muted transition hover:border-line-strong hover:text-text"><ChevronRight className="size-4" /></button>
+          <button type="button" onClick={() => pick(top - 1, -1)} aria-label="Previous project" className="grid size-9 place-items-center rounded-lg border border-line text-muted transition hover:border-line-strong hover:text-text"><ChevronLeft className="size-4" /></button>
+          <button type="button" onClick={() => pick(top + 1, 1)} aria-label="Next project" className="grid size-9 place-items-center rounded-lg border border-line text-muted transition hover:border-line-strong hover:text-text"><ChevronRight className="size-4" /></button>
         </div>
       </div>
     </div>
@@ -152,7 +158,7 @@ export function ProjectDeck() {
 function Card({ p }: { p: Project }) {
   return (
     <>
-      <div className="relative aspect-[16/8] overflow-hidden bg-[linear-gradient(135deg,#09090b,#1f1f22_55%,#09090b)] text-white/80 sm:aspect-[16/7]">
+      <div className="relative aspect-[16/8] overflow-hidden bg-[linear-gradient(135deg,#09090b,#1f1f22_55%,#09090b)] text-white/80 sm:aspect-[16/7] md:aspect-[16/6]">
         <div aria-hidden className="absolute inset-0 bg-[linear-gradient(rgb(255_255_255/0.05)_1px,transparent_1px),linear-gradient(90deg,rgb(255_255_255/0.05)_1px,transparent_1px)] bg-[size:22px_22px]" />
         <Schematic id={p.art} className="absolute top-1/2 left-1/2 w-[58%] -translate-x-1/2 -translate-y-1/2 text-white/70" />
         <span className="absolute top-[20%] left-[12%] flex items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-medium text-black shadow-lg"><span className="grid size-4 place-items-center rounded-full bg-black text-[9px] text-white">1</span> {p.callouts[0]}</span>
@@ -173,7 +179,7 @@ function Card({ p }: { p: Project }) {
             <div key={l} className="min-w-0 rounded-xl bg-surface-2/70 px-3 py-2"><div className="truncate text-[11px] text-faint">{l}</div><div className="text-sm font-semibold">{v}</div></div>
           ))}
         </div>
-        <div className="m-hide mt-4 flex flex-wrap gap-1.5">
+        <div className="m-hide mt-4 flex flex-wrap gap-1.5 [@media(min-width:768px)_and_(max-height:1000px)]:hidden">
           {p.tools.map((t) => <span key={t} className="rounded-lg border border-line px-2 py-1 font-mono text-[11px] text-muted">{t}</span>)}
         </div>
         <ol className="mt-4 space-y-2">
@@ -184,13 +190,13 @@ function Card({ p }: { p: Project }) {
               <p className="truncate text-[11px] font-medium text-ok">{p.vouch ? `Vouched for by ${p.verified.by}` : `Verified by ${p.verified.by} · ${p.club}`}</p>
             </div>
           </li>
-          <li className="m-hide flex items-center gap-3 rounded-2xl border border-dashed border-line px-3.5 py-2.5">
+          <li className="m-hide [@media(min-width:768px)_and_(max-height:1000px)]:hidden flex items-center gap-3 rounded-2xl border border-dashed border-line px-3.5 py-2.5">
             <span className="grid size-6 shrink-0 place-items-center rounded-full border border-dashed border-line-strong text-muted"><Clock3 className="size-3.5" /></span>
             <p className="min-w-0 flex-1 truncate text-sm text-muted">{p.pending}</p>
             <span className="shrink-0 text-[11px] text-faint">Waiting on 1 officer</span>
           </li>
         </ol>
-        <p className="m-hide mt-4 inline-flex items-center gap-1.5 text-xs font-medium"><Eye className="size-3.5" /> 24 profile views this week</p>
+        <p className="m-hide mt-4 inline-flex items-center gap-1.5 text-xs font-medium [@media(min-width:768px)_and_(max-height:1000px)]:hidden"><Eye className="size-3.5" /> 24 profile views this week</p>
       </div>
     </>
   );

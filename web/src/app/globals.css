@@ -647,15 +647,15 @@ html.lenis, html.lenis body { height: auto; }
 @keyframes scene-rise { from { opacity: 0; transform: translateY(72px) scale(0.965); } to { opacity: 1; transform: none; } }
 @media (min-width: 768px) and (prefers-reduced-motion: no-preference) {
   @supports (animation-timeline: view()) {
-    :is(#projects, #clubs, #reach, #who, #product, #pricing, #founders, #founding, #join) :is(.max-w-7xl > *, .grid > *):not([data-noscene] *),
+    :is(#clubs, #noclub, #other-side, #who, #product, #pricing, #founders, #founding, #join) :is(.max-w-7xl > *, .grid > *):not([data-noscene] *),
     #faq > * {
       animation: scene-rise linear both;
       animation-timeline: view();
       animation-range: entry 0% entry 85%;
     }
     /* Cards in a row arrive one after another. */
-    :is(#projects, #clubs, #reach, #who, #product, #pricing, #founders, #founding, #join) .grid > :nth-child(2):not([data-noscene] *) { animation-range: entry 8% entry 92%; }
-    :is(#projects, #clubs, #reach, #who, #product, #pricing, #founders, #founding, #join) .grid > :nth-child(3):not([data-noscene] *) { animation-range: entry 16% entry 100%; }
-    :is(#projects, #clubs, #reach, #who, #product, #pricing, #founders, #founding, #join) .grid > :nth-child(n + 4):not([data-noscene] *) { animation-range: entry 22% cover 30%; }
+    :is(#clubs, #noclub, #other-side, #who, #product, #pricing, #founders, #founding, #join) .grid > :nth-child(2):not([data-noscene] *) { animation-range: entry 8% entry 92%; }
+    :is(#clubs, #noclub, #other-side, #who, #product, #pricing, #founders, #founding, #join) .grid > :nth-child(3):not([data-noscene] *) { animation-range: entry 16% entry 100%; }
+    :is(#clubs, #noclub, #other-side, #who, #product, #pricing, #founders, #founding, #join) .grid > :nth-child(n + 4):not([data-noscene] *) { animation-range: entry 22% cover 30%; }
   }
 }
