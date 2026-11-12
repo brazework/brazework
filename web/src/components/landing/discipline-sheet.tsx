@@ -4,7 +4,7 @@ import { BadgeCheck } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/forge";
 
-// Every kind of engineering (Linear FIX-92), as one spec sheet: a tab per field, then one large
+// Every field in STEM (Linear FIX-92), as one spec sheet: a tab per field, then one large
 // drawing that keeps moving (CSS only, stopped by the global reduced-motion rule) beside what
 // Brazework records for that field. Black and white on both themes: the linework is the text colour.
 // Wide screens tell it as a scroll story: the section is pinned and scrolling moves through the
@@ -28,6 +28,9 @@ function gear(cx: number, cy: number, r: number, teeth: number): string {
 
 const sine = Array.from({ length: 49 }, (_, i) => `${i * 7.5},${(60 + Math.sin(i * 0.785) * 22).toFixed(1)}`).join(" ");
 const faint = { stroke: "currentColor", strokeOpacity: 0.3 } as const;
+const converge = Array.from({ length: 81 }, (_, i) => `${20 + i * 2.6},${(60 - 40 * Math.exp(-i / 22) * Math.cos(i / 3.2)).toFixed(1)}`).join(" ");
+const titration = Array.from({ length: 61 }, (_, i) => { const x = i / 60; return `${20 + x * 205},${(100 - 80 / (1 + Math.exp(-(x - 0.55) * 26))).toFixed(1)}`; }).join(" ");
+const loss = Array.from({ length: 61 }, (_, i) => `${22 + i * 3.4},${(22 + 70 * Math.exp(-i / 13) + (i % 3) * 1.4).toFixed(1)}`).join(" ");
 
 const DISCIPLINES: Discipline[] = [
   {
@@ -65,33 +68,60 @@ const DISCIPLINES: Discipline[] = [
     ),
   },
   {
-    id: "aerospace", name: "Aerospace", line: "The static fire, with the data.", steps: ["Thrust curve logged", "1.2 kN peak, within 3%"],
+    id: "biology", name: "Biology", line: "Run it, image it, run it again.", steps: ["Knockout confirmed on the gel", "Replicated in 3 of 3 runs"],
+    art: (
+      <>
+        {[40, 80, 120, 160, 200].map((x) => <rect key={x} x={x - 14} y="14" width="28" height="92" rx="2" fill="none" {...faint} strokeWidth="1.25" />)}
+        {[22, 36, 52, 70, 90].map((y) => <rect key={y} x="30" y={y} width="20" height="3" rx="1" fill="currentColor" fillOpacity="0.45" />)}
+        {[[80, 44], [120, 44], [160, 44], [200, 70]].map(([x, y], i) => (
+          <rect key={x} className="dz-blink" style={{ animationDelay: `${i * 0.5}s` }} x={x - 10} y={y} width="20" height="4" rx="1" fill="currentColor" />
+        ))}
+      </>
+    ),
+  },
+  {
+    id: "chemistry", name: "Chemistry", line: "Every titration, on the record.", steps: ["Equivalence point at 24.6 mL", "Within 1.2% of theory"],
     art: (
       <>
         <path d="M20 100 H225 M20 100 V15" {...faint} strokeWidth="1.25" />
-        <path d="M20 40 H225" stroke="currentColor" strokeOpacity="0.12" strokeDasharray="4 4" />
-        <path className="dz-draw" d="M20 100 C40 100 45 30 62 30 C78 30 82 44 100 46 C130 49 150 50 170 56 C185 61 190 98 225 100" fill="none" stroke="currentColor" strokeWidth="2" />
+        <path d="M133 15 V100" stroke="currentColor" strokeOpacity="0.15" strokeDasharray="4 4" />
+        <polyline className="dz-draw" points={titration} fill="none" stroke="currentColor" strokeWidth="2" />
+        <circle className="dz-blink" cx="133" cy="60" r="4" fill="var(--surface)" stroke="currentColor" strokeWidth="1.5" />
       </>
     ),
   },
   {
-    id: "structures", name: "Structures", line: "Load it and measure it.", steps: ["Truss built to spec", "2.1 mm deflection at 500 N"],
+    id: "physics", name: "Physics", line: "Measure it, then measure it again.", steps: ["g = 9.79 m/s² from 40 swings", "Error bars in the write-up"],
     art: (
       <>
-        <g className="dz-flex">
-          <path d="M20 80 L60 40 L100 80 L140 40 L180 80 L220 40 M20 80 H220 M60 40 H220" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinejoin="round" />
-          <path d="M120 8 V30 M114 24 L120 32 L126 24" fill="none" {...faint} strokeWidth="1.75" />
+        <path d="M70 12 H170" stroke="currentColor" strokeWidth="1.75" />
+        <g className="dz-swing" style={{ transformOrigin: "120px 12px" }}>
+          <path d="M120 12 V88" stroke="currentColor" strokeWidth="1.5" />
+          <circle cx="120" cy="96" r="9" fill="var(--surface)" stroke="currentColor" strokeWidth="1.75" />
         </g>
-        <path d="M14 92 L26 92 L20 82 Z M208 92 L232 92" fill="currentColor" fillOpacity="0.3" {...faint} />
+        <path d="M78 104 Q120 116 162 104" fill="none" {...faint} strokeDasharray="3 4" />
       </>
     ),
   },
   {
-    id: "biomedical", name: "Biomedical", line: "Protocol, results, sign-off.", steps: ["Sensor validated on 12 runs", "Matched reference ±2 bpm"],
+    id: "data", name: "Data & AI", line: "Show the model and the work behind it.", steps: ["Trained on 18k labelled images", "94% on a held-out set"],
     art: (
       <>
-        <path d="M0 64 H240" stroke="currentColor" strokeOpacity="0.1" />
-        <path className="dz-sweep" d="M0 64 H60 L70 64 L78 30 L88 96 L96 64 H150 L160 64 L168 30 L178 96 L186 64 H240" fill="none" stroke="currentColor" strokeWidth="2" strokeLinejoin="round" />
+        <path d="M20 100 H225 M20 100 V15" {...faint} strokeWidth="1.25" />
+        <polyline className="dz-draw" points={loss} fill="none" stroke="currentColor" strokeWidth="2" />
+        <path d="M20 30 H225" stroke="currentColor" strokeOpacity="0.15" strokeDasharray="4 4" />
+        <g className="dz-blink"><rect x="168" y="8" width="56" height="16" rx="4" fill="currentColor" /><text x="196" y="19.5" textAnchor="middle" fontSize="9" fontWeight="600" fill="var(--surface)">val 94%</text></g>
+      </>
+    ),
+  },
+  {
+    id: "math", name: "Math", line: "Proofs that hold up.", steps: ["Convergence proof written up", "Formalised in Lean 4"],
+    art: (
+      <>
+        <path d="M20 60 H230" stroke="currentColor" strokeOpacity="0.2" strokeDasharray="4 4" />
+        <text x="232" y="56" fontSize="10" fill="currentColor" fillOpacity="0.5" textAnchor="end">L</text>
+        <polyline className="dz-draw" points={converge} fill="none" stroke="currentColor" strokeWidth="2" />
+        <text className="dz-blink" x="226" y="104" fontSize="14" fill="currentColor" textAnchor="end">∎</text>
       </>
     ),
   },

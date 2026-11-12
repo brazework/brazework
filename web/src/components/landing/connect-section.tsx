@@ -17,7 +17,7 @@ import { Orb } from "./orb";
 const CHAPTERS = [
   { title: "You build like you already do", body: "Connect a repo once. Merged pull requests, releases and CI land in your project's build log on their own.", sources: ["github"] },
   { title: "Ember drafts it", body: "Ember, the agent built into Brazework, turns your week into an update, catches you up on your club's chats and answers @Ember. It drafts; you post.", sources: ["ember"] },
-  { title: "Or bring your own agent", body: "Claude Code, Cursor or Codex logs today's progress from where you code, through Brazework's MCP server. Every post says which tool wrote it.", sources: ["claude", "cursor", "codex"] },
+  { title: "Or bring your own agent", body: "The AI you already work with (Claude Code, Cursor, Codex) logs today's progress from where you work, through Brazework's MCP server. Every post says which tool wrote it.", sources: ["claude", "cursor", "codex"] },
   { title: "Your club signs it", body: "Anything can be posted. Only an officer of your club can verify it, by name. Agents never can.", sources: ["club"] },
   { title: "Someone notices", body: "Companies search verified work, not résumés, and you see who looked.", sources: ["companies"] },
 ] as const;

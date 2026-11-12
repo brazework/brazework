@@ -628,6 +628,8 @@ select option { background-color: var(--surface); color: var(--text); }
 .dz-sweep { stroke-dasharray: 60 240; animation: dz-sweep 2.6s linear infinite; }
 .dz-flex { animation: dz-flex 3.2s ease-in-out infinite; }
 .dz-blink { animation: dz-blink 4s ease-in-out infinite; }
+@keyframes dz-swing { 0%, 100% { transform: rotate(-16deg); } 50% { transform: rotate(16deg); } }
+.dz-swing { animation: dz-swing 2.2s ease-in-out infinite; }
 
 /* Smooth scrolling on the landing page (components/landing/smooth-scroll.tsx): Lenis's own rules. */
 html.lenis, html.lenis body { height: auto; }

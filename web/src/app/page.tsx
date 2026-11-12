@@ -9,6 +9,7 @@ import { LegacyLinks } from "@/components/landing/legacy-links";
 import { Audiences, FaqSection, Features, How, Pricing, Problem } from "@/components/landing/marketing";
 import { Nav } from "@/components/landing/nav";
 import { Organizations } from "@/components/landing/organizations";
+import { Reach } from "@/components/landing/reach";
 import { ClubShowcase, ProjectShowcase } from "@/components/landing/showcase";
 import { StoryRail } from "@/components/landing/story-rail";
 import { ThemeChrome } from "@/components/theme-chrome";
@@ -32,6 +33,7 @@ export default function Landing() {
         <ProjectShowcase />
         <ClubShowcase />
         <ConnectSection />
+        <Reach />
         <Audiences />
         <Features />
         <Pricing />
