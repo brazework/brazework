@@ -94,3 +94,13 @@ export async function saveEmailPrefs(weekly: boolean): Promise<SettingsState> {
   revalidatePath("/settings");
   return { ok: true, message: weekly ? "You'll get your week by email." : "Weekly emails are off." };
 }
+
+// Email alerts, one switch per kind (supabase/email-alerts.sql, Linear FIX-18).
+export async function saveEmailAlerts(kinds: { messages: boolean; requests: boolean; comments: boolean }): Promise<SettingsState> {
+  const { supabase, user } = await getViewer();
+  if (!user) return { ok: false, message: "Log in again." };
+  const { error } = await supabase.rpc("save_email_alerts", { p_messages: !!kinds.messages, p_requests: !!kinds.requests, p_comments: !!kinds.comments });
+  if (error) return { ok: false, message: friendlyError(error) };
+  revalidatePath("/settings");
+  return { ok: true, message: "Email alerts saved." };
+}

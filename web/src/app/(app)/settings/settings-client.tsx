@@ -7,7 +7,7 @@ import { Button, Field, inputCls } from "@/components/ui";
 import { ALL_TOPICS, FIELDS, TOPICS, cn, type Profile } from "@/lib/forge";
 import { gradYearOptions } from "@/lib/profile-meta";
 import { deleteAllChats } from "@/lib/copilot-chats";
-import { changePassword, deleteAccount, saveEmailPrefs, saveMessageSettings, saveProfileSettings, type SettingsState, unblockPerson } from "@/lib/settings";
+import { changePassword, deleteAccount, saveEmailAlerts, saveEmailPrefs, saveMessageSettings, saveProfileSettings, type SettingsState, unblockPerson } from "@/lib/settings";
 import { submitWithoutReset } from "@/lib/submit";
 
 const init: SettingsState = { ok: false, message: "" };
@@ -284,16 +284,42 @@ export function YourDataSettings() {
   );
 }
 
-export function EmailSettings({ weekly }: { weekly: boolean }) {
+export type EmailAlerts = { messages: boolean; requests: boolean; comments: boolean };
+
+const ALERT_KINDS: { key: keyof EmailAlerts; title: string; desc: string }[] = [
+  { key: "messages", title: "New messages", desc: "When someone messages you and you haven't read it yet." },
+  { key: "requests", title: "Connection requests", desc: "When someone wants to connect." },
+  { key: "comments", title: "Comments on your posts", desc: "When someone comments on something you posted." },
+];
+
+export function EmailSettings({ weekly, alerts }: { weekly: boolean; alerts?: EmailAlerts }) {
   const [on, setOn] = useState(weekly);
+  const [kinds, setKinds] = useState<EmailAlerts | undefined>(alerts);
   const [msg, setMsg] = useState<SettingsState>(init);
   const [pending, start] = useTransition();
+  const toggle = (key: keyof EmailAlerts, v: boolean) => {
+    if (!kinds) return;
+    const next = { ...kinds, [key]: v };
+    setKinds(next);
+    start(async () => setMsg(await saveEmailAlerts(next)));
+  };
   return (
     <div className="flex flex-col gap-3">
       <label className="flex items-start justify-between gap-4">
         <span><span className="text-sm font-medium">Your week, by email</span><span className="block text-sm text-faint">Once a week: what&apos;s waiting on you and what happened in your clubs. Never sent when there&apos;s nothing to say.</span></span>
         <input id="email-weekly" type="checkbox" role="switch" checked={on} disabled={pending} onChange={(e) => { const v = e.target.checked; setOn(v); start(async () => setMsg(await saveEmailPrefs(v))); }} className="mt-1 size-5 shrink-0 accent-[var(--text)]" />
       </label>
+      {kinds && (
+        <>
+          <p className="mt-2 text-sm text-faint">When you&apos;re away: one email at most every hour, only for what you haven&apos;t seen in the app.</p>
+          {ALERT_KINDS.map((k) => (
+            <label key={k.key} className="flex items-start justify-between gap-4">
+              <span><span className="text-sm font-medium">{k.title}</span><span className="block text-sm text-faint">{k.desc}</span></span>
+              <input id={`email-alert-${k.key}`} type="checkbox" role="switch" checked={kinds[k.key]} disabled={pending} onChange={(e) => toggle(k.key, e.target.checked)} className="mt-1 size-5 shrink-0 accent-[var(--text)]" />
+            </label>
+          ))}
+        </>
+      )}
       <Status state={msg} />
     </div>
   );
