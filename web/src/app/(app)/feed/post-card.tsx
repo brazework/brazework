@@ -298,7 +298,7 @@ function BuildStrip({ project, authorId, own }: { project: PostProject; authorId
   return (
     <div className="mt-3 rounded-2xl border border-line bg-surface-2/50 p-3">
       {/* The verified badge sits beside the title when there's room, and drops under it on a phone. */}
-      <Link prefetch={false} href={`/u/${authorId}#projects`} className="group/proj flex flex-wrap items-center gap-x-3 gap-y-2">
+      <Link prefetch={false} href={`/projects/${project.id}`} className="group/proj flex flex-wrap items-center gap-x-3 gap-y-2">
         <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-raised text-muted transition group-hover/proj:text-text"><FolderGit2 className="size-[18px]" /></span>
         <span className="min-w-[min(100%,14rem)] flex-1 basis-0">
           <span className="flex items-center gap-2 text-sm font-medium">
@@ -322,7 +322,7 @@ function BuildStrip({ project, authorId, own }: { project: PostProject; authorId
         </div>
       )}
       {own && v.n === 0 && !project.private && (
-        <Link prefetch={false} href={`/u/${authorId}#projects`} className="mt-2.5 flex items-center gap-1.5 border-t border-line pt-2.5 text-xs font-medium text-text-2 transition hover:text-text">
+        <Link prefetch={false} href={`/projects/${project.id}#proof`} className="mt-2.5 flex items-center gap-1.5 border-t border-line pt-2.5 text-xs font-medium text-text-2 transition hover:text-text">
           <BadgeCheck className="size-3.5 text-accent" /> Ask your club to verify a milestone on this project <ArrowRight className="size-3.5" />
         </Link>
       )}

@@ -1,10 +1,8 @@
 import { dbFeatures, eventWithHost } from "@/lib/db-features";
-import { CalendarDays, Plus, Sparkles, Trophy, Users } from "lucide-react";
+import { CalendarDays, Plus, Trophy, Users } from "lucide-react";
 import Link from "next/link";
 import { DROP_AFTER_MS, dateParts, withHost, type HostedEvent } from "@/lib/events";
 import { cn, requestTime } from "@/lib/forge";
-import type { WeekItem } from "@/lib/week";
-import { loadWeek } from "@/lib/week-load";
 import { getViewer } from "@/lib/supabase/server";
 import { RailCard } from "@/components/app/rail-card";
 import { MessageDock } from "@/components/messages/dock";
@@ -12,7 +10,7 @@ import { CommunityBadge } from "../communities/_components/badge";
 import { UpdatesPanel } from "@/components/tour/updates-panel";
 import { newsPool, pickNews, type NewsPick } from "@/lib/news";
 import { TrendingNews } from "./trending-news";
-import { StreakCard } from "./streak";
+import { YourWeekCard } from "./streak";
 import { Suspense } from "react";
 
 // The feed's right rail (wide screens): Brazework updates (recent and coming next), what's trending, your clubs and what's coming up, so the rest of Brazework is one glance away.
@@ -49,37 +47,21 @@ export async function FeedRail() {
   for (const r of (recent.data ?? []) as { tags: string[] }[]) for (const t of r.tags ?? []) counts.set(t, (counts.get(t) ?? 0) + 1);
   const trending = [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 6);
 
-  const week = await loadWeek(supabase, user.id, (mine.data ?? []) as unknown as { role: string; communities: C | null }[], events, goingSet, now);
-
-  // Your streak tops the rail (FIX-67): the weekly loop as a side card, not a banner over Home.
-  return <RailView top={<Suspense fallback={null}><StreakCard /></Suspense>} trending={trending} news={news} hasInterests={(profile.interests ?? []).length > 0} clubs={clubs} events={events} going={goingSet} challenges={challenges} week={week} />;
+  // Your week tops the rail (FIX-67, FIX-92): streak, proof, views and to-dos in one card.
+  return <RailView top={<Suspense fallback={null}><YourWeekCard /></Suspense>} trending={trending} news={news} hasInterests={(profile.interests ?? []).length > 0} clubs={clubs} events={events} going={goingSet} challenges={challenges} />;
 }
 
 type Club = { id: string; name: string; member_count: number };
 type RailChallenge = { id: string; title: string; sponsor: string; prize: string; days: number };
 
 // The rail's markup, separate from its queries so it can be previewed with sample data.
-export function RailView({ trending, news = [], hasInterests = false, clubs, events, going: goingSet, challenges = [], week = [], top }: { trending: [string, number][]; news?: NewsPick[]; hasInterests?: boolean; clubs: Club[]; events: HostedEvent[]; going: Set<string>; challenges?: RailChallenge[]; week?: WeekItem[]; top?: React.ReactNode }) {
+// Order (FIX-92): what's yours first (your week, what's coming up, your clubs, open challenges), then
+// what's around (trending), and Brazework's own news last.
+export function RailView({ trending, news = [], hasInterests = false, clubs, events, going: goingSet, challenges = [], top }: { trending: [string, number][]; news?: NewsPick[]; hasInterests?: boolean; clubs: Club[]; events: HostedEvent[]; going: Set<string>; challenges?: RailChallenge[]; top?: React.ReactNode }) {
   return (
     <div className="no-scrollbar sticky top-8 flex max-h-[calc(100dvh-4rem)] flex-col gap-4 [&>*]:shrink-0 overflow-y-auto overscroll-contain pb-2 min-[137.5rem]:grid min-[137.5rem]:grid-cols-2 min-[137.5rem]:items-start">
       {top}
-      {week.length > 0 && (
-        <RailCard id="week" title="Your week" icon={<Sparkles className="size-3.5" />} summary={week[0].text} badge={week.filter((w) => w.tone === "todo").length || undefined}>
-          <ul className="mt-3 flex flex-col gap-1">
-            {week.map((w) => (
-              <li key={w.id}>
-                <Link href={w.href} className={cn("group flex items-center gap-2.5 rounded-xl px-1.5 py-2 text-sm transition hover:bg-hover", w.tone === "nudge" && "bg-surface-2/70")}>
-                  <span className={cn("size-1.5 shrink-0 rounded-full", w.tone === "todo" ? "bg-accent" : w.tone === "nudge" ? "bg-ok" : "bg-line-strong")} aria-hidden="true" />
-                  <span className="min-w-0 flex-1 text-text-2 group-hover:text-text">{w.text}</span>
-                  {w.action && <span className="shrink-0 text-xs font-medium text-text">{w.action} →</span>}
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </RailCard>
-      )}
-      <UpdatesPanel />
-      <TrendingNews trending={trending} news={news} hasInterests={hasInterests} />
+      <ComingUp events={events} going={goingSet} />
 
       <RailCard id="clubs" title="Your clubs" icon={<Users className="size-3.5" />} href="/communities" summary={clubs.length ? clubs.map((c) => c.name).join(", ") : "Join your club"}>
         <ul className="mt-3 flex flex-col gap-1">
@@ -101,29 +83,6 @@ export function RailView({ trending, news = [], hasInterests = false, clubs, eve
         </Link>
       </RailCard>
 
-      <RailCard id="events" title="Coming up" icon={<CalendarDays className="size-3.5" />} href="/events" summary={events[0] ? `Next: ${events[0].title}` : "Nothing scheduled yet"}>
-        <ul className="mt-3 flex flex-col gap-2">
-          {events.map((e) => {
-            const d = dateParts(e.starts_at, "UTC");
-            return (
-              <li key={e.id}>
-                <Link href={`/events/${e.id}`} className="group flex gap-3 rounded-xl p-1.5 transition hover:bg-hover">
-                  <span className="flex w-11 shrink-0 flex-col items-center overflow-hidden rounded-xl border border-line bg-surface">
-                    <span className="bg-accent-grad w-full py-0.5 text-center text-[9px] font-semibold text-on-accent uppercase">{d.mon}</span>
-                    <span className="py-1 text-base leading-none font-semibold">{d.day}</span>
-                  </span>
-                  <span className="min-w-0 self-center">
-                    <span className="block truncate text-sm font-medium">{e.title}</span>
-                    <span className="block truncate text-xs text-faint">{goingSet.has(e.id) ? "✓ You're going · " : ""}{e.host}</span>
-                  </span>
-                </Link>
-              </li>
-            );
-          })}
-        </ul>
-        {!events.length && <p className="mt-2 text-sm text-muted">Nothing scheduled yet.</p>}
-      </RailCard>
-
       {challenges.length > 0 && (
         <RailCard id="challenges" title="Open challenges" icon={<Trophy className="size-3.5" />} href="/challenges" summary={`${challenges.length} open · next deadline in ${challenges[0]?.days ?? 0} ${challenges[0]?.days === 1 ? "day" : "days"}`}>
           <ul className="mt-3 flex flex-col gap-1">
@@ -139,7 +98,36 @@ export function RailView({ trending, news = [], hasInterests = false, clubs, eve
         </RailCard>
       )}
 
+      <TrendingNews trending={trending} news={news} hasInterests={hasInterests} />
+      <UpdatesPanel />
       <MessageDock variant="rail" />
     </div>
+  );
+}
+
+function ComingUp({ events, going }: { events: HostedEvent[]; going: Set<string> }) {
+  return (
+    <RailCard id="events" title="Coming up" icon={<CalendarDays className="size-3.5" />} href="/events" summary={events[0] ? `Next: ${events[0].title}` : "Nothing scheduled yet"}>
+      <ul className="mt-3 flex flex-col gap-2">
+        {events.map((e) => {
+          const d = dateParts(e.starts_at, "UTC");
+          return (
+            <li key={e.id}>
+              <Link href={`/events/${e.id}`} className="group flex gap-3 rounded-xl p-1.5 transition hover:bg-hover">
+                <span className="flex w-11 shrink-0 flex-col items-center overflow-hidden rounded-xl border border-line bg-surface">
+                  <span className="bg-accent-grad w-full py-0.5 text-center text-[9px] font-semibold text-on-accent uppercase">{d.mon}</span>
+                  <span className="py-1 text-base leading-none font-semibold">{d.day}</span>
+                </span>
+                <span className="min-w-0 self-center">
+                  <span className="block truncate text-sm font-medium">{e.title}</span>
+                  <span className="block truncate text-xs text-faint">{going.has(e.id) ? "✓ You're going · " : ""}{e.host}</span>
+                </span>
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+      {!events.length && <p className="mt-2 text-sm text-muted">Nothing scheduled yet.</p>}
+    </RailCard>
   );
 }

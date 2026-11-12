@@ -90,7 +90,8 @@ async function loadWeekInputFor(supabase: SupabaseClient, me: string, now: numbe
 
 // The weekly loop on Home (Linear FIX-67): this week's goal, your build streak (weeks in a row with a
 // post or a milestone, from your own rows), the last eight weeks for the streak bar, and who looked.
-export type Loop = { goal: WeekGoal; streak: Streak; recent: boolean[]; viewers: WeekInput["viewers"]; steps: LoopStep[]; toVerify: WeekInput["toVerify"]; verified: number };
+// week: the same items as "Your week" (buildWeek), from the same queries, so Home's one card needs no second load.
+export type Loop = { goal: WeekGoal; streak: Streak; recent: boolean[]; viewers: WeekInput["viewers"]; steps: LoopStep[]; toVerify: WeekInput["toVerify"]; verified: number; week: WeekItem[] };
 
 // Remembered for one render (React cache): Home asks twice, the phone's streak line and the laptop's
 // rail card (CSS picks which shows), and each ask was ~10 queries (Linear FIX-77). Keyed by who's
@@ -116,5 +117,5 @@ async function loadLoopOnce(supabase: SupabaseClient, me: string, now: number): 
   const active = new Set(times.map(weekStart));
   const recent = Array.from({ length: 8 }, (_, i) => active.has(weekStart(now) - (7 - i) * 7 * 864e5));
   const steps = buildLoopSteps(input, { shownThisWeek: streak.thisWeek, verified: verified.count ?? 0, me });
-  return { goal: weekGoal(input, streak.thisWeek), streak, recent, viewers: input.viewers, steps, toVerify: input.toVerify, verified: verified.count ?? 0 };
+  return { goal: weekGoal(input, streak.thisWeek), streak, recent, viewers: input.viewers, steps, toVerify: input.toVerify, verified: verified.count ?? 0, week: buildWeek(input) };
 }

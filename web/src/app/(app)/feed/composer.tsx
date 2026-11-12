@@ -112,12 +112,13 @@ export function Composer({ first, last, interests, userId, mediaEnabled = false,
   }
 
   // The box grows with what you write (up to max-h-80) and shrinks back once it's posted or cleared.
+  // Empty and not focused, it's one line (FIX-92: a calmer Home); tapping in opens it to three.
   useEffect(() => {
     const el = textRef.current;
     if (!el) return;
     el.style.height = "auto";
     el.style.height = `${el.scrollHeight}px`;
-  }, [body, question, mode]);
+  }, [body, question, mode, focused]);
 
   // Tags are the #tags written in the text (lib/hashtags.ts); more than three, and the rest are greyed.
   const tags = hashtagsIn(body);
@@ -207,11 +208,14 @@ export function Composer({ first, last, interests, userId, mediaEnabled = false,
             if (!asking && (e.metaKey || e.ctrlKey) && e.key === "Enter") formRef.current?.requestSubmit();
           }}
           maxLength={asking ? 4000 : MAX}
-          rows={asking ? 2 : 3}
-          placeholder={asking ? typed || "Ask Ember anything" : `What are you building, ${first}?${mentionsEnabled ? " Type @ for people or a project." : projects.length ? " Type @ for a project." : ""}`}
+          rows={asking ? 2 : focused || body ? 3 : 1}
+          // Idle: one short line. Tapped in: the @ hint too.
+          placeholder={asking ? typed || "Ask Ember anything" : `What are you building, ${first}?${!focused ? "" : mentionsEnabled ? " Type @ for people or a project." : projects.length ? " Type @ for a project." : ""}`}
           onScroll={(e) => { if (mirrorRef.current) mirrorRef.current.scrollTop = e.currentTarget.scrollTop; }}
           style={{ outline: "none" }}
-          className={cn("relative block max-h-80 w-full resize-none bg-transparent px-0.5 py-2 text-[16px] focus:outline-none leading-relaxed placeholder:text-faint", asking ? "min-h-[4.5rem] pr-14 text-text" : "no-scrollbar min-h-[6rem] text-transparent caret-[var(--text)] selection:bg-[color-mix(in_oklab,var(--accent)_22%,transparent)]")}
+          className={cn("relative block max-h-80 w-full resize-none bg-transparent px-0.5 py-2 text-[16px] focus:outline-none leading-relaxed placeholder:text-faint", asking ? "min-h-[4.5rem] pr-14 text-text" : "no-scrollbar text-transparent caret-[var(--text)] selection:bg-[color-mix(in_oklab,var(--accent)_22%,transparent)]",
+            // Compact until you start (FIX-92): about one line on Home, full height once you tap in or type.
+            !asking && (focused || body ? "min-h-[6rem]" : "min-h-[2.75rem]"))}
         />
         {!asking && at.menu}
         {asking && (
