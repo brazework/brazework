@@ -20,6 +20,7 @@
 - [launch.md](launch.md): turning it on in production, in order (database, test data, admins, schools, keys, checks).
 - [next-migration.md](next-migration.md): every database step with a one-line description. The order itself is [`supabase/order.txt`](../supabase/order.txt).
 - [github-org-move.md](github-org-move.md): moving the repo into the `brazework` GitHub organization (before, the move, the check script, undo).
+- [../infra/README.md](../infra/README.md): production's settings (Supabase, Vercel, DNS) written down in the repo, and `infra/check.mjs`, which reports any drift (read-only).
 - [automation.md](automation.md): what runs by itself (CI, scans, deploys, Linear sync), what needs a person, and what to add next.
 - [data-model.md](data-model.md): the tables and how they relate.
 - [../CONTRIBUTING.md](../CONTRIBUTING.md): how we ship (checks, tests, migrations, secrets, Linear), and the switch to pull requests when the team grows.
