@@ -5,7 +5,7 @@ import { PageHeader, Panel, Skeleton } from "@/components/app/page-ui";
 import { Kicker } from "@/components/ui";
 import { dbFeatures } from "@/lib/db-features";
 import { listApiTokens } from "@/lib/api-tokens";
-import { env } from "@/lib/env";
+import { isConnected } from "@/lib/tool-setup";
 import { getViewer } from "@/lib/supabase/server";
 import { AiToolsSettings, AppearanceSettings, BlockedList, EmailSettings, EmberSettings, HelpSettings, MessagingSettings, PasswordForm, ProfileSettings, YourDataSettings } from "./settings-client";
 import { OnlineStatusSetting, SettingsNav } from "./settings-nav";
@@ -69,7 +69,7 @@ async function Settings() {
       <Section id="messaging" title="Messaging and privacy" desc="Who can message you, and whether you show as online."><OnlineStatusSetting /><div className="my-6 border-t border-line" /><MessagingSettings requestsOn={ms.data ? Boolean(ms.data.requests_on) : true} who={(ms.data?.who_can_message as "everyone" | "communities" | "connections") ?? "everyone"} /></Section>
       <Section id="blocked" title="Blocked people" desc="People who can't message you or see your activity."><BlockedList people={blocked} /></Section>
       <Section id="ember" title="Ember and your data" desc="What Brazework's AI teammate can see, what it can do, and your chats with it."><EmberSettings saving={saving} chats={chatCount.count ?? 0} /></Section>
-      {mcpOn && <Section id="ai-tools" title="AI tools (MCP)" desc="Use your Brazework from Claude, Cursor and other AI assistants."><AiToolsSettings tokens={tokens} endpoint={`${env.siteUrl}/api/mcp`} /></Section>}
+      {mcpOn && <Section id="ai-tools" title="Your tools" desc="Use your Brazework from Claude Code, Cursor, VS Code, Codex and other AI tools."><AiToolsSettings connected={tokens.filter((t) => !t.revoked_at && isConnected(t)).length} total={tokens.filter((t) => !t.revoked_at).length} /></Section>}
       <Section id="data" title="Your data" desc="Download everything you've put on Brazework, or delete your account."><YourDataSettings /></Section>
       <Section id="help" title="Help" desc="Tours, what's new, and how to reach us."><HelpSettings /></Section>
       <Section id="account" title="Account" desc="Your sign-in email, password and session.">
