@@ -28,7 +28,7 @@ export function ExploreCard({ p }: { p: ExploreProject }) {
   const name = `${p.owner?.first_name ?? ""} ${p.owner?.last_name ?? ""}`.trim() || "Brazework member";
   const tools = p.tools ?? [];
   return (
-    <article className="glass-card group relative flex h-full flex-col rounded-3xl p-5 transition duration-300 hover:-translate-y-1">
+    <article className="glass-card group relative flex h-full flex-col rounded-3xl p-5 transition duration-300">
       <div className="flex items-center gap-2">
         <span className="nav-tile grid size-10 shrink-0 place-items-center rounded-xl text-text-2 transition group-hover:text-text"><ProjectIcon tools={tools} className="size-5" /></span>
         <span className="ml-auto flex flex-wrap justify-end gap-1.5">

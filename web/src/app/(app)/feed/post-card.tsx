@@ -103,7 +103,7 @@ export function PostCard({ post, liked, saved = false, own = false, index, proje
       onAnimationComplete={() => markCard(post.id, { seen: true })}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45, delay: Math.min(index, 8) * 0.04, ease: [0.16, 1, 0.3, 1] }}
-      className="group/post glass-card relative rounded-3xl p-5 transition-shadow duration-300 hover:shadow-[0_18px_50px_-24px_rgb(0_0_0/0.35)]"
+      className="group/post glass-card relative rounded-2xl p-5 transition-colors duration-200 hover:border-line-strong"
       onDoubleClick={(e) => {
         if ((e.target as Element).closest("a,button,video,input,textarea")) return;
         window.getSelection()?.removeAllRanges();
@@ -127,7 +127,7 @@ export function PostCard({ post, liked, saved = false, own = false, index, proje
       </AnimatePresence>
       {reason && <p className="mb-3 flex items-center gap-1.5 text-xs text-faint"><Sparkles className="size-3.5 shrink-0" /> {reason}</p>}
       <header className="flex items-center gap-3">
-        <Link prefetch={false} href={`/u/${post.author_id}`} aria-hidden="true" tabIndex={-1} className="rounded-full bg-accent-grad p-[2px]"><Avatar first={post.author_first} last={post.author_last} size={38} src={avatarSrc(post.author)} className="border-2 border-surface" /></Link>
+        <Link prefetch={false} href={`/u/${post.author_id}`} aria-hidden="true" tabIndex={-1} className="shrink-0 rounded-full"><Avatar first={post.author_first} last={post.author_last} size={40} src={avatarSrc(post.author)} /></Link>
         <div className="min-w-0">
           <Link prefetch={false} href={`/u/${post.author_id}`} className="-my-[3px] inline-block py-[3px] text-[15px] font-medium hover:underline">{post.author_first} {post.author_last}</Link>
           <div className="truncate text-xs text-faint">
@@ -181,7 +181,7 @@ export function PostCard({ post, liked, saved = false, own = false, index, proje
       {post.media && post.media.length > 0 && <MediaGrid media={post.media} alt={`Shared by ${post.author_first} ${post.author_last}`} />}
       {project && <BuildStrip project={project} authorId={post.author_id} own={own} />}
       <footer className="mt-3 flex items-center gap-0.5 text-sm text-faint">
-        <button onClick={() => like(!opt.liked)} aria-pressed={opt.liked} aria-label={opt.liked ? "Unlike" : "Like"} className="tap inline-flex h-9 items-center gap-1.5 rounded-full px-3 transition hover:bg-hover hover:text-text active:scale-90">
+        <button onClick={() => like(!opt.liked)} aria-pressed={opt.liked} aria-label={opt.liked ? "Unlike" : "Like"} className="tap inline-flex h-9 items-center gap-1.5 rounded-lg px-3 transition hover:bg-hover hover:text-text active:scale-90">
           <motion.span className="relative" animate={opt.liked ? { scale: [1, 1.35, 1] } : {}} transition={{ duration: 0.35 }}>
             {burst > 0 && <HeartBurst key={burst} />}
             <Heart className={cn("size-[18px] transition", opt.liked && "fill-[var(--accent)] text-accent")} />
@@ -189,20 +189,20 @@ export function PostCard({ post, liked, saved = false, own = false, index, proje
           <RollingCount n={likeCount} className={cn(opt.liked && "text-accent")} />
         </button>
         {viewer ? (
-          <button type="button" onClick={() => { setReplyOpen((v) => !v); requestAnimationFrame(() => replyRef.current?.focus()); }} aria-expanded={replyOpen} aria-label={`${question ? "Answer" : "Reply"} (${replyCount})`} className="tap inline-flex h-9 items-center gap-1.5 rounded-full px-3 transition hover:bg-hover hover:text-text">
+          <button type="button" onClick={() => { setReplyOpen((v) => !v); requestAnimationFrame(() => replyRef.current?.focus()); }} aria-expanded={replyOpen} aria-label={`${question ? "Answer" : "Reply"} (${replyCount})`} className="tap inline-flex h-9 items-center gap-1.5 rounded-lg px-3 transition hover:bg-hover hover:text-text">
             <MessageSquare className="size-[18px]" /> <span className="tabular-nums">{replyCount}</span>
             {question && <span className="text-xs font-medium text-text-2">Answer</span>}
           </button>
         ) : (
-          <Link prefetch={false} href={`/post/${post.id}`} aria-label={`${replyCount} comments`} className="tap inline-flex h-9 items-center gap-1.5 rounded-full px-3 transition hover:bg-hover hover:text-text">
+          <Link prefetch={false} href={`/post/${post.id}`} aria-label={`${replyCount} comments`} className="tap inline-flex h-9 items-center gap-1.5 rounded-lg px-3 transition hover:bg-hover hover:text-text">
             <MessageSquare className="size-[18px]" /> <span className="tabular-nums">{replyCount}</span>
           </Link>
         )}
-        <button onClick={() => act({ saved: !opt.saved }, () => toggleSave(post.id, !opt.saved))} aria-pressed={opt.saved} aria-label={opt.saved ? "Unsave" : "Save"} className="tap inline-flex h-9 items-center gap-1.5 rounded-full px-3 transition hover:bg-hover hover:text-text">
+        <button onClick={() => act({ saved: !opt.saved }, () => toggleSave(post.id, !opt.saved))} aria-pressed={opt.saved} aria-label={opt.saved ? "Unsave" : "Save"} className="tap inline-flex h-9 items-center gap-1.5 rounded-lg px-3 transition hover:bg-hover hover:text-text">
           <Bookmark className={cn("size-[18px]", opt.saved && "fill-[var(--accent)] text-accent")} />
         </button>
         <SendPost postId={post.id} />
-        <button type="button" onClick={share} aria-label={copied ? "Link copied" : "Copy link"} className="tap inline-flex h-9 items-center gap-1.5 rounded-full px-3 transition hover:bg-hover hover:text-text">
+        <button type="button" onClick={share} aria-label={copied ? "Link copied" : "Copy link"} className="tap inline-flex h-9 items-center gap-1.5 rounded-lg px-3 transition hover:bg-hover hover:text-text">
           {copied ? <Check className="size-[18px] text-ok" /> : <Link2 className="size-[18px]" />}
           <AnimatePresence>{copied && <motion.span initial={{ opacity: 0, x: -4 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }} className="text-xs text-ok">Copied</motion.span>}</AnimatePresence>
         </button>

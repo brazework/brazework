@@ -40,7 +40,7 @@ function Shared({ kind, id, mine, spaced }: { kind: Kind; id: string; mine: bool
   }, [kind, id]);
   const faint = mine ? "text-on-accent/70" : "text-faint";
   return (
-    <Link href={`/${kind}/${id}`} className={cn("block w-64 max-w-full rounded-2xl border p-3 text-left transition hover:-translate-y-px", spaced && "mt-2", mine ? "border-on-accent/25 bg-on-accent/10" : "border-line bg-surface/80")}>
+    <Link href={`/${kind}/${id}`} className={cn("block w-64 max-w-full rounded-2xl border p-3 text-left transition", spaced && "mt-2", mine ? "border-on-accent/25 bg-on-accent/10" : "border-line bg-surface/80")}>
       {p === undefined ? (
         <span className={cn("block h-10 animate-pulse rounded-lg", mine ? "bg-on-accent/15" : "bg-raised")} />
       ) : p && kind === "events" && "starts_at" in p ? (

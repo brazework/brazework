@@ -146,7 +146,7 @@ export function ClubShowcase() {
               </div>
               <div className="mt-3 flex gap-2">
                 <span className="inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-full bg-ok text-sm font-medium text-white"><Check className="size-4" /> Verify</span>
-                <span className="inline-flex h-9 items-center justify-center rounded-full border border-line px-4 text-sm">Ask for more</span>
+                <span className="inline-flex h-9 items-center justify-center rounded-lg border border-line px-4 text-sm">Ask for more</span>
               </div>
             </div>
             <div className="m-hide mt-4 grid grid-cols-3 gap-2 text-center">

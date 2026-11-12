@@ -56,7 +56,7 @@ async function Challenges({ searchParams }: { searchParams: PageProps<"/challeng
       <PageHeader
         title="Challenges"
         subtitle="Build briefs from companies and schools. Enter with a project, and the sponsor sees your verified work."
-        actions={canPost ? <Link href="/challenges/new" className="inline-flex h-10 items-center gap-1.5 rounded-full bg-accent px-4 text-sm font-medium text-on-accent shadow-[var(--shadow)] transition hover:opacity-90"><Plus className="size-4" /> Post a challenge</Link> : undefined}
+        actions={canPost ? <Link href="/challenges/new" className="inline-flex h-10 items-center gap-1.5 rounded-lg bg-accent px-4 text-sm font-medium text-on-accent shadow-[var(--shadow)] transition hover:opacity-90"><Plus className="size-4" /> Post a challenge</Link> : undefined}
       />
       <div className="mt-6">
         <Tabs active={tab} tabs={[
@@ -69,7 +69,7 @@ async function Challenges({ searchParams }: { searchParams: PageProps<"/challeng
         {list.map((c) => {
           const left = daysLeft(c.deadline, now);
           return (
-            <Link key={c.id} href={`/challenges/${c.id}`} className="glass-card group flex min-w-0 flex-col gap-3 rounded-3xl p-5 transition hover:-translate-y-0.5">
+            <Link key={c.id} href={`/challenges/${c.id}`} className="glass-card group flex min-w-0 flex-col gap-3 rounded-3xl p-5 transition">
               <div className="flex items-center gap-2 text-xs text-faint">
                 <Building2 className="size-3.5" /> <span className="truncate">{c.organizations?.name ?? "Sponsor"}</span>
                 <span className="ml-auto shrink-0 rounded-full bg-surface-2 px-2 py-0.5 text-[11px] text-text-2">

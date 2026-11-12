@@ -296,7 +296,7 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
         </div>
         {/* Topics, and on phones the sort too, in one compact menu so the row never wraps. */}
         <details className={cn("group relative shrink-0", !interests.length && "sm:hidden")}>
-          <summary aria-label={tag ? `Topic: ${tag}` : "Topics and sort"} className={cn("flex size-9 cursor-pointer list-none items-center justify-center gap-1.5 rounded-full border text-xs font-medium transition sm:h-8 sm:w-auto sm:px-3 [&::-webkit-details-marker]:hidden", tag ? "bg-accent-grad border-transparent text-on-accent" : "border-line bg-surface text-text-2 hover:border-line-strong hover:text-text")}>
+          <summary aria-label={tag ? `Topic: ${tag}` : "Topics and sort"} className={cn("flex size-9 cursor-pointer list-none items-center justify-center gap-1.5 rounded-lg border text-xs font-medium transition sm:h-8 sm:w-auto sm:px-3 [&::-webkit-details-marker]:hidden", tag ? "bg-accent-grad border-transparent text-on-accent" : "border-line bg-surface text-text-2 hover:border-line-strong hover:text-text")}>
             <SlidersHorizontal className="size-4 sm:hidden" />
             <Hash className="hidden size-3.5 sm:block" /><span className="hidden sm:inline">{tag || "Topics"}</span>
             <ChevronDown className="hidden size-3 transition group-open:rotate-180 sm:block" />

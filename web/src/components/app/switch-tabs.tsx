@@ -30,7 +30,7 @@ export function SwitchTabs({ items, name, className }: { items: Item[]; name: st
             onClick={() => { history.replaceState(null, "", `#${i.id}`); rerender((n) => n + 1); }}
             className={cn("relative inline-flex shrink-0 items-center gap-2 rounded-xl px-4 py-2 text-sm font-medium transition active:scale-95", i.id === active ? "text-on-accent" : "text-muted hover:text-text")}
           >
-            {i.id === active && <motion.span layoutId={`${name}-pill`} className="bg-accent-grad absolute inset-0 rounded-xl shadow-[0_6px_18px_-8px_var(--accent)]" transition={{ type: "spring", stiffness: 420, damping: 34 }} />}
+            {i.id === active && <motion.span layoutId={`${name}-pill`} className="bg-accent-grad absolute inset-0 rounded-xl" transition={{ type: "spring", stiffness: 420, damping: 34 }} />}
             <span className="relative">{i.label}</span>
             {i.count !== undefined && <span className={cn("relative rounded-full px-1.5 text-[11px] tabular-nums", i.id === active ? "bg-black/15" : "bg-raised")}>{i.count}</span>}
           </button>

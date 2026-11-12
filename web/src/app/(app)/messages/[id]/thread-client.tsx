@@ -125,7 +125,7 @@ export function ThreadScroll({ msgs, me, cid, otherName = "", reactions = [], ex
       {rx.error && <p role="alert" className="mt-2 text-center text-xs text-danger" onClick={rx.clearError}>{rx.error}</p>}
       {typing && (
         <div className="mt-3 flex items-center gap-2 text-xs text-muted">
-          <span className="glass-card inline-flex gap-1 rounded-full px-3 py-2.5" aria-hidden="true">{[0, 1, 2].map((k) => <span key={k} className="size-1.5 animate-bounce rounded-full bg-muted" style={{ animationDelay: `${k * 120}ms` }} />)}</span>
+          <span className="glass-card inline-flex gap-1 rounded-lg px-3 py-2.5" aria-hidden="true">{[0, 1, 2].map((k) => <span key={k} className="size-1.5 animate-bounce rounded-full bg-muted" style={{ animationDelay: `${k * 120}ms` }} />)}</span>
           {otherName || "They"} is typing…
         </div>
       )}
@@ -182,7 +182,7 @@ export function Composer({ cid, placeholder }: { cid: string; placeholder: strin
           style={{ outline: "none" }}
           className="max-h-40 min-h-10 flex-1 resize-none bg-transparent px-3 py-2 text-[15px] text-text placeholder:text-faint"
         />
-        <button type="submit" disabled={!body.trim()} aria-label="Send" className="bg-accent-grad grid size-10 shrink-0 place-items-center rounded-full text-on-accent transition hover:-translate-y-px active:scale-90 disabled:opacity-40">
+        <button type="submit" disabled={!body.trim()} aria-label="Send" className="bg-accent-grad grid size-10 shrink-0 place-items-center rounded-full text-on-accent transition active:scale-90 disabled:opacity-40">
           {pending ? <Loader2 className="size-4 animate-spin" /> : <ArrowUp className="size-4" />}
         </button>
       </div>
@@ -193,7 +193,7 @@ export function Composer({ cid, placeholder }: { cid: string; placeholder: strin
 export function RequestBar({ cid, firstName }: { cid: string; firstName: string }) {
   const [pending, start] = useTransition();
   const [error, setError] = useState("");
-  const btn = "inline-flex h-9 items-center rounded-full px-4 text-sm font-medium transition disabled:opacity-50";
+  const btn = "inline-flex h-9 items-center rounded-lg px-4 text-sm font-medium transition disabled:opacity-50";
   return (
     <div className="flex flex-wrap items-center gap-2 border-b border-line bg-surface-2 px-4 py-3">
       <p className="mr-auto text-sm text-text-2">{firstName || "This member"} isn&apos;t connected with you yet.</p>

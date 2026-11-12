@@ -155,21 +155,21 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
         <CoverBanner path={p.cover_path} editable={mine && mediaOn} userId={user.id} />
         <div className="px-6 pb-6">
           <div className="pointer-events-none relative z-10 -mt-14 flex flex-wrap items-end justify-between gap-4 *:pointer-events-auto">
-            <div className="inline-flex rounded-full bg-accent-grad p-[3px] shadow-[var(--shadow)]">
+            <div className="inline-flex rounded-full">
               <WithPresence id={p.id} dot="size-5 ring-4 top-[4%] bottom-auto"><ProfilePhoto path={p.avatar_path} first={p.first_name} last={p.last_name} editable={mine && mediaOn} userId={user.id} size={104} /></WithPresence>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <CopyLink path={`/u/${p.id}`} label="Share" />
-              <Link href={`/u/${p.id}/resume`} className="inline-flex h-10 items-center gap-1.5 rounded-full border border-line bg-surface px-4 text-sm transition hover:bg-hover active:scale-95"><FileText className="size-4" /> Résumé</Link>
+              <Link href={`/u/${p.id}/resume`} className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-line bg-surface px-4 text-sm transition hover:bg-hover active:scale-95"><FileText className="size-4" /> Résumé</Link>
               {mine && (
-                <Link href={`/u/${p.id}?view=visitor`} className="inline-flex h-10 items-center gap-1.5 rounded-full border border-line bg-surface px-4 text-sm transition hover:bg-hover active:scale-95"><Eye className="size-4" /> Preview</Link>
+                <Link href={`/u/${p.id}?view=visitor`} title="Preview as a visitor" className="inline-flex h-10 w-10 items-center justify-center gap-1.5 rounded-lg border border-line bg-surface text-sm transition hover:bg-hover active:scale-95 sm:w-auto sm:px-4"><Eye className="size-4" /> <span className="sr-only sm:not-sr-only">Preview</span></Link>
               )}
               {mine ? (
-                <Link href="/dashboard" data-tour="analytics" className="inline-flex h-10 items-center gap-1.5 rounded-full border border-line bg-surface px-4 text-sm transition hover:bg-hover active:scale-95">
-                  <BarChart3 className="size-4" /> Dashboard
+                <Link href="/dashboard" data-tour="analytics" title="Dashboard" className="inline-flex h-10 w-10 items-center justify-center gap-1.5 rounded-lg border border-line bg-surface text-sm transition hover:bg-hover active:scale-95 sm:w-auto sm:px-4">
+                  <BarChart3 className="size-4" /> <span className="sr-only sm:not-sr-only">Dashboard</span>
                 </Link>
               ) : preview ? (
-                <Link href={`/u/${p.id}`} className="bg-accent-grad inline-flex h-10 items-center gap-1.5 rounded-full px-4 text-sm font-medium text-on-accent transition active:scale-95">Done previewing</Link>
+                <Link href={`/u/${p.id}`} className="bg-accent-grad inline-flex h-10 items-center gap-1.5 rounded-lg px-4 text-sm font-medium text-on-accent transition active:scale-95">Done previewing</Link>
               ) : (
                 rel && <ConnectButtons personId={p.id} firstName={p.first_name} relationship={rel} />
               )}
@@ -196,7 +196,7 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
               {stats.map((st) => (
                 <li key={st.label}>
                   {/* In-page tabs (#projects) need a plain anchor so the hashchange reaches the tabs. */}
-                  <a href={st.href} className="block rounded-2xl border border-line bg-surface-2/60 px-3 py-3 text-center transition hover:-translate-y-0.5 hover:border-line-strong hover:bg-surface hover:shadow-[var(--shadow)] active:scale-95">
+                  <a href={st.href} className="block rounded-2xl border border-line bg-surface-2/60 px-3 py-3 text-center transition hover:border-line-strong hover:bg-surface active:scale-95">
                     <span className="block text-2xl font-semibold tracking-tight"><CountUp to={st.n} /></span>
                     <span className="block text-xs text-muted">{st.label}</span>
                   </a>
@@ -233,7 +233,7 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
         <div className="flex min-w-0 flex-col gap-6">
           {mine ? (hideStrength ? null : <ProfileStrength steps={steps} />) : <SharedContext clubs={sharedClubs} mutual={mutual} mutualCount={mutualCount} />}
           {nowBuilding && (
-            <Link href={`/projects/${nowBuilding.id}`} className="glass-card group flex flex-col rounded-3xl p-5 transition hover:-translate-y-0.5">
+            <Link href={`/projects/${nowBuilding.id}`} className="glass-card group flex flex-col rounded-3xl p-5 transition">
               <span className="flex items-center gap-2 text-xs font-medium tracking-wide text-faint uppercase"><span className="size-1.5 animate-pulse rounded-full bg-text" /> Now building</span>
               <span className="mt-3 flex items-start gap-3">
                 <span className="nav-tile grid size-10 shrink-0 place-items-center rounded-xl text-text-2"><ProjectIcon tools={nowBuilding.tools} className="size-5" /></span>

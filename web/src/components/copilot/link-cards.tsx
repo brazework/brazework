@@ -37,7 +37,7 @@ function Entity({ kind, id }: { kind: "c" | "u"; id: string }) {
     return () => { live = false; };
   }, [kind, id]);
   return (
-    <Link href={`/${kind}/${id}`} className="flex w-64 max-w-full items-center gap-3 rounded-2xl border border-line bg-surface/80 p-3 text-left transition hover:-translate-y-px hover:border-line-strong">
+    <Link href={`/${kind}/${id}`} className="flex w-64 max-w-full items-center gap-3 rounded-2xl border border-line bg-surface/80 p-3 text-left transition hover:border-line-strong">
       {p === undefined ? (
         <span className="block h-10 w-full animate-pulse rounded-lg bg-raised" />
       ) : p && "name" in p ? (

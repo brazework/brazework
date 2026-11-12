@@ -61,7 +61,7 @@ export function ConvList({ convs, requestsOn, groups = null }: { convs: Conv[]; 
         <div className="relative mt-3">
           <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-faint" />
           <label htmlFor="conv-q" className="sr-only">Search messages</label>
-          <input id="conv-q" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search people and messages" style={{ outline: "none" }} className="h-9 w-full rounded-full bg-surface-2/70 pr-8 pl-9 text-sm placeholder:text-faint focus:bg-surface-2" />
+          <input id="conv-q" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search people and messages" style={{ outline: "none" }} className="h-9 w-full rounded-lg bg-surface-2/70 pr-8 pl-9 text-sm placeholder:text-faint focus:bg-surface-2" />
           {q && <button type="button" onClick={() => setQ("")} aria-label="Clear search" className="absolute top-1/2 right-2 grid size-6 -translate-y-1/2 place-items-center rounded-full text-faint hover:text-text"><X className="size-3.5" /></button>}
         </div>
       </div>

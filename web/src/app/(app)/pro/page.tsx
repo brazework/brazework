@@ -31,7 +31,7 @@ async function Pro() {
         <Building2 className="size-5 text-muted" />
         <p className="mt-3 font-medium">Pro reviews need your work email</p>
         <p className="mt-1 text-muted">Sign-offs carry your employer&apos;s name, so they come from an account whose email is at a verified company on Brazework. Log in with your work email, or register your company first.</p>
-        <Link href="/org" className="mt-4 inline-flex h-10 items-center rounded-full border border-line px-4 font-medium transition hover:bg-hover">Register your company</Link>
+        <Link href="/org" className="mt-4 inline-flex h-10 items-center rounded-lg border border-line px-4 font-medium transition hover:bg-hover">Register your company</Link>
       </Panel>
     );
   if (!s.pro) return <ProSetup employer={s.employer.name} groups={TOPICS.map((g) => ({ name: g.name, topics: [...g.topics] }))} />;

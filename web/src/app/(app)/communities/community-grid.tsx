@@ -39,7 +39,7 @@ export function CommunityGrid({ items, discover = false, initialQuery = "", empt
           <div className="relative">
             <Search className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-faint" />
             <label htmlFor="cq" className="sr-only">Search communities</label>
-            <input id="cq" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search by name, field or topic" className="glass-card h-12 w-full rounded-full pr-11 pl-11 text-[15px] outline-none transition placeholder:text-faint" />
+            <input id="cq" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search by name, field or topic" className="glass-card h-12 w-full rounded-lg pr-11 pl-11 text-[15px] outline-none transition placeholder:text-faint" />
             {q && <button type="button" onClick={() => setQ("")} aria-label="Clear search" className="absolute top-1/2 right-3 grid size-7 -translate-y-1/2 place-items-center rounded-full text-faint hover:bg-hover hover:text-text"><X className="size-4" /></button>}
           </div>
           {fields.length > 1 && (
@@ -70,7 +70,7 @@ export function CommunityGrid({ items, discover = false, initialQuery = "", empt
 
 export function CommunityCard({ c, role, joinable, pulse }: { c: Community; role?: Role; joinable: boolean; pulse?: Pulse }) {
   return (
-    <article className="glass-card group relative flex h-full flex-col overflow-hidden rounded-3xl transition duration-300 hover:-translate-y-1">
+    <article className="glass-card group relative flex h-full flex-col overflow-hidden rounded-3xl transition duration-300">
       <div className="relative h-24 overflow-hidden border-b border-line">
         {c.cover_path ? <Image src={mediaUrl(c.cover_path)} alt="" fill sizes="(min-width: 640px) 440px, 100vw" className="object-cover transition duration-500 group-hover:scale-105" /> : <div className="cover-empty absolute inset-0 transition duration-500 group-hover:scale-110" style={{ backgroundImage: accentTint(c.accent) }} />}
         {pulse && pulse.week > 0 && <span className="absolute top-2.5 right-2.5 inline-flex items-center gap-1 rounded-full bg-bg/75 px-2 py-0.5 text-[11px] font-medium text-text backdrop-blur"><Flame className="size-3 text-accent" /> {pulse.week} this week</span>}
@@ -104,7 +104,7 @@ function QuickJoin({ c }: { c: Community }) {
   const [pending, start] = useTransition();
   if (state !== "none")
     return (
-      <span className="relative inline-flex h-9 items-center gap-1.5 rounded-full bg-[color-mix(in_oklab,var(--ok)_14%,transparent)] px-4 text-sm font-medium text-ok">
+      <span className="relative inline-flex h-9 items-center gap-1.5 rounded-lg bg-[color-mix(in_oklab,var(--ok)_14%,transparent)] px-4 text-sm font-medium text-ok">
         {state === "joined" && <Celebrate pieces={18} />}
         <Check className="size-4" /> {state === "joined" ? "Joined" : "Requested"}
       </span>
@@ -119,7 +119,7 @@ function QuickJoin({ c }: { c: Community }) {
           if (r.ok) setState(c.privacy === "public" ? "joined" : "requested");
           else setMsg(r.message);
         })}
-        className="bg-accent-grad inline-flex h-9 items-center gap-1.5 rounded-full px-4 text-sm font-medium text-on-accent shadow-[0_8px_20px_-10px_var(--accent)] transition hover:-translate-y-px active:scale-95 disabled:opacity-60"
+        className="bg-accent-grad inline-flex h-9 items-center gap-1.5 rounded-lg px-4 text-sm font-medium text-on-accent transition active:scale-95 disabled:opacity-60"
       >
         {pending && <Loader2 className="size-4 animate-spin" />} {c.privacy === "public" ? "Join" : "Ask to join"}
       </button>

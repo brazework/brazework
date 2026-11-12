@@ -20,7 +20,7 @@ export function CopyLink({ path, label = "Copy link", className }: { path: strin
           setFailed(true);
         }
       }}
-      className={cn("inline-flex h-10 items-center gap-1.5 rounded-full border border-line bg-surface px-4 text-sm transition hover:bg-hover active:scale-95", className)}
+      className={cn("inline-flex h-10 items-center gap-1.5 rounded-lg border border-line bg-surface px-4 text-sm transition hover:bg-hover active:scale-95", className)}
     >
       <AnimatePresence mode="wait" initial={false}>
         <motion.span key={copied ? "y" : "n"} initial={{ scale: 0.6, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.6, opacity: 0 }} transition={{ duration: 0.15 }} className="inline-flex items-center gap-1.5">

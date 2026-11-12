@@ -127,7 +127,7 @@ export function AppearanceSettings() {
         <div className="mb-3 text-sm font-medium text-text-2">Theme</div>
         <div role="radiogroup" aria-label="Theme" className="grid grid-cols-2 gap-3 sm:grid-cols-3">
           {SKINS.map((k) => (
-            <button key={k.id} role="radio" aria-checked={skin === k.id} onClick={() => applySkin(k.id)} className="group overflow-hidden rounded-2xl border border-line text-left transition hover:-translate-y-0.5 aria-checked:border-transparent aria-checked:ring-2 aria-checked:ring-[var(--accent)]">
+            <button key={k.id} role="radio" aria-checked={skin === k.id} onClick={() => applySkin(k.id)} className="group overflow-hidden rounded-2xl border border-line text-left transition aria-checked:border-transparent aria-checked:ring-2 aria-checked:ring-[var(--accent)]">
               {/* A tiny preview of the theme: its background, a card and its gradient. */}
               <div className="relative h-20 p-2.5" style={{ background: k.bg }}>
                 <div className="h-full rounded-lg p-2" style={{ background: k.card }}>
@@ -187,7 +187,7 @@ export function BlockedList({ people }: { people: { id: string; name: string }[]
       {shown.map((p) => (
         <li key={p.id} className="flex items-center justify-between py-3 first:pt-0 last:pb-0">
           <span className="text-sm">{p.name}</span>
-          <button disabled={pending} onClick={() => start(async () => { const r = await unblockPerson(p.id); if (r.ok) setDone((d) => [...d, p.id]); })} className="inline-flex h-9 items-center rounded-full border border-line px-4 text-sm transition hover:bg-hover">Unblock</button>
+          <button disabled={pending} onClick={() => start(async () => { const r = await unblockPerson(p.id); if (r.ok) setDone((d) => [...d, p.id]); })} className="inline-flex h-9 items-center rounded-lg border border-line px-4 text-sm transition hover:bg-hover">Unblock</button>
         </li>
       ))}
     </ul>
@@ -233,7 +233,7 @@ export function EmberSettings({ saving, chats }: { saving: boolean; chats: numbe
       {saving && (
         <div className="flex flex-wrap items-center gap-3 border-t border-line pt-4">
           <span className="text-muted">{left ? `${left} saved ${left === 1 ? "chat" : "chats"}` : "No saved chats"}</span>
-          <button type="button" disabled={!left || pending} onClick={() => { if (!confirm("Delete all your Ember chats? This can't be undone.")) return; start(async () => { const r = await deleteAllChats(); setMsg(r.ok ? "All your Ember chats are deleted." : r.message); if (r.ok) setLeft(0); }); }} className="inline-flex h-9 items-center gap-1.5 rounded-full border border-line px-4 font-medium text-text transition hover:border-danger hover:text-danger disabled:opacity-40">
+          <button type="button" disabled={!left || pending} onClick={() => { if (!confirm("Delete all your Ember chats? This can't be undone.")) return; start(async () => { const r = await deleteAllChats(); setMsg(r.ok ? "All your Ember chats are deleted." : r.message); if (r.ok) setLeft(0); }); }} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-line px-4 font-medium text-text transition hover:border-danger hover:text-danger disabled:opacity-40">
             {pending && <Loader2 className="size-4 animate-spin" />} Delete all Ember chats
           </button>
           {msg && <p role="status" className="w-full text-xs text-muted">{msg}</p>}
@@ -267,7 +267,7 @@ export function YourDataSettings() {
   return (
     <div className="flex flex-col gap-6">
       <div>
-        <a href="/api/export" download className="inline-flex h-10 items-center rounded-full border border-line px-4 text-sm font-medium transition hover:bg-hover">Download my data</a>
+        <a href="/api/export" download className="inline-flex h-10 items-center rounded-lg border border-line px-4 text-sm font-medium transition hover:bg-hover">Download my data</a>
         <p className="mt-2 text-xs text-muted">A JSON file with your profile, posts, replies, projects, milestones, messages you sent, clubs, follows and saved posts, plus links to your files. Brazework never pulls records from your school. <Link href="/privacy" className="underline hover:text-text">How Brazework handles your data</Link></p>
       </div>
       <form className="border-t border-line pt-6" onSubmit={(e) => { e.preventDefault(); start(async () => { const r = await deleteAccount(confirm); setState(r); if (r.ok) { router.replace("/"); router.refresh(); } }); }}>
@@ -275,8 +275,8 @@ export function YourDataSettings() {
         <p className="mt-1 text-xs text-muted">Deletes your profile, posts, replies, projects, milestones and messages, and your uploaded files. Verification records keep only an anonymous entry. Clubs you run with other members need a new owner first (Hand off). This can&apos;t be undone.</p>
         <label className="mt-3 block text-xs text-muted" htmlFor="delete-confirm">Type DELETE to confirm</label>
         <div className="mt-1 flex flex-wrap gap-2">
-          <input id="delete-confirm" value={confirm} onChange={(e) => setConfirm(e.target.value)} autoComplete="off" className="h-10 w-40 rounded-full border border-line bg-surface-2 px-3 text-sm" />
-          <button type="submit" disabled={confirm !== "DELETE" || pending} className="h-10 rounded-full bg-danger px-4 text-sm font-medium text-white disabled:opacity-40">{pending ? "Deleting…" : "Delete my account"}</button>
+          <input id="delete-confirm" value={confirm} onChange={(e) => setConfirm(e.target.value)} autoComplete="off" className="h-10 w-40 rounded-lg border border-line bg-surface-2 px-3 text-sm" />
+          <button type="submit" disabled={confirm !== "DELETE" || pending} className="h-10 rounded-lg bg-danger px-4 text-sm font-medium text-white disabled:opacity-40">{pending ? "Deleting…" : "Delete my account"}</button>
         </div>
         {state.message && <p role="status" className={state.ok ? "mt-2 text-sm text-ok" : "mt-2 text-sm text-danger"}>{state.message}</p>}
       </form>

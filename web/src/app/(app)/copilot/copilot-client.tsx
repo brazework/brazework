@@ -61,7 +61,7 @@ export function CopilotSoon() {
         <div className="mt-3 flex flex-wrap justify-center gap-2">
           {[[Search, "Search Brazework", "/search"], [Users, "Find clubs", "/communities?tab=discover"], [CalendarDays, "Events this week", "/events"], [FileText, "Add a project", "/profile#projects"]].map(([Icon, label, href]) => {
             const I = Icon as typeof Search;
-            return <Link key={label as string} href={href as string} className="glass-card inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm text-text-2 transition hover:-translate-y-px hover:text-text"><I className="size-4" /> {label as string} <ArrowRight className="size-3.5 text-faint" /></Link>;
+            return <Link key={label as string} href={href as string} className="glass-card inline-flex items-center gap-2 rounded-lg px-4 py-2 text-sm text-text-2 transition hover:text-text"><I className="size-4" /> {label as string} <ArrowRight className="size-3.5 text-faint" /></Link>;
           })}
         </div>
       </section>
@@ -202,7 +202,7 @@ export function CopilotChat({ first, field, initial = "", chats = [], chat = nul
         {busy ? (
           <button type="button" onClick={stop} aria-label="Stop" className="grid size-11 place-items-center rounded-full border border-line text-text transition hover:bg-hover"><Square className="size-4 fill-current" /></button>
         ) : (
-          <button type="submit" disabled={!input.trim()} aria-label="Send" className="bg-accent-grad grid size-11 place-items-center rounded-full text-on-accent shadow-[0_8px_20px_-10px_var(--accent)] transition hover:-translate-y-px active:scale-90 disabled:opacity-40"><ArrowUp className="size-5" /></button>
+          <button type="submit" disabled={!input.trim()} aria-label="Send" className="bg-accent-grad grid size-11 place-items-center rounded-full text-on-accent transition active:scale-90 disabled:opacity-40"><ArrowUp className="size-5" /></button>
         )}
       </form>
       {/* Plain disclosure, every time: what Ember is and what it can do on its own (nothing). */}
@@ -244,7 +244,7 @@ export function CopilotChat({ first, field, initial = "", chats = [], chat = nul
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: 0.1 + (gi * 2 + i) * 0.04 }}
                         onClick={() => (idea.text.endsWith(": ") || idea.text.endsWith("/") ? (setInput(idea.text), document.getElementById("copilot-input")?.focus()) : void send(idea.text))}
-                        className="glass-card group flex items-start gap-3 rounded-2xl p-3 text-left text-sm transition duration-300 hover:-translate-y-0.5 active:scale-[0.98]"
+                        className="glass-card group flex items-start gap-3 rounded-2xl p-3 text-left text-sm transition duration-300 active:scale-[0.98]"
                       >
                         <span className="nav-tile grid size-8 shrink-0 place-items-center rounded-[10px] text-text-2 transition group-hover:text-text"><idea.icon className="size-4" /></span>
                         <span className="pt-1 leading-snug text-text-2">{idea.text}</span>
@@ -299,7 +299,7 @@ export function CopilotChat({ first, field, initial = "", chats = [], chat = nul
           {!busy && lastAnswer?.role === "assistant" && lastAnswer.next?.length ? (
             <div className="flex flex-wrap gap-2 pl-11">
               {lastAnswer.next.map((n) => (
-                <button key={n} type="button" onClick={() => void send(n)} className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface/80 px-3 py-1.5 text-left text-xs font-medium text-text-2 transition hover:-translate-y-px hover:border-line-strong hover:text-text active:scale-95">
+                <button key={n} type="button" onClick={() => void send(n)} className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface/80 px-3 py-1.5 text-left text-xs font-medium text-text-2 transition hover:border-line-strong hover:text-text active:scale-95">
                   <CornerDownRight className="size-3.5 shrink-0 text-accent" /> {n}
                 </button>
               ))}
@@ -318,7 +318,7 @@ export function CopilotChat({ first, field, initial = "", chats = [], chat = nul
 function ChatRail({ list, current, opening, onOpen, onNew, onDelete, onDeleteAll }: { list: ChatSummary[]; current: string | null; opening: string | null; onOpen: (id: string) => void; onNew: () => void; onDelete: (id: string) => void; onDeleteAll: () => void }) {
   return (
     <div className="flex h-full flex-col">
-      <button type="button" onClick={onNew} className="glass-card inline-flex items-center justify-center gap-1.5 rounded-2xl px-3 py-2.5 text-sm font-medium transition hover:-translate-y-px"><Plus className="size-4" /> New chat</button>
+      <button type="button" onClick={onNew} className="glass-card inline-flex items-center justify-center gap-1.5 rounded-2xl px-3 py-2.5 text-sm font-medium transition"><Plus className="size-4" /> New chat</button>
       <h2 className="mt-5 mb-2 px-2 text-xs font-medium tracking-wide text-faint uppercase">Your chats</h2>
       <ul className="-mx-1 flex-1 space-y-0.5 overflow-y-auto px-1">
         {list.map((c) => (
@@ -367,7 +367,7 @@ function Rate({ question, answer, tools }: { question: string; answer: string; t
           </div>
           <textarea value={note} onChange={(e) => setNote(e.target.value)} maxLength={400} rows={2} placeholder="Anything else? (optional)" className="mt-2 w-full resize-none rounded-xl border border-line bg-surface px-3 py-2 text-sm outline-none focus:border-line-strong" />
           <p className="mt-1 text-[11px] leading-snug text-faint">Sends this question and answer to the Brazework team, nothing else from the chat.</p>
-          <button type="button" disabled={pending || (!reason && !note.trim())} onClick={() => void send("down")} className="bg-accent-grad mt-2 inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-xs font-medium text-on-accent disabled:opacity-40">{pending && <Loader2 className="size-3.5 animate-spin" />} Send</button>
+          <button type="button" disabled={pending || (!reason && !note.trim())} onClick={() => void send("down")} className="bg-accent-grad mt-2 inline-flex h-8 items-center gap-1.5 rounded-lg px-3 text-xs font-medium text-on-accent disabled:opacity-40">{pending && <Loader2 className="size-3.5 animate-spin" />} Send</button>
         </div>
       )}
     </>

@@ -40,7 +40,7 @@ async function Results({ searchParams }: { searchParams: PageProps<"/search">["s
   return (
     <>
       <PageHeader title={`Results for “${q}”`} subtitle={total ? [`${res.people.length} ${res.people.length === 1 ? "person" : "people"}`, `${res.communities.length} ${res.communities.length === 1 ? "community" : "communities"}`, `${res.projects.length} ${res.projects.length === 1 ? "project" : "projects"}`, `${res.events.length} ${res.events.length === 1 ? "event" : "events"}`, `${res.posts.length} ${res.posts.length === 1 ? "post" : "posts"}`].join(" · ") : undefined} />
-      <Link href={`/copilot?q=${encodeURIComponent(q)}`} className={`grad-edge mt-6 flex items-center gap-3 rounded-3xl border p-4 shadow-[var(--shadow)] transition hover:-translate-y-0.5 ${res.question ? "" : "opacity-90"}`}>
+      <Link href={`/copilot?q=${encodeURIComponent(q)}`} className={`grad-edge mt-6 flex items-center gap-3 rounded-3xl border p-4 shadow-[var(--shadow)] transition ${res.question ? "" : "opacity-90"}`}>
         <span className="bg-accent-grad grid size-10 shrink-0 place-items-center rounded-xl text-on-accent"><Sparkles className="size-5" /></span>
         <span className="min-w-0 flex-1"><span className="block font-medium">{res.question ? "This looks like a question. Ask Copilot" : "Ask Copilot about this"}</span><span className="block truncate text-sm text-muted">&ldquo;{q}&rdquo;: answers with clubs, events and people from Brazework</span></span>
       </Link>

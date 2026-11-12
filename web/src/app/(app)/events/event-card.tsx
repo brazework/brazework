@@ -17,7 +17,7 @@ export function EventCard({ event: e, going, saved, now, match = "", friends = [
   const over = isOver(e, now);
   const badge = whenBadge(e, now);
   return (
-    <article id={`ev-${e.id}`} className="glass-card grid scroll-mt-24 grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-3 rounded-3xl p-4 transition duration-300 hover:-translate-y-0.5 sm:flex sm:p-5">
+    <article id={`ev-${e.id}`} className="glass-card grid scroll-mt-24 grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-3 rounded-3xl p-4 transition duration-300 sm:flex sm:p-5">
       <div className={cn("flex w-14 shrink-0 flex-col self-start items-center justify-center rounded-2xl py-2 text-center transition-colors", marks.going ? "bg-accent-grad text-on-accent" : "bg-raised")}>
         <span className={cn("font-mono text-[10px] tracking-widest uppercase", marks.going ? "opacity-80" : "text-muted")}>{d.mon}</span>
         <span className="text-2xl leading-none font-semibold">{d.day}</span>

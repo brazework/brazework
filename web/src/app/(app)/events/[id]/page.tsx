@@ -100,7 +100,7 @@ async function EventView({ params }: { params: PageProps<"/events/[id]">["params
             <CopyLink path={`/events/${e.id}`} label="Share" />
             {going && f.groupChats && (
               <form action={openEventChat.bind(null, e.id)}>
-                <button className="inline-flex h-10 items-center gap-1.5 rounded-full border border-line px-4 text-sm font-medium transition hover:bg-hover active:scale-95"><MessagesSquare className="size-4" /> Event chat</button>
+                <button className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-line px-4 text-sm font-medium transition hover:bg-hover active:scale-95"><MessagesSquare className="size-4" /> Event chat</button>
               </form>
             )}
           </div>
@@ -119,8 +119,8 @@ async function EventView({ params }: { params: PageProps<"/events/[id]">["params
             <iframe title={`Map of ${e.location}`} src={`https://maps.google.com/maps?q=${q}&z=15&output=embed`} loading="lazy" referrerPolicy="no-referrer-when-downgrade" className="block h-72 w-full border-0 bg-surface-2" />
             <div className="flex flex-wrap items-center gap-2 p-4">
               <span className="mr-auto flex min-w-0 items-center gap-1.5 text-sm"><MapPin className="size-4 shrink-0 text-faint" /> <span className="truncate">{e.location}</span></span>
-              <a href={`https://maps.apple.com/?q=${q}`} target="_blank" rel="noopener noreferrer" className="inline-flex h-9 items-center gap-1.5 rounded-full border border-line px-3.5 text-sm transition hover:bg-hover">Apple Maps</a>
-              <a href={`https://www.google.com/maps/dir/?api=1&destination=${q}`} target="_blank" rel="noopener noreferrer" className="inline-flex h-9 items-center gap-1.5 rounded-full bg-text px-3.5 text-sm text-bg transition hover:opacity-90"><Navigation className="size-3.5" /> Directions</a>
+              <a href={`https://maps.apple.com/?q=${q}`} target="_blank" rel="noopener noreferrer" className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-line px-3.5 text-sm transition hover:bg-hover">Apple Maps</a>
+              <a href={`https://www.google.com/maps/dir/?api=1&destination=${q}`} target="_blank" rel="noopener noreferrer" className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-text px-3.5 text-sm text-bg transition hover:opacity-90"><Navigation className="size-3.5" /> Directions</a>
             </div>
           </Panel>
         )}
@@ -129,13 +129,13 @@ async function EventView({ params }: { params: PageProps<"/events/[id]">["params
           <Panel className="flex items-center gap-4 p-5">
             <span className="nav-tile grid size-11 shrink-0 place-items-center rounded-xl text-text"><Video className="size-5" /></span>
             <span className="min-w-0 flex-1"><span className="block text-sm font-medium">Join online</span><span className="block truncate text-xs text-muted">{link.replace(/^https?:\/\//, "")}</span></span>
-            <a href={link} target="_blank" rel="noopener noreferrer nofollow" className="inline-flex h-10 items-center gap-1.5 rounded-full bg-accent-grad px-4 text-sm font-medium text-on-accent"><ExternalLink className="size-4" /> Open link</a>
+            <a href={link} target="_blank" rel="noopener noreferrer nofollow" className="inline-flex h-10 items-center gap-1.5 rounded-lg bg-accent-grad px-4 text-sm font-medium text-on-accent"><ExternalLink className="size-4" /> Open link</a>
           </Panel>
         )}
         {e.format === "In person" && link && <a href={link} target="_blank" rel="noopener noreferrer nofollow" className="inline-flex items-center gap-1.5 text-sm underline underline-offset-4"><ExternalLink className="size-4" /> Event link</a>}
 
         {!over && e.status !== "cancelled" && (
-          <Link href={`/copilot?q=${encodeURIComponent(prep)}`} className="glass-card flex items-center gap-3 rounded-3xl p-5 transition hover:-translate-y-0.5">
+          <Link href={`/copilot?q=${encodeURIComponent(prep)}`} className="glass-card flex items-center gap-3 rounded-3xl p-5 transition">
             <Ember size={40} />
             <span className="min-w-0 flex-1"><span className="block text-sm font-medium">Prep me with Ember</span><span className="block text-xs text-muted">What to bring, who to meet and what to ask.</span></span>
           </Link>

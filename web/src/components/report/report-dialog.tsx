@@ -57,7 +57,7 @@ export function ReportDialog() {
             <textarea id="report-detail" value={detail} onChange={(e) => setDetail(e.target.value)} maxLength={500} rows={3} className="rounded-2xl border border-line bg-surface-2/60 px-3 py-2 outline-none focus:border-line-strong" />
           </label>
           <div className="flex flex-wrap items-center gap-3">
-            <button type="button" onClick={send} disabled={!reason || pending} className="inline-flex h-10 items-center gap-1.5 rounded-full bg-accent px-5 text-sm font-medium text-on-accent disabled:opacity-50">{pending && <Loader2 className="size-4 animate-spin" />} Send report</button>
+            <button type="button" onClick={send} disabled={!reason || pending} className="inline-flex h-10 items-center gap-1.5 rounded-lg bg-accent px-5 text-sm font-medium text-on-accent disabled:opacity-50">{pending && <Loader2 className="size-4 animate-spin" />} Send report</button>
             {msg && <p role={msg.ok ? "status" : "alert"} className={cn("text-sm", msg.ok ? "text-ok" : "text-danger")}>{msg.message}</p>}
           </div>
         </div>
@@ -82,8 +82,8 @@ export function ResolveReport({ id }: { id: number }) {
   const run = (s: "actioned" | "dismissed") => start(async () => { const r = await resolveReport(id, s); setMsg(r.ok ? "" : r.message); });
   return (
     <span className="flex flex-wrap items-center gap-2">
-      <button type="button" disabled={pending} onClick={() => run("actioned")} className="h-8 rounded-full bg-accent px-3 text-xs font-medium text-on-accent disabled:opacity-50">Actioned</button>
-      <button type="button" disabled={pending} onClick={() => run("dismissed")} className="h-8 rounded-full border border-line px-3 text-xs disabled:opacity-50 hover:bg-hover">Dismiss</button>
+      <button type="button" disabled={pending} onClick={() => run("actioned")} className="h-8 rounded-lg bg-accent px-3 text-xs font-medium text-on-accent disabled:opacity-50">Actioned</button>
+      <button type="button" disabled={pending} onClick={() => run("dismissed")} className="h-8 rounded-lg border border-line px-3 text-xs disabled:opacity-50 hover:bg-hover">Dismiss</button>
       {msg && <span role="alert" className="text-xs text-danger">{msg}</span>}
     </span>
   );

@@ -41,7 +41,7 @@ export function ChapterInvite({ cid, name, code }: { cid: string; name: string; 
           <CopyLink path={path} label="Copy invite link" className="justify-center" />
         </div>
       ) : (
-        <Link href={`/c/${cid}/manage?tab=invite`} className="mt-3 inline-flex h-10 items-center gap-1.5 rounded-full bg-text px-4 text-sm font-medium text-surface">Make an invite link <ArrowRight className="size-4" /></Link>
+        <Link href={`/c/${cid}/manage?tab=invite`} className="mt-3 inline-flex h-10 items-center gap-1.5 rounded-lg bg-text px-4 text-sm font-medium text-surface">Make an invite link <ArrowRight className="size-4" /></Link>
       )}
       <p className="mt-3 text-xs text-faint">Next: post your first build update, and verify members&apos; milestones from <Link href={`/c/${cid}/manage?tab=report`} className="underline hover:text-text">This week</Link>.</p>
     </section>

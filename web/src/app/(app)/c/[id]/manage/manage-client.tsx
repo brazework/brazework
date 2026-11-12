@@ -7,7 +7,7 @@ import { cn } from "@/lib/forge";
 import { submitWithoutReset } from "@/lib/submit";
 import { approveJoin, declineJoin, removeMember, setMemberRole, unbanMember, updateCommunitySettings, type CreateState } from "../../../communities/actions";
 
-const small = "inline-flex h-9 items-center rounded-full px-4 text-sm font-medium transition disabled:opacity-50";
+const small = "inline-flex h-9 items-center rounded-lg px-4 text-sm font-medium transition disabled:opacity-50";
 
 function useAct() {
   const [pending, start] = useTransition();

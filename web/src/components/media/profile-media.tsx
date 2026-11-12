@@ -33,7 +33,7 @@ export function CoverBanner({ path, editable, userId }: { path?: string; editabl
         <>
           <input ref={input} type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) void pick(f); }} />
           <div className="absolute top-3 right-3 z-20 flex gap-2">
-            <button type="button" onClick={() => input.current?.click()} disabled={busy} className="inline-flex h-9 items-center gap-1.5 rounded-full bg-bg/75 px-3 text-xs font-medium text-text shadow-sm backdrop-blur transition hover:bg-bg active:scale-95">
+            <button type="button" onClick={() => input.current?.click()} disabled={busy} className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-bg/75 px-3 text-xs font-medium text-text shadow-sm backdrop-blur transition hover:bg-bg active:scale-95">
               {busy ? <Loader2 className="size-4 animate-spin" /> : <ImagePlus className="size-4" />} {path ? "Change cover" : "Add a cover"}
             </button>
             {path && !busy && (

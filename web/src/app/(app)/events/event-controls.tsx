@@ -44,7 +44,7 @@ export function RsvpButton({ going, onClick, className }: { going: boolean; onCl
       onClick={onClick}
       aria-pressed={going}
       className={cn(
-        "inline-flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium transition",
+        "inline-flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-lg px-5 text-sm font-medium transition",
         going ? "border border-line-strong bg-raised text-text hover:bg-hover" : "bg-accent text-on-accent shadow-[var(--shadow)] hover:opacity-90",
         className,
       )}
@@ -87,7 +87,7 @@ export function CalendarButton({ eventId, className }: { eventId: string; classN
           setTimeout(() => setState("done"), 600);
           setTimeout(() => setState("idle"), 6000);
         }}
-        className={cn("inline-flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-full border border-line px-4 text-sm text-text transition hover:border-line-strong hover:bg-hover", className)}
+        className={cn("inline-flex h-10 shrink-0 items-center justify-center gap-1.5 rounded-lg border border-line px-4 text-sm text-text transition hover:border-line-strong hover:bg-hover", className)}
       >
         {state === "busy" ? <Loader2 className="size-4 animate-spin" /> : <CalendarPlus className="size-4" />}
         Add to calendar

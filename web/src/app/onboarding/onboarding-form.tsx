@@ -20,7 +20,7 @@ export function OnboardingForm({ firstName, student, askGradYear = false }: { fi
   return (
     <form onSubmit={submitWithoutReset(action)} className="flex flex-col gap-8">
       <div>
-        <div className="font-mono text-[11px] tracking-[0.18em] text-accent uppercase">Step 3 of 3</div>
+        <div className="text-[11px] font-medium tracking-[0.06em] text-accent uppercase">Step 3 of 3</div>
         <h1 className="mt-2 text-4xl font-semibold tracking-tight">
           Welcome{firstName ? `, ${firstName}` : ""}. <span className="text-shine">What do you build?</span>
         </h1>
@@ -44,7 +44,7 @@ export function OnboardingForm({ firstName, student, askGradYear = false }: { fi
         <input type="hidden" name="field" value={field} />
         <div role="radiogroup" aria-labelledby="ob-field-label" className="flex flex-wrap gap-2">
           {TOPICS.map((t) => (
-            <button key={t.name} type="button" role="radio" aria-checked={field === t.name} onClick={() => setField(t.name)} className="relative rounded-full border border-line px-4 py-2 text-sm text-muted transition aria-checked:border-transparent aria-checked:text-on-accent">
+            <button key={t.name} type="button" role="radio" aria-checked={field === t.name} onClick={() => setField(t.name)} className="relative rounded-lg border border-line px-4 py-2 text-sm text-muted transition aria-checked:border-transparent aria-checked:text-on-accent">
               {field === t.name && <motion.span layoutId="ob-field" className="absolute inset-0 rounded-full bg-accent" />}
               <span className="relative">{t.name}</span>
             </button>

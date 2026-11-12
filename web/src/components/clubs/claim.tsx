@@ -31,7 +31,7 @@ export function WithdrawClaim({ id, cid }: { id: number; cid: string }) {
   const [msg, setMsg] = useState<ClaimState>(init);
   return (
     <span className="inline-flex items-center gap-2">
-      <button type="button" disabled={pending} onClick={() => start(async () => setMsg(await withdrawClaim(id, cid)))} className="h-8 rounded-full border border-line px-3 text-xs hover:bg-hover disabled:opacity-50">Withdraw</button>
+      <button type="button" disabled={pending} onClick={() => start(async () => setMsg(await withdrawClaim(id, cid)))} className="h-8 rounded-lg border border-line px-3 text-xs hover:bg-hover disabled:opacity-50">Withdraw</button>
       {msg.message && !msg.ok && <span role="alert" className="text-xs text-danger">{msg.message}</span>}
     </span>
   );
@@ -45,9 +45,9 @@ export function ClaimDecision({ id }: { id: number }) {
   const run = (approve: boolean) => start(async () => setMsg(await decideClaim(id, approve, note)));
   return (
     <span className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
-      <input value={note} onChange={(e) => setNote(e.target.value)} maxLength={300} placeholder="Note (optional)" aria-label="Note for the claimant" className="h-8 min-w-0 flex-1 rounded-full border border-line bg-transparent px-3 text-xs sm:w-44 sm:flex-none" />
-      <button type="button" disabled={pending} onClick={() => run(true)} className="h-8 rounded-full bg-accent px-3 text-xs font-medium text-on-accent disabled:opacity-50">Approve</button>
-      <button type="button" disabled={pending} onClick={() => run(false)} className="h-8 rounded-full border border-line px-3 text-xs hover:bg-hover disabled:opacity-50">Deny</button>
+      <input value={note} onChange={(e) => setNote(e.target.value)} maxLength={300} placeholder="Note (optional)" aria-label="Note for the claimant" className="h-8 min-w-0 flex-1 rounded-lg border border-line bg-transparent px-3 text-xs sm:w-44 sm:flex-none" />
+      <button type="button" disabled={pending} onClick={() => run(true)} className="h-8 rounded-lg bg-accent px-3 text-xs font-medium text-on-accent disabled:opacity-50">Approve</button>
+      <button type="button" disabled={pending} onClick={() => run(false)} className="h-8 rounded-lg border border-line px-3 text-xs hover:bg-hover disabled:opacity-50">Deny</button>
       {msg.message && !msg.ok && <span role="alert" className="text-xs text-danger">{msg.message}</span>}
     </span>
   );

@@ -80,7 +80,7 @@ async function Settings() {
         <p className="text-sm text-muted">Signed in as <span className="text-text">{user.email}</span></p>
         <PasswordForm />
         <form action="/auth/signout" method="post" className="mt-6 border-t border-line pt-6">
-          <button className="inline-flex h-10 items-center rounded-full border border-line px-4 text-sm transition hover:bg-hover">Log out</button>
+          <button className="inline-flex h-10 items-center rounded-lg border border-line px-4 text-sm transition hover:bg-hover">Log out</button>
         </form>
       </Section>
     </>
