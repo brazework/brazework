@@ -93,7 +93,7 @@ export function Features() {
         <Head eyebrow="The product" title="Everything a club runs on." accent="Everything a member needs to get noticed." />
         <div className="m-cards mt-12 grid grid-cols-1 gap-4 md:grid-cols-3">
           {FEATURES.map((f, i) => (
-            <Reveal key={f.title} delay={(i % 3) * 0.06} className={cn("spotlight group rounded-3xl border border-line bg-surface p-7 transition hover:-translate-y-1 hover:shadow-[var(--shadow)]", f.span)}>
+            <Reveal key={f.title} delay={(i % 3) * 0.06} className={cn("spotlight group rounded-3xl border border-line bg-surface p-7 transition hover:border-line-strong", f.span)}>
               <span className="grid size-11 place-items-center rounded-2xl bg-accent-grad text-on-accent transition duration-300 group-hover:scale-110"><f.icon className="size-5" /></span>
               <h3 className="mt-5 text-lg font-semibold tracking-tight">{f.title}</h3>
               <p className="mt-1.5 text-sm leading-relaxed text-muted">{f.body}</p>
@@ -132,7 +132,7 @@ export function Pricing() {
               <ul className="mt-5 flex-1 space-y-2 text-sm text-text-2">
                 {p.points.map((x) => <li key={x} className="flex gap-2"><Check className="mt-0.5 size-4 shrink-0 text-ok" />{x}</li>)}
               </ul>
-              <Link href={p.cta.href} className={cn("mt-6 inline-flex h-11 items-center justify-center rounded-full text-sm font-semibold transition", p.featured ? "bg-accent-grad text-on-accent hover:opacity-90" : "border border-line hover:border-line-strong")}>{p.cta.label}</Link>
+              <Link href={p.cta.href} className={cn("mt-6 inline-flex h-11 items-center justify-center rounded-lg text-sm font-semibold transition", p.featured ? "bg-accent-grad text-on-accent hover:opacity-90" : "border border-line hover:border-line-strong")}>{p.cta.label}</Link>
             </Reveal>
           ))}
         </div>

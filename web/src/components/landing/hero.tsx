@@ -41,9 +41,6 @@ export function Hero() {
 
   return (
     <section id="top" data-story="Brazework" className="story-sec relative isolate overflow-hidden pt-32 pb-20 sm:pt-40">
-      <div className="pointer-events-none absolute inset-0 -z-10" aria-hidden="true">
-        <div className="bg-accent-grad absolute -top-40 left-1/2 h-[560px] w-[900px] -translate-x-1/2 rounded-full opacity-[0.14] blur-3xl" />
-      </div>
       <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-14 px-6 lg:grid-cols-[1.05fr_1fr] [&>*]:min-w-0">
         <div>
           <a href="#founding" className="rise-in inline-flex max-w-full items-center gap-2 rounded-full border border-line bg-surface px-3 py-1.5 text-xs text-text-2 shadow-sm transition hover:border-line-strong">
@@ -72,7 +69,7 @@ export function Hero() {
                   aria-controls="hero-preview"
                   onClick={() => { setAuto(false); setI(n); }}
                   className={cn(
-                    "relative inline-flex items-center gap-1.5 overflow-hidden rounded-full border px-3.5 py-1.5 text-sm transition",
+                    "relative inline-flex items-center gap-1.5 overflow-hidden rounded-lg border px-3.5 py-1.5 text-sm transition",
                     n === i ? "border-text bg-text text-bg" : "border-line bg-surface text-muted hover:border-line-strong hover:text-text",
                   )}
                 >

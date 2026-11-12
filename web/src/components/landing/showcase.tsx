@@ -32,7 +32,6 @@ const MILESTONES = [
 export function ProjectShowcase() {
   return (
     <section id="projects" data-story="Projects" className="story-sec relative overflow-hidden py-24 sm:py-32">
-      <div aria-hidden className="pointer-events-none absolute inset-x-0 top-0 h-[38rem] bg-[radial-gradient(60%_50%_at_70%_0%,color-mix(in_oklab,var(--accent)_10%,transparent),transparent)]" />
       <div className="relative mx-auto grid max-w-7xl grid-cols-1 items-center gap-12 px-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] lg:gap-16">
         <Reveal>
           <Eyebrow>Projects</Eyebrow>

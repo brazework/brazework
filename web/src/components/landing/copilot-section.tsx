@@ -87,7 +87,6 @@ export function CopilotSection() {
 
   return (
     <section id="copilot" data-story="Ember, the AI agent" className="story-sec relative isolate scroll-mt-24 overflow-hidden py-24 sm:py-32">
-      <div className="bg-accent-grad pointer-events-none absolute top-1/3 left-1/2 -z-10 h-[420px] w-[720px] -translate-x-1/2 rounded-full opacity-[0.12] blur-3xl" aria-hidden="true" />
       <div className="mx-auto max-w-7xl px-6">
         <div className="mx-auto max-w-3xl text-center">
           <div className="flex justify-center"><Ember size={72} mood="happy" /></div>
@@ -113,8 +112,8 @@ export function CopilotSection() {
         <div ref={ref} className="mx-auto mt-10 max-w-3xl">
           <div role="tablist" aria-label="Example tasks" className="mx-auto flex w-fit max-w-full flex-wrap justify-center gap-1 rounded-3xl bg-surface-2 p-1">
             {SCENARIOS.map((sc, i) => (
-              <button key={sc.id} type="button" role="tab" aria-selected={pick === i} onClick={() => setPick(i)} className={cn("relative inline-flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-1.5 text-sm font-medium whitespace-nowrap transition", pick === i ? "text-on-accent" : "text-muted hover:text-text")}>
-                {pick === i && <motion.span layoutId="ember-demo-tab" className="bg-accent-grad absolute inset-0 rounded-full" transition={{ type: "spring", stiffness: 420, damping: 34 }} />}
+              <button key={sc.id} type="button" role="tab" aria-selected={pick === i} onClick={() => setPick(i)} className={cn("relative inline-flex shrink-0 items-center gap-1.5 rounded-lg px-3.5 py-1.5 text-sm font-medium whitespace-nowrap transition", pick === i ? "text-on-accent" : "text-muted hover:text-text")}>
+                {pick === i && <motion.span layoutId="ember-demo-tab" className="bg-accent-grad absolute inset-0 rounded-lg" transition={{ type: "spring", stiffness: 420, damping: 34 }} />}
                 <sc.icon className="relative size-4" /> <span className="relative">{sc.tab}</span>
               </button>
             ))}
