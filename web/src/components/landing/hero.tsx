@@ -52,10 +52,10 @@ export function Hero() {
             <span className="truncate">Founding clubs program is open</span>
             <ArrowRight className="size-3.5 shrink-0" />
           </a>
-          <h1 className="focus-in mt-7 text-[clamp(2.6rem,5.4vw,4.6rem)] leading-[0.98] font-semibold tracking-[-0.045em] text-balance">
+          <h1 className="focus-in mt-7 text-[clamp(2.6rem,5.4vw,4.6rem)] leading-[0.98] font-semibold tracking-[-0.045em]">
             Build with AI.
             <br />
-            <span className="text-grad">Get credit for the work.</span>
+            <span className="text-grad">Get credit<br />for the work.</span>
           </h1>
           <p className="m-hide focus-in mt-6 max-w-xl text-lg leading-relaxed text-muted" style={{ ["--delay" as string]: "0.1s" }}>
             The record of what you build in STEM: code, circuits, experiments, models, proofs. Use any tools you like. Your club signs off on what it watched you do, and that signed record is what labs, companies and grad programs trust when every résumé reads the same.

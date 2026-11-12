@@ -104,6 +104,7 @@ export function Globe({ from, to, active, className }: { from: Place; to: Place[
         ctx.fillRect(sx - s / 2, sy - s / 2, s, s);
       }
       // Arcs: the active one drawn in over a second, with a packet riding it; the others faint.
+      ctx.save(); ctx.beginPath(); ctx.arc(cx, cy, R * 1.04, 0, Math.PI * 2); ctx.clip(); // arcs stay on the globe
       const on = act.current, since = (now - lit.current) / 1000;
       arcs.forEach((pts, i) => {
         const isOn = i === on, reach = isOn ? (reduce ? 1 : Math.min(1, since / 1.1)) : 1;
@@ -121,6 +122,7 @@ export function Globe({ from, to, active, className }: { from: Place; to: Place[
           if (p[2] > 0.04) { ctx.fillStyle = `rgba(${ink},1)`; ctx.beginPath(); ctx.arc(p[0], p[1], 2.4, 0, Math.PI * 2); ctx.fill(); }
         }
       });
+      ctx.restore();
       // Places: your club pulses; where it reached gets a ring and, when active, its name.
       ctx.font = "500 12px ui-sans-serif, system-ui, -apple-system, sans-serif";
       const mark = (v: readonly [number, number, number], label: string | null, strong: boolean, pulse: boolean) => {
