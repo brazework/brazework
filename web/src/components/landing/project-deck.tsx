@@ -15,6 +15,7 @@ type Project = {
   id: string; field: string; art: string; title: string; club: string; media: string;
   callouts: [string, string]; stats: [string, string][]; tools: string[];
   verified: { title: string; by: string }; pending: string; company: string; note: string;
+  vouch?: boolean; // signed by someone the member asked (no club)
 };
 
 const PROJECTS: Project[] = [
@@ -49,9 +50,9 @@ const PROJECTS: Project[] = [
     verified: { title: "Matched the reference on 12 runs", by: "Noah Kim, President" }, pending: "Motion-artifact filter", company: "Pulse Medical", note: "Your validation protocol is exactly how we work. Let's talk.",
   },
   {
-    id: "ai", field: "AI / ML", art: "ai", title: "Crop disease classifier", club: "Data Science Club", media: "0:30 field demo",
+    id: "ai", field: "AI / ML", art: "ai", title: "Crop disease classifier", club: "Independent project", media: "0:30 field demo", vouch: true,
     callouts: ["On-device model", "94% top-1"], stats: [["Accuracy", "94%"], ["Images", "18k"], ["Model size", "9 MB"]], tools: ["PyTorch", "Python", "Core ML"],
-    verified: { title: "Beat the baseline by 11 points", by: "Sara Haddad, Officer" }, pending: "Field trial with the ag school", company: "Fieldwise AI", note: "We'd love to hear how you labelled 18k images. Coffee?",
+    verified: { title: "Beat the baseline by 11 points", by: "Dr. Sara Haddad, Assistant Professor · uw.edu" }, pending: "Field trial with the ag school", company: "Fieldwise AI", note: "We'd love to hear how you labelled 18k images. Coffee?",
   },
 ];
 
@@ -165,7 +166,7 @@ function Card({ p }: { p: Project }) {
             <h3 className="text-lg font-semibold tracking-tight">{p.title}</h3>
             <p className="mt-0.5 text-xs text-faint">In progress · updated today · {p.club}</p>
           </div>
-          <span className="inline-flex items-center gap-1.5 rounded-full bg-[color-mix(in_oklab,var(--ok)_12%,transparent)] px-2.5 py-1 text-xs font-medium text-ok"><BadgeCheck className="size-3.5" /> Club-verified</span>
+          <span className="inline-flex items-center gap-1.5 rounded-full bg-[color-mix(in_oklab,var(--ok)_12%,transparent)] px-2.5 py-1 text-xs font-medium text-ok"><BadgeCheck className="size-3.5" /> {p.vouch ? "Vouched for" : "Club-verified"}</span>
         </div>
         <div className="m-hide mt-4 grid grid-cols-3 gap-2">
           {p.stats.map(([l, v]) => (
@@ -180,7 +181,7 @@ function Card({ p }: { p: Project }) {
             <span className="grid size-6 shrink-0 place-items-center rounded-full bg-ok text-white"><BadgeCheck className="size-3.5" /></span>
             <div className="min-w-0">
               <p className="truncate text-sm font-medium">{p.verified.title}</p>
-              <p className="truncate text-[11px] font-medium text-ok">Verified by {p.verified.by} · {p.club}</p>
+              <p className="truncate text-[11px] font-medium text-ok">{p.vouch ? `Vouched for by ${p.verified.by}` : `Verified by ${p.verified.by} · ${p.club}`}</p>
             </div>
           </li>
           <li className="m-hide flex items-center gap-3 rounded-2xl border border-dashed border-line px-3.5 py-2.5">

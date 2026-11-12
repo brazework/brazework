@@ -105,7 +105,7 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
   const projects: ProjectView[] = projectRows.map((r) => ({ ...r, details: details.get(r.id)?.details ?? null, link: details.get(r.id)?.link ?? null, specs: details.get(r.id)?.specs ?? [], milestones: msOn && (own || !r.private) ? ms.filter((m) => m.project_id === r.id) : undefined }));
   // Proof shows work on public projects (and your own private ones, to you), like the feed and résumé.
   const titles = new Map(projectRows.filter((r) => mine || !r.private).map((r) => [r.id, r.title]));
-  const proofBase: ProofItem[] = ms.filter((m) => m.status === "verified" && titles.has(m.project_id)).map((m) => ({ id: m.id, title: m.title, detail: m.detail, achieved_on: m.achieved_on, community_id: m.community_id, community_name: m.community_name, reviewer_name: m.reviewer_name, project: { id: m.project_id, title: titles.get(m.project_id)! } }));
+  const proofBase: ProofItem[] = ms.filter((m) => m.status === "verified" && titles.has(m.project_id)).map((m) => ({ id: m.id, title: m.title, detail: m.detail, achieved_on: m.achieved_on, community_id: m.community_id, community_name: m.community_name, reviewer_name: m.reviewer_name, vouched_by: m.vouched_by, project: { id: m.project_id, title: titles.get(m.project_id)! } }));
   // Pro sign-offs (supabase/pro-verification.sql): an engineer's name, title, employer and note. Work
   // they signed comes first: Pro-verified, then club-verified (Linear FIX-72).
   type ProRow = { milestone_id: string; reviewer_name: string; reviewer_title: string; employer_name: string; note: string; created_at: string };
@@ -113,7 +113,8 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
   const proBy = new Map<string, ProofItem["pro"]>();
   for (const r of (proRows ?? []) as ProRow[]) proBy.set(r.milestone_id, [...(proBy.get(r.milestone_id) ?? []), { name: r.reviewer_name, title: r.reviewer_title, employer: r.employer_name, note: r.note, at: r.created_at }]);
   const proof: ProofItem[] = proofBase.map((m) => ({ ...m, pro: proBy.get(m.id) })).sort((a, b) => Number(Boolean(b.pro?.length)) - Number(Boolean(a.pro?.length)));
-  const verifiedBy = [...proof.reduce((acc, m) => acc.set(m.community_id, { name: m.community_name, n: (acc.get(m.community_id)?.n ?? 0) + 1 }), new Map<string, { name: string; n: number }>())].sort((a, b) => b[1].n - a[1].n);
+  // The clubs behind the proof (vouched-for milestones have no club, so they're not counted here).
+  const verifiedBy = [...proof.filter((m): m is ProofItem & { community_id: string } => !!m.community_id).reduce((acc, m) => acc.set(m.community_id, { name: m.community_name, n: (acc.get(m.community_id)?.n ?? 0) + 1 }), new Map<string, { name: string; n: number }>())].sort((a, b) => b[1].n - a[1].n);
 
   const name = `${p.first_name} ${p.last_name}`.trim();
   const joined = new Date(p.created_at).toLocaleDateString("en-US", { month: "long", year: "numeric" });

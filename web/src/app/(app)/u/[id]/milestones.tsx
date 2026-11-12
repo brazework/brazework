@@ -8,12 +8,15 @@ import { Button, Field, inputCls } from "@/components/ui";
 import { cn } from "@/lib/forge";
 import { addMilestone, disputeMilestone, removeMilestone, setMilestoneVisible, type MilestoneState } from "@/lib/milestones";
 import { submitWithoutReset } from "@/lib/submit";
+import { RELATIONSHIPS } from "@/lib/vouch-email";
 
 export type Milestone = {
-  id: string; project_id: string; community_id: string; community_name: string; title: string; detail: string; evidence: string;
+  id: string; project_id: string; community_id: string | null; community_name: string; title: string; detail: string; evidence: string;
   achieved_on: string; status: "draft" | "pending" | "verified" | "declined" | "refused" | "revoked" | "disputed"; reviewer_name: string; review_note: string;
   // With supabase/verification.sql:
   private?: boolean; revoked_reason?: string; reviewer_role?: string; reviewed_at?: string | null; escalated?: boolean;
+  // With supabase/vouches.sql: "Name, Role · domain" when someone vouched instead of a club.
+  vouched_by?: string;
 };
 export type Club = { id: string; name: string };
 
@@ -47,14 +50,19 @@ export function MilestoneTimeline({ items, own }: { items: Milestone[]; own: boo
                 <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px]">
                   <span className="text-faint">{day(m.achieved_on)}</span>
                   {/* The badge: who verified it, their role, the club and when. */}
-                  {m.status === "verified" && (
+                  {m.status === "verified" && m.vouched_by && (
+                    <span className="inline-block max-w-full rounded-lg bg-[color-mix(in_oklab,var(--ok)_14%,transparent)] px-2 py-0.5 font-medium text-ok">
+                      <BadgeCheck className="mr-1 inline size-3 align-[-2px]" />Vouched for by {m.vouched_by}{m.reviewed_at ? ` · ${new Date(m.reviewed_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}` : ""}
+                    </span>
+                  )}
+                  {m.status === "verified" && !m.vouched_by && (
                     // Inline text, not flex: on a phone the sentence wraps as one line of text instead of
                     // splitting into columns (each text piece was its own flex item).
                     <span className="inline-block max-w-full rounded-lg bg-[color-mix(in_oklab,var(--ok)_14%,transparent)] px-2 py-0.5 font-medium text-ok">
                       <BadgeCheck className="mr-1 inline size-3 align-[-2px]" />Verified{m.reviewer_name ? ` by ${m.reviewer_name}` : ""}{m.reviewer_role ? ` (${m.reviewer_role})` : ""}, <Link href={`/c/${m.community_id}`} className="hover:underline">{m.community_name}</Link>{m.reviewed_at ? ` · ${new Date(m.reviewed_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}` : ""}
                     </span>
                   )}
-                  {m.status === "pending" && <span className="inline-flex items-center gap-1 rounded-full bg-surface-2 px-2 py-0.5 text-muted"><Clock className="size-3" /> Waiting for {m.community_name}</span>}
+                  {m.status === "pending" && <span className="inline-flex items-center gap-1 rounded-full bg-surface-2 px-2 py-0.5 text-muted"><Clock className="size-3" /> {m.community_id ? `Waiting for ${m.community_name}` : "Waiting for a vouch"}</span>}
                   {m.status === "draft" && <span className="inline-flex items-center gap-1 rounded-full bg-surface-2 px-2 py-0.5 text-muted">Draft</span>}
                   {refused(m.status) && <span className="inline-flex items-center gap-1 rounded-full bg-[color-mix(in_oklab,var(--danger)_12%,transparent)] px-2 py-0.5 text-danger"><XCircle className="size-3" /> Not verified by {m.community_name}</span>}
                   {m.status === "revoked" && <span className="inline-flex items-center gap-1 rounded-full bg-[color-mix(in_oklab,var(--danger)_12%,transparent)] px-2 py-0.5 text-danger"><XCircle className="size-3" /> Revoked by {m.community_name}</span>}
@@ -110,6 +118,7 @@ export function AddMilestone({ projectId, projectTitle, clubs }: { projectId: st
 function MilestoneDialog({ projectId, projectTitle, clubs, onClose, onSent }: { projectId: string; projectTitle: string; clubs: Club[]; onClose: () => void; onSent: () => void }) {
   const ref = useRef<HTMLDialogElement>(null);
   const [state, action, pending] = useActionState(addMilestone, initial);
+  const [by, setBy] = useState<"club" | "vouch">(clubs.length ? "club" : "vouch");
   useEffect(() => { ref.current?.showModal(); }, []);
   useEffect(() => { if (state.ok) { onSent(); onClose(); } }, [state.ok, onSent, onClose]);
   const today = new Date().toISOString().slice(0, 10);
@@ -119,7 +128,7 @@ function MilestoneDialog({ projectId, projectTitle, clubs, onClose, onSent }: { 
         <div className="flex items-start justify-between gap-4">
           <div>
             <h2 className="text-xl font-semibold tracking-tight">Add a milestone</h2>
-            <p className="mt-1 text-sm text-muted">On <span className="font-medium text-text-2">{projectTitle}</span>. Your club confirms it happened, and it shows as verified on your profile.</p>
+            <p className="mt-1 text-sm text-muted">On <span className="font-medium text-text-2">{projectTitle}</span>. Someone who saw it confirms it happened, and it shows as verified on your profile.</p>
           </div>
           <button type="button" onClick={onClose} aria-label="Close" className="grid size-8 shrink-0 place-items-center rounded-full text-faint hover:bg-hover hover:text-text"><X className="size-4" /></button>
         </div>
@@ -130,14 +139,36 @@ function MilestoneDialog({ projectId, projectTitle, clubs, onClose, onSent }: { 
           <Field label="When"><input name="achievedOn" type="date" max={today} defaultValue={today} required className={inputCls} /></Field>
           <Field label="Evidence" hint="A photo, video, file, commit or the event page."><input name="evidence" type="url" required maxLength={300} placeholder="https://…" className={inputCls} /></Field>
         </div>
-        {clubs.length ? (
+        <fieldset>
+          <legend className="text-sm font-medium">Who confirms it?</legend>
+          <input type="hidden" name="verifyBy" value={by} />
+          <div role="radiogroup" className="mt-2 grid grid-cols-2 gap-2">
+            {([["club", "Your club", clubs.length ? "Its officers verify it" : "You're not in one yet"], ["vouch", "Someone who saw it", "A professor, TA, PI, manager or mentor"]] as const).map(([id, label, hint]) => (
+              <button key={id} type="button" role="radio" aria-checked={by === id} disabled={id === "club" && !clubs.length} onClick={() => setBy(id)}
+                className={cn("rounded-xl border p-3 text-left transition disabled:opacity-50", by === id ? "border-text bg-surface-2" : "border-line hover:border-line-strong")}>
+                <span className="block text-sm font-medium">{label}</span>
+                <span className="mt-0.5 block text-xs text-muted">{hint}</span>
+              </button>
+            ))}
+          </div>
+        </fieldset>
+        {by === "club" ? (
           <Field label="Which club saw it happen?">
-            <select name="communityId" required defaultValue={clubs[0].id} className={inputCls}>
+            <select name="communityId" required defaultValue={clubs[0]?.id} className={inputCls}>
               {clubs.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
           </Field>
         ) : (
-          <p className="rounded-2xl border border-dashed border-line p-4 text-sm text-muted">Milestones are verified by a club you belong to. <Link href="/communities?tab=discover" className="font-medium text-text underline underline-offset-4">Join your club</Link> first.</p>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_auto]">
+            <Field label="Their email" hint="Their university or company address. We email them a link; they don't need an account.">
+              <input name="vouchEmail" type="email" required maxLength={254} autoComplete="off" placeholder="name@university.edu" className={inputCls} />
+            </Field>
+            <Field label="They're">
+              <select name="vouchRelationship" required defaultValue="professor" className={inputCls}>
+                {Object.entries(RELATIONSHIPS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+              </select>
+            </Field>
+          </div>
         )}
         <label className="flex items-center gap-2 text-sm text-text-2">
           <input type="checkbox" name="showOnProfile" defaultChecked className="size-4 accent-[var(--accent)]" />
@@ -146,7 +177,7 @@ function MilestoneDialog({ projectId, projectTitle, clubs, onClose, onSent }: { 
         {state.message && !state.ok && <p role="alert" className="text-sm text-danger">{state.message}</p>}
         <div className="flex justify-end gap-2">
           <Button type="button" variant="ghost" onClick={onClose}>Cancel</Button>
-          <Button type="submit" disabled={pending || !clubs.length}>{pending ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />} Ask for verification</Button>
+          <Button type="submit" disabled={pending}>{pending ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />} {by === "club" ? "Ask for verification" : "Ask them to vouch"}</Button>
         </div>
       </form>
     </dialog>

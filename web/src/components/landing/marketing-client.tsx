@@ -9,7 +9,7 @@ const AUDIENCES = [
   {
     id: "students", label: "Students", icon: GraduationCap,
     headline: "Your work, on the record.",
-    points: ["A profile built from projects and results, not just a résumé", "Milestones your club verified, with who checked them and when", "The clubs, events and people in your field", "An inbox where recruiters and strangers wait in Requests"],
+    points: ["A profile built from projects and results, not just a résumé", "Milestones your club verified, or a professor or manager vouched for, with who signed and when", "The clubs, events and people in your field", "An inbox where recruiters and strangers wait in Requests"],
     cta: { label: "Create your profile", href: "/signup" },
   },
   {
@@ -68,6 +68,7 @@ const QA = [
   ["Is Brazework free?", "Yes, for students and clubs, always. Companies pay: they sponsor build challenges and, with a subscription, search and message verified builders."],
   ["Who is it for?", "Anyone 18 or older studying or working in STEM, the clubs they belong to, and the companies that hire from them. Students verify with a university email; companies with their work domain."],
   ["What does \"verified\" mean?", "An organization vouched for it: officers confirm a milestone they saw happen, and Brazework records who verified it and when. It's proof of the work, not just of who you are."],
+  ["I'm not in a club. Can I still get verified?", "Yes. Ask someone who saw the work (a professor, TA, lab PI, manager or mentor) to vouch for a milestone. We email their university or company address; they answer what they saw and how they know your work, and their name and domain go on your record. Free-mail addresses don't count, and you can't vouch for yourself."],
   ["What does the AI do?", "Ember, the agent inside Brazework, plans meetings, drafts updates from real numbers, finds the right people and helps members keep their work on the record. It checks real Brazework data first and never acts without your approval."],
   ["How is this different from LinkedIn, Handshake or Discord?", "LinkedIn is built for reach and is filling up with AI-written posts; Handshake is run by career centers; Discord is chat that disappears. Brazework is where organizations actually run, so the work is recorded where it happens and verified by the people who saw it."],
   ["What happens to my data?", "Your birthday and analytics are private, read status in messages is never shown, private write-ups stay private, and you decide who can message you. Everything is enforced by the database, not just the app."],

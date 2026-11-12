@@ -79,7 +79,7 @@ export function Audiences() {
 const FEATURES = [
   { icon: Users, title: "Organization operating system", body: "Chapters, clubs, labs and teams: five roles, join approvals, moderation, chat with officer announcements, team chats and invite links.", span: "md:col-span-2" },
   { icon: Images, title: "Photos and video", body: "Post build videos, test runs and demo-day photos right in the feed." },
-  { icon: BadgeCheck, title: "Proof-of-work profiles", body: "Projects with a public summary, a private write-up and milestones your club verified." },
+  { icon: BadgeCheck, title: "Proof-of-work profiles", body: "Projects with a public summary, a private write-up and milestones signed by your club, or by a professor, PI or manager who saw them." },
   { icon: CalendarDays, title: "Events that fill up", body: "General body meetings, build nights and demo days next to career events from verified companies, with RSVPs, maps and an attendee chat.", span: "md:col-span-2" },
   { icon: MessageSquareLock, title: "Respectful messaging", body: "Strangers land in Requests. Accept, decline, or block and report. Read status is never shown." },
   { icon: ShieldCheck, title: "Verified members", body: "Students verify with a university email; companies with their work domain. Report and block anywhere." },

@@ -3,15 +3,21 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { friendlyError } from "@/lib/forge";
 import { getViewer } from "@/lib/supabase/server";
+import { requestVouch } from "@/lib/vouches";
 
-// Club-verified milestones (supabase/milestones.sql). The database enforces who can ask and who
-// can verify; these actions validate input and turn database errors into plain sentences.
+// Club-verified milestones (supabase/milestones.sql), or, with no club, vouched for by someone who
+// saw it (supabase/vouches.sql). The database enforces who can ask and who can verify; these actions
+// validate input and turn database errors into plain sentences.
 
 export type MilestoneState = { ok: boolean; message: string };
 
 const add = z.object({
   projectId: z.string().min(1).max(64),
-  communityId: z.string().min(1, "Pick the club that saw it happen.").max(64),
+  // Either the club that saw it, or someone (at a university or company address) who'll vouch.
+  verifyBy: z.enum(["club", "vouch"]),
+  communityId: z.string().max(64),
+  vouchEmail: z.string().trim().max(254),
+  vouchRelationship: z.string().max(20),
   title: z.string().trim().min(1, "Say what happened.").max(120, "Keep the title under 120 characters."),
   detail: z.string().trim().max(600, "Keep the details under 600 characters."),
   // Evidence is required (supabase/verification.sql): a link to a photo, video, file, commit or the event.
@@ -25,7 +31,8 @@ const reason = (e: { message?: string; code?: string }) => (e.code === "P0001" |
 
 export async function addMilestone(_: MilestoneState, form: FormData): Promise<MilestoneState> {
   const v = add.safeParse({
-    projectId: form.get("projectId"), communityId: form.get("communityId"), title: form.get("title"),
+    projectId: form.get("projectId"), verifyBy: form.get("verifyBy") === "vouch" ? "vouch" : "club",
+    communityId: form.get("communityId") ?? "", vouchEmail: form.get("vouchEmail") ?? "", vouchRelationship: form.get("vouchRelationship") ?? "", title: form.get("title"),
     detail: form.get("detail") ?? "", evidence: form.get("evidence") ?? "", achievedOn: form.get("achievedOn"),
     showOnProfile: form.get("showOnProfile") === "on",
   });
@@ -33,12 +40,21 @@ export async function addMilestone(_: MilestoneState, form: FormData): Promise<M
   const { supabase, user } = await getViewer();
   if (!user) return { ok: false, message: "Log in again to add milestones." };
   const d = v.data;
-  const row: Record<string, unknown> = { project_id: d.projectId, community_id: d.communityId, title: d.title, detail: d.detail, evidence: d.evidence, achieved_on: d.achievedOn };
+  if (d.verifyBy === "club" && !d.communityId) return { ok: false, message: "Pick the club that saw it happen." };
+  if (d.verifyBy === "vouch" && !d.vouchEmail) return { ok: false, message: "Enter the email of the person who saw it." };
+  const row: Record<string, unknown> = { project_id: d.projectId, community_id: d.verifyBy === "club" ? d.communityId : null, title: d.title, detail: d.detail, evidence: d.evidence, achieved_on: d.achievedOn };
   // Private by default once verification.sql has run; showing it is the member's choice.
   if (d.showOnProfile) row.private = false;
-  let { error } = await supabase.from("milestones").insert(row);
-  if (error && d.showOnProfile && /private/.test(error.message ?? "")) ({ error } = await supabase.from("milestones").insert({ ...row, private: undefined }));
-  if (error) return { ok: false, message: error.code === "42501" ? "You can only ask a club you're a member of, for your own project." : reason(error) };
+  let { data: made, error } = await supabase.from("milestones").insert(row).select("id").single();
+  if (error && d.showOnProfile && /private/.test(error.message ?? "")) ({ data: made, error } = await supabase.from("milestones").insert({ ...row, private: undefined }).select("id").single());
+  if (error || !made) return { ok: false, message: error?.code === "42501" ? "You can only ask a club you're a member of, for your own project." : reason(error ?? {}) };
+  if (d.verifyBy === "vouch") {
+    const asked = await requestVouch(made.id, d.vouchEmail, d.vouchRelationship);
+    // No ask went out: don't leave a milestone waiting on nobody.
+    if (!asked.ok) { await supabase.from("milestones").delete().eq("id", made.id).eq("owner_id", user.id); return asked; }
+    revalidatePath(`/u/${user.id}`);
+    return asked;
+  }
   revalidatePath(`/u/${user.id}`);
   return { ok: true, message: "Sent to the club for verification." };
 }

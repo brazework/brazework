@@ -35,7 +35,7 @@ export function ProjectShowcase() {
           </p>
           <ul className="m-hide mt-8 grid gap-5">
             <Point icon={Play} title="Show it, don't claim it" body="Photos and video with callouts, before-and-after, specs like a peak L/D of 14.2. Anyone can see what you made." />
-            <Point icon={ShieldCheck} title="Signed by the people who were there" body="Your club's officers verify each milestone with its evidence, and their name stays on it. Recruiters trust that more than any bullet point." />
+            <Point icon={ShieldCheck} title="Signed by the people who were there" body="Your club's officers, or a professor, PI or manager who saw it, sign each milestone with its evidence, and their name stays on it. Recruiters trust that more than any bullet point." />
             <Point icon={Eye} title="Get found by the work" body="Companies search verified projects by tool, field and spec, and you see who looked." />
           </ul>
         </Reveal>

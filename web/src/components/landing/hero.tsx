@@ -11,7 +11,7 @@ import { Orb } from "./orb";
 const AUDIENCES = [
   {
     id: "students", label: "Students", short: "Students", icon: GraduationCap, cta: { label: "Create your profile", href: "/signup" },
-    line: "Post what you're building, in any field. Your club verifies what it saw, and that proof goes with you to every internship, lab and grad application.",
+    line: "Post what you're building, in any field. Your club, or a professor or manager who saw it, signs off, and that proof goes with you to every internship, lab and grad application.",
   },
   {
     id: "orgs", label: "Clubs", short: "Clubs", icon: Users, cta: { label: "Bring your club", href: "#founding" },
@@ -58,10 +58,10 @@ export function Hero() {
             <span className="text-grad">Get credit<br />for the work.</span>
           </h1>
           <p className="m-hide focus-in mt-6 max-w-xl text-lg leading-relaxed text-muted" style={{ ["--delay" as string]: "0.1s" }}>
-            The record of what you build in STEM: code, circuits, experiments, models, proofs. Use any tools you like. Your club signs off on what it watched you do, and that signed record is what labs, companies and grad programs trust when every résumé reads the same.
+            The record of what you build in STEM: code, circuits, experiments, models, proofs. Use any tools you like. Your club, or a professor, PI or manager who watched you do it, signs off, and that signed record is what labs, companies and grad programs trust when every résumé reads the same.
           </p>
           {/* Phones: the same idea, short enough to read in full. */}
-          <p className="m-only focus-in mt-5 text-base leading-relaxed text-muted">Use any tools. Your club signs off on the work. Labs and companies find you by it.</p>
+          <p className="m-only focus-in mt-5 text-base leading-relaxed text-muted">Use any tools. Someone who saw it signs off. Labs and companies find you by it.</p>
 
           <div className="rise-in mt-8" style={{ ["--delay" as string]: "0.2s" }}>
             <div role="tablist" aria-label="Who Brazework is for" className="flex flex-wrap gap-2">
