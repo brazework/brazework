@@ -61,7 +61,7 @@ export function CommunityComposer({ cid, first, last, interests, topics, userId,
       <input ref={videoRef} type="file" accept="video/mp4,video/webm,video/quicktime" hidden onChange={(e) => { if (e.target.files) pick(e.target.files); e.target.value = ""; }} />
       {dragging && <div className="pointer-events-none absolute inset-0 z-10 grid place-items-center rounded-3xl border-2 border-dashed border-accent bg-surface/90 text-sm font-medium backdrop-blur-sm">Drop photos or a video</div>}
       <div className="flex gap-3">
-        <span className="h-fit rounded-full bg-accent-grad p-[2px]"><Avatar first={first} last={last} size={40} src={avatarSrc} className="border-2 border-surface" /></span>
+        <Avatar first={first} last={last} size={40} src={avatarSrc} />
         <label htmlFor="c-body" className="sr-only">Post to this community</label>
         <textarea id="c-body" value={body} onChange={(e) => setBody(e.target.value)} maxLength={3000} rows={body ? 4 : 2} onPaste={(e) => { const f = [...e.clipboardData.files]; if (f.length && mediaEnabled) { e.preventDefault(); pick(f); } }} placeholder="Share with the club: a build update, a photo, a question" className="flex-1 resize-none rounded-2xl bg-surface-2/60 px-4 py-2.5 text-[15px] leading-relaxed outline-none transition placeholder:text-faint focus:bg-transparent" />
       </div>
@@ -81,8 +81,8 @@ export function CommunityComposer({ cid, first, last, interests, topics, userId,
         </div>
       )}
       <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-line pt-3">
-        <button type="button" onClick={() => photoRef.current?.click()} disabled={!mediaEnabled || att.full} title={mediaEnabled ? undefined : "Photo and video are switching on soon"} className="inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-sm text-muted transition hover:bg-hover hover:text-text active:scale-95 disabled:pointer-events-none disabled:opacity-40"><ImagePlus className="size-[18px] text-sky-500" /> Photo</button>
-        <button type="button" onClick={() => videoRef.current?.click()} disabled={!mediaEnabled || att.full} title={mediaEnabled ? undefined : "Photo and video are switching on soon"} className="inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-sm text-muted transition hover:bg-hover hover:text-text active:scale-95 disabled:pointer-events-none disabled:opacity-40"><Video className="size-[18px] text-rose-500" /> Video</button>
+        <button type="button" onClick={() => photoRef.current?.click()} disabled={!mediaEnabled || att.full} title={mediaEnabled ? undefined : "Photo and video are switching on soon"} className="inline-flex h-9 items-center gap-1.5 rounded-lg px-3 text-sm text-muted transition hover:bg-hover hover:text-text active:scale-95 disabled:pointer-events-none disabled:opacity-40"><ImagePlus className="size-[18px] text-sky-500" /> Photo</button>
+        <button type="button" onClick={() => videoRef.current?.click()} disabled={!mediaEnabled || att.full} title={mediaEnabled ? undefined : "Photo and video are switching on soon"} className="inline-flex h-9 items-center gap-1.5 rounded-lg px-3 text-sm text-muted transition hover:bg-hover hover:text-text active:scale-95 disabled:pointer-events-none disabled:opacity-40"><Video className="size-[18px] text-rose-500" /> Video</button>
         {(att.error || note) && <p role={att.error || note?.error ? "alert" : "status"} className={cn("text-sm", att.error || note?.error ? "text-danger" : "text-muted")}>{att.error || note?.text}</p>}
         <Button type="submit" className="ml-auto" disabled={pending || att.busy || !body.trim()}>{pending && <Loader2 className="size-4 animate-spin" />} Post</Button>
       </div>

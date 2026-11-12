@@ -206,7 +206,7 @@ export function MobileBar({ first, last, badges, avatar }: { first: string; last
     const active = isActive(path, t.match);
     const count = t.badge ? badges[t.badge] : 0;
     return (
-      <Link key={t.href} href={t.href} aria-current={active ? "page" : undefined} aria-label={count ? `${t.label}, ${count} new` : t.label} className={cn("relative flex h-14 flex-col items-center justify-center gap-0.5 rounded-[20px] text-[10px] font-medium transition active:scale-90", active ? "text-text" : "text-faint")}>
+      <Link key={t.href} href={t.href} aria-current={active ? "page" : undefined} aria-label={count ? `${t.label}, ${count} new` : t.label} className={cn("relative flex h-14 flex-col items-center justify-center gap-0.5 rounded-xl text-[10px] font-medium transition active:scale-90", active ? "text-text" : "text-faint")}>
         {active && <motion.span layoutId="tab-pill" className="absolute inset-0.5 rounded-xl bg-hover" transition={{ type: "spring", stiffness: 500, damping: 38 }} />}
         <span className="relative">
           <t.icon className="size-[22px]" strokeWidth={active ? 2.2 : 1.8} />
@@ -223,7 +223,7 @@ export function MobileBar({ first, last, badges, avatar }: { first: string; last
       <header className="glass fixed inset-x-0 top-0 z-40 flex items-center gap-3 px-4 pt-[calc(env(safe-area-inset-top)+0.625rem)] pb-2.5 md:hidden">
         <Link href="/feed" aria-label="Brazework feed"><Logo /></Link>
         <div className="ml-auto flex items-center gap-1">
-          <button type="button" onClick={() => setSheet("create")} aria-expanded={sheet === "create"} aria-label="Create" className="bg-accent-grad mr-1 grid size-9 place-items-center rounded-full text-on-accent shadow-[0_8px_18px_-8px_rgb(0_0_0/0.5)] transition active:scale-95">
+          <button type="button" onClick={() => setSheet("create")} aria-expanded={sheet === "create"} aria-label="Create" className="bg-accent-grad mr-1 grid size-9 place-items-center rounded-full text-on-accent transition active:scale-95">
             <Plus className="size-5" strokeWidth={2.4} />
           </button>
           <Link href="/search" aria-label="Search" className="grid size-10 place-items-center rounded-full text-text-2 transition hover:bg-hover">
@@ -312,7 +312,7 @@ function Sheet({ open, title, onClose, children }: { open: boolean; title: strin
             dragElastic={{ top: 0, bottom: 0.6 }}
             onDragEnd={(_, i) => { if (i.offset.y > 90 || i.velocity.y > 500) onClose(); }}
             transition={{ type: "spring", stiffness: 380, damping: 36 }}
-            className="absolute inset-x-0 bottom-0 max-h-[85dvh] overflow-y-auto rounded-t-[28px] border-t border-line bg-surface p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]"
+            className="absolute inset-x-0 bottom-0 max-h-[85dvh] overflow-y-auto rounded-t-2xl border-t border-line bg-surface p-4 pb-[calc(1rem+env(safe-area-inset-bottom))]"
           >
             <div className="mx-auto mb-3 h-1 w-10 rounded-full bg-line-strong" aria-hidden />
             <div className="mb-3 flex items-center justify-between px-1">

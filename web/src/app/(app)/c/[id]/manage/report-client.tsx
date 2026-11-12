@@ -38,8 +38,8 @@ export function ClubUpdate({ report, clubId, copilot }: { report: ClubReport; cl
           <h3 className="font-semibold">Write this week&apos;s update</h3>
           <p className="text-sm text-muted">A short post for the club from these numbers. You review it before it&apos;s posted.</p>
         </div>
-        {copilot && <button type="button" onClick={draft} disabled={ai.busy} className="bg-accent-grad inline-flex h-9 items-center gap-1.5 rounded-full px-4 text-sm font-medium text-on-accent disabled:opacity-50"><Sparkles className="size-4" /> {ai.busy ? "Drafting…" : "Draft with Copilot"}</button>}
-        <button type="button" onClick={() => { setText(""); setTools([]); setCards([{ id: `t${Date.now()}`, kind: "club_post", club_id: clubId, club_name: report.name, body: template(report), postKind: "update" }]); }} className="inline-flex h-9 items-center gap-1.5 rounded-full border border-line px-4 text-sm text-text-2 hover:bg-hover"><FileText className="size-4" /> Quick template</button>
+        {copilot && <button type="button" onClick={draft} disabled={ai.busy} className="bg-accent-grad inline-flex h-9 items-center gap-1.5 rounded-lg px-4 text-sm font-medium text-on-accent disabled:opacity-50"><Sparkles className="size-4" /> {ai.busy ? "Drafting…" : "Draft with Copilot"}</button>}
+        <button type="button" onClick={() => { setText(""); setTools([]); setCards([{ id: `t${Date.now()}`, kind: "club_post", club_id: clubId, club_name: report.name, body: template(report), postKind: "update" }]); }} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-line px-4 text-sm text-text-2 hover:bg-hover"><FileText className="size-4" /> Quick template</button>
       </div>
       {(text || tools.length > 0) && <div className="mt-3 text-sm leading-relaxed whitespace-pre-wrap text-text-2"><Lookups tools={tools} live={ai.busy} /><Rich text={text} /></div>}
       {ai.error && <p role="alert" className="mt-2 text-sm text-danger">{ai.error}</p>}
@@ -63,17 +63,17 @@ export function ShareReport({ clubId, token: initial }: { clubId: string; token:
           <p className="mt-1 max-w-xl text-sm text-muted">A link to this semester&apos;s report: events and attendance, members&apos; club-verified work and challenge wins. Public information only; anyone with the link can open it, no account needed.</p>
         </div>
         {!token && (
-          <button type="button" disabled={pending} onClick={() => start(async () => { const r = await shareClubReport(clubId); if (r.ok && r.token) setToken(r.token); else setMsg(r.message); })} className="inline-flex h-10 items-center gap-1.5 rounded-full bg-accent px-4 text-sm font-medium text-on-accent disabled:opacity-50">
+          <button type="button" disabled={pending} onClick={() => start(async () => { const r = await shareClubReport(clubId); if (r.ok && r.token) setToken(r.token); else setMsg(r.message); })} className="inline-flex h-10 items-center gap-1.5 rounded-lg bg-accent px-4 text-sm font-medium text-on-accent disabled:opacity-50">
             {pending && <Loader2 className="size-4 animate-spin" />} Create link
           </button>
         )}
       </div>
       {token && (
         <div className="mt-4 flex flex-wrap items-center gap-2">
-          <input id="report-link" readOnly value={url} onFocus={(e) => e.currentTarget.select()} aria-label="Report link" className="h-10 min-w-0 flex-1 rounded-full border border-line bg-surface-2 px-4 font-mono text-xs text-text-2" />
-          <button type="button" onClick={() => { void navigator.clipboard?.writeText(url); setCopied(true); setTimeout(() => setCopied(false), 1800); }} className="inline-flex h-10 items-center rounded-full border border-line px-4 text-sm hover:bg-hover">{copied ? "Copied" : "Copy"}</button>
-          <a href={`/r/${token}`} target="_blank" rel="noopener noreferrer" className="inline-flex h-10 items-center rounded-full border border-line px-4 text-sm hover:bg-hover">Open</a>
-          <button type="button" disabled={pending} onClick={() => start(async () => { if (!confirm("Turn off this link? Anyone who has it won't be able to open the report.")) return; const r = await revokeClubReport(clubId); if (r.ok) setToken(null); setMsg(r.message); })} className="inline-flex h-10 items-center rounded-full px-3 text-sm text-danger hover:bg-hover">Turn off</button>
+          <input id="report-link" readOnly value={url} onFocus={(e) => e.currentTarget.select()} aria-label="Report link" className="h-10 min-w-0 flex-1 rounded-lg border border-line bg-surface-2 px-4 font-mono text-xs text-text-2" />
+          <button type="button" onClick={() => { void navigator.clipboard?.writeText(url); setCopied(true); setTimeout(() => setCopied(false), 1800); }} className="inline-flex h-10 items-center rounded-lg border border-line px-4 text-sm hover:bg-hover">{copied ? "Copied" : "Copy"}</button>
+          <a href={`/r/${token}`} target="_blank" rel="noopener noreferrer" className="inline-flex h-10 items-center rounded-lg border border-line px-4 text-sm hover:bg-hover">Open</a>
+          <button type="button" disabled={pending} onClick={() => start(async () => { if (!confirm("Turn off this link? Anyone who has it won't be able to open the report.")) return; const r = await revokeClubReport(clubId); if (r.ok) setToken(null); setMsg(r.message); })} className="inline-flex h-10 items-center rounded-lg px-3 text-sm text-danger hover:bg-hover">Turn off</button>
         </div>
       )}
       {msg && <p role="status" className="mt-2 text-xs text-muted">{msg}</p>}

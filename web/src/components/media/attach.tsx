@@ -69,7 +69,7 @@ export function useAttachments(ownerId: string) {
 export function AttachButtons({ onPick, disabled }: { onPick: (files: FileList) => void; disabled?: boolean }) {
   const photo = useRef<HTMLInputElement>(null);
   const video = useRef<HTMLInputElement>(null);
-  const btn = "inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-xs text-muted transition hover:bg-hover hover:text-text disabled:pointer-events-none disabled:opacity-40";
+  const btn = "inline-flex h-8 items-center gap-1.5 rounded-lg px-3 text-xs text-muted transition hover:bg-hover hover:text-text disabled:pointer-events-none disabled:opacity-40";
   return (
     <div className="flex items-center gap-1">
       <input ref={photo} type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple hidden onChange={(e) => { if (e.target.files?.length) onPick(e.target.files); e.target.value = ""; }} />

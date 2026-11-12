@@ -137,7 +137,7 @@ export function GroupThread({ msgs, me, myName, chatId, seen = {}, reactions = [
       )}
       {typers.length > 0 && (
         <div className="mt-3 flex items-center gap-2 text-xs text-muted">
-          <span className="glass-card inline-flex gap-1 rounded-full px-3 py-2.5" aria-hidden="true">{[0, 1, 2].map((k) => <span key={k} className="size-1.5 animate-bounce rounded-full bg-muted" style={{ animationDelay: `${k * 120}ms` }} />)}</span>
+          <span className="glass-card inline-flex gap-1 rounded-lg px-3 py-2.5" aria-hidden="true">{[0, 1, 2].map((k) => <span key={k} className="size-1.5 animate-bounce rounded-full bg-muted" style={{ animationDelay: `${k * 120}ms` }} />)}</span>
           {typers.length === 1 ? `${typers[0]} is typing…` : `${typers.slice(0, 2).join(" and ")}${typers.length > 2 ? " and others" : ""} are typing…`}
         </div>
       )}
@@ -217,7 +217,7 @@ export function GroupComposer({ chatId, canAnnounce = false, placeholder = "Writ
           style={{ outline: "none" }}
           className="max-h-40 min-h-10 flex-1 resize-none bg-transparent px-3 py-2 text-[15px] text-text placeholder:text-faint"
         />
-        <button type="submit" disabled={!body.trim()} aria-label="Send" className="bg-accent-grad grid size-10 shrink-0 place-items-center rounded-full text-on-accent transition hover:-translate-y-px active:scale-90 disabled:opacity-40">
+        <button type="submit" disabled={!body.trim()} aria-label="Send" className="bg-accent-grad grid size-10 shrink-0 place-items-center rounded-full text-on-accent transition active:scale-90 disabled:opacity-40">
           {pending ? <Loader2 className="size-4 animate-spin" /> : <ArrowUp className="size-4" />}
         </button>
       </div>
@@ -236,9 +236,9 @@ export function NewTeamChat({ communityId, members, me }: { communityId: string;
   const [pending, start] = useTransition();
   const others = members.filter((m) => m.uid !== me && `${m.first} ${m.last}`.toLowerCase().includes(q.trim().toLowerCase()));
   if (!open)
-    return <button type="button" onClick={() => setOpen(true)} className="inline-flex h-8 items-center gap-1.5 rounded-full border border-line px-3 text-xs font-medium text-text-2 transition hover:bg-hover"><Plus className="size-3.5" /> Team chat</button>;
+    return <button type="button" onClick={() => setOpen(true)} className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-line px-3 text-xs font-medium text-text-2 transition hover:bg-hover"><Plus className="size-3.5" /> Team chat</button>;
   return (
-    <div className="absolute top-full right-3 z-30 mt-2 w-80 rounded-2xl border border-line bg-surface p-4 shadow-[0_20px_50px_-12px_rgba(0,0,0,0.35)]">
+    <div className="absolute top-full right-3 z-30 mt-2 w-80 rounded-2xl border border-line bg-surface p-4 shadow-[var(--shadow-float)]">
       <div className="flex items-center justify-between"><span className="inline-flex items-center gap-1.5 text-sm font-semibold"><Hash className="size-4" /> New team chat</span><button type="button" aria-label="Close" onClick={() => setOpen(false)} className="text-faint hover:text-text"><X className="size-4" /></button></div>
       <input value={name} onChange={(e) => setName(e.target.value)} maxLength={60} placeholder="Name, e.g. Avionics" autoFocus className="mt-3 h-10 w-full rounded-xl border border-line bg-surface/70 px-3 text-sm outline-none focus:border-text" />
       <div className="relative mt-2">

@@ -42,7 +42,7 @@ export function HandOff({ cid, role, candidates }: { cid: string; role: string; 
           <label className="text-sm font-medium" htmlFor="handoff-note">Note for the club (optional)</label>
           <input id="handoff-note" value={note} onChange={(e) => setNote(e.target.value)} maxLength={300} placeholder="e.g. Graduating in May; Josh runs it next year" className={inputCls} />
           {msg && <p role="status" className={msg.ok ? "text-sm text-ok" : "text-sm text-danger"}>{msg.text}</p>}
-          <button type="submit" disabled={!to || pending || msg?.ok} className="bg-accent-grad inline-flex h-11 items-center justify-center gap-2 self-start rounded-full px-5 text-sm font-semibold text-on-accent disabled:opacity-50">
+          <button type="submit" disabled={!to || pending || msg?.ok} className="bg-accent-grad inline-flex h-11 items-center justify-center gap-2 self-start rounded-lg px-5 text-sm font-semibold text-on-accent disabled:opacity-50">
             {pending && <Loader2 className="size-4 animate-spin" />} Hand off
           </button>
         </form>

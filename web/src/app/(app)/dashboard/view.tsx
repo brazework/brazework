@@ -75,7 +75,7 @@ export function DashboardView({ r, range, likes, comments, follows, views, repor
             <div className="font-semibold">Quiet {label}. Let&apos;s change that.</div>
             <p className="mt-0.5 text-sm text-muted">Posts with a result or a photo get the most replies. Ember can find a club to join or turn your notes into a post.</p>
           </div>
-          <Link href={`/copilot?q=${encodeURIComponent("How can I get more people to see my work on Brazework? Look at my profile and suggest three concrete next steps.")}`} className="bg-accent-grad inline-flex h-10 items-center gap-1.5 rounded-full px-4 text-sm font-medium text-on-accent">Ask Ember <ArrowRight className="size-4" /></Link>
+          <Link href={`/copilot?q=${encodeURIComponent("How can I get more people to see my work on Brazework? Look at my profile and suggest three concrete next steps.")}`} className="bg-accent-grad inline-flex h-10 items-center gap-1.5 rounded-lg px-4 text-sm font-medium text-on-accent">Ask Ember <ArrowRight className="size-4" /></Link>
         </Panel>
       )}
 

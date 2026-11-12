@@ -169,7 +169,7 @@ export function NewPosts({ me }: { me: string }) {
       <button
         type="button"
         onClick={() => { setCount(0); router.refresh(); window.scrollTo({ top: 0, behavior: "smooth" }); }}
-        className="bg-accent-grad pointer-events-auto inline-flex items-center gap-1.5 rounded-full px-4 py-2 text-sm font-medium text-on-accent shadow-[0_12px_28px_-12px_var(--accent)] transition hover:-translate-y-px active:scale-95"
+        className="bg-accent-grad pointer-events-auto inline-flex items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium text-on-accent transition active:scale-95"
       >
         <ArrowUp className="size-4" /> {count} new {count === 1 ? "post" : "posts"}
       </button>

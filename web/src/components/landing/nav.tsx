@@ -44,7 +44,7 @@ export function Nav() {
         aria-label="Main"
         className={cn(
           "relative flex w-full max-w-6xl flex-wrap items-center gap-6 rounded-2xl px-4 py-2.5 transition-all duration-500",
-          scrolled || open ? "glass shadow-[0_10px_40px_-12px_rgba(0,0,0,0.6)]" : "border border-transparent",
+          scrolled || open ? "glass shadow-[var(--shadow-float)]" : "border border-transparent",
         )}
       >
         <Link href="/" aria-label="Brazework home"><Logo /></Link>

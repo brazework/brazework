@@ -77,7 +77,7 @@ export function ProjectCard({ project, own, interests, copilot = false, clubs, s
   const act = (fn: () => Promise<ProjectState>) => start(async () => { const r = await fn(); setMsg(r.ok ? r.message : r.message); });
 
   return (
-    <article className="glass-card group relative flex h-full flex-col overflow-hidden rounded-3xl p-5 transition duration-300 hover:-translate-y-1">
+    <article className="glass-card group relative flex h-full flex-col overflow-hidden rounded-3xl p-5 transition duration-300">
       <div className="flex items-start justify-between gap-3">
         <h3 className="text-lg font-semibold tracking-tight"><Link href={`/projects/${project.id}`} className="hover:underline">{project.title}</Link></h3>
         {verified > 0 && <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[color-mix(in_oklab,var(--ok)_14%,transparent)] px-2 py-0.5 text-[11px] font-medium text-ok"><BadgeCheck className="size-3.5" /> {verified} verified</span>}
@@ -299,9 +299,9 @@ function ProjectDialog({ project, interests, onClose, copilot = false, stack = f
         {copilot && (
           <div className="-mt-2 flex flex-wrap items-center gap-2">
             {ai.busy ? (
-              <button type="button" onClick={ai.stop} className="h-8 rounded-full border border-line px-3 text-xs">Stop</button>
+              <button type="button" onClick={ai.stop} className="h-8 rounded-lg border border-line px-3 text-xs">Stop</button>
             ) : (
-              <button type="button" onClick={writeUp} className="bg-accent-grad inline-flex h-8 items-center gap-1.5 rounded-full px-3 text-xs font-medium text-on-accent"><Sparkles className="size-3.5" /> {details.trim() ? "Polish it with Copilot" : "Write it with Copilot"}</button>
+              <button type="button" onClick={writeUp} className="bg-accent-grad inline-flex h-8 items-center gap-1.5 rounded-lg px-3 text-xs font-medium text-on-accent"><Sparkles className="size-3.5" /> {details.trim() ? "Polish it with Copilot" : "Write it with Copilot"}</button>
             )}
             <span className="text-xs text-faint">Uses your title, summary and notes. Check every fact before saving.</span>
             {ai.error && <p role="alert" className="w-full text-xs text-danger">{ai.error}</p>}

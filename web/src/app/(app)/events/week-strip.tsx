@@ -38,7 +38,7 @@ export function WeekStrip({ events, now }: { events: Item[]; now: number }) {
             className={cn(
               "flex flex-col items-center gap-1 rounded-2xl border py-2.5 transition",
               i === 0 ? "border-line-strong bg-raised" : "border-line",
-              first ? "hover:-translate-y-0.5 hover:border-line-strong hover:bg-hover" : "opacity-60",
+              first ? "hover:border-line-strong hover:bg-hover" : "opacity-60",
             )}
           >
             <span className="text-[10px] font-medium tracking-wide text-faint uppercase">{i === 0 ? "Today" : d.dow}</span>

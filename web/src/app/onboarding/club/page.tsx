@@ -47,7 +47,7 @@ async function FindYourClub() {
   return (
     <>
       <div className="flex items-center justify-between gap-3">
-        <p className="text-xs font-medium tracking-[0.14em] text-faint uppercase">Step 2 of 2</p>
+        <p className="text-xs font-medium tracking-[0.06em] text-faint uppercase">Step 2 of 2</p>
         {/* On phones the cards are long; skipping shouldn't need a scroll. */}
         <Link href="/feed" className="text-sm text-muted hover:text-text sm:hidden">Skip</Link>
       </div>
@@ -62,8 +62,8 @@ async function FindYourClub() {
       )}
       <StartChapterCard className="mt-4" />
       <div className="mt-8 flex flex-wrap items-center gap-3">
-        <Link href="/communities?tab=discover" className="inline-flex h-10 items-center gap-1.5 rounded-full border border-line px-4 text-sm transition hover:bg-hover"><Search className="size-4" /> Search all clubs</Link>
-        <Link href="/communities?tab=create" className="inline-flex h-10 items-center gap-1.5 rounded-full border border-line px-4 text-sm transition hover:bg-hover"><Plus className="size-4" /> Start your club</Link>
+        <Link href="/communities?tab=discover" className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-line px-4 text-sm transition hover:bg-hover"><Search className="size-4" /> Search all clubs</Link>
+        <Link href="/communities?tab=create" className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-line px-4 text-sm transition hover:bg-hover"><Plus className="size-4" /> Start your club</Link>
         <Link href="/feed" className="ml-auto inline-flex h-10 items-center gap-1.5 px-2 text-sm text-muted transition hover:text-text">Skip for now <ArrowRight className="size-4" /></Link>
       </div>
     </>

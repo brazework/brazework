@@ -12,7 +12,7 @@ export function FirstBuild({ first, chapter }: { first: string; chapter?: string
   const [pending, start] = useTransition();
   const router = useRouter();
   return (
-    <section aria-label="Your first build" className="glass-card relative mb-4 overflow-hidden rounded-[28px] p-5 sm:p-7">
+    <section aria-label="Your first build" className="glass-card relative mb-4 overflow-hidden rounded-2xl p-5 sm:p-7">
       <div aria-hidden className="cover-empty pointer-events-none absolute inset-0 opacity-70 [mask-image:linear-gradient(to_bottom,black,transparent_80%)]" />
       <form className="relative" onSubmit={(e) => { e.preventDefault(); setError(""); start(async () => { const r = await startProject(text); if (r.ok) router.refresh(); else setError(r.message); }); }}>
         <span className="grid size-11 place-items-center rounded-2xl bg-text text-surface"><Rocket className="size-5" /></span>

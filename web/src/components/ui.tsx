@@ -31,7 +31,7 @@ export function Button({ href, variant = "primary", size = "md", className, chil
 }
 
 export function Kicker({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <div className={cn("font-mono text-[11px] uppercase tracking-[0.18em] text-faint", className)}>{children}</div>;
+  return <div className={cn("text-[11px] font-medium uppercase tracking-[0.06em] text-faint", className)}>{children}</div>;
 }
 
 export function Avatar({ first, last, size = 40, className, src }: { first: string; last: string; size?: number; className?: string; src?: string | null }) {

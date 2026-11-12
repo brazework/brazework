@@ -63,7 +63,6 @@ async function ChallengeView({ params }: { params: PageProps<"/challenges/[id]">
     <div className="mx-auto max-w-3xl">
       <Link href="/challenges" className="inline-flex items-center gap-1 text-sm text-muted hover:text-text"><ArrowLeft className="size-4" /> Challenges</Link>
       <header className="glass-card relative mt-4 overflow-hidden rounded-3xl p-6">
-        <div className="bg-accent-grad pointer-events-none absolute -top-24 -right-16 size-64 rounded-full banner-glow blur-3xl" aria-hidden="true" />
         <div className="relative">
           <div className="flex flex-wrap items-center gap-2 text-xs text-faint">
             <span className="inline-flex items-center gap-1"><Building2 className="size-3.5" /> {c.organizations?.name ?? "Sponsor"}</span>

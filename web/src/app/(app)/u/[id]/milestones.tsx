@@ -96,7 +96,7 @@ export function AddMilestone({ projectId, projectTitle, clubs }: { projectId: st
   const [sent, setSent] = useState(false);
   return (
     <>
-      <button type="button" onClick={() => setOpen(true)} className="relative inline-flex h-8 items-center gap-1.5 rounded-full border border-dashed border-line-strong px-3 text-xs font-medium text-text-2 transition hover:border-solid hover:bg-hover active:scale-95">
+      <button type="button" onClick={() => setOpen(true)} className="relative inline-flex h-8 items-center gap-1.5 rounded-lg border border-dashed border-line-strong px-3 text-xs font-medium text-text-2 transition hover:border-solid hover:bg-hover active:scale-95">
         {sent && <Celebrate pieces={16} />}
         <Flag className="size-3.5" /> Add milestone
       </button>

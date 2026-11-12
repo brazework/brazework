@@ -83,7 +83,7 @@ async function Events({ searchParams }: { searchParams: PageProps<"/events">["se
         actions={<HostMenu clubs={hostClubs} orgAdmin={isAdmin} />}
       />
       {next && tab === "upcoming" && !topic && (
-        <Link href={`/events/${next.id}`} className="glass-card group mt-6 flex flex-wrap items-center gap-4 rounded-3xl p-5 transition hover:-translate-y-0.5">
+        <Link href={`/events/${next.id}`} className="glass-card group mt-6 flex flex-wrap items-center gap-4 rounded-3xl p-5 transition">
           <span className="bg-accent-grad grid size-12 shrink-0 place-items-center rounded-2xl text-on-accent"><CalendarCheck className="size-5" /></span>
           <span className="min-w-0 flex-1">
             <span className="block text-xs font-medium tracking-wide text-faint uppercase">Up next for you{nextBadge ? ` · ${nextBadge.text}` : ""}</span>

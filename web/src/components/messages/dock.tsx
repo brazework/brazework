@@ -173,12 +173,12 @@ function Dock({ variant }: { variant: "float" | "rail" }) {
     <div className="fixed right-6 bottom-6 z-40 hidden w-[340px] lg:block xl:hidden [html[data-tour=on]_&]:!hidden">
       <AnimatePresence initial={false}>
         {open && (
-          <motion.section aria-label="Messages" initial={{ opacity: 0, y: 12, height: 0 }} animate={{ opacity: 1, y: 0, height: 460 }} exit={{ opacity: 0, y: 12, height: 0 }} transition={{ type: "spring", stiffness: 380, damping: 34 }} className="mb-2 flex flex-col overflow-hidden rounded-3xl border border-line bg-surface shadow-[0_24px_60px_-20px_rgb(0_0_0/0.45)]">
+          <motion.section aria-label="Messages" initial={{ opacity: 0, y: 12, height: 0 }} animate={{ opacity: 1, y: 0, height: 460 }} exit={{ opacity: 0, y: 12, height: 0 }} transition={{ type: "spring", stiffness: 380, damping: 34 }} className="mb-2 flex flex-col overflow-hidden rounded-3xl border border-line bg-surface shadow-[var(--shadow-float)]">
             {panel}
           </motion.section>
         )}
       </AnimatePresence>
-      <button type="button" onClick={toggle} aria-expanded={open} className="glass flex w-full items-center gap-2.5 rounded-2xl border border-line px-4 py-2.5 shadow-[var(--shadow)] transition hover:-translate-y-px">
+      <button type="button" onClick={toggle} aria-expanded={open} className="glass flex w-full items-center gap-2.5 rounded-2xl border border-line px-4 py-2.5 shadow-[var(--shadow)] transition">
         <MessageSquare className="size-4" />
         <span className="text-sm font-semibold">Messages</span>
         {unread > 0 && <span className="rounded-full bg-accent px-1.5 text-[11px] font-semibold text-on-accent tabular-nums">{unread}</span>}

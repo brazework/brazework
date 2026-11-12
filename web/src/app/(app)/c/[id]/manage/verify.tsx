@@ -89,13 +89,13 @@ function QueueCard({ m, result, onDone }: { m: QueueItem; result?: "verified" | 
           <div className="mt-4 flex flex-wrap items-center gap-2">
             {declining ? (
               <>
-                <button type="button" disabled={pending} onClick={() => review(false)} className="inline-flex h-9 items-center gap-1.5 rounded-full bg-danger px-4 text-sm font-medium text-white transition active:scale-95 disabled:opacity-50">{pending && <Loader2 className="size-4 animate-spin" />} Decline</button>
-                <button type="button" onClick={() => setDeclining(false)} className="inline-flex h-9 items-center gap-1 rounded-full px-3 text-sm text-muted hover:text-text"><X className="size-4" /> Cancel</button>
+                <button type="button" disabled={pending} onClick={() => review(false)} className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-danger px-4 text-sm font-medium text-white transition active:scale-95 disabled:opacity-50">{pending && <Loader2 className="size-4 animate-spin" />} Decline</button>
+                <button type="button" onClick={() => setDeclining(false)} className="inline-flex h-9 items-center gap-1 rounded-lg px-3 text-sm text-muted hover:text-text"><X className="size-4" /> Cancel</button>
               </>
             ) : (
               <>
-                <button type="button" disabled={pending} onClick={() => review(true)} className="bg-accent-grad inline-flex h-9 items-center gap-1.5 rounded-full px-4 text-sm font-medium text-on-accent shadow-[0_8px_20px_-10px_var(--accent)] transition hover:-translate-y-px active:scale-95 disabled:opacity-50">{pending ? <Loader2 className="size-4 animate-spin" /> : <BadgeCheck className="size-4" />} Verify</button>
-                <button type="button" onClick={() => setDeclining(true)} className="inline-flex h-9 items-center rounded-full border border-line px-4 text-sm text-muted transition hover:text-text">Decline</button>
+                <button type="button" disabled={pending} onClick={() => review(true)} className="bg-accent-grad inline-flex h-9 items-center gap-1.5 rounded-lg px-4 text-sm font-medium text-on-accent transition active:scale-95 disabled:opacity-50">{pending ? <Loader2 className="size-4 animate-spin" /> : <BadgeCheck className="size-4" />} Verify</button>
+                <button type="button" onClick={() => setDeclining(true)} className="inline-flex h-9 items-center rounded-lg border border-line px-4 text-sm text-muted transition hover:text-text">Decline</button>
               </>
             )}
             {msg && <span role="alert" className="text-xs text-danger">{msg}</span>}
@@ -128,8 +128,8 @@ export function RecentReviews({ items, isOwner = false }: { items: QueueItem[]; 
                 <div><span className="font-medium">{m.title}</span> <span className="text-muted">· {m.owner?.first_name} {m.owner?.last_name}</span></div>
                 {m.dispute_note && <p className="mt-2 rounded-xl bg-surface-2 px-3 py-2 text-text-2">&ldquo;{m.dispute_note}&rdquo;</p>}
                 <div className="mt-3 flex flex-wrap gap-2">
-                  <button type="button" disabled={pending} onClick={() => start(async () => { const r = await resolveDispute(m.id, true); setMsg(r.message); if (r.ok) setState((s) => ({ ...s, [m.id]: "verified" })); })} className="inline-flex h-9 items-center gap-1.5 rounded-full bg-accent-grad px-4 text-sm font-medium text-on-accent disabled:opacity-60"><BadgeCheck className="size-4" /> Uphold: verify it</button>
-                  <button type="button" disabled={pending} onClick={() => start(async () => { const r = await resolveDispute(m.id, false); setMsg(r.message); if (r.ok) setState((s) => ({ ...s, [m.id]: "escalated" })); })} className="inline-flex h-9 items-center gap-1.5 rounded-full border border-line px-4 text-sm disabled:opacity-60">Disagree: send to Brazework admins</button>
+                  <button type="button" disabled={pending} onClick={() => start(async () => { const r = await resolveDispute(m.id, true); setMsg(r.message); if (r.ok) setState((s) => ({ ...s, [m.id]: "verified" })); })} className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-accent-grad px-4 text-sm font-medium text-on-accent disabled:opacity-60"><BadgeCheck className="size-4" /> Uphold: verify it</button>
+                  <button type="button" disabled={pending} onClick={() => start(async () => { const r = await resolveDispute(m.id, false); setMsg(r.message); if (r.ok) setState((s) => ({ ...s, [m.id]: "escalated" })); })} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-line px-4 text-sm disabled:opacity-60">Disagree: send to Brazework admins</button>
                 </div>
               </li>
             ))}
@@ -154,9 +154,9 @@ export function RecentReviews({ items, isOwner = false }: { items: QueueItem[]; 
                 </div>
                 {revoking === m.id && (
                   <form className="mt-2 flex flex-wrap gap-2" onSubmit={(e) => { e.preventDefault(); start(async () => { const r = await revokeMilestone(m.id, why); setMsg(r.message); if (r.ok) { setState((s) => ({ ...s, [m.id]: "revoked" })); setRevoking(null); } }); }}>
-                    <input value={why} onChange={(e) => setWhy(e.target.value)} required minLength={5} maxLength={300} placeholder="Why it's being revoked (they'll see this)" className="h-9 min-w-0 flex-1 rounded-full border border-line bg-surface-2 px-3 text-sm" />
-                    <button type="submit" disabled={pending} className="h-9 rounded-full bg-danger px-4 text-sm font-medium text-white disabled:opacity-60">Revoke</button>
-                    <button type="button" onClick={() => setRevoking(null)} className="h-9 rounded-full px-3 text-sm text-muted">Cancel</button>
+                    <input value={why} onChange={(e) => setWhy(e.target.value)} required minLength={5} maxLength={300} placeholder="Why it's being revoked (they'll see this)" className="h-9 min-w-0 flex-1 rounded-lg border border-line bg-surface-2 px-3 text-sm" />
+                    <button type="submit" disabled={pending} className="h-9 rounded-lg bg-danger px-4 text-sm font-medium text-white disabled:opacity-60">Revoke</button>
+                    <button type="button" onClick={() => setRevoking(null)} className="h-9 rounded-lg px-3 text-sm text-muted">Cancel</button>
                   </form>
                 )}
               </li>

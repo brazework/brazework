@@ -63,7 +63,7 @@ export function CommandPalette() {
         <motion.div className="fixed inset-0 z-[70] flex items-start justify-center bg-black/40 px-4 pt-[12vh] backdrop-blur-sm" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setOpen(false)}>
           <motion.div role="dialog" aria-modal="true" aria-label="Ask Ember or jump anywhere" onClick={(e) => e.stopPropagation()}
             initial={{ opacity: 0, y: -10, scale: 0.98 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -6, scale: 0.98 }} transition={{ type: "spring", stiffness: 420, damping: 34 }}
-            className="w-full max-w-xl overflow-hidden rounded-3xl border border-line bg-surface shadow-[0_30px_80px_-20px_rgb(0_0_0/0.6)]">
+            className="w-full max-w-xl overflow-hidden rounded-3xl border border-line bg-surface shadow-[var(--shadow-float)]">
             <div className="flex items-center gap-3 border-b border-line px-4">
               <Sparkles className="size-5 shrink-0 text-accent" />
               <input ref={input} value={q} onChange={(e) => { setQ(e.target.value); setI(0); }}

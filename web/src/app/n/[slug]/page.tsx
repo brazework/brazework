@@ -50,7 +50,7 @@ async function Network({ params }: { params: PageProps<"/n/[slug]">["params"] })
 
   return (
     <>
-      <section aria-label={n.name} className="glass-card relative overflow-hidden rounded-[28px] p-6 sm:p-8">
+      <section aria-label={n.name} className="glass-card relative overflow-hidden rounded-2xl p-6 sm:p-8">
         <div aria-hidden className="cover-empty pointer-events-none absolute inset-0 opacity-70 [mask-image:linear-gradient(to_bottom,black,transparent_85%)]" />
         <div className="relative">
           <span className="grid size-14 place-items-center rounded-2xl bg-text text-base font-bold text-surface">{n.short.slice(0, 4)}</span>
@@ -118,7 +118,7 @@ async function Network({ params }: { params: PageProps<"/n/[slug]">["params"] })
           <p className="font-semibold">Is your school&apos;s chapter here?</p>
           <p className="mt-0.5 text-sm text-muted">Start it with your school email. Members join with one link and land in your chapter&apos;s feed.</p>
         </div>
-        <Link href="/chapters/new" className="inline-flex h-11 shrink-0 items-center gap-2 rounded-full bg-text px-5 text-sm font-semibold text-surface transition hover:opacity-90">Start a chapter <ArrowRight className="size-4" /></Link>
+        <Link href="/chapters/new" className="inline-flex h-11 shrink-0 items-center gap-2 rounded-lg bg-text px-5 text-sm font-semibold text-surface transition hover:opacity-90">Start a chapter <ArrowRight className="size-4" /></Link>
       </section>
       <p className="mt-6 text-center text-xs text-faint">Each chapter is run by its own members. This page isn&apos;t run by {n.short} National; it shows what chapters build on Brazework.</p>
     </>

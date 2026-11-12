@@ -30,7 +30,7 @@ export function StartChecklist({ steps }: { steps: GuideStep[] }) {
           <div className="text-[11px] font-medium tracking-wide text-faint uppercase">Your first five minutes</div>
           <div className="truncate text-sm font-semibold">Next: {next.label}</div>
         </div>
-        <Link href={next.href} className="bg-accent-grad hidden h-9 shrink-0 items-center gap-1.5 rounded-full px-4 text-sm font-semibold text-on-accent transition hover:opacity-90 sm:inline-flex">
+        <Link href={next.href} className="bg-accent-grad hidden h-9 shrink-0 items-center gap-1.5 rounded-lg px-4 text-sm font-semibold text-on-accent transition hover:opacity-90 sm:inline-flex">
           Start <ArrowRight className="size-4" />
         </Link>
         <DismissButton id="feed-start" label="Hide your first five minutes" className="-mr-1.5 self-start sm:self-center" />
@@ -40,7 +40,7 @@ export function StartChecklist({ steps }: { steps: GuideStep[] }) {
         <Link href={next.href} className="bg-accent-grad inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-full text-sm font-semibold text-on-accent sm:hidden">
           Start <ArrowRight className="size-4" />
         </Link>
-        <button type="button" onClick={() => setAll((v) => !v)} aria-expanded={all} className="inline-flex h-9 items-center gap-1 rounded-full px-3 text-xs font-medium text-muted transition hover:bg-hover hover:text-text">
+        <button type="button" onClick={() => setAll((v) => !v)} aria-expanded={all} className="inline-flex h-9 items-center gap-1 rounded-lg px-3 text-xs font-medium text-muted transition hover:bg-hover hover:text-text">
           All steps <ChevronDown className={cn("size-3.5 transition", all && "rotate-180")} />
         </button>
       </div>

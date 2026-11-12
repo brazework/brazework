@@ -235,7 +235,7 @@ function TestRunPlayer({ v }: { v: MediaItem }) {
   const seek = (s: number) => { const x = el(); if (x) { x.currentTime = Math.max(0, Math.min(dur || s, s)); setT(x.currentTime); } };
   const step = (frames: number) => { const x = el(); if (x) { x.pause(); userPaused.current = true; setHeld(true); seek(x.currentTime + frames / 30); } };
   const nextSpeed = () => { const sp = SPEEDS[(SPEEDS.indexOf(speed) + 1) % SPEEDS.length]; setSpeed(sp); if (el()) el()!.playbackRate = sp; };
-  const chip = "inline-flex h-9 items-center gap-1.5 rounded-full bg-black/55 px-3 text-xs font-medium text-white backdrop-blur transition active:scale-95";
+  const chip = "inline-flex h-9 items-center gap-1.5 rounded-lg bg-black/55 px-3 text-xs font-medium text-white backdrop-blur transition active:scale-95";
 
   return (
     <div className="mt-4">

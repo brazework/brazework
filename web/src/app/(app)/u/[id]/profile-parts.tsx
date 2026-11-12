@@ -40,7 +40,7 @@ export function ProfileStrength({ steps }: { steps: Step[] }) {
       <ul className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-3">
         {next.map((s) => (
           <li key={s.label}>
-            <a href={s.href} className="group flex h-full items-center justify-between gap-2 rounded-2xl border border-line bg-surface/70 px-3 py-2.5 text-sm transition hover:-translate-y-px hover:border-line-strong">
+            <a href={s.href} className="group flex h-full items-center justify-between gap-2 rounded-2xl border border-line bg-surface/70 px-3 py-2.5 text-sm transition hover:border-line-strong">
               {s.label} <ArrowRight className="size-3.5 shrink-0 text-faint transition group-hover:translate-x-0.5 group-hover:text-text" />
             </a>
           </li>

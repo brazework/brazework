@@ -71,7 +71,7 @@ async function Starts() {
               <li key={p.uid} className="flex items-center gap-3 rounded-2xl px-2 py-2 transition hover:bg-hover">
                 <Avatar first={p.first_name} last={p.last_name} size={36} />
                 <span className="min-w-0 flex-1"><span className="block truncate text-sm font-medium">{`${p.first_name} ${p.last_name}`.trim()}</span>{p.headline && <span className="block truncate text-xs text-muted">{p.headline}</span>}</span>
-                <Link href={`/messages/new?to=${p.uid}`} className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-full border border-line px-3 text-xs font-medium transition hover:bg-surface"><Send className="size-3.5" /> Message</Link>
+                <Link href={`/messages/new?to=${p.uid}`} className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border border-line px-3 text-xs font-medium transition hover:bg-surface"><Send className="size-3.5" /> Message</Link>
               </li>
             ))}
           </ul>

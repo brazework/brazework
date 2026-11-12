@@ -35,7 +35,7 @@ export function PersonRow({
 }
 
 // Small round buttons used across network rows.
-export const smallBtn = "inline-flex h-9 items-center justify-center gap-1.5 rounded-full px-4 text-sm font-medium transition disabled:pointer-events-none disabled:opacity-50";
+export const smallBtn = "inline-flex h-9 items-center justify-center gap-1.5 rounded-lg px-4 text-sm font-medium transition disabled:pointer-events-none disabled:opacity-50";
 export const smallPrimary = cn(smallBtn, "bg-accent text-on-accent hover:opacity-90");
 export const smallOutline = cn(smallBtn, "border border-line text-text hover:border-line-strong hover:bg-hover");
 export const smallGhost = cn(smallBtn, "text-muted hover:bg-hover hover:text-text");

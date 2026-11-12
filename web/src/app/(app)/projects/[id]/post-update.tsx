@@ -109,8 +109,8 @@ export function PostUpdate({ projectId, title, className, autoFocus = false, att
       {attach && linkOpen && (
         <div className="mt-2 flex gap-2">
           <label htmlFor={`${id}-link`} className="sr-only">Link</label>
-          <input id={`${id}-link`} autoFocus value={linkDraft} onChange={(e) => setLinkDraft(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addLink(); } if (e.key === "Escape") setLinkOpen(false); }} placeholder="github.com/you/repo, an Onshape doc, a Drive folder…" className="h-9 min-w-0 flex-1 rounded-full border border-line bg-surface/70 px-3.5 text-sm outline-none placeholder:text-faint focus:border-text" />
-          <button type="button" onClick={addLink} disabled={!linkDraft.trim()} className="h-9 shrink-0 rounded-full border border-line px-4 text-sm font-medium transition hover:bg-hover disabled:opacity-50">Add</button>
+          <input id={`${id}-link`} autoFocus value={linkDraft} onChange={(e) => setLinkDraft(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); addLink(); } if (e.key === "Escape") setLinkOpen(false); }} placeholder="github.com/you/repo, an Onshape doc, a Drive folder…" className="h-9 min-w-0 flex-1 rounded-lg border border-line bg-surface/70 px-3.5 text-sm outline-none placeholder:text-faint focus:border-text" />
+          <button type="button" onClick={addLink} disabled={!linkDraft.trim()} className="h-9 shrink-0 rounded-lg border border-line px-4 text-sm font-medium transition hover:bg-hover disabled:opacity-50">Add</button>
         </div>
       )}
 
@@ -122,7 +122,7 @@ export function PostUpdate({ projectId, title, className, autoFocus = false, att
             <button type="button" disabled={busy} onClick={() => setLinkOpen(!linkOpen)} aria-expanded={linkOpen} aria-label="Add a link" title="Add a link (GitHub, Onshape, Drive…)" className="grid size-9 place-items-center rounded-full border border-line text-muted transition hover:bg-hover hover:text-text"><Link2 className="size-4" /></button>
           </>
         )}
-        <button type="submit" disabled={busy || (!body.trim() && !files.length && !links.length)} className="bg-accent-grad inline-flex h-9 items-center gap-1.5 rounded-full px-4 text-sm font-medium text-on-accent disabled:opacity-50">{busy && <Loader2 className="size-4 animate-spin" />} {step || "Post update"}</button>
+        <button type="submit" disabled={busy || (!body.trim() && !files.length && !links.length)} className="bg-accent-grad inline-flex h-9 items-center gap-1.5 rounded-lg px-4 text-sm font-medium text-on-accent disabled:opacity-50">{busy && <Loader2 className="size-4 animate-spin" />} {step || "Post update"}</button>
         {msg && <span role={msg.ok ? "status" : "alert"} className={msg.ok ? "text-xs text-ok" : "text-xs text-danger"}>{msg.text}</span>}
         <span className="ml-auto text-[11px] text-faint">{attach ? "Drop or paste files here · " : ""}Also shows in your followers&apos; feeds</span>
       </div>

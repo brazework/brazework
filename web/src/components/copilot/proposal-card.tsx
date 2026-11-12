@@ -182,10 +182,10 @@ export function ProposalCard({ p: initial }: { p: Proposal }) {
           )}
           <AnimatePresence>{msg && <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} role="alert" className="text-xs text-danger">{msg}</motion.p>}</AnimatePresence>
           <div className="flex items-center gap-2">
-            <button type="button" onClick={confirm} disabled={pending} className="bg-accent-grad inline-flex h-9 items-center gap-1.5 rounded-full px-4 text-sm font-medium text-on-accent shadow-[0_8px_20px_-10px_var(--accent)] transition hover:-translate-y-px active:scale-95 disabled:opacity-50">
+            <button type="button" onClick={confirm} disabled={pending} className="bg-accent-grad inline-flex h-9 items-center gap-1.5 rounded-lg px-4 text-sm font-medium text-on-accent transition active:scale-95 disabled:opacity-50">
               {pending ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />} Confirm
             </button>
-            <button type="button" onClick={() => setState("dismissed")} className="inline-flex h-9 items-center gap-1 rounded-full px-3 text-sm text-muted hover:text-text"><X className="size-4" /> Dismiss</button>
+            <button type="button" onClick={() => setState("dismissed")} className="inline-flex h-9 items-center gap-1 rounded-lg px-3 text-sm text-muted hover:text-text"><X className="size-4" /> Dismiss</button>
           </div>
         </div>
       )}
@@ -199,7 +199,7 @@ function DiscordShare({ clubId, text }: { clubId: string; text: string }) {
   const [pending, start] = useTransition();
   return (
     <div className="mt-2 flex flex-wrap items-center gap-2">
-      {!res?.ok && <button type="button" disabled={pending} onClick={() => start(async () => setRes(await shareToDiscord(clubId, text)))} className="inline-flex h-8 items-center gap-1.5 rounded-full border border-line px-3 text-xs font-medium text-text-2 hover:bg-hover disabled:opacity-50">{pending ? <Loader2 className="size-3.5 animate-spin" /> : <Sparkles className="size-3.5" />} Also post in Discord</button>}
+      {!res?.ok && <button type="button" disabled={pending} onClick={() => start(async () => setRes(await shareToDiscord(clubId, text)))} className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-line px-3 text-xs font-medium text-text-2 hover:bg-hover disabled:opacity-50">{pending ? <Loader2 className="size-3.5 animate-spin" /> : <Sparkles className="size-3.5" />} Also post in Discord</button>}
       {res && <span role={res.ok ? "status" : "alert"} className={cn("text-xs", res.ok ? "text-ok" : "text-muted")}>{res.message}</span>}
     </div>
   );

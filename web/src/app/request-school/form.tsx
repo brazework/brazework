@@ -34,8 +34,8 @@ export function SchoolDecision({ id }: { id: number }) {
   const run = (add: boolean) => start(async () => setMsg(await decideSchool(id, add)));
   return (
     <span className="flex flex-wrap items-center gap-2">
-      <button type="button" disabled={pending} onClick={() => run(true)} className="h-8 rounded-full bg-accent px-3 text-xs font-medium text-on-accent disabled:opacity-50">Add school</button>
-      <button type="button" disabled={pending} onClick={() => run(false)} className="h-8 rounded-full border border-line px-3 text-xs hover:bg-hover disabled:opacity-50">Dismiss</button>
+      <button type="button" disabled={pending} onClick={() => run(true)} className="h-8 rounded-lg bg-accent px-3 text-xs font-medium text-on-accent disabled:opacity-50">Add school</button>
+      <button type="button" disabled={pending} onClick={() => run(false)} className="h-8 rounded-lg border border-line px-3 text-xs hover:bg-hover disabled:opacity-50">Dismiss</button>
       {msg.message && !msg.ok && <span role="alert" className={cn("text-xs text-danger")}>{msg.message}</span>}
     </span>
   );

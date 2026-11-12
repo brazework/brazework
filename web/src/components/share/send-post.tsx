@@ -35,11 +35,11 @@ export function SendPost({ postId, eventId, projectId, compact = true }: { postI
 
   return (
     <div className="relative">
-      <button type="button" onClick={toggle} aria-expanded={open} aria-label={eventId ? "Send event to people" : projectId ? "Send project to people" : "Send post to people"} className={compact ? "inline-flex h-9 items-center gap-1.5 rounded-full px-3 transition hover:bg-hover hover:text-text" : "inline-flex h-10 items-center gap-1.5 rounded-full border border-line px-4 text-sm font-medium transition hover:bg-hover"}>
+      <button type="button" onClick={toggle} aria-expanded={open} aria-label={eventId ? "Send event to people" : projectId ? "Send project to people" : "Send post to people"} className={compact ? "inline-flex h-9 items-center gap-1.5 rounded-lg px-3 transition hover:bg-hover hover:text-text" : "inline-flex h-10 items-center gap-1.5 rounded-lg border border-line px-4 text-sm font-medium transition hover:bg-hover"}>
         <Send className={compact ? "size-[18px]" : "size-4"} />{!compact && " Send to friends"}
       </button>
       {open && (
-        <div className="absolute bottom-full left-1/2 z-30 mb-2 w-80 -translate-x-1/2 rounded-2xl border border-line bg-surface p-3 text-left shadow-[0_20px_50px_-12px_rgba(0,0,0,0.35)]">
+        <div className="absolute bottom-full left-1/2 z-30 mb-2 w-80 -translate-x-1/2 rounded-2xl border border-line bg-surface p-3 text-left shadow-[var(--shadow-float)]">
           <div className="flex items-center justify-between px-1">
             <span className="text-sm font-semibold">Send to</span>
             <button type="button" onClick={() => setOpen(false)} aria-label="Close" className="text-faint hover:text-text"><X className="size-4" /></button>

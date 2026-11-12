@@ -29,7 +29,7 @@ async function Setup() {
         <School className="size-5 text-muted" />
         <p className="mt-3 font-medium">Start a chapter from your school email</p>
         <p className="mt-1 text-muted">Chapters belong to a school, and members trust it&apos;s really theirs because the lead signed up with that school&apos;s email. Log in with your school account, or ask us to add your school.</p>
-        <Link href="/request-school" className="mt-4 inline-flex h-10 items-center rounded-full border border-line px-4 font-medium transition hover:bg-hover">Request your school</Link>
+        <Link href="/request-school" className="mt-4 inline-flex h-10 items-center rounded-lg border border-line px-4 font-medium transition hover:bg-hover">Request your school</Link>
       </Panel>
     );
   if (!setup.networks.length) return <Panel className="p-6 text-sm text-muted">No national organizations are on Brazework yet.</Panel>;

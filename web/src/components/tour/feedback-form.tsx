@@ -108,7 +108,7 @@ export function FeedbackForm({ compact = false }: { compact?: boolean }) {
       <button
         type="submit"
         disabled={pending}
-        className="bg-accent-grad inline-flex h-9 items-center justify-center gap-2 rounded-full px-4 text-sm font-medium text-on-accent transition hover:-translate-y-px active:scale-95 disabled:opacity-60"
+        className="bg-accent-grad inline-flex h-9 items-center justify-center gap-2 rounded-lg px-4 text-sm font-medium text-on-accent transition active:scale-95 disabled:opacity-60"
       >
         {pending ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />} Send feedback
       </button>
