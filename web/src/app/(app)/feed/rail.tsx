@@ -12,6 +12,8 @@ import { newsPool, pickNews, type NewsPick } from "@/lib/news";
 import { TrendingNews } from "./trending-news";
 import { YourWeekCard } from "./streak";
 import { ConnectAgentCard } from "./connect-agent";
+import { GoalCard } from "@/components/app/goal-card";
+import { loadGoal, loadRecord } from "@/lib/goal-load";
 import { Suspense } from "react";
 
 // The feed's right rail (wide screens): your week, what's coming up, your clubs and open challenges, then what's trending and Brazework's own updates, so the rest of Brazework is one glance away.
@@ -52,7 +54,9 @@ export async function FeedRail() {
   const trending = [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 6);
 
   // Your week tops the rail (FIX-67, FIX-92): streak, proof, views and to-dos in one card.
-  return <RailView top={<><Suspense fallback={null}><YourWeekCard /></Suspense>{(tokens.count ?? 1) === 0 && <ConnectAgentCard />}</>} trending={trending} news={news} hasInterests={(profile.interests ?? []).length > 0} clubs={clubs} events={events} going={goingSet} challenges={challenges} />;
+  // Your goal first (supabase/goals.sql): what you're working toward and the one next step.
+  const [goal, record] = f.goals ? await Promise.all([loadGoal(supabase, user.id), loadRecord(supabase, user.id)]) : [null, null];
+  return <RailView top={<>{record && <GoalCard compact goal={goal} record={record} profileId={user.id} />}<Suspense fallback={null}><YourWeekCard /></Suspense>{(tokens.count ?? 1) === 0 && <ConnectAgentCard />}</>} trending={trending} news={news} hasInterests={(profile.interests ?? []).length > 0} clubs={clubs} events={events} going={goingSet} challenges={challenges} />;
 }
 
 type Club = { id: string; name: string; member_count: number };

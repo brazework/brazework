@@ -1,42 +1,64 @@
 "use client";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import { ArrowRight, BadgeCheck, Building2, CalendarDays, GraduationCap, Megaphone, Search, Sparkles, UserRound, Users } from "lucide-react";
+import { ArrowRight, BadgeCheck, Briefcase, Check, Flame, FlaskConical, GraduationCap, Hammer, Rocket, Search, Trophy, Wallet } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui";
 import { cn } from "@/lib/forge";
 import { Orb } from "./orb";
 
-// The hero: one clear line (build with any tools, get credit for the work), then the four groups Brazework serves. Each one shows what Brazework does for
-// them in a small live preview (example data, labelled as such). It cycles until you pick one.
-const AUDIENCES = [
+// The hero (Linear FIX-95): one clear line, then the question the rest of the page answers: what are
+// you working toward? Each goal shows its path: what to build, the proof it takes and who signs it,
+// who's looking for exactly that, and Ember's next step. It cycles until you pick one; the button
+// carries the goal into sign-up (?goal=). Example data, labelled as such.
+const GOALS = [
   {
-    id: "students", label: "Students", short: "Students", icon: GraduationCap, cta: { label: "Create your profile", href: "/signup" },
-    line: "Post what you're building, in any field. Your club, or a professor or manager who saw it, signs off, and that proof goes with you to every internship, lab and grad application.",
+    id: "internship", label: "Internship", icon: Briefcase, title: "a summer internship",
+    line: "Companies hiring interns search signed work in your field. Show them three real milestones, not a list of courses.",
+    build: "Battery management board, updated weekly", prove: { done: 2, of: 3, by: "your club or a mentor" },
+    looking: "Volt Systems · power electronics intern", next: "Log Tuesday's scope captures as a milestone and ask Dr. Lee to vouch.",
   },
   {
-    id: "orgs", label: "Clubs", short: "Clubs", icon: Users, cta: { label: "Bring your club", href: "#founding" },
-    line: "Run your chapter in one place. Ember handles the busywork, and every milestone you verify follows your members into their careers.",
+    id: "job", label: "First job", icon: Rocket, title: "your first full-time role",
+    line: "Hiring teams filter by verified results. A project with real users or real load, signed by people who saw it, beats a polished résumé.",
+    build: "Campus shuttle tracker, 2.1k weekly riders", prove: { done: 3, of: 4, by: "a manager or your club" },
+    looking: "Northwind Software · new-grad engineer", next: "Add the load test from Friday; your officer can sign it this week.",
   },
   {
-    id: "companies", label: "Companies", short: "Companies", icon: Building2, cta: { label: "Sponsor a challenge", href: "#founding" },
-    line: "Find people by verified work, not keywords. Sponsor a build challenge and meet the members who win it.",
+    id: "grad", label: "Grad school", icon: GraduationCap, title: "grad school",
+    line: "Programs want research you can explain. A professor who vouches for what they saw goes next to your application.",
+    build: "Thrust stand calibration study", prove: { done: 1, of: 2, by: "a professor or PI" },
+    looking: "MSc Robotics programs · reviewing applicants", next: "Write up the method and ask your advisor to vouch for the results.",
   },
   {
-    id: "pros", label: "Professionals", short: "Professionals", icon: UserRound, cta: { label: "Join free", href: "/signup" },
-    line: "Mentor the chapters in your field, show work that's been vouched for, and get found for what you've actually built.",
+    id: "research", label: "Research lab", icon: FlaskConical, title: "a spot in a research lab",
+    line: "Labs look for students who've already done the method. Replicate a result, get the PI or TA to sign it, and you're the obvious pick.",
+    build: "CRISPR knockout, confirmed on a gel", prove: { done: 2, of: 2, by: "the PI or TA" },
+    looking: "Gene-editing lab · undergraduate researcher", next: "Your proof is complete. Send your page to the two labs that viewed it.",
+  },
+  {
+    id: "competition", label: "Competition", icon: Trophy, title: "a competition win",
+    line: "Sponsors back teams with verified progress. A weekly build log your club signs is how you get the parts, the money and the judges' attention.",
+    build: "Formula SAE gearbox, weekly build log", prove: { done: 4, of: 6, by: "your club's officers" },
+    looking: "Vector Motors · sponsoring two student teams", next: "Post the dyno pull from Saturday; it's the milestone sponsors ask about.",
+  },
+  {
+    id: "funding", label: "Funding", icon: Wallet, title: "funding for what you build",
+    line: "Grants, accelerators and sponsors want traction someone can check. Results signed by the people who saw them are the check.",
+    build: "Crop disease classifier, field trial", prove: { done: 1, of: 3, by: "a professor or a partner" },
+    looking: "AgTech fund · student founders", next: "Ask the ag school's PI to vouch for the field trial results.",
   },
 ] as const;
-type Id = (typeof AUDIENCES)[number]["id"];
+type Goal = (typeof GOALS)[number];
 
 export function Hero() {
   const [i, setI] = useState(0);
   const [auto, setAuto] = useState(true);
   const reduce = useReducedMotion();
-  const a = AUDIENCES[i];
+  const g = GOALS[i];
 
   useEffect(() => {
     if (!auto || reduce) return;
-    const t = setInterval(() => setI((v) => (v + 1) % AUDIENCES.length), 5200);
+    const t = setInterval(() => setI((v) => (v + 1) % GOALS.length), 5200);
     return () => clearInterval(t);
   }, [auto, reduce]);
 
@@ -58,14 +80,14 @@ export function Hero() {
             <span className="text-grad">Get credit<br />for the work.</span>
           </h1>
           <p className="m-hide focus-in mt-6 max-w-xl text-lg leading-relaxed text-muted" style={{ ["--delay" as string]: "0.1s" }}>
-            The record of what you build in STEM: code, circuits, experiments, models, proofs. Use any tools you like. Your club, or a professor, PI or manager who watched you do it, signs off, and that signed record is what labs, companies and grad programs trust when every résumé reads the same.
+            Pick what you&apos;re working toward. Brazework keeps the record of what you build (code, circuits, experiments, models, proofs), gets it signed by the people who saw it, and puts it in front of the people who decide.
           </p>
-          {/* Phones: the same idea, short enough to read in full. */}
-          <p className="m-only focus-in mt-5 text-base leading-relaxed text-muted">Use any tools. Someone who saw it signs off. Labs and companies find you by it.</p>
+          <p className="m-only focus-in mt-5 text-base leading-relaxed text-muted">Pick a goal. Build, get it signed, get found by the people who decide.</p>
 
           <div className="rise-in mt-8" style={{ ["--delay" as string]: "0.2s" }}>
-            <div role="tablist" aria-label="Who Brazework is for" className="flex flex-wrap gap-2">
-              {AUDIENCES.map((x, n) => (
+            <p className="text-sm font-medium">What are you working toward?</p>
+            <div role="tablist" aria-label="Your goal" className="mt-2.5 flex flex-wrap gap-2">
+              {GOALS.map((x, n) => (
                 <button
                   key={x.id}
                   role="tab"
@@ -73,24 +95,33 @@ export function Hero() {
                   aria-controls="hero-preview"
                   onClick={() => { setAuto(false); setI(n); }}
                   className={cn(
-                    "relative inline-flex items-center gap-1.5 overflow-hidden rounded-lg border px-3.5 py-1.5 text-sm transition",
+                    "relative inline-flex items-center gap-1.5 overflow-hidden rounded-lg border px-3 py-1.5 text-sm transition",
                     n === i ? "border-text bg-text text-bg" : "border-line bg-surface text-muted hover:border-line-strong hover:text-text",
                   )}
                 >
-                  <x.icon className="size-4" /> <span className="hidden sm:inline">{x.label}</span><span className="sm:hidden">{x.short}</span>
+                  <x.icon className="size-4" /> {x.label}
                 </button>
               ))}
             </div>
             <AnimatePresence mode="wait" initial={false}>
-              <motion.p key={a.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.25 }} className="mt-4 min-h-[3.25rem] max-w-xl text-[15px] leading-relaxed text-text-2" aria-live="polite">
-                {a.line}
-              </motion.p>
+              <motion.div key={g.id} initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -6 }} transition={{ duration: 0.25 }} aria-live="polite">
+                <p className="m-hide mt-4 min-h-[3.25rem] max-w-xl text-[15px] leading-relaxed text-text-2">{g.line}</p>
+                {/* Phones (no room for the path card): the path in one line, and Ember's next step. */}
+                <div className="m-only mt-4">
+                  <p className="flex items-center gap-1.5 text-sm">
+                    <span className="inline-flex items-center gap-1 font-medium"><Check className="size-3.5" /> Build</span><span className="text-faint">→</span>
+                    <span className="font-medium">Signed {g.prove.done}/{g.prove.of}</span><span className="text-faint">→</span>
+                    <span className="text-muted">Found</span>
+                  </p>
+                  <p className="mt-1.5 flex items-start gap-1.5 text-[13px] leading-snug text-text-2"><Flame className="mt-0.5 size-3.5 shrink-0 text-[#f28c28]" /> {g.next}</p>
+                </div>
+              </motion.div>
             </AnimatePresence>
           </div>
 
           <div className="rise-in mt-7 flex flex-wrap items-center gap-3" style={{ ["--delay" as string]: "0.3s" }}>
-            <Button href={a.cta.href} size="lg">{a.cta.label} <ArrowRight className="size-4 transition group-hover:translate-x-0.5" /></Button>
-            {a.cta.href !== "/signup" && <Button href="/signup" variant="outline" size="lg">Join free</Button>}
+            <Button href={`/signup?goal=${g.id}`} size="lg">Start toward {g.label.toLowerCase()} <ArrowRight className="size-4 transition group-hover:translate-x-0.5" /></Button>
+            <Button href="#who" variant="outline" size="lg">Clubs &amp; companies</Button>
           </div>
           <p className="rise-in mt-4 text-sm text-faint" style={{ ["--delay" as string]: "0.35s" }}>Free for students and clubs · Verified university and work emails</p>
         </div>
@@ -98,8 +129,8 @@ export function Hero() {
         <div id="hero-preview" role="tabpanel" className="relative mx-auto w-full max-w-[440px]">
           <Orb tone="auto" className="pointer-events-none absolute top-0 right-0 -z-10 hidden aspect-square w-[118%] translate-x-[42%] -translate-y-[38%] md:block" />
           <AnimatePresence mode="popLayout" initial={false}>
-            <motion.div key={a.id} initial={{ opacity: 0, y: 30, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -20, scale: 0.98 }} transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}>
-              <Preview id={a.id} />
+            <motion.div key={g.id} initial={{ opacity: 0, y: 30, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -20, scale: 0.98 }} transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}>
+              <GoalPath g={g} play={!reduce} />
             </motion.div>
           </AnimatePresence>
           <p className="mt-3 text-center text-xs text-faint">Example data</p>
@@ -109,87 +140,61 @@ export function Hero() {
   );
 }
 
-function Panel({ title, icon: Icon, children }: { title: string; icon: typeof Users; children: React.ReactNode }) {
+// A goal's path: build → prove → get found, with where you are on it and Ember's next step.
+function GoalPath({ g, play }: { g: Goal; play: boolean }) {
+  const proven = g.prove.done >= g.prove.of;
+  const stepsDone = 1 + (proven ? 1 : 0);
+  const row = (k: number) => ({ initial: play ? { opacity: 0, x: -8 } : false, animate: { opacity: 1, x: 0 }, transition: { delay: play ? 0.15 + k * 0.12 : 0, duration: 0.35 } }) as const;
   return (
     <div className="glass-card rounded-3xl p-5 shadow-[var(--shadow)]">
-      <div className="mb-4 flex items-center gap-2 text-xs font-medium text-muted"><Icon className="size-4" /> {title}</div>
-      {children}
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <p className="text-xs font-medium text-muted">Your path to</p>
+          <p className="text-lg font-semibold tracking-tight">{g.title}</p>
+        </div>
+        <ProgressRing value={stepsDone / 3} label={`${stepsDone}/3`} />
+      </div>
+      <ol className="mt-4 flex flex-col gap-2">
+        <Step motionProps={row(0)} state="done" icon={Hammer} title="Build" text={g.build} />
+        <Step motionProps={row(1)} state={proven ? "done" : "now"} icon={BadgeCheck} title="Get it signed" text={`${g.prove.done} of ${g.prove.of} milestones signed by ${g.prove.by}`}>
+          <span className="mt-1.5 block h-1 overflow-hidden rounded-full bg-surface-2">
+            <motion.span className="block h-full origin-left rounded-full bg-text" initial={play ? { scaleX: 0 } : false} animate={{ scaleX: g.prove.done / g.prove.of }} transition={{ delay: 0.5, duration: 0.8, ease: [0.16, 1, 0.3, 1] }} />
+          </span>
+        </Step>
+        <Step motionProps={row(2)} state={proven ? "now" : "next"} icon={Search} title="Get found" text={g.looking} />
+      </ol>
+      <motion.p {...row(3)} className="mt-4 flex items-start gap-2 rounded-xl bg-[color-mix(in_oklab,#f28c28_10%,transparent)] px-3 py-2.5 text-[13px] leading-snug">
+        <Flame className="mt-0.5 size-4 shrink-0 text-[#f28c28]" />
+        <span><b className="font-semibold text-[#c2410c] dark:text-[#f28c28]">Ember · next step:</b> <span className="text-text-2">{g.next}</span></span>
+      </motion.p>
     </div>
   );
 }
 
-function Row({ children, delay = 0 }: { children: React.ReactNode; delay?: number }) {
+function Step({ state, icon: Icon, title, text, children, motionProps }: { state: "done" | "now" | "next"; icon: typeof Hammer; title: string; text: string; children?: React.ReactNode; motionProps: object }) {
   return (
-    <motion.div initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} transition={{ delay, duration: 0.35 }} className="flex items-center gap-3 rounded-2xl border border-line bg-surface px-3.5 py-2.5 text-sm">
-      {children}
-    </motion.div>
+    <motion.li {...motionProps} className={cn("flex gap-3 rounded-2xl border px-3 py-2.5", state === "now" ? "border-line-strong bg-surface" : "border-line bg-surface/60")}>
+      <span className={cn("grid size-7 shrink-0 place-items-center rounded-full", state === "done" ? "bg-text text-bg" : state === "now" ? "border border-text text-text" : "border border-line text-faint")}>
+        {state === "done" ? <Check className="size-3.5" /> : <Icon className="size-3.5" />}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="flex items-center justify-between gap-2 text-sm font-medium">{title}<span className="text-[11px] font-normal text-faint">{state === "done" ? "Done" : state === "now" ? "Now" : "Next"}</span></span>
+        <span className="block truncate text-xs text-muted">{text}</span>
+        {children}
+      </span>
+    </motion.li>
   );
 }
 
-const Dot = ({ className }: { className?: string }) => <span className={cn("grid size-7 shrink-0 place-items-center rounded-full", className)} />;
-
-function Preview({ id }: { id: Id }) {
-  if (id === "students") return <StudentPreview />;
-  if (id === "orgs") {
-    return (
-      <Panel title="Ember · this week for your chapter" icon={Sparkles}>
-        <div className="space-y-2">
-          <Row><CalendarDays className="size-4 shrink-0 text-text-2" /><span className="flex-1">General body meeting created · Thu 6:00 PM</span><BadgeCheck className="size-4 text-ok" /></Row>
-          <Row delay={0.12}><Megaphone className="size-4 shrink-0 text-text-2" /><span className="flex-1">Weekly update drafted from real numbers</span><span className="text-xs text-faint">Review</span></Row>
-          <Row delay={0.24}><BadgeCheck className="size-4 shrink-0 text-text-2" /><span className="flex-1">3 member milestones ready to verify</span><span className="text-xs text-faint">Open</span></Row>
-          <Row delay={0.36}><Users className="size-4 shrink-0 text-text-2" /><span className="flex-1">12 new members this month</span><span className="text-xs font-medium text-ok">+40%</span></Row>
-        </div>
-        <p className="mt-4 text-xs text-faint">Ember drafts; officers approve every action.</p>
-      </Panel>
-    );
-  }
-  if (id === "pros") {
-    return (
-      <Panel title="A profile built from proof" icon={UserRound}>
-        <div className="flex items-center gap-3">
-          <span className="bg-accent-grad grid size-12 place-items-center rounded-full text-sm font-semibold text-on-accent">AO</span>
-          <div><div className="font-semibold">Amara Osei</div><div className="text-xs text-muted">Battery systems engineer · Open to mentoring</div></div>
-        </div>
-        <div className="mt-4 space-y-2">
-          <Row><BadgeCheck className="size-4 shrink-0 text-ok" /><span className="flex-1">Pack thermal model, validated on test rig</span><span className="text-xs text-faint">Verified</span></Row>
-          <Row delay={0.12}><BadgeCheck className="size-4 shrink-0 text-ok" /><span className="flex-1">Judged regional design competition</span><span className="text-xs text-faint">Verified</span></Row>
-          <Row delay={0.24}><Users className="size-4 shrink-0 text-text-2" /><span className="flex-1">Mentoring 2 student chapters</span></Row>
-        </div>
-      </Panel>
-    );
-  }
-  if (id === "companies") {
-    return (
-      <Panel title="Find people by verified work" icon={Search}>
-        <div className="flex items-center gap-2 rounded-2xl border border-line bg-surface px-3 py-2 text-sm text-muted"><Search className="size-4" /> embedded systems · verified · graduating 2027</div>
-        <div className="mt-3 space-y-2">
-          {[["Jordan Reyes", "Flight computer logging at 200 Hz", "Verified by Rocketry Club"], ["Priya Nair", "Low-power sensor mesh", "Verified by IEEE branch"], ["Malik Brooks", "Motor controller, 3 revisions", "Verified by Robotics team"]].map(([n, w, v], k) => (
-            <Row key={n} delay={k * 0.12}>
-              <Dot className="bg-surface-2" />
-              <span className="min-w-0 flex-1"><span className="block truncate font-medium">{n}</span><span className="block truncate text-xs text-muted">{w}</span></span>
-              <span className="hidden shrink-0 items-center gap-1 text-xs text-ok sm:inline-flex"><BadgeCheck className="size-3.5" />{v.split(" by ")[0]}</span>
-            </Row>
-          ))}
-        </div>
-      </Panel>
-    );
-  }
-  return null;
-}
-
-function StudentPreview() {
+function ProgressRing({ value, label }: { value: number; label: string }) {
+  const r = 18, c = 2 * Math.PI * r;
   return (
-    <Panel title="A profile built from proof" icon={GraduationCap}>
-      <div className="flex items-center gap-3">
-        <span className="bg-accent-grad grid size-12 place-items-center rounded-full text-sm font-semibold text-on-accent">JR</span>
-        <div><div className="font-semibold">Jordan Reyes</div><div className="text-xs text-muted">Aerospace engineering · Class of 2027</div></div>
-      </div>
-      <div className="mt-4 space-y-2">
-        <Row><BadgeCheck className="size-4 shrink-0 text-ok" /><span className="flex-1">Flight computer logs at 200 Hz</span><span className="text-xs text-faint">Verified</span></Row>
-        <Row delay={0.12}><BadgeCheck className="size-4 shrink-0 text-ok" /><span className="flex-1">Static fire passed, L2 motor</span><span className="text-xs text-faint">Verified</span></Row>
-        <Row delay={0.24}><Users className="size-4 shrink-0 text-text-2" /><span className="flex-1">Rocketry Club · Avionics lead</span></Row>
-      </div>
-      <p className="mt-4 text-xs text-faint">Each badge names the club officer who verified it.</p>
-    </Panel>
+    <span className="relative grid size-12 shrink-0 place-items-center" aria-label={`${label} steps done`}>
+      <svg viewBox="0 0 44 44" className="absolute inset-0 size-full -rotate-90" aria-hidden="true">
+        <circle cx="22" cy="22" r={r} fill="none" stroke="var(--line)" strokeWidth="3" />
+        <motion.circle cx="22" cy="22" r={r} fill="none" stroke="var(--text)" strokeWidth="3" strokeLinecap="round" strokeDasharray={c} initial={{ strokeDashoffset: c }} animate={{ strokeDashoffset: c * (1 - value) }} transition={{ duration: 0.9, ease: [0.16, 1, 0.3, 1] }} />
+      </svg>
+      <span className="text-[11px] font-semibold tabular-nums">{label}</span>
+    </span>
   );
 }

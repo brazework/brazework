@@ -12,7 +12,7 @@ export function FinalCta() {
           <br />
           <span className="text-grad">Build it on Brazework.</span>
         </h2>
-        <p className="mt-6 max-w-xl text-lg text-muted">Bring your club, or join with your university or work email and put the first thing you&apos;ve built on the record.</p>
+        <p className="mt-6 max-w-xl text-lg text-muted">Pick what you&apos;re working toward (an internship, a first job, grad school, a lab, a win, funding) and put the first thing you&apos;ve built on the record. Bring your club, or ask whoever saw it to vouch.</p>
         <div className="mt-10 flex flex-col items-stretch gap-3 sm:flex-row sm:justify-center">
           <Button href="/signup" size="lg">
             Create your free account <ArrowRight className="size-4 transition group-hover:translate-x-0.5" />
