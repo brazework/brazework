@@ -45,7 +45,8 @@ from (values
   (45, 'feed-pages',      to_regprocedure('public.feed_pages_ready()') is not null),
   (46, 'mcp-writes',      to_regprocedure('public.mcp_writes_ready()') is not null),
   (47, 'mcp-milestones',  to_regprocedure('public.mcp_milestones_ready()') is not null),
-  (48, 'email-alerts',    to_regclass('public.alert_sends') is not null)
+  (48, 'email-alerts',    to_regclass('public.alert_sends') is not null),
+  (49, 'who-looked',      to_regprocedure('public.who_looked_ready()') is not null)
 ) as s(step, file, present)
 order by step;
 
