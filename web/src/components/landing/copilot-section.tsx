@@ -55,7 +55,7 @@ const SCENARIOS: Scenario[] = [
     ask: "Draft this week's update for Rocketry Club.",
     tools: ["Reading this week's club report", "Checking the verification queue"],
     answer: "This week: 6 new members, 14 posts (up from 9), and 2 milestones verified. Static fire is Saturday.",
-    card: { title: "Post to Rocketry Club", lines: ["Uses only the report's numbers", "Also announces in Discord, if connected"], confirm: "Post" },
+    card: { title: "Post to Rocketry Club", lines: ["Uses only the report's numbers", "Goes to every member's feed"], confirm: "Post" },
   },
 ];
 
@@ -69,7 +69,7 @@ const CAN = [
   { icon: BadgeCheck, label: "Get milestones verified" },
   { icon: CalendarPlus, label: "Host club events" },
   { icon: ClipboardList, label: "Run weekly club reports" },
-  { icon: Megaphone, label: "Post updates to Brazework and Discord" },
+  { icon: Megaphone, label: "Post updates to your club" },
 ];
 
 const HOW = [

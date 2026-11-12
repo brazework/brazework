@@ -46,7 +46,7 @@ The Vercel project lives in Ian's account, so these are his steps. It's already 
    3. `supabase/invites.sql`: club invite links
    4. `supabase/copilot.sql`: Brazework Copilot's daily limit (25 requests per person)
    5. `supabase/milestones.sql`: club-verified milestones (members ask a club to vouch; moderators and up verify)
-   6. `supabase/integrations.sql`: club integrations (Discord announcements for events, verified milestones and weekly updates)
+   6. `supabase/integrations.sql`: club integrations (Discord announcements; unused since FIX-92, kept until a cleanup step drops it)
    7. `supabase/group-chats.sql`: group chats inside Brazework (a chat for every club with officer announcements, a chat for every event's attendees, and team chats)
    8. `supabase/project-stack.sql`: what each project is built with (its tools), shown as a "Built with" stack and searchable in Explore
    9. `supabase/club-profile.sql`: a club's logo, tagline, website and accent colour

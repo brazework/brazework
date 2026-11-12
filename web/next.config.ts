@@ -42,7 +42,7 @@ const securityHeaders = [
   { key: "X-Frame-Options", value: "DENY" },
   { key: "Permissions-Policy", value: "camera=(), microphone=(), geolocation=(), payment=(), usb=()" },
   { key: "Strict-Transport-Security", value: "max-age=63072000; includeSubDomains" },
-  // allow-popups: connecting GitHub or Discord can open a sign-in window that must report back.
+  // allow-popups: connecting GitHub can open a sign-in window that must report back.
   { key: "Cross-Origin-Opener-Policy", value: "same-origin-allow-popups" },
 ];
 

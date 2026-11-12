@@ -39,7 +39,7 @@ function Hero({ title, sub, mood = "idle" }: { title: string; sub: string; mood?
 const CAPS = [
   { icon: Compass, title: "Find and join", body: "Finds the clubs, events and people that fit you, then joins, RSVPs, follows or messages for you once you tap OK." },
   { icon: GitBranch, title: "Build your record", body: "Imports your GitHub projects, writes them up from the README, and asks your club to verify milestones." },
-  { icon: Megaphone, title: "Run your club", body: "Weekly reports, the verification queue, events and club updates, posted to Brazework and Discord." },
+  { icon: Megaphone, title: "Run your club", body: "Weekly reports, the verification queue, events and club updates, posted to your club on Brazework." },
 ];
 
 // Shown until Copilot is switched on (an API key plus supabase/copilot.sql). Shortcuts still work.

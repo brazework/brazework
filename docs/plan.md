@@ -53,7 +53,7 @@ To build:
 - ✅ Import events from Google Calendar, Outlook or Apple Calendar (`.ics` file, parsed in the browser with time zones and all-day events; pick which to bring; same checks as a hand-made event). Tests: `web/tests/ics.test.ts`, e2e step in `b-clubs-events.cjs`.
 - ⬜ Import members (CSV/email list): needs an email sender for invitations.
 - ✅ Club home as a to-do list for officers (verify queue incl. disputes, join requests, held posts, next event).
-- 🟡 Discord bridge (announcements exist; add Discord → Brazework post via bot/webhook, stubbed without credentials).
+- ✖️ Discord bridge: removed (FIX-92). Clubs announce on Brazework; work comes in from GitHub and members' AI tools.
 - ✅ Weekly club report (Manage → This week) and a shareable semester report for sponsors at `/r/<link>` (`club-reports.sql`, step 28): events, public verified work, challenge wins; public information only; revocable.
 - ✅ Officer handoff at end of term: `club-handoff.sql` (step 18), "Hand off" tab, SQL and e2e tests.
 

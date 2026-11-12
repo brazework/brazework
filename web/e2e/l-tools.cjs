@@ -129,6 +129,14 @@ const { step, browser, as, go, summary, BASE } = require("./lib.cjs");
     await maya.context().close();
   }, ben);
 
+  await step("FIX-92: a club's Integrations tab shows how work comes in (GitHub, members' AI tools), and no Discord", async () => {
+    await go(ben, "/c/rkt/manage?tab=integrations"); // Ben owns Rocketry Club
+    const main = ben.locator("main");
+    await main.getByRole("heading", { name: "Members' AI tools" }).waitFor({ timeout: 15000 });
+    if ((await main.getByRole("link", { name: /How members connect/ }).getAttribute("href")) !== "/settings/tools") throw new Error("the AI tools card doesn't link to setup");
+    if (await main.getByText(/Discord/).count()) throw new Error("Discord is still on the Integrations tab");
+  }, ben);
+
   summary();
   await b.close();
 })();
