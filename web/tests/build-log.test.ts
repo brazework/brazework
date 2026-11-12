@@ -35,8 +35,8 @@ test("the log mixes updates and verified milestones, newest first; pending ones 
     { id: "m3", title: "No review time", reviewer_name: "Maya", community_name: "Rocketry", reviewed_at: null, achieved_on: "2026-10-20", status: "verified" },
   ];
   const log = buildLog(posts, ms);
-  assert.deepEqual(log.map((e) => (e.kind === "post" ? e.post.id : e.milestone.id)), ["p1", "m1", "p2", "m3"]);
-  assert.ok(log.every((e) => e.kind === "post" || e.milestone.status === "verified"));
+  assert.deepEqual(log.map((e) => (e.kind === "post" ? e.post.id : e.kind === "verified" ? e.milestone.id : "")), ["p1", "m1", "p2", "m3"]);
+  assert.ok(log.every((e) => e.kind !== "verified" || e.milestone.status === "verified"));
 });
 
 test("in thirty seconds: who, what, the proof with who signed it, the momentum, the stack", () => {
@@ -56,4 +56,14 @@ test("in thirty seconds: who, what, the proof with who signed it, the momentum, 
 test("in thirty seconds, for a brand-new solo project: honest about having no proof yet", () => {
   const lines = inThirtySeconds({ owner: "Ada", title: "Rover", summary: "", status: "completed", teamSize: 1, verified: [], activeWeeks: 0, weeks: 12, updates: 0, tools: [] });
   assert.deepEqual(lines, ["Ada built Rover.", "No club-verified milestones yet."]);
+});
+
+test("GitHub activity joins the same log, in time order with updates and verified milestones (FIX-92 phase 3)", () => {
+  const posts = [{ id: "p1", created_at: "2026-11-10T00:00:00Z" }];
+  const events = [
+    { id: 1, kind: "pr_merged" as const, title: "Merged #42: Add igniter sequencing", url: "https://github.com/ben/stand/pull/42", actor: "bencho", state: "", occurred_at: "2026-11-11T00:00:00Z" },
+    { id: 2, kind: "release" as const, title: "Released v1.0", url: "https://github.com/ben/stand/releases/tag/v1.0", actor: "bencho", state: "", occurred_at: "2026-11-09T00:00:00Z" },
+  ];
+  const log = buildLog(posts, [], events);
+  assert.deepEqual(log.map((e) => e.kind === "github" ? `gh:${e.event.id}` : e.kind === "post" ? e.post.id : e.milestone.id), ["gh:1", "p1", "gh:2"]);
 });
