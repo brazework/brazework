@@ -113,6 +113,16 @@ jobs:
           path: web/e2e/.results/
           include-hidden-files: true
           retention-days: 7
+      # Every key page at iPhone and laptop size (web/e2e/m-layout.cjs), kept for each run, so a reviewer
+      # can see what a change looks like without running it.
+      - name: Keep layout screenshots
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: layout-screenshots
+          path: web/e2e/.results/layout/
+          if-no-files-found: ignore
+          retention-days: 14
 
   quality:
     name: Speed, accessibility and security scan
