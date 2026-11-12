@@ -1,5 +1,5 @@
 import { Sparkles } from "lucide-react";
-import { VerifiedStamp } from "@/components/app/verified-seal";
+import { VerifiedStamp, VouchStamp } from "@/components/app/verified-seal";
 import Link from "next/link";
 import { Avatar } from "@/components/ui";
 import { timeAgo } from "@/lib/forge";
@@ -7,7 +7,7 @@ import { timeAgo } from "@/lib/forge";
 // A club-verified milestone in the feed: the thing Brazework exists for. Someone did the work, their
 // club checked it, and anyone can open the project to see the evidence.
 export type Proof = {
-  id: string; title: string; detail: string; reviewed_at: string; community_id: string; community_name: string; reviewer_name: string;
+  id: string; title: string; detail: string; reviewed_at: string; community_id: string | null; community_name: string; reviewer_name: string; vouched_by?: string;
   project: { id: string; title: string }; owner: { id: string; first: string; last: string; avatar: string | null };
 };
 
@@ -15,7 +15,7 @@ export function ProofCard({ p, reason = "" }: { p: Proof; reason?: string }) {
   return (
     <article className="glass-card rounded-3xl p-5">
       {reason && <p className="mb-3 flex items-center gap-1.5 text-xs text-faint"><Sparkles className="size-3.5 shrink-0" /> {reason}</p>}
-      <VerifiedStamp club={p.community_name} clubId={p.community_id} by={p.reviewer_name} when={timeAgo(p.reviewed_at)} />
+      {p.vouched_by ? <VouchStamp by={p.vouched_by} when={timeAgo(p.reviewed_at)} /> : <VerifiedStamp club={p.community_name} clubId={p.community_id ?? undefined} by={p.reviewer_name} when={timeAgo(p.reviewed_at)} />}
 
       <div className="mt-4 flex items-start gap-3">
         <Link prefetch={false} href={`/u/${p.owner.id}`} tabIndex={-1} aria-hidden="true" className="shrink-0"><Avatar first={p.owner.first} last={p.owner.last} size={40} src={p.owner.avatar} /></Link>

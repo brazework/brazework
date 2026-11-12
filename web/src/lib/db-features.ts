@@ -27,7 +27,7 @@ export const dbFeatures = cache(async (): Promise<Features> => {
 
 async function probe() {
   const supabase = await createClient();
-  const [ev, po, inv, cop, ms, gc, st, cp, mn, cc, px, mcp, cx, pp, vf, ho, chl, spc, gy, clm, vc, wl, pf, puf, chp, prv, fpg, mcw, mcm, wlk, ghb] = await Promise.all([
+  const [ev, po, inv, cop, ms, gc, st, cp, mn, cc, px, mcp, cx, pp, vf, ho, chl, spc, gy, clm, vc, wl, pf, puf, chp, prv, fpg, mcw, mcm, wlk, ghb, vch] = await Promise.all([
     supabase.from("events").select("community_id").limit(1),
     supabase.from("posts").select("media").limit(1),
     supabase.from("community_invites").select("code").limit(1),
@@ -59,8 +59,9 @@ async function probe() {
     supabase.rpc("mcp_milestones_ready"),
     supabase.rpc("who_looked_ready"),
     supabase.rpc("github_ready"),
+    supabase.rpc("vouches_ready"),
   ]);
-  return { clubEvents: !missing(ev.error), media: !missing(po.error), invites: !missing(inv.error), copilot: !missing(cop.error), milestones: !missing(ms.error), groupChats: !missing(gc.error), projectTools: !missing(st.error), clubProfile: !missing(cp.error), mentions: !missing(mn.error), copilotChats: !missing(cc.error), profileExtras: !missing(px.error), mcp: !missing(mcp.error), chatExtras: !missing(cx.error), projectPosts: !missing(pp.error), verification: !missing(vf.error), handoff: !missing(ho.error), challenges: !missing(chl.error), projectSpecs: !missing(spc.error), gradYear: !missing(gy.error), clubClaims: !missing(clm.error), videoCaptions: !missing(vc.error), weeklyLoop: !missing(wl.error), projectFiles: !missing(pf.error), updateFiles: !missing(puf.error), chapters: !missing(chp.error), proVerification: !missing(prv.error), feedPages: !missing(fpg.error), mcpWrites: !missing(mcw.error), mcpMilestones: !missing(mcm.error), whoLooked: !missing(wlk.error), github: !missing(ghb.error) };
+  return { clubEvents: !missing(ev.error), media: !missing(po.error), invites: !missing(inv.error), copilot: !missing(cop.error), milestones: !missing(ms.error), groupChats: !missing(gc.error), projectTools: !missing(st.error), clubProfile: !missing(cp.error), mentions: !missing(mn.error), copilotChats: !missing(cc.error), profileExtras: !missing(px.error), mcp: !missing(mcp.error), chatExtras: !missing(cx.error), projectPosts: !missing(pp.error), verification: !missing(vf.error), handoff: !missing(ho.error), challenges: !missing(chl.error), projectSpecs: !missing(spc.error), gradYear: !missing(gy.error), clubClaims: !missing(clm.error), videoCaptions: !missing(vc.error), weeklyLoop: !missing(wl.error), projectFiles: !missing(pf.error), updateFiles: !missing(puf.error), chapters: !missing(chp.error), proVerification: !missing(prv.error), feedPages: !missing(fpg.error), mcpWrites: !missing(mcw.error), mcpMilestones: !missing(mcm.error), whoLooked: !missing(wlk.error), github: !missing(ghb.error), vouches: !missing(vch.error) };
 }
 
 export async function eventCols(): Promise<string> {
@@ -79,5 +80,7 @@ export async function postSelect(): Promise<string> {
 // Milestone columns for timelines: with the verification badge details once verification.sql has run.
 export async function milestoneCols(): Promise<string> {
   const base = "id, project_id, community_id, community_name, title, detail, evidence, achieved_on, status, reviewer_name, review_note";
-  return (await dbFeatures()).verification ? `${base}, private, revoked_reason, reviewer_role, reviewed_at, escalated` : base;
+  const f = await dbFeatures();
+  const cols = f.verification ? `${base}, private, revoked_reason, reviewer_role, reviewed_at, escalated` : base;
+  return f.vouches ? `${cols}, vouched_by` : cols;
 }

@@ -23,6 +23,19 @@ export function Seal({ size = 20, className, tone = "club" }: { size?: number; c
   );
 }
 
+// Vouched for instead of club-verified (supabase/vouches.sql): "Name, Role · domain", when.
+export function VouchStamp({ by, when, className }: { by: string; when?: string | null; className?: string }) {
+  return (
+    <span className={cn("inline-flex min-w-0 items-center gap-2", className)}>
+      <Seal size={18} />
+      <span className="min-w-0 leading-tight">
+        <span className="block truncate text-xs font-semibold text-text">Vouched for by {by}</span>
+        {when && <span suppressHydrationWarning className="block truncate text-[11px] text-faint">Saw the work · {when}</span>}
+      </span>
+    </span>
+  );
+}
+
 // The full stamp: the seal, "Verified by <club>", and who checked it, when.
 export function VerifiedStamp({ club, clubId, by, when, size = "md", className }: { club: string; clubId?: string; by?: string | null; when?: string | null; size?: "sm" | "md"; className?: string }) {
   const name = clubId ? <Link prefetch={false} href={`/c/${clubId}`} className="hover:underline">{club}</Link> : club;
@@ -30,7 +43,7 @@ export function VerifiedStamp({ club, clubId, by, when, size = "md", className }
     <span className={cn("inline-flex min-w-0 items-center gap-2", className)}>
       <Seal size={size === "sm" ? 18 : 28} />
       <span className="min-w-0 leading-tight">
-        <span className={cn("block truncate font-semibold text-text", size === "sm" ? "text-xs" : "text-sm")}>Verified by {name}</span>
+        <span className={cn("block truncate font-semibold text-text", size === "sm" ? "text-xs" : "text-sm")}>{club ? <>Verified by {name}</> : "Verified"}</span>
         {/* "· 1m" can tick over between the server render and the browser's: not a real mismatch. */}
         {(by || when) && <span suppressHydrationWarning className="block truncate text-[11px] text-faint">{by ? `Checked by ${by}` : "Checked by an officer"}{when ? ` · ${when}` : ""}</span>}
       </span>

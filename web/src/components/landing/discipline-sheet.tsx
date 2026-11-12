@@ -216,7 +216,7 @@ export function DisciplineSheet({ head }: { head: React.ReactNode }) {
               {d.steps.map((s, n) => (
                 <li key={s} className="flex items-center gap-2"><span className="font-mono text-[11px] text-faint">0{n + 1}</span> {s}</li>
               ))}
-              <li className="flex items-center gap-2 font-medium text-text"><BadgeCheck className="size-4 shrink-0" /> Verified by your club</li>
+              <li className="flex items-center gap-2 font-medium text-text"><BadgeCheck className="size-4 shrink-0" /> Signed by someone who saw it</li>
             </ol>
           </motion.div>
         </AnimatePresence>

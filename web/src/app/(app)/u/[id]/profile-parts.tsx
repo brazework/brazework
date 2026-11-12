@@ -1,6 +1,6 @@
 import { ArrowRight, BadgeCheck, Check, Users } from "lucide-react";
 import Link from "next/link";
-import { ProStamp, Seal, VerifiedStamp } from "@/components/app/verified-seal";
+import { ProStamp, Seal, VerifiedStamp, VouchStamp } from "@/components/app/verified-seal";
 import { CommunityBadge } from "../../communities/_components/badge";
 import { DismissButton } from "@/components/app/dismiss";
 import { cn } from "@/lib/forge";
@@ -51,7 +51,7 @@ export function ProfileStrength({ steps }: { steps: Step[] }) {
   );
 }
 
-export type ProofItem = { id: string; title: string; detail: string; achieved_on: string; community_id: string; community_name: string; reviewer_name: string; project: { id: string; title: string }; pro?: { name: string; title: string; employer: string; note: string; at: string }[] };
+export type ProofItem = { id: string; title: string; detail: string; achieved_on: string; community_id: string | null; community_name: string; reviewer_name: string; vouched_by?: string; project: { id: string; title: string }; pro?: { name: string; title: string; employer: string; note: string; at: string }[] };
 
 // Club-verified milestones, newest first: the strongest thing on a profile.
 export function ProofTimeline({ items, own }: { items: ProofItem[]; own: boolean }) {
@@ -66,15 +66,15 @@ export function ProofTimeline({ items, own }: { items: ProofItem[]; own: boolean
   const day = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString("en-US", { month: "short", year: "numeric" });
   return (
     <section aria-label="Club-verified work" className="glass-card rounded-3xl p-5">
-      <h2 className="flex items-center gap-2 font-semibold"><Seal size={20} /> Proof <span className="text-sm font-normal text-muted">· verified by clubs</span></h2>
+      <h2 className="flex items-center gap-2 font-semibold"><Seal size={20} /> Proof <span className="text-sm font-normal text-muted">· signed by people who saw it</span></h2>
       <ol className="relative mt-4 space-y-5 before:absolute before:top-2 before:bottom-2 before:left-[15px] before:w-px before:bg-line">
         {items.slice(0, 6).map((m) => (
           <li key={m.id} className="relative flex gap-3">
-            <CommunityBadge id={m.community_id} name={m.community_name} size={32} className="relative shrink-0 rounded-full ring-4 ring-surface" />
+            {m.community_id ? <CommunityBadge id={m.community_id} name={m.community_name} size={32} className="relative shrink-0 rounded-full ring-4 ring-surface" /> : <span className="relative grid size-8 shrink-0 place-items-center rounded-full bg-surface-2 ring-4 ring-surface"><Seal size={18} /></span>}
             <div className="min-w-0">
               <p className="font-medium leading-snug">{m.title}</p>
               {m.pro?.map((r) => <ProStamp key={r.name + r.at} name={r.name} title={r.title} employer={r.employer} note={r.note} className="mt-1.5" />)}
-              <p className="mt-1"><VerifiedStamp club={m.community_name} clubId={m.community_id} by={m.reviewer_name} when={day(m.achieved_on)} size="sm" /></p>
+              <p className="mt-1">{m.vouched_by ? <VouchStamp by={m.vouched_by} when={day(m.achieved_on)} /> : <VerifiedStamp club={m.community_name} clubId={m.community_id ?? undefined} by={m.reviewer_name} when={day(m.achieved_on)} size="sm" />}</p>
               <p className="mt-1 text-xs text-muted">On <Link href={`/projects/${m.project.id}`} className="hover:text-text hover:underline">{m.project.title}</Link></p>
               {m.detail && <p className="mt-1 line-clamp-2 text-sm text-text-2">{m.detail}</p>}
             </div>

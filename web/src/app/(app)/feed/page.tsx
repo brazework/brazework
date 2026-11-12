@@ -80,7 +80,7 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
   let emptyTitle = "No posts yet";
   let emptyBody: React.ReactNode = "Be the first to share what you're building.";
   let emptyAction: React.ReactNode = null;
-  const { media: mediaEnabled, mentions: mentionsEnabled, milestones: proofOn, videoCaptions: captionsEnabled, chapters: chaptersOn, feedPages: pagesOn } = await dbFeatures();
+  const { media: mediaEnabled, mentions: mentionsEnabled, milestones: proofOn, videoCaptions: captionsEnabled, chapters: chaptersOn, feedPages: pagesOn, vouches: vouchesOn } = await dbFeatures();
   const cols = await postSelect();
   const base = () => {
     let q = supabase.from("posts").select(cols).order("created_at", { ascending: sort === "old" });
@@ -119,10 +119,10 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
   // Proof: club-verified milestones (supabase/milestones.sql), in every tab but Latest. Milestones
   // on private projects stay out of the feed (the owner chose not to broadcast that project).
   // Fetched alongside the posts, not after them.
-  type M = { id: string; title: string; detail: string; reviewed_at: string | null; community_id: string; community_name: string; reviewer_name: string; owner_id: string; project: { id: string; title: string; private: boolean } | null; owner: { id: string; first_name: string; last_name: string; avatar_path?: string | null } | null };
+  type M = { id: string; title: string; detail: string; reviewed_at: string | null; community_id: string | null; community_name: string; reviewer_name: string; vouched_by?: string; owner_id: string; project: { id: string; title: string; private: boolean } | null; owner: { id: string; first_name: string; last_name: string; avatar_path?: string | null } | null };
   const proofP: Promise<M[]> = (async () => {
     if (!proofOn || tag || (kind !== "" && kind !== "result") || tab === "latest") return [];
-    let q = supabase.from("milestones").select(`id, title, detail, reviewed_at, community_id, community_name, reviewer_name, owner_id, project:projects(id, title, private), owner:profiles!milestones_owner_id_fkey(id, first_name, last_name${mediaEnabled ? ", avatar_path" : ""})`).eq("status", "verified").order("reviewed_at", { ascending: false }).limit(12);
+    let q = supabase.from("milestones").select(`id, title, detail, reviewed_at, community_id, community_name, reviewer_name${vouchesOn ? ", vouched_by" : ""}, owner_id, project:projects(id, title, private), owner:profiles!milestones_owner_id_fkey(id, first_name, last_name${mediaEnabled ? ", avatar_path" : ""})`).eq("status", "verified").order("reviewed_at", { ascending: false }).limit(12);
     if (tab === "communities") q = cids.length ? q.in("community_id", cids) : q.eq("community_id", "none");
     if (tab === "chapter") q = q.eq("community_id", chapter?.id ?? "none");
     if (tab === "following") q = people.length ? q.in("owner_id", people.slice(0, 300)) : q.eq("owner_id", user.id);
@@ -151,10 +151,10 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
   // Club-verified proof, woven into the posts (For you by score; the other tabs by time).
   const mineClubs = new Set(cids);
   const proofs: ProofItem[] = (await proofP).filter((m) => m.project && !m.project.private && m.owner && m.reviewed_at).map((m) => ({
-    proof: { id: m.id, title: m.title, detail: m.detail, reviewed_at: m.reviewed_at!, community_id: m.community_id, community_name: m.community_name, reviewer_name: m.reviewer_name, project: { id: m.project!.id, title: m.project!.title }, owner: { id: m.owner!.id, first: m.owner!.first_name, last: m.owner!.last_name, avatar: avatarSrc(m.owner) } },
-    reason: tab === "for-you" ? (mineClubs.has(m.community_id) ? `From your club ${m.community_name}` : "Club-verified work") : "",
+    proof: { id: m.id, title: m.title, detail: m.detail, reviewed_at: m.reviewed_at!, community_id: m.community_id, community_name: m.community_name, reviewer_name: m.reviewer_name, vouched_by: m.vouched_by, project: { id: m.project!.id, title: m.project!.title }, owner: { id: m.owner!.id, first: m.owner!.first_name, last: m.owner!.last_name, avatar: avatarSrc(m.owner) } },
+    reason: tab === "for-you" ? (m.community_id && mineClubs.has(m.community_id) ? `From your club ${m.community_name}` : m.vouched_by ? "Vouched for by someone who saw it" : "Club-verified work") : "",
     at: Date.parse(m.reviewed_at!),
-    score: scoreProof(m.reviewed_at!, mineClubs.has(m.community_id), now),
+    score: scoreProof(m.reviewed_at!, !!m.community_id && mineClubs.has(m.community_id), now),
   })).sort((a, b) => b.score - a.score).map((p) => ({ proof: p.proof, reason: p.reason, at: p.at }));
 
   const viewer = { id: user.id, first: profile.first_name, last: profile.last_name };
@@ -227,10 +227,10 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
       const mineClubs = new Set(cids);
       const proofs: Item[] = (await proofP).filter((m) => m.project && !m.project.private && m.owner && m.reviewed_at).map((m) => ({
         type: "proof",
-        proof: { id: m.id, title: m.title, detail: m.detail, reviewed_at: m.reviewed_at!, community_id: m.community_id, community_name: m.community_name, reviewer_name: m.reviewer_name, project: { id: m.project!.id, title: m.project!.title }, owner: { id: m.owner!.id, first: m.owner!.first_name, last: m.owner!.last_name, avatar: avatarSrc(m.owner) } },
-        reason: tab === "for-you" ? (mineClubs.has(m.community_id) ? `From your club ${m.community_name}` : "Club-verified work") : "",
+        proof: { id: m.id, title: m.title, detail: m.detail, reviewed_at: m.reviewed_at!, community_id: m.community_id, community_name: m.community_name, reviewer_name: m.reviewer_name, vouched_by: m.vouched_by, project: { id: m.project!.id, title: m.project!.title }, owner: { id: m.owner!.id, first: m.owner!.first_name, last: m.owner!.last_name, avatar: avatarSrc(m.owner) } },
+        reason: tab === "for-you" ? (m.community_id && mineClubs.has(m.community_id) ? `From your club ${m.community_name}` : m.vouched_by ? "Vouched for by someone who saw it" : "Club-verified work") : "",
         at: Date.parse(m.reviewed_at!),
-        score: scoreProof(m.reviewed_at!, mineClubs.has(m.community_id), now),
+        score: scoreProof(m.reviewed_at!, !!m.community_id && mineClubs.has(m.community_id), now),
       }));
       if (proofs.length) items = [...items, ...proofs].sort((a, b) => (tab === "for-you" ? b.score - a.score : b.at - a.at));
     }

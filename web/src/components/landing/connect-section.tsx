@@ -18,7 +18,7 @@ const CHAPTERS = [
   { title: "You build like you already do", body: "Connect a repo once. Merged pull requests, releases and CI land in your project's build log on their own.", sources: ["github"] },
   { title: "Ember drafts it", body: "Ember, the agent built into Brazework, turns your week into an update, catches you up on your club's chats and answers @Ember. It drafts; you post.", sources: ["ember"] },
   { title: "Or bring your own agent", body: "The AI you already work with (Claude Code, Cursor, Codex) logs today's progress from where you work, through Brazework's MCP server. Every post says which tool wrote it.", sources: ["claude", "cursor", "codex"] },
-  { title: "Your club signs it", body: "Anything can be posted. Only an officer of your club can verify it, by name. Agents never can.", sources: ["club"] },
+  { title: "Someone who saw it signs it", body: "Anything can be posted. Only a club officer, or a professor, PI or manager you ask, can verify it, by name. Agents never can.", sources: ["club"] },
   { title: "Someone notices", body: "Companies search verified work, not résumés, and you see who looked.", sources: ["companies"] },
 ] as const;
 
