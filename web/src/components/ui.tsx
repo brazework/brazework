@@ -1,14 +1,12 @@
 import Image from "next/image";
 import Link from "next/link";
 import { cn } from "@/lib/forge";
+import { BrandMark } from "@/components/brand-mark";
 
 export function Logo({ className, withWord = true }: { className?: string; withWord?: boolean }) {
   return (
     <span className={cn("inline-flex items-center gap-2.5 font-semibold tracking-tight", className)}>
-      <svg width="24" height="24" viewBox="0 0 28 28" fill="none" aria-hidden="true">
-        <path d="M4 22 L14 4 L24 22 Z" stroke="currentColor" strokeWidth="2.2" strokeLinejoin="round" />
-        <path d="M9 22 L14 13 L19 22" stroke="currentColor" strokeWidth="2.2" strokeLinejoin="round" />
-      </svg>
+      <BrandMark size={24} />
       {withWord && <span className="text-[17px]">Brazework</span>}
     </span>
   );
