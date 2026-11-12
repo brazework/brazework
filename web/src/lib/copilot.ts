@@ -1,3 +1,4 @@
+import { goalTitle, isGoalKind, type GoalKind } from "@/lib/goals";
 import { z } from "zod";
 import { dbFeatures } from "@/lib/db-features";
 import { getViewer } from "@/lib/supabase/server";
@@ -47,10 +48,13 @@ After the answer, on its own last line, offer up to 3 short next steps the membe
 export async function memberContext() {
   const { supabase, user, profile } = await getViewer();
   if (!user || !profile) return null;
-  const [projects, clubs] = await Promise.all([
+  const [projects, clubs, goals] = await Promise.all([
     supabase.from("projects").select("title, status").eq("owner_id", user.id).limit(8),
     supabase.from("community_members").select("communities(id, name)").eq("uid", user.id).limit(10),
+    // Their goal (supabase/goals.sql), so advice points at it; absent until that step has run.
+    supabase.from("member_goals").select("kind, target").eq("uid", user.id).eq("status", "active").limit(1),
   ]);
+  const goal = ((goals.data ?? []) as { kind: string; target: string }[]).find((g) => isGoalKind(g.kind));
   type C = { id: string; name: string };
   const mine = ((clubs.data ?? []) as unknown as { communities: C | C[] | null }[]).flatMap((r) => (Array.isArray(r.communities) ? r.communities : r.communities ? [r.communities] : []));
   const lines = [
@@ -58,6 +62,7 @@ export async function memberContext() {
     profile.field && `Field: ${profile.field}.`,
     profile.interests?.length && `Interests: ${profile.interests.join(", ")}.`,
     mine.length && `Their clubs: ${mine.map((c) => c.name).join(", ")}.`,
+    goal && `Their goal: ${goalTitle(goal as { kind: GoalKind; target: string })}. Point advice toward it.`,
     projects.data?.length && `Their projects: ${projects.data.map((p) => `${p.title} (${p.status === "completed" ? "completed" : "in progress"})`).join("; ")}.`,
   ].filter(Boolean);
   return { supabase, userId: user.id, name: profile.first_name || "the member", system: `${RULES}\n\n${lines.join("\n")}` };

@@ -60,3 +60,4 @@ email-alerts
 who-looked
 github
 vouches
+goals

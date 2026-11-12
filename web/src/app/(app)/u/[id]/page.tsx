@@ -9,6 +9,8 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
 import { CopyLink } from "@/components/app/copy-link";
+import { GoalCard, GoalLine } from "@/components/app/goal-card";
+import { loadGoal, loadRecord } from "@/lib/goal-load";
 import { CountUp } from "@/components/app/count-up";
 import { EmptyState, Panel, Skeleton } from "@/components/app/page-ui";
 import { MemberFaces } from "@/components/network/member-faces";
@@ -62,6 +64,11 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
   const { milestones: msOn, projectTools: stackOn, profileExtras: extrasOn } = f;
   const clubCols = `id, name${f.clubProfile ? ", logo_path, accent" : ""}`;
 
+  // Goals (supabase/goals.sql): theirs if it's visible (row-level security decides), and, on your own
+  // profile, the record your path is built from.
+  const goalP = f.goals ? loadGoal(supabase, id) : Promise.resolve(null);
+  const recordP = f.goals && mine ? loadRecord(supabase, id) : Promise.resolve(null);
+
   // Everything that only needs the profile's id, at once (one round of requests, not seven).
   const [pr, rel, counts, postsRes, projectsRes, msRes, theirClubs, followRows, myClubRows, myFollows, , copilotOn] = await Promise.all([
     supabase.from("profiles").select(`id, first_name, last_name, account_type, headline, bio, field, interests, onboarded, created_at${f.media ? ", avatar_path, cover_path" : ""}${extrasOn ? ", open_to, links, location" : ""}${f.gradYear ? ", grad_year" : ""}`).eq("id", id).maybeSingle(),
@@ -95,6 +102,7 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
   ]);
   type Win = { challenge_id: string; placement: number; challenges: { title: string; status: string; organizations: { name: string } | null } | null };
   const wins = ((winsRes.data ?? []) as unknown as Win[]).filter((w) => w.challenges?.status === "closed").sort((a, b) => a.placement - b.placement);
+  const [goal, record] = await Promise.all([goalP, recordP]);
   const liked = new Set(((likesRes.data ?? []) as { post_id: string }[]).map((l) => l.post_id));
   const details = new Map(((detailsRes.data ?? []) as unknown as { project_id: string; details: string; link: string; specs?: { label: string; value: string }[] }[]).map((d) => [d.project_id, d]));
   const byId = Object.fromEntries(projectRows.map((r) => [r.id, r]));
@@ -178,6 +186,7 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
           </div>
           <div className="mt-4 flex flex-wrap items-center gap-3"><h1 className="text-3xl font-semibold tracking-tight">{name || "Brazework member"}</h1><OnlineLabel id={p.id} /></div>
           {p.headline && <p className="mt-1 text-lg text-text-2">{p.headline}</p>}
+          {goal && !mine && <div className="mt-2.5"><GoalLine goal={goal} /></div>}
           <p className="mt-2 flex flex-wrap items-center gap-x-1.5 text-sm text-muted">
             {p.account_type === "student" ? "Student" : "Professional"}
             {p.grad_year && <> · {classOf(p.grad_year)}</>}
@@ -242,6 +251,7 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
               </span>
             </Link>
           )}
+          {mine && f.goals && record && <GoalCard goal={goal} record={record} profileId={p.id} />}
           {msOn && <div id="proof" className="scroll-mt-24"><ProofTimeline items={proof} own={mine} /></div>}
 
           <section id="projects" data-tour="projects-tab" className="scroll-mt-24">

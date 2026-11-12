@@ -9,6 +9,7 @@ import { dbFeatures } from "@/lib/db-features";
 import { OPEN_TO, classOf, openToLabel } from "@/lib/profile-meta";
 import { getViewer } from "@/lib/supabase/server";
 import { buildBuilders, classYears, rankBuilders, type Person, type VerifiedRow } from "@/lib/talent";
+import { GOAL_KINDS, goalTitle, isGoalKind, type GoalKind } from "@/lib/goals";
 
 export const metadata: Metadata = { title: "Find builders" };
 
@@ -67,7 +68,12 @@ async function Talent({ searchParams }: { searchParams: PageProps<"/talent">["se
     ? await supabase.from("profiles").select(`id, first_name, last_name, headline, field${f.profileExtras ? ", open_to" : ""}${f.gradYear ? ", grad_year" : ""}`).in("id", ids)
     : { data: [] };
   const all = buildBuilders(rows, (peopleData ?? []) as unknown as Person[]);
-  const list = rankBuilders(all, { q, club, openTo, min, year });
+  // Goals (supabase/goals.sql): what each person is working toward, when they've made it visible, and
+  // a filter by it ("Working toward grad school").
+  const goalKind = isGoalKind(sp.goal) ? sp.goal : "";
+  const { data: goalRows } = f.goals && ids.length ? await supabase.from("member_goals").select("uid, kind, target").in("uid", ids).eq("status", "active") : { data: [] };
+  const goals = new Map(((goalRows ?? []) as { uid: string; kind: GoalKind; target: string }[]).filter((g) => isGoalKind(g.kind)).map((g) => [g.uid, g]));
+  const list = rankBuilders(all, { q, club, openTo, min, year }).filter((b) => !goalKind || goals.get(b.person.id)?.kind === goalKind);
   // Class-year chips: the years present among everyone else's filters, so a chip never leads nowhere.
   const years = classYears(rankBuilders(all, { q, club, openTo, min }));
   // Challenge wins (public once announced) next to the verified work.
@@ -82,7 +88,7 @@ async function Talent({ searchParams }: { searchParams: PageProps<"/talent">["se
   }
   const clubs = [...new Map(all.flatMap((b) => b.clubs).map((c) => [c.id, c])).values()].sort((a, b) => a.name.localeCompare(b.name));
   const href = (o: Record<string, string>) => {
-    const p = new URLSearchParams({ ...(q && { q }), ...(club && { club }), ...(openTo && { open: openTo }), ...(min > 1 && { min: String(min) }), ...(year && { year: String(year) }), ...o });
+    const p = new URLSearchParams({ ...(q && { q }), ...(club && { club }), ...(openTo && { open: openTo }), ...(min > 1 && { min: String(min) }), ...(year && { year: String(year) }), ...(goalKind && { goal: goalKind }), ...o });
     for (const [k, v] of [...p]) if (!v) p.delete(k);
     return `/talent${p.size ? `?${p}` : ""}`;
   };
@@ -107,6 +113,12 @@ async function Talent({ searchParams }: { searchParams: PageProps<"/talent">["se
         <Link href={href({ open: "" })} className={chip(!openTo)}>Anyone</Link>
         {OPEN_TO.map((o) => <Link key={o.id} href={href({ open: o.id })} className={chip(openTo === o.id)}>Open to {o.label.toLowerCase()}</Link>)}
       </div>
+      {f.goals && (
+        <div className="no-scrollbar mt-2 flex gap-1.5 overflow-x-auto" aria-label="Working toward">
+          <Link href={href({ goal: "" })} className={chip(!goalKind)}>Any goal</Link>
+          {(Object.keys(GOAL_KINDS) as GoalKind[]).map((k) => <Link key={k} href={href({ goal: k })} className={chip(goalKind === k)}>Working toward {GOAL_KINDS[k].label.toLowerCase()}</Link>)}
+        </div>
+      )}
       <div className="no-scrollbar mt-2 flex gap-1.5 overflow-x-auto" aria-label="Clubs and verified count">
         {MINS.map((m) => <Link key={m} href={href({ min: m > 1 ? String(m) : "" })} className={chip(min === m)}>{m}+ verified</Link>)}
         {clubs.length > 1 && <span className="mx-1 w-px shrink-0 bg-line" />}
@@ -131,7 +143,8 @@ async function Talent({ searchParams }: { searchParams: PageProps<"/talent">["se
                 <div className="min-w-0 flex-1">
                   <Link href={`/u/${b.person.id}`} className="block truncate font-semibold hover:underline">{name}</Link>
                   <p className="truncate text-sm text-muted">{b.person.headline || b.person.field || "Builder"}{b.person.grad_year ? ` · ${classOf(b.person.grad_year)}` : ""}</p>
-                  {!!b.person.open_to?.length && <p className="mt-0.5 truncate text-xs text-text-2">Open to {b.person.open_to.map(openToLabel).join(", ").toLowerCase()}</p>}
+                  {goals.get(b.person.id) ? <p className="mt-0.5 truncate text-xs text-text-2">Working toward {goalTitle(goals.get(b.person.id)!)}</p>
+                    : !!b.person.open_to?.length && <p className="mt-0.5 truncate text-xs text-text-2">Open to {b.person.open_to.map(openToLabel).join(", ").toLowerCase()}</p>}
                 </div>
                 <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-ok/12 px-2.5 py-1 text-xs font-medium text-ok"><BadgeCheck className="size-3.5" /> {b.verified}<span className="hidden sm:inline"> verified</span></span>
               </div>
