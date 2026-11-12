@@ -48,8 +48,10 @@ export function MilestoneTimeline({ items, own }: { items: Milestone[]; own: boo
                   <span className="text-faint">{day(m.achieved_on)}</span>
                   {/* The badge: who verified it, their role, the club and when. */}
                   {m.status === "verified" && (
-                    <span className="inline-flex items-center gap-1 rounded-full bg-[color-mix(in_oklab,var(--ok)_14%,transparent)] px-2 py-0.5 font-medium text-ok">
-                      <BadgeCheck className="size-3" /> Verified{m.reviewer_name ? ` by ${m.reviewer_name}` : ""}{m.reviewer_role ? ` (${m.reviewer_role})` : ""}, <Link href={`/c/${m.community_id}`} className="hover:underline">{m.community_name}</Link>{m.reviewed_at ? ` · ${new Date(m.reviewed_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}` : ""}
+                    // Inline text, not flex: on a phone the sentence wraps as one line of text instead of
+                    // splitting into columns (each text piece was its own flex item).
+                    <span className="inline-block max-w-full rounded-lg bg-[color-mix(in_oklab,var(--ok)_14%,transparent)] px-2 py-0.5 font-medium text-ok">
+                      <BadgeCheck className="mr-1 inline size-3 align-[-2px]" />Verified{m.reviewer_name ? ` by ${m.reviewer_name}` : ""}{m.reviewer_role ? ` (${m.reviewer_role})` : ""}, <Link href={`/c/${m.community_id}`} className="hover:underline">{m.community_name}</Link>{m.reviewed_at ? ` · ${new Date(m.reviewed_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}` : ""}
                     </span>
                   )}
                   {m.status === "pending" && <span className="inline-flex items-center gap-1 rounded-full bg-surface-2 px-2 py-0.5 text-muted"><Clock className="size-3" /> Waiting for {m.community_name}</span>}
