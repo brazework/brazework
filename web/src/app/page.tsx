@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { FinalCta, Footer } from "@/components/landing/closing";
-import { CopilotSection } from "@/components/landing/copilot-section";
+import { ConnectSection } from "@/components/landing/connect-section";
 import { Hero } from "@/components/landing/hero";
 import { Founders } from "@/components/landing/founders";
 import { Traction } from "@/components/landing/traction";
@@ -31,7 +31,7 @@ export default function Landing() {
         <How />
         <ProjectShowcase />
         <ClubShowcase />
-        <CopilotSection />
+        <ConnectSection />
         <Audiences />
         <Features />
         <Pricing />
