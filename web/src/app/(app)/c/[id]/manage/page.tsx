@@ -72,7 +72,8 @@ async function Manage({ params, searchParams }: { params: PageProps<"/c/[id]/man
     ? ((await supabase.from("club_report_links").select("token").eq("community_id", id).is("revoked_at", null).maybeSingle()).data?.token as string | undefined) ?? null
     : null;
 
-  const MS_COLS = ((await dbFeatures()).verification ? "dispute_note, escalated, revoked_reason, " : "") + "id, owner_id, title, detail, evidence, achieved_on, created_at, status, reviewer_name, review_note, project:projects(title, summary), owner:profiles!milestones_owner_id_fkey(first_name, last_name, headline)";
+  const feat = await dbFeatures();
+  const MS_COLS = (feat.verification ? "dispute_note, escalated, revoked_reason, evidence_items, " : "") + (feat.mcpMilestones ? "via, " : "") + "id, owner_id, title, detail, evidence, achieved_on, created_at, status, reviewer_name, review_note, project:projects(title, summary), owner:profiles!milestones_owner_id_fkey(first_name, last_name, headline)";
   const [reqs, members, bans, invites, queue, reviewed] = await Promise.all([
     tab === "requests" ? supabase.from("community_requests").select("*").eq("community_id", id).order("at", { ascending: true }).limit(100) : Promise.resolve({ data: [] }),
     tab === "members" || tab === "handoff" ? supabase.from("community_members").select("*").eq("community_id", id).limit(500) : Promise.resolve({ data: [] }),

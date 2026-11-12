@@ -69,3 +69,18 @@ test("MCP tools are annotated honestly: reads are read-only; post_update writes 
     { p_body: "Hi", p_kind: "result", p_project: "p1", p_club: null, p_tags: ["a", "b", "c"] });
   assert.deepEqual(post!.inputSchema.required, ["body"]);
 });
+
+test("log_milestone writes (never destroys), needs evidence, and passes it through cleaned; the review list only reads", async () => {
+  const { MCP_TOOLS, annotationsFor } = await import("@/lib/mcp");
+  const log = MCP_TOOLS.find((t) => t.name === "log_milestone");
+  assert.ok(log?.writes);
+  assert.equal(annotationsFor(log!).destructiveHint, false);
+  assert.deepEqual(log!.inputSchema.required, ["project_id", "club_id", "title", "evidence"]);
+  const many = Array.from({ length: 10 }, (_, i) => `https://example.com/${i}`);
+  const a = log!.args({ project_id: "p1", club_id: "rkt", title: "Static fire", evidence: [...many, 3], achieved_on: "2026-11-01" }) as { p_evidence: string[]; p_achieved_on: string | null };
+  assert.equal(a.p_evidence.length, 8, "at most 8 links");
+  assert.equal(a.p_achieved_on, "2026-11-01");
+  assert.equal((log!.args({ project_id: "p1", club_id: "rkt", title: "x", evidence: [], achieved_on: "soon" }) as { p_achieved_on: string | null }).p_achieved_on, null, "a bad date means today");
+  const review = MCP_TOOLS.find((t) => t.name === "my_review_requests");
+  assert.equal(annotationsFor(review!).readOnlyHint, true);
+});
