@@ -18,7 +18,7 @@ export function ReportView({ r, clubId, copilot }: { r: ClubReport; clubId: stri
           <div className="mt-1 text-xs text-ok">{r.newMembers ? `+${r.newMembers} this week` : <span className="text-faint">No new members this week</span>}</div>
         </div>
         <div className={card}>
-          <div className="flex items-center gap-1.5 text-xs text-muted"><MessageSquare className="size-3.5" /> Posts this week</div>
+          <div className="flex items-center gap-1.5 text-xs text-muted"><MessageSquare className="size-3.5" /> Club posts this week</div>
           <div className="mt-2 text-3xl font-semibold tracking-tight"><CountUp to={r.posts.thisWeek} /></div>
           <div className={`mt-1 inline-flex items-center gap-1 text-xs ${delta > 0 ? "text-ok" : delta < 0 ? "text-danger" : "text-faint"}`}><Trend className="size-3.5" /> {delta === 0 ? "Same as" : `${Math.abs(delta)} ${delta > 0 ? "more than" : "fewer than"}`} last week</div>
         </div>

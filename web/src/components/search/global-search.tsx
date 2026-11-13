@@ -78,7 +78,7 @@ export function GlobalSearch() {
   const askRow = cur && (
     <Link data-result href={`/copilot?q=${encodeURIComponent(query)}`} className="flex items-center gap-3 rounded-lg px-2.5 py-2.5 text-sm transition hover:bg-hover focus:bg-hover focus:outline-none">
       <span className="bg-accent-grad grid size-9 shrink-0 place-items-center rounded-xl text-on-accent"><Sparkles className="size-4" /></span>
-      <span className="min-w-0"><span className="block truncate font-medium">Ask Copilot: &ldquo;{query}&rdquo;</span><span className="block text-xs text-faint">Answers with clubs, events and people from Brazework</span></span>
+      <span className="min-w-0"><span className="block truncate font-medium">Ask Ember: &ldquo;{query}&rdquo;</span><span className="block text-xs text-faint">Answers with clubs, events and people from Brazework</span></span>
     </Link>
   );
 

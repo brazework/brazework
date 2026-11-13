@@ -51,7 +51,8 @@ async function Starts() {
       {rooms.length > 0 && (
         <section className="mt-8">
           <h2 className="text-xs font-medium tracking-wide text-faint uppercase">Your club chats</h2>
-          <ul className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
+          {/* One column: this panel is narrow even on wide screens, and two columns cut club names off. */}
+          <ul className="mt-2 grid grid-cols-1 gap-2">
             {rooms.map((c) => (
               <li key={c.id}>
                 <Link href={`/messages/g/${c.id}`} className="flex items-center gap-3 rounded-2xl border border-line bg-surface p-3 transition hover:bg-hover">
