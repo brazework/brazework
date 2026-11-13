@@ -8,7 +8,8 @@ import { avatarSrc, mediaUrl } from "@/lib/media";
 
 const KIND = { update: { icon: Megaphone, label: "Update" }, question: { icon: HelpCircle, label: "Question" }, result: { icon: FlaskConical, label: "Result" }, project: { icon: Rocket, label: "Project" } } as const;
 
-// A post as a cover card: its first photo, or the theme gradient with the post type.
+// A post as a cover card: its first photo, or a quiet panel with the post type. Not the accent: in dark
+// mode the accent is near-white, so a photo-less card became the brightest thing on the feed.
 export function SpotlightCard({ post }: { post: Post }) {
   const k = KIND[post.kind] ?? KIND.update;
   const photo = post.media?.find((m) => m.type === "image");
@@ -18,8 +19,8 @@ export function SpotlightCard({ post }: { post: Post }) {
         {photo ? (
           <Image src={mediaUrl(photo.path)} alt={photo.alt || ""} fill sizes="280px" className="object-cover transition duration-700 group-hover:scale-110" />
         ) : (
-          <div className="bg-accent-grad absolute inset-0 grid place-items-center transition duration-700 group-hover:scale-110">
-            <k.icon className="size-14 text-on-accent opacity-80" />
+          <div className="absolute inset-0 grid place-items-center border-b border-line bg-surface-2 transition duration-700 group-hover:scale-110">
+            <k.icon className="size-10 text-faint" />
           </div>
         )}
         <span className="absolute top-3 left-3 inline-flex items-center gap-1 rounded-full bg-black/55 px-2.5 py-1 text-[11px] font-medium text-white backdrop-blur"><k.icon className="size-3.5" /> {k.label}</span>
