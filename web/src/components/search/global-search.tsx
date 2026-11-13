@@ -8,6 +8,7 @@ import { joinCommunity } from "@/app/(app)/communities/actions";
 import { CommunityBadge } from "@/app/(app)/communities/_components/badge";
 import { ConnectDialog } from "@/components/network/connect-dialog";
 import { Avatar } from "@/components/ui";
+import { Ember } from "@/components/ember/ember";
 import { membersLabel, PRIVACY_LABEL } from "@/lib/communities";
 import { cn } from "@/lib/forge";
 import { respondToRequest, sendConnectionRequest } from "@/lib/network";
@@ -90,7 +91,9 @@ export function GlobalSearch() {
         onSubmit={(e) => { e.preventDefault(); if (query) { setOpen(false); router.push(`/search?q=${encodeURIComponent(query)}`); } }}
         className="flex h-10 items-center gap-2.5 rounded-lg border border-line bg-surface px-3 transition hover:border-line-strong focus-within:border-line-strong focus-within:ring-[3px] focus-within:ring-text/8"
       >
-        {loading ? <Loader2 className="size-[18px] shrink-0 animate-spin text-faint" /> : <Search className="size-[18px] shrink-0 text-faint" />}
+        {/* The Ember bar (redesign stage 1): one bar to search, jump anywhere or ask Ember. Typing searches
+            right here; the button at the end (or ⌘K) opens the palette, the way into Ember. */}
+        {loading ? <Loader2 className="size-[18px] shrink-0 animate-spin text-faint" /> : <span className="grid size-[18px] shrink-0 place-items-center" aria-hidden="true"><Ember size={18} /></span>}
         <label htmlFor="forge-search" className="sr-only">Search Brazework</label>
         <input
           ref={input}
@@ -100,7 +103,7 @@ export function GlobalSearch() {
           value={q}
           onChange={(e) => { setQ(e.target.value); setOpen(true); }}
           onFocus={() => setOpen(true)}
-          placeholder="Search people, clubs, projects, events…"
+          placeholder="Ask Ember, search, or jump anywhere"
           autoComplete="off"
           aria-controls={showPanel ? listId : undefined}
           className="min-w-0 flex-1 bg-transparent text-[15px] outline-none placeholder:text-faint [&::-webkit-search-cancel-button]:hidden"
@@ -108,7 +111,10 @@ export function GlobalSearch() {
         {q ? (
           <button type="button" onClick={() => { setQ(""); input.current?.focus(); }} aria-label="Clear search" className="grid size-7 place-items-center rounded-full text-faint hover:bg-hover hover:text-text"><X className="size-4" /></button>
         ) : (
-          <kbd className="hidden rounded-md border border-line px-1.5 py-0.5 font-mono text-[11px] text-faint sm:block" aria-hidden="true">/</kbd>
+          <button type="button" onClick={() => window.dispatchEvent(new Event("forge:palette"))} aria-label="Ask Ember, or jump anywhere (Command K)"
+            className="hidden shrink-0 items-center gap-1.5 rounded-md px-1.5 py-1 text-xs text-muted transition hover:bg-hover hover:text-text sm:inline-flex">
+            Ask Ember <kbd className="rounded border border-line px-1 py-px font-mono text-[10px] text-faint" aria-hidden="true">⌘K</kbd>
+          </button>
         )}
       </form>
 

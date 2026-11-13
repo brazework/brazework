@@ -36,7 +36,7 @@ export function CommandPalette() {
   const items = useMemo<Item[]>(() => {
     const text = q.trim();
     const actions: Item[] = [
-      { id: "post", label: "New post", hint: "What are you building?", icon: PenLine, run: () => { setOpen(false); if (path === "/feed") window.dispatchEvent(new Event("forge:compose")); else router.push("/feed#composer"); } },
+      { id: "post", label: "Log work", hint: "What did you build today?", icon: PenLine, run: () => { setOpen(false); if (path === "/feed") window.dispatchEvent(new Event("forge:compose")); else router.push("/feed#composer"); } },
       { id: "project", label: "Add a project", icon: FolderGit2, run: go("/projects") },
       { id: "verify", label: "Ask your club to verify a milestone", icon: BadgeCheck, run: go("/projects") },
       { id: "clubs", label: "Find a club", icon: Users, run: go("/communities?tab=discover") },

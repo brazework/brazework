@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { ChevronDown, Hash, SlidersHorizontal } from "lucide-react";
+import { ChevronDown, SlidersHorizontal } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
@@ -20,15 +20,18 @@ import { cookies } from "next/headers";
 import { DISMISS_PREFIX } from "@/lib/dismiss";
 import { Composer } from "./composer";
 import { FeedHeader, TABS, type TabId } from "./header";
+import { feedTabs } from "@/lib/feed-tabs";
+import { NextStep } from "./next-step";
+import { WaitingOnYou } from "./waiting";
 import type { ReplyPreview } from "./post-card";
 import type { Proof } from "./proof-card";
 import { FeedList, NewPosts, type FeedPage as FirstPage, type FeedParams, type ProofItem } from "./feed-list";
 import { MessageDock } from "@/components/messages/dock";
 import { FeedRail } from "./rail";
-import { PeopleStrip, SpotlightStrip, WeekStrip } from "./discover";
+import { WeekStrip } from "./discover";
 import { StripSkeleton } from "@/components/app/discover-cards";
 
-export const metadata: Metadata = { title: "Feed" };
+export const metadata: Metadata = { title: "Today" };
 
 
 export default function FeedPage({ searchParams }: PageProps<"/feed">) {
@@ -39,7 +42,7 @@ export default function FeedPage({ searchParams }: PageProps<"/feed">) {
           <Feed searchParams={searchParams} />
         </Suspense>
       </div>
-      <aside aria-label="Your week, what's coming up and your clubs" className="hidden xl:block">
+      <aside aria-label="Your week and what's coming up" className="hidden xl:block">
         <Suspense fallback={<div className="h-96 shimmer rounded-3xl" />}>
           <FeedRail />
         </Suspense>
@@ -192,8 +195,6 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
   const composeClubs = ((clubRows ?? []) as unknown as { communities: ClubRef | ClubRef[] | null }[])
     .flatMap((r) => (Array.isArray(r.communities) ? r.communities : r.communities ? [r.communities] : []))
     .sort((a, b) => a.name.localeCompare(b.name));
-  const spotlight = <div className="py-2 empty:hidden"><Suspense fallback={<StripSkeleton w={280} h={250} />}><SpotlightStrip /></Suspense></div>;
-  const peopleStrip = <div className="py-2 empty:hidden"><Suspense fallback={<StripSkeleton w={200} h={250} />}><PeopleStrip field={profile.field} interests={interests} rows /></Suspense></div>;
   // Before supabase/feed-pages.sql has run: the whole feed in one go, as it was (lib/db-features.ts).
   async function legacyFirstPage(): Promise<FirstPage> {
     if (!user || !profile) return { items: [], next: null, as_of: new Date(now).toISOString() };
@@ -263,6 +264,9 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
     };
   }
 
+  // What the Filter button says: "Filter", or what's narrowing the feed right now.
+  const sorted = sort !== (tab === "for-you" ? "best" : "new");
+  const filterLabel = tag ? `#${tag}` : kind ? KINDS.find((k) => k.id === kind)?.label ?? "Filter" : sorted ? SORTS.find((x) => x.id === sort)?.label ?? "Filter" : "Filter";
   const href = (patch: { tab?: string; kind?: string; tag?: string; sort?: string }) => {
     const q = new URLSearchParams();
     const t = patch.tab ?? tab, k = patch.kind ?? kind, g = patch.tag ?? tag;
@@ -279,53 +283,55 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
     <>
       <NewPosts me={user.id} />
       <MessageDock />
-      <FeedHeader tab={tab} chapter={Boolean(chapter)} hrefFor={(t) => href({ tab: t })} sort={/* Order: ranked, newest or oldest first. */ <span className="mr-1 hidden shrink-0 sm:inline-flex items-center gap-0.5 rounded-full border border-line bg-surface p-0.5" role="group" aria-label="Sort posts">
-          {SORTS.filter((x) => x.id !== "best" || tab === "for-you").map((x) => (
-            <Link key={x.id} href={href({ sort: x.id })} aria-current={sort === x.id ? "true" : undefined} className={cn("rounded-full px-2.5 py-0.5 text-xs whitespace-nowrap transition", sort === x.id ? "bg-text text-surface" : "text-muted hover:text-text")}>{x.label}</Link>
-          ))}
-        </span>} hero={<>{noProjects && <FirstBuild first={profile.first_name} chapter={chapter?.name} />}{/* When the checklist's next step is the project, the card above already asks it, so the checklist waits. */}{startOpen && !(noProjects && nextStep === "project") ? <StartChecklist steps={guide?.loop ?? []} /> : noProjects ? null : <Suspense fallback={null}><WeekLoop /></Suspense>}<div id="composer" data-tour="composer" className="scroll-mt-24"><Composer first={profile.first_name} last={profile.last_name} interests={interests} userId={user.id} mediaEnabled={mediaEnabled} captionsEnabled={captionsEnabled} avatarSrc={avatarSrc(profile)} copilot={copilotOn} mentionsEnabled={mentionsEnabled} club={ledClub} next={null} projects={(myProjects ?? []) as { id: string; title: string }[]} clubs={composeClubs} defaultShareTo={chapter?.id} initialProject={typeof sp.project === "string" ? sp.project : undefined} /></div>{!startOpen && !noProjects && <Suspense fallback={null}><BuildsRow /></Suspense>}</>} />
-      {/* What kind of post (a quiet segmented control), and your topics in one chip: one calm row on a
-          wide screen; on a phone it is one row: the kinds scroll, and one button holds topics and sort. */}
-      <nav data-tour="interests" aria-label="Filter the feed" className="mt-4 flex flex-nowrap items-center gap-2 sm:flex-wrap">
-        <div className="no-scrollbar flex min-w-0 flex-1 items-center gap-0.5 overflow-x-auto rounded-full bg-surface-2/80 p-1 sm:w-auto sm:flex-none">
-          {KINDS.map((k) => (
-            <Link key={k.id || "all"} href={href({ kind: k.id })} aria-current={kind === k.id ? "true" : undefined}
-              className={cn("shrink-0 rounded-full px-3 py-1 text-xs font-medium whitespace-nowrap transition active:scale-95", kind === k.id ? "bg-surface text-text shadow-[0_1px_2px_rgb(0_0_0/0.08),0_0_0_1px_var(--border)]" : "text-muted hover:text-text")}>
-              {k.label}
-            </Link>
-          ))}
-        </div>
-        {/* Topics, and on phones the sort too, in one compact menu so the row never wraps. */}
-        <details className={cn("group relative shrink-0", !interests.length && "sm:hidden")}>
-          <summary aria-label={tag ? `Topic: ${tag}` : "Topics and sort"} className={cn("flex size-9 cursor-pointer list-none items-center justify-center gap-1.5 rounded-lg border text-xs font-medium transition sm:h-8 sm:w-auto sm:px-3 [&::-webkit-details-marker]:hidden", tag ? "bg-accent-grad border-transparent text-on-accent" : "border-line bg-surface text-text-2 hover:border-line-strong hover:text-text")}>
-            <SlidersHorizontal className="size-4 sm:hidden" />
-            <Hash className="hidden size-3.5 sm:block" /><span className="hidden sm:inline">{tag || "Topics"}</span>
-            <ChevronDown className="hidden size-3 transition group-open:rotate-180 sm:block" />
-          </summary>
-          <div className={cn(menuCls, "absolute top-full right-0 z-30 mt-1.5 w-64 p-2")}>
-            {/* Phones: the sort lives here (the tabs row is too narrow for it). */}
-            <div className="mb-2 flex items-center gap-0.5 rounded-full bg-surface-2 p-0.5 sm:hidden" role="group" aria-label="Sort posts">
-              {SORTS.filter((x) => x.id !== "best" || tab === "for-you").map((x) => (
-                <Link key={x.id} href={href({ sort: x.id })} aria-current={sort === x.id ? "true" : undefined} className={cn("flex-1 rounded-full px-2.5 py-1 text-center text-xs whitespace-nowrap transition", sort === x.id ? "bg-text text-surface" : "text-muted hover:text-text")}>{x.label}</Link>
-              ))}
-            </div>
-            {interests.length > 0 && <>
-              <div className="flex flex-wrap gap-1.5">
-                {interests.map((t) => (
-                  <Link key={t} href={href({ tag: tag === t ? "" : t })} aria-current={tag === t ? "true" : undefined}
-                    className={cn("rounded-full border px-2.5 py-1 text-xs transition", tag === t ? "bg-accent-grad border-transparent text-on-accent" : "border-line text-muted hover:border-line-strong hover:text-text")}>
-                    #{t}
+      <FeedHeader tabs={feedTabs(tab, Boolean(chapter))} hrefFor={(t) => href({ tab: t })}
+        filter={/* One Filter menu for the feed: order, kind of post and your topics (they were a sort pill, a kind row and a topics chip). */
+          <details name="feed-menu" key={`${tab}:${kind}:${tag}:${sort}`} data-tour="interests" className="group relative shrink-0">
+            <summary aria-label={filterLabel === "Filter" ? "Filter the feed" : `Filter: ${filterLabel}`} className={cn("flex h-8 cursor-pointer list-none items-center gap-1.5 rounded-lg border px-2.5 text-xs font-medium transition [&::-webkit-details-marker]:hidden", filterLabel === "Filter" ? "border-line bg-surface text-text-2 hover:border-line-strong hover:text-text" : "bg-accent-grad border-transparent text-on-accent")}>
+              <SlidersHorizontal className="size-3.5" /><span className="hidden max-w-28 truncate sm:inline">{filterLabel}</span>
+              <ChevronDown className="hidden size-3 transition group-open:rotate-180 sm:block" />
+            </summary>
+            <div className={cn(menuCls, "absolute top-full right-0 z-30 mt-1.5 w-72 p-2")}>
+              <div className="px-1 pb-1 text-[11px] font-medium tracking-wide text-faint uppercase">Order</div>
+              <div className="flex items-center gap-0.5 rounded-full bg-surface-2 p-0.5" role="group" aria-label="Sort posts">
+                {SORTS.filter((x) => x.id !== "best" || tab === "for-you").map((x) => (
+                  <Link key={x.id} href={href({ sort: x.id })} aria-current={sort === x.id ? "true" : undefined} className={cn("flex-1 rounded-full px-2.5 py-1 text-center text-xs whitespace-nowrap transition", sort === x.id ? "bg-text text-surface" : "text-muted hover:text-text")}>{x.label}</Link>
+                ))}
+              </div>
+              <div className="px-1 pt-3 pb-1 text-[11px] font-medium tracking-wide text-faint uppercase">Show</div>
+              <div className="flex flex-wrap gap-1.5" role="group" aria-label="Kind of post">
+                {KINDS.map((k) => (
+                  <Link key={k.id || "all"} href={href({ kind: k.id })} aria-current={kind === k.id ? "true" : undefined}
+                    className={cn("rounded-full border px-2.5 py-1 text-xs transition", kind === k.id ? "border-transparent bg-text text-surface" : "border-line text-muted hover:border-line-strong hover:text-text")}>
+                    {k.label}
                   </Link>
                 ))}
               </div>
-              <div className="mt-2 flex items-center justify-between border-t border-line px-1 pt-2 text-xs">
-                {tag ? <Link href={href({ tag: "" })} className="text-muted hover:text-text">All topics</Link> : <span className="text-faint">Your interests</span>}
-                <Link href="/settings#profile" className="text-muted hover:text-text">Edit</Link>
-              </div>
-            </>}
-          </div>
-        </details>
-      </nav>
+              {interests.length > 0 && <>
+                <div className="px-1 pt-3 pb-1 text-[11px] font-medium tracking-wide text-faint uppercase">Your topics</div>
+                <div className="flex flex-wrap gap-1.5">
+                  {interests.map((t) => (
+                    <Link key={t} href={href({ tag: tag === t ? "" : t })} aria-current={tag === t ? "true" : undefined}
+                      className={cn("rounded-full border px-2.5 py-1 text-xs transition", tag === t ? "bg-accent-grad border-transparent text-on-accent" : "border-line text-muted hover:border-line-strong hover:text-text")}>
+                      #{t}
+                    </Link>
+                  ))}
+                </div>
+                <div className="mt-2 flex items-center justify-between border-t border-line px-1 pt-2 text-xs">
+                  {tag ? <Link href={href({ tag: "" })} className="text-muted hover:text-text">All topics</Link> : <span className="text-faint">From your interests</span>}
+                  <Link href="/settings#profile" className="text-muted hover:text-text">Edit</Link>
+                </div>
+              </>}
+            </div>
+          </details>}
+        hero={<>
+          {/* What's yours, in order: your next step, the log-work box, what's waiting on you, your builds. */}
+          {noProjects && <FirstBuild first={profile.first_name} chapter={chapter?.name} />}
+          {/* When the checklist's next step is the project, the card above already asks it, so the checklist waits. */}
+          {startOpen && !(noProjects && nextStep === "project") ? <StartChecklist steps={guide?.loop ?? []} /> : noProjects ? null : <><Suspense fallback={<div className="h-[76px] shimmer rounded-2xl" aria-hidden="true" />}><NextStep /></Suspense><Suspense fallback={null}><WeekLoop /></Suspense></>}
+          <div id="composer" data-tour="composer" className="scroll-mt-24"><Composer first={profile.first_name} last={profile.last_name} interests={interests} userId={user.id} mediaEnabled={mediaEnabled} captionsEnabled={captionsEnabled} avatarSrc={avatarSrc(profile)} copilot={copilotOn} mentionsEnabled={mentionsEnabled} club={ledClub} next={null} projects={(myProjects ?? []) as { id: string; title: string }[]} clubs={composeClubs} defaultShareTo={chapter?.id} initialProject={typeof sp.project === "string" ? sp.project : undefined} /></div>
+          <Suspense fallback={null}><WaitingOnYou /></Suspense>
+          {!startOpen && !noProjects && <Suspense fallback={null}><BuildsRow /></Suspense>}
+        </>} />
       {(tag || kind) && (
         <div className="mt-3 flex items-center justify-between rounded-2xl border border-line bg-surface-2 px-4 py-2.5 text-sm">
           <span>Showing {kind ? <strong className="font-medium">{KINDS.find((k) => k.id === kind)?.label.toLowerCase()}</strong> : "posts"}{tag && <> tagged <strong className="font-medium">#{tag}</strong></>}{kind === "question" && " · unanswered first"}{sort === "old" && " · oldest first"}</span>
@@ -335,8 +341,7 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
       {discover && <div className="mt-6"><Suspense fallback={<StripSkeleton w={250} h={96} />}><WeekStrip /></Suspense></div>}
       <div className="mt-6 flex flex-col gap-4">
         {first.items.length === 0 && <EmptyState title={emptyTitle} body={emptyBody} action={emptyAction} />}
-        <FeedList first={first} params={params} proofs={proofs} ranked={tab === "for-you" && sort === "best"} me={user.id} viewer={viewer}
-          slots={discover ? { 1: spotlight, 4: peopleStrip } : {}}
+        <FeedList first={first} params={params} proofs={proofs} ranked={tab === "for-you" && sort === "best"} me={user.id} viewer={viewer} slots={{}}
           end={first.items.length > 0 ? <FeedEnd tab={tab} /> : null} />
       </div>
     </>

@@ -250,11 +250,11 @@ export const RELEASED = UPDATES.filter((u) => u.kind !== "Next");
 export function welcomeSteps(firstName: string): TourStep[] {
   return [
     { route: ROUTES.feed, title: `Welcome to Brazework, ${firstName || "there"}`, body: "Here's a one-minute look at the essentials. Close this at any time, or use Back to see a step again." },
-    { route: ROUTES.feed, target: "feed-tabs", title: "Your feed", body: "For you only shows posts that match your interests, with a note saying why. Latest has every post, Following has the people you follow, and Communities has your groups." },
-    { route: ROUTES.feed, target: "search", title: "Find people and clubs", body: "Search Brazework by name, field or club from the bar at the top of every page, and connect or join from the results." },
+    { route: ROUTES.feed, target: "feed-tabs", title: "Your feed", body: "Your clubs shows what your clubs are building. Everyone is ranked for your interests, with a note saying why. Latest and Following are under More." },
+    { route: ROUTES.feed, target: "search", title: "Ask Ember, search, or jump anywhere", body: "One bar at the top of every page. Type a name, field or club to search and connect or join from the results, or ask Ember with ⌘K." },
     { route: ROUTES.feed, target: "composer", title: "Share your work", body: "Post an update, question, result or project. Add up to 3 topics so it reaches the people interested in them." },
-    { route: ROUTES.feed, target: "interests", title: "Your focus areas", body: "Your interests decide what's in For you and which people and events we suggest. Click one to filter the feed, or change them in Settings." },
-    { route: ROUTES.feed, target: "menu", title: "Everything else", body: "The menu has every page: Network, Communities, Messages, Events, Saved and Settings." },
+    { route: ROUTES.feed, target: "interests", title: "Your focus areas", body: "Filter narrows the feed by kind of post or by one of your topics. Your interests decide what's in Everyone and which people and events we suggest; change them in Settings." },
+    { route: ROUTES.feed, target: "menu", title: "Five places", body: "Today is what needs you. Build is what you're making. Club is your team. Proof is what you've proven and who looked. Inbox is who's reaching out. Settings are on your photo at the bottom." },
     { route: ROUTES.feed, target: "bell", title: "Notifications", body: "Likes, comments, new followers and connection requests show up here." },
     { route: ROUTES.projects, target: "projects-tab", title: "Your profile and projects", body: "Show what you've built. Projects can be public or private, and you can share them to the feed." },
     { route: ROUTES.profile, target: "analytics", title: "Your dashboard", body: "See how people find your profile and how your posts are doing over time. Only you can see it." },

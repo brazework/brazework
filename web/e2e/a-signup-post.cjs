@@ -76,7 +76,7 @@ const { BASE, step, browser, as, go, closeTour, summary } = require("./lib.cjs")
     await page.getByRole("button", { name: "Post", exact: true }).click();
     await page.locator("article a", { hasText: "@Ben Cho" }).first().waitFor({ timeout: 15000 });
   }, page);
-  await step("your new post shows first in For you (desktop and phone)", async () => {
+  await step("your new post shows first in Everyone (desktop and phone)", async () => {
     await go(page, "/feed");
     const first = await page.locator("article").first().innerText();
     if (!first.includes("Hello Brazework! Thanks")) throw new Error("first post is: " + first.slice(0, 80));
