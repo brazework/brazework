@@ -4,6 +4,9 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { LiveRefresh } from "@/components/app/live-refresh";
+import { PlaceTabs } from "@/components/app/place-tabs";
+import { PlaceTabsCounted } from "@/components/app/place-tabs-counted";
+import { loadBadges } from "@/lib/badges";
 import { QueryProvider } from "@/components/app/query-provider";
 import { GlobalSearch } from "@/components/search/global-search";
 import { TourMount } from "@/components/tour/tour-mount";
@@ -26,6 +29,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <main className="min-w-0 flex-1 px-4 pt-[var(--m-top)] pb-[calc(var(--m-bottom)+1rem)] sm:px-6 md:py-6 lg:px-8 2xl:px-12">
         {/* One search for people and communities, above every page. On the feed it lines up with the posts column (globals.css). */}
         <div className="search-row mx-auto mb-6 hidden max-w-3xl md:block xl:max-w-4xl"><Suspense fallback={<div className="h-12 rounded-2xl border border-line bg-surface/60" aria-hidden="true" />}><GlobalSearch /></Suspense></div>
+        {/* The pages inside the place you're in (lib/places.ts), on phones too. Lines up with the search row. */}
+        <div className="place-row mx-auto max-w-3xl xl:max-w-4xl">{/* Two boundaries: the tabs read the path, which on a page with an id in its address isn't known when
+            the shell is prerendered, so they wait in the outer one; inside it, the plain tabs show at once
+            and the same tabs with their counts take over when the counts arrive. */}
+          <Suspense fallback={null}><Suspense fallback={<PlaceTabs />}><PlaceTabsCounted /></Suspense></Suspense></div>
         <QueryProvider>{children}</QueryProvider>
       </main>
     </div>
@@ -39,12 +47,10 @@ async function SignedInShell() {
   if (!profile?.onboarded) redirect("/onboarding");
 
   // What's waiting for you, shown as badges across the app (supabase/activity.sql, messages.sql).
-  const { groupChats, clubProfile, media } = await dbFeatures();
-  const [n, m, i, g, cl] = await Promise.all([
-    supabase.rpc("unread_notifications"),
-    supabase.rpc("unread_conversations"),
-    supabase.from("connections").select("*", { count: "exact", head: true }).eq("to_id", user.id).eq("status", "pending"),
-    groupChats ? supabase.rpc("unread_chats") : Promise.resolve({ data: 0 }),
+  const { clubProfile, media } = await dbFeatures();
+  const [counts, cl] = await Promise.all([
+    // Shared with the place tabs above the page (lib/badges.ts): one set of queries per render.
+    loadBadges(),
     // Your clubs, as shortcuts in the sidebar.
     // With their logo (or cover) where they have one.
     supabase.from("community_members").select(`communities(id, name${clubProfile ? ", logo_path" : ""}${media ? ", cover_path" : ""})`).eq("uid", user.id).order("joined_at", { ascending: false }).limit(5),
@@ -53,7 +59,7 @@ async function SignedInShell() {
   const myClubs = ((cl.data ?? []) as unknown as { communities: ClubRef | ClubRef[] | null }[])
     .flatMap((r) => (Array.isArray(r.communities) ? r.communities : r.communities ? [r.communities] : []))
     .map((c) => ({ id: c.id, name: c.name, image: c.logo_path ?? c.cover_path ?? null }));
-  const badges: Badges = { notifications: Number(n.data) || 0, messages: (Number(m.data) || 0) + (Number(g.data) || 0), invites: i.count ?? 0 };
+  const badges: Badges = counts ?? { notifications: 0, messages: 0, invites: 0 };
   const collapsed = (await cookies()).get(SIDEBAR_COOKIE)?.value === "collapsed";
 
   return (

@@ -93,6 +93,8 @@ const pw = require("playwright-core");
   }, josh);
   await step("log out ends the session", async () => {
     await go(josh, "/feed");
+    // Log out lives in the menu on your photo at the foot of the sidebar (redesign stage 1).
+    await josh.getByRole("button", { name: /profile, settings and log out/ }).click();
     await josh.locator('form[action="/auth/signout"] button').first().click();
     await josh.waitForURL((u) => !u.pathname.startsWith("/feed"), { timeout: 15000 });
     await go(josh, "/feed");

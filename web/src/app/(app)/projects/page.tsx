@@ -10,6 +10,8 @@ import { getViewer } from "@/lib/supabase/server";
 import { ExploreCard, type ExploreProject } from "./project-card";
 import { Workbench, type BenchProject } from "./workbench";
 import { copilotEnabled } from "@/lib/copilot";
+import { SpotlightStrip } from "../feed/discover";
+import { StripSkeleton } from "@/components/app/discover-cards";
 
 export const metadata: Metadata = { title: "Projects" };
 
@@ -102,6 +104,8 @@ async function Explore({ searchParams }: { searchParams: PageProps<"/projects">[
     <>
       <PageHeader title="Projects" subtitle="What you're building, and what people across Brazework have built and had verified." />
       {!q && !topic && !tool && !status && !verifiedOnly && !mine && <Workbench projects={bench} interests={profile.interests ?? []} copilot={copilot} stack={stackOn} specsOn={specsOn} filesOn={filesOn} />}
+      {/* Spotlight moved here from Today (redesign stage 1): standout builds sit with the rest of Explore. */}
+      {!q && !topic && !tool && !status && !verifiedOnly && !mine && <div className="mt-6 empty:hidden"><Suspense fallback={<StripSkeleton w={280} h={250} />}><SpotlightStrip /></Suspense></div>}
       <form action="/projects" className="relative mt-6">
         {topic && <input type="hidden" name="topic" value={topic} />}
         {tool && <input type="hidden" name="tool" value={tool} />}

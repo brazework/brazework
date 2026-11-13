@@ -5,7 +5,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { LiveRefresh } from "@/components/app/live-refresh";
-import { ClubsSwitch, EmptyState, PageHeader, Skeleton, Tabs } from "@/components/app/page-ui";
+import { EmptyState, PageHeader, Skeleton, Tabs } from "@/components/app/page-ui";
 import { DROP_AFTER_MS, isOver, timeBucket, whenBadge, whereLabel, withHost, type HostedEvent } from "@/lib/events";
 import { LocalTime } from "./local-time";
 import { requestTime } from "@/lib/forge";
@@ -76,7 +76,6 @@ async function Events({ searchParams }: { searchParams: PageProps<"/events">["se
 
   return (
     <>
-      <ClubsSwitch active="events" />
       <PageHeader
         title="Events"
         subtitle="Career fairs, talks, build nights and hackathons from verified organizations and clubs."

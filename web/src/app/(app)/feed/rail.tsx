@@ -1,12 +1,11 @@
 import { dbFeatures, eventWithHost } from "@/lib/db-features";
-import { CalendarDays, Plus, Trophy, Users } from "lucide-react";
+import { CalendarDays, Trophy } from "lucide-react";
 import Link from "next/link";
 import { DROP_AFTER_MS, dateParts, withHost, type HostedEvent } from "@/lib/events";
 import { requestTime } from "@/lib/forge";
 import { getViewer } from "@/lib/supabase/server";
 import { RailCard } from "@/components/app/rail-card";
 import { MessageDock } from "@/components/messages/dock";
-import { CommunityBadge } from "../communities/_components/badge";
 import { UpdatesPanel } from "@/components/tour/updates-panel";
 import { newsPool, pickNews, type NewsPick } from "@/lib/news";
 import { TrendingNews } from "./trending-news";
@@ -65,31 +64,13 @@ type RailChallenge = { id: string; title: string; sponsor: string; prize: string
 // The rail's markup, separate from its queries so it can be previewed with sample data.
 // Order (FIX-92): what's yours first (your week, what's coming up, your clubs, open challenges), then
 // what's around (trending), and Brazework's own news last.
-export function RailView({ trending, news = [], hasInterests = false, clubs, events, going: goingSet, challenges = [], top }: { trending: [string, number][]; news?: NewsPick[]; hasInterests?: boolean; clubs: Club[]; events: HostedEvent[]; going: Set<string>; challenges?: RailChallenge[]; top?: React.ReactNode }) {
+export function RailView({ trending, news = [], hasInterests = false, events, going: goingSet, challenges = [], top }: { trending: [string, number][]; news?: NewsPick[]; hasInterests?: boolean; clubs: Club[]; events: HostedEvent[]; going: Set<string>; challenges?: RailChallenge[]; top?: React.ReactNode }) {
   return (
     <div className="no-scrollbar sticky top-8 flex max-h-[calc(100dvh-4rem)] flex-col gap-4 [&>*]:shrink-0 overflow-y-auto overscroll-contain pb-2 min-[137.5rem]:grid min-[137.5rem]:grid-cols-2 min-[137.5rem]:items-start">
       {top}
       <ComingUp events={events} going={goingSet} />
 
-      <RailCard id="clubs" title="Your clubs" icon={<Users className="size-3.5" />} href="/communities" summary={clubs.length ? clubs.map((c) => c.name).join(", ") : "Join your club"}>
-        <ul className="mt-3 flex flex-col gap-1">
-          {clubs.map((cl) => (
-            <li key={cl.id}>
-              <Link href={`/c/${cl.id}`} className="group flex items-center gap-3 rounded-xl p-1.5 transition hover:bg-hover">
-                <CommunityBadge id={cl.id} name={cl.name} size={32} className="transition group-hover:scale-105" />
-                <span className="min-w-0 flex-1">
-                  <span className="block truncate text-sm font-medium">{cl.name}</span>
-                  <span className="block text-xs text-faint">{cl.member_count} {cl.member_count === 1 ? "member" : "members"}</span>
-                </span>
-              </Link>
-            </li>
-          ))}
-        </ul>
-        {!clubs.length && <p className="mt-2 text-sm text-muted">Join your club, or start it here.</p>}
-        <Link href={clubs.length ? "/communities?tab=discover" : "/communities?tab=create"} className="mt-2 flex items-center gap-2 rounded-xl px-1.5 py-1.5 text-sm text-muted transition hover:bg-hover hover:text-text">
-          <Plus className="size-4" /> {clubs.length ? "Find more clubs" : "Start your club"}
-        </Link>
-      </RailCard>
+      {/* Your clubs are in the sidebar on every page now (redesign stage 1), so the rail no longer repeats them. */}
 
       {challenges.length > 0 && (
         <RailCard id="challenges" title="Open challenges" icon={<Trophy className="size-3.5" />} href="/challenges" summary={`${challenges.length} open · next deadline in ${challenges[0]?.days ?? 0} ${challenges[0]?.days === 1 ? "day" : "days"}`}>

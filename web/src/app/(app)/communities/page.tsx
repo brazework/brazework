@@ -3,7 +3,7 @@ import { Flame, Users } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
-import { ClubsSwitch, EmptyState, PageHeader, Panel, Skeleton, Tabs } from "@/components/app/page-ui";
+import { EmptyState, PageHeader, Panel, Skeleton, Tabs } from "@/components/app/page-ui";
 import { COMMUNITY_COLS, type Community, type Role } from "@/lib/communities";
 import { getViewer } from "@/lib/supabase/server";
 import { requestTime } from "@/lib/forge";
@@ -64,7 +64,6 @@ async function Communities({ searchParams }: { searchParams: PageProps<"/communi
 
   return (
     <>
-      <ClubsSwitch active="clubs" />
       <PageHeader title="Clubs" subtitle="Your chapter, team or lab: members, events, chat and the work you verify, in one place." />
       <div className="mt-6">
         <Tabs active={tab} tabs={[

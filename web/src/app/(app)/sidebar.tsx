@@ -1,47 +1,29 @@
 "use client";
 import { AnimatePresence, motion } from "motion/react";
-import { BadgeCheck, Bell, Bookmark, CalendarDays, ChevronDown, FolderGit2, Home, LayoutDashboard, LogOut, MessageSquare, Network, PanelLeftClose, PanelLeftOpen, PenLine, Plus, Search, Settings, Sparkles, Trophy, UserRound, Users, X } from "lucide-react";
+import { BadgeCheck, Bell, Bookmark, CalendarDays, FolderGit2, Hammer, Inbox, LayoutDashboard, LogOut, Network, PanelLeftClose, PanelLeftOpen, PenLine, Plus, Search, Settings, Sparkles, Sun, Trophy, UserRound, Users, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { UpdatesButton } from "@/components/tour/tour-mount";
-import { Avatar, Logo } from "@/components/ui";
+import { UpdatesButton, UpdatesDialog } from "@/components/tour/tour-mount";
+import { Avatar, Logo, menuCls, menuItemCls } from "@/components/ui";
 import { MyStatus, WithPresence } from "@/components/presence/presence";
 import { cn } from "@/lib/forge";
-import { onPage } from "@/lib/nav-match";
+import { MENU_PAGES, PLACES, placeFor, type BadgeKey, type PlaceId } from "@/lib/places";
 import { NavTile, TILE } from "@/components/app/nav-tile";
-import { Ember } from "@/components/ember/ember";
-import { foldMotion, useFold } from "@/components/app/rail-card";
 
-export type Badges = { notifications: number; messages: number; invites: number };
-type BadgeKey = keyof Badges;
+export type Badges = Record<BadgeKey, number>;
 
-// The five places in the signed-in app, built around one loop: join a club → post what you're
-// building → your club verifies it → proof on your profile → companies find you. Everything else
-// lives inside one of these (events in Clubs, notifications and saved on Home, analytics and
-// settings on Profile). `match` = path prefixes that light the item up; `badge` = which count it shows.
-const NAV: { href: string; label: string; icon: typeof Home; match: string[]; badge?: BadgeKey }[] = [
-  { href: "/feed", label: "Home", icon: Home, match: ["/feed", "/post/", "/notifications", "/saved"], badge: "notifications" },
-  { href: "/communities", label: "Clubs", icon: Users, match: ["/communities", "/c/", "/events", "/org"] },
-  { href: "/projects", label: "Projects", icon: FolderGit2, match: ["/projects"] },
-  { href: "/messages", label: "Messages", icon: MessageSquare, match: ["/messages"], badge: "messages" },
-  { href: "/profile", label: "Profile", icon: UserRound, match: ["/profile", "/u/", "/dashboard", "/analytics", "/network", "/settings"], badge: "invites" },
-];
+// The five places of the signed-in app (redesign stage 1), each answering one question: Today (what
+// needs me?), Build (what am I making?), Club (what's my team doing?), Proof (what have I proven?),
+// Inbox (who's reaching out?). The list itself, and which place a page belongs to, live in
+// lib/places.ts; here they only get their icons. There is no More drawer: every other page sits inside
+// one of the five, a tab away (components/app/place-tabs.tsx), and settings are on your avatar.
+const PLACE_ICON: Record<PlaceId, typeof Sun> = { today: Sun, build: Hammer, club: Users, proof: BadgeCheck, inbox: Inbox };
+const NAV = PLACES.map((p) => ({ ...p, icon: PLACE_ICON[p.id] }));
 
-// Still a tap away, from the menu: the pages inside the five places.
-const MORE: { href: string; label: string; icon: typeof Home; badge?: BadgeKey }[] = [
-  { href: "/notifications", label: "Notifications", icon: Bell, badge: "notifications" },
-  { href: "/events", label: "Events", icon: CalendarDays },
-  { href: "/challenges", label: "Challenges", icon: Trophy },
-  { href: "/pro", label: "Pro reviews", icon: BadgeCheck },
-  { href: "/saved", label: "Saved", icon: Bookmark },
-  { href: "/network", label: "Connections", icon: Network, badge: "invites" },
-  { href: "/dashboard", label: "Analytics", icon: LayoutDashboard },
-  { href: "/settings", label: "Settings", icon: Settings },
-];
-
-const isActive = (path: string, match: string[]) => match.some((m) => path.startsWith(m));
+// Phones keep one sheet with every page inside the places (lib/places.ts MENU_PAGES).
+const MENU_ICON: Record<string, typeof Sun> = { "/notifications": Bell, "/events": CalendarDays, "/challenges": Trophy, "/pro": BadgeCheck, "/saved": Bookmark, "/network": Network, "/dashboard": LayoutDashboard, "/settings": Settings };
 
 // One row, one tile, one group card for every part of the sidebar, so the icons line up and match.
 const ROW = "group relative flex items-center gap-2.5 rounded-md py-1 text-sm transition";
@@ -78,7 +60,7 @@ export const SIDEBAR_COOKIE = "forge-sidebar";
 
 export function Sidebar({ first, last, userId, badges, avatar, initialCollapsed = false, clubs = [] }: { first: string; last: string; userId: string; badges: Badges; avatar?: string | null; clubs?: { id: string; name: string; image?: string | null }[]; initialCollapsed?: boolean }) {
   const path = usePathname();
-  const onProfile = path.startsWith("/profile") || path === `/u/${userId}`;
+  const here = placeFor(path)?.id;
   const [collapsed, setCollapsed] = useState(initialCollapsed);
   const toggle = () => {
     const next = !collapsed;
@@ -86,13 +68,12 @@ export function Sidebar({ first, last, userId, badges, avatar, initialCollapsed 
     document.cookie = `${SIDEBAR_COOKIE}=${next ? "collapsed" : "open"}; path=/; max-age=31536000; samesite=lax`;
   };
   return (
-    <motion.aside layoutRoot aria-label="Sidebar" className={cn("sticky top-0 isolate hidden h-dvh shrink-0 transition-[width] duration-300 ease-out motion-reduce:transition-none md:block", collapsed ? "w-16" : "w-[248px]")}>
+    <motion.aside layoutRoot aria-label="Sidebar" className={cn("sticky top-0 isolate z-30 hidden h-dvh shrink-0 transition-[width] duration-300 ease-out motion-reduce:transition-none md:block", collapsed ? "w-16" : "w-[248px]")}>
       {/* A flush, calm column (redesign 2026-11): a hairline edge on a soft tint, no floating glass. */}
       <div className="flex h-full flex-col border-r border-line bg-surface-2/70 px-2 py-3">
       <div className={cn("flex items-center gap-1", collapsed ? "flex-col" : "justify-between pr-1 pl-2")}>
         <Link href="/feed" aria-label="Brazework feed" className={cn(collapsed && "mb-2")}><Logo withWord={!collapsed} /></Link>
         <div className={cn("flex items-center gap-1", collapsed && "flex-col")}>
-          <ThemeToggle className={TOP_BTN} />
           <button
             type="button"
             data-tour="sidebar-toggle"
@@ -106,43 +87,35 @@ export function Sidebar({ first, last, userId, badges, avatar, initialCollapsed 
           </button>
         </div>
       </div>
-      {/* The two things you do most: post what you're building, and ask Ember (⌘K from anywhere). */}
-      <div className={cn("mt-6 flex gap-1.5", collapsed ? "flex-col items-center" : "px-1")}>
-        <Link href="/feed#composer" onClick={(e) => { if (path === "/feed") { e.preventDefault(); window.dispatchEvent(new Event("forge:compose")); } }} title={collapsed ? "New post" : undefined} aria-label="New post"
+      {/* The one action that starts the loop: log what you built. (Ember is the bar above every page, and ⌘K.) */}
+      <div className={cn("mt-6 flex", collapsed ? "justify-center" : "px-1")}>
+        <Link href="/feed#composer" onClick={(e) => { if (path === "/feed") { e.preventDefault(); window.dispatchEvent(new Event("forge:compose")); } }} title={collapsed ? "Log work" : undefined} aria-label="Log work"
           className={cn("bg-accent-grad inline-flex h-9 items-center justify-center gap-2 rounded-lg text-sm font-medium text-on-accent transition hover:opacity-90", collapsed ? "w-9" : "flex-1")}>
-          <PenLine className="size-4" />{!collapsed && "New post"}
+          <PenLine className="size-4" />{!collapsed && "Log work"}
         </Link>
-        {/* Ember, the orb: ask anything or jump anywhere (also ⌘K from any page). */}
-        <button type="button" onClick={() => window.dispatchEvent(new Event("forge:palette"))} title="Ask Ember (⌘K)" aria-label="Ask Ember, or jump anywhere (Command K)"
-          className="nav-tile group grid size-9 shrink-0 place-items-center rounded-lg transition">
-          {/* The orb takes the theme's Ember colours (globals.css --ember-*), like Ember everywhere else. */}
-          <span className="transition duration-300 group-hover:scale-110"><Ember size={28} /></span>
-        </button>
       </div>
       <nav data-tour="menu" aria-label="Main" className={cn("flex shrink-0 flex-col gap-0.5", collapsed ? "mt-4" : "mt-5")}>
         {NAV.map((n) => {
-          // On a page that has its own row under More (Notifications, Events…), only that row lights up.
-          const active = isActive(path, n.match) && !MORE.some((m) => onPage(path, m.href));
+          const active = here === n.id;
           const count = n.badge ? badges[n.badge] : 0;
           return (
             <Link
               key={n.label}
               href={n.href}
-              data-tour={n.href === "/notifications" ? "bell" : undefined}
               aria-current={active ? "page" : undefined}
               aria-label={count ? `${n.label}, ${count} new` : collapsed ? n.label : undefined}
               title={collapsed ? n.label : undefined}
               className={cn(ROW, collapsed ? "justify-center px-0" : "px-2", active ? "font-medium text-text" : "text-text-2 hover:bg-hover/60 hover:text-text")}
             >
               {active && <motion.span layoutId="nav-active" className="nav-pill absolute inset-0 rounded-md" transition={{ type: "spring", stiffness: 400, damping: 34 }} />}
-              <NavTile icon={n.icon} active={active} ember={n.href === "/copilot"} />
+              <NavTile icon={n.icon} active={active} />
               {!collapsed && <span className="relative">{n.label}</span>}
               <Count n={count} className={collapsed ? "absolute top-0 right-2.5" : "relative ml-auto"} />
             </Link>
           );
         })}
       </nav>
-      {/* Your clubs and More scroll on short screens, so the five main places are always whole. */}
+      {/* Your clubs scroll on short screens, so the five places are always whole. */}
       <div className="no-scrollbar -mx-1 min-h-0 flex-1 overflow-y-auto px-1 pb-2">
       {/* Your clubs, one click away. */}
       {clubs.length > 0 && (
@@ -161,24 +134,62 @@ export function Sidebar({ first, last, userId, badges, avatar, initialCollapsed 
           })}
         </div>
       )}
-      {/* Secondary places, in a quiet card under the five main ones. Folds to its header (remembered). */}
-      <MoreGroup collapsed={collapsed} path={path} badges={badges} />
       </div>
-      {/* You: your profile lives here (photo and name open it), with your online status and log out. */}
-      <div className={cn("mt-2 flex shrink-0 items-center gap-2.5 rounded-lg transition", onProfile ? "nav-pill" : "hover:bg-hover/60", collapsed ? "flex-col p-1.5" : "p-2")}>
-        <Link href="/profile" aria-label="Your profile" aria-current={onProfile ? "page" : undefined} title={collapsed ? `${first} ${last} · Profile` : undefined}><WithPresence id={userId} dot="size-2.5"><Avatar first={first} last={last} size={collapsed ? 28 : 32} src={avatar} /></WithPresence></Link>
+      <YouMenu first={first} last={last} userId={userId} avatar={avatar} collapsed={collapsed} path={path} />
+      </div>
+    </motion.aside>
+  );
+}
+
+// You, at the foot of the sidebar: one button (photo, name, online status) that opens a small menu
+// with your profile, settings, appearance, what's new and log out. They used to be spread over the
+// sidebar's top row, the More drawer and a lone log-out icon.
+function YouMenu({ first, last, userId, avatar, collapsed, path }: { first: string; last: string; userId: string; avatar?: string | null; collapsed: boolean; path: string }) {
+  const [open, setOpen] = useState(false);
+  const [updates, setUpdates] = useState(false);
+  const box = useRef<HTMLDivElement>(null);
+  // Closes when the page changes, on Escape, and on a click anywhere else.
+  const [lastPath, setLastPath] = useState(path);
+  if (path !== lastPath) { setLastPath(path); setOpen(false); }
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    const onDown = (e: PointerEvent) => { if (!box.current?.contains(e.target as Node)) setOpen(false); };
+    window.addEventListener("keydown", onKey);
+    window.addEventListener("pointerdown", onDown);
+    return () => { window.removeEventListener("keydown", onKey); window.removeEventListener("pointerdown", onDown); };
+  }, [open]);
+  return (
+    <div ref={box} className="relative mt-2 shrink-0">
+      {/* The updates dialog lives outside the menu, so it stays open after the menu closes. */}
+      <UpdatesDialog open={updates} onClose={() => setUpdates(false)} />
+      <div data-tour="updates" className={cn("flex items-center gap-2.5 rounded-lg transition hover:bg-hover/60", open && "bg-hover/60", collapsed ? "justify-center p-1.5" : "p-2")}>
+        <button type="button" onClick={() => setOpen(!open)} aria-expanded={open} aria-controls="you-menu" aria-label={`${first} ${last}: profile, settings and log out`} title={collapsed ? `${first} ${last}` : undefined} className="shrink-0 rounded-full">
+          <WithPresence id={userId} dot="size-2.5"><Avatar first={first} last={last} size={collapsed ? 28 : 32} src={avatar} /></WithPresence>
+        </button>
         {!collapsed && (
           <div className="min-w-0 flex-1">
-            <Link href="/profile" className="block truncate text-sm font-medium hover:underline">{first} {last}</Link>
+            <button type="button" onClick={() => setOpen(!open)} tabIndex={-1} aria-hidden="true" className="block w-full truncate text-left text-sm font-medium">{first} {last}</button>
             <MyStatus />
           </div>
         )}
-        <form action="/auth/signout" method="post">
-          <button aria-label="Log out" className="grid size-8 place-items-center rounded-lg text-faint transition hover:bg-hover hover:text-text"><LogOut className="size-4" /></button>
-        </form>
       </div>
-      </div>
-    </motion.aside>
+      {/* After the button in the page, so Tab moves from it straight into the list. */}
+      <AnimatePresence>
+        {open && (
+          <motion.div id="you-menu" aria-label="You" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }} transition={{ duration: 0.15 }}
+            className={cn(menuCls, "absolute bottom-[calc(100%+6px)] left-0 z-50 w-56")}>
+            <Link href="/profile" onClick={() => setOpen(false)} className={menuItemCls}><UserRound className="size-4" /> View profile</Link>
+            <Link href="/settings" onClick={() => setOpen(false)} className={menuItemCls}><Settings className="size-4" /> Settings</Link>
+            <div className="flex items-center justify-between px-2.5 py-1 text-sm text-text-2">Appearance <ThemeToggle className={TOP_BTN} /></div>
+            <button type="button" onClick={() => { setOpen(false); setUpdates(true); }} className={menuItemCls}><Sparkles className="size-4" /> What&apos;s new</button>
+            <form action="/auth/signout" method="post" className="mt-1 border-t border-line pt-1">
+              <button className={menuItemCls}><LogOut className="size-4" /> Log out</button>
+            </form>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
   );
 }
 
@@ -201,10 +212,11 @@ export function MobileBar({ first, last, badges, avatar }: { first: string; last
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [sheet]);
-  const rest = MORE;
+  const rest = MENU_PAGES.map((m) => ({ ...m, icon: MENU_ICON[m.href] ?? Settings }));
   const restCount = badges.invites;
+  const here = placeFor(path)?.id;
   const tab = (t: (typeof TABS)[number]) => {
-    const active = isActive(path, t.match);
+    const active = here === t.id;
     const count = t.badge ? badges[t.badge] : 0;
     return (
       <Link key={t.href} href={t.href} aria-current={active ? "page" : undefined} aria-label={count ? `${t.label}, ${count} new` : t.label} className={cn("relative flex h-14 flex-col items-center justify-center gap-0.5 rounded-xl text-[10px] font-medium transition active:scale-90", active ? "text-text" : "text-faint")}>
@@ -288,7 +300,7 @@ export function MobileBar({ first, last, badges, avatar }: { first: string; last
 }
 
 const CREATE = [
-  { href: "/feed#composer", label: "Post", body: "An update, result or question", icon: PenLine },
+  { href: "/feed#composer", label: "Log work", body: "An update, result or question", icon: PenLine },
   { href: "/copilot", label: "Ask Ember", body: "Your AI teammate does the busywork", icon: Sparkles },
   { href: "/profile#projects", label: "Add a project", body: "Show what you built", icon: FolderGit2 },
   { href: "/events", label: "Events", body: "Find one, or host for your club", icon: CalendarDays },
@@ -325,38 +337,5 @@ function Sheet({ open, title, onClose, children }: { open: boolean; title: strin
         </motion.div>
       )}
     </AnimatePresence>
-  );
-}
-
-// "More": the secondary places under a hairline, matching the main nav; the header folds it away.
-function MoreGroup({ collapsed, path, badges }: { collapsed: boolean; path: string; badges: Badges }) {
-  const [folded, setFolded] = useFold("sidebar-more");
-  const waiting = MORE.reduce((n, m) => n + (m.badge ? badges[m.badge] ?? 0 : 0), 0);
-  const items = MORE.map((n) => {
-    const active = onPage(path, n.href);
-    const count = n.badge ? badges[n.badge] : 0;
-    return (
-      <Link key={n.href} href={n.href} data-tour={n.href === "/notifications" ? "bell" : undefined} aria-current={active ? "page" : undefined}
-        aria-label={count ? `${n.label}, ${count} new` : collapsed ? n.label : undefined} title={collapsed ? n.label : undefined}
-        className={cn(ROW, collapsed ? "justify-center px-0" : "px-1.5", active ? "font-medium text-text" : "text-text-2 hover:bg-hover/70 hover:text-text")}>
-        {active && <motion.span layoutId="more-active" className="nav-pill absolute inset-0 rounded-md" transition={{ type: "spring", stiffness: 400, damping: 34 }} />}
-        <NavTile icon={n.icon} active={active} />
-        {!collapsed && <span className="relative truncate">{n.label}</span>}
-        <Count n={count} className={collapsed ? "absolute -top-0.5 right-0.5" : "relative ml-auto"} />
-      </Link>
-    );
-  });
-  if (collapsed) return <div aria-label="More" role="group" className="mt-4 flex flex-col items-center gap-1 border-t border-line pt-4">{items}</div>;
-  return (
-    <section aria-label="More" className={cn("mt-4", GROUP)}>
-      <button type="button" onClick={() => setFolded(!folded)} aria-expanded={!folded} className="group flex w-full items-center gap-2 rounded-xl text-left">
-        <span className={GROUP_LABEL}>More</span>
-        {folded && waiting > 0 && <span className="rounded-full bg-accent px-1.5 text-[10px] font-semibold text-on-accent tabular-nums">{waiting}</span>}
-        <ChevronDown className={cn("ml-auto size-3.5 text-faint transition group-hover:text-text", !folded && "rotate-180")} />
-      </button>
-      <AnimatePresence initial={false}>
-        {!folded && <motion.div {...foldMotion} className="overflow-hidden"><div className="flex flex-col gap-0.5 pt-0.5">{items}</div></motion.div>}
-      </AnimatePresence>
-    </section>
   );
 }

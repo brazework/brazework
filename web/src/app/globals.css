@@ -352,7 +352,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity
 }
 /* The feed's two columns (posts, then the rail), widening with the screen. The search row above the
    page takes the same frame on the feed, so the search bar lines up with the posts. */
-.feed-frame, main:has(.feed-frame) .search-row {
+.feed-frame, main:has(.feed-frame) .search-row, main:has(.feed-frame) .place-row {
   display: grid;
   gap: 2rem;
   margin-inline: auto;
@@ -360,10 +360,10 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity
 }
 /* Phones: search lives in the top bar, not a full-width row. */
 @media (max-width: 767px) { .search-row, main:has(.feed-frame) .search-row { display: none; } }
-@media (width >= 80rem) { .feed-frame, main:has(.feed-frame) .search-row { max-width: 72rem; grid-template-columns: minmax(0, 1fr) 300px; } }
-@media (width >= 96rem) { .feed-frame, main:has(.feed-frame) .search-row { max-width: 80rem; grid-template-columns: minmax(0, 1fr) 340px; } }
-@media (width >= 112.5rem) { .feed-frame, main:has(.feed-frame) .search-row { max-width: 1520px; grid-template-columns: minmax(0, 1fr) 380px; } }
-@media (width >= 137.5rem) { .feed-frame, main:has(.feed-frame) .search-row { max-width: 1840px; grid-template-columns: minmax(0, 1fr) 740px; } }
+@media (width >= 80rem) { .feed-frame, main:has(.feed-frame) .search-row, main:has(.feed-frame) .place-row { max-width: 72rem; grid-template-columns: minmax(0, 1fr) 300px; } }
+@media (width >= 96rem) { .feed-frame, main:has(.feed-frame) .search-row, main:has(.feed-frame) .place-row { max-width: 80rem; grid-template-columns: minmax(0, 1fr) 340px; } }
+@media (width >= 112.5rem) { .feed-frame, main:has(.feed-frame) .search-row, main:has(.feed-frame) .place-row { max-width: 1520px; grid-template-columns: minmax(0, 1fr) 380px; } }
+@media (width >= 137.5rem) { .feed-frame, main:has(.feed-frame) .search-row, main:has(.feed-frame) .place-row { max-width: 1840px; grid-template-columns: minmax(0, 1fr) 740px; } }
 
 /* Cards in the same glass as the sidebar: translucent, a bright top edge, a slightly firmer edge on hover. */
 @utility glass-card {
