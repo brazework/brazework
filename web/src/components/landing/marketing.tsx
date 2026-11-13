@@ -58,7 +58,7 @@ export function How() {
   return (
     <section id="how" data-story="How it works" className="story-sec scroll-mt-24 py-24 sm:py-32">
       <div className="mx-auto max-w-7xl px-6">
-        <Head eyebrow="How it works" title="One club" accent="starts the loop." />
+        <Head eyebrow="How it works" title="Build it. Get it signed." accent="Get found." />
         <div className="mt-12"><HowItWorks /></div>
       </div>
     </section>

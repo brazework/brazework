@@ -101,8 +101,8 @@ export function SignupForm({ invite, clubName }: { invite?: string; clubName?: s
   return (
     <form onSubmit={submitWithoutReset(action)} className="rise-in flex flex-col gap-5">
       <div>
-        <div className="text-[11px] font-medium tracking-[0.06em] text-accent uppercase">Step 1 of 3</div>
-        <h1 className="mt-2 text-3xl font-semibold tracking-tight">Join the STEM network</h1>
+        <div className="text-[11px] font-medium tracking-[0.06em] text-accent uppercase">Step 1 of 4</div>
+        <h1 className="mt-2 text-3xl font-semibold tracking-tight">Create your account</h1>
       </div>
       <input type="hidden" name="accountType" value={type} />
       {invite && <input type="hidden" name="invite" value={invite} />}
@@ -151,7 +151,7 @@ export function VerifyPanel({ email }: { email: string }) {
         <MailCheck className="relative size-7 text-accent" />
       </div>
       <div>
-        <div className="text-[11px] font-medium tracking-[0.06em] text-accent uppercase">Step 2 of 3</div>
+        <div className="text-[11px] font-medium tracking-[0.06em] text-accent uppercase">Step 2 of 4</div>
         <h1 className="mt-2 text-3xl font-semibold tracking-tight">Check your inbox</h1>
         <p className="mt-2 text-muted">
           We sent a confirmation link to <span className="text-text">{email || "your email"}</span>. Open it in this browser to continue.

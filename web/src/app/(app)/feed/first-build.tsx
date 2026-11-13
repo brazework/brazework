@@ -1,23 +1,33 @@
 "use client";
 import { ArrowRight, Loader2, Rocket } from "lucide-react";
 import { useRouter } from "next/navigation";
-import { useState, useTransition } from "react";
+import { useState, useSyncExternalStore, useTransition } from "react";
+import { BUILD_KEY, cleanBuild } from "@/lib/front-door";
 import { startProject } from "@/lib/projects";
 
 // "What are you building this semester?" (Linear FIX-71): for members with no project yet, one box
 // that starts their first one. After that, every post links to it on its own.
+const noStore = () => () => {};
+const readBuild = () => { try { return cleanBuild(localStorage.getItem(BUILD_KEY) ?? ""); } catch { return ""; } };
+
 export function FirstBuild({ first, chapter }: { first: string; chapter?: string | null }) {
-  const [text, setText] = useState("");
+  // The line they typed on the landing page (lib/front-door.ts) is waiting here, ready to start,
+  // until they type something else. Read from this browser only (nothing on the server's render).
+  const waiting = useSyncExternalStore(noStore, readBuild, () => "");
+  const [typed, setText] = useState<string | null>(null);
+  const text = typed ?? waiting;
+  const carried = typed === null && waiting !== "";
   const [error, setError] = useState("");
   const [pending, start] = useTransition();
   const router = useRouter();
+  const forget = () => { try { localStorage.removeItem(BUILD_KEY); } catch {} };
   return (
     <section aria-label="Your first build" className="glass-card relative mb-4 overflow-hidden rounded-2xl p-5 sm:p-7">
       <div aria-hidden className="cover-empty pointer-events-none absolute inset-0 opacity-70 [mask-image:linear-gradient(to_bottom,black,transparent_80%)]" />
-      <form className="relative" onSubmit={(e) => { e.preventDefault(); setError(""); start(async () => { const r = await startProject(text); if (r.ok) router.refresh(); else setError(r.message); }); }}>
+      <form className="relative" onSubmit={(e) => { e.preventDefault(); setError(""); start(async () => { const r = await startProject(text); if (r.ok) { forget(); router.refresh(); } else setError(r.message); }); }}>
         <span className="grid size-11 place-items-center rounded-2xl bg-text text-surface"><Rocket className="size-5" /></span>
         <label htmlFor="first-build" className="mt-4 block text-[1.45rem] leading-tight font-semibold tracking-tight sm:text-[1.75rem]">What are you building this semester, {first}?</label>
-        <p className="mt-1.5 text-[15px] text-muted">One line is enough. {chapter ? `It's how ${chapter} sees your work, ` : "It's how your club sees your work, "}and every update you post adds to it.</p>
+        <p className="mt-1.5 text-[15px] text-muted">{carried ? "This is what you typed on the way in. Change it, or start as it is. " : "One line is enough. "}{chapter ? `It's how ${chapter} sees your work, ` : "It's how your club sees your work, "}and every update you post adds to it.</p>
         <div className="mt-4 flex flex-col gap-2 sm:flex-row">
           <input id="first-build" value={text} onChange={(e) => setText(e.target.value)} maxLength={300} autoComplete="off"
             placeholder="A line-following robot"

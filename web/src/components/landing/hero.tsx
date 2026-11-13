@@ -4,12 +4,14 @@ import { ArrowRight, BadgeCheck, Briefcase, Check, Flame, FlaskConical, Graduati
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui";
 import { cn } from "@/lib/forge";
+import { cleanBuild, signupHref } from "@/lib/front-door";
 import { Orb } from "./orb";
 
-// The hero (Linear FIX-95): one clear line, then the question the rest of the page answers: what are
-// you working toward? Each goal shows its path: what to build, the proof it takes and who signs it,
-// who's looking for exactly that, and Ember's next step. It cycles until you pick one; the button
-// carries the goal into sign-up (?goal=). Example data, labelled as such.
+// The hero: one clear line, then something to try. Type what you're building and it becomes the
+// first step of the path card, live; pick what you're working toward (Linear FIX-95) and the card
+// shows the rest: the proof it takes and who signs it, who's looking for exactly that, and Ember's
+// next step. The goals cycle until you pick one or start typing. The button carries both into
+// sign-up (?goal= and ?build=, lib/front-door.ts). Everything you didn't type is example data.
 const GOALS = [
   {
     id: "internship", label: "Internship", icon: Briefcase, title: "a summer internship",
@@ -53,8 +55,11 @@ type Goal = (typeof GOALS)[number];
 export function Hero() {
   const [i, setI] = useState(0);
   const [auto, setAuto] = useState(true);
+  const [typed, setTyped] = useState("");
   const reduce = useReducedMotion();
   const g = GOALS[i];
+  // What they typed, tidied; "" until it's long enough to be a build.
+  const build = cleanBuild(typed);
 
   useEffect(() => {
     if (!auto || reduce) return;
@@ -75,16 +80,27 @@ export function Hero() {
             <ArrowRight className="size-3.5 shrink-0" />
           </a>
           <h1 className="focus-in mt-7 text-[clamp(2.6rem,5.4vw,4.6rem)] leading-[0.98] font-semibold tracking-[-0.045em]">
-            Build with AI.
+            Prove what
             <br />
-            <span className="text-grad">Get credit<br />for the work.</span>
+            <span className="text-grad">you built.</span>
           </h1>
           <p className="m-hide focus-in mt-6 max-w-xl text-lg leading-relaxed text-muted" style={{ ["--delay" as string]: "0.1s" }}>
-            Pick what you&apos;re working toward. Brazework keeps the record of what you build (code, circuits, experiments, models, proofs), gets it signed by the people who saw it, and puts it in front of the people who decide.
+            Log your work, get it signed by someone who saw it, and get found by the teams hiring for it. Code, circuits, experiments, models, proofs: if you built it, it counts.
           </p>
-          <p className="m-only focus-in mt-5 text-base leading-relaxed text-muted">Pick a goal. Build, get it signed, get found by the people who decide.</p>
+          <p className="m-only focus-in mt-5 text-base leading-relaxed text-muted">Log your work, get it signed by someone who saw it, and get found.</p>
 
-          <div className="rise-in mt-8" style={{ ["--delay" as string]: "0.2s" }}>
+          {/* Try it: what you type becomes the first step of the path card, as you type. */}
+          <div className="rise-in mt-8" style={{ ["--delay" as string]: "0.15s" }}>
+            <label htmlFor="hero-build" className="text-sm font-medium">What are you building?</label>
+            <input id="hero-build" value={typed} onChange={(e) => { setTyped(e.target.value); setAuto(false); }} maxLength={300} autoComplete="off" enterKeyHint="go"
+              onKeyDown={(e) => { if (e.key === "Enter" && build) window.location.assign(signupHref(g.id, build)); }}
+              placeholder="A line-following robot"
+              aria-describedby="hero-build-hint" aria-controls="hero-preview"
+              className="mt-2.5 block h-12 w-full max-w-xl rounded-2xl border border-line bg-surface px-4 text-[16px] transition outline-none placeholder:text-faint focus:border-line-strong focus:shadow-[0_0_0_4px_color-mix(in_oklab,var(--accent)_9%,transparent)]" />
+            <p id="hero-build-hint" className="mt-2 text-xs text-faint">One line is enough. Watch it land on your path{build ? ", then take it with you" : ""}.</p>
+          </div>
+
+          <div className="rise-in mt-6" style={{ ["--delay" as string]: "0.2s" }}>
             <p className="text-sm font-medium">What are you working toward?</p>
             <div role="tablist" aria-label="Your goal" className="mt-2.5 flex flex-wrap gap-2">
               {GOALS.map((x, n) => (
@@ -109,19 +125,22 @@ export function Hero() {
                 {/* Phones (no room for the path card): the path in one line, and Ember's next step. */}
                 <div className="m-only mt-4">
                   <p className="flex items-center gap-1.5 text-sm">
-                    <span className="inline-flex items-center gap-1 font-medium"><Check className="size-3.5" /> Build</span><span className="text-faint">→</span>
-                    <span className="font-medium">Signed {g.prove.done}/{g.prove.of}</span><span className="text-faint">→</span>
+                    {/* With a build typed, the path is theirs: their line, nothing signed yet. */}
+                    <span className="inline-flex min-w-0 items-center gap-1 font-medium"><Check className="size-3.5 shrink-0" /> <span className="max-w-[9.5rem] truncate">{build || "Build"}</span></span><span className="text-faint">→</span>
+                    <span className="shrink-0 font-medium">Signed {build ? 0 : g.prove.done}/{g.prove.of}</span><span className="text-faint">→</span>
                     <span className="text-muted">Found</span>
                   </p>
-                  <p className="mt-1.5 flex items-start gap-1.5 text-[13px] leading-snug text-text-2"><Flame className="mt-0.5 size-3.5 shrink-0 text-[#f28c28]" /> {g.next}</p>
+                  <p className="mt-1.5 flex items-start gap-1.5 text-[13px] leading-snug text-text-2"><Flame className="mt-0.5 size-3.5 shrink-0 text-[#f28c28]" /> {build ? `Create your account, log one result on it, and ask ${g.prove.by} to sign it.` : g.next}</p>
                 </div>
               </motion.div>
             </AnimatePresence>
           </div>
 
           <div className="rise-in mt-7 flex flex-wrap items-center gap-3" style={{ ["--delay" as string]: "0.3s" }}>
-            <Button href={`/signup?goal=${g.id}`} size="lg">Start toward {g.label.toLowerCase()} <ArrowRight className="size-4 transition group-hover:translate-x-0.5" /></Button>
-            <Button href="#who" variant="outline" size="lg">Clubs &amp; companies</Button>
+            <Button href={signupHref(g.id, typed)} size="lg">{build ? "Start with this build" : `Start toward ${g.label.toLowerCase()}`} <ArrowRight className="size-4 transition group-hover:translate-x-0.5" /></Button>
+            {/* The other two ways in: each jumps to its own section. */}
+            <Button href="#clubs" variant="outline" size="lg">For clubs</Button>
+            <Button href="#companies" variant="outline" size="lg">For companies</Button>
           </div>
           <p className="rise-in mt-4 text-sm text-faint" style={{ ["--delay" as string]: "0.35s" }}>Free for students and clubs · Verified university and work emails</p>
         </div>
@@ -130,10 +149,10 @@ export function Hero() {
           <Orb tone="auto" className="pointer-events-none absolute top-0 right-0 -z-10 hidden aspect-square w-[118%] translate-x-[42%] -translate-y-[38%] md:block" />
           <AnimatePresence mode="popLayout" initial={false}>
             <motion.div key={g.id} initial={{ opacity: 0, y: 30, scale: 0.97 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: -20, scale: 0.98 }} transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}>
-              <GoalPath g={g} play={!reduce} />
+              <GoalPath g={g} play={!reduce} build={build} />
             </motion.div>
           </AnimatePresence>
-          <p className="mt-3 text-center text-xs text-faint">Example data</p>
+          <p className="mt-3 text-center text-xs text-faint">{build ? "Your build · the rest is example data" : "Example data"}</p>
         </div>
       </div>
     </section>
@@ -141,9 +160,12 @@ export function Hero() {
 }
 
 // A goal's path: build → prove → get found, with where you are on it and Ember's next step.
-function GoalPath({ g, play }: { g: Goal; play: boolean }) {
-  const proven = g.prove.done >= g.prove.of;
+// With a build typed in the hero, the card is theirs: their line is the Build step, signing is what's
+// next (nothing is signed yet), and Ember's next step is to ask for the first signature.
+function GoalPath({ g, play, build = "" }: { g: Goal; play: boolean; build?: string }) {
+  const proven = !build && g.prove.done >= g.prove.of;
   const stepsDone = 1 + (proven ? 1 : 0);
+  const signed = build ? 0 : g.prove.done;
   const row = (k: number) => ({ initial: play ? { opacity: 0, x: -8 } : false, animate: { opacity: 1, x: 0 }, transition: { delay: play ? 0.15 + k * 0.12 : 0, duration: 0.35 } }) as const;
   return (
     <div className="glass-card rounded-3xl p-5 shadow-[var(--shadow)]">
@@ -155,17 +177,17 @@ function GoalPath({ g, play }: { g: Goal; play: boolean }) {
         <ProgressRing value={stepsDone / 3} label={`${stepsDone}/3`} />
       </div>
       <ol className="mt-4 flex flex-col gap-2">
-        <Step motionProps={row(0)} state="done" icon={Hammer} title="Build" text={g.build} />
-        <Step motionProps={row(1)} state={proven ? "done" : "now"} icon={BadgeCheck} title="Get it signed" text={`${g.prove.done} of ${g.prove.of} milestones signed by ${g.prove.by}`}>
+        <Step motionProps={row(0)} state="done" icon={Hammer} title="Build" text={build || g.build} />
+        <Step motionProps={row(1)} state={proven ? "done" : "now"} icon={BadgeCheck} title="Get it signed" text={build ? `Ask ${g.prove.by} to sign your first milestone` : `${g.prove.done} of ${g.prove.of} milestones signed by ${g.prove.by}`}>
           <span className="mt-1.5 block h-1 overflow-hidden rounded-full bg-surface-2">
-            <motion.span className="block h-full origin-left rounded-full bg-text" initial={play ? { scaleX: 0 } : false} animate={{ scaleX: g.prove.done / g.prove.of }} transition={{ delay: 0.5, duration: 0.8, ease: [0.16, 1, 0.3, 1] }} />
+            <motion.span className="block h-full origin-left rounded-full bg-text" initial={play ? { scaleX: 0 } : false} animate={{ scaleX: signed / g.prove.of }} transition={{ delay: 0.5, duration: 0.8, ease: [0.16, 1, 0.3, 1] }} />
           </span>
         </Step>
         <Step motionProps={row(2)} state={proven ? "now" : "next"} icon={Search} title="Get found" text={g.looking} />
       </ol>
       <motion.p {...row(3)} className="mt-4 flex items-start gap-2 rounded-xl bg-[color-mix(in_oklab,#f28c28_10%,transparent)] px-3 py-2.5 text-[13px] leading-snug">
         <Flame className="mt-0.5 size-4 shrink-0 text-[#f28c28]" />
-        <span><b className="font-semibold text-[#c2410c] dark:text-[#f28c28]">Ember · next step:</b> <span className="text-text-2">{g.next}</span></span>
+        <span><b className="font-semibold text-[#c2410c] dark:text-[#f28c28]">Ember · next step:</b> <span className="text-text-2">{build ? `Create your account, log one result on it, and ask ${g.prove.by} to sign it.` : g.next}</span></span>
       </motion.p>
     </div>
   );

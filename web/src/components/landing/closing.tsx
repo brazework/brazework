@@ -8,11 +8,11 @@ export function FinalCta() {
     <section id="join" data-story="Join Brazework" className="story-sec relative isolate overflow-hidden py-28 sm:py-36">
       <Reveal className="mx-auto flex max-w-3xl flex-col items-center px-6 text-center">
         <h2 className="text-[clamp(2.5rem,6vw,4.75rem)] leading-[0.98] font-semibold tracking-[-0.04em]">
-          Stop describing it.
+          Built something?
           <br />
-          <span className="text-grad">Build it on Brazework.</span>
+          <span className="text-grad">Put it on the record.</span>
         </h2>
-        <p className="mt-6 max-w-xl text-lg text-muted">Pick what you&apos;re working toward (an internship, a first job, grad school, a lab, a win, funding) and put the first thing you&apos;ve built on the record. Bring your club, or ask whoever saw it to vouch.</p>
+        <p className="mt-6 max-w-xl text-lg text-muted">Log the first thing you&apos;ve built and ask whoever saw it to sign it: your club, a professor, a manager. It takes a few minutes, and it&apos;s free for you and your club.</p>
         <div className="mt-10 flex flex-col items-stretch gap-3 sm:flex-row sm:justify-center">
           <Button href="/signup" size="lg">
             Create your free account <ArrowRight className="size-4 transition group-hover:translate-x-0.5" />

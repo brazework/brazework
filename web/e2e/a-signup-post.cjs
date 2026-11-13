@@ -1,4 +1,4 @@
-const { BASE, step, browser, as, go, closeTour, summary } = require("./lib.cjs");
+const { BASE, step, browser, as, go, closeTour, hydrated, summary } = require("./lib.cjs");
 (async () => {
   const b = await browser();
   const ctx = await b.newContext({ viewport: { width: 1440, height: 950 } });
@@ -20,6 +20,20 @@ const { BASE, step, browser, as, go, closeTour, summary } = require("./lib.cjs")
     await page.getByRole("button", { name: "Request my school" }).click();
     await page.getByText(/^Requested\./).waitFor({ timeout: 15000 });
     require("fs").writeFileSync(require("path").join(__dirname, ".results", "school-domain.txt"), schoolDomain);
+  }, page);
+  // The front door: what a visitor types on the landing page lands on the path card, and rides into
+  // sign-up in the link (lib/front-door.ts). It's waiting in the first-build box once they're in (below).
+  const BUILD = "A line-following robot for the fall expo";
+  await step("landing: typing what you're building puts it on the card and into the sign-up link", async () => {
+    await go(page, "/");
+    const box = page.locator("#hero-build");
+    await hydrated(box);
+    await box.fill(BUILD);
+    await page.locator("#hero-preview").getByText(BUILD).waitFor({ timeout: 10000 });
+    await page.getByRole("link", { name: /Start with this build/ }).click();
+    await page.waitForURL((u) => u.pathname === "/signup" && u.searchParams.get("build") === BUILD, { timeout: 20000 });
+    await page.getByRole("heading", { name: "Create your account" }).waitFor({ timeout: 15000 });
+    await page.waitForFunction((b) => localStorage.getItem("brazework-build") === b, BUILD, { timeout: 15000 });
   }, page);
   await step("sign up as a new student", async () => {
     await go(page, "/signup");
@@ -55,6 +69,9 @@ const { BASE, step, browser, as, go, closeTour, summary } = require("./lib.cjs")
     await page.waitForURL(/\/feed/, { timeout: 20000 });
   }, page);
   await closeTour(page);
+  await step("the build typed on the landing page is waiting in the first-build box on Today", async () => {
+    await page.waitForFunction((b) => document.querySelector("#first-build")?.value === b, BUILD, { timeout: 15000 });
+  }, page);
   await step("feed is never empty for a new member", async () => {
     await page.locator("article").first().waitFor({ timeout: 10000 });
   }, page);

@@ -39,10 +39,10 @@ export function NoClub() {
 
 export function OtherSide() {
   return (
-    <section id="other-side" data-story="The other side" className="story-sec scroll-mt-24 bg-surface-2/50 py-24 sm:py-32">
+    <section id="companies" data-story="For companies" className="story-sec scroll-mt-24 bg-surface-2/50 py-24 sm:py-32">
       <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-12 px-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:gap-16">
         <div>
-          <Head eyebrow="The other side" title="Someone is looking" accent="for exactly that work."
+          <Head eyebrow="For companies" title="Search the work," accent="not the résumé."
             body="Labs, startups, companies and grad programs search Brazework by what people built and who signed it, not by keywords on a résumé." />
           <Steps items={[
             [Search, "They search the work", "A field, a tool, a spec: \"PCB bring-up\", \"CRISPR\", \"Lean 4\". Only signed work counts."],
