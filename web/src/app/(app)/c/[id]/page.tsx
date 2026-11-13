@@ -110,19 +110,9 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
         <div className="p-6">
         <div className="flex flex-wrap items-start gap-4">
           <CommunityBadge id={c.id} name={c.name} size={84} logo={c.logo_path} accent={c.accent} className="relative z-10 -mt-16 border-4 border-surface shadow-[var(--shadow)] transition duration-300 hover:-rotate-6 hover:scale-105" />
-          <div className="min-w-0 flex-1">
-            <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-3xl font-semibold tracking-tight">{c.name}</h1>
-              {clubVerified && <span title="A school-email officer runs it, and its members have club-verified work" className="inline-flex items-center gap-1 rounded-full bg-[color-mix(in_oklab,var(--ok)_12%,transparent)] px-2.5 py-0.5 text-xs font-medium text-ok"><BadgeCheck className="size-3.5" /> Verified club</span>}
-              {role && role !== "member" && <RoleChip role={role} />}
-            </div>
-            {c.tagline && <p className="mt-0.5 text-[15px] text-text-2">{c.tagline}</p>}
-            <Suspense fallback={null}><div><ChapterLine cid={c.id} /></div></Suspense>
-            <MetaLine parts={[membersLabel(c.member_count), PRIVACY_LABEL[c.privacy], c.field, TYPE_LABEL[c.type]]} />
-            {c.website && /^https?:\/\/\S+$/i.test(c.website) && <a href={c.website} target="_blank" rel="noopener noreferrer nofollow" className="mt-1 inline-flex items-center gap-1 text-xs text-text-2 hover:text-text hover:underline"><Globe className="size-3.5" /> {c.website.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "")}</a>}
-            <MemberFaces faces={faces} ids={members.map((m) => m.uid)} total={c.member_count} className="mt-3" />
-          </div>
-          <div className="flex flex-wrap items-center gap-2">
+          {/* Actions beside the badge, like a profile; the name and details get the full width below, so four
+              buttons never squeeze a club's name onto two lines. */}
+          <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
             <CopyLink path={`/c/${c.id}`} label="Share" />
             {me && groupChats && (
               <form action={openClubChat.bind(null, c.id)}>
@@ -136,6 +126,18 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
               <Link href={`/c/${c.id}/manage`} className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-line px-4 text-sm transition hover:bg-hover"><Settings className="size-4" /> Manage</Link>
             )}
             <JoinButton cid={c.id} privacy={c.privacy} state={me ? "member" : requested ? "requested" : "none"} isOwner={role === "owner"} />
+          </div>
+          <div className="min-w-0 basis-full">
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-3xl font-semibold tracking-tight">{c.name}</h1>
+              {clubVerified && <span title="A school-email officer runs it, and its members have club-verified work" className="inline-flex items-center gap-1 rounded-full bg-[color-mix(in_oklab,var(--ok)_12%,transparent)] px-2.5 py-0.5 text-xs font-medium text-ok"><BadgeCheck className="size-3.5" /> Verified club</span>}
+              {role && role !== "member" && <RoleChip role={role} />}
+            </div>
+            {c.tagline && <p className="mt-0.5 text-[15px] text-text-2">{c.tagline}</p>}
+            <Suspense fallback={null}><div><ChapterLine cid={c.id} /></div></Suspense>
+            <MetaLine parts={[membersLabel(c.member_count), PRIVACY_LABEL[c.privacy], c.field, TYPE_LABEL[c.type]]} />
+            {c.website && /^https?:\/\/\S+$/i.test(c.website) && <a href={c.website} target="_blank" rel="noopener noreferrer nofollow" className="mt-1 inline-flex items-center gap-1 text-xs text-text-2 hover:text-text hover:underline"><Globe className="size-3.5" /> {c.website.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "")}</a>}
+            <MemberFaces faces={faces} ids={members.map((m) => m.uid)} total={c.member_count} className="mt-3" />
           </div>
         </div>
         <p className="mt-4 text-[15px] leading-relaxed text-text-2">{c.about}</p>

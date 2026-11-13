@@ -121,7 +121,8 @@ export function Sidebar({ first, last, userId, badges, avatar, initialCollapsed 
       </div>
       <nav data-tour="menu" aria-label="Main" className={cn("flex shrink-0 flex-col gap-0.5", collapsed ? "mt-4" : "mt-5")}>
         {NAV.map((n) => {
-          const active = isActive(path, n.match);
+          // On a page that has its own row under More (Notifications, Events…), only that row lights up.
+          const active = isActive(path, n.match) && !MORE.some((m) => onPage(path, m.href));
           const count = n.badge ? badges[n.badge] : 0;
           return (
             <Link
