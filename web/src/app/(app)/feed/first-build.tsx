@@ -20,7 +20,7 @@ export function FirstBuild({ first, chapter }: { first: string; chapter?: string
         <p className="mt-1.5 text-[15px] text-muted">One line is enough. {chapter ? `It's how ${chapter} sees your work, ` : "It's how your club sees your work, "}and every update you post adds to it.</p>
         <div className="mt-4 flex flex-col gap-2 sm:flex-row">
           <input id="first-build" value={text} onChange={(e) => setText(e.target.value)} maxLength={300} autoComplete="off"
-            placeholder="A line-following robot for the regional competition"
+            placeholder="A line-following robot"
             className="h-12 min-w-0 flex-1 rounded-2xl border border-line bg-surface px-4 text-[16px] transition outline-none placeholder:text-faint focus:border-line-strong focus:shadow-[0_0_0_4px_color-mix(in_oklab,var(--accent)_9%,transparent)]" />
           <button type="submit" disabled={pending || text.trim().length < 3} className="inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-2xl bg-text px-5 text-sm font-semibold text-surface transition hover:opacity-90 active:scale-[0.98] disabled:opacity-40">
             {pending ? <Loader2 className="size-4 animate-spin" /> : null} Start my build <ArrowRight className="size-4" />

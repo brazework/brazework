@@ -210,7 +210,7 @@ export function Composer({ first, last, interests, userId, mediaEnabled = false,
           maxLength={asking ? 4000 : MAX}
           rows={asking ? 2 : focused || body ? 3 : 1}
           // Idle: one short line. Tapped in: the @ hint too.
-          placeholder={asking ? typed || "Ask Ember anything" : `What are you building, ${first}?${!focused ? "" : mentionsEnabled ? " Type @ for people or a project." : projects.length ? " Type @ for a project." : ""}`}
+          placeholder={asking ? typed || "Ask Ember anything" : `Share progress, a result or a question, ${first}.${!focused ? "" : mentionsEnabled ? " Type @ for people or a project." : projects.length ? " Type @ for a project." : ""}`}
           onScroll={(e) => { if (mirrorRef.current) mirrorRef.current.scrollTop = e.currentTarget.scrollTop; }}
           style={{ outline: "none" }}
           className={cn("relative block max-h-80 w-full resize-none bg-transparent px-0.5 py-2 text-[16px] focus:outline-none leading-relaxed placeholder:text-faint", asking ? "min-h-[4.5rem] pr-14 text-text" : "no-scrollbar text-transparent caret-[var(--text)] selection:bg-[color-mix(in_oklab,var(--accent)_22%,transparent)]",

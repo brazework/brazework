@@ -187,6 +187,7 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
   ]);
   // No project yet: Home asks what you're building this semester (Linear FIX-71).
   const noProjects = !(myProjects ?? []).length;
+  const nextStep = (guide?.loop ?? []).find((s) => !s.done)?.id;
   type ClubRef = { id: string; name: string };
   const composeClubs = ((clubRows ?? []) as unknown as { communities: ClubRef | ClubRef[] | null }[])
     .flatMap((r) => (Array.isArray(r.communities) ? r.communities : r.communities ? [r.communities] : []))
@@ -282,7 +283,7 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
           {SORTS.filter((x) => x.id !== "best" || tab === "for-you").map((x) => (
             <Link key={x.id} href={href({ sort: x.id })} aria-current={sort === x.id ? "true" : undefined} className={cn("rounded-full px-2.5 py-0.5 text-xs whitespace-nowrap transition", sort === x.id ? "bg-text text-surface" : "text-muted hover:text-text")}>{x.label}</Link>
           ))}
-        </span>} hero={<>{noProjects && <FirstBuild first={profile.first_name} chapter={chapter?.name} />}{startOpen ? <StartChecklist steps={guide?.loop ?? []} /> : noProjects ? null : <Suspense fallback={null}><WeekLoop /></Suspense>}<div id="composer" data-tour="composer" className="scroll-mt-24"><Composer first={profile.first_name} last={profile.last_name} interests={interests} userId={user.id} mediaEnabled={mediaEnabled} captionsEnabled={captionsEnabled} avatarSrc={avatarSrc(profile)} copilot={copilotOn} mentionsEnabled={mentionsEnabled} club={ledClub} next={null} projects={(myProjects ?? []) as { id: string; title: string }[]} clubs={composeClubs} defaultShareTo={chapter?.id} initialProject={typeof sp.project === "string" ? sp.project : undefined} /></div>{!startOpen && !noProjects && <Suspense fallback={null}><BuildsRow /></Suspense>}</>} />
+        </span>} hero={<>{noProjects && <FirstBuild first={profile.first_name} chapter={chapter?.name} />}{/* When the checklist's next step is the project, the card above already asks it, so the checklist waits. */}{startOpen && !(noProjects && nextStep === "project") ? <StartChecklist steps={guide?.loop ?? []} /> : noProjects ? null : <Suspense fallback={null}><WeekLoop /></Suspense>}<div id="composer" data-tour="composer" className="scroll-mt-24"><Composer first={profile.first_name} last={profile.last_name} interests={interests} userId={user.id} mediaEnabled={mediaEnabled} captionsEnabled={captionsEnabled} avatarSrc={avatarSrc(profile)} copilot={copilotOn} mentionsEnabled={mentionsEnabled} club={ledClub} next={null} projects={(myProjects ?? []) as { id: string; title: string }[]} clubs={composeClubs} defaultShareTo={chapter?.id} initialProject={typeof sp.project === "string" ? sp.project : undefined} /></div>{!startOpen && !noProjects && <Suspense fallback={null}><BuildsRow /></Suspense>}</>} />
       {/* What kind of post (a quiet segmented control), and your topics in one chip: one calm row on a
           wide screen; on a phone it is one row: the kinds scroll, and one button holds topics and sort. */}
       <nav data-tour="interests" aria-label="Filter the feed" className="mt-4 flex flex-nowrap items-center gap-2 sm:flex-wrap">
