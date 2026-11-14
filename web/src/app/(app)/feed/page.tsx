@@ -20,7 +20,6 @@ import { cookies } from "next/headers";
 import { DISMISS_PREFIX } from "@/lib/dismiss";
 import { Composer } from "./composer";
 import { FeedHeader, TABS, type TabId } from "./header";
-import { feedTabs } from "@/lib/feed-tabs";
 import { NextStep } from "./next-step";
 import { WaitingOnYou } from "./waiting";
 import { VerifyInbox } from "./verify-inbox";
@@ -284,9 +283,9 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
     <>
       <NewPosts me={user.id} />
       <MessageDock />
-      <FeedHeader tabs={feedTabs(tab, Boolean(chapter))} hrefFor={(t) => href({ tab: t })}
+      <FeedHeader tab={tab} chapter={Boolean(chapter)} hrefFor={(t) => href({ tab: t })}
         filter={/* One Filter menu for the feed: order, kind of post and your topics (they were a sort pill, a kind row and a topics chip). */
-          <details name="feed-menu" key={`${tab}:${kind}:${tag}:${sort}`} data-tour="interests" className="group relative shrink-0">
+          <details key={`${tab}:${kind}:${tag}:${sort}`} data-tour="interests" className="group relative shrink-0">
             <summary aria-label={filterLabel === "Filter" ? "Filter the feed" : `Filter: ${filterLabel}`} className={cn("flex h-8 cursor-pointer list-none items-center gap-1.5 rounded-lg border px-2.5 text-xs font-medium transition [&::-webkit-details-marker]:hidden", filterLabel === "Filter" ? "border-line bg-surface text-text-2 hover:border-line-strong hover:text-text" : "bg-accent-grad border-transparent text-on-accent")}>
               <SlidersHorizontal className="size-3.5" /><span className="hidden max-w-28 truncate sm:inline">{filterLabel}</span>
               <ChevronDown className="hidden size-3 transition group-open:rotate-180 sm:block" />

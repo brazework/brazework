@@ -1,5 +1,5 @@
 // Chapters, end to end (Linear FIX-71): a lead starts "NSBE - <school>" under NSBE National from their
-// school email, a member joins through the invite and lands in the chapter, Today opens on Your clubs (the chapter)
+// school email, a member joins through the invite and lands in the chapter, Today opens on My chapter
 // with posts going to the chapter, a first-timer starts their build from one question, the lead sees
 // the week's roster, and the national page ranks chapters signed out.
 const { BASE, step, browser, as, go, hydrated, closeTour, summary } = require("./lib.cjs");
@@ -40,10 +40,10 @@ const { BASE, step, browser, as, go, hydrated, closeTour, summary } = require(".
     await cara.getByRole("button", { name: `Join ${chapter}` }).click();
     await cara.waitForURL((u) => u.pathname === `/c/${cid}` && u.searchParams.get("joined") === "1", { timeout: 20000 });
   }, cara);
-  await step("Today opens on Your clubs (the chapter), and a first-timer starts their build from one question", async () => {
+  await step("Today opens on My chapter, and a first-timer starts their build from one question", async () => {
     await go(cara, "/feed");
     await closeTour(cara);
-    await cara.locator('a[aria-current="page"]', { hasText: "Your clubs" }).waitFor({ timeout: 15000 });
+    await cara.locator('a[aria-current="page"]', { hasText: "My chapter" }).waitFor({ timeout: 15000 });
     const first = cara.getByRole("region", { name: "Your first build" });
     await first.waitFor({ timeout: 15000 });
     await hydrated(cara.locator("#first-build"));
