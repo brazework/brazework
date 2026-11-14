@@ -36,11 +36,12 @@ begin
 end $$;
 
 -- Editing: only the text, only by its author; the database stamps edited_at. Applies to members
--- (signed-in requests); the database's own maintenance and tests can still adjust rows.
+-- (requests running as the authenticated role); the database's own maintenance and tests, running as
+-- the owner, can still adjust rows. Security invoker, so current_user is the caller's role.
 create or replace function public.comments_before_update() returns trigger
-language plpgsql security definer set search_path = public as $$
+language plpgsql security invoker set search_path = public as $$
 begin
-  if auth.uid() is null then return new; end if;
+  if current_user not in ('authenticated', 'anon') then return new; end if;
   if new.body is distinct from old.body then new.edited_at := now(); end if;
   new.id := old.id; new.post_id := old.post_id; new.author_id := old.author_id; new.parent_id := old.parent_id;
   new.author_first := old.author_first; new.author_last := old.author_last; new.created_at := old.created_at;
