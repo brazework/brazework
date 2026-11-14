@@ -5,7 +5,7 @@ import { ProjectFiles, type ProjectFileItem } from "@/components/projects/projec
 import { Kicker } from "@/components/ui";
 import { cn, timeAgo, type Post } from "@/lib/forge";
 import type { BuildEvent, LogEntry } from "@/lib/build-log";
-import { PostCard } from "../../feed/post-card";
+import { PostCard, type ReplyPreview } from "../../feed/post-card";
 
 // The project page as a live build log (Linear FIX-92): the pieces, kept out of page.tsx.
 
@@ -27,8 +27,9 @@ export function ActivityStrip({ weeks }: { weeks: number[] }) {
 
 /** One timeline, newest first: updates (with what was posted with them), verified milestones, and
  *  what happened on the project's GitHub repo (FIX-92 phase 3). */
-export function BuildLogTimeline({ entries, liked, saved, me, projectId, ownerId, filesByPost }: {
+export function BuildLogTimeline({ entries, liked, saved, me, projectId, ownerId, filesByPost, replies, viewer }: {
   entries: LogEntry<Post>[]; liked: Set<string>; saved: Set<string>; me: string; projectId: string; ownerId: string; filesByPost: Map<string, ProjectFileItem[]>;
+  replies?: Map<string, ReplyPreview[]>; viewer?: { id: string; first: string; last: string };
 }) {
   return (
     <ol className="relative flex flex-col gap-4 before:absolute before:top-2 before:bottom-2 before:left-[11px] before:w-px before:bg-line sm:gap-5">
@@ -43,7 +44,7 @@ export function BuildLogTimeline({ entries, liked, saved, me, projectId, ownerId
             </div>
           ) : (
             <div className="flex flex-col gap-3">
-              <PostCard post={e.post} liked={liked.has(e.post.id)} saved={saved.has(e.post.id)} own={e.post.author_id === me} index={i} />
+              <PostCard post={e.post} liked={liked.has(e.post.id)} saved={saved.has(e.post.id)} own={e.post.author_id === me} index={i} replies={replies?.get(e.post.id) ?? []} viewer={viewer} />
               {filesByPost.has(e.post.id) && <ProjectFiles projectId={projectId} items={filesByPost.get(e.post.id)!} me={me} ownerId={ownerId} variant="update" />}
             </div>
           )}

@@ -15,10 +15,12 @@ import { SendPost } from "@/components/share/send-post";
 import { MentionText } from "@/components/mentions/mention-text";
 import { hashtagParts } from "@/lib/hashtags";
 import { toggleLike } from "./actions";
+import { FeedComment } from "./feed-comment";
 
 type Opt = { liked: boolean; saved: boolean };
 
-export type ReplyPreview = { id: string; author_id: string; author_first: string; author_last: string; body: string; created_at: string };
+// The thread fields arrive once step 53/54 have run (supabase/comment-threads.sql, feed-comment-threads.sql).
+export type ReplyPreview = { id: string; author_id: string; author_first: string; author_last: string; body: string; created_at: string; parent_id?: string | null; edited_at?: string | null; like_count?: number; liked?: boolean };
 // Links in a card don't prefetch: every one scrolling past cost a server render and a sign-in check;
 // a feed is browsed, not clicked through in bulk (Linear FIX-77). A tap still opens it at once.
 const KIND_DOT: Record<string, string> = { result: "bg-ok", question: "bg-amber-500", project: "bg-sky-500" };
@@ -48,6 +50,8 @@ export function PostCard({ post, liked, saved = false, own = false, index, proje
   const [mine, setMineState] = useState<ReplyPreview[]>(mark.replies ?? []);
   const setMine = (f: (m: ReplyPreview[]) => ReplyPreview[]) => setMineState((m) => { const next = f(m); markCard(post.id, { replies: next }); return next; });
   const [replyOpen, setReplyOpen] = useState(false);
+  // Replying to a comment (its thread and who), or to the post when null.
+  const [replyTo, setReplyTo] = useState<{ parent: string; name: string } | null>(null);
   const [draft, setDraft] = useState("");
   const [sending, setSending] = useState(false);
   const replyRef = useRef<HTMLTextAreaElement>(null);
@@ -59,11 +63,12 @@ export function PostCard({ post, liked, saved = false, own = false, index, proje
     const text = draft.trim();
     if (!text || sending || !viewer) return;
     setSending(true); setError("");
-    const r = await addComment(post.id, text).catch(() => ({ ok: false, message: "Couldn't send that. Check your connection." }));
+    const r = await addComment(post.id, text, replyTo?.parent).catch(() => ({ ok: false, message: "Couldn't send that. Check your connection." }));
     setSending(false);
     if (!r.ok) { setError(r.message); return; }
-    setMine((m) => [...m, { id: `me-${Date.now()}`, author_id: viewer.id, author_first: viewer.first, author_last: viewer.last, body: text, created_at: new Date().toISOString() }]);
+    setMine((m) => [...m, { id: `me-${Date.now()}`, author_id: viewer.id, author_first: viewer.first, author_last: viewer.last, body: text, created_at: new Date().toISOString(), parent_id: replyTo?.parent ?? null }]);
     setDraft("");
+    setReplyTo(null);
   };
 
   // Shown at once; put back if the server says no.
@@ -189,7 +194,7 @@ export function PostCard({ post, liked, saved = false, own = false, index, proje
           <RollingCount n={likeCount} className={cn(opt.liked && "text-accent")} />
         </button>
         {viewer ? (
-          <button type="button" onClick={() => { setReplyOpen((v) => !v); requestAnimationFrame(() => replyRef.current?.focus()); }} aria-expanded={replyOpen} aria-label={`${question ? "Answer" : "Reply"} (${replyCount})`} className="tap inline-flex h-9 items-center gap-1.5 rounded-lg px-3 transition hover:bg-hover hover:text-text">
+          <button type="button" onClick={() => { setReplyTo(null); setReplyOpen((v) => !v); requestAnimationFrame(() => replyRef.current?.focus()); }} aria-expanded={replyOpen} aria-label={`${question ? "Answer" : "Reply"} (${replyCount})`} className="tap inline-flex h-9 items-center gap-1.5 rounded-lg px-3 transition hover:bg-hover hover:text-text">
             <MessageSquare className="size-[18px]" /> <span className="tabular-nums">{replyCount}</span>
             {question && <span className="text-xs font-medium text-text-2">Answer</span>}
           </button>
@@ -214,13 +219,8 @@ export function PostCard({ post, liked, saved = false, own = false, index, proje
         <div className="mt-2 space-y-2.5 border-t border-line pt-3">
           {replyCount > shown.length && <Link prefetch={false} href={`/post/${post.id}`} className="block text-xs font-medium text-muted hover:text-text">View all {replyCount} replies</Link>}
           {shown.map((c) => (
-            <div key={c.id} className="flex gap-2.5">
-              <Link prefetch={false} href={`/u/${c.author_id}`} tabIndex={-1} aria-hidden="true" className="shrink-0"><Avatar first={c.author_first} last={c.author_last} size={28} /></Link>
-              <div className="min-w-0 rounded-2xl bg-surface-2/70 px-3 py-2">
-                <div className="text-xs"><Link prefetch={false} href={`/u/${c.author_id}`} className="font-medium text-text hover:underline">{`${c.author_first} ${c.author_last}`.trim()}</Link> <span className="text-faint">· {timeAgo(c.created_at)}</span></div>
-                <p className="mt-0.5 text-sm leading-relaxed whitespace-pre-wrap text-text-2">{c.body}</p>
-              </div>
-            </div>
+            <FeedComment key={c.id} postId={post.id} c={c} me={viewer?.id} postIsMine={own}
+              onReply={viewer ? (r) => { setReplyTo({ parent: r.parent_id ?? r.id, name: r.author_first || "them" }); setReplyOpen(true); requestAnimationFrame(() => replyRef.current?.focus()); } : undefined} />
           ))}
           {replyOpen && viewer && (
             <form onSubmit={(e) => { e.preventDefault(); void sendReply(); }} className="flex items-end gap-2.5">
@@ -229,11 +229,11 @@ export function PostCard({ post, liked, saved = false, own = false, index, proje
                 ref={replyRef}
                 value={draft}
                 onChange={(e) => setDraft(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void sendReply(); } }}
+                onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void sendReply(); } if (e.key === "Escape") setReplyTo(null); }}
                 rows={1}
                 maxLength={1000}
-                aria-label={question ? "Write an answer" : "Write a reply"}
-                placeholder={question ? "Write an answer…" : "Write a reply…"}
+                aria-label={replyTo ? `Reply to ${replyTo.name}` : question ? "Write an answer" : "Write a reply"}
+                placeholder={replyTo ? `Reply to ${replyTo.name}…` : question ? "Write an answer…" : "Write a reply…"}
                 className="max-h-32 min-h-10 flex-1 resize-none rounded-2xl border border-line bg-surface px-3.5 py-2 text-sm outline-none focus:border-line-strong"
               />
               <button type="submit" disabled={!draft.trim() || sending} aria-label="Send reply" className="bg-accent-grad grid size-10 shrink-0 place-items-center rounded-full text-on-accent transition active:scale-90 disabled:opacity-40">

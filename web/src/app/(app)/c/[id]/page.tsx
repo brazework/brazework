@@ -14,6 +14,7 @@ import { EmptyState, Panel, Skeleton, Tabs } from "@/components/app/page-ui";
 import { Kicker } from "@/components/ui";
 import { PRIVACY_LABEL, TYPE_LABEL, can, membersLabel, rank, type CommunityPost } from "@/lib/communities";
 import { PostCard } from "../../feed/post-card";
+import { cardReplies } from "@/lib/card-replies";
 import { CommunityBadge, MetaLine, RoleChip } from "../../communities/_components/badge";
 import { inLog, withHost, type HostedEvent } from "@/lib/events";
 import { requestTime } from "@/lib/forge";
@@ -90,9 +91,14 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
   const thisWeek = posts.filter((p) => Date.parse(p.created_at) > now - 7 * 864e5).length;
   const heldPosts = (held.data ?? []) as unknown as CommunityPost[];
   const ids = posts.map((p) => p.id);
-  const [likes, saves] = ids.length
-    ? await Promise.all([supabase.from("likes").select("post_id").eq("user_id", user.id).in("post_id", ids), supabase.from("saved").select("post_id").eq("user_id", user.id).in("post_id", ids)])
-    : [{ data: [] }, { data: [] }];
+  const [[likes, saves], replies] = await Promise.all([
+    ids.length
+      ? Promise.all([supabase.from("likes").select("post_id").eq("user_id", user.id).in("post_id", ids), supabase.from("saved").select("post_id").eq("user_id", user.id).in("post_id", ids)])
+      : Promise.resolve([{ data: [] }, { data: [] }] as const),
+    // The latest comments under each post, so they can be liked, replied to, edited and deleted here too.
+    cardReplies(supabase, user.id, ids),
+  ]);
+  // Members can reply; anyone who can see the club can like.
   const liked = new Set((likes.data ?? []).map((l: { post_id: string }) => l.post_id));
   const saved = new Set((saves.data ?? []).map((l: { post_id: string }) => l.post_id));
 
@@ -208,7 +214,7 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
             )}
             {posts.map((p, i) => (
               <div key={p.id}>
-                <PostCard post={p} liked={liked.has(p.id)} saved={saved.has(p.id)} own={p.author_id === user.id} index={i} />
+                <PostCard post={p} liked={liked.has(p.id)} saved={saved.has(p.id)} own={p.author_id === user.id} index={i} replies={replies.get(p.id) ?? []} viewer={me ? { id: user.id, first: profile.first_name, last: profile.last_name } : undefined} />
                 {can(role, "removePosts") && p.author_id !== user.id && <ModRemove cid={c.id} postId={p.id} />}
               </div>
             ))}

@@ -62,3 +62,4 @@ github
 vouches
 goals
 comment-threads
+feed-comment-threads
