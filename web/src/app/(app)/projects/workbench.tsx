@@ -3,13 +3,13 @@ import Link from "next/link";
 import { ProjectEditor } from "../u/[id]/profile-client";
 import { BenchCard } from "./bench-card";
 
-export type BenchProject = { id: string; title: string; summary: string; status: string; private: boolean; updated_at: string; verified: number; waiting: number; updates: number; log: { id: string; body: string; status: string; created_at: string }[] };
+export type BenchProject = { id: string; title: string; summary: string; status: string; private: boolean; updated_at: string; field: string; verified: number; waiting: number; updates: number; log: { id: string; body: string; status: string; created_at: string }[] };
 
 // Your projects first: where each one stands on the way to proof, and the next thing to do.
 export function Workbench({ projects, interests, copilot, stack, specsOn = false, filesOn = false }: { projects: BenchProject[]; interests: string[]; copilot: boolean; stack: boolean; specsOn?: boolean; filesOn?: boolean }) {
   if (!projects.length) {
     return (
-      <section aria-label="Your workbench" className="glass-card mt-6 rounded-3xl p-6">
+      <section aria-label="Your builds" className="glass-card mt-6 rounded-3xl p-6">
         <h2 className="text-lg font-semibold tracking-tight">Start your first project</h2>
         <p className="mt-1 max-w-xl text-sm text-muted">A project is anything you&apos;re building: a robot, a rocket, a model, an experiment, an app. Post updates as you go, and your club verifies the milestones.</p>
         <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -31,19 +31,24 @@ export function Workbench({ projects, interests, copilot, stack, specsOn = false
       </section>
     );
   }
+  const signed = projects.reduce((n, p) => n + p.verified, 0), waiting = projects.reduce((n, p) => n + p.waiting, 0);
   return (
-    <section aria-label="Your workbench" className="mt-6">
-      <div className="flex items-center justify-between gap-3">
-        <h2 className="text-sm font-semibold">Your workbench</h2>
+    <section aria-label="Your builds" className="mt-6">
+      <div className="flex items-end justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-semibold tracking-tight">Your builds</h2>
+          {/* The record at a glance: how much of your work someone has signed. */}
+          <p className="mt-0.5 text-sm text-muted tabular-nums">{projects.length} build{projects.length === 1 ? "" : "s"} · <span className={signed ? "font-medium text-ok" : undefined}>{signed} signed result{signed === 1 ? "" : "s"}</span>{waiting ? ` · ${waiting} waiting` : ""}</p>
+        </div>
         <div className="flex items-center gap-2">
           {copilot && <Link href="/copilot?q=Import%20my%20GitHub%20repo%20as%20a%20project" className="hidden h-10 items-center gap-1.5 rounded-lg border border-line px-4 text-sm transition hover:bg-hover sm:inline-flex"><GitBranch className="size-4" /> Import</Link>}
           <ProjectEditor interests={interests} copilot={copilot} stack={stack} specsOn={specsOn} />
         </div>
       </div>
-      <ul className="mt-3 grid grid-cols-1 items-start gap-3 md:grid-cols-2">
+      <ul className="mt-4 grid grid-cols-1 items-start gap-4 md:grid-cols-2">
         {projects.map((p) => <BenchCard key={p.id} p={p} attach={filesOn} />)}
       </ul>
-      <h2 className="mt-10 text-sm font-semibold">Explore what people are building</h2>
+      <h2 className="mt-12 text-lg font-semibold tracking-tight">Explore what people are building</h2>
     </section>
   );
 }

@@ -5,7 +5,8 @@ import { PostUpdate } from "./[id]/post-update";
 
 // "Post update" on a workbench card: opens the update box right in the card, so you stay on
 // Projects. The update still goes to the feed as a project post.
-export function QuickUpdate({ projectId, title, attach = false }: { projectId: string; title: string; attach?: boolean }) {
+// `quiet`: an outlined button, for cards whose primary action is something else.
+export function QuickUpdate({ projectId, title, attach = false, quiet = false }: { projectId: string; title: string; attach?: boolean; quiet?: boolean }) {
   const [open, setOpen] = useState(false);
   return (
     <>
@@ -14,7 +15,7 @@ export function QuickUpdate({ projectId, title, attach = false }: { projectId: s
         onClick={() => setOpen(!open)}
         aria-expanded={open}
         aria-controls={`qu-${projectId}`}
-        className="bg-accent-grad inline-flex h-9 items-center gap-1.5 rounded-lg px-4 text-xs font-semibold text-on-accent"
+        className={quiet ? "inline-flex h-9 items-center gap-1.5 rounded-lg border border-line px-3.5 text-xs font-medium transition hover:bg-hover" : "bg-accent-grad inline-flex h-9 items-center gap-1.5 rounded-lg px-4 text-xs font-semibold text-on-accent"}
       >
         {open ? <X className="size-3.5" /> : <Plus className="size-3.5" />} {open ? "Close" : "Post update"}
       </button>
