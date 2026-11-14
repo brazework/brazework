@@ -3,7 +3,7 @@ import { ReportLink } from "@/components/report/report-dialog";
 import { BadgeCheck, BarChart3, Eye, FileText, FolderGit2, Lock, MapPin, MessageSquare, Trophy } from "lucide-react";
 import { CommunityBadge } from "../../communities/_components/badge";
 import { ActivityGrid } from "@/components/profile/activity";
-import { requestTime } from "@/lib/forge";
+import { cn, requestTime } from "@/lib/forge";
 import { ProjectIcon } from "../../projects/project-card";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
@@ -139,7 +139,7 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
   const openTo = p.open_to ?? [];
   const links = p.links ?? [];
   const stats: { n: number; label: string; href: string }[] = [
-    ...(msOn ? [{ n: proof.length, label: "Club-verified", href: "#proof" }] : []),
+    ...(msOn ? [{ n: proof.length, label: "Signed results", href: "#proof" }] : []),
     { n: projects.length, label: projects.length === 1 ? "Project" : "Projects", href: "#projects" },
     { n: posts.length, label: posts.length === 1 ? "Post" : "Posts", href: "#posts" },
   ];
@@ -218,8 +218,9 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
               {stats.map((st) => (
                 <li key={st.label}>
                   {/* In-page tabs (#projects) need a plain anchor so the hashchange reaches the tabs. */}
-                  <a href={st.href} className="block rounded-2xl border border-line bg-surface-2/60 px-3 py-3 text-center transition hover:border-line-strong hover:bg-surface active:scale-95">
-                    <span className="block text-2xl font-semibold tracking-tight"><CountUp to={st.n} /></span>
+                  {/* The signed count is the number that matters here, so it stands out once there is one. */}
+                  <a href={st.href} className={cn("block rounded-2xl border px-3 py-3 text-center transition active:scale-95", st.href === "#proof" && st.n > 0 ? "border-transparent bg-[color-mix(in_oklab,var(--ok)_12%,transparent)] hover:bg-[color-mix(in_oklab,var(--ok)_18%,transparent)]" : "border-line bg-surface-2/60 hover:border-line-strong hover:bg-surface")}>
+                    <span className={cn("block text-2xl font-semibold tracking-tight", st.href === "#proof" && st.n > 0 && "text-ok")}><CountUp to={st.n} /></span>
                     <span className="block text-xs text-muted">{st.label}</span>
                   </a>
                 </li>
@@ -253,6 +254,8 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
 
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
         <div className="flex min-w-0 flex-col gap-6">
+          {/* Proof leads: the work someone signed comes before everything else on the page. */}
+          {msOn && <div id="proof" className="scroll-mt-24"><ProofTimeline items={proof} own={mine} /></div>}
           {mine ? (hideStrength ? null : <ProfileStrength steps={steps} />) : <SharedContext clubs={sharedClubs} mutual={mutual} mutualCount={mutualCount} />}
           {nowBuilding && (
             <Link href={`/projects/${nowBuilding.id}`} className="glass-card group flex flex-col rounded-3xl p-5 transition">
@@ -264,7 +267,6 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
             </Link>
           )}
           {mine && f.goals && record && <GoalCard goal={goal} record={record} profileId={p.id} />}
-          {msOn && <div id="proof" className="scroll-mt-24"><ProofTimeline items={proof} own={mine} /></div>}
 
           <section id="projects" data-tour="projects-tab" className="scroll-mt-24">
             <SwitchTabs

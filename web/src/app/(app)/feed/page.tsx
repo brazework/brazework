@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { ChevronDown, SlidersHorizontal } from "lucide-react";
+import { SlidersHorizontal } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
@@ -286,9 +286,9 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
       <FeedHeader tab={tab} chapter={Boolean(chapter)} hrefFor={(t) => href({ tab: t })}
         filter={/* One Filter menu for the feed: order, kind of post and your topics (they were a sort pill, a kind row and a topics chip). */
           <details key={`${tab}:${kind}:${tag}:${sort}`} data-tour="interests" className="group relative shrink-0">
-            <summary aria-label={filterLabel === "Filter" ? "Filter the feed" : `Filter: ${filterLabel}`} className={cn("flex h-8 cursor-pointer list-none items-center gap-1.5 rounded-lg border px-2.5 text-xs font-medium transition [&::-webkit-details-marker]:hidden", filterLabel === "Filter" ? "border-line bg-surface text-text-2 hover:border-line-strong hover:text-text" : "bg-accent-grad border-transparent text-on-accent")}>
-              <SlidersHorizontal className="size-3.5" /><span className="hidden max-w-28 truncate sm:inline">{filterLabel}</span>
-              <ChevronDown className="hidden size-3 transition group-open:rotate-180 sm:block" />
+            <summary aria-label={filterLabel === "Filter" ? "Filter the feed" : `Filter: ${filterLabel}`} title="Filter the feed" className={cn("flex h-8 cursor-pointer list-none items-center gap-1.5 rounded-lg text-xs font-medium transition [&::-webkit-details-marker]:hidden", filterLabel === "Filter" ? "w-8 justify-center text-muted hover:bg-hover hover:text-text" : "bg-accent-grad px-2.5 text-on-accent")}>
+              {/* Compact: just the icon until something is narrowing the feed, then it says what. */}
+              <SlidersHorizontal className="size-4" />{filterLabel !== "Filter" && <span className="max-w-28 truncate">{filterLabel}</span>}
             </summary>
             <div className={cn(menuCls, "absolute top-full right-0 z-30 mt-1.5 w-72 p-2")}>
               <div className="px-1 pb-1 text-[11px] font-medium tracking-wide text-faint uppercase">Order</div>
