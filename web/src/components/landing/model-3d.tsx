@@ -8,7 +8,7 @@ import { MODELS, project } from "./models";
 // the colour of the text around it, nearer lines brighter. Decorative (aria-hidden: the card says
 // what the project is in words). Draws only while on screen; holds still for reduced motion, though
 // you can still turn it.
-export function Model3D({ id, className }: { id: string; className?: string }) {
+export function Model3D({ id, className, spin: when = "always" }: { id: string; className?: string; spin?: "always" | "hover" }) {
   const ref = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -18,7 +18,8 @@ export function Model3D({ id, className }: { id: string; className?: string }) {
     if (!canvas || !ctx || !make) return;
     const m = make();
     const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-    const spin = reduce ? 0 : 0.35; // radians per second
+    // Radians per second. "hover": still until the pointer is over it (a page of cards stays calm).
+    let spin = reduce || when === "hover" ? 0 : 0.35;
     let yaw = -0.6, pitch = 0.42;
     let w = 0, h = 0, raf = 0, last = 0, visible = false, drag: { x: number; y: number; id: number } | null = null;
 
@@ -33,19 +34,22 @@ export function Model3D({ id, className }: { id: string; className?: string }) {
       ctx.clearRect(0, 0, w, h);
       // The model's box is about ±1.2 wide; fit it to the shorter side.
       const s = Math.min(w / 2.9, h / 1.9), ox = w / 2, oy = h / 2;
-      const ink = getComputedStyle(canvas).color.match(/\d+(\.\d+)?/g)?.slice(0, 3).join(",") ?? "255,255,255";
-      ctx.lineCap = "round"; ctx.lineWidth = 1.1;
+      // Drawn in the colour of the text around it, whatever format the browser reports it in; depth
+      // is the stroke's opacity.
+      const ink = getComputedStyle(canvas).color || "#fff";
+      ctx.lineCap = "round"; ctx.lineWidth = 1.1; ctx.strokeStyle = ink; ctx.fillStyle = ink;
       for (const [a, b] of m.edges) {
         const p = project(a, yaw, pitch), q = project(b, yaw, pitch);
         // Nearer lines are brighter, so the shape reads as solid while it turns.
-        ctx.strokeStyle = `rgba(${ink},${(0.22 + 0.55 * ((p[2] + q[2]) / 2 + 1.2) / 2.4).toFixed(3)})`;
+        ctx.globalAlpha = 0.22 + 0.55 * ((p[2] + q[2]) / 2 + 1.2) / 2.4;
         ctx.beginPath(); ctx.moveTo(ox + p[0] * s, oy + p[1] * s); ctx.lineTo(ox + q[0] * s, oy + q[1] * s); ctx.stroke();
       }
       for (const d of m.dots) {
         const p = project(d, yaw, pitch);
-        ctx.fillStyle = `rgba(${ink},${(0.45 + 0.5 * (p[2] + 1.2) / 2.4).toFixed(3)})`;
+        ctx.globalAlpha = 0.45 + 0.5 * (p[2] + 1.2) / 2.4;
         ctx.beginPath(); ctx.arc(ox + p[0] * s, oy + p[1] * s, 2.2, 0, Math.PI * 2); ctx.fill();
       }
+      ctx.globalAlpha = 1;
     };
     const frame = (t: number) => {
       const dt = Math.min(0.05, (t - (last || t)) / 1000); last = t;
@@ -66,6 +70,8 @@ export function Model3D({ id, className }: { id: string; className?: string }) {
       if (!raf) draw();
     };
     const up = (e: PointerEvent) => { if (drag?.id === e.pointerId) drag = null; };
+    const over = () => { if (when === "hover" && !reduce) { spin = 0.6; kick(); } };
+    const out = () => { if (when === "hover") spin = 0; };
 
     size(); draw();
     const ro = new ResizeObserver(() => { size(); draw(); });
@@ -76,12 +82,15 @@ export function Model3D({ id, className }: { id: string; className?: string }) {
     canvas.addEventListener("pointermove", move);
     canvas.addEventListener("pointerup", up);
     canvas.addEventListener("pointercancel", up);
+    canvas.addEventListener("pointerenter", over);
+    canvas.addEventListener("pointerleave", out);
     return () => {
       cancelAnimationFrame(raf); ro.disconnect(); io.disconnect();
       canvas.removeEventListener("pointerdown", down); canvas.removeEventListener("pointermove", move);
       canvas.removeEventListener("pointerup", up); canvas.removeEventListener("pointercancel", up);
+      canvas.removeEventListener("pointerenter", over); canvas.removeEventListener("pointerleave", out);
     };
-  }, [id]);
+  }, [id, when]);
 
   return <canvas ref={ref} aria-hidden="true" className={className} style={{ touchAction: "pan-y", cursor: "grab" }} />;
 }

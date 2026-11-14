@@ -14,7 +14,7 @@ import { getViewer } from "@/lib/supabase/server";
 import { copilotEnabled } from "@/lib/copilot";
 import { loadGuide } from "@/lib/guide";
 import { StartChecklist } from "./start-checklist";
-import { BuildsRow, WeekLoop } from "./week-loop";
+import { WeekLoop } from "./week-loop";
 import { FirstBuild } from "./first-build";
 import { cookies } from "next/headers";
 import { DISMISS_PREFIX } from "@/lib/dismiss";
@@ -23,6 +23,7 @@ import { FeedHeader, TABS, type TabId } from "./header";
 import { feedTabs } from "@/lib/feed-tabs";
 import { NextStep } from "./next-step";
 import { WaitingOnYou } from "./waiting";
+import { VerifyInbox } from "./verify-inbox";
 import type { ReplyPreview } from "./post-card";
 import type { Proof } from "./proof-card";
 import { FeedList, NewPosts, type FeedPage as FirstPage, type FeedParams, type ProofItem } from "./feed-list";
@@ -324,13 +325,15 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
             </div>
           </details>}
         hero={<>
-          {/* What's yours, in order: your next step, the log-work box, what's waiting on you, your builds. */}
+          {/* What needs you, in order: your next step, the log-work box, what's waiting on you. Your builds
+              live on the Build page (one click away in the sidebar), not here. */}
           {noProjects && <FirstBuild first={profile.first_name} chapter={chapter?.name} />}
           {/* When the checklist's next step is the project, the card above already asks it, so the checklist waits. */}
           {startOpen && !(noProjects && nextStep === "project") ? <StartChecklist steps={guide?.loop ?? []} /> : noProjects ? null : <><Suspense fallback={<div className="h-[76px] shimmer rounded-2xl" aria-hidden="true" />}><NextStep /></Suspense><Suspense fallback={null}><WeekLoop /></Suspense></>}
           <div id="composer" data-tour="composer" className="scroll-mt-24"><Composer first={profile.first_name} last={profile.last_name} interests={interests} userId={user.id} mediaEnabled={mediaEnabled} captionsEnabled={captionsEnabled} avatarSrc={avatarSrc(profile)} copilot={copilotOn} mentionsEnabled={mentionsEnabled} club={ledClub} next={null} projects={(myProjects ?? []) as { id: string; title: string }[]} clubs={composeClubs} defaultShareTo={chapter?.id} initialProject={typeof sp.project === "string" ? sp.project : undefined} /></div>
           <Suspense fallback={null}><WaitingOnYou /></Suspense>
-          {!startOpen && !noProjects && <Suspense fallback={null}><BuildsRow /></Suspense>}
+          {/* For officers: the work members asked your club to sign, with Verify right here. */}
+          <Suspense fallback={null}><VerifyInbox /></Suspense>
         </>} />
       {(tag || kind) && (
         <div className="mt-3 flex items-center justify-between rounded-2xl border border-line bg-surface-2 px-4 py-2.5 text-sm">

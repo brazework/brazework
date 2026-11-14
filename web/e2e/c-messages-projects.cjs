@@ -121,6 +121,8 @@ async function saved(page, path, text) {
     await card.getByRole("button", { name: /Add milestone/ }).click();
     await josh.fill('input[name="title"]', "Measured lift on 3 fin shapes");
     await josh.fill('input[name="evidence"]', "https://github.com/josh/wind-tunnel/commit/3f2a9c1");
+    // Who can sign is said before he asks (lib/signers.ts): the club's officers, not him.
+    await josh.getByText(/can sign this\. They'll see it on Today\./).waitFor({ timeout: 10000 });
     await josh.getByRole("button", { name: /Ask for verification/ }).click();
     await josh.getByText(/Measured lift on 3 fin shapes/).first().waitFor({ timeout: 15000 });
   }, josh);
@@ -131,10 +133,11 @@ async function saved(page, path, text) {
     const href = await week.getByRole("link", { name: /waiting for you to verify/ }).getAttribute("href");
     if (!/^\/c\/rkt\/manage\?tab=verify$/.test(href || "")) throw new Error("link: " + href);
   }, ben);
-  await step("Ben (club owner) gets a request and verifies it", async () => {
-    await go(ben, "/c/rkt/manage?tab=verify");
-    await ben.getByText(/Measured lift on 3 fin shapes/).first().waitFor({ timeout: 15000 });
-    await ben.getByRole("button", { name: /^Verify$/ }).first().click();
+  await step("Ben (club owner) sees the request on Today and verifies it right there", async () => {
+    await go(ben, "/feed");
+    const inbox = ben.getByRole("region", { name: "Signatures waiting on you" });
+    await inbox.getByText(/Measured lift on 3 fin shapes/).first().waitFor({ timeout: 15000 });
+    await inbox.getByRole("button", { name: /^Verify$/ }).first().click();
     await ben.waitForLoadState("networkidle");
     await go(ben, "/c/rkt/manage?tab=verify");
     await ben.getByText("Recently reviewed").waitFor({ timeout: 15000 });

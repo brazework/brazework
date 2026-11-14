@@ -10,6 +10,7 @@ import { getViewer } from "@/lib/supabase/server";
 import { ExploreCard, type ExploreProject } from "./project-card";
 import { Workbench, type BenchProject } from "./workbench";
 import { copilotEnabled } from "@/lib/copilot";
+import { schematicFor } from "@/lib/schematic-field";
 import { SpotlightStrip } from "../feed/discover";
 import { StripSkeleton } from "@/components/app/discover-cards";
 
@@ -69,22 +70,23 @@ async function Explore({ searchParams }: { searchParams: PageProps<"/projects">[
   const toolCounts = rows.flatMap((r) => (r as unknown as { tools?: string[] }).tools ?? []).reduce((m, t) => m.set(t, (m.get(t) ?? 0) + 1), new Map<string, number>());
   const topTools = [...toolCounts].sort((a, b) => b[1] - a[1]).slice(0, 10).map(([t]) => t);
   if (tool && !topTools.includes(tool)) topTools.unshift(tool);
-  // Your workbench: every project of yours (private too), with where it stands on the way to proof.
+  // Your builds: every project of yours (private too), with where it stands on the way to proof.
   const [{ data: myRows }, copilot] = await Promise.all([
-    supabase.from("projects").select("id, title, summary, status, private, updated_at").eq("owner_id", user.id).order("updated_at", { ascending: false }).limit(20),
+    supabase.from("projects").select(`id, title, summary, status, private, updated_at, tags${stackOn ? ", tools" : ""}`).eq("owner_id", user.id).order("updated_at", { ascending: false }).limit(20),
     copilotEnabled(),
   ]);
-  const myIds = ((myRows ?? []) as { id: string }[]).map((r) => r.id);
+  const myIds = ((myRows ?? []) as unknown as { id: string }[]).map((r) => r.id);
   const [myMs, myUps] = myIds.length ? await Promise.all([
     msOn ? supabase.from("milestones").select("project_id, status").in("project_id", myIds).limit(2000) : Promise.resolve({ data: [] }),
     supabase.from("posts").select("id, project_id, body, status, created_at").in("project_id", myIds).order("created_at", { ascending: false }).limit(2000),
   ]) : [{ data: [] }, { data: [] }];
   const msRows = (myMs.data ?? []) as { project_id: string; status: string }[];
   const upRows = (myUps.data ?? []) as (BenchProject["log"][number] & { project_id: string })[];
-  const bench: BenchProject[] = ((myRows ?? []) as Omit<BenchProject, "verified" | "waiting" | "updates" | "log">[]).map((r) => {
+  const bench: BenchProject[] = ((myRows ?? []) as unknown as (Omit<BenchProject, "verified" | "waiting" | "updates" | "log" | "field"> & { tags?: string[]; tools?: string[] })[]).map(({ tags, tools, ...r }) => {
     const mine = upRows.filter((u) => u.project_id === r.id);
     return {
       ...r,
+      field: schematicFor(tags ?? [], tools ?? []),
       verified: msRows.filter((m) => m.project_id === r.id && m.status === "verified").length,
       waiting: msRows.filter((m) => m.project_id === r.id && (m.status === "pending" || m.status === "disputed")).length,
       updates: mine.length,

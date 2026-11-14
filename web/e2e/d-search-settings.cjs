@@ -158,10 +158,15 @@ const pw = require("playwright-core");
     await week.waitFor({ timeout: 15000 });
     await week.getByText(/-week streak|No streak yet/).waitFor();
     await week.getByText(/Acme Aerospace viewed your profile/).waitFor({ timeout: 10000 });
-    // His builds as roomy cards, each with one next step and a one-tap reel.
+    // His builds are on the Build page now, not on Today: each card shows where it stands (built,
+    // signed) and one next step.
+    if (await ben.getByRole("region", { name: "Your builds" }).count()) throw new Error("Your builds is still on Today");
+    await go(ben, "/projects");
     const builds = ben.getByRole("region", { name: "Your builds" });
-    await builds.getByRole("link", { name: "Start a new build" }).waitFor();
-    if (!(await builds.getByRole("link", { name: "Reel" }).count())) throw new Error("no build cards on Home");
+    await builds.getByText(/signed result/).first().waitFor({ timeout: 15000 });
+    await builds.getByRole("list", { name: "Where this build stands" }).first().waitFor();
+    if (!(await builds.getByText(/^Next: /).count())) throw new Error("no next step on the build cards");
+    await go(ben, "/feed");
     // Hidden for good: a reload keeps the checklist away.
     await ben.reload({ waitUntil: "networkidle" });
     if (await ben.getByRole("button", { name: "Hide your first five minutes" }).count()) throw new Error("the checklist came back after a reload");
