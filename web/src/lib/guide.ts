@@ -43,7 +43,7 @@ export async function loadGuide(): Promise<Guide | null> {
   const member: GuideStep[] = [
     ...(f.media ? [{ id: "photo", label: "Add a profile photo", done: !!p.avatar_path, href: "/profile", why: "People and clubs recognize you faster with a face." }] : []),
     { id: "headline", label: "Write your headline", done: !!p.headline?.trim(), href: "/settings#profile", why: "It's the first line everyone reads about you.", ask: `Suggest three sharp profile headlines for me, a ${p.field || "STEM"} student. Ask me what I'm working on if you need to.` },
-    { id: "interests", label: "Pick at least 3 interests", done: (p.interests ?? []).length >= 3, href: "/settings#profile", why: "They decide what Everyone shows and who finds you." },
+    { id: "interests", label: "Pick at least 3 interests", done: (p.interests ?? []).length >= 3, href: "/settings#profile", why: "They decide what For you shows and who finds you." },
     { id: "club", label: "Join your club", done: mine.length > 0, href: "/communities?tab=discover", why: "Clubs are where your work gets seen and vouched for.", ask: "Which clubs on Brazework fit me best, and why?" },
     { id: "project", label: "Add a project", done: (projects.count ?? 0) > 0, href: "/profile#projects", why: "Projects are the heart of your profile.", ask: "Help me turn something I've built into a project: ask me a few questions, then draft a title and a one-line summary." },
     { id: "post", label: "Share your first post", done: (posts.count ?? 0) > 0, href: "/feed", why: "A post puts your work in front of your field.", ask: "Give me three ideas for a first post about what I'm building, based on my projects." },
