@@ -6,9 +6,9 @@ import { cn } from "@/lib/forge";
 import { CountUp } from "./count-up";
 
 const STEPS = [
-  { title: "Your club runs on Brazework", body: "Members, events, chat, announcements and roles in one place, instead of a group chat, a Google Form and a spreadsheet. Ember does the busywork." },
-  { title: "Members prove the work", body: "Projects with photos, video and write-ups. Club officers verify the milestones they saw happen. No club? A professor, PI or manager who saw it can vouch instead." },
-  { title: "The right people find it", body: "Companies and alumni find people by verified work, sponsor the clubs behind it, and reach out through a respectful inbox." },
+  { title: "Build it, with your club", body: "Your club runs here: members, events, chat and announcements in one place, instead of a group chat, a form and a spreadsheet. You log what you build as you go, and Ember does the busywork." },
+  { title: "Get it signed", body: "Ask for a result to be verified, with its evidence. A club officer who saw it happen signs it by name. No club? A professor, PI or manager who saw it can vouch instead." },
+  { title: "Get found", body: "Companies and labs search signed work, not résumés. They sponsor the clubs behind it and message you through a requests inbox you control." },
 ];
 
 // The landing is black and white (FIX-92): the active step, its bar and the buttons are the text colour.

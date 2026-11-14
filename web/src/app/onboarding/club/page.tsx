@@ -47,7 +47,7 @@ async function FindYourClub() {
   return (
     <>
       <div className="flex items-center justify-between gap-3">
-        <p className="text-xs font-medium tracking-[0.06em] text-faint uppercase">Step 2 of 2</p>
+        <p className="text-xs font-medium tracking-[0.06em] text-faint uppercase">Step 4 of 4</p>
         {/* On phones the cards are long; skipping shouldn't need a scroll. */}
         <Link href="/feed" className="text-sm text-muted hover:text-text sm:hidden">Skip</Link>
       </div>

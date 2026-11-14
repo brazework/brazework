@@ -30,12 +30,12 @@ export function ProjectShowcase() {
       <div className="relative mx-auto grid max-w-7xl grid-cols-1 items-center gap-12 px-6 md:sticky md:top-0 md:h-screen md:content-center md:pt-16 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.15fr)] lg:gap-16">
         <Reveal>
           <Eyebrow>Projects</Eyebrow>
-          <h2 className={cn("mt-5", H2)}>Your project page is <span className="text-grad">your proof.</span></h2>
+          <h2 className={cn("mt-5", H2)}>Don&apos;t describe it. <span className="text-grad">Show the build.</span></h2>
           <p className="m-hide mt-5 max-w-xl text-lg leading-relaxed text-muted">
-            Software, CAD, circuits, bridges, devices, models: every build gets a living page with photos and video, the specs, what it&apos;s built with, and a timeline of milestones your club has signed. It&apos;s the link you send instead of a résumé, and it gets stronger every week you build.
+            Every build gets its own page: the model you can turn, photos and video, the specs, what it&apos;s built with, and each result signed by someone who saw it. It&apos;s the link you send instead of a résumé, and it gets stronger every week you build.
           </p>
           <ul className="m-hide mt-8 grid gap-5">
-            <Point icon={Play} title="Show it, don't claim it" body="Photos and video with callouts, before-and-after, specs like a peak L/D of 14.2. Anyone can see what you made." />
+            <Point icon={Play} title="Show it, don't claim it" body="Turn the model, watch the test, read the numbers: a peak L/D of 14.2, a gearbox that held 1.4 kN. Anyone can see what you made." />
             <Point icon={ShieldCheck} title="Signed by the people who were there" body="Your club's officers, or a professor, PI or manager who saw it, sign each milestone with its evidence, and their name stays on it. Recruiters trust that more than any bullet point." />
             <Point icon={Eye} title="Get found by the work" body="Companies search verified projects by tool, field and spec, and you see who looked." />
           </ul>

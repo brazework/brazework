@@ -1,4 +1,5 @@
 import { Inbox, MailCheck, MessageSquareText, Search, ShieldCheck, Signature } from "lucide-react";
+import Link from "next/link";
 import { SearchMock, VouchMock } from "./angles-client";
 import { Head } from "./marketing";
 
@@ -39,16 +40,21 @@ export function NoClub() {
 
 export function OtherSide() {
   return (
-    <section id="other-side" data-story="The other side" className="story-sec scroll-mt-24 bg-surface-2/50 py-24 sm:py-32">
+    <section id="companies" data-story="For companies" className="story-sec scroll-mt-24 bg-surface-2/50 py-24 sm:py-32">
       <div className="mx-auto grid max-w-7xl grid-cols-1 items-center gap-12 px-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:gap-16">
         <div>
-          <Head eyebrow="The other side" title="Someone is looking" accent="for exactly that work."
-            body="Labs, startups, companies and grad programs search Brazework by what people built and who signed it, not by keywords on a résumé." />
+          <Head eyebrow="For companies" title="Search the work," accent="not the résumé."
+            body="Find student engineers by what they built and who signed it, not by keywords on a résumé anyone can generate." />
           <Steps items={[
-            [Search, "They search the work", "A field, a tool, a spec: \"PCB bring-up\", \"CRISPR\", \"Lean 4\". Only signed work counts."],
-            [Inbox, "They see who vouched", "Every result shows the club or the person who signed it, and how steadily you build."],
-            [MessageSquareText, "They ask, you decide", "Their message lands in your Requests. Accept, decline or block; you're never cold-called."],
+            [Search, "Search by the work", "A field, a tool, a spec: \"PCB bring-up\", \"CRISPR\", \"Lean 4\". Only signed work shows up."],
+            [Inbox, "See who signed it", "Every result names the club officer or the person who saw it happen, and shows how steadily the builder ships."],
+            [MessageSquareText, "Ask, and they decide", "Your message lands in their requests. Builders accept or decline, so the ones who reply want to talk."],
           ]} />
+          {/* The two ways a company starts: sponsor a challenge clubs opt into, or see what it costs. */}
+          <div className="m-hide mt-8 flex flex-wrap gap-3">
+            <Link href="#founding" className="bg-accent-grad inline-flex h-11 items-center justify-center rounded-lg px-5 text-sm font-semibold text-on-accent transition hover:opacity-90">Sponsor a challenge</Link>
+            <Link href="#pricing" className="inline-flex h-11 items-center justify-center rounded-lg border border-line px-5 text-sm font-semibold transition hover:border-line-strong">See pricing</Link>
+          </div>
         </div>
         <SearchMock />
       </div>

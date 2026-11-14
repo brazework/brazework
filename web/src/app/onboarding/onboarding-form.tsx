@@ -6,21 +6,26 @@ import { Button, Field, inputCls } from "@/components/ui";
 import { TOPICS, cn } from "@/lib/forge";
 import { completeOnboarding, type OnboardState } from "./actions";
 import { submitWithoutReset } from "@/lib/submit";
+import { starterInterests } from "@/lib/front-door";
 import { gradYearOptions } from "@/lib/profile-meta";
 
 export function OnboardingForm({ firstName, student, askGradYear = false }: { firstName: string; student: boolean; askGradYear?: boolean }) {
   const [state, action, pending] = useActionState<OnboardState, FormData>(completeOnboarding, { message: "" });
-  const [field, setField] = useState<string>(TOPICS[0].name);
-  const [picked, setPicked] = useState<string[]>([]);
+  const [field, setFieldOnly] = useState<string>(TOPICS[0].name);
+  // Three interests are needed to continue, so a field starts with its first three picked
+  // (lib/front-door.ts). Once you change one yourself, your picks are yours: switching field keeps them.
+  const [picked, setPicked] = useState<string[]>(() => starterInterests(TOPICS[0].name));
+  const [mine, setMine] = useState(false);
+  const setField = (f: string) => { setFieldOnly(f); if (!mine) setPicked(starterInterests(f)); };
   const [headline, setHeadline] = useState("");
   const need = Math.max(0, 3 - picked.length);
-  const toggle = (t: string) => setPicked((p) => (p.includes(t) ? p.filter((x) => x !== t) : [...p, t]));
+  const toggle = (t: string) => { setMine(true); setPicked((p) => (p.includes(t) ? p.filter((x) => x !== t) : [...p, t])); };
   const group = TOPICS.find((t) => t.name === field) ?? TOPICS[0];
 
   return (
     <form onSubmit={submitWithoutReset(action)} className="flex flex-col gap-8">
       <div>
-        <div className="text-[11px] font-medium tracking-[0.06em] text-accent uppercase">Step 3 of 3</div>
+        <div className="text-[11px] font-medium tracking-[0.06em] text-accent uppercase">Step 3 of 4</div>
         <h1 className="mt-2 text-4xl font-semibold tracking-tight">
           Welcome{firstName ? `, ${firstName}` : ""}. <span className="text-shine">What do you build?</span>
         </h1>
@@ -54,7 +59,7 @@ export function OnboardingForm({ firstName, student, askGradYear = false }: { fi
 
       <div>
         <div className="mb-3 flex items-baseline justify-between text-sm">
-          <span className="font-medium text-text-2">Interests <span className="text-faint">(pick at least 3, from any field)</span></span>
+          <span className="font-medium text-text-2">Interests <span className="text-faint">{mine ? "(pick at least 3, from any field)" : "(we picked three to start; change them freely)"}</span></span>
           <span className={cn("font-mono tabular-nums", picked.length >= 3 ? "text-ok" : "text-faint")}>{picked.length} picked</span>
         </div>
         {picked.map((t) => <input key={t} type="hidden" name="interests" value={t} />)}
