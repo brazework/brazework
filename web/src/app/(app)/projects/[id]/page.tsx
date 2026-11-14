@@ -18,6 +18,7 @@ import { Avatar, Kicker } from "@/components/ui";
 import { dbFeatures, postSelect, milestoneCols } from "@/lib/db-features";
 import { requestTime, timeAgo, type Post } from "@/lib/forge";
 import { getViewer } from "@/lib/supabase/server";
+import { cardReplies } from "@/lib/card-replies";
 import { MilestoneTimeline, type Milestone } from "../../u/[id]/milestones";
 import { PostUpdate } from "./post-update";
 import { buildLog, inThirtySeconds, lastActivity, liveStatus, weeklyActivity, type BuildEvent } from "@/lib/build-log";
@@ -49,7 +50,7 @@ type Project = { tools?: string[]; id: string; title: string; summary: string; s
 async function ProjectView({ params, searchParams }: { params: PageProps<"/projects/[id]">["params"]; searchParams: PageProps<"/projects/[id]">["searchParams"] }) {
   const { id } = await params;
   const ghNote = (await searchParams).github;
-  const { supabase, user } = await getViewer();
+  const { supabase, user, profile: viewerProfile } = await getViewer();
   if (!user) redirect("/login");
   const { milestones: msOn, projectTools: stackOn, projectSpecs: specsOn, projectFiles: filesOn, updateFiles: updFilesOn, github: ghOn } = await dbFeatures();
   const { data } = await supabase.from("projects").select(`id, title, summary, status, year, tags, private, updated_at, created_at, owner_id, profiles!projects_owner_id_fkey(first_name, last_name, headline, field)${stackOn ? ", tools" : ""}`).eq("id", id).maybeSingle();
@@ -95,9 +96,13 @@ async function ProjectView({ params, searchParams }: { params: PageProps<"/proje
   const verified = milestones.filter((m) => m.status === "verified");
   const posts = (ups.data ?? []) as unknown as Post[];
   const ids = posts.map((x) => x.id);
-  const [likes, saves] = ids.length
-    ? await Promise.all([supabase.from("likes").select("post_id").eq("user_id", user.id).in("post_id", ids), supabase.from("saved").select("post_id").eq("user_id", user.id).in("post_id", ids)])
-    : [{ data: [] }, { data: [] }];
+  const [[likes, saves], replies] = await Promise.all([
+    ids.length
+      ? Promise.all([supabase.from("likes").select("post_id").eq("user_id", user.id).in("post_id", ids), supabase.from("saved").select("post_id").eq("user_id", user.id).in("post_id", ids)])
+      : Promise.resolve([{ data: [] }, { data: [] }] as const),
+    // The latest comments under each post, so they can be liked, replied to, edited and deleted here too.
+    cardReplies(supabase, user.id, ids),
+  ]);
   const liked = new Set((likes.data ?? []).map((l: { post_id: string }) => l.post_id));
   const saved = new Set((saves.data ?? []).map((l: { post_id: string }) => l.post_id));
   // How many public projects use each tool (for "N other projects use it").
@@ -225,7 +230,7 @@ async function ProjectView({ params, searchParams }: { params: PageProps<"/proje
           </div>
           {own && ghOn && <GitHubConnect supabase={supabase} projectId={p.id} linked={repos} note={typeof ghNote === "string" ? ghNote : undefined} />}
           {own && <PostUpdate projectId={p.id} title={p.title} attach={filesOn} />}
-          {log.length > 0 && <BuildLogTimeline entries={log} liked={liked} saved={saved} me={user.id} projectId={p.id} ownerId={p.owner_id} filesByPost={filesByPost} />}
+          {log.length > 0 && <BuildLogTimeline entries={log} liked={liked} saved={saved} me={user.id} projectId={p.id} ownerId={p.owner_id} filesByPost={filesByPost} replies={replies} viewer={{ id: user.id, first: viewerProfile?.first_name ?? "", last: viewerProfile?.last_name ?? "" }} />}
           {!log.length && (own ? (
             <p className="rounded-xl border border-dashed border-line-strong px-4 py-3 text-sm text-muted">
               Log what you did, what broke and what you learned: a few lines a week adds up to proof. Or let your AI tool do it as you work: <Link href="/settings/tools" className="font-medium text-text underline underline-offset-4">connect Claude Code, Cursor or Codex</Link>.

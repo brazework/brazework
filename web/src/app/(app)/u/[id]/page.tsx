@@ -27,6 +27,7 @@ import { type Post, type Profile } from "@/lib/forge";
 import { recordProfileView } from "@/lib/network";
 import { dbFeatures, postSelect, milestoneCols } from "@/lib/db-features";
 import { getViewer } from "@/lib/supabase/server";
+import { cardReplies } from "@/lib/card-replies";
 import { cookies } from "next/headers";
 import { DISMISS_PREFIX } from "@/lib/dismiss";
 import { copilotEnabled } from "@/lib/copilot";
@@ -55,7 +56,7 @@ type ClubRow = { role: string; communities: (Club & { logo_path?: string; accent
 async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id]">["params"]; searchParams: PageProps<"/u/[id]">["searchParams"] }) {
   const { id } = await params;
   if (!/^[0-9a-f-]{36}$/i.test(id)) notFound();
-  const { supabase, user } = await getViewer();
+  const { supabase, user, profile: me } = await getViewer();
   if (!user) redirect("/login");
   const own = user.id === id;
   // "Preview" (?view=visitor, Linear FIX-21): your own profile the way another member sees it, without
@@ -96,13 +97,16 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
   const projectRows = ((projectsRes.data ?? []) as unknown as (Omit<ProjectView, "details" | "link"> & { tools?: string[] })[]).filter((r) => !preview || !r.private);
   const following = ((myFollows.data ?? []) as { target: string }[]).map((r) => r.target).filter((t) => t !== id);
   // Second round: what depends on the first (your likes on these posts, project write-ups, mutual follows).
-  const [likesRes, detailsRes, mutualRes, winsRes] = await Promise.all([
+  const [likesRes, detailsRes, mutualRes, winsRes, replies] = await Promise.all([
     posts.length ? supabase.from("likes").select("post_id").eq("user_id", user.id).in("post_id", posts.map((x) => x.id)) : Promise.resolve({ data: [] }),
     projectRows.length ? supabase.from("project_details").select(f.projectSpecs ? "project_id, details, link, specs" : "project_id, details, link").in("project_id", projectRows.map((x) => x.id)) : Promise.resolve({ data: [] }),
     following.length ? supabase.from("follows").select("follower, follower_info", { count: "exact" }).eq("target", id).in("follower", following.slice(0, 300)).limit(2) : Promise.resolve({ data: [], count: 0 }),
     // Challenge placements (supabase/challenges.sql): public once the sponsor announces winners.
     f.challenges ? supabase.from("challenge_entries").select("challenge_id, placement, challenges(title, status, organizations(name))").eq("uid", id).not("placement", "is", null).limit(20) : Promise.resolve({ data: [] }),
+    // The latest comments under each post, so they can be liked, replied to, edited and deleted here too.
+    cardReplies(supabase, user.id, posts.map((x) => x.id)),
   ]);
+  const viewer = { id: user.id, first: me?.first_name ?? "", last: me?.last_name ?? "" };
   type Win = { challenge_id: string; placement: number; challenges: { title: string; status: string; organizations: { name: string } | null } | null };
   const wins = ((winsRes.data ?? []) as unknown as Win[]).filter((w) => w.challenges?.status === "closed").sort((a, b) => a.placement - b.placement);
   const [goal, record] = await Promise.all([goalP, recordP]);
@@ -287,7 +291,7 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
                   id: "posts", label: "Posts", count: posts.length,
                   content: (
                     <div className="flex flex-col gap-4">
-                      {posts.map((post, i) => <PostCard key={post.id} post={post} liked={liked.has(post.id)} own={mine} index={i} project={post.project_id ? byId[post.project_id] ?? null : null} />)}
+                      {posts.map((post, i) => <PostCard key={post.id} post={post} liked={liked.has(post.id)} own={mine} index={i} project={post.project_id ? byId[post.project_id] ?? null : null} replies={replies.get(post.id) ?? []} viewer={viewer} />)}
                       {!posts.length && <EmptyState icon={<MessageSquare className="size-6" />} title={mine ? "You haven't posted yet" : "No posts yet"} body={mine ? "Share an update, a question or a result from the feed." : undefined} action={mine ? <Link href="/feed" className="text-sm underline underline-offset-4">Go to the feed</Link> : undefined} />}
                     </div>
                   ),
