@@ -6,6 +6,7 @@ import { useActionState, useEffect, useRef, useState, useTransition } from "reac
 import { Celebrate } from "@/components/app/celebrate";
 import { Button, Field, inputCls } from "@/components/ui";
 import { cn } from "@/lib/forge";
+import { signerNote } from "@/lib/signers";
 import { addMilestone, disputeMilestone, removeMilestone, setMilestoneVisible, type MilestoneState } from "@/lib/milestones";
 import { submitWithoutReset } from "@/lib/submit";
 import { RELATIONSHIPS } from "@/lib/vouch-email";
@@ -18,7 +19,8 @@ export type Milestone = {
   // With supabase/vouches.sql: "Name, Role · domain" when someone vouched instead of a club.
   vouched_by?: string;
 };
-export type Club = { id: string; name: string };
+// `signers`: the officers who could sign your work there (lib/signers.ts); undefined when not loaded.
+export type Club = { id: string; name: string; signers?: string[] };
 
 const day = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 
@@ -120,6 +122,10 @@ function MilestoneDialog({ projectId, projectTitle, clubs, vouches, onClose, onS
   const ref = useRef<HTMLDialogElement>(null);
   const [state, action, pending] = useActionState(addMilestone, initial);
   const [by, setBy] = useState<"club" | "vouch">(clubs.length || !vouches ? "club" : "vouch");
+  // Who can sign in the chosen club, said before you ask (not as an error after).
+  const [clubId, setClubId] = useState(clubs[0]?.id ?? "");
+  const club = clubs.find((c) => c.id === clubId);
+  const note = club?.signers ? signerNote(club.name, club.signers) : null;
   useEffect(() => { ref.current?.showModal(); }, []);
   useEffect(() => { if (state.ok) { onSent(); onClose(); } }, [state.ok, onSent, onClose]);
   const today = new Date().toISOString().slice(0, 10);
@@ -156,9 +162,15 @@ function MilestoneDialog({ projectId, projectTitle, clubs, vouches, onClose, onS
         </fieldset>}
         {by === "club" ? (clubs.length > 0 && (
           <Field label="Which club saw it happen?">
-            <select name="communityId" required defaultValue={clubs[0]?.id} className={inputCls}>
+            <select name="communityId" required value={clubId} onChange={(e) => setClubId(e.target.value)} className={inputCls}>
               {clubs.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
             </select>
+            {note && (
+              <p role="status" className={cn("mt-2 rounded-xl px-3 py-2 text-xs leading-relaxed", note.ok ? "bg-surface-2 text-text-2" : "border border-[color-mix(in_oklab,var(--pro)_40%,transparent)] bg-[color-mix(in_oklab,var(--pro)_10%,transparent)] text-text")}>
+                {note.text}
+                {!note.ok && vouches && <> <button type="button" onClick={() => setBy("vouch")} className="font-medium underline underline-offset-2">Ask someone who saw it</button></>}
+              </p>
+            )}
           </Field>
         )) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_auto]">

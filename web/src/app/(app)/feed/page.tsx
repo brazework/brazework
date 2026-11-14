@@ -23,6 +23,7 @@ import { FeedHeader, TABS, type TabId } from "./header";
 import { feedTabs } from "@/lib/feed-tabs";
 import { NextStep } from "./next-step";
 import { WaitingOnYou } from "./waiting";
+import { VerifyInbox } from "./verify-inbox";
 import type { ReplyPreview } from "./post-card";
 import type { Proof } from "./proof-card";
 import { FeedList, NewPosts, type FeedPage as FirstPage, type FeedParams, type ProofItem } from "./feed-list";
@@ -331,6 +332,8 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
           {startOpen && !(noProjects && nextStep === "project") ? <StartChecklist steps={guide?.loop ?? []} /> : noProjects ? null : <><Suspense fallback={<div className="h-[76px] shimmer rounded-2xl" aria-hidden="true" />}><NextStep /></Suspense><Suspense fallback={null}><WeekLoop /></Suspense></>}
           <div id="composer" data-tour="composer" className="scroll-mt-24"><Composer first={profile.first_name} last={profile.last_name} interests={interests} userId={user.id} mediaEnabled={mediaEnabled} captionsEnabled={captionsEnabled} avatarSrc={avatarSrc(profile)} copilot={copilotOn} mentionsEnabled={mentionsEnabled} club={ledClub} next={null} projects={(myProjects ?? []) as { id: string; title: string }[]} clubs={composeClubs} defaultShareTo={chapter?.id} initialProject={typeof sp.project === "string" ? sp.project : undefined} /></div>
           <Suspense fallback={null}><WaitingOnYou /></Suspense>
+          {/* For officers: the work members asked your club to sign, with Verify right here. */}
+          <Suspense fallback={null}><VerifyInbox /></Suspense>
         </>} />
       {(tag || kind) && (
         <div className="mt-3 flex items-center justify-between rounded-2xl border border-line bg-surface-2 px-4 py-2.5 text-sm">

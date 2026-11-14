@@ -9,6 +9,7 @@ import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
 import { CopyLink } from "@/components/app/copy-link";
+import { signersFor, type MemberRow } from "@/lib/signers";
 import { PlaceTabsRow } from "@/components/app/place-tabs";
 import { OwnProofTabs } from "@/components/app/place-tabs-counted";
 import { GoalCard, GoalLine } from "@/components/app/goal-card";
@@ -110,7 +111,14 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
   const byId = Object.fromEntries(projectRows.map((r) => [r.id, r]));
   const ms = ((msRes.data ?? []) as unknown as Milestone[]).filter((m) => !preview || (m.status === "verified" && !m.private));
   const flat = <T,>(rows: { communities: T | T[] | null }[]) => rows.flatMap((r) => (Array.isArray(r.communities) ? r.communities : r.communities ? [r.communities] : []));
-  const myClubs: Club[] = flat((myClubRows.data ?? []) as unknown as { communities: Club | Club[] | null }[]);
+  const myClubsBare: Club[] = flat((myClubRows.data ?? []) as unknown as { communities: Club | Club[] | null }[]);
+  // On your own profile: who could sign your work in each club (its officers, not you), so the ask
+  // form can say so up front (lib/signers.ts).
+  const officers = mine && myClubsBare.length
+    ? await supabase.from("community_members").select("community_id, uid, role, first_name, last_name").in("community_id", myClubsBare.map((c) => c.id)).in("role", ["moderator", "admin", "owner"]).limit(500)
+    : { data: [] };
+  const signers = signersFor((officers.data ?? []) as MemberRow[], user.id);
+  const myClubs: Club[] = mine ? myClubsBare.map((c) => ({ ...c, signers: signers.get(c.id) ?? [] })) : myClubsBare;
   const clubs = ((theirClubs.data ?? []) as unknown as ClubRow[]).filter((r) => r.communities).map((r) => ({ ...r.communities!, role: r.role }));
   const projects: ProjectView[] = projectRows.map((r) => ({ ...r, details: details.get(r.id)?.details ?? null, link: details.get(r.id)?.link ?? null, specs: details.get(r.id)?.specs ?? [], milestones: msOn && (own || !r.private) ? ms.filter((m) => m.project_id === r.id) : undefined }));
   // Proof shows work on public projects (and your own private ones, to you), like the feed and résumé.
