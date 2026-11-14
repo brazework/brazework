@@ -1,6 +1,6 @@
 "use client";
 import { AnimatePresence, motion } from "motion/react";
-import { Check, Flame, Loader2, Search, X } from "lucide-react";
+import { CalendarDays, Check, Flame, Loader2, Search, Settings2, ShieldCheck, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState, useTransition } from "react";
@@ -14,7 +14,8 @@ import { accentTint } from "@/lib/club-look";
 import { MemberFaces, type Face } from "@/components/network/member-faces";
 
 // A club's pulse: a few faces, member ids for the live online count, and posts this week.
-export type Pulse = { faces: Face[]; ids: string[]; week: number };
+// For your own clubs: what's next on the calendar, and (officers) how many results wait for a signature.
+export type Pulse = { faces: Face[]; ids: string[]; week: number; next?: { id: string; title: string; when: string } | null; verify?: number };
 type Item = { c: Community; role?: Role; pulse?: Pulse };
 
 // Communities as a live grid: search and field filters apply as you type, cards glide into
@@ -92,6 +93,21 @@ export function CommunityCard({ c, role, joinable, pulse }: { c: Community; role
           )}
           {pulse && <MemberFaces faces={pulse.faces} ids={pulse.ids} total={c.member_count} size={28} className="mt-3" />}
           {joinable && <div className="relative z-10 mt-4"><QuickJoin c={c} /></div>}
+          {/* Your club: what's next, and one tap to the things you do there. */}
+          {role && (
+            <div className="relative z-10 mt-4 flex flex-col gap-2 border-t border-line pt-3">
+              {pulse?.next && (
+                <Link href={`/events/${pulse.next.id}`} className="inline-flex min-w-0 items-center gap-1.5 text-xs text-text-2 transition hover:text-text">
+                  <CalendarDays className="size-3.5 shrink-0" /> <span className="truncate">Next: {pulse.next.title}</span> <span className="shrink-0 text-faint">· {pulse.next.when}</span>
+                </Link>
+              )}
+              <div className="flex flex-wrap gap-1.5">
+                {(pulse?.verify ?? 0) > 0 && <Link href={`/c/${c.id}/manage?tab=verify`} className="bg-accent-grad inline-flex h-8 items-center gap-1.5 rounded-lg px-3 text-xs font-semibold text-on-accent"><ShieldCheck className="size-3.5" /> {pulse!.verify} to verify</Link>}
+                <Link href={`/c/${c.id}?tab=events`} className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-line px-3 text-xs font-medium transition hover:bg-hover"><CalendarDays className="size-3.5" /> Events</Link>
+                {role !== "member" && <Link href={`/c/${c.id}/manage`} className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-line px-3 text-xs font-medium transition hover:bg-hover"><Settings2 className="size-3.5" /> Manage</Link>}
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </article>
