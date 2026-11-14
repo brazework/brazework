@@ -248,10 +248,10 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
       ids.length ? supabase.from("likes").select("post_id").eq("user_id", user.id).in("post_id", ids) : Promise.resolve({ data: [] }),
       ids.length ? supabase.from("saved").select("post_id").eq("user_id", user.id).in("post_id", ids) : Promise.resolve({ data: [] }),
       // The latest replies, so conversations show (and continue) right in the feed.
-      ids.length ? supabase.from("comments").select("id, post_id, author_id, author_first, author_last, body, created_at").in("post_id", ids).order("created_at", { ascending: false }).limit(400) : Promise.resolve({ data: [] }),
+      ids.length ? supabase.from("comments").select((await dbFeatures()).commentThreads ? "id, post_id, author_id, author_first, author_last, body, created_at, parent_id, edited_at, like_count" : "id, post_id, author_id, author_first, author_last, body, created_at").in("post_id", ids).order("created_at", { ascending: false }).limit(400) : Promise.resolve({ data: [] }),
     ]);
     const replies = new Map<string, ReplyPreview[]>();
-    for (const c of (replyRows.data ?? []) as (ReplyPreview & { post_id: string })[]) {
+    for (const c of (replyRows.data ?? []) as unknown as (ReplyPreview & { post_id: string })[]) {
       const list = replies.get(c.post_id) ?? [];
       if (list.length < 2) replies.set(c.post_id, [c, ...list]);
     }

@@ -50,7 +50,8 @@ from (values
   (50, 'github',          to_regprocedure('public.github_ready()') is not null),
   (51, 'vouches',         to_regprocedure('public.vouches_ready()') is not null),
   (52, 'goals',           to_regprocedure('public.goals_ready()') is not null),
-  (53, 'comment-threads', to_regprocedure('public.comment_threads_ready()') is not null)
+  (53, 'comment-threads', to_regprocedure('public.comment_threads_ready()') is not null),
+  (54, 'feed-comment-threads', to_regprocedure('public.feed_comment_threads_ready()') is not null)
 ) as s(step, file, present)
 order by step;
 
