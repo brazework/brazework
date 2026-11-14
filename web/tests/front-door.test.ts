@@ -16,6 +16,8 @@ test("the sign-up link carries the goal, and the build only when there is one", 
   assert.equal(signupHref("internship", ""), "/signup?goal=internship");
   assert.equal(signupHref("internship", " a "), "/signup?goal=internship", "a build that's too short is left out");
   assert.equal(signupHref("job", "PCB v2 & bring-up"), "/signup?goal=job&build=PCB+v2+%26+bring-up");
+  assert.equal(signupHref("", "A truss bridge"), "/signup?build=A+truss+bridge", "no goal picked (the closing section's box)");
+  assert.equal(signupHref("", ""), "/signup");
 });
 
 test("a field starts with its first three interests; an unknown field with none", () => {

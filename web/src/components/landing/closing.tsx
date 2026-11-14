@@ -1,6 +1,6 @@
-import { ArrowRight } from "lucide-react";
 import Link from "next/link";
 import { Button, Logo } from "@/components/ui";
+import { BuildStart } from "./build-start";
 import { Reveal } from "./reveal";
 
 export function FinalCta() {
@@ -13,11 +13,10 @@ export function FinalCta() {
           <span className="text-grad">Put it on the record.</span>
         </h2>
         <p className="mt-6 max-w-xl text-lg text-muted">Log the first thing you&apos;ve built and ask whoever saw it to sign it: your club, a professor, a manager. It takes a few minutes, and it&apos;s free for you and your club.</p>
-        <div className="mt-10 flex flex-col items-stretch gap-3 sm:flex-row sm:justify-center">
-          <Button href="/signup" size="lg">
-            Create your free account <ArrowRight className="size-4 transition group-hover:translate-x-0.5" />
-          </Button>
-          <Button href="#founding" variant="outline" size="lg">Bring your club</Button>
+        <BuildStart />
+        <div className="mt-4 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-muted">
+          <span>Free for students and clubs</span>
+          <Button href="#founding" variant="outline">Bring your club</Button>
         </div>
       </Reveal>
     </section>

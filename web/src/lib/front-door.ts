@@ -15,12 +15,14 @@ export function cleanBuild(text: string): string {
   return s.length >= 3 ? s : "";
 }
 
-/** The sign-up link from the landing page: the goal always, the build when there is one. */
+/** The sign-up link from the landing page: the goal when one is picked, the build when there is one. */
 export function signupHref(goal: string, build: string): string {
-  const q = new URLSearchParams({ goal });
+  const q = new URLSearchParams();
+  if (goal) q.set("goal", goal);
   const b = cleanBuild(build);
   if (b) q.set("build", b);
-  return `/signup?${q}`;
+  const s = q.toString();
+  return s ? `/signup?${s}` : "/signup";
 }
 
 /** Onboarding: a field starts with its first three interests picked (three are needed to continue),
