@@ -62,18 +62,50 @@ export async function deletePost(postId: string): Promise<R> {
   return { ok: true, message: "" };
 }
 
-export async function addComment(postId: string, body: string): Promise<R> {
+// A comment on a post, or (with parentId) a reply to a comment (supabase/comment-threads.sql files a
+// reply to a reply under its thread's top comment).
+export async function addComment(postId: string, body: string, parentId?: string): Promise<R> {
   const text = body.trim();
   if (!text) return { ok: false, message: "Write a comment first." };
   if (text.length > 1000) return { ok: false, message: "Comments can be up to 1,000 characters." };
+  if (parentId && !pid.safeParse(parentId).success) return { ok: false, message: "That comment couldn't be found." };
   const { supabase, user } = await getViewer();
   if (!user) return { ok: false, message: "Log in again." };
-  const { error } = await supabase.from("comments").insert({ post_id: postId, body: text });
+  const { error } = await supabase.from("comments").insert({ post_id: postId, body: text, ...(parentId ? { parent_id: parentId } : {}) });
   if (error) return { ok: false, message: friendlyError(error) };
   touch(postId);
   return { ok: true, message: "" };
 }
 
+// Edit your own comment or reply. Only the text changes; the database marks it edited.
+export async function editComment(postId: string, commentId: string, body: string): Promise<R> {
+  const text = body.trim();
+  if (!text) return { ok: false, message: "A comment can't be empty. Delete it instead." };
+  if (text.length > 1000) return { ok: false, message: "Comments can be up to 1,000 characters." };
+  if (!pid.safeParse(commentId).success) return { ok: false, message: "That comment couldn't be found." };
+  const { supabase, user } = await getViewer();
+  if (!user) return { ok: false, message: "Log in again." };
+  const { data, error } = await supabase.from("comments").update({ body: text }).eq("id", commentId).eq("author_id", user.id).select("id");
+  if (error) return { ok: false, message: friendlyError(error) };
+  if (!data?.length) return { ok: false, message: "You can only edit your own comments." };
+  touch(postId);
+  return { ok: true, message: "" };
+}
+
+// Like or unlike a comment or reply.
+export async function toggleCommentLike(postId: string, commentId: string, like: boolean): Promise<R> {
+  if (!pid.safeParse(commentId).success) return { ok: false, message: "That comment couldn't be found." };
+  const { supabase, user } = await getViewer();
+  if (!user) return { ok: false, message: "Log in again." };
+  const { error } = like
+    ? await supabase.from("comment_likes").insert({ comment_id: commentId })
+    : await supabase.from("comment_likes").delete().eq("comment_id", commentId).eq("user_id", user.id);
+  if (error && error.code !== "23505") return { ok: false, message: friendlyError(error) };
+  touch(postId);
+  return { ok: true, message: "" };
+}
+
+// Delete a comment (yours, any on your post, or as a club moderator). Its replies go with it.
 export async function deleteComment(postId: string, commentId: string): Promise<R> {
   const { supabase, user } = await getViewer();
   if (!user) return { ok: false, message: "Log in again." };
