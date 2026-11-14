@@ -1,17 +1,19 @@
 "use client";
 import { AnimatePresence, motion, useInView, useReducedMotion, type PanInfo } from "motion/react";
-import { BadgeCheck, ChevronLeft, ChevronRight, Clock3, Eye, Play, Sparkles } from "lucide-react";
+import { BadgeCheck, ChevronLeft, ChevronRight, Clock3, Eye, Move3d, Play, Sparkles } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/forge";
 import { usePinned } from "./use-pinned";
 import { Schematic } from "./schematics";
+import { Model3D } from "./model-3d";
 
 // The landing page's project section (Linear FIX-92): one project page per kind of builder, stacked
 // like a deck. The top card is the one you read; the next ones peek out behind it. Wide screens: the
 // section is pinned and scrolling deals the deck, one project per step (use-pinned.ts); the arrows and
 // field tabs scroll to theirs. Phones: every few seconds the top card slides away and the next rises
 // into place; drag it, use the arrows, or pick a field. Holds still for reduced motion.
-// Example data throughout.
+// The top card shows its build as a 3D model you can turn (model-3d.tsx); the cards peeking out behind
+// keep the flat drawing, so only one model is ever being drawn. Example data throughout.
 
 type Project = {
   id: string; field: string; art: string; title: string; club: string; media: string;
@@ -127,7 +129,7 @@ export function ProjectDeck() {
               style={{ transformOrigin: "50% 0%" }}
               className={cn("glass-card overflow-hidden rounded-[28px] shadow-[0_40px_100px_-40px_rgb(0_0_0/0.5)]", k === 0 && !reduce && "cursor-grab touch-pan-y active:cursor-grabbing")}
             >
-              <Card p={p} />
+              <Card p={p} live={k === 0} />
             </motion.article>
           ))}
         </AnimatePresence>
@@ -145,7 +147,7 @@ export function ProjectDeck() {
       </div>
 
       <div className="mt-6 flex items-center justify-between gap-4 sm:mt-28 sm:pl-60">
-        <p className="text-xs text-faint"><span className="font-medium text-text tabular-nums">{String(top + 1).padStart(2, "0")}</span> / {String(n).padStart(2, "0")} · Example data{!reduce && <span className="m-hide"> · drag to flip</span>}</p>
+        <p className="text-xs text-faint"><span className="font-medium text-text tabular-nums">{String(top + 1).padStart(2, "0")}</span> / {String(n).padStart(2, "0")} · Example data{!reduce && <span className="m-hide"> · drag the model to turn it, the card to flip</span>}</p>
         <div className="flex gap-1.5">
           <button type="button" onClick={() => pick(top - 1, -1)} aria-label="Previous project" className="grid size-9 place-items-center rounded-lg border border-line text-muted transition hover:border-line-strong hover:text-text"><ChevronLeft className="size-4" /></button>
           <button type="button" onClick={() => pick(top + 1, 1)} aria-label="Next project" className="grid size-9 place-items-center rounded-lg border border-line text-muted transition hover:border-line-strong hover:text-text"><ChevronRight className="size-4" /></button>
@@ -155,16 +157,19 @@ export function ProjectDeck() {
   );
 }
 
-function Card({ p }: { p: Project }) {
+function Card({ p, live }: { p: Project; live: boolean }) {
   return (
     <>
-      <div className="relative aspect-[16/8] overflow-hidden bg-[linear-gradient(135deg,#09090b,#1f1f22_55%,#09090b)] text-white/80 sm:aspect-[16/7] md:aspect-[16/6]">
+      <div className="relative aspect-[16/9] overflow-hidden bg-[linear-gradient(135deg,#09090b,#1f1f22_55%,#09090b)] text-white/80 sm:aspect-[16/8] md:aspect-[16/7]">
         <div aria-hidden className="absolute inset-0 bg-[linear-gradient(rgb(255_255_255/0.05)_1px,transparent_1px),linear-gradient(90deg,rgb(255_255_255/0.05)_1px,transparent_1px)] bg-[size:22px_22px]" />
-        <Schematic id={p.art} className="absolute top-1/2 left-1/2 w-[58%] -translate-x-1/2 -translate-y-1/2 text-white/70" />
-        <span className="absolute top-[20%] left-[12%] flex items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-medium text-black shadow-lg"><span className="grid size-4 place-items-center rounded-full bg-black text-[9px] text-white">1</span> {p.callouts[0]}</span>
-        <span className="absolute right-[10%] bottom-[20%] flex items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-medium text-black shadow-lg"><span className="grid size-4 place-items-center rounded-full bg-black text-[9px] text-white">2</span> {p.callouts[1]}</span>
-        <span className="absolute top-3 left-3 inline-flex items-center gap-1.5 rounded-full bg-black/55 px-2.5 py-1 text-[11px] text-white backdrop-blur"><Play className="size-3 fill-current" /> {p.media}</span>
-        <span className="absolute top-3 right-3 rounded-md border border-white/15 bg-black/40 px-2 py-0.5 text-[11px] font-medium tracking-wide text-white/85 backdrop-blur">{p.field}</span>
+        {live
+          ? <Model3D id={p.art} className="absolute inset-0 size-full text-white" />
+          : <Schematic id={p.art} className="absolute top-1/2 left-1/2 w-[58%] -translate-x-1/2 -translate-y-1/2 text-white/70" />}
+        <span className="pointer-events-none absolute top-[20%] left-[12%] flex items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-medium text-black shadow-lg"><span className="grid size-4 place-items-center rounded-full bg-black text-[9px] text-white">1</span> {p.callouts[0]}</span>
+        <span className="pointer-events-none absolute right-[10%] bottom-[20%] flex items-center gap-1.5 rounded-full bg-white/95 px-2.5 py-1 text-[11px] font-medium text-black shadow-lg"><span className="grid size-4 place-items-center rounded-full bg-black text-[9px] text-white">2</span> {p.callouts[1]}</span>
+        <span className="pointer-events-none absolute top-3 left-3 inline-flex items-center gap-1.5 rounded-full bg-black/55 px-2.5 py-1 text-[11px] text-white backdrop-blur"><Play className="size-3 fill-current" /> {p.media}</span>
+        {live && <span className="pointer-events-none absolute bottom-3 left-3 inline-flex items-center gap-1.5 text-[11px] text-white/60"><Move3d className="size-3.5" /> 3D model · drag to turn</span>}
+        <span className="pointer-events-none absolute top-3 right-3 rounded-md border border-white/15 bg-black/40 px-2 py-0.5 text-[11px] font-medium tracking-wide text-white/85 backdrop-blur">{p.field}</span>
       </div>
       <div className="p-5 sm:p-6">
         <div className="flex flex-wrap items-start justify-between gap-3">

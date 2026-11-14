@@ -1,0 +1,87 @@
+"use client";
+import { useEffect, useRef } from "react";
+import { MODELS, project } from "./models";
+
+// A project's build as a 3D wireframe you can turn (models.ts has the shapes). It turns slowly by
+// itself; drag it to look around (sideways drags only on touch, so the page still scrolls), let go
+// and it carries on from there. Same family as the orb and the globe: a plain 2D canvas, drawn in
+// the colour of the text around it, nearer lines brighter. Decorative (aria-hidden: the card says
+// what the project is in words). Draws only while on screen; holds still for reduced motion, though
+// you can still turn it.
+export function Model3D({ id, className }: { id: string; className?: string }) {
+  const ref = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const canvas = ref.current;
+    const ctx = canvas?.getContext("2d");
+    const make = MODELS[id];
+    if (!canvas || !ctx || !make) return;
+    const m = make();
+    const reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const spin = reduce ? 0 : 0.35; // radians per second
+    let yaw = -0.6, pitch = 0.42;
+    let w = 0, h = 0, raf = 0, last = 0, visible = false, drag: { x: number; y: number; id: number } | null = null;
+
+    const size = () => {
+      const r = canvas.getBoundingClientRect(), dpr = Math.min(window.devicePixelRatio || 1, 2);
+      w = r.width; h = r.height;
+      canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr);
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    };
+    const draw = () => {
+      if (!w || !h) return;
+      ctx.clearRect(0, 0, w, h);
+      // The model's box is about ±1.2 wide; fit it to the shorter side.
+      const s = Math.min(w / 2.9, h / 1.9), ox = w / 2, oy = h / 2;
+      const ink = getComputedStyle(canvas).color.match(/\d+(\.\d+)?/g)?.slice(0, 3).join(",") ?? "255,255,255";
+      ctx.lineCap = "round"; ctx.lineWidth = 1.1;
+      for (const [a, b] of m.edges) {
+        const p = project(a, yaw, pitch), q = project(b, yaw, pitch);
+        // Nearer lines are brighter, so the shape reads as solid while it turns.
+        ctx.strokeStyle = `rgba(${ink},${(0.22 + 0.55 * ((p[2] + q[2]) / 2 + 1.2) / 2.4).toFixed(3)})`;
+        ctx.beginPath(); ctx.moveTo(ox + p[0] * s, oy + p[1] * s); ctx.lineTo(ox + q[0] * s, oy + q[1] * s); ctx.stroke();
+      }
+      for (const d of m.dots) {
+        const p = project(d, yaw, pitch);
+        ctx.fillStyle = `rgba(${ink},${(0.45 + 0.5 * (p[2] + 1.2) / 2.4).toFixed(3)})`;
+        ctx.beginPath(); ctx.arc(ox + p[0] * s, oy + p[1] * s, 2.2, 0, Math.PI * 2); ctx.fill();
+      }
+    };
+    const frame = (t: number) => {
+      const dt = Math.min(0.05, (t - (last || t)) / 1000); last = t;
+      if (!drag) yaw += spin * dt;
+      draw();
+      raf = visible && (spin || drag) ? requestAnimationFrame(frame) : 0;
+    };
+    const kick = () => { if (!raf && visible) { last = 0; raf = requestAnimationFrame(frame); } };
+
+    // Dragging turns the model. The card it sits on is itself draggable (it flips the deck), so the
+    // press stops here and never reaches the card.
+    const down = (e: PointerEvent) => { e.stopPropagation(); drag = { x: e.clientX, y: e.clientY, id: e.pointerId }; canvas.setPointerCapture(e.pointerId); kick(); };
+    const move = (e: PointerEvent) => {
+      if (!drag || e.pointerId !== drag.id) return;
+      yaw += (e.clientX - drag.x) * 0.012;
+      pitch = Math.max(-1.1, Math.min(1.1, pitch + (e.clientY - drag.y) * 0.008));
+      drag = { ...drag, x: e.clientX, y: e.clientY };
+      if (!raf) draw();
+    };
+    const up = (e: PointerEvent) => { if (drag?.id === e.pointerId) drag = null; };
+
+    size(); draw();
+    const ro = new ResizeObserver(() => { size(); draw(); });
+    ro.observe(canvas);
+    const io = new IntersectionObserver(([en]) => { visible = en.isIntersecting; if (visible) kick(); }, { threshold: 0.1 });
+    io.observe(canvas);
+    canvas.addEventListener("pointerdown", down);
+    canvas.addEventListener("pointermove", move);
+    canvas.addEventListener("pointerup", up);
+    canvas.addEventListener("pointercancel", up);
+    return () => {
+      cancelAnimationFrame(raf); ro.disconnect(); io.disconnect();
+      canvas.removeEventListener("pointerdown", down); canvas.removeEventListener("pointermove", move);
+      canvas.removeEventListener("pointerup", up); canvas.removeEventListener("pointercancel", up);
+    };
+  }, [id]);
+
+  return <canvas ref={ref} aria-hidden="true" className={className} style={{ touchAction: "pan-y", cursor: "grab" }} />;
+}
