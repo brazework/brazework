@@ -53,7 +53,8 @@ from (values
   (53, 'comment-threads', to_regprocedure('public.comment_threads_ready()') is not null),
   (54, 'feed-comment-threads', to_regprocedure('public.feed_comment_threads_ready()') is not null),
   (55, 'project-access',  to_regprocedure('public.project_access_ready()') is not null),
-  (56, 'school-links',    to_regprocedure('public.school_links_ready()') is not null)
+  (56, 'school-links',    to_regprocedure('public.school_links_ready()') is not null),
+  (57, 'hardening',       to_regprocedure('public.hardening_ready()') is not null)
 ) as s(step, file, present)
 order by step;
 

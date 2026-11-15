@@ -1,0 +1,56 @@
+name: Database watch
+
+# Every Monday (and from Run workflow): a read-only look at production. It runs Supabase's Security
+# and Performance advisors and blocks 1, 2 and 4 of supabase/maintenance/health-check.sql, then
+# .github/scripts/db-watch.mjs reports anything new against the accepted list
+# (supabase/maintenance/advisor-baseline.json): new warnings, steps production is missing, tables with
+# row-level security off. New findings fail the run (GitHub emails us) and open or update one
+# "Database watch" issue in Linear. Nothing here writes to the database.
+#
+# Uses the SUPABASE_ACCESS_TOKEN secret (as db-migrate.yml does) and LINEAR_API_KEY when it's set.
+on:
+  schedule:
+    - cron: "30 13 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: db-watch
+  cancel-in-progress: true
+
+env:
+  PROJECT_REF: uwiwkjoonculpxjmzsfj
+  SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+jobs:
+  watch:
+    name: Check production
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 3.1.0
+      - name: Health check (read-only)
+        run: |
+          hc=supabase/maintenance/health-check.sql
+          awk '/^select step, file/{on=1} on{print} /order by step;/{if(on) exit}' $hc > /tmp/steps.sql
+          awk '/^-- 2\./{on=1;next} on&&/^-- 3\./{exit} on{print}' $hc > /tmp/norls.sql
+          awk '/^-- 4\./{on=1;next} on&&/^-- 5\./{exit} on{print}' $hc > /tmp/tables.sql
+          for q in steps norls tables; do
+            grep -q select /tmp/$q.sql || { echo "::error::Couldn't find the $q block in $hc"; exit 1; }
+            supabase db query --remote="$PROJECT_REF" --read-only -f /tmp/$q.sql --output-format json > /tmp/$q.json
+          done
+      - name: Compare with the accepted list
+        env:
+          LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}
+          STEPS_JSON: /tmp/steps.json
+          NO_RLS_JSON: /tmp/norls.json
+          TABLES_JSON: /tmp/tables.json
+        run: node .github/scripts/db-watch.mjs
