@@ -9,6 +9,8 @@ import { SponsorshipDecision } from "../challenges/challenge-client";
 import { ResolveReport } from "@/components/report/report-dialog";
 import { SchoolDecision } from "../../request-school/form";
 import { ClaimDecision } from "@/components/clubs/claim";
+import { dbFeatures } from "@/lib/db-features";
+import { SchoolLinkDecision } from "@/components/clubs/school-link-decision";
 
 export const metadata: Metadata = { title: "Brazework admin" };
 
@@ -54,6 +56,11 @@ async function Admin() {
   ]);
   type Claim = { id: number; community_id: string; role_title: string; evidence: string; created_at: string; communities: { name: string; owner_name: string } | null; profiles: { first_name: string; last_name: string } | null };
   const claims = claimRows as unknown as Claim[] | null;
+  // Clubs asking to be verified as one of a school's clubs (step 56), while the school has no official account.
+  type SchoolAsk = { community_id: string; school_name: string; school_domain: string; evidence_url: string; requester_at_school: boolean; requested_at: string; communities: { name: string; member_count: number } | null };
+  const schoolAsks = (await dbFeatures()).schoolLinks
+    ? (((await supabase.from("club_school_links").select("community_id, school_name, school_domain, evidence_url, requester_at_school, requested_at, communities(name, member_count)").eq("status", "pending").order("requested_at", { ascending: true }).limit(50)).data ?? []) as unknown as SchoolAsk[])
+    : null;
   const r = ret as Retention | null;
   const schools = (schoolRows ?? []) as { id: number; domain: string; school: string; contact: string; asks: number; created_at: string }[];
   type Report = { id: number; kind: string; target_id: string; reason: string; detail: string; reported: string | null; created_at: string };
@@ -132,6 +139,26 @@ async function Admin() {
           {!reqs.length && <p className="text-sm text-muted">Nothing waiting.</p>}
         </div>
       </section>
+
+      {schoolAsks && (
+        <section className="mt-8" aria-label="Clubs asking to be verified by their school">
+          <Kicker>School clubs · {schoolAsks.length}</Kicker>
+          <p className="mt-1 text-xs text-faint">Open the proof: the school&apos;s own site should list the club. Once a school&apos;s official account is set up (set_up_school), its admins review their own clubs.</p>
+          <div className="mt-3 flex flex-col gap-2">
+            {schoolAsks.map((a) => (
+              <Panel key={a.community_id} className="flex flex-wrap items-start gap-3 p-4 text-sm">
+                <div className="min-w-0 flex-1">
+                  <p className="font-medium"><Link href={`/c/${a.community_id}`} className="hover:underline">{a.communities?.name ?? "A club"}</Link> · a club of {a.school_name}</p>
+                  <p className="mt-0.5 text-xs text-faint">{a.school_domain} · {a.communities?.member_count ?? 0} members · {a.requester_at_school ? "asked from a school email" : "not asked from a school email"}</p>
+                  <a href={a.evidence_url} target="_blank" rel="noopener noreferrer nofollow" className="mt-1.5 block text-sm break-all text-text-2 underline underline-offset-2">{a.evidence_url}</a>
+                </div>
+                <SchoolLinkDecision cid={a.community_id} />
+              </Panel>
+            ))}
+            {!schoolAsks.length && <p className="text-sm text-muted">No clubs waiting.</p>}
+          </div>
+        </section>
+      )}
 
       {claims && (
         <section className="mt-8" aria-label="Club claims">

@@ -28,9 +28,17 @@ export function RegisterOrg({ email }: { email: string }) {
           <button key={t} type="button" aria-pressed={type === t} onClick={() => setType(t)} className="rounded-full border border-line px-4 py-1.5 text-sm text-muted transition aria-pressed:border-accent aria-pressed:bg-accent aria-pressed:text-on-accent">{t === "company" ? "Company" : "School"}</button>
         ))}
       </div>
+      {/* Schools don't sign themselves up (supabase/school-links.sql): the Brazework team sets up a
+          school's official account, which is what lets it verify the clubs that operate under it. */}
+      {type === "school" && (
+        <p className="rounded-2xl border border-line bg-surface-2 px-4 py-3 text-sm text-text-2">
+          School accounts are set up with the Brazework team, so clubs and students can trust they&apos;re really your school. Get in touch with us and we&apos;ll set up your school&apos;s official account and its admins.
+        </p>
+      )}
+      {type === "company" && <>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <Field label="Name"><input name="name" maxLength={120} className={inputCls} required /></Field>
-        <Field label="Website" hint={type === "school" ? "Needs an academic domain, e.g. ending in .edu." : undefined}><input name="website" placeholder={domain ? `https://${domain}` : "https://"} className={inputCls} required /></Field>
+        <Field label="Website"><input name="website" placeholder={domain ? `https://${domain}` : "https://"} className={inputCls} required /></Field>
         <Field label="Location"><input name="location" maxLength={160} placeholder="City, country" className={inputCls} /></Field>
         <Field label="Size"><select name="size" className={inputCls} defaultValue=""><option value="">Choose…</option>{ORG_SIZES.map((s) => <option key={s}>{s}</option>)}</select></Field>
       </div>
@@ -46,6 +54,7 @@ export function RegisterOrg({ email }: { email: string }) {
       )}
       {state.message && <p role={state.ok ? "status" : "alert"} className={cn("text-sm", state.ok ? "text-ok" : "text-danger")}>{state.message}</p>}
       <Button type="submit" size="lg" disabled={pending} className="self-start">{pending && <Loader2 className="size-4 animate-spin" />} Register organization</Button>
+      </>}
     </form>
   );
 }

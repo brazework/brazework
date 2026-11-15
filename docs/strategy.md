@@ -1,4 +1,4 @@
-# Brazework: strategy to YC and to revenue (updated 2026-11-14)
+# Brazework: strategy to YC and to revenue (updated 2026-11-15)
 
 Builds on [positioning.md](positioning.md) (market research, with sources). Numbers marked *assumption* are hypotheses to test, not facts.
 
@@ -38,9 +38,18 @@ Free, always: **members and student organizations.** That's the supply side and 
 | Customer | What they buy | Budget it replaces | First price to test (*assumption*) |
 |---|---|---|---|
 | **Companies** (first revenue) | Chapter sponsorships with real ROI reporting; search by verified work; events beside the organizations they support | Diversity and campus recruiting spend that already flows to NSBE, SHPE and SWE (conference booths, chapter sponsorships) | $1,000–$5,000 per chapter per semester; talent search $300–$500 per seat per month |
-| **Universities** | Every student organization on one platform, plus outcomes: verified projects, events, employer connections | Student-org management platforms. UHart already lists its organizations, including NSBE, on Presence ([hartford.presence.io](https://hartford.presence.io/organization/national-society-of-black-engineers)) | $15k–$40k per campus per year |
+| **Universities** | A showcase of the school's STEM work for prospective students: its verified clubs and what they're building. Plus every student organization on one platform, and outcomes: verified projects, events, employer connections | Student-org management platforms. UHart already lists its organizations, including NSBE, on Presence ([hartford.presence.io](https://hartford.presence.io/organization/national-society-of-black-engineers)) | $15k–$40k per campus per year |
 | **National organizations** (NSBE, SHPE, SWE, IEEE, ASME…) | Chapter health across the network, member engagement, sponsor reporting | Chapter management tools and spreadsheets | Network license, priced per active chapter |
 | **Later: AI labs and the expert market** | Access to verified STEM experts (with consent) | The market Handshake and Mercor proved: Handshake's AI-training work is about $1B of its ~$1.15B run rate | Marketplace take rate |
+
+### The pitch to schools
+
+**Show prospective students exactly what your STEM clubs are building.** Every university says it has hands-on engineering and science; Brazework shows it, with real builds, verified milestones and the companies working with its clubs.
+
+- **How a school joins:** schools don't sign themselves up. A school gets in touch, and the Brazework team sets up its official account and its admins (`set_up_school()`). That's what makes "official" mean something: students and companies can trust the school's page is really the school.
+- **Its clubs, verified by the school:** a club that operates under the school asks to be verified as one of its clubs, with proof such as its listing in the school's student-organization directory. The school's admins approve it (the Brazework team covers this until a school is set up). Verified clubs carry a "Verified club of <school>" badge and are listed together under the school.
+- **What the school gets:** one page showing every verified club and what its members are building right now, which admissions can send to prospective students and their parents. It also shows employers and partners the school's STEM work, and gives the school outcomes it can measure.
+- **Why schools will pay:** it turns student activity the school already funds into a recruiting asset, and it replaces a student-org platform it already pays for (see Presence above). Built so far: official school accounts, club verification and the school's club list (step 56, Nov 2026). Next: the school's public page.
 
 **Why this can be very large (illustrative, not a forecast):** about 4,000 US degree-granting institutions; if 1,000 campuses pay $25k that's $25M ARR. 3,000 employers at $15k is $45M. National-organization licenses add to that, and the verified-expert marketplace is a separate, larger market. The asset under all of it is the **verified work graph**, which gets more valuable with every milestone and is hard to copy because it's attested by organizations, not self-reported.
 
