@@ -18,6 +18,7 @@ What runs by itself, what still needs a person, and what to add next. The goal: 
 | **The app adapts to the database:** features whose step hasn't run stay hidden instead of breaking | Every request | `web/src/lib/db-features.ts` |
 | **Weekly digest email** ("Your week") to every member who hasn't turned it off; never twice in a week (`digest_sends`). Check a run: Vercel → forge-app → Cron Jobs → logs, and Resend → Emails | Mondays 14:00 UTC | `web/vercel.json` → `/api/cron/digest` (needs `CRON_SECRET`, Linear FIX-86) |
 | **Email alerts** for new messages, connection requests and comments on your posts, batched: at most one email a run per member, only for what's still unread 10 minutes after it arrived; a switch per kind in Settings → Email. Check a run: Vercel → forge-app → Cron Jobs → logs, and Resend → Emails | Every hour at :07 | `web/vercel.json` → `/api/cron/alerts` (needs `CRON_SECRET`, Linear FIX-18) |
+| **Database watch** (read-only): Supabase's Security and Performance advisors plus the health check (missing steps, tables without row-level security, biggest tables). Anything not on the accepted list (`supabase/maintenance/advisor-baseline.json`) fails the run and opens or updates one "Database watch" issue in Linear. Fixes go in as a new step by PR; accept a warning with `node .github/scripts/db-watch.mjs --write-baseline` and say why | Mondays 13:30 UTC, and Actions → Database watch → Run workflow | `.github/workflows/db-watch.yml`, `.github/scripts/db-watch.mjs` |
 | **Database backups**, kept 7 days (Storage files aren't included). How to restore: [accounts.md](accounts.md#restoring-the-database-from-a-backup-supabase-pro) | Daily | Supabase Pro → Database → Backups |
 
 ## Runs by itself once a key or setting is in ⏳
@@ -53,7 +54,6 @@ In order of value. Each is filed in Linear when started.
 1. **Move the repo to a GitHub organization (FIX-54):** unblocks every admin-only setting below without waiting on one person.
 2. **Error monitoring** (Sentry) and **uptime alerts** (Better Stack or UptimeRobot): today we'd learn about a production error from a member. Free tiers; needs the accounts ([accounts.md](accounts.md)).
 3. **Auto-merge green Dependabot patch updates:** a small workflow plus the repo setting "Allow auto-merge" (admin, after FIX-54). Minor and major updates stay manual.
-4. **A scheduled production health check:** run `supabase/maintenance/health-check.sql` against production weekly and post the result to Linear. Needs a read-only database connection as a secret.
 5. **Migrations from CI:** apply new database steps with the Supabase CLI after CI passes, instead of by hand. Worth it once steps ship weekly; until then the manual step with the health check is safer.
 6. **Branch protection and pull requests** when a third person joins (FIX-4; checklist in CONTRIBUTING.md).
 

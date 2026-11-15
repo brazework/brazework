@@ -65,3 +65,4 @@ comment-threads
 feed-comment-threads
 project-access
 school-links
+hardening
