@@ -1,4 +1,4 @@
-# Brazework: strategy to YC and to revenue (updated 2026-11-10)
+# Brazework: strategy to YC and to revenue (updated 2026-11-14)
 
 Builds on [positioning.md](positioning.md) (market research, with sources). Numbers marked *assumption* are hypotheses to test, not facts.
 
@@ -114,6 +114,30 @@ Don't say "NSBE partner" publicly until NSBE agrees; say "built with student cha
 - **Why now?** AI made résumés free to fake, so hiring needs proof. And AI agents are finally good enough to run the operations that student organizations drop.
 - **How will you make money?** Free for members and organizations. Companies pay for sponsorships and search; universities and national organizations pay for campus- and network-wide tools.
 - **Competition?** LinkedIn (noise, AI-written posts), Handshake (career-center led; most revenue now from AI training), Presence/Engage (student-org admin without careers or AI), Discord/GroupMe (where organizations live today, but chat disappears). Brazework is the only one where the organization's work becomes verified career proof.
+- **What do you understand that they don't?** Profiles were never the problem; trust is. LinkedIn is where you *say* what you did, and Polywork and Read.cv were nicer ways to say it. Brazework is where the people who saw it *confirm* it: your club, your team, and the companies that set the challenges.
+
+### How we compare (for the competition answer and the interview)
+
+| | LinkedIn | Polywork (shut down Jan 2025) | Read.cv (wound down Jan 2025) | Brazework |
+|---|---|---|---|---|
+| Built around | The résumé and your network | A personal "what I'm doing" timeline | A minimalist CV and portfolio | The project: a living build log |
+| Who vouches | Nobody (identity only) | Nobody: self-reported | Nobody | Club officers sign milestones by name; pro verification; vouches |
+| Unit of community | Individuals | Individuals | Individuals | The club: chapter, events, chat, verification |
+| Teams | Name teammates | Collaboration requests | None | Owner, admins, teammates and viewers; each builds their own proof |
+| While building | Nothing | Nothing | Nothing | Private until finished, public in one click |
+| Engineering work | Photos and PDFs | Posts and links | Images and links | CAD, rotatable 3D models, code, GitHub activity |
+| Earning credit | Self-added certificates | None | None | Sponsor challenges entered with real projects |
+| AI | Writing help | None | None | Ember across the whole app, and your own AI tools via MCP |
+| Direction | Job search | None | None | Goals: what to work toward, with Ember suggesting the next step |
+| Who pays | Recruiters, Premium | Never found it | Never found it | Companies sponsoring clubs and challenges; later universities |
+
+**Why Polywork and Read.cv failed, and what we do differently:**
+1. **No atomic network.** Polywork raised $44.5M and still shut down: a personal profile is worth little until everyone is there. Ours is one club, useful the day it runs its events, chat and verification on Brazework, before anyone else joins.
+2. **Self-reported, so copyable.** LinkedIn can match a nicer self-written page in a quarter. It can't match a milestone signed by a named officer inside that club's history.
+3. **No buyer.** Neither found who pays. Companies already spend campus-recruiting money; sponsored clubs and challenges give them something concrete to buy.
+4. **Horizontal.** "Everyone's personal brand" is LinkedIn's home ground. "Verified STEM work, inside clubs, for the companies hiring engineers" is a niche it serves badly.
+
+**Where we could still look like them (watch this):** an update feed without proof is Polywork's product, and a profile that leads with bio and links is Read.cv's. Proof leads every profile, and the cold start is the same risk that killed both, which is why one campus has to be truly active (the UHart NSBE pilot) before we expand.
 
 ## 8. Product priorities to support this
 
