@@ -75,7 +75,7 @@ export function TeamList({ projectId, people, candidates, manage, isOwner, roles
                 {isOwner && <option value="admin">as an admin</option>}
               </select>
             )}
-            <button type="button" disabled={!pick || pending} onClick={() => run(() => addTeammate(projectId, pick, as))} aria-label="Add" className="grid size-9 shrink-0 place-items-center rounded-lg bg-accent text-on-accent disabled:opacity-40">
+            <button type="button" disabled={!pick || pending} onClick={() => run(() => addTeammate(projectId, pick, as))} aria-label={as === "viewer" ? "Add viewer" : as === "admin" ? "Add admin" : "Add teammate"} className="grid size-9 shrink-0 place-items-center rounded-lg bg-accent text-on-accent disabled:opacity-40">
               {pending ? <Loader2 className="size-4 animate-spin" /> : <UserPlus className="size-4" />}
             </button>
           </div>

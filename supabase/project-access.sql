@@ -88,7 +88,7 @@ drop policy if exists "write posts" on public.posts;
 create policy "write posts" on public.posts for insert to authenticated
   with check (author_id = auth.uid()
     and (community_id is null or public.my_rank(community_id) > 0)
-    and (project_id is null or (community_id is null and public.am_on_project_team(project_id))));
+    and (project_id is null or public.am_on_project_team(project_id)));
 drop policy if exists "ask your club to verify" on public.milestones;
 create policy "ask your club to verify" on public.milestones for insert to authenticated
   with check (owner_id = auth.uid() and public.am_on_project_team(project_id)
