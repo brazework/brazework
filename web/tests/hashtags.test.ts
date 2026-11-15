@@ -32,3 +32,10 @@ test("validTag: known topics or well-formed lower-case new tags", () => {
   assert.ok(!validTag("has space"));
   assert.ok(!validTag("<script>"));
 });
+
+test("**bold** in a post shows as bold text; stray asterisks stay as written", async () => {
+  const { boldParts } = await import("../src/lib/hashtags");
+  assert.deepEqual(boldParts("Starting **LLM University** today"), ["Starting ", { bold: "LLM University" }, " today"]);
+  assert.deepEqual(boldParts("2 ** 3 and **open"), ["2 ** 3 and **open"]);
+  assert.deepEqual(boldParts("**a** **b**"), [{ bold: "a" }, " ", { bold: "b" }]);
+});

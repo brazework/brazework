@@ -54,3 +54,17 @@ export function hashtagParts(text: string): (string | TagPart)[] {
   if (last < text.length) out.push(text.slice(last));
   return out;
 }
+
+// **bold** in post text (people and AI tools write it) as strong text, not literal asterisks. Only
+// pairs on one line whose text touches both ends count ("**this**", not "2 ** 3"); anything else stays as written.
+export function boldParts(text: string): (string | { bold: string })[] {
+  const out: (string | { bold: string })[] = [];
+  let last = 0;
+  for (const m of text.matchAll(/\*\*(?=\S)([^*\n]*?\S)\*\*/g)) {
+    if (m.index! > last) out.push(text.slice(last, m.index));
+    out.push({ bold: m[1] });
+    last = m.index! + m[0].length;
+  }
+  if (last < text.length) out.push(text.slice(last));
+  return out;
+}

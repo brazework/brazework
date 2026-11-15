@@ -1,10 +1,10 @@
 import { CalendarDays, Sparkles, UserPlus } from "lucide-react";
 import { Carousel } from "@/components/app/carousel";
-import { EventMiniCard, SpotlightCard } from "@/components/app/discover-cards";
+import { SpotlightCard } from "@/components/app/discover-cards";
 import { PersonCard, PersonRow, type PersonCardData } from "@/components/network/person-card";
 import Link from "next/link";
 import { eventWithHost, postSelect } from "@/lib/db-features";
-import { DAY_MS, withHost, type HostedEvent } from "@/lib/events";
+import { DAY_MS, dateParts, withHost, type HostedEvent } from "@/lib/events";
 import { requestTime, type Post } from "@/lib/forge";
 import { avatarSrc } from "@/lib/media";
 import { getViewer } from "@/lib/supabase/server";
@@ -12,7 +12,9 @@ import { getViewer } from "@/lib/supabase/server";
 // Discovery strips woven into the feed and other pages. Each is its own async component, so it
 // streams in behind a skeleton and never holds up the page around it; each hides when it's empty.
 
-export async function WeekStrip() {
+// Below wide screens (the rail's "Coming up" covers those): the next event this week as one slim line
+// under your week, with a count of the rest, instead of a strip of cards between the tabs and the feed.
+export async function NextUp() {
   const { supabase, user } = await getViewer();
   if (!user) return null;
   const now = requestTime();
@@ -23,10 +25,25 @@ export async function WeekStrip() {
   const events = ((ev.data ?? []) as unknown as Parameters<typeof withHost>[0][]).map(withHost) as HostedEvent[];
   if (!events.length) return null;
   const goingSet = new Set((going.data ?? []).map((g) => g.event_id as string));
+  // The one you're going to comes first; otherwise the soonest.
+  const e = events.find((x) => goingSet.has(x.id)) ?? events[0];
+  const d = dateParts(e.starts_at, "UTC");
+  const where = e.format === "Online" ? "Online" : e.location || e.format;
+  const more = events.length - 1;
   return (
-    <Carousel title="This week" icon={<CalendarDays className="size-3.5" />} href="/events">
-      {events.map((e) => <EventMiniCard key={e.id} e={e} going={goingSet.has(e.id)} />)}
-    </Carousel>
+    <div className="glass-card mb-3 flex items-center gap-3 rounded-2xl p-3.5">
+      <Link prefetch={false} href={`/events/${e.id}`} className="flex min-w-0 flex-1 items-center gap-3">
+        <span className="flex size-8 shrink-0 flex-col items-center justify-center overflow-hidden rounded-lg border border-line bg-surface leading-none">
+          <span className="text-[8px] font-bold text-accent uppercase">{d.mon}</span>
+          <span className="text-sm font-semibold">{d.day}</span>
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-sm font-semibold">{e.title}</span>
+          <span className="block truncate text-xs text-muted">{goingSet.has(e.id) ? <span className="font-medium text-ok">Going</span> : `${e.rsvp_count} going`}{where ? ` · ${where}` : ""}</span>
+        </span>
+      </Link>
+      {more > 0 ? <Link prefetch={false} href="/events" className="shrink-0 text-xs text-muted hover:text-text">+{more} this week</Link> : <CalendarDays className="size-4 shrink-0 text-faint" />}
+    </div>
   );
 }
 

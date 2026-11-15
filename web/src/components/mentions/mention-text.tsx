@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { hashtagParts } from "@/lib/hashtags";
+import { boldParts, hashtagParts } from "@/lib/hashtags";
 import { mentionParts, type Mention } from "@/lib/mention-text";
 
 // Post text with each @mention linked to that person's profile, "@Project title" (the post's own
@@ -12,7 +12,7 @@ export function MentionText({ body, mentions, tags, project }: { body: string; m
     <>
       {mentionParts(body, list).map((p, i) =>
         typeof p === "string"
-          ? hashtagParts(p).map((h, j) => typeof h === "string" ? h : tags && !tags.includes(h.tag) ? h.written : <Link prefetch={false} key={`${i}-${j}`} href={`/feed?tag=${encodeURIComponent(h.tag)}`} className="font-medium text-[var(--tag)] hover:underline">{h.written}</Link>)
+          ? boldParts(p).map((b, k) => typeof b !== "string" ? <strong key={`${i}-b${k}`} className="font-semibold text-text">{b.bold}</strong> : hashtagParts(b).map((h, j) => typeof h === "string" ? h : tags && !tags.includes(h.tag) ? h.written : <Link prefetch={false} key={`${i}-${k}-${j}`} href={`/feed?tag=${encodeURIComponent(h.tag)}`} className="font-medium text-[var(--tag)] hover:underline">{h.written}</Link>))
           : <Link prefetch={false} key={i} href={p === projectRef ? `/projects/${project!.id}` : `/u/${p.id}`} className="font-medium text-text hover:underline">@{p.name}</Link>)}
     </>
   );
