@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { CalendarDays, Globe, MessagesSquare, PartyPopper, Settings, UserPlus, BadgeCheck } from "lucide-react";
+import { CalendarDays, Globe, GraduationCap, MessagesSquare, PartyPopper, Settings, UserPlus, BadgeCheck } from "lucide-react";
 import { accentTint } from "@/lib/club-look";
 import { openClubChat } from "@/lib/chats";
 import Link from "next/link";
@@ -70,6 +70,8 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
     : { count: 0 };
   // A verified club has a school-email officer and enough members with club-verified work (verification.sql).
   const { data: clubVerified } = verifyOn ? await supabase.rpc("club_is_verified", { p_cid: id }) : { data: false };
+  // Verified by its school as one of the school's clubs (supabase/school-links.sql, step 56).
+  const { data: schoolLink } = (await dbFeatures()).schoolLinks ? await supabase.from("club_school_links").select("school_name, school_domain").eq("community_id", id).eq("status", "verified").maybeSingle() : { data: null };
   const [toVerify, joinReqs] = officer ? await Promise.all([
     msOn ? supabase.from("milestones").select("id", { count: "exact", head: true }).eq("community_id", id).in("status", ["pending", "disputed"]) : Promise.resolve({ count: 0 }),
     can(role, "approve") ? supabase.from("community_requests").select("uid", { count: "exact", head: true }).eq("community_id", id) : Promise.resolve({ count: 0 }),
@@ -137,6 +139,7 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-3xl font-semibold tracking-tight">{c.name}</h1>
               {clubVerified && <span title="A school-email officer runs it, and its members have club-verified work" className="inline-flex items-center gap-1 rounded-full bg-[color-mix(in_oklab,var(--ok)_12%,transparent)] px-2.5 py-0.5 text-xs font-medium text-ok"><BadgeCheck className="size-3.5" /> Verified club</span>}
+              {schoolLink && <span title={`Verified as a club of ${(schoolLink as { school_name: string }).school_name}`} className="inline-flex items-center gap-1 rounded-full bg-surface-2 px-2.5 py-0.5 text-xs font-medium text-text-2"><GraduationCap className="size-3.5" /> Verified club of {(schoolLink as { school_name: string }).school_name}</span>}
               {role && role !== "member" && <RoleChip role={role} />}
             </div>
             {c.tagline && <p className="mt-0.5 text-[15px] text-text-2">{c.tagline}</p>}
