@@ -27,6 +27,8 @@ import { avatarSrc, mediaUrl } from "@/lib/media";
 import { loadCommunity } from "./data";
 import { ChapterInvite, ChapterLine } from "./chapter";
 import { MemberFaces, type Face } from "@/components/network/member-faces";
+import { leadCounts, studyLine, type LeadRow } from "@/lib/study";
+import { StudyLeads } from "./study-leads";
 
 export const metadata: Metadata = { title: "Community" };
 
@@ -90,6 +92,11 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
   const { data: memberRows } = await supabase.from("community_members").select("uid, first_name, last_name").eq("community_id", id).order("joined_at", { ascending: false }).limit(500);
   const members = (memberRows ?? []) as { uid: string; first_name: string; last_name: string }[];
   const faces: Face[] = members.slice(0, 6).map((m) => ({ uid: m.uid, first: m.first_name, last: m.last_name }));
+  // Study groups (supabase/study-groups.sql): who members confirmed led the sessions.
+  const study = c.type === "study" && (await dbFeatures()).studyGroups;
+  const { data: leadRows } = study ? await supabase.from("study_leads").select("community_id, leader, confirmed_by, created_at").eq("community_id", id).limit(2000) : { data: [] };
+  const leads = leadCounts((leadRows ?? []) as LeadRow[], user.id);
+  const leadPeople = members.map((m) => ({ uid: m.uid, first: m.first_name, last: m.last_name, n: leads.get(m.uid)?.n ?? 0, mine: leads.get(m.uid)?.mine ?? false }));
   const thisWeek = posts.filter((p) => Date.parse(p.created_at) > now - 7 * 864e5).length;
   const heldPosts = (held.data ?? []) as unknown as CommunityPost[];
   const ids = posts.map((p) => p.id);
@@ -145,6 +152,7 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
             {c.tagline && <p className="mt-0.5 text-[15px] text-text-2">{c.tagline}</p>}
             <Suspense fallback={null}><div><ChapterLine cid={c.id} /></div></Suspense>
             <MetaLine parts={[membersLabel(c.member_count), PRIVACY_LABEL[c.privacy], c.field, TYPE_LABEL[c.type]]} />
+            {study && studyLine(c) && <p className="mt-1 text-sm font-medium text-text-2">{studyLine(c)}</p>}
             {c.website && /^https?:\/\/\S+$/i.test(c.website) && <a href={c.website} target="_blank" rel="noopener noreferrer nofollow" className="mt-1 inline-flex items-center gap-1 text-xs text-text-2 hover:text-text hover:underline"><Globe className="size-3.5" /> {c.website.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "")}</a>}
             <MemberFaces faces={faces} ids={members.map((m) => m.uid)} total={c.member_count} className="mt-3" />
           </div>
@@ -188,6 +196,7 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
             </ul>
           </section>
         )}
+        {study && <StudyLeads cid={c.id} me={user.id} member={!!me} people={leadPeople} />}
         {msOn && <Suspense fallback={null}><BuildersThisTerm cid={c.id} /></Suspense>}
         {typeof sp.chat_error === "string" && <p role="alert" className="mt-4 rounded-2xl border border-danger/30 bg-danger/10 px-4 py-2.5 text-sm text-danger">{sp.chat_error}</p>}
         {sp.joined === "1" && (

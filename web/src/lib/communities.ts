@@ -28,6 +28,10 @@ export type Community = {
   tagline?: string;
   website?: string;
   accent?: string;
+  // supabase/study-groups.sql (study groups only)
+  course?: string;
+  term?: string;
+  meets?: string;
 };
 
 export type Member = {

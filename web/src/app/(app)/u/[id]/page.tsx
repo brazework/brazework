@@ -19,6 +19,7 @@ import { EmptyState, Panel, Skeleton } from "@/components/app/page-ui";
 import { MemberFaces } from "@/components/network/member-faces";
 import { classOf, openToLabel, type ProfileLink } from "@/lib/profile-meta";
 import { ExtrasCard } from "./extras-client";
+import { studyProof } from "@/lib/study";
 import { ProfileStrength, ProofTimeline, SharedContext, SideCard, type ProofItem, type Step } from "./profile-parts";
 import { SwitchTabs } from "@/components/app/switch-tabs";
 import { ConnectButtons } from "@/components/network/connect-buttons";
@@ -135,6 +136,9 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
   const proBy = new Map<string, ProofItem["pro"]>();
   for (const r of (proRows ?? []) as ProRow[]) proBy.set(r.milestone_id, [...(proBy.get(r.milestone_id) ?? []), { name: r.reviewer_name, title: r.reviewer_title, employer: r.employer_name, note: r.note, at: r.created_at }]);
   const proof: ProofItem[] = proofBase.map((m) => ({ ...m, pro: proBy.get(m.id) })).sort((a, b) => Number(Boolean(b.pro?.length)) - Number(Boolean(a.pro?.length)));
+  // Study groups they led, as the members confirmed it (supabase/study-groups.sql).
+  const { data: ledRows } = f.studyGroups ? await supabase.from("study_leads").select("community_id, leader, confirmed_by, created_at, communities(name, course, term)").eq("leader", id).limit(500) : { data: [] };
+  const led = studyProof((ledRows ?? []) as unknown as Parameters<typeof studyProof>[0]);
   // The clubs behind the proof (vouched-for milestones have no club, so they're not counted here).
   const verifiedBy = [...proof.filter((m): m is ProofItem & { community_id: string } => !!m.community_id).reduce((acc, m) => acc.set(m.community_id, { name: m.community_name, n: (acc.get(m.community_id)?.n ?? 0) + 1 }), new Map<string, { name: string; n: number }>())].sort((a, b) => b[1].n - a[1].n);
 
@@ -143,7 +147,7 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
   const openTo = p.open_to ?? [];
   const links = p.links ?? [];
   const stats: { n: number; label: string; href: string }[] = [
-    ...(msOn ? [{ n: proof.length, label: "Signed results", href: "#proof" }] : []),
+    ...(msOn ? [{ n: proof.length + led.length, label: "Signed results", href: "#proof" }] : []),
     { n: projects.length, label: projects.length === 1 ? "Project" : "Projects", href: "#projects" },
     { n: posts.length, label: posts.length === 1 ? "Post" : "Posts", href: "#posts" },
   ];
@@ -259,7 +263,7 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
       <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
         <div className="flex min-w-0 flex-col gap-6">
           {/* Proof leads: the work someone signed comes before everything else on the page. */}
-          {msOn && <div id="proof" className="scroll-mt-24"><ProofTimeline items={proof} own={mine} /></div>}
+          {msOn && <div id="proof" className="scroll-mt-24"><ProofTimeline items={proof} own={mine} led={led} /></div>}
           {mine ? (hideStrength ? null : <ProfileStrength steps={steps} />) : <SharedContext clubs={sharedClubs} mutual={mutual} mutualCount={mutualCount} />}
           {nowBuilding && (
             <Link href={`/projects/${nowBuilding.id}`} className="glass-card group flex flex-col rounded-3xl p-5 transition">

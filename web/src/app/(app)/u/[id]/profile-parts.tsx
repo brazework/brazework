@@ -4,6 +4,7 @@ import { ProStamp, Seal, VerifiedStamp, VouchStamp } from "@/components/app/veri
 import { CommunityBadge } from "../../communities/_components/badge";
 import { DismissButton } from "@/components/app/dismiss";
 import { cn } from "@/lib/forge";
+import { confirmedBy, ledTitle, type StudyProof } from "@/lib/study";
 
 // Pieces of the profile page that need no state: profile strength (your own profile), the proof
 // timeline, what you share with this person, and the small titled cards in the sidebar.
@@ -54,8 +55,9 @@ export function ProfileStrength({ steps }: { steps: Step[] }) {
 export type ProofItem = { id: string; title: string; detail: string; achieved_on: string; community_id: string | null; community_name: string; reviewer_name: string; vouched_by?: string; project: { id: string; title: string }; pro?: { name: string; title: string; employer: string; note: string; at: string }[] };
 
 // Club-verified milestones, newest first: the strongest thing on a profile.
-export function ProofTimeline({ items, own }: { items: ProofItem[]; own: boolean }) {
-  if (!items.length)
+// `led`: study groups they led, as their members confirmed (supabase/study-groups.sql), after the work.
+export function ProofTimeline({ items, own, led = [] }: { items: ProofItem[]; own: boolean; led?: StudyProof[] }) {
+  if (!items.length && !led.length)
     return own ? (
       <section className="rounded-3xl border border-dashed border-line-strong p-5">
         <h2 className="flex items-center gap-2 font-semibold"><BadgeCheck className="size-4" /> Proof</h2>
@@ -77,6 +79,16 @@ export function ProofTimeline({ items, own }: { items: ProofItem[]; own: boolean
               <p className="mt-1">{m.vouched_by ? <VouchStamp by={m.vouched_by} when={day(m.achieved_on)} /> : <VerifiedStamp club={m.community_name} clubId={m.community_id ?? undefined} by={m.reviewer_name} when={day(m.achieved_on)} size="sm" />}</p>
               <p className="mt-1 text-xs text-muted">On <Link href={`/projects/${m.project.id}`} className="hover:text-text hover:underline">{m.project.title}</Link></p>
               {m.detail && <p className="mt-1 line-clamp-2 text-sm text-text-2">{m.detail}</p>}
+            </div>
+          </li>
+        ))}
+        {led.slice(0, 4).map((s) => (
+          <li key={`study-${s.community_id}`} className="relative flex gap-3">
+            <CommunityBadge id={s.community_id} name={s.name} size={32} className="relative shrink-0 rounded-full ring-4 ring-surface" />
+            <div className="min-w-0">
+              <p className="font-medium leading-snug">{ledTitle(s)}</p>
+              <p className="mt-1 inline-flex items-center gap-1 text-xs font-medium text-ok"><BadgeCheck className="size-3.5" /> {confirmedBy(s.n)}{s.term ? ` · ${s.term}` : ""}</p>
+              <p className="mt-1 text-xs text-muted">In <Link href={`/c/${s.community_id}`} className="hover:text-text hover:underline">{s.name}</Link></p>
             </div>
           </li>
         ))}

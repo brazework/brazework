@@ -1,10 +1,11 @@
 import type { Metadata } from "next";
-import { ArrowLeft, Flame, Plus, Search, Users } from "lucide-react";
+import { ArrowLeft, BookOpen, Flame, Plus, Search, Users } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { EmptyState, PageHeader, Panel, Skeleton } from "@/components/app/page-ui";
 import { dbFeatures } from "@/lib/db-features";
+import { currentTerm } from "@/lib/study";
 import { COMMUNITY_COLS, rank, type Community, type Role } from "@/lib/communities";
 import { getViewer } from "@/lib/supabase/server";
 import { requestTime } from "@/lib/forge";
@@ -90,6 +91,7 @@ async function Communities({ searchParams }: { searchParams: PageProps<"/communi
         subtitle={tab === "mine" ? "Your chapter, team or lab: members, events, chat and the work you verify, in one place." : tab === "discover" ? "Clubs in your field first, then the biggest." : "For the chapter, team or lab that isn't here yet."}
         actions={tab === "mine" ? <>
           <Link href="/communities?tab=discover" className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-line px-4 text-sm font-medium transition hover:bg-hover"><Search className="size-4" /> Find a club</Link>
+          {f.studyGroups && <Link href="/communities?tab=create&type=study" className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-line px-4 text-sm font-medium transition hover:bg-hover"><BookOpen className="size-4" /> Start a study group</Link>}
           <Link href="/communities?tab=create" className="bg-accent-grad inline-flex h-10 items-center gap-1.5 rounded-lg px-4 text-sm font-medium text-on-accent"><Plus className="size-4" /> Start a club</Link>
         </> : <Link href="/communities?tab=mine" className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-line px-4 text-sm font-medium transition hover:bg-hover"><ArrowLeft className="size-4" /> Your clubs</Link>}
       />
@@ -115,7 +117,7 @@ async function Communities({ searchParams }: { searchParams: PageProps<"/communi
           />
         )}
         {tab === "create" && <Suspense fallback={null}><StartChapterCard className="mb-4" /></Suspense>}
-        {tab === "create" && <Panel className="p-6"><CreateCommunity interests={profile.interests ?? []} field={profile.field} /></Panel>}
+        {tab === "create" && <Panel className="p-6"><CreateCommunity key={sp.type === "study" ? "study" : "club"} interests={profile.interests ?? []} field={profile.field} term={f.studyGroups ? currentTerm(now) : null} startType={sp.type === "study" ? "study" : "field"} /></Panel>}
       </div>
     </>
   );
