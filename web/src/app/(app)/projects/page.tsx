@@ -38,7 +38,7 @@ async function Explore({ searchParams }: { searchParams: PageProps<"/projects">[
   const verifiedOnly = sp.verified === "1";
   const mine = sp.mine === "1";
   const tool = typeof sp.tool === "string" ? sp.tool.slice(0, 40) : "";
-  const { milestones: msOn, projectTools: stackOn, projectSpecs: specsOn, projectFiles: filesOn } = await dbFeatures();
+  const { milestones: msOn, projectTools: stackOn, projectSpecs: specsOn, projectFiles: filesOn, projectAccess: accessOn } = await dbFeatures();
 
   let req = supabase.from("projects").select(`id, title, summary, status, year, tags, updated_at, owner_id, profiles!projects_owner_id_fkey(first_name, last_name, field)${stackOn ? ", tools" : ""}`).eq("private", false).order("updated_at", { ascending: false }).limit(120);
   if (mine) req = req.eq("owner_id", user.id);
@@ -71,10 +71,14 @@ async function Explore({ searchParams }: { searchParams: PageProps<"/projects">[
   const topTools = [...toolCounts].sort((a, b) => b[1] - a[1]).slice(0, 10).map(([t]) => t);
   if (tool && !topTools.includes(tool)) topTools.unshift(tool);
   // Your builds: every project of yours (private too), with where it stands on the way to proof.
-  const [{ data: myRows }, copilot] = await Promise.all([
+  const [{ data: myRows }, copilot, { data: sharedRows }] = await Promise.all([
     supabase.from("projects").select(`id, title, summary, status, private, updated_at, tags${stackOn ? ", tools" : ""}`).eq("owner_id", user.id).order("updated_at", { ascending: false }).limit(20),
     copilotEnabled(),
+    // Projects others added you to (step 55): as an admin, a teammate or a viewer.
+    accessOn ? supabase.from("project_members").select("role, projects(id, title, summary, status, private, owner_first:profiles!projects_owner_id_fkey(first_name, last_name))").eq("uid", user.id).order("added_at", { ascending: false }).limit(20) : Promise.resolve({ data: [] }),
   ]);
+  type SharedRow = { role: "admin" | "member" | "viewer"; projects: { id: string; title: string; summary: string; status: string; private: boolean; owner_first: { first_name: string; last_name: string } | null } | null };
+  const shared = ((sharedRows ?? []) as unknown as SharedRow[]).filter((r) => r.projects);
   const myIds = ((myRows ?? []) as unknown as { id: string }[]).map((r) => r.id);
   const [myMs, myUps] = myIds.length ? await Promise.all([
     msOn ? supabase.from("milestones").select("project_id, status").in("project_id", myIds).limit(2000) : Promise.resolve({ data: [] }),
@@ -106,6 +110,7 @@ async function Explore({ searchParams }: { searchParams: PageProps<"/projects">[
     <>
       <PageHeader title="Projects" subtitle="What you're building, and what people across Brazework have built and had verified." />
       {!q && !topic && !tool && !status && !verifiedOnly && !mine && <Workbench projects={bench} interests={profile.interests ?? []} copilot={copilot} stack={stackOn} specsOn={specsOn} filesOn={filesOn} />}
+      {!q && !topic && !tool && !status && !verifiedOnly && !mine && shared.length > 0 && <SharedWithYou rows={shared} />}
       {/* Spotlight moved here from Today (redesign stage 1): standout builds sit with the rest of Explore. */}
       {!q && !topic && !tool && !status && !verifiedOnly && !mine && <div className="mt-6 empty:hidden"><Suspense fallback={<StripSkeleton w={280} h={250} />}><SpotlightStrip /></Suspense></div>}
       <form action="/projects" className="relative mt-6">
@@ -136,5 +141,32 @@ async function Explore({ searchParams }: { searchParams: PageProps<"/projects">[
       </div>
       {!list.length && <EmptyState icon={<FolderGit2 className="size-5" />} title={q || topic || tool || status || verifiedOnly || mine ? "No projects match" : "No projects yet"} body={q || topic || tool || status || verifiedOnly || mine ? <Link href="/projects" className="underline">Clear filters</Link> : "Add yours from your profile, or import one from GitHub."} />}
     </>
+  );
+}
+
+// Projects you were added to, with what you can do on each.
+const SHARED_ROLE = { admin: "Admin", member: "Teammate", viewer: "Viewer" } as const;
+function SharedWithYou({ rows }: { rows: { role: "admin" | "member" | "viewer"; projects: { id: string; title: string; summary: string; private: boolean; owner_first: { first_name: string; last_name: string } | null } | null }[] }) {
+  return (
+    <section aria-labelledby="shared-title" className="mt-8">
+      <h2 id="shared-title" className="text-sm font-semibold">Shared with you</h2>
+      <ul className="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2">
+        {rows.map(({ role, projects: p }) => p && (
+          <li key={p.id}>
+            <Link href={`/projects/${p.id}`} className="glass-card flex items-start gap-3 rounded-2xl p-4 transition hover:border-line-strong">
+              <span className="min-w-0 flex-1">
+                <span className="block truncate font-semibold">{p.title}</span>
+                <span className="mt-0.5 line-clamp-2 block text-xs text-muted">{p.summary}</span>
+                <span className="mt-2 block text-[11px] text-faint">{`${p.owner_first?.first_name ?? ""} ${p.owner_first?.last_name ?? ""}`.trim() || "A member"}&apos;s project</span>
+              </span>
+              <span className="flex shrink-0 flex-col items-end gap-1">
+                <span className="rounded-full bg-surface-2 px-2 py-0.5 text-[10px] font-medium text-muted">{SHARED_ROLE[role]}</span>
+                {p.private && <span className="rounded-full bg-surface-2 px-2 py-0.5 text-[10px] text-faint">Private</span>}
+              </span>
+            </Link>
+          </li>
+        ))}
+      </ul>
+    </section>
   );
 }
