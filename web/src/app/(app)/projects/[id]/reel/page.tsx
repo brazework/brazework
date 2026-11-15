@@ -29,13 +29,15 @@ async function Reel({ params }: { params: PageProps<"/projects/[id]/reel">["para
   const { data } = await supabase.from("projects").select(`id, title, summary, status, year, private, owner_id, created_at, profiles!projects_owner_id_fkey(first_name, last_name)${f.projectTools ? ", tools" : ""}`).eq("id", id).maybeSingle();
   const p = data as unknown as P | null;
   const own = p?.owner_id === user.id;
-  if (!p || (p.private && !own)) notFound();
+  // A private project's reel is for the people on it (step 55: owner, admins, teammates and viewers).
+  const { data: role } = p?.private && !own && f.projectAccess ? await supabase.rpc("project_role", { p_project: id, p_uid: user.id }) : { data: null };
+  if (!p || (p.private && !own && !role)) notFound();
 
   const [det, ms, ups, teamRes] = await Promise.all([
     supabase.from("project_details").select(f.projectSpecs ? "details, specs" : "details").eq("project_id", id).maybeSingle(),
     f.milestones ? supabase.from("milestones").select(await milestoneCols()).eq("project_id", id).eq("status", "verified").order("reviewed_at", { ascending: false }).limit(20) : Promise.resolve({ data: [] }),
     supabase.from("posts").select(await postSelect()).eq("project_id", id).eq("status", "visible").order("created_at", { ascending: true }).limit(200),
-    f.verification ? supabase.from("project_members").select("profiles(first_name, last_name)").eq("project_id", id).limit(10) : Promise.resolve({ data: [] }),
+    f.verification ? (f.projectAccess ? supabase.from("project_members").select("profiles(first_name, last_name)").eq("project_id", id).neq("role", "viewer").limit(10) : supabase.from("project_members").select("profiles(first_name, last_name)").eq("project_id", id).limit(10)) : Promise.resolve({ data: [] }),
   ]);
   const details = (det.data as unknown as { details?: string; specs?: { label: string; value: string }[] } | null) ?? {};
   // Proof shows what others may see: verified, and public unless it's your own reel.

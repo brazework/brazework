@@ -19,11 +19,11 @@ import { dbFeatures, postSelect, milestoneCols } from "@/lib/db-features";
 import { requestTime, timeAgo, type Post } from "@/lib/forge";
 import { getViewer } from "@/lib/supabase/server";
 import { cardReplies } from "@/lib/card-replies";
-import { MilestoneTimeline, type Milestone } from "../../u/[id]/milestones";
+import { AddMilestone, MilestoneTimeline, type Milestone } from "../../u/[id]/milestones";
 import { PostUpdate } from "./post-update";
 import { buildLog, inThirtySeconds, lastActivity, liveStatus, weeklyActivity, type BuildEvent } from "@/lib/build-log";
 import { AboutBuild, ActivityStrip, BuildLogTimeline, ThirtySeconds } from "./build-log-view";
-import { TeamList } from "./team";
+import { MakePublic, TeamList } from "./team";
 import { GitHubConnect } from "./github-connect";
 import { OrganizeWithEmber } from "./organize";
 import { copilotEnabled } from "@/lib/copilot";
@@ -52,19 +52,25 @@ async function ProjectView({ params, searchParams }: { params: PageProps<"/proje
   const ghNote = (await searchParams).github;
   const { supabase, user, profile: viewerProfile } = await getViewer();
   if (!user) redirect("/login");
-  const { milestones: msOn, projectTools: stackOn, projectSpecs: specsOn, projectFiles: filesOn, updateFiles: updFilesOn, github: ghOn } = await dbFeatures();
+  const { milestones: msOn, projectTools: stackOn, projectSpecs: specsOn, projectFiles: filesOn, updateFiles: updFilesOn, github: ghOn, projectAccess: accessOn } = await dbFeatures();
   const { data } = await supabase.from("projects").select(`id, title, summary, status, year, tags, private, updated_at, created_at, owner_id, profiles!projects_owner_id_fkey(first_name, last_name, headline, field)${stackOn ? ", tools" : ""}`).eq("id", id).maybeSingle();
   const p = data as unknown as Project | null;
   const own = p?.owner_id === user.id;
-  if (!p || (p.private && !own)) return <EmptyState title="This project isn't available" body="It may be private, or it was removed." />;
+  // Your role on it (step 55): owner, admin, teammate ("member") or viewer. A private project is for
+  // them only; builders (owner, admins, teammates) post on it; the owner and admins manage the team.
+  const { data: roleData } = p && !own && accessOn ? await supabase.rpc("project_role", { p_project: id, p_uid: user.id }) : { data: null };
+  const role = own ? "owner" : ((roleData as string | null) ?? null);
+  const builder = role === "owner" || role === "admin" || role === "member";
+  const canManage = role === "owner" || role === "admin";
+  if (!p || (p.private && !role)) return <EmptyState title="This project isn't available" body="It may be private, or it was removed." />;
 
   const [det, ms, ups, more, teamRes, clubRes, filesRes, ghEvents, ghRepos] = await Promise.all([
     supabase.from("project_details").select(specsOn ? "details, link, specs" : "details, link").eq("project_id", id).maybeSingle(),
     msOn ? supabase.from("milestones").select(await milestoneCols()).eq("project_id", id).order("achieved_on", { ascending: false }).limit(100) : Promise.resolve({ data: [] }),
     supabase.from("posts").select(await postSelect()).eq("project_id", id).eq("status", "visible").order("created_at", { ascending: false }).limit(30),
     supabase.from("projects").select("id, title, status").eq("owner_id", p.owner_id).eq("private", false).neq("id", id).order("updated_at", { ascending: false }).limit(4),
-    (await dbFeatures()).verification ? supabase.from("project_members").select("uid, profiles(first_name, last_name, headline)").eq("project_id", id).order("added_at", { ascending: true }).limit(20) : Promise.resolve({ data: [] }),
-    own ? supabase.from("community_members").select("community_id").eq("uid", user.id).limit(50) : Promise.resolve({ data: [] }),
+    (await dbFeatures()).verification ? supabase.from("project_members").select(accessOn ? "uid, role, profiles(first_name, last_name, headline)" : "uid, profiles(first_name, last_name, headline)").eq("project_id", id).order("added_at", { ascending: true }).limit(20) : Promise.resolve({ data: [] }),
+    builder ? supabase.from("community_members").select("community_id, communities(id, name)").eq("uid", user.id).limit(50) : Promise.resolve({ data: [] }),
     filesOn ? supabase.from("project_files").select(updFilesOn ? "id, kind, name, path, size, url, added_by, created_at, post_id" : "id, kind, name, path, size, url, added_by, created_at").eq("project_id", id).order("created_at", { ascending: false }).limit(100) : Promise.resolve({ data: [] }),
     // Live from GitHub (supabase/github.sql, FIX-92 phase 3): what happened on its linked repos.
     ghOn ? supabase.from("build_events").select("id, kind, title, url, actor, state, occurred_at").eq("project_id", id).order("occurred_at", { ascending: false }).limit(60) : Promise.resolve({ data: [] }),
@@ -81,11 +87,14 @@ async function ProjectView({ params, searchParams }: { params: PageProps<"/proje
   const srcByPath = previewPaths.length ? await signedUrls(supabase, "project-files", previewPaths) : new Map<string, string>();
   const files: ProjectFileItem[] = fileRows.map(({ path, ...f }) => ({ ...f, src: path ? srcByPath.get(path) ?? null : null }));
   const filesByPost = files.reduce((m, f) => (f.post_id ? m.set(f.post_id, [...(m.get(f.post_id) ?? []), f]) : m), new Map<string, ProjectFileItem[]>());
-  type TM = { uid: string; profiles: { first_name: string; last_name: string; headline: string } | null };
-  const team = ((teamRes.data ?? []) as unknown as TM[]).map((t) => ({ id: t.uid, first: t.profiles?.first_name ?? "", last: t.profiles?.last_name ?? "", headline: t.profiles?.headline ?? "" }));
-  // Who the owner can add: people in their clubs.
+  type TM = { uid: string; role?: "admin" | "member" | "viewer"; profiles: { first_name: string; last_name: string; headline: string } | null };
+  const everyone = ((teamRes.data ?? []) as unknown as TM[]).map((t) => ({ id: t.uid, role: t.role ?? "member", first: t.profiles?.first_name ?? "", last: t.profiles?.last_name ?? "", headline: t.profiles?.headline ?? "" }));
+  // The builders show as the team; viewers only to the people managing it.
+  const team = everyone.filter((t) => t.role !== "viewer");
+  // Who the owner or an admin can add: people in their clubs. (Your clubs also fill the milestone form.)
   const myClubIds = ((clubRes.data ?? []) as { community_id: string }[]).map((r) => r.community_id);
-  const { data: clubPeople } = own && myClubIds.length
+  const myClubs = ((clubRes.data ?? []) as unknown as { communities: { id: string; name: string } | { id: string; name: string }[] | null }[]).flatMap((r) => (Array.isArray(r.communities) ? r.communities : r.communities ? [r.communities] : []));
+  const { data: clubPeople } = canManage && myClubIds.length
     ? await supabase.from("community_members").select("uid, first_name, last_name").in("community_id", myClubIds).neq("uid", user.id).limit(200)
     : { data: [] };
   const candidates = [...new Map(((clubPeople ?? []) as { uid: string; first_name: string; last_name: string }[]).map((c) => [c.uid, { id: c.uid, first: c.first_name, last: c.last_name }])).values()];
@@ -182,21 +191,22 @@ async function ProjectView({ params, searchParams }: { params: PageProps<"/proje
             </ul>
             <ActivityStrip weeks={weeks} />
             <div className="mt-5 flex flex-wrap items-center gap-2">
-              {own && <a href="#log" className="inline-flex h-10 items-center gap-1.5 rounded-lg bg-text px-4 text-sm font-semibold text-surface transition hover:opacity-90 active:scale-95"><Megaphone className="size-4" /> Post update</a>}
+              {builder && <a href="#log" className="inline-flex h-10 items-center gap-1.5 rounded-lg bg-text px-4 text-sm font-semibold text-surface transition hover:opacity-90 active:scale-95"><Megaphone className="size-4" /> Post update</a>}
               {/* The reel: this build as a short story, from its real photos, specs and proof. */}
               {/* One primary action: for the owner it's Post update; for everyone else, the reel. */}
-              <Link href={`/projects/${p.id}/reel`} className={own ? "inline-flex h-10 items-center gap-1.5 rounded-lg border border-line px-4 text-sm font-medium transition hover:bg-hover" : "bg-accent-grad inline-flex h-10 items-center gap-2 rounded-lg pr-4 pl-3 text-sm font-semibold text-on-accent transition active:scale-95"}>{own ? <Play className="size-3.5 fill-current" /> : <span className="grid size-6 place-items-center rounded-full bg-white/20"><Play className="size-3 fill-current" /></span>} Play reel</Link>
+              <Link href={`/projects/${p.id}/reel`} className={builder ? "inline-flex h-10 items-center gap-1.5 rounded-lg border border-line px-4 text-sm font-medium transition hover:bg-hover" : "bg-accent-grad inline-flex h-10 items-center gap-2 rounded-lg pr-4 pl-3 text-sm font-semibold text-on-accent transition active:scale-95"}>{builder ? <Play className="size-3.5 fill-current" /> : <span className="grid size-6 place-items-center rounded-full bg-white/20"><Play className="size-3 fill-current" /></span>} Play reel</Link>
               {link && <a href={link} target="_blank" rel="noopener noreferrer nofollow" className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-line px-4 text-sm font-medium transition hover:bg-hover"><ExternalLink className="size-4" /> {new URL(link).host.replace(/^www\./, "")}</a>}
               <SendPost projectId={p.id} compact={false} />
               <CopyLink path={`/projects/${p.id}`} label="Share" />
-              {!own && <ReportLink kind="project" id={p.id} label="this project" className="ml-auto" />}
+              {own && p.private && <MakePublic projectId={p.id} />}
+              {!role && <ReportLink kind="project" id={p.id} label="this project" className="ml-auto" />}
               {own && <Link href={`/u/${user.id}#projects`} className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-line px-4 text-sm transition hover:bg-hover"><Pencil className="size-4" /> Edit</Link>}
             </div>
           </div>
         </section>
 
         {/* Proof first: what the club verified, signed by the officer who saw it. */}
-        {(milestones.length > 0 || own) && (
+        {(milestones.length > 0 || builder) && (
           <div id="proof" className="scroll-mt-24">
           <Panel className="p-6">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -204,6 +214,8 @@ async function ProjectView({ params, searchParams }: { params: PageProps<"/proje
               <span className="text-xs text-muted">{own ? "Verified ones show to everyone; pending and declined ones only to you." : "Each one verified by an officer of the club who saw it happen."}</span>
             </div>
             {milestones.length > 0 && <MilestoneTimeline items={milestones} own={own} />}
+            {/* Teammates log their own milestones on it here (the owner does it from their profile). */}
+            {builder && !own && myClubs.length > 0 && <div className="mt-4"><AddMilestone projectId={p.id} projectTitle={p.title} clubs={myClubs} /></div>}
             {own && verified.length === 0 && (
               <Link href={`/u/${user.id}#projects`} className="group mt-4 flex items-center gap-3 rounded-2xl border border-dashed border-line-strong p-4 transition hover:border-text hover:bg-hover/50">
                 <span className="bg-accent-grad grid size-10 shrink-0 place-items-center rounded-xl text-on-accent"><BadgeCheck className="size-5" /></span>
@@ -229,7 +241,7 @@ async function ProjectView({ params, searchParams }: { params: PageProps<"/proje
             </span>
           </div>
           {own && ghOn && <GitHubConnect supabase={supabase} projectId={p.id} linked={repos} note={typeof ghNote === "string" ? ghNote : undefined} />}
-          {own && <PostUpdate projectId={p.id} title={p.title} attach={filesOn} />}
+          {builder && <PostUpdate projectId={p.id} title={p.title} attach={filesOn} />}
           {log.length > 0 && <BuildLogTimeline entries={log} liked={liked} saved={saved} me={user.id} projectId={p.id} ownerId={p.owner_id} filesByPost={filesByPost} replies={replies} viewer={{ id: user.id, first: viewerProfile?.first_name ?? "", last: viewerProfile?.last_name ?? "" }} />}
           {!log.length && (own ? (
             <p className="rounded-xl border border-dashed border-line-strong px-4 py-3 text-sm text-muted">
@@ -257,7 +269,7 @@ async function ProjectView({ params, searchParams }: { params: PageProps<"/proje
             <Avatar first={owner?.first_name ?? ""} last={owner?.last_name ?? ""} size={44} />
             <span className="min-w-0"><span className="block truncate font-medium hover:underline">{ownerName}</span><span className="block truncate text-xs text-muted">{owner?.headline || owner?.field || "Brazework member"}</span></span>
           </Link>
-          {(team.length > 0 || own) && <TeamList projectId={p.id} team={team} candidates={candidates} own={own} me={user.id} />}
+          {(team.length > 0 || canManage) && <TeamList projectId={p.id} people={canManage ? everyone : team} candidates={candidates} manage={canManage} isOwner={own} roles={accessOn} me={user.id} />}
           {!own && <Link href={`/messages/new?to=${p.owner_id}`} className="mt-4 inline-flex h-9 w-full items-center justify-center rounded-lg border border-line text-sm font-medium transition hover:bg-hover">Message {owner?.first_name || "them"}</Link>}
         </Panel>
         <ThirtySeconds lines={summary} ownerId={p.owner_id} />

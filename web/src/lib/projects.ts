@@ -100,6 +100,8 @@ export async function setProjectPrivate(id: string, value: boolean): Promise<Pro
   const { error } = await supabase.from("projects").update({ private: value }).eq("id", id).eq("owner_id", user.id);
   if (error) return { ok: false, message: friendlyError(error) };
   revalidatePath(`/u/${user.id}`);
+  revalidatePath(`/projects/${id}`);
+  revalidatePath("/projects");
   return { ok: true, message: "" };
 }
 
@@ -110,8 +112,16 @@ export async function shareProject(id: string, body: string): Promise<ProjectSta
   if (text.length > 3000) return { ok: false, message: "Posts can be up to 3,000 characters." };
   const { supabase, user } = await getViewer();
   if (!user) return { ok: false, message: "Log in again." };
-  const { data: pr } = await supabase.from("projects").select("tags").eq("id", id).eq("owner_id", user.id).maybeSingle();
+  // The owner, or (step 55) an admin or teammate: the database decides who may post on it.
+  const access = (await dbFeatures()).projectAccess;
+  const { data: pr } = access
+    ? await supabase.from("projects").select("tags").eq("id", id).maybeSingle()
+    : await supabase.from("projects").select("tags").eq("id", id).eq("owner_id", user.id).maybeSingle();
   if (!pr) return { ok: false, message: "That project couldn't be found." };
+  if (access) {
+    const { data: role } = await supabase.rpc("project_role", { p_project: id, p_uid: user.id });
+    if (!["owner", "admin", "member"].includes(String(role ?? ""))) return { ok: false, message: "Only people building this project can post updates on it." };
+  }
   const { data: post, error } = await supabase.from("posts").insert({ body: text, project_id: id, kind: "project", tags: ((pr.tags as string[]) ?? []).slice(0, 3) }).select("id").single();
   if (error) return { ok: false, message: friendlyError(error) };
   revalidatePath("/feed");
