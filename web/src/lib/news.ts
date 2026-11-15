@@ -185,7 +185,7 @@ export async function newsPool(): Promise<NewsItem[]> {
 }
 
 // Headlines for one member: stories on their interests first (more matching interests and newer
-// rank higher), then stories in their field, then the latest STEM headlines if there aren't enough.
+// rank higher), then stories in their field, then the latest headlines if there aren't enough.
 // No more than 2 in a row from one publisher, so one busy feed can't fill the list.
 export function pickNews(pool: NewsItem[], interests: string[], field: string, n = 6, now = Date.now()): NewsPick[] {
   const mine = new Set(interests);
@@ -196,7 +196,7 @@ export function pickNews(pool: NewsItem[], interests: string[], field: string, n
     const ageDays = Math.max(0, (now - Date.parse(item.published)) / 864e5);
     const score = strong.length * 10 + weak.length * 4 + (inField ? 2 : 0) - ageDays;
     const match = strong[0] ?? weak[0];
-    const reason = match ? `Matches ${match}` : inField ? `In ${field}` : "Top STEM news";
+    const reason = match ? `Matches ${match}` : inField ? `In ${field}` : "Top news";
     return { ...item, score, reason, tier: match ? 0 : inField ? 1 : 2 };
   });
   scored.sort((a, b) => a.tier - b.tier || b.score - a.score);

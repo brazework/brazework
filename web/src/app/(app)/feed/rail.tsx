@@ -38,7 +38,7 @@ export async function FeedRail() {
   ]);
   const challenges: RailChallenge[] = ((ch.data ?? []) as unknown as { id: string; title: string; prize: string; deadline: string; organizations: { name: string } | null }[])
     .map((c) => ({ id: c.id, title: c.title, sponsor: c.organizations?.name ?? "Sponsor", prize: c.prize, days: Math.max(0, Math.ceil((Date.parse(c.deadline) - now) / 864e5)) }));
-  // STEM news from around the web, on your interests first.
+  // News from around the web, on your interests first.
   const news = pickNews(pool, profile.interests ?? [], profile.field ?? "", 6, now);
   type C = { id: string; name: string; member_count: number };
   const clubs = ((mine.data ?? []) as unknown as { communities: C | C[] | null }[])

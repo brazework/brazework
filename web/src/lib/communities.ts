@@ -95,8 +95,9 @@ export const PRIVACY: { id: Privacy; label: string; hint: string }[] = [
 ];
 export const PRIVACY_LABEL: Record<Privacy, string> = { public: "Public", approval: "Approval required" };
 
-// The community's main field: any Brazework field, or all of STEM.
-export const COMMUNITY_FIELDS: string[] = [...FIELDS, "All of STEM"];
+// The community's main field: any Brazework field, or any field at all. Clubs made before
+// Brazework opened to every major may still say "All of STEM"; that stays as they set it.
+export const COMMUNITY_FIELDS: string[] = [...FIELDS, "Any field"];
 
 export const LIMITS = { name: 60, about: 500, rules: 1500, topics: 3, words: 50, wordsText: 2000, members: 500 } as const;
 

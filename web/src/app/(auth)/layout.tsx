@@ -18,7 +18,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
             <p className="text-4xl leading-tight font-semibold tracking-tight">
               Built by clubs. <span className="text-grad">Proven by work.</span>
             </p>
-            <footer className="mt-4 text-sm text-faint">The network for STEM builders: engineering, science, math and computing</footer>
+            <footer className="mt-4 text-sm text-faint">The network for students who build, in any major</footer>
           </blockquote>
         </div>
       </aside>

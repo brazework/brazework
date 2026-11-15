@@ -10,7 +10,7 @@ import type { NewsPick } from "@/lib/news";
 type Tab = "trending" | "news";
 const KEY = "forge.rail.tab";
 
-// One box, two views: what's trending on Brazework, and STEM news from around the web picked for your
+// One box, two views: what's trending on Brazework, and news from around the web picked for your
 // interests. Flip between them with the tabs; Brazework remembers which one you looked at last.
 export function TrendingNews({ trending, news, hasInterests }: { trending: [string, number][]; news: NewsPick[]; hasInterests: boolean }) {
   const [tab, setTab] = useState<Tab>(trending.length ? "trending" : "news");
@@ -77,8 +77,8 @@ export function TrendingNews({ trending, news, hasInterests }: { trending: [stri
           )}
         </div>
       ) : (
-        <div id="rail-news" role="tabpanel" aria-label="STEM news for you">
-          <h2 className="mt-3 text-sm font-semibold">STEM news for you</h2>
+        <div id="rail-news" role="tabpanel" aria-label="News for you">
+          <h2 className="mt-3 text-sm font-semibold">News for you</h2>
           {news.length ? (
             <ul className="mt-1 flex flex-col">
               {news.map((n) => (
@@ -93,7 +93,7 @@ export function TrendingNews({ trending, news, hasInterests }: { trending: [stri
                       <span>{n.source}</span>
                       <span aria-hidden="true">·</span>
                       <span>{timeAgo(n.published)}</span>
-                      {n.reason !== "Top STEM news" && <span className="rounded-full bg-surface-2 px-1.5 py-px text-[10px] text-accent">{n.reason}</span>}
+                      {n.reason !== "Top news" && <span className="rounded-full bg-surface-2 px-1.5 py-px text-[10px] text-accent">{n.reason}</span>}
                     </span>
                   </a>
                 </li>

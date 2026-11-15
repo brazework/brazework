@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 import { BrandMark } from "@/components/brand-mark";
 
-export const alt = "Brazework: where STEM clubs build, prove it and get hired.";
+export const alt = "Brazework: your clubs, your work, proof that gets you hired.";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -28,7 +28,7 @@ export default function OpengraphImage() {
           <div style={{ fontSize: 96, fontWeight: 700, letterSpacing: -4, lineHeight: 1 }}>Proof of work</div>
           <div style={{ fontSize: 96, fontWeight: 700, letterSpacing: -4, lineHeight: 1.1, color: "#8b8b94" }}>beats a résumé.</div>
         </div>
-        <div style={{ display: "flex", fontSize: 30, color: "#a1a1aa" }}>Home base for university STEM clubs · verified work that gets you hired</div>
+        <div style={{ display: "flex", fontSize: 30, color: "#a1a1aa" }}>Home base for university clubs · verified work that gets you hired</div>
       </div>
     ),
     size,

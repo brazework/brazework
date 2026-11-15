@@ -40,7 +40,7 @@ export const ROUTES = {
 export const UPDATES: ForgeUpdate[] = [
   {
     id: "2026-11-09-news", date: "2026-11-09", kind: "New",
-    title: "STEM news on your feed",
+    title: "News on your feed",
     summary: "Headlines from IEEE Spectrum, ScienceDaily, Nature, NASA and more, picked for your interests.",
     points: [
       "The Trending box on your feed now has a News tab. Flip between them any time; Brazework remembers the one you used last.",
@@ -48,7 +48,7 @@ export const UPDATES: ForgeUpdate[] = [
       "Each headline opens the full story on the publisher's site.",
     ],
     tour: [
-      { route: ROUTES.feed, target: "news", title: "STEM news for you", body: "Switch to News to see headlines from around the web on the topics you follow." },
+      { route: ROUTES.feed, target: "news", title: "News for you", body: "Switch to News to see headlines from around the web on the topics you follow." },
     ],
   },
   {

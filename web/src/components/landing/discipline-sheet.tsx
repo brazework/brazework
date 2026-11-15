@@ -177,7 +177,7 @@ export function DisciplineSheet({ head }: { head: React.ReactNode }) {
       {/* Wide screens: the heading, the fields and what this one records on the left; the drawing on the right. */}
       <div className="md:col-start-1">{head}</div>
 
-      <div role="tablist" aria-label="Fields in STEM" className="no-scrollbar -mx-6 flex gap-1 overflow-x-auto border-b border-line px-6 md:col-start-1 md:mx-0 md:flex-wrap md:px-0">
+      <div role="tablist" aria-label="Fields" className="no-scrollbar -mx-6 flex gap-1 overflow-x-auto border-b border-line px-6 md:col-start-1 md:mx-0 md:flex-wrap md:px-0">
         {DISCIPLINES.map((x, i) => (
           <button key={x.id} type="button" role="tab" id={`dz-tab-${x.id}`} aria-selected={i === at} aria-controls="dz-panel"
             onClick={() => pick(i)}

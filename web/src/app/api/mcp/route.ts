@@ -41,7 +41,7 @@ export async function POST(req: Request) {
         protocolVersion: MCP_PROTOCOLS.includes(asked) ? asked : MCP_PROTOCOLS[1],
         capabilities: { tools: { listChanged: false } },
         serverInfo: { name: "brazework", title: "Brazework", version: "0.2.0" },
-        instructions: canPost ? "Brazework is home base for university STEM clubs. These tools read the member's Brazework (profile and club-verified work, clubs, events, projects, notifications, search) and can post a build update as them with post_update. Ask the member before posting, and write in their voice. Results include links to open in Brazework." : "Brazework is home base for university STEM clubs. These tools read the signed-in member's Brazework: their profile and club-verified work, clubs, upcoming events, projects, notifications, and search across clubs and people. Results include links to open in Brazework.",
+        instructions: canPost ? "Brazework is home base for university clubs, in any major. These tools read the member's Brazework (profile and club-verified work, clubs, events, projects, notifications, search) and can post a build update as them with post_update. Ask the member before posting, and write in their voice. Results include links to open in Brazework." : "Brazework is home base for university clubs, in any major. These tools read the signed-in member's Brazework: their profile and club-verified work, clubs, upcoming events, projects, notifications, and search across clubs and people. Results include links to open in Brazework.",
       } });
     }
     case "ping":

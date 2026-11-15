@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "Brazework",
     short_name: "Brazework",
-    description: "Home base for university STEM clubs: build, prove it, get hired.",
+    description: "Home base for university clubs: build, prove it, get hired.",
     start_url: "/feed",
     scope: "/",
     display: "standalone",
