@@ -110,6 +110,11 @@ export const TOPICS = [
   { name: "Earth & Environment", topics: ["Climate Science", "Renewable Energy", "Geology", "Oceanography", "Hydrology", "Sustainability"] },
   { name: "Health & Medicine", topics: ["Medical Imaging", "Epidemiology", "Pharmacology", "Public Health", "Biomechanics", "Health Tech"] },
   { name: "Space Science", topics: ["Astrophysics", "Planetary Science", "Space Systems", "Cosmology"] },
+  { name: "Business & Entrepreneurship", topics: ["Startups", "Finance & Investing", "Marketing", "Consulting", "Product Management", "Accounting"] },
+  { name: "Design & Arts", topics: ["Product & UX Design", "Graphic Design", "Architecture", "Film & Video", "Music & Audio", "Fine Arts"] },
+  { name: "Media & Communication", topics: ["Journalism", "Public Relations", "Content & Social Media", "Writing", "Podcasting"] },
+  { name: "Social Sciences & Policy", topics: ["Economics", "Psychology", "Political Science", "Law & Pre-Law", "Sociology", "Public Policy"] },
+  { name: "Education", topics: ["Teaching", "Tutoring & Peer Learning", "Education Technology", "Curriculum Design"] },
 ] as const;
 
 export const FIELDS: string[] = TOPICS.map((t) => t.name);
