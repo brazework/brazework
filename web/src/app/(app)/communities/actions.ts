@@ -6,6 +6,7 @@ import { ALL_TOPICS } from "@/lib/forge";
 import { COMMUNITY_FIELDS, LIMITS, autoModVerdict, can, cleanName, communityError, normalizeAutomod, parseWords, rank, type Role } from "@/lib/communities";
 import { dbFeatures } from "@/lib/db-features";
 import { validMedia } from "@/lib/media";
+import { STUDY_LIMITS } from "@/lib/study";
 import { getViewer } from "@/lib/supabase/server";
 
 export type Result = { ok: boolean; message: string };
@@ -39,6 +40,14 @@ const createSchema = z.object({
   rules: z.string().trim().max(LIMITS.rules, "Rules can be up to 1,500 characters."),
 });
 
+// Study groups (supabase/study-groups.sql): the course is required, the term too; when they meet is optional.
+const plain = (max: number, what: string) => z.string().trim().max(max, `Keep the ${what} under ${max} characters.`).refine((v) => !/[<>]/.test(v), `Leave < and > out of the ${what}.`);
+const studySchema = z.object({
+  course: plain(STUDY_LIMITS.course, "course").pipe(z.string().min(2, "Add the course, like CHEM 201.")),
+  term: plain(STUDY_LIMITS.term, "term").pipe(z.string().min(2, "Add the term, like Spring 2027.")),
+  meets: plain(STUDY_LIMITS.meets, "meeting time"),
+});
+
 const str = (v: FormDataEntryValue | null) => (typeof v === "string" ? v : "");
 
 // Creates the community with you as owner, in one step (create_community RPC), then opens it.
@@ -53,9 +62,12 @@ export async function createCommunity(_prev: CreateState, form: FormData): Promi
     rules: str(form.get("rules")),
   });
   if (!parsed.success) return { ok: false, message: parsed.error.issues[0]?.message ?? "Check the form." };
+  const d = parsed.data;
+  const studyOn = d.type === "study" && (await dbFeatures()).studyGroups;
+  const study = studyOn ? studySchema.safeParse({ course: str(form.get("course")), term: str(form.get("term")), meets: str(form.get("meets")) }) : null;
+  if (study && !study.success) return { ok: false, message: study.error.issues[0]?.message ?? "Check the course and term." };
   const { supabase, user } = await getViewer();
   if (!user) return { ok: false, message: "Log in again to create a community." };
-  const d = parsed.data;
 
   const taken = await supabase.from("communities").select("id").eq("name_lower", d.name.toLowerCase()).limit(1);
   if (taken.error) return { ok: false, message: communityError(taken.error) };
@@ -71,6 +83,11 @@ export async function createCommunity(_prev: CreateState, form: FormData): Promi
     p_rules: d.rules,
   });
   if (error || typeof id !== "string") return { ok: false, message: error ? communityError(error) : "Something went wrong. Try again." };
+  // You own it now, so the club's update rules let you set its course, term and meeting time.
+  if (study?.success) {
+    const { error: sErr } = await supabase.from("communities").update(study.data).eq("id", id);
+    if (sErr) console.error("study group details", sErr.message);
+  }
   revalidatePath("/communities");
   redirect(`/c/${id}?created=1`);
 }

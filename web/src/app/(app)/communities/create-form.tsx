@@ -5,15 +5,19 @@ import { chipCls } from "@/components/app/page-ui";
 import { Button, Field, inputCls } from "@/components/ui";
 import { COMMUNITY_FIELDS, LIMITS, PRIVACY, TYPES } from "@/lib/communities";
 import { ALL_TOPICS, cn } from "@/lib/forge";
+import { STUDY_LIMITS } from "@/lib/study";
 import { submitWithoutReset } from "@/lib/submit";
 import { createCommunity, type CreateState } from "./actions";
 import { CommunityBadge } from "./_components/badge";
 
 const STARTER_RULES = "Be kind and assume good intent.\nShare your work, including what didn't go to plan.\nCredit teammates and sources.\nKeep it on topic; take side chats to messages.\nNo spam or self-promotion without context.";
 
-export function CreateCommunity({ interests, field }: { interests: string[]; field: string }) {
+// `term`: this term ("Spring 2027") once study groups are on (supabase/study-groups.sql), else null.
+export function CreateCommunity({ interests, field, term, startType = "field" }: { interests: string[]; field: string; term: string | null; startType?: string }) {
   const [state, action, pending] = useActionState<CreateState, FormData>(createCommunity, { ok: false, message: "" });
-  const [type, setType] = useState("field");
+  const [type, setType] = useState(startType);
+  const [course, setCourse] = useState("");
+  const study = type === "study" && term !== null;
   const [privacy, setPrivacy] = useState("public");
   const [topics, setTopics] = useState<string[]>([]);
   const [name, setName] = useState("");
@@ -30,7 +34,7 @@ export function CreateCommunity({ interests, field }: { interests: string[]; fie
     const raf = requestAnimationFrame(() => { if (v("name")) setName(v("name")); if (v("about")) setAbout(v("about")); if (v("rules")) setRules(v("rules")); });
     return () => cancelAnimationFrame(raf);
   }, []);
-  const ready = name.trim().length >= 3 && about.trim().length >= 1;
+  const ready = name.trim().length >= 3 && about.trim().length >= 1 && (!study || course.trim().length >= 2);
   const options = [...new Set([...interests, ...ALL_TOPICS])];
   const pill = "relative rounded-2xl border border-line px-4 py-3 text-left text-sm transition hover:border-line-strong aria-pressed:border-text aria-pressed:bg-raised";
   return (
@@ -52,6 +56,14 @@ export function CreateCommunity({ interests, field }: { interests: string[]; fie
         <legend className="mb-2 text-sm font-medium text-text-2">Type</legend>
         <div className="grid grid-cols-2 gap-2">{TYPES.map((t) => <button key={t.id} type="button" aria-pressed={type === t.id} onClick={() => setType(t.id)} className={pill}>{t.label}{type === t.id && <Check className="absolute top-3 right-3 size-4" />}</button>)}</div>
       </fieldset>
+      {study && (
+        <div className="-mt-1 grid grid-cols-1 gap-4 rounded-3xl border border-line bg-surface-2/60 p-4 sm:grid-cols-2">
+          <p className="text-sm text-text-2 sm:col-span-2">A study group is for one course and one term. Whoever leads its sessions gets it on their profile as proof, once other members confirm it.</p>
+          <Field label="Course" count={course.length} max={STUDY_LIMITS.course}><input name="course" value={course} onChange={(e) => setCourse(e.target.value)} maxLength={STUDY_LIMITS.course} placeholder="e.g. CHEM 201" className={inputCls} required /></Field>
+          <Field label="Term"><input name="term" defaultValue={term ?? ""} maxLength={STUDY_LIMITS.term} className={inputCls} required /></Field>
+          <div className="sm:col-span-2"><Field label="When and where you meet" optional><input name="meets" maxLength={STUDY_LIMITS.meets} placeholder="e.g. Tuesdays 7pm, Library room 3" className={inputCls} /></Field></div>
+        </div>
+      )}
       <fieldset>
         <legend className="mb-2 text-sm font-medium text-text-2">Who can join</legend>
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
@@ -77,7 +89,7 @@ export function CreateCommunity({ interests, field }: { interests: string[]; fie
       {state.message && !state.ok && <p role="alert" className="text-sm text-danger">{state.message}</p>}
       <div className="flex flex-wrap items-center gap-3">
         <Button type="submit" size="lg" disabled={pending || !ready}>{pending && <Loader2 className="size-4 animate-spin" />} {pending ? "Creating…" : "Create community"}</Button>
-        {!ready && <span className="text-sm text-muted">Add a name and a line about what it&apos;s for.</span>}
+        {!ready && <span className="text-sm text-muted">{study && name.trim().length >= 3 && about.trim() ? "Add the course." : "Add a name and a line about what it's for."}</span>}
       </div>
     </form>
     {/* What members will see in Discover, updating as you type. */}

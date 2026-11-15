@@ -66,3 +66,4 @@ feed-comment-threads
 project-access
 school-links
 hardening
+study-groups
