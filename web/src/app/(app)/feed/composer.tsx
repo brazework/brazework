@@ -9,6 +9,7 @@ import { POST_KINDS, cn } from "@/lib/forge";
 import { createPost, type ComposeState } from "./actions";
 import { AttachmentTray, useAttachments } from "@/components/media/attach";
 import { useCopilot } from "@/components/copilot/use-copilot";
+import type { Preset } from "@/lib/copilot-presets";
 import { EmberAnswer, emberActions, useTypedPlaceholder, type EmberAction, type EmberAnswerState } from "@/components/copilot/feed-copilot";
 import { Ember } from "@/components/ember/ember";
 import { useMentions } from "@/components/mentions/mention-menu";
@@ -64,16 +65,16 @@ export function Composer({ first, last, interests, userId, mediaEnabled = false,
   const [soon, setSoon] = useState(false);
   const [focused, setFocused] = useState(false);
   const typed = useTypedPlaceholder(mode === "ask" && !question && !focused && !answer.q);
-  const ask = async (text: string) => {
+  const ask = async (text: string, preset?: Preset) => {
     const t = text.trim();
     if (!t || ai.busy) return;
     if (!copilot) { setSoon(true); return; }
     setQuestion("");
     setAnswer({ ...NO_ANSWER, q: t });
-    await ai.run({ task: "ask", input: t }, (full, tools, proposals) => setAnswer({ q: t, text: full, tools, proposals }));
+    await ai.run({ task: "ask", input: t, preset }, (full, tools, proposals) => setAnswer({ q: t, text: full, tools, proposals }));
   };
   const pickAction = (a: EmberAction) => {
-    if (a.ask) void ask(a.ask);
+    if (a.ask) void ask(a.ask, a.preset);
     else if (a.prefill) { setQuestion(a.prefill); requestAnimationFrame(() => { textRef.current?.focus(); textRef.current?.setSelectionRange(a.prefill!.length, a.prefill!.length); }); }
   };
 

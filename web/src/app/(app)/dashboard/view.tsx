@@ -1,5 +1,6 @@
 import { ArrowRight, BarChart3, Lock, Users } from "lucide-react";
 import Link from "next/link";
+import { clubUpdateHref } from "@/lib/copilot-presets";
 import { EmptyState, PageHeader, Panel, Tabs } from "@/components/app/page-ui";
 import { Kicker } from "@/components/ui";
 import { Ember } from "@/components/ember/ember";
@@ -158,7 +159,7 @@ export function DashboardView({ r, range, likes, comments, follows, views, repor
                   {c.upcoming[0] && <p className="mt-3 truncate text-xs text-muted">Next: <span className="text-text-2">{c.upcoming[0].title}</span> · {c.upcoming[0].going} going</p>}
                   <div className="mt-auto flex gap-3 pt-4 text-sm">
                     <Link href={`/c/${id}/manage?tab=report`} className="font-medium hover:underline">Full report</Link>
-                    <Link href={`/copilot?q=${encodeURIComponent(`Use club_report for club ${id}, then draft this week's update for ${c.name} with propose_club_post. Use only the report's numbers.`)}`} className="inline-flex items-center gap-1 text-muted hover:text-text">Draft the update with Ember <ArrowRight className="size-3.5" /></Link>
+                    <Link href={clubUpdateHref(id, c.name)} className="inline-flex items-center gap-1 text-muted hover:text-text">Draft the update with Ember <ArrowRight className="size-3.5" /></Link>
                   </div>
                 </Panel>
               );

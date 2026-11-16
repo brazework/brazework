@@ -1,5 +1,6 @@
 "use client";
 import { AnimatePresence, motion } from "motion/react";
+import type { Preset } from "@/lib/copilot-presets";
 import { ArrowRight, ArrowUp, BadgeCheck, CalendarCheck, CalendarDays, Check, Compass, Copy, CornerDownRight, FileText, GitBranch, History, Loader2, Megaphone, MessageSquare, Plus, Search, ShieldCheck, Square, ThumbsDown, ThumbsUp, Trash2, Users, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
@@ -99,7 +100,7 @@ export function Lookups({ tools, live }: { tools?: string[]; live: boolean }) {
 
 // The chat: a rail of your saved chats (when supabase/copilot-chats.sql has run), the conversation
 // with real Brazework cards under each answer, tap-to-ask follow-ups, and the confirm cards.
-export function CopilotChat({ first, field, initial = "", chats = [], chat = null, saving = false }: { first: string; field: string; initial?: string; chats?: ChatSummary[]; chat?: { id: string; title: string; messages: SavedMsg[] } | null; saving?: boolean }) {
+export function CopilotChat({ first, field, initial = "", initialPreset = null, chats = [], chat = null, saving = false }: { first: string; field: string; initial?: string; initialPreset?: Preset | null; chats?: ChatSummary[]; chat?: { id: string; title: string; messages: SavedMsg[] } | null; saving?: boolean }) {
   const { run, stop, busy, error, remaining } = useCopilot();
   const [msgs, setMsgs] = useState<Msg[]>(chat?.messages ?? []);
   const [chatId, setChatId] = useState<string | null>(chat?.id ?? null);
@@ -125,7 +126,7 @@ export function CopilotChat({ first, field, initial = "", chats = [], chat = nul
     ] },
   ];
 
-  const send = async (text: string) => {
+  const send = async (text: string, preset?: Preset) => {
     const q = text.trim();
     if (!q || busy || opening) return;
     const before = msgs;
@@ -133,7 +134,7 @@ export function CopilotChat({ first, field, initial = "", chats = [], chat = nul
     let last: Msg = { role: "assistant", content: "" };
     setMsgs([...before, asked, last]);
     setInput("");
-    const out = await run({ task: "ask", input: q, history: before.slice(-10).map(({ role, content }) => ({ role, content })) }, (full, tools, proposals) => {
+    const out = await run({ task: "ask", input: q, preset, history: before.slice(-10).map(({ role, content }) => ({ role, content })) }, (full, tools, proposals) => {
       const { text: body, next } = splitNext(full);
       last = { role: "assistant", content: body, tools, proposals, next };
       setMsgs([...before, asked, last]);
@@ -152,7 +153,7 @@ export function CopilotChat({ first, field, initial = "", chats = [], chat = nul
   useEffect(() => {
     if (!initial || askedInitial.current) return;
     askedInitial.current = true;
-    const t = setTimeout(() => void send(initial), 0);
+    const t = setTimeout(() => void send(initial, initialPreset ?? undefined), 0);
     return () => clearTimeout(t);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initial]);

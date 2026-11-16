@@ -6,11 +6,12 @@ import { useEffect, useState } from "react";
 import { Lookups, Rich } from "@/app/(app)/copilot/copilot-client";
 import { ProposalCard } from "@/components/copilot/proposal-card";
 import type { Proposal } from "@/lib/copilot-agent";
+import { clubUpdateAsk, clubUpdatePreset, type Preset } from "@/lib/copilot-presets";
 
 // Pieces of "Ask Ember" in the feed's create box (feed/composer.tsx): example prompts typed into
 // the placeholder, the one-tap actions, and the answer area with lookups and confirm cards.
 
-export type EmberAction = { icon: typeof Compass; label: string; ask?: string; prefill?: string; href: string };
+export type EmberAction = { icon: typeof Compass; label: string; ask?: string; prefill?: string; preset?: Preset; href: string };
 export type EmberAnswerState = { q: string; text: string; tools: string[]; proposals: Proposal[] };
 
 // Short enough to fit on one line on a phone.
@@ -38,7 +39,7 @@ export function emberActions(club?: { id: string; name: string } | null): EmberA
     { icon: CalendarDays, label: "What's on this week", ask: "What's coming up on Brazework in the next 7 days that fits me?", href: "/events" },
     { icon: GitBranch, label: "Import a GitHub repo", prefill: "Add my GitHub repo to my profile: github.com/", href: "/profile#projects" },
     { icon: BadgeCheck, label: "Get a milestone verified", ask: "Help me pick one of my milestones to ask my club to verify, then draft it.", href: "/profile#projects" },
-    ...(club ? [{ icon: Megaphone, label: `This week's update for ${club.name}`, ask: `Use club_report for club ${club.id}, then draft this week's update for ${club.name} with propose_club_post. Use only the report's numbers.`, href: `/c/${club.id}/manage?tab=report` }] : []),
+    ...(club ? [{ icon: Megaphone, label: `This week's update for ${club.name}`, ask: clubUpdateAsk(club.name), preset: clubUpdatePreset(club.id), href: `/c/${club.id}/manage?tab=report` }] : []),
   ];
 }
 

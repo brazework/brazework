@@ -7,6 +7,7 @@ import { ProposalCard } from "@/components/copilot/proposal-card";
 import { useCopilot } from "@/components/copilot/use-copilot";
 import type { Proposal } from "@/lib/copilot-agent";
 import type { ClubReport } from "@/lib/club-report";
+import { clubUpdateAsk, clubUpdatePreset } from "@/lib/copilot-presets";
 
 // The quick template: this week's numbers as a club post, no AI needed.
 function template(r: ClubReport) {
@@ -27,7 +28,7 @@ export function ClubUpdate({ report, clubId, copilot }: { report: ClubReport; cl
   const draft = () => {
     setCards([]);
     void ai.run(
-      { task: "ask", input: `Use club_report for club ${clubId}, then draft this week's update for ${report.name} with propose_club_post: welcome new members by name, point to the top post, list what's coming up, and invite members to ask the club to verify their milestones. Keep it short and use only the report's numbers.` },
+      { task: "ask", input: clubUpdateAsk(report.name), preset: clubUpdatePreset(clubId) },
       (full, t, p) => { setText(full); setTools(t); setCards(p); },
     );
   };
