@@ -13,10 +13,11 @@ export function BuildShowcase() {
   const s = SAMPLES.find((x) => x.id === id)!;
   return (
     <div>
-      <div role="tablist" aria-label="What do you build?" className="flex flex-wrap gap-2">
+      {/* Every field the app offers. Laptop: they wrap. Phone: one row you swipe, so the model stays in view. */}
+      <div role="tablist" aria-label="What do you build?" className="no-scrollbar -mx-5 flex gap-2 overflow-x-auto px-5 pb-1 sm:mx-0 sm:flex-wrap sm:overflow-visible sm:px-0 sm:pb-0">
         {SAMPLES.map((x) => (
           <button key={x.id} type="button" role="tab" aria-selected={x.id === id} aria-controls="build-example" onClick={() => setId(x.id)}
-            className={cn("inline-flex h-9 items-center rounded-lg border px-3.5 text-sm transition", x.id === id ? "border-transparent bg-accent font-medium text-on-accent" : "border-line bg-surface text-text-2 hover:border-line-strong")}>
+            className={cn("inline-flex h-9 shrink-0 items-center rounded-lg border px-3 text-sm whitespace-nowrap transition", x.id === id ? "border-transparent bg-accent font-medium text-on-accent" : "border-line bg-surface text-text-2 hover:border-line-strong")}>
             {x.field}
           </button>
         ))}

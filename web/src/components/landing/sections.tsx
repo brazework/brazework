@@ -45,13 +45,16 @@ export function Tour() {
 export function ShowBuild() {
   return (
     <section id="projects" className={SEC}>
-      <div className={cn(WRAP, "grid grid-cols-1 items-center gap-10 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] lg:gap-16")}>
-        <div className="order-2 min-w-0 lg:order-1"><BuildShowcase /></div>
-        <div className="order-1 lg:order-2">
+      {/* Phone: the heading, then the picker and the model, then the detail. Laptop: the model on the left, the words beside it. */}
+      <div className={cn(WRAP, "grid grid-cols-1 gap-x-16 gap-y-8 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]")}>
+        <div className="lg:col-start-2 lg:row-start-1 lg:self-end">
           <h2 className={H2}>Don&apos;t describe it. Show the build.</h2>
           <p className={LEAD}>Whatever you make, post the thing itself. Upload the model, and whoever checks your work can turn it over, look inside and see how big it is.</p>
+        </div>
+        <div className="min-w-0 lg:col-start-1 lg:row-span-2 lg:row-start-1 lg:self-center"><BuildShowcase /></div>
+        <div className="lg:col-start-2 lg:row-start-2 lg:self-start [&>dl]:mt-0">
           <Points items={[
-            ["Pick what you do", "A robot, a rocket, a gearbox, a circuit board, a bridge, a lab model. Each is an example of a build and the milestone that goes with it."],
+            ["Pick what you do", "Twenty fields, from robotics and software to chemistry, business, design and education. Each shows an example build and the milestone that goes with it."],
             ["Look closer", "Front, side and top at a tap. See through the surfaces, or pull an assembly apart."],
             ["Blueprint mode", "One tap turns it into a line drawing on blue paper, with its dimensions written on it."],
             ["Your real file", "STL, OBJ, GLB and 3MF open right on your project page. No CAD tool needed."],
