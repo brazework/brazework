@@ -110,15 +110,21 @@ test("the blueprint writes each side's length with its unit, or bare numbers whe
   assert.deepEqual(dimTexts("stl", [20, 20, 20]), ["20", "20", "20"]);
 });
 
+test("there is an example for software, computer science and every other kind of build", () => {
+  const fields = SAMPLES.map((s) => s.field);
+  for (const f of ["Robotics", "Software", "Computer science", "Data & AI", "Mathematics", "Physics", "Chemistry", "Biology", "Environment", "Space", "Medicine", "Business", "Design", "Media", "Social science", "Education"]) assert.ok(fields.includes(f as (typeof fields)[number]), f);
+  assert.equal(SAMPLES.length, 20);
+});
+
 test("every example on the landing page builds: several parts, a sensible size, something to post", () => {
   assert.equal(new Set(SAMPLES.map((s) => s.id)).size, SAMPLES.length);
   assert.equal(new Set(SAMPLES.map((s) => s.field)).size, SAMPLES.length, "one example per field");
   for (const s of SAMPLES) {
     const m = measure(THREE, buildSample(THREE, s.id));
     assert.ok(m.parts > 1, `${s.id} has parts to pull apart`);
-    assert.ok(m.triangles > 200 && m.triangles < 60_000, `${s.id}: ${m.triangles} triangles`);
-    assert.ok(m.size.every((v) => v > 0.005 && v < 1), `${s.id} is between 5 mm and 1 m on every side: ${m.size}`);
-    assert.equal(sizeLabel(SAMPLE_EXT, m.size).unit, "mm");
+    assert.ok(m.triangles > 100 && m.triangles < 60_000, `${s.id}: ${m.triangles} triangles`);
+    assert.ok(m.size.every((v) => v > 0.005 && v < 2.5), `${s.id} is between 5 mm and 2.5 m on every side: ${m.size}`);
+    assert.match(sizeLabel(SAMPLE_EXT, m.size).unit, /^(mm|m)$/);
     for (const v of [s.name, s.milestone, s.by]) assert.ok(v.trim().length > 3, s.id);
   }
 });

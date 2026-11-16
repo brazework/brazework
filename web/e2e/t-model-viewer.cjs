@@ -54,14 +54,16 @@ const settled = (v) => v.evaluate((el) => new Promise((ok) => { const t = setInt
   await step("landing: picking what you do shows a different build and what you'd post", async () => {
     const sec = page.locator("#projects"), v = sec.locator("[data-model-viewer]");
     const seen = new Set();
-    for (const [field, build] of [["Aerospace", "Certification rocket"], ["Electronics", "Battery management board"], ["Civil", "Balsa truss bridge"], ["Biology", "DNA double helix model"], ["Mechanical", "Reduction gearbox"], ["Robotics", "Line-following robot"]]) {
-      await sec.getByRole("tab", { name: field }).click();
+    if ((await sec.getByRole("tab").count()) !== 20) throw new Error(`expected 20 fields in the picker, found ${await sec.getByRole("tab").count()}`);
+    const tries = [["Aerospace", "Certification rocket"], ["Software", "Campus shuttle tracker app"], ["Computer science", "Four-node compute cluster"], ["Data & AI", "Crop disease classifier"], ["Chemistry", "Salt crystal lattice model"], ["Business", "Campus coffee cart"], ["Education", "Tactile fraction kit"], ["Robotics", "Line-following robot"]];
+    for (const [field, build] of tries) {
+      await sec.getByRole("tab", { name: field, exact: true }).click();
       await sec.locator("#build-example").getByText(build, { exact: true }).waitFor();
       await sec.locator("#build-example").getByText("Verified by").waitFor();
       if ((await settled(v)) === "error") throw new Error(`${field}: the example failed to load`);
       seen.add((await v.locator("[data-model-size]").innerText()).replace(/\s+/g, " ").trim());
     }
-    if (seen.size !== 6) throw new Error(`six examples but ${seen.size} different sizes: the model didn't change`);
+    if (seen.size !== tries.length) throw new Error(`${tries.length} examples but ${seen.size} different sizes: the model didn't change`);
     if (page.errs.length) throw new Error(page.errs[0]);
   }, page);
 
