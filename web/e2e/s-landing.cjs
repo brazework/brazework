@@ -1,0 +1,120 @@
+// The landing page's demos (components/landing, Linear FIX-117). Signed out, on a laptop and a phone:
+// the hero's milestone gets signed and a company asks to talk; the app tour's loop runs from Club
+// (verify) to Proof to Inbox (accept); Ember answers and waits for the OK; the club checklist ticks;
+// the company search only finds signed work. With reduced motion, nothing waits on an animation.
+const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
+
+(async () => {
+  const b = await browser();
+  const ctx = await b.newContext({ viewport: { width: 1440, height: 950 } });
+  const page = await ctx.newPage();
+  page.errs = []; page.on("pageerror", (e) => page.errs.push(e.message));
+  const tab = (p, name) => p.locator("#app").getByRole("tab", { name: new RegExp(`^${name}`) }).locator("visible=true").first();
+
+  await step("hero: the example milestone is signed, then a company asks to talk, and you can answer", async () => {
+    await go(page, "/");
+    const stage = page.locator("#hero-preview");
+    await hydrated(page.locator("#hero-build"));
+    await stage.getByText("A line-following robot").waitFor();
+    await stage.getByText("Verified", { exact: true }).waitFor({ timeout: 10000 });
+    await stage.getByRole("button", { name: "Accept" }).click({ timeout: 10000 });
+    await stage.getByText(/You're talking/).waitFor();
+  }, page);
+
+  await step("hero: Replay starts over, and pressing Verify yourself signs it", async () => {
+    const stage = page.locator("#hero-preview");
+    await stage.getByRole("button", { name: "Replay" }).click();
+    await stage.getByRole("button", { name: "Verify" }).click();
+    await stage.getByText("Verified", { exact: true }).waitFor();
+    await stage.getByRole("button", { name: "Accept" }).waitFor({ timeout: 10000 });
+  }, page);
+
+  await step("tour: before anything is signed, Proof and Inbox say so", async () => {
+    const app = page.locator("#app");
+    await tab(page, "Proof").click();
+    await app.getByText(/isn't here yet/).waitFor();
+    await tab(page, "Inbox").click();
+    await app.getByText("No requests yet").waitFor();
+  }, page);
+
+  await step("tour: the hint opens Club; verifying puts the milestone on Proof", async () => {
+    const app = page.locator("#app");
+    await app.getByRole("button", { name: "Open Club" }).click();
+    await app.getByRole("heading", { name: "Rocketry Club" }).waitFor();
+    await app.getByRole("button", { name: "Verify" }).click();
+    await app.getByText(/It's on Maya's record/).waitFor();
+    await tab(page, "Proof").click();
+    const panel = app.locator("#tour-panel");
+    await panel.getByText("Beat the course in 41.2 seconds").waitFor();
+    await panel.getByText("Verified by Rocketry Club").waitFor();
+    if (await panel.getByText(/isn't here yet/).count()) throw new Error("Proof still says the run is waiting");
+  }, page);
+
+  await step("tour: the request is in Inbox; accepting it finishes the loop", async () => {
+    const app = page.locator("#app");
+    await app.getByRole("button", { name: "Open Inbox" }).click();
+    await app.getByText(/Free to talk about our robotics internship/).waitFor();
+    await app.getByRole("button", { name: "Accept" }).click();
+    await app.getByText(/Thursday afternoon works/).waitFor();
+    await app.getByText("That's the loop: built, signed, found.").waitFor();
+    await app.getByRole("button", { name: "Start the tour over" }).click();
+    await app.getByRole("button", { name: "Open Club" }).waitFor();
+  }, page);
+
+  await step("Ember: it answers, shows a card, and does nothing until you press the button", async () => {
+    const ember = page.locator("#ember");
+    await ember.getByRole("button", { name: "Find clubs for me" }).click();
+    await ember.getByText("Checked clubs at your school").waitFor();
+    const act = ember.getByRole("button", { name: "Ask to join" });
+    await act.click({ timeout: 15000 });
+    await ember.getByText("Request sent to Robotics Society").waitFor();
+  }, page);
+
+  await step("clubs: the setup card ticks rules and the invite link, and shows the message to paste", async () => {
+    const clubs = page.locator("#clubs");
+    await clubs.getByText("1 of 5 done", { exact: false }).waitFor();
+    await clubs.getByRole("button", { name: "Use starter rules" }).click();
+    await clubs.getByRole("button", { name: "Get invite link" }).click();
+    await clubs.getByText("3 of 5 done", { exact: false }).waitFor();
+    await clubs.getByText(/We're moving Rocketry Club to Brazework/).waitFor();
+  }, page);
+
+  await step("companies: search finds signed work only, and a message is a request", async () => {
+    const co = page.locator("#companies");
+    await co.getByLabel("Find builders").fill("pcb");
+    await co.getByText('1 person with signed work matching "pcb"').waitFor();
+    await co.getByText("Theo Nguyen").waitFor();
+    if (await co.getByText("Maya Patel").count()) throw new Error("the search didn't narrow the list");
+    await co.getByRole("button", { name: "Message" }).click();
+    await co.getByText(/It waits in their Requests/).waitFor();
+    await co.getByLabel("Find builders").fill("blockchain");
+    await co.getByText(/No signed work matches that/).waitFor();
+  }, page);
+
+  await step("the page raised no errors", async () => { if (page.errs.length) throw new Error(page.errs[0]); }, page);
+
+  // A phone: the tour's places are the app's tab bar, and the hero's box is full height.
+  const phone = await (await b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true })).newPage();
+  await step("phone: the build box is a full-size field and the tour runs from the tab bar", async () => {
+    await go(phone, "/");
+    const box = await phone.locator("#hero-build").boundingBox();
+    if (!box || box.height < 44) throw new Error(`the build box is ${box && Math.round(box.height)}px tall`);
+    await tab(phone, "Club").click();
+    await phone.locator("#app").getByRole("button", { name: "Verify" }).click();
+    await phone.locator("#app").getByText(/It's on Maya's record/).waitFor();
+    const cut = await phone.locator("#app").getByText(/It's on Maya's record/).evaluate((el) => { const r = el.getBoundingClientRect(), p = document.querySelector("#tour-panel").getBoundingClientRect(); return r.bottom > p.bottom; });
+    if (cut) throw new Error("the verified line is cut off by the frame");
+  }, phone);
+
+  // Reduced motion: the whole sequence is simply there.
+  const still = await (await b.newContext({ viewport: { width: 1440, height: 950 }, reducedMotion: "reduce" })).newPage();
+  await step("reduced motion: the hero shows every step at once", async () => {
+    await still.goto(BASE + "/", { waitUntil: "networkidle" });
+    const stage = still.locator("#hero-preview");
+    await stage.getByText("Verified", { exact: true }).waitFor({ timeout: 3000 });
+    await stage.getByRole("button", { name: "Accept" }).click({ timeout: 3000 });
+  }, still);
+
+  await b.close();
+  summary();
+})();

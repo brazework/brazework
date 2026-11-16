@@ -173,9 +173,6 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity
 @keyframes rise-in {
   from { opacity: 0; transform: translateY(24px); filter: blur(8px); }
 }
-@keyframes reveal-in {
-  from { opacity: 0; transform: translateY(32px); }
-}
 /* The hero's main text: visible from the first frame (so it counts as painted right away), it just pulls into focus. */
 @keyframes focus-in {
   from { transform: translateY(14px); filter: blur(10px); }
@@ -188,17 +185,8 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity
   animation: focus-in 1s cubic-bezier(0.16, 1, 0.3, 1) both;
   animation-delay: var(--delay, 0s);
 }
-/* Scroll-driven where supported; elsewhere sections are simply visible. */
-@supports (animation-timeline: view()) {
-  .reveal {
-    animation: reveal-in linear both;
-    animation-timeline: view();
-    animation-range: entry calc(var(--rd, 0) * 1%) entry calc(55% + var(--rd, 0) * 1%);
-  }
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .rise-in, .focus-in, .reveal { animation: none !important; }
+  .rise-in, .focus-in { animation: none !important; }
 
   *, *::before, *::after {
     animation-duration: 0.01ms !important;
@@ -459,133 +447,6 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity
 html { -webkit-tap-highlight-color: transparent; }
 
 
-/* Landing page on phones: a stack of full-screen pages. One flick moves exactly one page
-   (mandatory snapping + snap-stop), every page is one screen tall, and each holds one idea:
-   eyebrow, title, and one swipe row or control. Desktop is unchanged. */
-/* Phone-only copy (the landing's short versions of long paragraphs). */
-.m-only { display: none; }
-@media (max-width: 767px) {
-  .m-only { display: revert; }
-  /* The pages scroll inside .story-root, not the document: Safari only collapses its toolbar when the
-     document scrolls, so the visible height stays fixed and every page lines up with the screen. */
-  html:has(.story-root), body:has(.story-root) { height: 100%; overflow: hidden; }
-  .story-root { height: 100dvh; overflow-y: auto; overscroll-behavior-y: contain; scroll-snap-type: y mandatory; }
-  .m-hide { display: none !important; }
-  .story-sec, #founding .grid.max-w-7xl > * {
-    min-height: 100dvh;
-    scroll-margin-top: 0;
-    scroll-snap-align: start;
-    scroll-snap-stop: always;
-    display: flex; flex-direction: column; justify-content: center;
-    padding-top: calc(env(safe-area-inset-top, 0px) + 5.5rem);
-    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 1.5rem);
-  }
-  /* Founding clubs is two pages: the pitch, then the form. */
-  #founding.story-sec { height: auto; display: block; padding: 0; overflow: visible; scroll-snap-align: none; }
-  #founding .grid.max-w-7xl { gap: 0; }
-  #founding form { padding-top: 0; }
-  #founding .grid.max-w-7xl > * { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 0.5rem); }
-  .landing-footer { scroll-snap-align: end; }
-  /* Flex items with auto margins shrink to their content; a swipe row's content is wide on purpose. */
-  .story-sec > :not(.absolute) { width: 100%; }
-  .story-sec h2 { font-size: 2.05rem; line-height: 1.05; }
-  /* Hero: the pitch and the field picker; the profile demo lives on the next pages' cards. */
-  #top h1 { font-size: 2.9rem; }
-  #top .grid.max-w-7xl > :nth-child(2) { display: none; }
-  #top p { font-size: 1rem; }
-  #top .mt-8 { margin-top: 1.25rem; }
-  /* No sideways scrolling anywhere: the hero's audience chips and the audience tabs wrap. */
-  #top [role="tablist"] button { padding: 6px 11px; font-size: 0.8rem; }
-  #top [aria-live="polite"] { min-height: 0; font-size: 0.9rem; }
-  #top p.text-faint { display: none; }
-  #who .no-scrollbar { flex-wrap: wrap; overflow: visible; margin-inline: 0; padding-inline: 0; }
-  #who .no-scrollbar [role="tab"] { padding: 6px 10px; font-size: 0.78rem; gap: 4px; }
-  #who .no-scrollbar [role="tab"] svg { display: none; }
-  /* No sideways scrolling: card grids become compact stacks or two-column tiles that fit. */
-  .m-cards { margin-top: 1.25rem !important; gap: 10px !important; }
-  #why .m-cards { grid-template-columns: 1fr; }
-  #why .m-cards > * { flex-direction: row; align-items: center; gap: 14px; padding: 14px 16px; }
-  #why .m-cards > * > div:first-child { min-width: 4.6rem; font-size: 2rem; }
-  #why .m-cards p { margin-top: 0; font-size: 0.8rem; line-height: 1.35; }
-  #why .m-cards a { display: none; }
-  #product .m-cards { grid-template-columns: 1fr 1fr 1fr; }
-  /* Built for AI: three compact rows. Pricing: three compact cards, the points hidden. */
-  #ai .m-cards { grid-template-columns: 1fr; }
-  #ai .m-cards > * { padding: 14px 16px; display: grid; grid-template-columns: auto 1fr; column-gap: 12px; align-items: center; }
-  #ai .m-cards h3 { margin-top: 0; font-size: 1rem; }
-  #ai .m-cards p { grid-column: 2; margin-top: 2px; font-size: 0.8rem; line-height: 1.35; }
-  #ai .m-cards > * > span:first-child { grid-row: span 2; width: 2.5rem; height: 2.5rem; }
-  #pricing .m-cards { grid-template-columns: 1fr; }
-  #pricing .m-cards > * { padding: 12px 16px; }
-  #pricing .m-cards ul { display: none; }
-  #pricing .m-cards a { margin-top: 8px; height: 2.2rem; }
-  #pricing .m-cards .text-3xl { font-size: 1.25rem; }
-  #pricing .m-cards .mt-2 { margin-top: 2px; }
-  /* Founding form and FAQ fit one screen: a smaller form title; tighter questions, the last one
-     (founding organizations, answered just above) hidden. */
-  #founding form h3 { font-size: 1.1rem; }
-  #founding form { gap: 0.6rem !important; }
-  #founding form .min-h-5 { min-height: 0; }
-  #faq h3 button { padding: 13px 18px; font-size: 0.93rem; }
-  #faq [id^="faq-"] p { padding: 0 18px 14px; font-size: 0.88rem; }
-  #faq .divide-y > :nth-child(n+7) { display: none; }
-  #product .m-cards > * { padding: 12px !important; }
-  #product .m-cards h3 { font-size: 0.8rem !important; }
-  #product .m-cards > * { padding: 14px; grid-column: auto !important; }
-  #product .m-cards p { display: none; }
-  #product .m-cards h3 { margin-top: 0.6rem; font-size: 0.92rem; line-height: 1.25; }
-  #product .m-cards > * > span:first-child { width: 2.25rem; height: 2.25rem; }
-  /* How it works: every step listed; only the active one (it advances on its own) shows its line. */
-  #how [aria-live="polite"] { display: none; }
-  #how ol { margin-top: 1.25rem; gap: 6px; }
-  #how ol button { padding: 12px 14px; }
-  #how ol button:not([aria-pressed="true"]) p { display: none; }
-  #how ol h3 { font-size: 1rem; }
-  /* Ember: orb, title, one row of what it does, then the steps to swipe. */
-  #copilot ul[aria-label="What Ember can do"] { flex-wrap: nowrap; justify-content: flex-start; overflow-x: auto; margin-inline: -24px; padding-inline: 24px; scrollbar-width: none; margin-top: 1.25rem; }
-  #copilot ul[aria-label="What Ember can do"] > li { flex: none; }
-
-  /* Every page has to fit Safari's visible height (about 660px on a Pro with the toolbars showing):
-     WebKit won't scroll inside a snap page that's taller, it snaps back to its top. */
-  #who li:nth-child(n+2) { display: none; }
-  #founding .mt-10.space-y-3 { display: none; }
-  #founding form { gap: 0.8rem; }
-  #founding form h3 + p { display: none; }
-  #founding .rounded-\[2rem\] { padding: 1.25rem; }
-  /* Ember on a phone: the title and the live chat demo; the step cards are for bigger screens. */
-  #copilot ol { display: none !important; }
-  #copilot .max-w-3xl > .flex.justify-center, #copilot ul[aria-label="What Ember can do"] { display: none; }
-  #faq dl, #faq ul, #faq details { font-size: 0.95rem; }
-  /* Content rises in as each page lands (StoryRail marks it). Without JavaScript it simply shows. */
-  .js-story .story-sec:not(#founding) > :not(.absolute), .js-story #founding .grid.max-w-7xl > * > * {
-    opacity: 0; transform: translateY(26px) scale(0.98);
-    transition: opacity 0.7s cubic-bezier(0.16, 1, 0.3, 1), transform 0.7s cubic-bezier(0.16, 1, 0.3, 1);
-  }
-  /* Same selectors as the hide rule plus [data-in], so the reveal always wins. */
-  .js-story .story-sec:not(#founding)[data-in] > :not(.absolute), .js-story #founding .grid.max-w-7xl > [data-in] > * { opacity: 1; transform: none; }
-}
-/* Shorter phones (SE, mini): tighter type and spacing so every page still fits one screen. */
-@media (max-width: 767px) and (max-height: 760px) {
-  .story-sec, #founding .grid.max-w-7xl > * { padding-top: calc(env(safe-area-inset-top, 0px) + 4.9rem); padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 0.75rem); }
-  .story-sec h2 { font-size: 1.7rem; }
-  .story-sec h2.mt-5, .story-sec .mt-5 { margin-top: 0.75rem; }
-  #top h1 { font-size: 2.35rem; margin-top: 1rem; }
-
-  .m-cards, #how ol { margin-top: 1rem !important; }
-  #who p, #faq p { font-size: 0.9rem; }
-  #founding form .mt-5, #founding form .gap-4 { margin-top: 0.5rem; gap: 0.6rem; }
-}
-/* Very short screens (iPhone SE, about 570px visible): some pages can't fit, and WebKit won't scroll
-   inside a mandatory snap page that's taller than the screen, so snap gently instead. */
-@media (max-width: 767px) and (max-height: 640px) {
-  .story-root { scroll-snap-type: y proximity; }
-  .story-sec, #founding .grid.max-w-7xl > * { scroll-snap-stop: normal; }
-}
-@media (max-width: 767px) and (prefers-reduced-motion: reduce) {
-  .story-root { scroll-snap-type: y proximity; }
-  .js-story .story-sec > *, .js-story #founding .grid.max-w-7xl > * > * { opacity: 1 !important; transform: none !important; transition: none !important; }
-}
-
 /* Dropdowns: every native <select> gets Brazework's chevron and spacing instead of the browser's arrow,
    so form fields, pills and filters all match. Unlayered on purpose: it must win over utility padding,
    or the text runs under the chevron. The option list itself stays native (keyboard, screen readers,
@@ -604,58 +465,13 @@ select:not([multiple]):not([size]) {
 select:disabled { cursor: not-allowed; }
 select option { background-color: var(--surface); color: var(--text); }
 
-/* The landing's agent section (components/landing/connect-section.tsx): on phones, the current
-   chapter's bar fills while it plays, then the next chapter starts. */
-@keyframes agent-fill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
-
-/* The landing page is black and white (FIX-92): headline accents are a sheen from the text colour to
-   muted grey, readable on both themes. */
-.story { --text-grad: linear-gradient(90deg, var(--text), var(--muted)); }
-
-/* Every kind of engineering (components/landing/disciplines.tsx): quiet, looping drawings of real
-   work. The global reduced-motion rule above stops them. */
-@keyframes dz-spin { to { transform: rotate(360deg); } }
-@keyframes dz-spin-back { to { transform: rotate(-360deg); } }
-@keyframes dz-scroll { to { transform: translateX(-60px); } }
-@keyframes dz-draw { 0% { stroke-dashoffset: 400; } 55%, 85% { stroke-dashoffset: 0; } 100% { stroke-dashoffset: 0; opacity: 0; } }
-@keyframes dz-sweep { from { stroke-dashoffset: 300; } to { stroke-dashoffset: 0; } }
-@keyframes dz-flex { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(5px); } }
-@keyframes dz-blink { 0%, 60%, 100% { opacity: 0.25; } 70%, 90% { opacity: 1; } }
-.dz-gear { transform-box: fill-box; transform-origin: center; animation: dz-spin 9s linear infinite; }
-.dz-gear-back { transform-box: fill-box; transform-origin: center; animation: dz-spin-back 6.75s linear infinite; }
-.dz-scroll { animation: dz-scroll 2.4s linear infinite; }
-.dz-draw { stroke-dasharray: 400; animation: dz-draw 5s ease-out infinite; }
-.dz-sweep { stroke-dasharray: 60 240; animation: dz-sweep 2.6s linear infinite; }
-.dz-flex { animation: dz-flex 3.2s ease-in-out infinite; }
-.dz-blink { animation: dz-blink 4s ease-in-out infinite; }
-@keyframes dz-swing { 0%, 100% { transform: rotate(-16deg); } 50% { transform: rotate(16deg); } }
-.dz-swing { animation: dz-swing 2.2s ease-in-out infinite; }
-
-/* Smooth scrolling on the landing page (components/landing/smooth-scroll.tsx): Lenis's own rules. */
-html.lenis, html.lenis body { height: auto; }
-.lenis:not(.lenis-autoToggle).lenis-stopped { overflow: clip; }
-.lenis [data-lenis-prevent] { overscroll-behavior: contain; }
-.lenis.lenis-smooth iframe { pointer-events: none; }
-.lenis.lenis-smooth, .lenis.lenis-smooth * { scroll-behavior: auto !important; }
-
-/* Live scroll scenes (FIX-92): after the fields section, every block rises into place as it scrolls
-   into view, tied to the scroll itself (scrub back and it sinks back), not played once. CSS
-   scroll-driven animations run off the main thread and follow Lenis, which moves the real scroll.
-   Wide screens only (phones have their own one-screen story) and never with reduced motion; browsers
-   without view timelines just show the page. [data-noscene] opts a block's insides out (the project
-   deck animates its own cards). */
-@keyframes scene-rise { from { opacity: 0; transform: translateY(72px) scale(0.965); } to { opacity: 1; transform: none; } }
-@media (min-width: 768px) and (prefers-reduced-motion: no-preference) {
-  @supports (animation-timeline: view()) {
-    :is(#clubs, #noclub, #other-side, #companies, #who, #product, #pricing, #founders, #founding, #join) :is(.max-w-7xl > *, .grid > *):not([data-noscene] *),
-    #faq > * {
-      animation: scene-rise linear both;
-      animation-timeline: view();
-      animation-range: entry 0% entry 85%;
-    }
-    /* Cards in a row arrive one after another. */
-    :is(#clubs, #noclub, #other-side, #companies, #who, #product, #pricing, #founders, #founding, #join) .grid > :nth-child(2):not([data-noscene] *) { animation-range: entry 8% entry 92%; }
-    :is(#clubs, #noclub, #other-side, #companies, #who, #product, #pricing, #founders, #founding, #join) .grid > :nth-child(3):not([data-noscene] *) { animation-range: entry 16% entry 100%; }
-    :is(#clubs, #noclub, #other-side, #companies, #who, #product, #pricing, #founders, #founding, #join) .grid > :nth-child(n + 4):not([data-noscene] *) { animation-range: entry 22% cover 30%; }
-  }
+/* The landing page (components/landing). Its hero sits on a faint engineering grid, like the paper a
+   build gets sketched on, fading out before the edges. */
+.landing-grid {
+  background:
+    linear-gradient(color-mix(in oklab, var(--text) 6%, transparent) 1px, transparent 1px) 0 0 / 32px 32px,
+    linear-gradient(90deg, color-mix(in oklab, var(--text) 6%, transparent) 1px, transparent 1px) 0 0 / 32px 32px;
+  mask-image: radial-gradient(ellipse 75% 70% at 70% 35%, #000 20%, transparent 75%);
 }
+/* The app tour's feed runs past the bottom of its frame, the way a real feed does. */
+.tour-panel { mask-image: linear-gradient(#000 calc(100% - 2.5rem), transparent); }

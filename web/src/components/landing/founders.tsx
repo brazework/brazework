@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { Eyebrow, H2 } from "./marketing";
+import { H2 } from "./sections";
 
 // Who built Brazework and why. Empty until the founders write it themselves: no invented bios. Add an
 // entry per founder (photo in /public/founders/, optional), and the section appears.
@@ -12,11 +12,10 @@ export function Founders() {
   const ready = FOUNDERS.filter((f) => f.name.trim() && f.bio.trim());
   if (!ready.length) return null;
   return (
-    <section id="founders" data-story="Founders" className="story-sec scroll-mt-24 py-24 sm:py-32">
+    <section id="founders" className="scroll-mt-20 py-20 sm:py-28">
       <div className="mx-auto max-w-5xl px-6">
-        <Eyebrow>Founders</Eyebrow>
-        <h2 className={`mt-5 ${H2}`}>Built by people <span className="text-grad">who build.</span></h2>
-        <div className="m-cards mt-10 grid grid-cols-1 gap-4 md:grid-cols-2">
+        <h2 className={H2}>Built by people who build.</h2>
+        <div className="mt-10 grid grid-cols-1 gap-4 md:grid-cols-2">
           {ready.map((f) => (
             <article key={f.name} className="rounded-3xl border border-line bg-surface p-6">
               <div className="flex items-center gap-4">

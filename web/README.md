@@ -43,7 +43,7 @@ src/
   app/auth/callback|signout    Email-link code exchange; sign out
   app/onboarding/              Step 3: field, headline, interests
   app/(app)/                   Signed-in shell; feed (composer, likes, realtime refresh)
-  components/landing/          Hero (spark-network canvas), live demo, bento, disciplines, compare, partners
+  components/landing/          The marketing page: hero with the signing demo, the app tour, Ember, clubs, company search, FAQ
 ```
 
 Conventions:

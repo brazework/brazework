@@ -8,12 +8,12 @@ import { Button, Logo } from "@/components/ui";
 import { cn } from "@/lib/forge";
 
 const LINKS = [
-  { href: "#how", label: "How it works" },
-  { href: "#projects", label: "Projects" },
+  { href: "#app", label: "The app" },
+  { href: "#ember", label: "Ember" },
   { href: "#clubs", label: "Clubs" },
   { href: "#companies", label: "Companies" },
   { href: "#pricing", label: "Pricing" },
-  { href: "#faq", label: "FAQ" },
+  { href: "#faq", label: "Questions" },
 ];
 
 export function Nav() {
@@ -21,15 +21,6 @@ export function Nav() {
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   useMotionValueEvent(scrollY, "change", (v) => setScrolled(v > 24));
-  // On phones the landing page scrolls inside .story-root (so Safari's toolbar stays put).
-  useEffect(() => {
-    const root = document.querySelector(".story-root");
-    if (!root) return;
-    const on = () => setScrolled(root.scrollTop > 24 || window.scrollY > 24);
-    root.addEventListener("scroll", on, { passive: true });
-    return () => root.removeEventListener("scroll", on);
-  }, []);
-
   // Close the mobile menu with Escape.
   useEffect(() => {
     if (!open) return;
@@ -39,7 +30,7 @@ export function Nav() {
   }, [open]);
 
   return (
-    <header className="rise-in fixed inset-x-0 top-0 z-50 flex justify-center px-4 pt-[calc(env(safe-area-inset-top)+1rem)]">
+    <header className="fixed inset-x-0 top-0 z-50 flex justify-center px-4 pt-[calc(env(safe-area-inset-top)+1rem)]">
       <nav
         aria-label="Main"
         className={cn(
