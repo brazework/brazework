@@ -226,7 +226,7 @@ Implementation: `supabase/milestones.sql`, `web/src/lib/milestones.ts`, queue UI
 - **No email or push notifications** (none found in `web/src`, `ios/`, `supabase/`).
 - **No club deletion or ownership transfer.**
 - **iOS lacks projects, milestones, verification and Ember.**
-- Landing hero preview uses hard-coded stats ("24 organizations active", "312 milestones verified this term", "41 employer connections", `components/landing/hero.tsx`); the preview is captioned "Example data" (L101).
+- The landing page's demos (hero signing sequence, app tour, Ember, club setup, company search) run on example data in `web/src/lib/landing-demo.ts`, not the database; each is captioned as an example on the page.
 
 ---
 

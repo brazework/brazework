@@ -1,95 +1,60 @@
 "use client";
-import { AnimatePresence, motion } from "motion/react";
-import { Building2, Loader2, PartyPopper, Wrench } from "lucide-react";
+import { Check, Loader2 } from "lucide-react";
 import { useActionState, useState } from "react";
 import { registerOrgInterest, type OrgInterestState } from "@/app/actions/org-interest";
 import { Button, Field, inputCls } from "@/components/ui";
-import { cn } from "@/lib/forge";
-import { Eyebrow, H2 } from "./marketing";
-import { Reveal } from "./reveal";
 import { submitWithoutReset } from "@/lib/submit";
+import { H2 } from "./sections";
 
-const TYPES = [
-  { id: "club", label: "Club", icon: Wrench, title: "For clubs and chapters", body: "Chapters, societies, clubs, labs and teams. Run your organization on Brazework, let Ember handle the busywork, and your members' verified work follows them into their careers." },
-  { id: "company", label: "Company", icon: Building2, title: "For companies", body: "Meet engineers and scientists through what they've built and what their organization vouched for. Sponsor chapters, host events, skip the résumé pile." },
-] as const;
+// The founding clubs form: a club (or a company) leaves its name and the founders get in touch.
+const TYPES = [{ id: "club", label: "Club or study group" }, { id: "company", label: "Company" }] as const;
 
 export function Organizations() {
   const [type, setType] = useState<(typeof TYPES)[number]["id"]>("club");
   const [state, action, pending] = useActionState<OrgInterestState, FormData>(registerOrgInterest, { ok: false, message: "" });
 
   return (
-    <section id="founding" data-story="Founding clubs" className="story-sec relative isolate scroll-mt-24 overflow-hidden py-24 sm:py-32">
-      <div className="mx-auto grid grid-cols-1 max-w-7xl gap-14 px-6 lg:grid-cols-2">
-        <div>
-          <Reveal>
-            <Eyebrow>Founding clubs program</Eyebrow>
-            <h2 className={`mt-5 ${H2}`}>
-              Be one of the first clubs <span className="text-grad">on Brazework.</span>
-            </h2>
-            <ul className="mt-6 grid gap-2 text-sm text-text-2">
-              <li>· We set your club up with you, personally.</li>
-              <li>· Your requests shape what we build next.</li>
-              <li>· Free for your club and every member.</li>
+    <section id="founding" className="scroll-mt-20 pb-20 sm:pb-28">
+      <div className="mx-auto max-w-6xl px-5 sm:px-6">
+        <div className="grid grid-cols-1 gap-10 rounded-[1.25rem] border border-line bg-surface p-6 sm:p-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:gap-16">
+          <div>
+            <h2 className={H2}>Be one of the first clubs on Brazework.</h2>
+            <ul className="mt-7 flex flex-col gap-3 text-[15px] text-text-2">
+              {["We set your club up with you, personally.", "Your requests shape what we build next.", "Free for your club and every member."].map((x) => <li key={x} className="flex gap-2.5"><Check className="mt-1 size-4 shrink-0 text-ok" />{x}</li>)}
             </ul>
-          </Reveal>
-          <div className="mt-10 space-y-3">
-            {TYPES.map((t, i) => (
-              <Reveal key={t.id} delay={i * 0.06}>
-                <button
-                  type="button"
-                  onClick={() => setType(t.id)}
-                  className={cn(
-                    "flex w-full items-start gap-4 rounded-3xl border p-5 text-left transition",
-                    type === t.id ? "border-line-strong bg-surface shadow-[var(--shadow)]" : "border-line bg-surface/60 hover:border-line-strong",
-                  )}
-                >
-                  <span className={cn("grid size-10 shrink-0 place-items-center rounded-xl transition", type === t.id ? "bg-accent-grad text-on-accent" : "bg-surface-2 text-faint")}><t.icon className="size-5" /></span>
-                  <div>
-                    <div className="font-semibold">{t.title}</div>
-                    <p className="mt-1 text-sm text-muted">{t.body}</p>
-                  </div>
-                </button>
-              </Reveal>
-            ))}
+            <p className="mt-7 text-sm text-muted">Hiring or sponsoring? Pick Company in the form and we&apos;ll set up a pilot with you.</p>
           </div>
-        </div>
 
-        <Reveal delay={0.1}>
-          <div className="relative overflow-hidden rounded-[2rem] border border-line bg-surface p-6 shadow-[var(--shadow)] sm:p-8">
-            <AnimatePresence mode="wait">
-              {state.ok ? (
-                <motion.div key="done" initial={{ opacity: 0, scale: 0.96 }} animate={{ opacity: 1, scale: 1 }} className="flex min-h-[420px] flex-col items-center justify-center text-center">
-                  <PartyPopper className="size-10 text-accent" />
-                  <h3 className="mt-4 text-2xl font-semibold">Thanks, {state.contact}.</h3>
-                  <p className="mt-2 max-w-sm text-muted">We&apos;ve noted {state.name}&apos;s interest and will reach out personally. Early partners get set up by the founders.</p>
-                </motion.div>
-              ) : (
-                <motion.form key="form" onSubmit={submitWithoutReset(action)} exit={{ opacity: 0 }} className="flex flex-col gap-5">
-                  <h3 className="text-xl font-semibold">Apply to be a founding club</h3><p className="-mt-3 text-sm text-muted">Companies: pick Company below and we&apos;ll reach out.</p>
-                  <input type="hidden" name="type" value={type} />
-                  <div role="group" aria-label="Organization type" className="flex flex-wrap gap-2">
-                    {TYPES.map((t) => (
-                      <button key={t.id} type="button" aria-pressed={type === t.id} onClick={() => setType(t.id)} className="rounded-lg border border-line px-4 py-1.5 text-sm text-muted transition aria-pressed:border-transparent aria-pressed:bg-accent-grad aria-pressed:text-on-accent">
-                        {t.label}
-                      </button>
-                    ))}
-                  </div>
-                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                    <Field label={type === "club" ? "Club name" : "Company name"}><input name="name" maxLength={120} autoComplete="organization" className={inputCls} required /></Field>
-                    <Field label="Your name"><input name="contact" maxLength={80} autoComplete="name" className={inputCls} required /></Field>
-                    <Field label={type === "company" ? "Work email" : "School email"}><input name="email" type="email" maxLength={120} autoComplete="email" className={inputCls} required /></Field>
-                    <Field label="Your role"><input name="role" maxLength={60} placeholder={type === "club" ? "e.g. President" : "e.g. University recruiter"} className={inputCls} /></Field>
-                  </div>
-                  <p role="status" className="min-h-5 text-sm text-danger">{state.message}</p>
-                  <Button type="submit" size="lg" disabled={pending} className="self-start">
-                    {pending && <Loader2 className="size-4 animate-spin" />} {pending ? "Sending…" : "Register interest"}
-                  </Button>
-                </motion.form>
-              )}
-            </AnimatePresence>
-          </div>
-        </Reveal>
+          {state.ok ? (
+            <div role="status" className="flex min-h-[22rem] flex-col justify-center">
+              <span className="grid size-10 place-items-center rounded-full bg-ok text-white dark:text-[#06240f]"><Check className="size-5" strokeWidth={3} /></span>
+              <h3 className="mt-4 text-2xl font-semibold tracking-tight">Thanks, {state.contact}.</h3>
+              <p className="mt-2 max-w-sm text-muted">We&apos;ve noted {state.name}&apos;s interest and will reach out personally. Early partners get set up by the founders.</p>
+            </div>
+          ) : (
+            <form onSubmit={submitWithoutReset(action)} className="flex flex-col gap-5">
+              <h3 className="text-xl font-semibold tracking-tight">Apply to be a founding club</h3>
+              <input type="hidden" name="type" value={type} />
+              <div role="group" aria-label="Organization type" className="flex flex-wrap gap-2">
+                {TYPES.map((t) => (
+                  <button key={t.id} type="button" aria-pressed={type === t.id} onClick={() => setType(t.id)} className="h-9 rounded-lg border border-line px-4 text-sm text-text-2 transition hover:border-line-strong aria-pressed:border-transparent aria-pressed:bg-accent aria-pressed:text-on-accent">
+                    {t.label}
+                  </button>
+                ))}
+              </div>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <Field label={type === "club" ? "Club name" : "Company name"}><input name="name" maxLength={120} autoComplete="organization" className={inputCls} required /></Field>
+                <Field label="Your name"><input name="contact" maxLength={80} autoComplete="name" className={inputCls} required /></Field>
+                <Field label={type === "company" ? "Work email" : "School email"}><input name="email" type="email" maxLength={120} autoComplete="email" className={inputCls} required /></Field>
+                <Field label="Your role"><input name="role" maxLength={60} placeholder={type === "club" ? "e.g. President" : "e.g. University recruiter"} className={inputCls} /></Field>
+              </div>
+              <p role="status" className="min-h-5 text-sm text-danger">{state.message}</p>
+              <Button type="submit" size="lg" disabled={pending} className="self-start">
+                {pending && <Loader2 className="size-4 animate-spin" />} {pending ? "Sending…" : "Register interest"}
+              </Button>
+            </form>
+          )}
+        </div>
       </div>
     </section>
   );

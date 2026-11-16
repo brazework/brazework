@@ -1,16 +1,15 @@
 import Link from "next/link";
 import { Button, Logo } from "@/components/ui";
 import { BuildStart } from "./build-start";
-import { Reveal } from "./reveal";
 
 export function FinalCta() {
   return (
-    <section id="join" data-story="Join Brazework" className="story-sec relative isolate overflow-hidden py-28 sm:py-36">
-      <Reveal className="mx-auto flex max-w-3xl flex-col items-center px-6 text-center">
-        <h2 className="text-[clamp(2.5rem,6vw,4.75rem)] leading-[0.98] font-semibold tracking-[-0.04em]">
+    <section id="join" className="scroll-mt-20 py-24 sm:py-36">
+      <div className="mx-auto flex max-w-3xl flex-col items-center px-5 text-center sm:px-6">
+        <h2 className="text-[clamp(2.5rem,6vw,4.75rem)] leading-[0.96] font-semibold tracking-[-0.045em]">
           Built something?
           <br />
-          <span className="text-grad">Put it on the record.</span>
+          Put it on the record.
         </h2>
         <p className="mt-6 max-w-xl text-lg text-muted">Log the first thing you&apos;ve built and ask whoever saw it to sign it: your club, a professor, a manager. It takes a few minutes, and it&apos;s free for you and your club.</p>
         <BuildStart />
@@ -18,7 +17,7 @@ export function FinalCta() {
           <span>Free for students and clubs</span>
           <Button href="#founding" variant="outline">Bring your club</Button>
         </div>
-      </Reveal>
+      </div>
     </section>
   );
 }
@@ -31,8 +30,8 @@ async function Year() {
 
 export function Footer() {
   return (
-    <footer className="landing-footer border-t border-line">
-      <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-6 px-6 py-10">
+    <footer className="border-t border-line">
+      <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-6 px-5 py-10 sm:px-6">
         <div className="flex items-center gap-4">
           <Logo />
           <span className="text-sm text-faint">© <Year /> Brazework. Built for the people who build.</span>
@@ -42,7 +41,7 @@ export function Footer() {
           <Link href="/signup" className="hover:text-text">Sign up</Link>
           <a href="#founding" className="hover:text-text">Founding clubs</a>
           <Link href="/privacy" className="hover:text-text">Privacy</Link>
-          <a href="#top" className="hover:text-text">Back to top ↑</a>
+          <a href="#top" className="hover:text-text">Back to top</a>
         </nav>
       </div>
     </footer>
