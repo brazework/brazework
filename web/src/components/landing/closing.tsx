@@ -4,7 +4,7 @@ import { BuildStart } from "./build-start";
 
 export function FinalCta() {
   return (
-    <section id="join" className="scroll-mt-20 py-24 sm:py-36">
+    <section id="join" className="scroll-mt-20 border-t border-line bg-surface-2/60 py-24 sm:py-36">
       <div className="mx-auto flex max-w-3xl flex-col items-center px-5 text-center sm:px-6">
         <h2 className="text-[clamp(2.5rem,6vw,4.75rem)] leading-[0.96] font-semibold tracking-[-0.045em]">
           Built something?

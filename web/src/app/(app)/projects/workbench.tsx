@@ -3,7 +3,7 @@ import Link from "next/link";
 import { ProjectEditor } from "../u/[id]/profile-client";
 import { BenchCard } from "./bench-card";
 
-export type BenchProject = { id: string; title: string; summary: string; status: string; private: boolean; updated_at: string; field: string; verified: number; waiting: number; updates: number; log: { id: string; body: string; status: string; created_at: string }[] };
+export type BenchProject = { id: string; title: string; summary: string; status: string; private: boolean; updated_at: string; field: string; verified: number; waiting: number; updates: number; model?: { name: string; src: string } | null; log: { id: string; body: string; status: string; created_at: string }[] };
 
 // Your projects first: where each one stands on the way to proof, and the next thing to do.
 export function Workbench({ projects, interests, copilot, stack, specsOn = false, filesOn = false }: { projects: BenchProject[]; interests: string[]; copilot: boolean; stack: boolean; specsOn?: boolean; filesOn?: boolean }) {

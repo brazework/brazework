@@ -106,6 +106,55 @@ function append(req, res, up, key, code, extra) {
   });
 }
 
+// Project files (supabase/project-files.sql): a private bucket. Signed-in members upload, links are
+// signed for a while, and only a signed link reads a file back. The real bucket's row-level rules
+// aren't modelled (the SQL tests cover those); this is enough for the app's upload and preview paths.
+const FILES = process.env.E2E_FILES_DIR || path.join(__dirname, ".project-files");
+const PF = "/storage/v1/object/project-files/", PF_SIGN = "/storage/v1/object/sign/project-files";
+const safe = (rel) => (/^[A-Za-z0-9_-]+\/[A-Za-z0-9._-]+$/.test(rel) && !rel.includes("..") ? rel : null);
+const tokenFor = (rel) => crypto.createHmac("sha256", SECRET || "e2e").update(`project-files/${rel}`).digest("base64url");
+const readBody = (req, done) => { const chunks = []; req.on("data", (c) => chunks.push(c)); req.on("end", () => done(Buffer.concat(chunks))); };
+function projectFiles(req, res, url) {
+  // Reading a file back needs only its signed link.
+  if (req.method === "GET" && url.startsWith(`${PF_SIGN}/`)) {
+    const rel = safe(decodeURIComponent(url.slice(PF_SIGN.length + 1)));
+    const token = new URL(req.url, "http://x").searchParams.get("token");
+    if (!rel || token !== tokenFor(rel)) return json(res, 400, { statusCode: "400", error: "InvalidJWT", message: "signature verification failed" });
+    return fs.readFile(path.join(FILES, rel), (err, data) => {
+      if (err) return json(res, 404, { statusCode: "404", error: "not_found", message: "Object not found" });
+      res.writeHead(200, { "content-type": "application/octet-stream", "content-length": data.length, "cache-control": "private, max-age=3600", "access-control-allow-origin": "*" });
+      res.end(data);
+    });
+  }
+  if (!claims(req.headers.authorization)) return json(res, 400, { statusCode: "403", error: "Unauthorized", message: "Invalid JWT" });
+  if ((req.method === "POST" || req.method === "PUT") && url.startsWith(PF)) {
+    const rel = safe(decodeURIComponent(url.slice(PF.length)));
+    if (!rel) return json(res, 400, { statusCode: "400", error: "InvalidKey", message: "Invalid key" });
+    return readBody(req, (body) => {
+      const f = filePart(body, req.headers["content-type"]) || { data: body };
+      fs.mkdirSync(path.dirname(path.join(FILES, rel)), { recursive: true });
+      fs.writeFileSync(path.join(FILES, rel), f.data);
+      json(res, 200, { Key: `project-files/${rel}`, Id: crypto.randomUUID() });
+    });
+  }
+  // Sign several paths at once (createSignedUrls), or one (createSignedUrl).
+  if (req.method === "POST" && url === PF_SIGN) return readBody(req, (body) => {
+    const { paths = [] } = JSON.parse(body.toString() || "{}");
+    json(res, 200, paths.map((p) => (safe(p) && fs.existsSync(path.join(FILES, p)) ? { path: p, signedURL: `/object/sign/project-files/${p}?token=${tokenFor(p)}`, error: null } : { path: p, signedURL: null, error: "Either the object does not exist or you do not have access to it" })));
+  });
+  if (req.method === "POST" && url.startsWith(`${PF_SIGN}/`)) {
+    const rel = safe(decodeURIComponent(url.slice(PF_SIGN.length + 1)));
+    if (!rel || !fs.existsSync(path.join(FILES, rel))) return json(res, 400, { statusCode: "404", error: "not_found", message: "Object not found" });
+    return json(res, 200, { signedURL: `/object/sign/project-files/${rel}?token=${tokenFor(rel)}` });
+  }
+  if (req.method === "DELETE" && url === PF.slice(0, -1)) return readBody(req, (body) => {
+    const { prefixes = [] } = JSON.parse(body.toString() || "{}");
+    for (const p of prefixes) if (safe(p)) fs.rmSync(path.join(FILES, p), { force: true });
+    json(res, 200, prefixes.map((name) => ({ name, bucket_id: "project-files" })));
+  });
+  json(res, 404, { statusCode: "404", error: "not_found", message: "Not found" });
+}
+
 http.createServer((req, res) => {
   const t0 = process.hrtime.bigint();
   // GW_LOG: one line per request (time, ms, method, path, response bytes, server or browser), so a test can
@@ -117,6 +166,7 @@ http.createServer((req, res) => {
   if (url.startsWith("/storage/v1/upload/resumable") && req.method === "OPTIONS") { res.writeHead(204, { ...TUS, "access-control-allow-headers": req.headers["access-control-request-headers"] || "*", "access-control-allow-methods": "POST, HEAD, PATCH, OPTIONS", "access-control-max-age": "600" }); return res.end(); }
   if (url.startsWith("/storage/v1/upload/resumable")) return resumable(req, res, url);
   if (req.method === "OPTIONS" && url.startsWith("/storage/")) { res.writeHead(204, { "access-control-allow-origin": req.headers.origin || "*", "access-control-allow-headers": req.headers["access-control-request-headers"] || "*", "access-control-allow-methods": "GET,POST,PUT,DELETE,OPTIONS" }); return res.end(); }
+  if (url.startsWith(PF_SIGN) || url.startsWith(PF) || url === PF.slice(0, -1)) return projectFiles(req, res, url);
   if ((req.method === "POST" || req.method === "PUT") && url.startsWith("/storage/v1/object/media/")) return upload(req, res, decodeURIComponent(url.slice("/storage/v1/object/media/".length)));
   // Public Storage files.
   if (req.url.startsWith("/storage/v1/object/public/media/")) {

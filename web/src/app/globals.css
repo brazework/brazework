@@ -475,3 +475,16 @@ select option { background-color: var(--surface); color: var(--text); }
 }
 /* The app tour's feed runs past the bottom of its frame, the way a real feed does. */
 .tour-panel { mask-image: linear-gradient(#000 calc(100% - 2.5rem), transparent); }
+/* The 3D viewer's backdrop (components/projects/model-viewer.tsx): a soft studio sweep in the theme's
+   own surfaces, lighter where the light comes from. */
+.model-bg { background: radial-gradient(120% 85% at 50% 0%, var(--surface), var(--surface-2) 70%, var(--raised)); }
+/* Dark: a lit backdrop a step brighter than the page, or a dark model disappears into it. */
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .model-bg { background: radial-gradient(120% 85% at 50% 0%, #4a4a4a, #2e2e2e 60%, #222222); } }
+:root[data-theme="dark"] .model-bg { background: radial-gradient(120% 85% at 50% 0%, #4a4a4a, #2e2e2e 60%, #222222); }
+/* Blueprint mode: blue paper with a drawing grid, the same in both themes (it's a drawing, not a surface). */
+.model-bg[data-look="blueprint"], :root .model-bg[data-look="blueprint"] {
+  background:
+    linear-gradient(rgba(255, 255, 255, 0.07) 1px, transparent 1px) 0 0 / 24px 24px,
+    linear-gradient(90deg, rgba(255, 255, 255, 0.07) 1px, transparent 1px) 0 0 / 24px 24px,
+    radial-gradient(120% 90% at 50% 0%, #1f5cad, #17468a 55%, #113567);
+}

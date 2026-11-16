@@ -1,11 +1,12 @@
 "use client";
 import { AnimatePresence, motion } from "motion/react";
-import { ArrowUpRight, BadgeCheck, Check, ChevronDown, Clock, Lock, ShieldCheck } from "lucide-react";
+import { ArrowUpRight, BadgeCheck, Box, Check, ChevronDown, Clock, Lock, ShieldCheck, X } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { Model3D } from "@/components/landing/model-3d";
 import { MODELS } from "@/components/landing/models";
 import { Schematic } from "@/components/landing/schematics";
+import { ModelViewer } from "@/components/projects/model-viewer";
 import { buildStage, nextBuildStep } from "@/lib/build-step";
 import { cn, timeAgo } from "@/lib/forge";
 import { QuickUpdate } from "./quick-update";
@@ -17,6 +18,8 @@ import type { BenchProject } from "./workbench";
 // opens under the card; the arrow opens the full project page.
 export function BenchCard({ p, attach = false }: { p: BenchProject; attach?: boolean }) {
   const [open, setOpen] = useState(false);
+  // The member's own uploaded model, opened on the card when they ask for it.
+  const [in3d, setIn3d] = useState(false);
   const logId = `log-${p.id}`;
   const step = nextBuildStep(p), stage = buildStage(p);
   const STAGES = [
@@ -25,19 +28,28 @@ export function BenchCard({ p, attach = false }: { p: BenchProject; attach?: boo
   ];
   return (
     <li className="glass-card group/card flex flex-col overflow-hidden rounded-2xl transition hover:border-line-strong">
-      {/* The stage: the build, not a description of it. */}
-      <div className="cover-empty relative aspect-[16/7] overflow-hidden text-text">
-        {MODELS[p.field]
-          ? <Model3D id={p.field} spin="hover" className="absolute inset-0 size-full" />
-          : <Schematic id={p.field} className="absolute top-1/2 left-1/2 w-[42%] -translate-x-1/2 -translate-y-1/2 text-text/40" />}
-        <span className="pointer-events-none absolute top-3 left-3 inline-flex items-center gap-1.5 rounded-md bg-surface/90 px-2 py-0.5 text-[11px] text-text ring-1 ring-line">
-          <span className={cn("size-1.5 rounded-full", p.status === "completed" ? "bg-ok" : "bg-orange-500")} aria-hidden="true" />{p.status === "completed" ? "Completed" : "In progress"}
-        </span>
-        {p.private && <span className="pointer-events-none absolute top-3 left-[7.5rem] inline-flex items-center gap-1 rounded-md bg-surface/90 px-2 py-0.5 text-[11px] text-text ring-1 ring-line"><Lock className="size-3" /> Private</span>}
-        <Link href={`/projects/${p.id}`} aria-label={`Open ${p.title}`} title="Open the project page" className="absolute top-2.5 right-2.5 grid size-8 place-items-center rounded-lg bg-surface/90 text-text-2 ring-1 ring-line transition hover:text-text">
-          <ArrowUpRight className="size-4" />
-        </Link>
-      </div>
+      {/* The stage: the build, not a description of it. With an uploaded 3D model, "View in 3D" opens
+          the real file here (downloaded only then); otherwise it's a drawing for the build's field. */}
+      {in3d && p.model ? (
+        <div className="relative aspect-[4/3] overflow-hidden border-b border-line">
+          <ModelViewer url={p.model.src} name={p.model.name} className="size-full" />
+          <button type="button" onClick={() => setIn3d(false)} aria-label="Close 3D" title="Close the 3D view" className="absolute top-2.5 right-2.5 grid size-8 place-items-center rounded-lg bg-surface/90 text-text-2 ring-1 ring-line transition hover:text-text"><X className="size-4" /></button>
+        </div>
+      ) : (
+        <div className="cover-empty relative aspect-[16/7] overflow-hidden text-text">
+          {MODELS[p.field]
+            ? <Model3D id={p.field} spin="hover" className="absolute inset-0 size-full" />
+            : <Schematic id={p.field} className="absolute top-1/2 left-1/2 w-[42%] -translate-x-1/2 -translate-y-1/2 text-text/40" />}
+          <span className="pointer-events-none absolute top-3 left-3 inline-flex items-center gap-1.5 rounded-md bg-surface/90 px-2 py-0.5 text-[11px] text-text ring-1 ring-line">
+            <span className={cn("size-1.5 rounded-full", p.status === "completed" ? "bg-ok" : "bg-orange-500")} aria-hidden="true" />{p.status === "completed" ? "Completed" : "In progress"}
+          </span>
+          {p.private && <span className="pointer-events-none absolute top-3 left-[7.5rem] inline-flex items-center gap-1 rounded-md bg-surface/90 px-2 py-0.5 text-[11px] text-text ring-1 ring-line"><Lock className="size-3" /> Private</span>}
+          <Link href={`/projects/${p.id}`} aria-label={`Open ${p.title}`} title="Open the project page" className="absolute top-2.5 right-2.5 grid size-8 place-items-center rounded-lg bg-surface/90 text-text-2 ring-1 ring-line transition hover:text-text">
+            <ArrowUpRight className="size-4" />
+          </Link>
+          {p.model && <button type="button" onClick={() => setIn3d(true)} title={`Open ${p.model.name}`} className="absolute right-2.5 bottom-2.5 inline-flex h-8 items-center gap-1.5 rounded-lg bg-surface/90 px-3 text-xs font-medium text-text ring-1 ring-line transition hover:bg-surface"><Box className="size-3.5" /> View in 3D</button>}
+        </div>
+      )}
 
       <div className="flex flex-1 flex-col p-4 sm:p-5">
         <Link href={`/projects/${p.id}`} className="line-clamp-1 text-[17px] font-semibold tracking-tight hover:underline">{p.title}</Link>
