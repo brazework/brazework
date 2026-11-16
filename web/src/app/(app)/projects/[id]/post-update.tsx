@@ -16,6 +16,7 @@ type Pending = { key: string; file: File; name: string };
 // feed as a project post; its files show under it on the project page and in the project's Files.
 // Posting keeps you where you are (the project page, or the Projects workbench).
 // `compact`: one line with its buttons beside it, for a Build card: type what you did and press Log.
+// (A long line stays on one line and scrolls sideways, like a text field, rather than wrapping out of sight.)
 // `onPosted` runs once the update is up (the card then offers the next step).
 export function PostUpdate({ projectId, title, className, autoFocus = false, attach = false, compact = false, onPosted }: { projectId: string; title: string; className?: string; autoFocus?: boolean; attach?: boolean; compact?: boolean; onPosted?: () => void }) {
   const router = useRouter();
@@ -139,9 +140,9 @@ export function PostUpdate({ projectId, title, className, autoFocus = false, att
       <form {...formProps} className={cn("rounded-xl", className, drag && "ring-2 ring-text")}>
         <label htmlFor={id} className="sr-only">Log an update on {title}</label>
         <div className="flex flex-wrap items-center gap-2">
-          <textarea id={id} autoFocus={autoFocus} value={body} onChange={(e) => setBody(e.target.value)} maxLength={3000} rows={1} placeholder="What did you do on this today?"
+          <textarea id={id} autoFocus={autoFocus} value={body} onChange={(e) => setBody(e.target.value)} maxLength={3000} rows={1} wrap="off" placeholder="What did you do on this today?"
             onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void submit(); } }}
-            style={{ outline: "none" }} className="h-10 min-w-0 flex-1 basis-full resize-none rounded-lg border border-line bg-surface px-3 py-2 text-[15px] leading-6 placeholder:text-faint focus:border-text sm:basis-48" />
+            style={{ outline: "none" }} className="no-scrollbar h-10 min-w-0 flex-1 basis-full resize-none overflow-x-auto overflow-y-hidden rounded-lg border border-line bg-surface px-3 py-2 text-[15px] leading-6 placeholder:text-faint focus:border-text sm:basis-48" />
           {tools}
           <span className="ml-auto sm:ml-0">{send("Log")}</span>
         </div>
