@@ -7,6 +7,7 @@ import { COMMUNITY_FIELDS, LIMITS, autoModVerdict, can, cleanName, communityErro
 import { dbFeatures } from "@/lib/db-features";
 import { validMedia } from "@/lib/media";
 import { STUDY_LIMITS } from "@/lib/study";
+import { STARTER_RULES, reusableInvite, type InviteRow } from "@/lib/club-setup";
 import { getViewer } from "@/lib/supabase/server";
 
 export type Result = { ok: boolean; message: string };
@@ -361,4 +362,31 @@ export async function handOffRole(cid: string, to: string, note = ""): Promise<{
   if (error) return { ok: false, message: error.code === "P0001" || error.code === "42501" ? error.message : communityError(error) };
   revalidatePath(`/c/${cid}`, "layout");
   return { ok: true, message: "Done. They're in charge now, and you're a member." };
+}
+
+/* ---------- Club setup card (app/(app)/c/[id]/setup.tsx) ---------- */
+
+// The link to hand out: a working one if the club has it, otherwise a new one that doesn't expire.
+// Tapping twice never piles up links.
+export async function clubInviteLink(cid: string): Promise<Result & { code?: string }> {
+  const { supabase, user, role } = await myRole(cid);
+  if (!user || !can(role, "approve")) return denied;
+  const { data: rows, error: readErr } = await supabase.from("community_invites").select("code, expires_at, max_uses, uses, revoked").eq("community_id", cid).order("created_at", { ascending: false }).limit(20);
+  if (readErr) return { ok: false, message: communityError(readErr) };
+  const live = reusableInvite((rows ?? []) as InviteRow[], Date.now());
+  if (live) return { ok: true, message: "Your invite link is ready.", code: live.code };
+  const { data, error } = await supabase.from("community_invites").insert({ community_id: cid, expires_at: null, max_uses: null }).select("code").single();
+  if (error) return { ok: false, message: communityError(error) };
+  revalidateCommunity(cid);
+  return { ok: true, message: "Your invite link is ready.", code: data.code as string };
+}
+
+// Fill in the starter rules, only if the club has none yet (never overwrites rules someone wrote).
+export async function addStarterRules(cid: string): Promise<Result> {
+  const { supabase, role } = await myRole(cid);
+  if (!can(role, "editInfo")) return denied;
+  const { data, error } = await supabase.from("communities").update({ rules: STARTER_RULES }).eq("id", cid).eq("rules", "").select("id");
+  if (error) return { ok: false, message: communityError(error) };
+  revalidateCommunity(cid);
+  return data?.length ? { ok: true, message: "Starter rules added. Edit them any time in Manage." } : { ok: true, message: "Your club already has rules." };
 }

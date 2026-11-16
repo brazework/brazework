@@ -1,6 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { COPILOT_MODEL, copilotEnabled, copilotRequest, memberContext, taskPrompt } from "@/lib/copilot";
 import { frame, runAgent } from "@/lib/copilot-agent";
+import { presetInstruction } from "@/lib/copilot-presets";
 import { TOOLS, makeExec } from "@/lib/copilot-tools";
 
 // POST /api/copilot: streams Copilot's reply as plain text, so it types out live in the UI.
@@ -26,7 +27,7 @@ export async function POST(req: Request) {
   const { instructions, maxTokens } = taskPrompt(r);
   const messages: Anthropic.MessageParam[] = [...(r.history ?? []), { role: "user", content: r.input }];
   const client = new Anthropic();
-  const system = `${ctx.system}\n\n${instructions}`;
+  const system = `${ctx.system}\n\n${instructions}${r.preset ? `\n\n${presetInstruction(r.preset)}` : ""}`;
   const abort = new AbortController();
 
   const body = new ReadableStream<Uint8Array>({

@@ -1,5 +1,6 @@
 import { dbFeatures } from "@/lib/db-features";
 import { rank } from "@/lib/communities";
+import { reusableInvite, type InviteRow } from "@/lib/club-setup";
 import { getViewer } from "@/lib/supabase/server";
 
 // The guide's "next best step" engine: plain checks against your real data, so it's instant and
@@ -21,7 +22,7 @@ export type ClubGuide = { id: string; name: string; steps: GuideStep[] };
 // verification → proof). Home shows it until every step is done.
 export type Guide = { member: GuideStep[]; clubs: ClubGuide[]; loop: GuideStep[] };
 
-type Club = { id: string; name: string; about: string; rules: string; member_count: number };
+export type Club = { id: string; name: string; about: string; rules: string; member_count: number };
 
 export async function loadGuide(): Promise<Guide | null> {
   const { supabase, user, profile } = await getViewer();
@@ -66,24 +67,30 @@ export async function loadGuide(): Promise<Guide | null> {
 
   // Club setup, for the clubs you run (admin or owner). Bounded to keep the guide fast.
   const led = mine.filter((c) => rank(c.role) >= 4).slice(0, 3);
-  const clubs: ClubGuide[] = await Promise.all(led.map(async (c) => {
-    const [invites, events, clubPosts, reviewed] = await Promise.all([
-      f.invites ? supabase.from("community_invites").select("code", { count: "exact", head: true }).eq("community_id", c.id) : Promise.resolve({ count: 0 }),
-      f.clubEvents ? supabase.from("events").select("id", { count: "exact", head: true }).eq("community_id", c.id) : Promise.resolve({ count: 0 }),
-      supabase.from("posts").select("id", { count: "exact", head: true }).eq("community_id", c.id),
-      f.milestones ? supabase.from("milestones").select("id", { count: "exact", head: true }).eq("community_id", c.id).neq("status", "pending") : Promise.resolve({ count: 0 }),
-    ]);
-    const steps: GuideStep[] = [
-      { id: "about", label: "Say what the club builds", done: (c.about ?? "").trim().length >= 40, href: `/c/${c.id}/manage?tab=settings`, why: "Members decide to join from this.", ask: `Write a short, concrete About for ${c.name}: what we build, when we meet, who should join. Ask me for details you don't have.` },
-      { id: "rules", label: "Post your rules", done: (c.rules ?? "").trim().length > 0, href: `/c/${c.id}/manage?tab=settings`, why: "Clear rules make moderation easy.", ask: `Draft five short rules for ${c.name}, a university club on Brazework.` },
-      ...(f.invites ? [{ id: "invite", label: "Create an invite link", done: (invites.count ?? 0) > 0, href: `/c/${c.id}/manage?tab=invite`, why: "Share one link in your group chat and members land in the club." }] : []),
-      { id: "members", label: "Reach 5 members", done: c.member_count >= 5, href: `/c/${c.id}/manage?tab=${f.invites ? "invite" : "members"}`, why: "A club feels alive once a few people are posting." },
-      { id: "club-post", label: "Make the first club post", done: (clubPosts.count ?? 0) > 0, href: `/c/${c.id}`, why: "Show members what the club feed is for.", ask: `Draft a welcome post for ${c.name} that tells members what to share here.` },
-      ...(f.clubEvents ? [{ id: "event", label: "Host your first event", done: (events.count ?? 0) > 0, href: `/c/${c.id}?tab=events`, why: "Build nights and demo days bring members back.", ask: `Draft a short event announcement for a ${c.name} build night.` }] : []),
-      ...(f.milestones ? [{ id: "verify", label: "Verify a member's milestone", done: (reviewed.count ?? 0) > 0, href: `/c/${c.id}/manage?tab=verify`, why: "Your club's name on members' work is what makes Brazework different." }] : []),
-    ];
-    return { id: c.id, name: c.name, steps };
-  }));
+  const clubs: ClubGuide[] = await Promise.all(led.map(async (c) => ({ id: c.id, name: c.name, steps: await clubSetupSteps(supabase, f, c) })));
 
   return { member, clubs, loop };
+}
+
+// A club's setup checklist: the guide shows it for the clubs you run, and the club page shows it to
+// its owner and admins until every step is done (app/(app)/c/[id]/setup.tsx).
+type Supa = Awaited<ReturnType<typeof getViewer>>["supabase"];
+type Features = Awaited<ReturnType<typeof dbFeatures>>;
+export async function clubSetupSteps(supabase: Supa, f: Features, c: Club): Promise<GuideStep[]> {
+  const [invites, events, clubPosts, reviewed] = await Promise.all([
+    f.invites ? supabase.from("community_invites").select("code, expires_at, max_uses, uses, revoked").eq("community_id", c.id).order("created_at", { ascending: false }).limit(20) : Promise.resolve({ data: [] }),
+    f.clubEvents ? supabase.from("events").select("id", { count: "exact", head: true }).eq("community_id", c.id) : Promise.resolve({ count: 0 }),
+    supabase.from("posts").select("id", { count: "exact", head: true }).eq("community_id", c.id),
+    f.milestones ? supabase.from("milestones").select("id", { count: "exact", head: true }).eq("community_id", c.id).neq("status", "pending") : Promise.resolve({ count: 0 }),
+  ]);
+  const steps: GuideStep[] = [
+    { id: "about", label: "Say what the club builds", done: (c.about ?? "").trim().length >= 40, href: `/c/${c.id}/manage?tab=settings`, why: "Members decide to join from this.", ask: `Write a short, concrete About for ${c.name}: what we build, when we meet, who should join. Ask me for details you don't have.` },
+    { id: "rules", label: "Post your rules", done: (c.rules ?? "").trim().length > 0, href: `/c/${c.id}/manage?tab=settings`, why: "Clear rules make moderation easy.", ask: `Draft five short rules for ${c.name}, a university club on Brazework.` },
+    ...(f.invites ? [{ id: "invite", label: "Create an invite link", done: !!reusableInvite((invites.data ?? []) as InviteRow[], Date.now()), href: `/c/${c.id}/manage?tab=invite`, why: "Share one link in your group chat and members land in the club." }] : []),
+    { id: "members", label: "Reach 5 members", done: c.member_count >= 5, href: `/c/${c.id}/manage?tab=${f.invites ? "invite" : "members"}`, why: "A club feels alive once a few people are posting." },
+    { id: "club-post", label: "Make the first club post", done: (clubPosts.count ?? 0) > 0, href: `/c/${c.id}`, why: "Show members what the club feed is for.", ask: `Draft a welcome post for ${c.name} that tells members what to share here.` },
+    ...(f.clubEvents ? [{ id: "event", label: "Host your first event", done: (events.count ?? 0) > 0, href: `/c/${c.id}?tab=events`, why: "Build nights and demo days bring members back.", ask: `Draft a short event announcement for a ${c.name} build night.` }] : []),
+    ...(f.milestones ? [{ id: "verify", label: "Verify a member's milestone", done: (reviewed.count ?? 0) > 0, href: `/c/${c.id}/manage?tab=verify`, why: "Your club's name on members' work is what makes Brazework different." }] : []),
+  ];
+  return steps;
 }

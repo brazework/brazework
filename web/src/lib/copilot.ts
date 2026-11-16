@@ -1,5 +1,4 @@
 import { goalTitle, isGoalKind, type GoalKind } from "@/lib/goals";
-import { z } from "zod";
 import { dbFeatures } from "@/lib/db-features";
 import { getViewer } from "@/lib/supabase/server";
 
@@ -13,15 +12,8 @@ export async function copilotEnabled() {
   return Boolean(process.env.ANTHROPIC_API_KEY) && (await dbFeatures()).copilot;
 }
 
-export const copilotRequest = z.object({
-  task: z.enum(["post", "writeup", "ask"]),
-  input: z.string().trim().min(1, "Write a few words first.").max(4000, "Keep it under 4,000 characters."),
-  kind: z.enum(["update", "question", "result", "project"]).optional(),
-  title: z.string().max(120).optional(),
-  summary: z.string().max(600).optional(),
-  history: z.array(z.object({ role: z.enum(["user", "assistant"]), content: z.string().max(6000) })).max(12).optional(),
-});
-export type CopilotRequest = z.infer<typeof copilotRequest>;
+export { copilotRequest, type CopilotRequest } from "@/lib/copilot-request";
+import type { CopilotRequest } from "@/lib/copilot-request";
 
 const RULES = `You are Ember, the AI teammate inside Brazework, a professional network for university clubs and study groups, in any major. You look things up, answer from what you find, and get things done for members and club leaders by preparing actions they confirm.
 - Be concrete and technical, in plain language. No hype, no emojis, no hashtags.

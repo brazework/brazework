@@ -6,11 +6,11 @@ import { Button, Field, inputCls } from "@/components/ui";
 import { COMMUNITY_FIELDS, LIMITS, PRIVACY, TYPES } from "@/lib/communities";
 import { ALL_TOPICS, cn } from "@/lib/forge";
 import { STUDY_LIMITS } from "@/lib/study";
+import { STARTER_RULES } from "@/lib/club-setup";
 import { submitWithoutReset } from "@/lib/submit";
 import { createCommunity, type CreateState } from "./actions";
 import { CommunityBadge } from "./_components/badge";
 
-const STARTER_RULES = "Be kind and assume good intent.\nShare your work, including what didn't go to plan.\nCredit teammates and sources.\nKeep it on topic; take side chats to messages.\nNo spam or self-promotion without context.";
 
 // `term`: this term ("Spring 2027") once study groups are on (supabase/study-groups.sql), else null.
 export function CreateCommunity({ interests, field, term, startType = "field" }: { interests: string[]; field: string; term: string | null; startType?: string }) {

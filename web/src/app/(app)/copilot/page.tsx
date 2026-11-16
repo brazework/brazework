@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
+import { presetFromQuery } from "@/lib/copilot-presets";
 import { Suspense } from "react";
 import { Skeleton } from "@/components/app/page-ui";
 import { copilotEnabled } from "@/lib/copilot";
@@ -23,6 +24,7 @@ export default function CopilotPage({ searchParams }: PageProps<"/copilot">) {
 async function Copilot({ searchParams }: { searchParams: PageProps<"/copilot">["searchParams"] }) {
   const sp = await searchParams;
   const q = typeof sp.q === "string" ? sp.q.trim().slice(0, 500) : "";
+  const preset = q ? presetFromQuery(sp) : null;
   const { user, profile } = await getViewer();
   if (!user || !profile) redirect("/login");
   if (!(await copilotEnabled())) return <div className="mx-auto max-w-3xl xl:max-w-4xl"><CopilotSoon /></div>;
@@ -30,5 +32,5 @@ async function Copilot({ searchParams }: { searchParams: PageProps<"/copilot">["
   const saving = (await dbFeatures()).copilotChats;
   const id = typeof sp.chat === "string" ? sp.chat : "";
   const [chats, chat] = saving ? await Promise.all([listChats(), id ? loadChat(id) : Promise.resolve(null)]) : [[], null];
-  return <CopilotChat first={profile.first_name} field={profile.field} initial={chat ? "" : q} chats={chats} chat={chat} saving={saving} />;
+  return <CopilotChat first={profile.first_name} field={profile.field} initial={chat ? "" : q} initialPreset={chat ? null : preset} chats={chats} chat={chat} saving={saving} />;
 }

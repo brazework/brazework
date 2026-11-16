@@ -29,6 +29,12 @@ import { ChapterInvite, ChapterLine } from "./chapter";
 import { MemberFaces, type Face } from "@/components/network/member-faces";
 import { leadCounts, studyLine, type LeadRow } from "@/lib/study";
 import { StudyLeads } from "./study-leads";
+import { ClubSetup } from "./setup";
+import { clubSetupSteps } from "@/lib/guide";
+import { reusableInvite, setupProgress, type InviteRow } from "@/lib/club-setup";
+import { DISMISS_PREFIX } from "@/lib/dismiss";
+import { env } from "@/lib/env";
+import { cookies } from "next/headers";
 
 export const metadata: Metadata = { title: "Community" };
 
@@ -96,6 +102,12 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
   const study = c.type === "study" && (await dbFeatures()).studyGroups;
   const { data: leadRows } = study ? await supabase.from("study_leads").select("community_id, leader, confirmed_by, created_at").eq("community_id", id).limit(2000) : { data: [] };
   const leads = leadCounts((leadRows ?? []) as LeadRow[], user.id);
+  // Setup, for the club's owner and admins (rank 4+), until it's done or they hide it.
+  const lead = rank(role) >= 4 && !(await cookies()).has(`${DISMISS_PREFIX}club-setup-${id}`);
+  const setupSteps = lead ? await clubSetupSteps(supabase, await dbFeatures(), { id: c.id, name: c.name, about: c.about, rules: c.rules, member_count: c.member_count }) : [];
+  const showSetup = lead && setupSteps.length > 0 && !setupProgress(setupSteps).complete;
+  const { data: inviteRows } = showSetup && invitesOn ? await supabase.from("community_invites").select("code, expires_at, max_uses, uses, revoked").eq("community_id", id).order("created_at", { ascending: false }).limit(20) : { data: [] };
+  const setupInvite = reusableInvite((inviteRows ?? []) as InviteRow[], now)?.code ?? null;
   const leadPeople = members.map((m) => ({ uid: m.uid, first: m.first_name, last: m.last_name, n: leads.get(m.uid)?.n ?? 0, mine: leads.get(m.uid)?.mine ?? false }));
   const thisWeek = posts.filter((p) => Date.parse(p.created_at) > now - 7 * 864e5).length;
   const heldPosts = (held.data ?? []) as unknown as CommunityPost[];
@@ -171,6 +183,7 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
             </li>
           ))}
         </ul>
+        {showSetup && <ClubSetup cid={c.id} name={c.name} steps={setupSteps} origin={env.siteUrl} invite={setupInvite} />}
         {officer && (
           <section aria-label="To do" className="mt-4 rounded-3xl border border-line bg-surface p-4">
             <h2 className="text-xs font-medium tracking-wide text-faint uppercase">To do</h2>
