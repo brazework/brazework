@@ -7,7 +7,8 @@ import { onPage } from "@/lib/nav-match";
 // place tabs read, so "you are here" can't disagree between them. Pure, and tested (tests/places.test.ts).
 
 export type PlaceId = "today" | "build" | "club" | "proof" | "inbox";
-export type BadgeKey = "notifications" | "messages" | "invites";
+// `signing`: results members have asked your clubs to sign, when you're one of their officers.
+export type BadgeKey = "notifications" | "messages" | "invites" | "signing";
 // `tour`: a tour anchor (data-tour) that moved onto this tab when the More drawer went away.
 export type PlaceTab = { id: string; label: string; href: string; badge?: BadgeKey; tour?: string };
 // `match`: the pages that light the place up, as whole path segments (lib/nav-match.ts).
@@ -26,7 +27,7 @@ export const PLACES: Place[] = [
   // One page today (the workbench above Explore); it gets its own tabs when stage 2 splits it.
   { id: "build", label: "Build", href: "/projects", match: ["/projects"], tabs: [] },
   {
-    id: "club", label: "Club", href: "/communities",
+    id: "club", label: "Club", href: "/communities", badge: "signing",
     match: ["/communities", "/c", "/events", "/org", "/challenges", "/chapters"],
     tabs: [
       { id: "clubs", label: "Clubs", href: "/communities" },

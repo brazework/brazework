@@ -3,7 +3,7 @@ import { Box, FileText, Link2, Loader2, Megaphone, Paperclip, X } from "lucide-r
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { cn } from "@/lib/forge";
-import { ACCEPT_ATTR, cleanUrl, extOf, githubRepo, kindOfFile, maxBytesFor, sizeLabel, storedType } from "@/lib/project-file-types";
+import { ACCEPT_ATTR, MODEL_ACCEPT_ATTR, cleanUrl, extOf, githubRepo, kindOfFile, maxBytesFor, sizeLabel, storedType } from "@/lib/project-file-types";
 import { storageUpload } from "@/lib/storage-upload";
 import { addProjectLink, recordProjectFile } from "@/lib/project-files";
 import { shareProject } from "@/lib/projects";
@@ -15,9 +15,12 @@ type Pending = { key: string; file: File; name: string };
 // Attach with the paperclip, by dropping onto the box, or by pasting a file. The update goes to the
 // feed as a project post; its files show under it on the project page and in the project's Files.
 // Posting keeps you where you are (the project page, or the Projects workbench).
-export function PostUpdate({ projectId, title, className, autoFocus = false, attach = false }: { projectId: string; title: string; className?: string; autoFocus?: boolean; attach?: boolean }) {
+// `compact`: one line with its buttons beside it, for a Build card: type what you did and press Log.
+// `onPosted` runs once the update is up (the card then offers the next step).
+export function PostUpdate({ projectId, title, className, autoFocus = false, attach = false, compact = false, onPosted }: { projectId: string; title: string; className?: string; autoFocus?: boolean; attach?: boolean; compact?: boolean; onPosted?: () => void }) {
   const router = useRouter();
   const pick = useRef<HTMLInputElement>(null);
+  const pickModel = useRef<HTMLInputElement>(null);
   const [body, setBody] = useState("");
   const [files, setFiles] = useState<Pending[]>([]);
   const [links, setLinks] = useState<string[]>([]);
@@ -71,21 +74,19 @@ export function PostUpdate({ projectId, title, className, autoFocus = false, att
     setBody(""); setFiles([]); setLinks([]);
     setMsg(failed.length ? { ok: false, text: `Posted, but ${failed.length === 1 ? `${failed[0]} didn't upload` : `${failed.length} attachments didn't upload`}. Try adding ${failed.length === 1 ? "it" : "them"} in a new update.` } : { ok: true, text: r.message });
     router.refresh();
+    onPosted?.();
   };
 
-  return (
-    <form
-      onSubmit={(e) => { e.preventDefault(); void submit(); }}
-      onPaste={attach ? (e) => { const pasted = [...e.clipboardData.files]; if (pasted.length) { e.preventDefault(); add(pasted); } } : undefined}
-      onDragOver={attach ? (e) => { if ([...e.dataTransfer.types].includes("Files")) { e.preventDefault(); setDrag(true); } } : undefined}
-      onDragLeave={attach ? (e) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setDrag(false); } : undefined}
-      onDrop={attach ? (e) => { e.preventDefault(); setDrag(false); add([...e.dataTransfer.files]); } : undefined}
-      className={cn(className ?? "glass-card rounded-3xl p-4", drag && "ring-2 ring-text")}
-    >
-      <label htmlFor={id} className="flex items-center gap-1.5 text-sm font-medium"><Megaphone className="size-4" /> Post an update</label>
-      <textarea id={id} autoFocus={autoFocus} value={body} onChange={(e) => setBody(e.target.value)} maxLength={3000} rows={2} placeholder={attach ? `What changed on ${title}? Attach the CAD, a 3D model, the write-up or the repo…` : `What changed on ${title}? A result, a photo-worthy moment, what's next…`} style={{ outline: "none" }} className="mt-2 w-full resize-y rounded-xl border border-line bg-surface/70 px-3.5 py-2.5 text-[15px] placeholder:text-faint focus:border-text" />
-
-      {/* What's attached so far. */}
+  const formProps = {
+    onSubmit: (e: React.FormEvent) => { e.preventDefault(); void submit(); },
+    onPaste: attach ? (e: React.ClipboardEvent) => { const pasted = [...e.clipboardData.files]; if (pasted.length) { e.preventDefault(); add(pasted); } } : undefined,
+    onDragOver: attach ? (e: React.DragEvent) => { if ([...e.dataTransfer.types].includes("Files")) { e.preventDefault(); setDrag(true); } } : undefined,
+    onDragLeave: attach ? (e: React.DragEvent) => { if (!e.currentTarget.contains(e.relatedTarget as Node)) setDrag(false); } : undefined,
+    onDrop: attach ? (e: React.DragEvent) => { e.preventDefault(); setDrag(false); add([...e.dataTransfer.files]); } : undefined,
+  };
+  const round = "grid size-9 shrink-0 place-items-center rounded-full border border-line text-muted transition hover:bg-hover hover:text-text";
+  const attached = (
+    <>
       {(files.length > 0 || links.length > 0) && (
         <ul aria-label="Attached" className="mt-2 flex flex-wrap gap-1.5">
           {files.map((p) => {
@@ -106,6 +107,10 @@ export function PostUpdate({ projectId, title, className, autoFocus = false, att
         </ul>
       )}
 
+    </>
+  );
+  const linkRow = (
+    <>
       {attach && linkOpen && (
         <div className="mt-2 flex gap-2">
           <label htmlFor={`${id}-link`} className="sr-only">Link</label>
@@ -114,16 +119,50 @@ export function PostUpdate({ projectId, title, className, autoFocus = false, att
         </div>
       )}
 
+    </>
+  );
+  const tools = attach && (
+    <>
+      <button type="button" disabled={busy} onClick={() => pick.current?.click()} aria-label="Attach files" title="Attach files: documents, photos, video, CAD, 3D models, code (up to 50 MB each)" className={round}><Paperclip className="size-4" /></button>
+      <input ref={pick} type="file" multiple accept={ACCEPT_ATTR} className="hidden" onChange={(e) => { add([...(e.target.files ?? [])]); e.target.value = ""; }} />
+      {/* A 3D model has its own button: it's the one attachment people don't expect to work. */}
+      <button type="button" disabled={busy} onClick={() => pickModel.current?.click()} aria-label="Add a 3D model" title="Add a 3D model (STL, 3MF, OBJ or GLB): it opens in a viewer you can turn" className={round}><Box className="size-4" /></button>
+      <input ref={pickModel} type="file" accept={MODEL_ACCEPT_ATTR} className="hidden" onChange={(e) => { add([...(e.target.files ?? [])]); e.target.value = ""; }} />
+      <button type="button" disabled={busy} onClick={() => setLinkOpen(!linkOpen)} aria-expanded={linkOpen} aria-label="Add a link" title="Add a link (GitHub, Onshape, Drive…)" className={round}><Link2 className="size-4" /></button>
+    </>
+  );
+  const note = msg && <span role={msg.ok ? "status" : "alert"} className={msg.ok ? "text-xs text-ok" : "text-xs text-danger"}>{msg.text}</span>;
+  const send = (label: string) => <button type="submit" disabled={busy || (!body.trim() && !files.length && !links.length)} className="bg-accent-grad inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg px-4 text-sm font-medium text-on-accent disabled:opacity-50">{busy && <Loader2 className="size-4 animate-spin" />} {step || label}</button>;
+
+  if (compact) {
+    return (
+      <form {...formProps} className={cn("rounded-xl", className, drag && "ring-2 ring-text")}>
+        <label htmlFor={id} className="sr-only">Log an update on {title}</label>
+        <div className="flex flex-wrap items-center gap-2">
+          <textarea id={id} autoFocus={autoFocus} value={body} onChange={(e) => setBody(e.target.value)} maxLength={3000} rows={1} placeholder="What did you do on this today?"
+            onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void submit(); } }}
+            style={{ outline: "none" }} className="h-10 min-w-0 flex-1 basis-full resize-none rounded-lg border border-line bg-surface px-3 py-2 text-[15px] leading-6 placeholder:text-faint focus:border-text sm:basis-48" />
+          {tools}
+          <span className="ml-auto sm:ml-0">{send("Log")}</span>
+        </div>
+        {attached}
+        {linkRow}
+        {/* When it goes up, the card says so (and what's next); only a problem is reported here. */}
+        {msg && !msg.ok && <p className="mt-1.5">{note}</p>}
+      </form>
+    );
+  }
+
+  return (
+    <form {...formProps} className={cn(className ?? "glass-card rounded-3xl p-4", drag && "ring-2 ring-text")}>
+      <label htmlFor={id} className="flex items-center gap-1.5 text-sm font-medium"><Megaphone className="size-4" /> Post an update</label>
+      <textarea id={id} autoFocus={autoFocus} value={body} onChange={(e) => setBody(e.target.value)} maxLength={3000} rows={2} placeholder={attach ? `What changed on ${title}? Attach the CAD, a 3D model, the write-up or the repo…` : `What changed on ${title}? A result, a photo-worthy moment, what's next…`} style={{ outline: "none" }} className="mt-2 w-full resize-y rounded-xl border border-line bg-surface/70 px-3.5 py-2.5 text-[15px] placeholder:text-faint focus:border-text" />
+      {attached}
+      {linkRow}
       <div className="mt-2 flex flex-wrap items-center gap-2">
-        {attach && (
-          <>
-            <button type="button" disabled={busy} onClick={() => pick.current?.click()} aria-label="Attach files" title="Attach files: documents, photos, video, CAD, 3D models, code (up to 50 MB each)" className="grid size-9 place-items-center rounded-full border border-line text-muted transition hover:bg-hover hover:text-text"><Paperclip className="size-4" /></button>
-            <input ref={pick} type="file" multiple accept={ACCEPT_ATTR} className="hidden" onChange={(e) => { add([...(e.target.files ?? [])]); e.target.value = ""; }} />
-            <button type="button" disabled={busy} onClick={() => setLinkOpen(!linkOpen)} aria-expanded={linkOpen} aria-label="Add a link" title="Add a link (GitHub, Onshape, Drive…)" className="grid size-9 place-items-center rounded-full border border-line text-muted transition hover:bg-hover hover:text-text"><Link2 className="size-4" /></button>
-          </>
-        )}
-        <button type="submit" disabled={busy || (!body.trim() && !files.length && !links.length)} className="bg-accent-grad inline-flex h-9 items-center gap-1.5 rounded-lg px-4 text-sm font-medium text-on-accent disabled:opacity-50">{busy && <Loader2 className="size-4 animate-spin" />} {step || "Post update"}</button>
-        {msg && <span role={msg.ok ? "status" : "alert"} className={msg.ok ? "text-xs text-ok" : "text-xs text-danger"}>{msg.text}</span>}
+        {tools}
+        {send("Post update")}
+        {note}
         <span className="ml-auto text-[11px] text-faint">{attach ? "Drop or paste files here · " : ""}Also shows in your followers&apos; feeds</span>
       </div>
     </form>
