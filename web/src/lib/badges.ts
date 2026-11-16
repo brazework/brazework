@@ -12,12 +12,17 @@ export type Badges = Record<BadgeKey, number>;
 export const loadBadges = cache(async (): Promise<Badges | null> => {
   const { supabase, user } = await getViewer();
   if (!user) return null;
-  const { groupChats } = await dbFeatures();
-  const [n, m, i, g] = await Promise.all([
+  const { groupChats, milestones } = await dbFeatures();
+  const [n, m, i, g, led] = await Promise.all([
     supabase.rpc("unread_notifications"),
     supabase.rpc("unread_conversations"),
     supabase.from("connections").select("*", { count: "exact", head: true }).eq("to_id", user.id).eq("status", "pending"),
     groupChats ? supabase.rpc("unread_chats") : Promise.resolve({ data: 0 }),
+    // The clubs you're an officer of: their members' results are yours to sign.
+    milestones ? supabase.from("community_members").select("community_id").eq("uid", user.id).in("role", ["moderator", "admin", "owner"]).limit(50) : Promise.resolve({ data: [] }),
   ]);
-  return { notifications: Number(n.data) || 0, messages: (Number(m.data) || 0) + (Number(g.data) || 0), invites: i.count ?? 0 };
+  // Results waiting on your signature (never your own: nobody signs their own work). Only officers pay for this query.
+  const clubs = ((led.data ?? []) as { community_id: string }[]).map((r) => r.community_id);
+  const signing = clubs.length ? (await supabase.from("milestones").select("*", { count: "exact", head: true }).in("community_id", clubs).eq("status", "pending").neq("owner_id", user.id)).count ?? 0 : 0;
+  return { notifications: Number(n.data) || 0, messages: (Number(m.data) || 0) + (Number(g.data) || 0), invites: i.count ?? 0, signing };
 });

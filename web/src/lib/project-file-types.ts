@@ -25,6 +25,8 @@ const BY_EXT = new Map(Object.entries(KINDS).flatMap(([k, exts]) => exts.map((e)
 export const ACCEPTED_EXTS = [...BY_EXT.keys()];
 // For the file picker's accept attribute.
 export const ACCEPT_ATTR = ACCEPTED_EXTS.map((e) => `.${e}`).join(",");
+// The same, for the "Add a 3D model" button: only the kinds the viewer opens.
+export const MODEL_ACCEPT_ATTR = KINDS.model.map((e) => `.${e}`).join(",");
 
 export const extOf = (name: string) => (name.match(/\.([A-Za-z0-9_]{1,10})$/)?.[1] ?? "").toLowerCase();
 export const kindOfFile = (name: string): FileKind | null => BY_EXT.get(extOf(name)) ?? null;
@@ -76,9 +78,11 @@ export function cleanUrl(raw: string): string | null {
 // The size limit for a file, by its kind: 250 MB for video, 50 MB for everything else.
 export const maxBytesFor = (name: string) => (kindOfFile(name) === "video" ? PROJECT_VIDEO_MAX_BYTES : PROJECT_FILE_MAX_BYTES);
 
-/** The newest 3D model among each project's files (rows newest first): what its Build card opens. */
-export function newestModels<T extends { project_id: string; name: string; path: string | null }>(rows: T[]): Map<string, T & { path: string }> {
+/** The newest file of one kind among each project's files (rows newest first). */
+export function newestOfKind<T extends { project_id: string; name: string; path: string | null }>(rows: T[], kind: FileKind): Map<string, T & { path: string }> {
   const out = new Map<string, T & { path: string }>();
-  for (const r of rows) if (r.path && !out.has(r.project_id) && kindOfFile(r.name) === "model") out.set(r.project_id, r as T & { path: string });
+  for (const r of rows) if (r.path && !out.has(r.project_id) && kindOfFile(r.name) === kind) out.set(r.project_id, r as T & { path: string });
   return out;
 }
+/** The newest 3D model among each project's files: what "View in 3D" on its Build card opens. */
+export const newestModels = <T extends { project_id: string; name: string; path: string | null }>(rows: T[]) => newestOfKind(rows, "model");

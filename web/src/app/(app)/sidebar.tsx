@@ -11,6 +11,7 @@ import { MyStatus, WithPresence } from "@/components/presence/presence";
 import { cn } from "@/lib/forge";
 import { MENU_PAGES, PLACES, placeFor, type BadgeKey, type PlaceId } from "@/lib/places";
 import { NavTile, TILE } from "@/components/app/nav-tile";
+import { Ember } from "@/components/ember/ember";
 
 export type Badges = Record<BadgeKey, number>;
 
@@ -58,7 +59,7 @@ export function SidebarSkeleton() {
 // Remembered in a cookie (not localStorage) so the server draws it at the right width: no jump on load.
 export const SIDEBAR_COOKIE = "forge-sidebar";
 
-export function Sidebar({ first, last, userId, badges, avatar, initialCollapsed = false, clubs = [] }: { first: string; last: string; userId: string; badges: Badges; avatar?: string | null; clubs?: { id: string; name: string; image?: string | null }[]; initialCollapsed?: boolean }) {
+export function Sidebar({ first, last, userId, badges, avatar, initialCollapsed = false, clubs = [], builds = [] }: { first: string; last: string; userId: string; badges: Badges; avatar?: string | null; clubs?: { id: string; name: string; image?: string | null }[]; builds?: { id: string; name: string }[]; initialCollapsed?: boolean }) {
   const path = usePathname();
   const here = placeFor(path)?.id;
   const [collapsed, setCollapsed] = useState(initialCollapsed);
@@ -87,11 +88,15 @@ export function Sidebar({ first, last, userId, badges, avatar, initialCollapsed 
           </button>
         </div>
       </div>
-      {/* The one action that starts the loop: log what you built. (Ember is the bar above every page, and ⌘K.) */}
-      <div className={cn("mt-6 flex", collapsed ? "justify-center" : "px-1")}>
+      {/* The one action that starts the loop: log what you built. Under it, Ember: ask for the busywork to be done. */}
+      <div className={cn("mt-6 flex gap-1.5", collapsed ? "flex-col items-center" : "flex-col px-1")}>
         <Link href="/feed#composer" onClick={(e) => { if (path === "/feed") { e.preventDefault(); window.dispatchEvent(new Event("forge:compose")); } }} title={collapsed ? "Log work" : undefined} aria-label="Log work"
-          className={cn("bg-accent-grad inline-flex h-9 items-center justify-center gap-2 rounded-lg text-sm font-medium text-on-accent transition hover:opacity-90", collapsed ? "w-9" : "flex-1")}>
+          className={cn("bg-accent-grad inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-lg text-sm font-medium text-on-accent transition hover:opacity-90", collapsed ? "w-9" : "w-full")}>
           <PenLine className="size-4" />{!collapsed && "Log work"}
+        </Link>
+        <Link href="/copilot" title={collapsed ? "Ask Ember" : undefined} aria-label="Ask Ember" aria-current={path.startsWith("/copilot") ? "page" : undefined}
+          className={cn("inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-lg border border-line bg-surface text-sm font-medium text-text-2 transition hover:border-line-strong hover:text-text aria-[current=page]:border-line-strong aria-[current=page]:text-text", collapsed ? "w-9" : "w-full")}>
+          <Ember size={18} />{!collapsed && "Ask Ember"}
         </Link>
       </div>
       <nav data-tour="menu" aria-label="Main" className={cn("flex shrink-0 flex-col gap-0.5", collapsed ? "mt-4" : "mt-5")}>
@@ -103,7 +108,7 @@ export function Sidebar({ first, last, userId, badges, avatar, initialCollapsed 
               key={n.label}
               href={n.href}
               aria-current={active ? "page" : undefined}
-              aria-label={count ? `${n.label}, ${count} new` : collapsed ? n.label : undefined}
+              aria-label={count ? `${n.label}, ${count} ${n.badge === "signing" ? "to sign" : "new"}` : collapsed ? n.label : undefined}
               title={collapsed ? n.label : undefined}
               className={cn(ROW, collapsed ? "justify-center px-0" : "px-2", active ? "font-medium text-text" : "text-text-2 hover:bg-hover/60 hover:text-text")}
             >
@@ -117,6 +122,23 @@ export function Sidebar({ first, last, userId, badges, avatar, initialCollapsed 
       </nav>
       {/* Your clubs scroll on short screens, so the five places are always whole. */}
       <div className="no-scrollbar -mx-1 min-h-0 flex-1 overflow-y-auto px-1 pb-2">
+      {/* Your builds, one click away: the ones you touched last. */}
+      {builds.length > 0 && (
+        <div aria-label="Your builds" role="group" className={cn("mt-5 flex flex-col gap-0.5", collapsed ? "items-center border-t border-line pt-4" : GROUP)}>
+          {!collapsed && <div className={GROUP_LABEL}>Your builds</div>}
+          {builds.map((b) => {
+            const active = path === `/projects/${b.id}` || path.startsWith(`/projects/${b.id}/`);
+            return (
+              <Link key={b.id} href={`/projects/${b.id}`} title={collapsed ? b.name : undefined} aria-current={active ? "page" : undefined}
+                className={cn(ROW, collapsed ? "justify-center px-0" : "px-1.5", active ? "font-medium text-text" : "text-text-2 hover:bg-hover/70 hover:text-text")}>
+                {active && <motion.span layoutId="build-active" className="nav-pill absolute inset-0 rounded-md" transition={{ type: "spring", stiffness: 400, damping: 34 }} />}
+                <NavTile letter={b.name} active={active} />
+                {!collapsed && <span className="relative truncate">{b.name}</span>}
+              </Link>
+            );
+          })}
+        </div>
+      )}
       {/* Your clubs, one click away. */}
       {clubs.length > 0 && (
         <div aria-label="Your clubs" role="group" className={cn("mt-5 flex flex-col gap-0.5", collapsed ? "items-center border-t border-line pt-4" : GROUP)}>
@@ -219,7 +241,7 @@ export function MobileBar({ first, last, badges, avatar }: { first: string; last
     const active = here === t.id;
     const count = t.badge ? badges[t.badge] : 0;
     return (
-      <Link key={t.href} href={t.href} aria-current={active ? "page" : undefined} aria-label={count ? `${t.label}, ${count} new` : t.label} className={cn("relative flex h-14 flex-col items-center justify-center gap-0.5 rounded-xl text-[10px] font-medium transition active:scale-90", active ? "text-text" : "text-faint")}>
+      <Link key={t.href} href={t.href} aria-current={active ? "page" : undefined} aria-label={count ? `${t.label}, ${count} ${t.badge === "signing" ? "to sign" : "new"}` : t.label} className={cn("relative flex h-14 flex-col items-center justify-center gap-0.5 rounded-xl text-[10px] font-medium transition active:scale-90", active ? "text-text" : "text-faint")}>
         {active && <motion.span layoutId="tab-pill" className="absolute inset-0.5 rounded-xl bg-hover" transition={{ type: "spring", stiffness: 500, damping: 38 }} />}
         <span className="relative">
           <t.icon className="size-[22px]" strokeWidth={active ? 2.2 : 1.8} />

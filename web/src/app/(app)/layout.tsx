@@ -48,18 +48,21 @@ async function SignedInShell() {
 
   // What's waiting for you, shown as badges across the app (supabase/activity.sql, messages.sql).
   const { clubProfile, media } = await dbFeatures();
-  const [counts, cl] = await Promise.all([
+  const [counts, cl, pr] = await Promise.all([
     // Shared with the place tabs above the page (lib/badges.ts): one set of queries per render.
     loadBadges(),
     // Your clubs, as shortcuts in the sidebar.
     // With their logo (or cover) where they have one.
     supabase.from("community_members").select(`communities(id, name${clubProfile ? ", logo_path" : ""}${media ? ", cover_path" : ""})`).eq("uid", user.id).order("joined_at", { ascending: false }).limit(5),
+    // Your builds, the same way: the ones you touched last.
+    supabase.from("projects").select("id, title").eq("owner_id", user.id).order("updated_at", { ascending: false }).limit(4),
   ]);
+  const myBuilds = ((pr.data ?? []) as { id: string; title: string }[]).map((p) => ({ id: p.id, name: p.title }));
   type ClubRef = { id: string; name: string; logo_path?: string | null; cover_path?: string | null };
   const myClubs = ((cl.data ?? []) as unknown as { communities: ClubRef | ClubRef[] | null }[])
     .flatMap((r) => (Array.isArray(r.communities) ? r.communities : r.communities ? [r.communities] : []))
     .map((c) => ({ id: c.id, name: c.name, image: c.logo_path ?? c.cover_path ?? null }));
-  const badges: Badges = counts ?? { notifications: 0, messages: 0, invites: 0 };
+  const badges: Badges = counts ?? { notifications: 0, messages: 0, invites: 0, signing: 0 };
   const collapsed = (await cookies()).get(SIDEBAR_COOKIE)?.value === "collapsed";
 
   return (
@@ -68,7 +71,7 @@ async function SignedInShell() {
       <LiveRefresh tables={["notifications", "conversations", "connections", "chats"]} delay={800} quietOn={["/feed"]} />
       {/* Online status: who has Brazework open right now. */}
       <PresenceMount userId={user.id} />
-      <Sidebar first={profile.first_name} last={profile.last_name} userId={user.id} badges={badges} avatar={avatarSrc(profile)} initialCollapsed={collapsed} clubs={myClubs} />
+      <Sidebar first={profile.first_name} last={profile.last_name} userId={user.id} badges={badges} avatar={avatarSrc(profile)} initialCollapsed={collapsed} clubs={myClubs} builds={myBuilds} />
       <CommandPalette />
       <ReportDialog />
       <MobileBar first={profile.first_name} last={profile.last_name} badges={badges} avatar={avatarSrc(profile)} />

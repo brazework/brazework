@@ -10,13 +10,13 @@ import { getViewer } from "@/lib/supabase/server";
 import { ExploreCard, type ExploreProject } from "./project-card";
 import { Workbench, type BenchProject } from "./workbench";
 import { copilotEnabled } from "@/lib/copilot";
-import { newestModels } from "@/lib/project-file-types";
-import { schematicFor } from "@/lib/schematic-field";
+import { weeklyActivity } from "@/lib/build-step";
+import { newestModels, newestOfKind } from "@/lib/project-file-types";
 import { signedUrls } from "@/lib/signed-urls";
 import { SpotlightStrip } from "../feed/discover";
 import { StripSkeleton } from "@/components/app/discover-cards";
 
-export const metadata: Metadata = { title: "Projects" };
+export const metadata: Metadata = { title: "Build" };
 
 export default function ProjectsPage({ searchParams }: PageProps<"/projects">) {
   return (
@@ -74,7 +74,7 @@ async function Explore({ searchParams }: { searchParams: PageProps<"/projects">[
   if (tool && !topTools.includes(tool)) topTools.unshift(tool);
   // Your builds: every project of yours (private too), with where it stands on the way to proof.
   const [{ data: myRows }, copilot, { data: sharedRows }] = await Promise.all([
-    supabase.from("projects").select(`id, title, summary, status, private, updated_at, tags${stackOn ? ", tools" : ""}`).eq("owner_id", user.id).order("updated_at", { ascending: false }).limit(20),
+    supabase.from("projects").select("id, title, summary, status, private, updated_at").eq("owner_id", user.id).order("updated_at", { ascending: false }).limit(20),
     copilotEnabled(),
     // Projects others added you to (step 55): as an admin, a teammate or a viewer.
     accessOn ? supabase.from("project_members").select("role, projects(id, title, summary, status, private, owner_first:profiles!projects_owner_id_fkey(first_name, last_name))").eq("uid", user.id).order("added_at", { ascending: false }).limit(20) : Promise.resolve({ data: [] }),
@@ -89,19 +89,25 @@ async function Explore({ searchParams }: { searchParams: PageProps<"/projects">[
     // itself is downloaded when the button is pressed (models are large, FIX-75).
     filesOn ? supabase.from("project_files").select("project_id, name, path").in("project_id", myIds).eq("kind", "file").order("created_at", { ascending: false }).limit(500) : Promise.resolve({ data: [] }),
   ]) : [{ data: [] }, { data: [] }, { data: [] }];
-  const models = newestModels((myFiles.data ?? []) as { project_id: string; name: string; path: string | null }[]);
-  const modelSrc = models.size ? await signedUrls(supabase, "project-files", [...models.values()].map((m) => m.path)) : new Map<string, string>();
+  const fileRows = (myFiles.data ?? []) as { project_id: string; name: string; path: string | null }[];
+  const models = newestModels(fileRows);
+  // Each build's newest photo, as the small picture on its card (a resized copy, through the image optimizer).
+  const covers = newestOfKind(fileRows, "image");
+  const srcs = models.size || covers.size ? await signedUrls(supabase, "project-files", [...models.values(), ...covers.values()].map((m) => m.path)) : new Map<string, string>();
+  const modelSrc = srcs;
   const msRows = (myMs.data ?? []) as { project_id: string; status: string }[];
   const upRows = (myUps.data ?? []) as (BenchProject["log"][number] & { project_id: string })[];
-  const bench: BenchProject[] = ((myRows ?? []) as unknown as (Omit<BenchProject, "verified" | "waiting" | "updates" | "log" | "field" | "model"> & { tags?: string[]; tools?: string[] })[]).map(({ tags, tools, ...r }) => {
+  const bench: BenchProject[] = ((myRows ?? []) as unknown as Omit<BenchProject, "verified" | "waiting" | "updates" | "log" | "model" | "weeks" | "cover">[]).map((r) => {
     const mine = upRows.filter((u) => u.project_id === r.id);
     return {
       ...r,
-      field: schematicFor(tags ?? [], tools ?? []),
       verified: msRows.filter((m) => m.project_id === r.id && m.status === "verified").length,
       waiting: msRows.filter((m) => m.project_id === r.id && (m.status === "pending" || m.status === "disputed")).length,
       updates: mine.length,
+      // One bar a week for twelve weeks: when you posted on this build.
+      weeks: weeklyActivity(mine.map((u) => u.created_at)),
       model: (() => { const m = models.get(r.id), src = m && modelSrc.get(m.path); return m && src ? { name: m.name, src } : null; })(),
+      cover: (() => { const m = covers.get(r.id), src = m && srcs.get(m.path); return m && src ? { name: m.name, src } : null; })(),
       // The update log under each card: the newest few, newest first.
       log: mine.slice(0, 8).map(({ id, body, status, created_at }) => ({ id, body, status, created_at })),
     };
@@ -116,7 +122,7 @@ async function Explore({ searchParams }: { searchParams: PageProps<"/projects">[
 
   return (
     <>
-      <PageHeader title="Projects" subtitle="What you're building, and what people across Brazework have built and had verified." />
+      <PageHeader title="Build" subtitle="Log what you did today, get it signed, and see what people across Brazework are building." />
       {!q && !topic && !tool && !status && !verifiedOnly && !mine && <Workbench projects={bench} interests={profile.interests ?? []} copilot={copilot} stack={stackOn} specsOn={specsOn} filesOn={filesOn} />}
       {!q && !topic && !tool && !status && !verifiedOnly && !mine && shared.length > 0 && <SharedWithYou rows={shared} />}
       {/* Spotlight moved here from Today (redesign stage 1): standout builds sit with the rest of Explore. */}

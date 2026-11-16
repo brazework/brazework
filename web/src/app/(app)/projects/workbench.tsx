@@ -1,9 +1,10 @@
 import { Cpu, FlaskConical, GitBranch, Wrench } from "lucide-react";
 import Link from "next/link";
 import { ProjectEditor } from "../u/[id]/profile-client";
+import { weekSummary } from "@/lib/build-step";
 import { BenchCard } from "./bench-card";
 
-export type BenchProject = { id: string; title: string; summary: string; status: string; private: boolean; updated_at: string; field: string; verified: number; waiting: number; updates: number; model?: { name: string; src: string } | null; log: { id: string; body: string; status: string; created_at: string }[] };
+export type BenchProject = { id: string; title: string; summary: string; status: string; private: boolean; updated_at: string; verified: number; waiting: number; updates: number; weeks: number[]; cover?: { name: string; src: string } | null; model?: { name: string; src: string } | null; log: { id: string; body: string; status: string; created_at: string }[] };
 
 // Your projects first: where each one stands on the way to proof, and the next thing to do.
 export function Workbench({ projects, interests, copilot, stack, specsOn = false, filesOn = false }: { projects: BenchProject[]; interests: string[]; copilot: boolean; stack: boolean; specsOn?: boolean; filesOn?: boolean }) {
@@ -31,16 +32,18 @@ export function Workbench({ projects, interests, copilot, stack, specsOn = false
       </section>
     );
   }
-  const signed = projects.reduce((n, p) => n + p.verified, 0), waiting = projects.reduce((n, p) => n + p.waiting, 0);
+  const { thisWeek, signed, waiting } = weekSummary(projects);
   return (
     <section aria-label="Your builds" className="mt-6">
       <div className="flex items-end justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold tracking-tight">Your builds</h2>
-          {/* The record at a glance: how much of your work someone has signed. */}
-          <p className="mt-0.5 text-sm text-muted tabular-nums">{projects.length} build{projects.length === 1 ? "" : "s"} · <span className={signed ? "font-medium text-ok" : undefined}>{signed} signed result{signed === 1 ? "" : "s"}</span>{waiting ? ` · ${waiting} waiting` : ""}</p>
+          {/* The week and the record at a glance: what you logged, and how much of your work someone has signed. */}
+          <p className="mt-0.5 text-sm text-muted tabular-nums">
+            {thisWeek ? `${thisWeek} update${thisWeek === 1 ? "" : "s"} this week` : "Nothing logged this week yet"} · <span className={signed ? "font-medium text-ok" : undefined}>{signed} signed result{signed === 1 ? "" : "s"}</span>{waiting ? ` · ${waiting} waiting on a signature` : ""}
+          </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex shrink-0 items-center gap-2 [&_button]:whitespace-nowrap">
           {copilot && <Link href="/copilot?q=Import%20my%20GitHub%20repo%20as%20a%20project" className="hidden h-10 items-center gap-1.5 rounded-lg border border-line px-4 text-sm transition hover:bg-hover sm:inline-flex"><GitBranch className="size-4" /> Import</Link>}
           <ProjectEditor interests={interests} copilot={copilot} stack={stack} specsOn={specsOn} />
         </div>
