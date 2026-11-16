@@ -10,7 +10,9 @@ import { getViewer } from "@/lib/supabase/server";
 import { ExploreCard, type ExploreProject } from "./project-card";
 import { Workbench, type BenchProject } from "./workbench";
 import { copilotEnabled } from "@/lib/copilot";
+import { newestModels } from "@/lib/project-file-types";
 import { schematicFor } from "@/lib/schematic-field";
+import { signedUrls } from "@/lib/signed-urls";
 import { SpotlightStrip } from "../feed/discover";
 import { StripSkeleton } from "@/components/app/discover-cards";
 
@@ -80,13 +82,18 @@ async function Explore({ searchParams }: { searchParams: PageProps<"/projects">[
   type SharedRow = { role: "admin" | "member" | "viewer"; projects: { id: string; title: string; summary: string; status: string; private: boolean; owner_first: { first_name: string; last_name: string } | null } | null };
   const shared = ((sharedRows ?? []) as unknown as SharedRow[]).filter((r) => r.projects);
   const myIds = ((myRows ?? []) as unknown as { id: string }[]).map((r) => r.id);
-  const [myMs, myUps] = myIds.length ? await Promise.all([
+  const [myMs, myUps, myFiles] = myIds.length ? await Promise.all([
     msOn ? supabase.from("milestones").select("project_id, status").in("project_id", myIds).limit(2000) : Promise.resolve({ data: [] }),
     supabase.from("posts").select("id, project_id, body, status, created_at").in("project_id", myIds).order("created_at", { ascending: false }).limit(2000),
-  ]) : [{ data: [] }, { data: [] }];
+    // Each build's newest 3D model, for "View in 3D" on its card. Only a link is made here: the file
+    // itself is downloaded when the button is pressed (models are large, FIX-75).
+    filesOn ? supabase.from("project_files").select("project_id, name, path").in("project_id", myIds).eq("kind", "file").order("created_at", { ascending: false }).limit(500) : Promise.resolve({ data: [] }),
+  ]) : [{ data: [] }, { data: [] }, { data: [] }];
+  const models = newestModels((myFiles.data ?? []) as { project_id: string; name: string; path: string | null }[]);
+  const modelSrc = models.size ? await signedUrls(supabase, "project-files", [...models.values()].map((m) => m.path)) : new Map<string, string>();
   const msRows = (myMs.data ?? []) as { project_id: string; status: string }[];
   const upRows = (myUps.data ?? []) as (BenchProject["log"][number] & { project_id: string })[];
-  const bench: BenchProject[] = ((myRows ?? []) as unknown as (Omit<BenchProject, "verified" | "waiting" | "updates" | "log" | "field"> & { tags?: string[]; tools?: string[] })[]).map(({ tags, tools, ...r }) => {
+  const bench: BenchProject[] = ((myRows ?? []) as unknown as (Omit<BenchProject, "verified" | "waiting" | "updates" | "log" | "field" | "model"> & { tags?: string[]; tools?: string[] })[]).map(({ tags, tools, ...r }) => {
     const mine = upRows.filter((u) => u.project_id === r.id);
     return {
       ...r,
@@ -94,6 +101,7 @@ async function Explore({ searchParams }: { searchParams: PageProps<"/projects">[
       verified: msRows.filter((m) => m.project_id === r.id && m.status === "verified").length,
       waiting: msRows.filter((m) => m.project_id === r.id && (m.status === "pending" || m.status === "disputed")).length,
       updates: mine.length,
+      model: (() => { const m = models.get(r.id), src = m && modelSrc.get(m.path); return m && src ? { name: m.name, src } : null; })(),
       // The update log under each card: the newest few, newest first.
       log: mine.slice(0, 8).map(({ id, body, status, created_at }) => ({ id, body, status, created_at })),
     };

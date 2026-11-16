@@ -2,12 +2,14 @@ import { Check } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/forge";
 import { AppTour } from "./app-tour";
+import { BuildShowcase } from "./build-showcase";
 import { ClubSetupDemo } from "./club-setup-demo";
 import { CompanySearch } from "./company-search";
 import { EmberDemo } from "./ember-demo";
 import { Faq } from "./faq";
 
-// The landing page's sections, in the order a cold visitor needs them: the app itself (to try), why
+// The landing page's sections, in the order a cold visitor needs them: the app itself (to try), a
+// build in 3D, why
 // proof matters now, Ember, what clubs get, what companies get and what it costs, and questions.
 // Each one is a heading, a few plain sentences and something to try; the demos are client components.
 
@@ -38,6 +40,28 @@ export function Tour() {
   );
 }
 
+// The build itself: pick a field and see an example in the product's own 3D viewer
+// (build-showcase.tsx). three.js loads only when this nears the screen.
+export function ShowBuild() {
+  return (
+    <section id="projects" className={SEC}>
+      <div className={cn(WRAP, "grid grid-cols-1 items-center gap-10 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] lg:gap-16")}>
+        <div className="order-2 min-w-0 lg:order-1"><BuildShowcase /></div>
+        <div className="order-1 lg:order-2">
+          <h2 className={H2}>Don&apos;t describe it. Show the build.</h2>
+          <p className={LEAD}>Whatever you make, post the thing itself. Upload the model, and whoever checks your work can turn it over, look inside and see how big it is.</p>
+          <Points items={[
+            ["Pick what you do", "A robot, a rocket, a gearbox, a circuit board, a bridge, a lab model. Each is an example of a build and the milestone that goes with it."],
+            ["Look closer", "Front, side and top at a tap. See through the surfaces, or pull an assembly apart."],
+            ["Blueprint mode", "One tap turns it into a line drawing on blue paper, with its dimensions written on it."],
+            ["Your real file", "STL, OBJ, GLB and 3MF open right on your project page. No CAD tool needed."],
+          ]} />
+        </div>
+      </div>
+    </section>
+  );
+}
+
 const FACTS = [
   { n: "91%", label: "of recruiters have spotted candidate deception.", src: "Greenhouse, 2025", href: "https://www.greenhouse.com/newsroom/an-ai-trust-crisis-70-of-hiring-managers-trust-ai-to-make-faster-and-better-hiring-decisions-only-8-of-job-seekers-call-it-fair" },
   { n: "1 in 4", label: "candidate profiles are expected to be fake by 2028.", src: "Gartner via HR Dive", href: "https://www.hrdive.com/news/fake-job-candidates-ai/757126/" },
@@ -46,7 +70,7 @@ const FACTS = [
 
 export function Why() {
   return (
-    <section id="why" className={SEC}>
+    <section id="why" className={cn(SEC, BAND)}>
       <div className={cn(WRAP, "grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:gap-16")}>
         <div>
           <h2 className={H2}><span className="block">AI made claims free.</span> Proof is what&apos;s scarce now.</h2>
@@ -67,7 +91,7 @@ export function Why() {
 
 export function EmberSection() {
   return (
-    <section id="ember" className={cn(SEC, BAND)}>
+    <section id="ember" className={SEC}>
       <div className={cn(WRAP, "grid grid-cols-1 items-start gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:gap-16")}>
         <div>
           <h2 className={H2}>Ember does the busywork.</h2>
@@ -86,7 +110,7 @@ export function EmberSection() {
 
 export function Clubs() {
   return (
-    <section id="clubs" className={SEC}>
+    <section id="clubs" className={cn(SEC, "border-t border-line bg-surface-2/60")}>
       <div className={cn(WRAP, "grid grid-cols-1 items-start gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-16")}>
         <div>
           <h2 className={H2}>Run your club here. Its work gets counted.</h2>
@@ -106,7 +130,7 @@ export function Clubs() {
 
 export function Companies() {
   return (
-    <section id="companies" className={cn(SEC, BAND)}>
+    <section id="companies" className={SEC}>
       <div className={cn(WRAP, "grid grid-cols-1 items-start gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:gap-16")}>
         <div>
           <h2 className={H2}>Search the work, not the résumé.</h2>
@@ -134,7 +158,7 @@ const PLANS = [
 
 export function Pricing() {
   return (
-    <section id="pricing" className={SEC}>
+    <section id="pricing" className={cn(SEC, BAND)}>
       <div className={WRAP}>
         <h2 className={H2}>Free for the people who build. Paid by the people who hire.</h2>
         <div className="mt-10 grid grid-cols-1 overflow-hidden rounded-[1.25rem] border border-line bg-surface md:grid-cols-2 md:divide-x md:divide-line">
@@ -157,7 +181,7 @@ export function Pricing() {
 
 export function FaqSection() {
   return (
-    <section id="faq" className={cn(SEC, BAND)}>
+    <section id="faq" className={SEC}>
       <div className="mx-auto max-w-3xl px-5 sm:px-6">
         <h2 className={H2}>Questions</h2>
         <div className="mt-8"><Faq /></div>

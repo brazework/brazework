@@ -156,7 +156,7 @@ function Build({ s, set }: { s: S; set: (p: Partial<S>) => void }) {
           </li>
         </ul>
       </div>
-      <p className="mt-3 text-sm text-muted">A milestone is one result someone else can check. You log it; the people who saw it sign it.</p>
+      <p className="mt-3 text-sm text-muted">A milestone is one result someone else can check. <a href="#projects" className="font-medium text-text underline decoration-line-strong underline-offset-4 hover:decoration-text">See this robot in 3D</a></p>
     </div>
   );
 }

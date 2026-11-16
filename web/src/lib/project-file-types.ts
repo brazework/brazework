@@ -75,3 +75,10 @@ export function cleanUrl(raw: string): string | null {
 
 // The size limit for a file, by its kind: 250 MB for video, 50 MB for everything else.
 export const maxBytesFor = (name: string) => (kindOfFile(name) === "video" ? PROJECT_VIDEO_MAX_BYTES : PROJECT_FILE_MAX_BYTES);
+
+/** The newest 3D model among each project's files (rows newest first): what its Build card opens. */
+export function newestModels<T extends { project_id: string; name: string; path: string | null }>(rows: T[]): Map<string, T & { path: string }> {
+  const out = new Map<string, T & { path: string }>();
+  for (const r of rows) if (r.path && !out.has(r.project_id) && kindOfFile(r.name) === "model") out.set(r.project_id, r as T & { path: string });
+  return out;
+}

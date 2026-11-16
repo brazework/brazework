@@ -227,6 +227,7 @@ Implementation: `supabase/milestones.sql`, `web/src/lib/milestones.ts`, queue UI
 - **No club deletion or ownership transfer.**
 - **iOS lacks projects, milestones, verification and Ember.**
 - The landing page's demos (hero signing sequence, app tour, Ember, club setup, company search) run on example data in `web/src/lib/landing-demo.ts`, not the database; each is captioned as an example on the page.
+- 3D: one viewer (`web/src/components/projects/model-viewer.tsx`) for uploaded STL, OBJ, GLB and 3MF on the project page, for "View in 3D" on Build cards, and for the landing page's six example models. Views, see-through, blueprint (with drawn dimensions), explode and full screen. Build cards without an uploaded model still show the line drawing for the build's field.
 
 ---
 
