@@ -1,5 +1,6 @@
 "use client";
 import { BadgeCheck } from "lucide-react";
+import Link from "next/link";
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui";
 import { answerVouch } from "@/lib/vouches";
@@ -13,7 +14,17 @@ export function AnswerForm({ token, domain }: { token: string; domain: string })
   const set = (k: keyof typeof f) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => setF({ ...f, [k]: e.target.value });
   const send = (vouch: boolean) => start(async () => setDone(await answerVouch({ token, vouch, ...f })));
 
-  if (done?.ok) return <p role="status" className="mt-6 flex items-start gap-2 rounded-xl border border-line bg-surface-2/60 p-4 text-sm"><BadgeCheck className="mt-0.5 size-4 shrink-0" /> {done.message}</p>;
+  if (done?.ok) return (
+    <>
+      <p role="status" className="mt-6 flex items-start gap-2 rounded-xl border border-line bg-surface-2/60 p-4 text-sm"><BadgeCheck className="mt-0.5 size-4 shrink-0" /> {done.message}</p>
+      {/* Witness invitations (FIX-129): the people who sign are builders too. */}
+      <div className="mt-6 rounded-xl border border-line p-4">
+        <p className="text-sm font-medium">Want a record like this for your own work?</p>
+        <p className="mt-1 text-sm text-muted">Log what you build, and the people who saw it sign it. Free.</p>
+        <Link href="/signup" className="mt-3 inline-flex h-10 items-center rounded-lg bg-accent px-4 text-sm font-medium text-on-accent hover:opacity-90">Start your record</Link>
+      </div>
+    </>
+  );
   const field = "mt-1.5 w-full rounded-lg border border-line bg-bg px-3 py-2 text-sm outline-none transition focus:border-line-strong";
   return (
     <form className="mt-6 flex flex-col gap-4" onSubmit={(e) => { e.preventDefault(); send(true); }}>

@@ -6,6 +6,11 @@ import { getViewer } from "@/lib/supabase/server";
 import { requestVouch } from "@/lib/vouches";
 import { backingMessage } from "@/lib/backing";
 import { checkBacking, recordBacking } from "@/lib/backing-check";
+import { mailer } from "@/lib/email";
+import { env } from "@/lib/env";
+import { proofUrl } from "@/lib/proof-card";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { buildProofSharedEmail } from "@/lib/witness-invite";
 
 // Club-verified milestones (supabase/milestones.sql), or, with no club, vouched for by someone who
 // saw it (supabase/vouches.sql), or, with nobody asked, backed by the member's own GitHub work
@@ -131,12 +136,28 @@ export async function resolveDispute(id: string, uphold: boolean, note = ""): Pr
 }
 
 // Show or hide a milestone on your profile.
+async function tellVoucher(milestoneId: string, memberId: string, title: string) {
+  const m = mailer();
+  const db = createAdminClient();
+  if (!m.enabled || !db) return;
+  const [{ data: v }, { data: me }] = await Promise.all([
+    db.from("milestone_vouches").select("email").eq("milestone_id", milestoneId).eq("state", "vouched").order("answered_at", { ascending: false }).limit(1).maybeSingle(),
+    db.from("profiles").select("first_name, last_name").eq("id", memberId).maybeSingle(),
+  ]);
+  if (!v?.email) return;
+  await m.send(buildProofSharedEmail({ to: v.email as string, member: `${me?.first_name ?? ""} ${me?.last_name ?? ""}`.trim(), title, cardUrl: proofUrl(env.siteUrl, milestoneId), signupUrl: `${env.siteUrl.replace(/\/$/, "")}/signup` }));
+}
+
 /** Shares one signed or backed result as a public link (/p/<id>), or stops sharing it (FIX-128). */
 export async function shareMilestone(id: string, on: boolean): Promise<MilestoneState> {
   const { supabase, user } = await getViewer();
   if (!user) return { ok: false, message: "Log in again." };
+  const { data: before } = await supabase.from("milestones").select("title, status, shared_at, vouched_by").eq("id", id).eq("owner_id", user.id).maybeSingle();
   const { error } = await supabase.rpc("share_milestone", { p_id: id, p_on: on });
   if (error) return { ok: false, message: reason(error) };
+  // The first time it's shared, someone who vouched for it by email hears about it, once (FIX-129). A
+  // member who signed it gets a notification from the database instead. Never blocks the share.
+  if (on && before && !before.shared_at && before.status === "verified" && before.vouched_by) await tellVoucher(id, user.id, before.title as string).catch(() => {});
   revalidatePath(`/u/${user.id}`);
   return { ok: true, message: on ? "Anyone with the link can see it now." : "Stopped sharing. The link no longer works." };
 }
