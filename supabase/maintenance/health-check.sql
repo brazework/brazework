@@ -55,7 +55,8 @@ from (values
   (55, 'project-access',  to_regprocedure('public.project_access_ready()') is not null),
   (56, 'school-links',    to_regprocedure('public.school_links_ready()') is not null),
   (57, 'hardening',       to_regprocedure('public.hardening_ready()') is not null),
-  (58, 'study-groups',    to_regprocedure('public.study_groups_ready()') is not null)
+  (58, 'study-groups',    to_regprocedure('public.study_groups_ready()') is not null),
+  (59, 'backed',          to_regprocedure('public.backed_ready()') is not null)
 ) as s(step, file, present)
 order by step;
 

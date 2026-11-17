@@ -4,9 +4,12 @@ import { z } from "zod";
 import { friendlyError } from "@/lib/forge";
 import { getViewer } from "@/lib/supabase/server";
 import { requestVouch } from "@/lib/vouches";
+import { backingMessage } from "@/lib/backing";
+import { checkBacking, recordBacking } from "@/lib/backing-check";
 
 // Club-verified milestones (supabase/milestones.sql), or, with no club, vouched for by someone who
-// saw it (supabase/vouches.sql). The database enforces who can ask and who can verify; these actions
+// saw it (supabase/vouches.sql), or, with nobody asked, backed by the member's own GitHub work
+// (supabase/backed.sql, lib/backing-check.ts). The database enforces who can ask and who can verify; these actions
 // validate input and turn database errors into plain sentences.
 
 export type MilestoneState = { ok: boolean; message: string };
@@ -14,7 +17,7 @@ export type MilestoneState = { ok: boolean; message: string };
 const add = z.object({
   projectId: z.string().min(1).max(64),
   // Either the club that saw it, or someone (at a university or company address) who'll vouch.
-  verifyBy: z.enum(["club", "vouch"]),
+  verifyBy: z.enum(["club", "vouch", "data"]),
   communityId: z.string().max(64),
   vouchEmail: z.string().trim().max(254),
   vouchRelationship: z.string().max(20),
@@ -31,7 +34,7 @@ const reason = (e: { message?: string; code?: string }) => (e.code === "P0001" |
 
 export async function addMilestone(_: MilestoneState, form: FormData): Promise<MilestoneState> {
   const v = add.safeParse({
-    projectId: form.get("projectId"), verifyBy: form.get("verifyBy") === "vouch" ? "vouch" : "club",
+    projectId: form.get("projectId"), verifyBy: form.get("verifyBy") === "vouch" ? "vouch" : form.get("verifyBy") === "data" ? "data" : "club",
     communityId: form.get("communityId") ?? "", vouchEmail: form.get("vouchEmail") ?? "", vouchRelationship: form.get("vouchRelationship") ?? "", title: form.get("title"),
     detail: form.get("detail") ?? "", evidence: form.get("evidence") ?? "", achievedOn: form.get("achievedOn"),
     showOnProfile: form.get("showOnProfile") === "on",
@@ -42,12 +45,30 @@ export async function addMilestone(_: MilestoneState, form: FormData): Promise<M
   const d = v.data;
   if (d.verifyBy === "club" && !d.communityId) return { ok: false, message: "Pick the club that saw it happen." };
   if (d.verifyBy === "vouch" && !d.vouchEmail) return { ok: false, message: "Enter the email of the person who saw it." };
+  // Nobody asked: check GitHub first, so nothing is saved unless it's the member's own work.
+  const backing = d.verifyBy === "data" ? await checkBacking(d.evidence, d.projectId, user.id) : null;
+  if (backing && !backing.ok) return { ok: false, message: backingMessage(backing.reason) };
   const row: Record<string, unknown> = { project_id: d.projectId, community_id: d.verifyBy === "club" ? d.communityId : null, title: d.title, detail: d.detail, evidence: d.evidence, achieved_on: d.achievedOn };
+  if (d.verifyBy === "data") row.status = "logged";
   // Private by default once verification.sql has run; showing it is the member's choice.
   if (d.showOnProfile) row.private = false;
   let { data: made, error } = await supabase.from("milestones").insert(row).select("id").single();
   if (error && d.showOnProfile && /private/.test(error.message ?? "")) ({ data: made, error } = await supabase.from("milestones").insert({ ...row, private: undefined }).select("id").single());
   if (error || !made) return { ok: false, message: error?.code === "42501" ? "You can only ask a club you're a member of, for your own project." : reason(error ?? {}) };
+  if (backing?.ok) {
+    if (!(await recordBacking(made.id, backing.facts))) {
+      await supabase.from("milestones").delete().eq("id", made.id).eq("owner_id", user.id);
+      return { ok: false, message: backingMessage("already_used") };
+    }
+    revalidatePath(`/u/${user.id}`);
+    return { ok: true, message: d.showOnProfile ? "Backed by GitHub. It's on your profile now." : "Backed by GitHub. Show it on your profile when you're ready." };
+  }
+  // Sent for signing: if the evidence is the member's own GitHub work, back it too (quietly; a
+  // GitHub outage never stops the ask).
+  if (/^https:\/\/github\.com\//i.test(d.evidence)) {
+    const extra = await checkBacking(d.evidence, d.projectId, user.id).catch(() => null);
+    if (extra?.ok) await recordBacking(made.id, extra.facts).catch(() => false);
+  }
   if (d.verifyBy === "vouch") {
     const asked = await requestVouch(made.id, d.vouchEmail, d.vouchRelationship);
     // No ask went out: don't leave a milestone waiting on nobody.

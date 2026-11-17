@@ -107,3 +107,27 @@ export async function recentHistory(c: GitHubConfig, installationId: number, rep
     ...releases.filter((r) => !r.draft && r.published_at && Date.parse(r.published_at) > since).map((r) => ({ event: "release", payload: { action: "published", repository, release: r } })),
   ];
 }
+
+/** What GitHub says about one piece of evidence (lib/backing.ts judges it): who made it, and for a
+ *  pull request or release whether it's final. A commit counts only once it has landed on the
+ *  repo's default branch, so a throwaway branch or a fork doesn't back anything. A release published
+ *  by a bot (CI release tools) counts for whoever made the commit it tags. */
+export async function githubFacts(c: GitHubConfig, installationId: number, ev: { fullName: string; kind: "commit" | "pull_request" | "release"; ref: string }, defaultBranch: string): Promise<{ authorId: number | null; merged?: boolean; draft?: boolean; landed?: boolean }> {
+  const t = await installationToken(c, installationId);
+  const repo = `/repos/${ev.fullName}`;
+  if (ev.kind === "commit") {
+    const commit = await gh<{ sha: string; author: { id: number } | null }>(c, `${repo}/commits/${encodeURIComponent(ev.ref)}`, t);
+    const cmp = await gh<{ status: string }>(c, `${repo}/compare/${encodeURIComponent(defaultBranch)}...${commit.sha}`, t);
+    return { authorId: commit.author?.id ?? null, landed: ["identical", "behind"].includes(cmp.status) };
+  }
+  if (ev.kind === "pull_request") {
+    const pr = await gh<{ user: { id: number } | null; merged: boolean }>(c, `${repo}/pulls/${encodeURIComponent(ev.ref)}`, t);
+    return { authorId: pr.user?.id ?? null, merged: pr.merged };
+  }
+  const rel = await gh<{ author: { id: number; type?: string } | null; draft: boolean }>(c, `${repo}/releases/tags/${encodeURIComponent(ev.ref)}`, t);
+  if (rel.author?.type === "Bot") {
+    const tagged = await gh<{ author: { id: number } | null }>(c, `${repo}/commits/${encodeURIComponent(ev.ref)}`, t);
+    return { authorId: tagged.author?.id ?? null, draft: rel.draft };
+  }
+  return { authorId: rel.author?.id ?? null, draft: rel.draft };
+}
