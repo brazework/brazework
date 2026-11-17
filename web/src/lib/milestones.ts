@@ -131,6 +131,16 @@ export async function resolveDispute(id: string, uphold: boolean, note = ""): Pr
 }
 
 // Show or hide a milestone on your profile.
+/** Shares one signed or backed result as a public link (/p/<id>), or stops sharing it (FIX-128). */
+export async function shareMilestone(id: string, on: boolean): Promise<MilestoneState> {
+  const { supabase, user } = await getViewer();
+  if (!user) return { ok: false, message: "Log in again." };
+  const { error } = await supabase.rpc("share_milestone", { p_id: id, p_on: on });
+  if (error) return { ok: false, message: reason(error) };
+  revalidatePath(`/u/${user.id}`);
+  return { ok: true, message: on ? "Anyone with the link can see it now." : "Stopped sharing. The link no longer works." };
+}
+
 export async function setMilestoneVisible(id: string, visible: boolean): Promise<MilestoneState> {
   const { supabase, user } = await getViewer();
   if (!user) return { ok: false, message: "Log in again." };
