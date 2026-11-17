@@ -1,13 +1,14 @@
 "use client";
 import { AnimatePresence, motion } from "motion/react";
-import { BadgeCheck, Clock, ExternalLink, Eye, EyeOff, Flag, GitMerge, Loader2, Plus, Scale, Trash2, X, XCircle } from "lucide-react";
+import { BadgeCheck, Clock, ExternalLink, Eye, EyeOff, Flag, GitMerge, Loader2, Plus, Scale, Share2, Trash2, X, XCircle } from "lucide-react";
 import Link from "next/link";
 import { useActionState, useEffect, useRef, useState, useTransition } from "react";
 import { Celebrate } from "@/components/app/celebrate";
 import { Button, Field, inputCls } from "@/components/ui";
 import { cn } from "@/lib/forge";
 import { signerNote } from "@/lib/signers";
-import { addMilestone, disputeMilestone, removeMilestone, setMilestoneVisible, type MilestoneState } from "@/lib/milestones";
+import { addMilestone, disputeMilestone, removeMilestone, setMilestoneVisible, shareMilestone, type MilestoneState } from "@/lib/milestones";
+import { proofPostText, proofUrl, shareLinks } from "@/lib/proof-card";
 import { submitWithoutReset } from "@/lib/submit";
 import { RELATIONSHIPS } from "@/lib/vouch-email";
 
@@ -20,6 +21,8 @@ export type Milestone = {
   vouched_by?: string;
   // With supabase/backed.sql: what GitHub backs (one row, or none).
   milestone_backings?: Backing | Backing[] | null;
+  // With supabase/proof-cards.sql: when the member shared it as a public link (/p/<id>), or null.
+  shared_at?: string | null;
 };
 export type Backing = { kind: "commit" | "pull_request" | "release"; repo_full_name: string; ref: string; url: string; checked_at: string };
 const backingOf = (m: Milestone): Backing | null => (Array.isArray(m.milestone_backings) ? m.milestone_backings[0] ?? null : m.milestone_backings ?? null);
@@ -36,6 +39,7 @@ export function MilestoneTimeline({ items, own }: { items: Milestone[]; own: boo
   const [gone, setGone] = useState<Set<string>>(new Set());
   const [patch, setPatch] = useState<Record<string, Partial<Milestone>>>({});
   const [disputing, setDisputing] = useState<string | null>(null);
+  const [sharing, setSharing] = useState<string | null>(null);
   const [note, setNote] = useState("");
   const [msg, setMsg] = useState("");
   const [, start] = useTransition();
@@ -89,6 +93,12 @@ export function MilestoneTimeline({ items, own }: { items: Milestone[]; own: boo
                       {m.private ? <><EyeOff className="size-3" /> Only you · Show on profile</> : <><Eye className="size-3" /> On your profile · Hide</>}
                     </button>
                   )}
+                  {/* Proof cards (FIX-128): share a signed or backed result as a public link. */}
+                  {own && m.shared_at !== undefined && (m.status === "verified" || (m.status === "logged" && backingOf(m))) && (
+                    <button type="button" onClick={() => setSharing(m.id)} className="inline-flex items-center gap-1 font-medium text-text-2 hover:text-text">
+                      <Share2 className="size-3" /> {m.shared_at ? "Shared · Link" : "Share"}
+                    </button>
+                  )}
                 </div>
                 {refused(m.status) && m.review_note && <p className="mt-1 rounded-lg bg-surface-2 px-2 py-1 text-[11px] text-text-2">&ldquo;{m.review_note}&rdquo;</p>}
                 {m.status === "revoked" && m.revoked_reason && <p className="mt-1 rounded-lg bg-surface-2 px-2 py-1 text-[11px] text-text-2">&ldquo;{m.revoked_reason}&rdquo;</p>}
@@ -110,7 +120,61 @@ export function MilestoneTimeline({ items, own }: { items: Milestone[]; own: boo
           </motion.li>
         ))}
       </AnimatePresence>
+      {sharing && (() => { const m = shown.find((x) => x.id === sharing); return m ? <ShareProof m={m} onClose={() => setSharing(null)} onChange={(shared_at, priv) => setPatch((p) => ({ ...p, [m.id]: { shared_at, private: priv } }))} /> : null; })()}
     </ol>
+  );
+}
+
+// Share one result as a public proof card: what anyone with the link sees, then the link and where to
+// post it. Nothing is public until "Create link"; "Stop sharing" takes it down (supabase/proof-cards.sql).
+function ShareProof({ m, onClose, onChange }: { m: Milestone; onClose: () => void; onChange: (shared_at: string | null, priv: boolean) => void }) {
+  const ref = useRef<HTMLDialogElement>(null);
+  const [pending, start] = useTransition();
+  const [msg, setMsg] = useState("");
+  const [copied, setCopied] = useState(false);
+  useEffect(() => { ref.current?.showModal(); }, []);
+  const url = typeof window === "undefined" ? `/p/${m.id}` : proofUrl(window.location.origin, m.id);
+  const b = backingOf(m);
+  const text = proofPostText({ id: m.id, title: m.title, detail: m.detail, achieved_on: m.achieved_on, level: m.status === "verified" ? "signed" : "backed", project: "",
+    member: { id: "", first: "", last: "", headline: "", avatar: "" },
+    witness: m.status === "verified" ? { name: m.reviewer_name, role: m.reviewer_role ?? "", club: m.community_name, vouched_by: m.vouched_by ?? "", at: m.reviewed_at ?? null } : null,
+    backing: b ? { kind: b.kind, repo: b.repo_full_name, ref: b.ref, url: b.url } : null, image: null, shared_at: "" });
+  const links = shareLinks(url, text);
+  const set = (on: boolean) => start(async () => { const r = await shareMilestone(m.id, on); setMsg(r.message); if (r.ok) onChange(on ? new Date().toISOString() : null, on ? false : !!m.private); });
+  const btn = "inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-line px-3.5 text-sm font-medium transition hover:border-line-strong hover:bg-hover";
+  return (
+    <dialog ref={ref} aria-label="Share this result" onCancel={(e) => { e.preventDefault(); onClose(); }} className="m-auto w-[min(480px,calc(100vw-24px))] rounded-3xl border border-line bg-surface p-0 text-text shadow-[var(--shadow)] backdrop:bg-black/60">
+      <div className="flex flex-col gap-4 p-6">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h2 className="text-xl font-semibold tracking-tight">Share this result</h2>
+            <p className="mt-1 text-sm text-muted">{m.title}</p>
+          </div>
+          <button type="button" onClick={onClose} aria-label="Close" className="grid size-8 shrink-0 place-items-center rounded-full text-faint hover:bg-hover hover:text-text"><X className="size-4" /></button>
+        </div>
+        {!m.shared_at ? (
+          <>
+            <p className="text-sm leading-relaxed text-text-2">Anyone with the link sees this result, your name and headline, and {m.status === "verified" ? "who signed it" : "what GitHub checked"}. It also shows on your profile. You can stop sharing at any time.</p>
+            <button type="button" disabled={pending} onClick={() => set(true)} className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-accent px-5 text-[15px] font-medium text-on-accent hover:opacity-90 disabled:opacity-60">{pending ? <Loader2 className="size-4 animate-spin" /> : <Share2 className="size-4" />} Create link</button>
+          </>
+        ) : (
+          <>
+            <div className="flex gap-2">
+              <input readOnly value={url} aria-label="Link to this result" onFocus={(e) => e.currentTarget.select()} className="h-10 min-w-0 flex-1 rounded-lg border border-line bg-bg px-3 text-sm" />
+              <button type="button" onClick={() => { navigator.clipboard?.writeText(url).then(() => setCopied(true)).catch(() => {}); }} className={btn}>{copied ? "Copied" : "Copy link"}</button>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <a href={links.linkedin} target="_blank" rel="noopener noreferrer" className={btn}>Post to LinkedIn</a>
+              <a href={links.x} target="_blank" rel="noopener noreferrer" className={btn}>Post to X</a>
+              <a href={`/p/${encodeURIComponent(m.id)}/opengraph-image`} download={`brazework-proof-${m.id}.png`} className={btn}>Download image</a>
+              <a href={`/p/${encodeURIComponent(m.id)}`} target="_blank" rel="noopener noreferrer" className={btn}>Open the page</a>
+            </div>
+            <button type="button" disabled={pending} onClick={() => set(false)} className="self-start text-sm font-medium text-muted underline underline-offset-4 hover:text-text">Stop sharing</button>
+          </>
+        )}
+        {msg && <p role="status" className="text-sm text-muted">{msg}</p>}
+      </div>
+    </dialog>
   );
 }
 

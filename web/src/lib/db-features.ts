@@ -27,7 +27,7 @@ export const dbFeatures = cache(async (): Promise<Features> => {
 
 async function probe() {
   const supabase = await createClient();
-  const [ev, po, inv, cop, ms, gc, st, cp, mn, cc, px, mcp, cx, pp, vf, ho, chl, spc, gy, clm, vc, wl, pf, puf, chp, prv, fpg, mcw, mcm, wlk, ghb, vch, gol, cth, pax, skl, stg, bkd] = await Promise.all([
+  const [ev, po, inv, cop, ms, gc, st, cp, mn, cc, px, mcp, cx, pp, vf, ho, chl, spc, gy, clm, vc, wl, pf, puf, chp, prv, fpg, mcw, mcm, wlk, ghb, vch, gol, cth, pax, skl, stg, bkd, pcd] = await Promise.all([
     supabase.from("events").select("community_id").limit(1),
     supabase.from("posts").select("media").limit(1),
     supabase.from("community_invites").select("code").limit(1),
@@ -66,8 +66,9 @@ async function probe() {
     supabase.rpc("school_links_ready"),
     supabase.rpc("study_groups_ready"),
     supabase.rpc("backed_ready"),
+    supabase.rpc("proof_cards_ready"),
   ]);
-  return { clubEvents: !missing(ev.error), media: !missing(po.error), invites: !missing(inv.error), copilot: !missing(cop.error), milestones: !missing(ms.error), groupChats: !missing(gc.error), projectTools: !missing(st.error), clubProfile: !missing(cp.error), mentions: !missing(mn.error), copilotChats: !missing(cc.error), profileExtras: !missing(px.error), mcp: !missing(mcp.error), chatExtras: !missing(cx.error), projectPosts: !missing(pp.error), verification: !missing(vf.error), handoff: !missing(ho.error), challenges: !missing(chl.error), projectSpecs: !missing(spc.error), gradYear: !missing(gy.error), clubClaims: !missing(clm.error), videoCaptions: !missing(vc.error), weeklyLoop: !missing(wl.error), projectFiles: !missing(pf.error), updateFiles: !missing(puf.error), chapters: !missing(chp.error), proVerification: !missing(prv.error), feedPages: !missing(fpg.error), mcpWrites: !missing(mcw.error), mcpMilestones: !missing(mcm.error), whoLooked: !missing(wlk.error), github: !missing(ghb.error), vouches: !missing(vch.error), goals: !missing(gol.error), commentThreads: !missing(cth.error), projectAccess: !missing(pax.error), schoolLinks: !missing(skl.error), studyGroups: !missing(stg.error), backed: !missing(bkd.error) };
+  return { clubEvents: !missing(ev.error), media: !missing(po.error), invites: !missing(inv.error), copilot: !missing(cop.error), milestones: !missing(ms.error), groupChats: !missing(gc.error), projectTools: !missing(st.error), clubProfile: !missing(cp.error), mentions: !missing(mn.error), copilotChats: !missing(cc.error), profileExtras: !missing(px.error), mcp: !missing(mcp.error), chatExtras: !missing(cx.error), projectPosts: !missing(pp.error), verification: !missing(vf.error), handoff: !missing(ho.error), challenges: !missing(chl.error), projectSpecs: !missing(spc.error), gradYear: !missing(gy.error), clubClaims: !missing(clm.error), videoCaptions: !missing(vc.error), weeklyLoop: !missing(wl.error), projectFiles: !missing(pf.error), updateFiles: !missing(puf.error), chapters: !missing(chp.error), proVerification: !missing(prv.error), feedPages: !missing(fpg.error), mcpWrites: !missing(mcw.error), mcpMilestones: !missing(mcm.error), whoLooked: !missing(wlk.error), github: !missing(ghb.error), vouches: !missing(vch.error), goals: !missing(gol.error), commentThreads: !missing(cth.error), projectAccess: !missing(pax.error), schoolLinks: !missing(skl.error), studyGroups: !missing(stg.error), backed: !missing(bkd.error), proofCards: !missing(pcd.error) };
 }
 
 export async function eventCols(): Promise<string> {
@@ -90,5 +91,7 @@ export async function milestoneCols(): Promise<string> {
   const cols = f.verification ? `${base}, private, revoked_reason, reviewer_role, reviewed_at, escalated` : base;
   const withVouch = f.vouches ? `${cols}, vouched_by` : cols;
   // backed.sql: what GitHub backs (lib/backing.ts).
-  return f.backed ? `${withVouch}, milestone_backings(kind, repo_full_name, ref, url, checked_at)` : withVouch;
+  const withBacking = f.backed ? `${withVouch}, milestone_backings(kind, repo_full_name, ref, url, checked_at)` : withVouch;
+  // proof-cards.sql: whether the member shares it as a public link (/p/<id>).
+  return f.proofCards ? `${withBacking}, shared_at` : withBacking;
 }
