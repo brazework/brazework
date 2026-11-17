@@ -2,10 +2,14 @@
 // in opens it and sees the result, who signed it and a way to start their own record, but none of
 // Ben's tools; the preview image LinkedIn and X show is a real PNG; and when Ben stops sharing, the
 // link says so. Nothing is public until he shares it.
+const { execSync } = require("child_process");
 const { BASE, step, browser, as, go, summary } = require("./lib.cjs");
+const psql = (sql) => execSync("docker exec -i forge-e2e-db psql -U postgres -h localhost -d postgres -v ON_ERROR_STOP=1 -qtA", { input: sql }).toString().trim();
 const TITLE = "Static fire at 1.2 kN";
 
 (async () => {
+  // Maya signed Ben's static fire (the seed names her; this links her account, as signing does).
+  psql("update public.milestones set reviewer_id = (select id from auth.users where email = 'maya@forge.test') where id = 'm1'");
   const b = await browser();
   const ben = await as(b, "ben@forge.test");
   const anon = await (await b.newContext({ viewport: { width: 390, height: 844 } })).newPage();
@@ -43,6 +47,17 @@ const TITLE = "Static fire at 1.2 kN";
     if (await anon.getByRole("button", { name: /Remove|Share|Hide/ }).count()) throw new Error("owner tools showed to a visitor");
     const og = await anon.locator('meta[property="og:image"]').getAttribute("content");
     if (!og || !og.includes("/p/m1/opengraph-image")) throw new Error("no preview image in the page head: " + og);
+  }, anon);
+
+  await step("the witness hears about it: Maya gets a notification that opens the card", async () => {
+    const maya = await as(b, "maya@forge.test");
+    await go(maya, "/notifications");
+    const row = maya.getByText(/shared a result you signed/).first();
+    await row.waitFor({ timeout: 15000 });
+    await maya.getByRole("link", { name: /See the card/ }).first().click();
+    await maya.waitForURL(/\/p\/m1$/, { timeout: 15000 });
+    await maya.locator("[data-proof]").getByRole("heading", { name: TITLE }).waitFor();
+    await maya.context().close();
   }, anon);
 
   await step("the preview image is a real picture", async () => {

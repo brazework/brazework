@@ -6,7 +6,7 @@
 export type PublicProof = {
   id: string; title: string; detail: string; achieved_on: string; level: "signed" | "backed"; project: string;
   member: { id: string; first: string; last: string; headline: string; avatar: string };
-  witness: { name: string; role: string; club: string; vouched_by: string; at: string | null } | null;
+  witness: { name: string; role: string; club: string; vouched_by: string; at: string | null; signed_count?: number } | null;
   backing: { kind: "commit" | "pull_request" | "release"; repo: string; ref: string; url: string } | null;
   image: string | null; shared_at: string;
 };

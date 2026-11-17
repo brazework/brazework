@@ -6,6 +6,7 @@ import { Suspense } from "react";
 import { Logo } from "@/components/ui";
 import { mediaUrl } from "@/lib/media";
 import { proofBadge } from "@/lib/proof-card";
+import { witnessCredit } from "@/lib/witness-invite";
 import { loadProof } from "@/lib/proof-public";
 
 // A proof card: one result its owner chose to share, for anyone with the link, signed in or not
@@ -55,6 +56,8 @@ async function Proof({ params }: { params: PageProps<"/p/[id]">["params"] }) {
             {signed ? <BadgeCheck className="mt-0.5 size-4 shrink-0" /> : <GitMerge className="mt-0.5 size-4 shrink-0" />}
             <span>{proofBadge(p)}</span>
           </p>
+          {/* Witness invitations (FIX-129): how many results the witness has signed here. */}
+          {signed && witnessCredit(p.witness?.signed_count ?? 0) && <p data-witness-credit className="mt-2 text-xs text-muted">{p.witness?.vouched_by ? p.witness.vouched_by.split(",")[0] : p.witness?.name} {witnessCredit(p.witness?.signed_count ?? 0).replace(/^Has/, "has")}</p>}
           <div className="mt-8 flex items-center gap-3 border-t border-line pt-6">
             {p.member.avatar
               ? <Image src={mediaUrl(p.member.avatar)} alt="" width={44} height={44} className="size-11 rounded-full object-cover" />
