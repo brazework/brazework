@@ -167,8 +167,10 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: 22
-      - name: Audit production dependencies (fails on high or critical)
+      - name: Audit production dependencies (fails on high or critical, beyond dated exceptions)
         working-directory: web
-        run: npm audit --omit=dev --audit-level=high
+        # npm audit, except advisories listed in web/audit-exceptions.json, each with why it can't
+        # reach members and a review date; an expired exception fails the run (web/scripts/audit.mjs).
+        run: node scripts/audit.mjs
       - name: Secret scan (gitleaks, whole history, values redacted)
         run: docker run --rm -v "$GITHUB_WORKSPACE:/repo" ghcr.io/gitleaks/gitleaks:v8.28.0 git /repo --redact --config /repo/.gitleaks.toml

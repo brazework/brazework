@@ -1,0 +1,9 @@
+[
+  {
+    "advisory": "GHSA-fc5q-39xc-vjpf",
+    "package": "picomatch",
+    "why": "ReDoS from an attacker-controlled glob pattern. picomatch only arrives through @sentry/nextjs's build-time Rollup plugin, which matches our own fixed file patterns while building; no member input reaches it. No patched version exists yet (the advisory lists none; the latest release is 4.0.7).",
+    "approved": "Josh, 2026-11-17",
+    "reviewBy": "2026-12-15"
+  }
+]
