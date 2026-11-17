@@ -10,7 +10,7 @@ Builds on [positioning.md](positioning.md) (market research, with sources). Numb
 | **Product** | The verified work network for STEM. **Clubs run on it** (members, events, chat, announcements, with Ember, the AI agent, doing the busywork). **Members post projects** (photos, video with callouts, specs, the tools). **Club officers, who saw the work happen, verify each milestone** with its evidence, and their name stays on it. **Companies find people by that proof** and sponsor the clubs behind it. |
 | **Why us, why it's defensible** | Verification is a social act only the club can perform, so the trust graph is ours: who vouched, when, with what evidence. Each verified milestone makes a profile more valuable to its owner and the whole network more useful to companies, and a club's history carries across officer turnover. Competitors either have the audience without the proof (LinkedIn, Handshake) or the admin without the careers outcome (Presence, Engage). |
 | **The habit** | A weekly loop that pays off: post what you built, get it verified, see who looked (Your week, the digest, "viewed by 3 companies"). Officers come back every Monday for Ember's brief. Clubs live on it, so it's where the chapter actually happens. |
-| **Business model** | Free forever for students and clubs (the supply side and the trust). Companies pay first: chapter sponsorships ($1–5k per chapter per semester) and verified-work search ($300–500 per seat per month). Then universities ($15–40k per campus per year) and national organizations (a per-chapter network license). |
+| **Business model** | Free forever for members and clubs (the supply side and the trust); clubs get 20% of the sponsor money that runs through them. Companies pay first: a $1,500 sponsored challenge ($1,000 for the first 10 founding sponsors), $2,500 per chapter per semester, verified-work search at $250 per seat per month, or $12,000 a year as a partner. Then universities (a free pilot, then $6,000 per college or $9,000–$20,000 per campus per year) and national organizations (about $300 per active chapter per year). See [Prices](#prices-nov-2026). |
 | **Go-to-market** | Atomic network: one club of 30–100 people, useful on day one. Design partner: NSBE @ UHart, then the other engineering clubs, then nearby campuses through officer-to-officer intros, then national organizations (NSBE, SHPE, SWE) once 20+ chapters are live. First sponsors: Connecticut employers that already recruit at NSBE (Pratt & Whitney, Collins, Electric Boat, Sikorsky). |
 | **What we'll show YC** | 40%+ of a pilot club's members active weekly for 8 weeks; 15+ verified milestones in the first month; organizations growing 5–10% a week; companies messaging members; one paid sponsor pilot or signed LOI. |
 | **Where we are (Nov 2026)** | The full loop is built and tested (84 end-to-end checks): club, projects, verification with evidence and revocation, company search, sponsored challenges, Ember. Live in production on the new name; the pilot with the UHart chapter is next. |
@@ -33,14 +33,36 @@ The atomic network is **one organization of 30–100 people**: useful on day one
 
 ## 3. Who pays (and who never does)
 
-Free, always: **members and student organizations.** That's the supply side and the trust.
+Free, always: **members (students and professionals) and student organizations.** That's the supply side and the trust.
 
 | Customer | What they buy | Budget it replaces | First price to test (*assumption*) |
 |---|---|---|---|
-| **Companies** (first revenue) | Chapter sponsorships with real ROI reporting; search by verified work; events beside the organizations they support | Diversity and campus recruiting spend that already flows to NSBE, SHPE and SWE (conference booths, chapter sponsorships) | $1,000–$5,000 per chapter per semester; talent search $300–$500 per seat per month |
-| **Universities** | A showcase of the school's STEM work for prospective students: its verified clubs and what they're building. Plus every student organization on one platform, and outcomes: verified projects, events, employer connections | Student-org management platforms. UHart already lists its organizations, including NSBE, on Presence ([hartford.presence.io](https://hartford.presence.io/organization/national-society-of-black-engineers)) | $15k–$40k per campus per year |
-| **National organizations** (NSBE, SHPE, SWE, IEEE, ASME…) | Chapter health across the network, member engagement, sponsor reporting | Chapter management tools and spreadsheets | Network license, priced per active chapter |
+| **Companies** (first revenue) | Chapter sponsorships with real ROI reporting; search by verified work; events beside the organizations they support | Diversity and campus recruiting spend that already flows to NSBE, SHPE and SWE (conference booths, chapter sponsorships) | $1,500 per sponsored challenge; $2,500 per chapter per semester; search $250 per seat per month; $12,000 a year partner |
+| **Universities** | A showcase of the school's STEM work for prospective students: its verified clubs and what they're building. Plus every student organization on one platform, and outcomes: verified projects, events, employer connections | Student-org management platforms. UHart already lists its organizations, including NSBE, on Presence ([hartford.presence.io](https://hartford.presence.io/organization/national-society-of-black-engineers)) | Free one-semester pilot, then $6,000 per college or $9,000–$20,000 per campus per year |
+| **National organizations** (NSBE, SHPE, SWE, IEEE, ASME…) | Chapter health across the network, member engagement, sponsor reporting | Chapter management tools and spreadsheets | Network license, about $300 per active chapter per year (from 2028) |
 | **Later: AI labs and the expert market** | Access to verified STEM experts (with consent) | The market Handshake and Mercor proved: Handshake's AI-training work is about $1B of its ~$1.15B run rate | Marketplace take rate |
+
+### Prices (Nov 2026)
+
+Starting prices to test in the first 10 employer and 5 school conversations. Each sits under what the buyer pays an incumbent today (Handshake Pro is $4,500 a year, LinkedIn Recruiter Lite $1,680, Parker Dewey $5,000 for 10 projects, Anthology Engage about $28,000 a year at College of Charleston, CampusGroups $18,853 at UW Tacoma), so a yes needs a card or a small purchase order, not procurement.
+
+| Payer | Plan | Price | What it includes |
+|---|---|---|---|
+| Members | Free | $0, always | Profile, projects, verified milestones, goals, Ember, MCP access |
+| Members | Plus (test only) | $6/month or $48/year | More Ember, profile analytics, who viewed you, a custom link. Launch only if 5%+ of weekly active members tap a fake-door button in spring; run it with professionals too. Never charge for verification or visibility |
+| Clubs | Free, plus a share | $0; clubs receive 20% of sponsor money run through them | Members, events, chat, announcements, verification, Ember, semester sponsor report |
+| Companies | Explore | $0 | Browse public verified profiles, 5 contact requests a month |
+| Companies | Sponsored challenge | $1,500 per challenge, one chapter ($1,000 for the first 10 founding sponsors) | A brief members build against, entries tied to verified projects, a results report, a demo-night slot |
+| Companies | Chapter sponsorship | $2,500 per chapter per semester | One challenge included, logo on the chapter and its events, first look at verified work, semester report |
+| Companies | Search seat | $250/month or $2,400/year | Search and message members by verified work. Not on sale until 100+ members have verified projects |
+| Companies | Annual partner | $12,000/year | 4 challenges, 2 search seats, named partner of a campus, quarterly report |
+| Universities | School pilot | Free for one semester | Official school page, every verified club, outcomes dashboard |
+| Universities | College plan | $6,000/year | The same for one college (for example CETA), up to 25 clubs |
+| Universities | Campus plan | $9,000 (under 5,000 students), $12,000 (5,000–15,000), $20,000 (over 15,000) per year | Every club, the public school page for admissions, outcomes reporting. A founding school gets 50% off year one if it signs by June 30, 2027 |
+
+**Launch (to mid-February 2027):** sell one thing, the $1,000 founding challenge with the UHart chapter for spring term. Card through the Stripe checkout or an invoice. Everything else is free or held back until its signal: search after 100+ verified members, the partner plan after a founding sponsor renews, school plans after the pilot semester (timed to the July 1 fiscal year).
+
+**Year one (2027), assumptions not a forecast:** about $8,500 if only the first chapter works, about $57,000 with UHart plus two nearby campuses (~8 clubs), about $117,000 with three campuses working (~15 clubs), before the 20% club share. Costs stay under $200 a month plus Ember usage and card fees.
 
 ### The pitch to schools
 
@@ -51,7 +73,7 @@ Free, always: **members and student organizations.** That's the supply side and 
 - **What the school gets:** one page showing every verified club and what its members are building right now, which admissions can send to prospective students and their parents. It also shows employers and partners the school's STEM work, and gives the school outcomes it can measure.
 - **Why schools will pay:** it turns student activity the school already funds into a recruiting asset, and it replaces a student-org platform it already pays for (see Presence above). Built so far: official school accounts, club verification and the school's club list (step 56, Nov 2026). Next: the school's public page.
 
-**Why this can be very large (illustrative, not a forecast):** about 4,000 US degree-granting institutions; if 1,000 campuses pay $25k that's $25M ARR. 3,000 employers at $15k is $45M. National-organization licenses add to that, and the verified-expert marketplace is a separate, larger market. The asset under all of it is the **verified work graph**, which gets more valuable with every milestone and is hard to copy because it's attested by organizations, not self-reported.
+**Why this can be very large (illustrative, not a forecast):** about 4,000 US degree-granting institutions; if 1,000 campuses pay $15k that's $15M ARR. 3,000 employers at $15k is $45M. National-organization licenses add to that, and the verified-expert marketplace is a separate, larger market. The asset under all of it is the **verified work graph**, which gets more valuable with every milestone and is hard to copy because it's attested by organizations, not self-reported.
 
 ## 4. The AI angle (core, not a feature)
 
