@@ -222,7 +222,7 @@ function Inbox({ s, set }: { s: S; set: (p: Partial<S>) => void }) {
         </div>
       ) : (
         <div className={cn(card, "p-4")}>
-          <div className="flex items-center gap-2.5"><Av>CD</Av><p className="text-sm leading-tight"><span className="font-medium">Cara Diaz</span><span className="block text-xs text-muted">University recruiter, Acme Aerospace</span></p></div>
+          <div className="flex items-center gap-2.5"><Av>CD</Av><p className="text-sm leading-tight"><span className="font-medium">Cara Diaz</span><span className="block text-xs text-muted">Recruiter, Acme Aerospace</span></p></div>
           <p className="mt-3 max-w-md rounded-2xl rounded-tl-sm bg-surface-2 px-3.5 py-2.5 text-[15px] leading-snug">Saw your verified run on Brazework. Free to talk about our robotics internship?</p>
           {s.accepted && <p className="mt-2 ml-auto w-fit max-w-md rounded-2xl rounded-tr-sm bg-accent px-3.5 py-2.5 text-[15px] leading-snug text-on-accent">Yes! Thursday afternoon works. Thank you for reaching out.</p>}
           <div className="mt-3 flex min-h-9 flex-wrap items-center gap-2" aria-live="polite">

@@ -2,21 +2,12 @@ import { dbFeatures } from "@/lib/db-features";
 import { rank } from "@/lib/communities";
 import { reusableInvite, type InviteRow } from "@/lib/club-setup";
 import { getViewer } from "@/lib/supabase/server";
+import { clubPath, describeMember, loopSteps, type GuideStep } from "@/lib/guide-steps";
 
 // The guide's "next best step" engine: plain checks against your real data, so it's instant and
 // free. Copilot only comes in when you ask it to explain or draft something.
 
-export type GuideStep = {
-  id: string;
-  label: string;
-  done: boolean;
-  /** Where to go to do it. */
-  href: string;
-  /** Why it matters, in one line. */
-  why: string;
-  /** What to ask Copilot for help with this step. */
-  ask?: string;
-};
+export type { GuideStep } from "@/lib/guide-steps";
 export type ClubGuide = { id: string; name: string; steps: GuideStep[] };
 // `loop`: the first five minutes, in the order of Brazework's loop (club → project → update →
 // verification → proof). Home shows it until every step is done.
@@ -40,30 +31,27 @@ export async function loadGuide(): Promise<Guide | null> {
   const rows = (memberships.data ?? []) as unknown as { role: string; communities: Club | Club[] | null }[];
   const mine = rows.flatMap((r) => (Array.isArray(r.communities) ? r.communities : r.communities ? [r.communities] : []).map((c) => ({ ...c, role: r.role })));
   const ms = (milestones.data ?? []) as { status: string }[];
+  // Students, and anyone in a club, get the club's steps; someone working with no club starts with the work (lib/guide-steps.ts).
+  const student = profile.account_type !== "professional";
+  const byClub = clubPath({ student, inClub: mine.length > 0 });
 
   const member: GuideStep[] = [
     ...(f.media ? [{ id: "photo", label: "Add a profile photo", done: !!p.avatar_path, href: "/profile", why: "People and clubs recognize you faster with a face." }] : []),
-    { id: "headline", label: "Write your headline", done: !!p.headline?.trim(), href: "/settings#profile", why: "It's the first line everyone reads about you.", ask: `Suggest three sharp profile headlines for me, a ${p.field ? `${p.field} ` : ""}student. Ask me what I'm working on if you need to.` },
+    { id: "headline", label: "Write your headline", done: !!p.headline?.trim(), href: "/settings#profile", why: "It's the first line everyone reads about you.", ask: `Suggest three sharp profile headlines for me, ${describeMember(p.field, student)}. Ask me what I'm working on if you need to.` },
     { id: "interests", label: "Pick at least 3 interests", done: (p.interests ?? []).length >= 3, href: "/settings#profile", why: "They decide what For you shows and who finds you." },
-    { id: "club", label: "Join your club", done: mine.length > 0, href: "/communities?tab=discover", why: "Clubs are where your work gets seen and vouched for.", ask: "Which clubs on Brazework fit me best, and why?" },
+    ...(byClub ? [{ id: "club", label: "Join your club", done: mine.length > 0, href: "/communities?tab=discover", why: "Clubs are where your work gets seen and vouched for.", ask: "Which clubs on Brazework fit me best, and why?" }] : []),
     { id: "project", label: "Add a project", done: (projects.count ?? 0) > 0, href: "/profile#projects", why: "Projects are the heart of your profile.", ask: "Help me turn something I've built into a project: ask me a few questions, then draft a title and a one-line summary." },
     { id: "post", label: "Share your first post", done: (posts.count ?? 0) > 0, href: "/feed", why: "A post puts your work in front of your field.", ask: "Give me three ideas for a first post about what I'm building, based on my projects." },
     ...(f.milestones ? [
-      { id: "ask-verify", label: "Ask your club to verify a milestone", done: ms.length > 0, href: "/profile#projects", why: "A club-verified milestone is proof no résumé can fake.", ask: "Which of my project milestones would make a strong verified milestone, and how should I describe it?" },
-      { id: "verified", label: "Get your first verified milestone", done: ms.some((m) => m.status === "verified"), href: "/profile#projects", why: "It shows on your profile with your club's name on it." },
+      { id: "ask-verify", label: byClub ? "Ask your club to verify a milestone" : "Ask someone who saw it to verify a milestone", done: ms.length > 0, href: "/profile#projects", why: byClub ? "A club-verified milestone is proof no résumé can fake." : "A milestone signed by a manager or mentor is proof no résumé can fake.", ask: "Which of my project milestones would make a strong verified milestone, and how should I describe it?" },
+      { id: "verified", label: "Get your first verified milestone", done: ms.some((m) => m.status === "verified"), href: "/profile#projects", why: byClub ? "It shows on your profile with your club's name on it." : "It shows on your profile with their name on it." },
     ] : []),
   ];
 
-  const verified = ms.filter((m) => m.status === "verified").length;
-  const loop: GuideStep[] = [
-    { id: "club", label: "Join your club", done: mine.length > 0, href: "/communities?tab=discover", why: "Your club is who vouches for your work. Not here yet? Create it, or invite your officer." },
-    { id: "project", label: "Add what you're building", done: (projects.count ?? 0) > 0, href: "/profile#projects", why: "A project with photos and specs. No repo needed; Ember can import one from GitHub.", ask: "Help me turn something I've built into a project on my profile." },
-    { id: "update", label: "Post an update about it", done: (projectPosts.count ?? 0) > 0, href: "/feed#composer", why: "Pick the project in the composer and share it with your club." },
-    ...(f.milestones ? [
-      { id: "ask-verify", label: "Ask your club to verify a milestone", done: ms.length > 0, href: "/profile#projects", why: "Add evidence (a photo, video, commit or the event) and your officers review it." },
-      { id: "verified", label: "Get your first verified milestone", done: verified > 0, href: "/profile#projects", why: "It shows on your profile with your club's name on it: proof no résumé can fake." },
-    ] : []),
-  ];
+  const loop = loopSteps({
+    student, inClub: mine.length > 0, hasProject: (projects.count ?? 0) > 0, hasUpdate: (projectPosts.count ?? 0) > 0,
+    asked: ms.length > 0, verified: ms.some((m) => m.status === "verified"), milestones: f.milestones,
+  });
 
   // Club setup, for the clubs you run (admin or owner). Bounded to keep the guide fast.
   const led = mine.filter((c) => rank(c.role) >= 4).slice(0, 3);

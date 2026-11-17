@@ -46,7 +46,7 @@ export function Organizations() {
                 <Field label={type === "club" ? "Club name" : "Company name"}><input name="name" maxLength={120} autoComplete="organization" className={inputCls} required /></Field>
                 <Field label="Your name"><input name="contact" maxLength={80} autoComplete="name" className={inputCls} required /></Field>
                 <Field label={type === "company" ? "Work email" : "School email"}><input name="email" type="email" maxLength={120} autoComplete="email" className={inputCls} required /></Field>
-                <Field label="Your role"><input name="role" maxLength={60} placeholder={type === "club" ? "e.g. President" : "e.g. University recruiter"} className={inputCls} /></Field>
+                <Field label="Your role"><input name="role" maxLength={60} placeholder={type === "club" ? "e.g. President" : "e.g. Recruiter"} className={inputCls} /></Field>
               </div>
               <p role="status" className="min-h-5 text-sm text-danger">{state.message}</p>
               <Button type="submit" size="lg" disabled={pending} className="self-start">

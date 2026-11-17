@@ -11,13 +11,13 @@ export const metadata: Metadata = {
   metadataBase: new URL(env.siteUrl),
   title: { default: "Brazework: build it, prove it, get found", template: "%s · Brazework" },
   description:
-    "Brazework is the network for student clubs and the people who hire from them. Clubs run on it, members prove what they've built, and Ember, the AI agent built in, does the busywork.",
+    "Brazework is the record of your work, signed by the people who saw it. Log what you build, get it signed by a club officer, a manager or a mentor, and let companies find you by the proof.",
   applicationName: "Brazework",
   // Installed from Safari's Share menu: full screen; the status bar takes the theme-color (ThemeChrome).
   appleWebApp: { capable: true, title: "Brazework", statusBarStyle: "default" },
   openGraph: {
     title: "Brazework: build it, prove it, get found",
-    description: "The network where students show what they've made, the people who saw it verify it, and companies recruit from the proof. With an AI agent that does the busywork.",
+    description: "The record of your work, signed by the people who saw it: a club officer, a manager, a mentor. Companies find you by the proof, not the résumé.",
     type: "website",
   },
 };

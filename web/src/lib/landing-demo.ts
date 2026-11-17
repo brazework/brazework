@@ -1,5 +1,7 @@
 // The landing page's demos (components/landing): the example people, clubs and work they show, and
 // the logic behind what a visitor can try. Everything here is example data, and the page says so.
+// The people are a mix on purpose: students signed by a club, and working people signed by a manager
+// or a client.
 // Pure, so it's tested without a browser (tests/landing-demo.test.ts).
 
 /** What the hero's milestone says before the visitor types their own. */
@@ -16,7 +18,7 @@ export const PLACES = [
 ] as const;
 export type Place = (typeof PLACES)[number]["id"];
 
-/** How far the visitor has taken the tour's loop: the officer signed, then the student answered. */
+/** How far the visitor has taken the tour's loop: the officer signed, then the builder answered. */
 export type Tour = { verified: boolean; accepted: boolean };
 
 /** The tour's one line of guidance: what to try next, and the place it sends you to (if not this one). */
@@ -73,14 +75,14 @@ export const BUILDERS: Builder[] = [
   { id: "maya", name: "Maya Patel", initials: "MP", role: "Avionics and flight software, class of 2027", open: "Open to internships",
     signed: [{ title: "Line-following robot beat the course in 41.2 seconds", by: "Ben C.", club: "Rocketry Club", when: "Nov 16" }],
     skills: ["Robotics", "PID control", "C++"] },
-  { id: "theo", name: "Theo Nguyen", initials: "TN", role: "Electrical engineering, class of 2027", open: "Open to internships",
-    signed: [{ title: "Battery management PCB passed bring-up", by: "Priya S.", club: "Solar Car Team", when: "Nov 2" }, { title: "Charger held 4.2 V across 50 cycles", by: "Priya S.", club: "Solar Car Team", when: "Oct 14" }],
+  { id: "theo", name: "Theo Nguyen", initials: "TN", role: "Electrical engineer, three years in EV charging", open: "Open to new roles",
+    signed: [{ title: "Battery management PCB passed bring-up", by: "Priya S., engineering manager", club: "Voltline", when: "Nov 2" }, { title: "Charger held 4.2 V across 50 cycles", by: "Priya S., engineering manager", club: "Voltline", when: "Oct 14" }],
     skills: ["PCB design", "KiCad", "Power electronics"] },
   { id: "ines", name: "Ines Okafor", initials: "IO", role: "Molecular biology, class of 2026", open: "Open to research",
     signed: [{ title: "CRISPR knockout confirmed on a gel", by: "Dr. Lee", club: "Gene Editing Lab", when: "Oct 29" }],
     skills: ["CRISPR", "PCR", "Gel electrophoresis"] },
-  { id: "lena", name: "Lena Brooks", initials: "LB", role: "Economics, class of 2026", open: "Open to full-time roles",
-    signed: [{ title: "Campus rent survey published: 412 responses", by: "Omar H.", club: "Economics Society", when: "Oct 20" }],
+  { id: "lena", name: "Lena Brooks", initials: "LB", role: "Freelance data analyst", open: "Open to contract work",
+    signed: [{ title: "City rent survey published: 412 responses", by: "Omar H., director", club: "Eastside Tenants Union", when: "Oct 20" }],
     skills: ["Survey design", "R", "Data analysis"] },
   { id: "ben", name: "Ben Cho", initials: "BC", role: "Propulsion lead, class of 2026", open: "Open to internships and research",
     signed: [{ title: "Static fire at 1.2 kN", by: "Maya P.", club: "Rocketry Club", when: "Nov 7" }, { title: "Flight computer passed vibration test", by: "Maya P.", club: "Robotics Society", when: "Oct 8" }],

@@ -24,11 +24,13 @@ export async function completeOnboarding(_: OnboardState, form: FormData): Promi
     if (!year.ok) return { message: "Pick a graduation year from the list." };
     row.grad_year = year.value;
   }
-  const { supabase, user } = await getViewer();
+  const { supabase, user, profile } = await getViewer();
   if (!user) redirect("/login");
   const { error } = await supabase.from("profiles").update(row).eq("id", user.id);
   if (error) return { message: friendlyError(error) };
   // Came in through a club invite link: land in that club.
-  // Otherwise: find your club next (its officers verify your work), before the feed.
-  redirect((await joinRememberedInvite()) ?? "/onboarding/club");
+  // Otherwise a student finds their club next (its officers verify their work), before the feed.
+  // Someone already working may not have one, so they go straight to Today, which starts with their
+  // work and a person who saw it (lib/guide-steps.ts). Clubs are still one tap away, under Club.
+  redirect((await joinRememberedInvite()) ?? (profile?.account_type === "professional" ? "/feed" : "/onboarding/club"));
 }

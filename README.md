@@ -1,15 +1,15 @@
 # Brazework
 
-**Build it. Prove it. Get found.** The verified work network for STEM.
+**Build it. Prove it. Get found.** The record of your work, signed by the people who saw it.
 
-Students post what they build. Their club's officers, who saw the work happen, verify it. Companies find proven builders through that verified work instead of through résumés anyone can write.
+People post what they build. Someone who saw the work happen verifies it: a club's officers, a manager, a mentor. Companies find proven builders through that verified work instead of through résumés anyone can write.
 
 > **Brazework** was called Forge until November 2026 ([why the new name](docs/naming.md); the trademark check is still open). Internal names keep the old one: the repo `forge-app`, tables like `forge_admins`, env vars like `FORGE_EMAIL_FROM` and the Linear team "Forge".
 
 ## For everyone
 
 **Who it's for**
-- **Students:** a profile of real, verified work that follows them into their career. Free, always.
+- **People who build, studying or working:** a record of real, verified work that follows them through their career. Free, always.
 - **Club officers:** one place to run the club (members, events, chat, announcements) and to vouch for members' work. Free, always.
 - **Companies and schools:** find builders by verified work, message them, and sponsor challenges clubs compete in. This is where revenue starts.
 

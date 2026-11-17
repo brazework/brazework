@@ -28,7 +28,7 @@ export default function OpengraphImage() {
           <div style={{ fontSize: 96, fontWeight: 700, letterSpacing: -4, lineHeight: 1 }}>Proof of work</div>
           <div style={{ fontSize: 96, fontWeight: 700, letterSpacing: -4, lineHeight: 1.1, color: "#8b8b94" }}>beats a résumé.</div>
         </div>
-        <div style={{ display: "flex", fontSize: 30, color: "#a1a1aa" }}>Home base for university clubs · verified work that gets you hired</div>
+        <div style={{ display: "flex", fontSize: 30, color: "#a1a1aa" }}>Your work, signed by the people who saw it</div>
       </div>
     ),
     size,

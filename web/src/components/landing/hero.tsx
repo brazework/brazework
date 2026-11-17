@@ -5,7 +5,8 @@ import { cleanBuild, signupHref } from "@/lib/front-door";
 import { ProofStage } from "./proof-stage";
 
 // The hero: one line, one box, and the product happening beside it. Type what you're building and it
-// becomes the milestone in the demo (proof-stage.tsx), which a club officer then signs. The button
+// becomes the milestone in the demo (proof-stage.tsx), which a club officer then signs (the example;
+// the line under the heading names the others who can: a manager, a mentor). The button
 // carries the line into sign-up (?build=, lib/front-door.ts), where it's waiting as your first build.
 export function Hero() {
   const [typed, setTyped] = useState("");
@@ -22,7 +23,7 @@ export function Hero() {
             you built.
           </h1>
           <p className="mt-6 max-w-[34rem] text-lg leading-relaxed text-muted sm:text-xl sm:leading-relaxed">
-            Log your work as you build it. Your club signs what it saw. Companies search signed work instead of résumés.
+            Log your work as you build it. Someone who saw it signs it: a club officer, a manager, a mentor. Companies search signed work instead of résumés.
           </p>
 
           <div className="mt-9 max-w-[34rem]">
@@ -35,7 +36,7 @@ export function Hero() {
                 className="h-12 w-full min-w-0 shrink-0 rounded-xl border border-line-strong bg-surface px-4 text-[16px] transition outline-none placeholder:text-faint focus:border-text focus:shadow-[0_0_0_4px_color-mix(in_oklab,var(--text)_9%,transparent)]" />
               <Button href={signupHref("", typed)} size="lg" className="h-12 shrink-0 rounded-xl px-5">{build ? "Start with this build" : "Create your free account"}</Button>
             </div>
-            <p id="hero-build-hint" className="mt-2.5 text-sm text-faint">{build ? "That's your first milestone. Take it with you." : "Type a line and watch it get signed."} Free for students and clubs.</p>
+            <p id="hero-build-hint" className="mt-2.5 text-sm text-faint">{build ? "That's your first milestone. Take it with you." : "Type a line and watch it get signed."} Free for everyone who builds.</p>
           </div>
 
           <p className="mt-9 text-sm text-muted">

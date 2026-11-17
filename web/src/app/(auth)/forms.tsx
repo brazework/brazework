@@ -95,7 +95,7 @@ export function SignupForm({ invite, clubName }: { invite?: string; clubName?: s
   const [emailValue, setEmailValue] = useState("");
   const choices = [
     { id: "student", label: "Student", hint: "Verify with your university email.", icon: GraduationCap },
-    { id: "professional", label: "Professional", hint: "Working in your field.", icon: Briefcase },
+    { id: "professional", label: "Professional", hint: "Employed, freelancing or building on your own.", icon: Briefcase },
   ] as const;
 
   return (
