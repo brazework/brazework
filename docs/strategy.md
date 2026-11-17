@@ -7,19 +7,19 @@ Builds on [positioning.md](positioning.md) (market research, with sources). Numb
 | | |
 |---|---|
 | **Problem** | AI made résumés and profiles free to fake: 91% of recruiters have caught candidate deception, and 1 in 4 candidate profiles may be fake by 2028. STEM students build real things in clubs, but the proof lives in group chats and lab notebooks, where no one hiring can see it. |
-| **Product** | The verified work network for STEM. **Clubs run on it** (members, events, chat, announcements, with Ember, the AI agent, doing the busywork). **Members post projects** (photos, video with callouts, specs, the tools). **Club officers, who saw the work happen, verify each milestone** with its evidence, and their name stays on it. **Companies find people by that proof** and sponsor the clubs behind it. |
+| **Product** | The record of your work, signed by the people who saw it. **Clubs run on it** (members, events, chat, announcements, with Ember, the AI agent, doing the busywork). **Members post projects** (photos, video with callouts, specs, the tools). **Club officers, who saw the work happen, verify each milestone** with its evidence, and their name stays on it. **Companies find people by that proof** and sponsor the clubs behind it. |
 | **Why us, why it's defensible** | Verification is a social act only the club can perform, so the trust graph is ours: who vouched, when, with what evidence. Each verified milestone makes a profile more valuable to its owner and the whole network more useful to companies, and a club's history carries across officer turnover. Competitors either have the audience without the proof (LinkedIn, Handshake) or the admin without the careers outcome (Presence, Engage). |
 | **The habit** | A weekly loop that pays off: post what you built, get it verified, see who looked (Your week, the digest, "viewed by 3 companies"). Officers come back every Monday for Ember's brief. Clubs live on it, so it's where the chapter actually happens. |
-| **Business model** | Free forever for students and clubs (the supply side and the trust). Companies pay first: chapter sponsorships ($1–5k per chapter per semester) and verified-work search ($300–500 per seat per month). Then universities ($15–40k per campus per year) and national organizations (a per-chapter network license). |
+| **Business model** | Free forever for the people who build, students and working professionals alike, and for clubs (the supply side and the trust). Companies pay first: chapter sponsorships ($1–5k per chapter per semester) and verified-work search ($300–500 per seat per month). Then universities ($15–40k per campus per year) and national organizations (a per-chapter network license). |
 | **Go-to-market** | Atomic network: one club of 30–100 people, useful on day one. Design partner: NSBE @ UHart, then the other engineering clubs, then nearby campuses through officer-to-officer intros, then national organizations (NSBE, SHPE, SWE) once 20+ chapters are live. First sponsors: Connecticut employers that already recruit at NSBE (Pratt & Whitney, Collins, Electric Boat, Sikorsky). |
 | **What we'll show YC** | 40%+ of a pilot club's members active weekly for 8 weeks; 15+ verified milestones in the first month; organizations growing 5–10% a week; companies messaging members; one paid sponsor pilot or signed LOI. |
 | **Where we are (Nov 2026)** | The full loop is built and tested (84 end-to-end checks): club, projects, verification with evidence and revocation, company search, sponsored challenges, Ember. Live in production on the new name; the pilot with the UHart chapter is next. |
 
 ## 1. What Brazework is, in one line
 
-**Brazework is the verified work network for STEM.** Organizations run on it, members prove what they've built, and the companies and universities that hire find them there. Ember, the AI agent built in, does the organization's busywork.
+**Brazework is the record of your work, signed by the people who saw it.** It is for anyone who builds, at any stage: a student signed by a club officer, an employee signed by a manager, a freelancer signed by a client (Josh's call, 2026-11-16, FIX-120). We still launch inside university clubs, because a club is the smallest group that is useful with nobody else there. Organizations run on it, members prove what they've built, and the companies and universities that hire find them there. Ember, the AI agent built in, does the organization's busywork.
 
-- **YC "describe it in 50 characters":** *Verified work, not résumés, for STEM.*
+- **YC "describe it in 50 characters":** *Your work, signed by the people who saw it.*
 - **Why it matters now:** AI made résumés and profiles free to generate. 91% of recruiters have caught candidate deception (Greenhouse, 2025), and Gartner expects 1 in 4 candidate profiles to be fake by 2028 (sources in positioning.md). Work that someone else saw happen is what still carries signal, and today it's buried in group chats and lab notebooks.
 
 ## 2. The product loop
@@ -119,7 +119,7 @@ Don't say "NSBE partner" publicly until NSBE agrees; say "built with student cha
 
 ### Draft application answers
 
-- **What are you making?** A network where STEM student organizations run their chapters, members prove what they've built through verification by their organization, and employers and universities find them. An AI agent runs the organization's busywork.
+- **What are you making?** A record of what people build, signed by the people who saw it. It starts in student organizations: chapters run on it, officers sign members' work, and employers and universities find them. The same record keeps going after graduation, signed by a manager or a client. An AI agent runs the organization's busywork.
 - **Why now?** AI made résumés free to fake, so hiring needs proof. And AI agents are finally good enough to run the operations that student organizations drop.
 - **How will you make money?** Free for members and organizations. Companies pay for sponsorships and search; universities and national organizations pay for campus- and network-wide tools.
 - **Competition?** LinkedIn (noise, AI-written posts), Handshake (career-center led; most revenue now from AI training), Presence/Engage (student-org admin without careers or AI), Discord/GroupMe (where organizations live today, but chat disappears). Brazework is the only one where the organization's work becomes verified career proof.
@@ -144,7 +144,7 @@ Don't say "NSBE partner" publicly until NSBE agrees; say "built with student cha
 1. **No atomic network.** Polywork raised $44.5M and still shut down: a personal profile is worth little until everyone is there. Ours is one club, useful the day it runs its events, chat and verification on Brazework, before anyone else joins.
 2. **Self-reported, so copyable.** LinkedIn can match a nicer self-written page in a quarter. It can't match a milestone signed by a named officer inside that club's history.
 3. **No buyer.** Neither found who pays. Companies already spend campus-recruiting money; sponsored clubs and challenges give them something concrete to buy.
-4. **Horizontal.** "Everyone's personal brand" is LinkedIn's home ground. "Verified STEM work, inside clubs, for the companies hiring engineers" is a niche it serves badly.
+4. **Horizontal from day one.** "Everyone's personal brand" is LinkedIn's home ground. Our positioning is now for anyone who builds (2026-11-16), which makes this the risk to watch: the message is broad, so the launch has to stay narrow. Signed work, inside one club at a time, for the companies that hire from it, is a start LinkedIn serves badly. A working professional can join and be signed by a manager today, but we don't go looking for them until a campus is active.
 
 **Where we could still look like them (watch this):** an update feed without proof is Polywork's product, and a profile that leads with bio and links is Read.cv's. Proof leads every profile, and the cold start is the same risk that killed both, which is why one campus has to be truly active (the UHart NSBE pilot) before we expand.
 

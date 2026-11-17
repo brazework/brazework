@@ -4,13 +4,13 @@ For anyone: co-founders, advisors, investors, a new teammate. No technical backg
 
 ## What it is
 
-**Brazework is where STEM students prove what they've built.** A student posts their project. Their club's officers, who saw the work happen, put their name on it ("verified"). Companies looking for builders find students through that verified work, not through résumés anyone can write.
+**Brazework is the record of your work, signed by the people who saw it.** It is for anyone who builds, studying or working, and it launches in university clubs. A member posts their project. Someone who saw the work happen puts their name on it ("verified"): their club's officers, or a manager or mentor asked by email. Companies looking for builders find people through that verified work, not through résumés anyone can write.
 
 Three kinds of people use it:
 
 | Who | What they get | What they pay |
 |---|---|---|
-| **Students** | A profile of real, verified work that follows them into their career | Nothing, ever |
+| **People who build** (students and working professionals) | A record of real, verified work that follows them through their career | Nothing, ever |
 | **Club officers** | One place to run the club (members, events, chat, announcements) and to vouch for members' work | Nothing, ever |
 | **Companies and schools** | A way to find proven builders, and to sponsor challenges that clubs compete in | The first revenue (challenge sponsorships, then search) |
 

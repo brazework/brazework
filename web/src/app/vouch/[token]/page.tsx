@@ -49,7 +49,7 @@ async function Vouch({ params }: { params: PageProps<"/vouch/[token]">["params"]
   const links = [v.evidence, ...v.evidence_items.map((e) => e.url ?? "")].filter((u): u is string => /^https:\/\//.test(u));
   return (
     <section className="rounded-2xl border border-line bg-surface p-6 shadow-[var(--shadow)] sm:p-7">
-      <p className="text-sm text-muted"><b className="font-semibold text-text">{v.member || "A student"}</b> listed you as {RELATIONSHIPS[v.relationship]} who saw this happen.</p>
+      <p className="text-sm text-muted"><b className="font-semibold text-text">{v.member || "Someone"}</b> listed you as {RELATIONSHIPS[v.relationship]} who saw this happen.</p>
       <div className="mt-4 rounded-xl border border-line bg-surface-2/60 p-4">
         {v.project && <p className="text-xs font-medium text-faint">{v.project}</p>}
         <h1 className="mt-0.5 text-lg font-semibold tracking-tight">{v.title}</h1>

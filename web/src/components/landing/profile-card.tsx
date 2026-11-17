@@ -23,7 +23,7 @@ export function ProfileCard({ p, className }: { p: Profession; className?: strin
           </span>
         </div>
         <div className="mt-3 flex items-center gap-1.5 font-semibold">
-          {p.person.first} {p.person.last} <BadgeCheck className="size-4 text-info" aria-label="Verified student" />
+          {p.person.first} {p.person.last} <BadgeCheck className="size-4 text-info" aria-label="Verified" />
         </div>
         <div className="text-sm text-muted">{p.person.headline}</div>
 

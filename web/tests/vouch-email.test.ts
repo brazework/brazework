@@ -21,5 +21,5 @@ test("names and titles are escaped in the HTML", () => {
 });
 
 test("no name still reads well", () => {
-  assert.equal(buildVouchEmail({ member: "", title: "T", project: "", relationship: "other", link: "https://x.test/v" }).subject, "A student asked you to vouch for their work");
+  assert.equal(buildVouchEmail({ member: "", title: "T", project: "", relationship: "other", link: "https://x.test/v" }).subject, "Someone asked you to vouch for their work");
 });

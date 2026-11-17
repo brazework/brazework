@@ -6,7 +6,9 @@
 - Verified STEM people are now worth money. Handshake and Mercor earn most of their revenue selling expert time to AI labs.
 - The "LinkedIn but better" startups (Polywork, Read.cv) both shut down in January 2025.
 
-**Brazework should start as the verified proof-of-work network for university STEM clubs, one club and one campus at a time.**
+**Brazework is the record of your work, signed by the people who saw it. It launches inside university clubs, one club and one campus at a time.**
+
+> **Updated 2026-11-16 (Josh's call, FIX-120): for anyone who builds, at any stage.** The public positioning no longer says "STEM" or "students". A student signed by a club officer, an employee signed by a manager and a freelancer signed by a client all keep the same record. What did not change is where we start: one club of 30 to 100 people is still the smallest group that is useful with nobody else there, and section 7's cold-start risk is why. The STEM figures in section 1 stay as the evidence for the first market, not as the limit of who it's for. Design: [superpowers/specs/2026-11-16-positioning-builders-design.md](superpowers/specs/2026-11-16-positioning-builders-design.md).
 
 Claims marked *(unverified)* couldn't be confirmed against a primary source.
 
@@ -39,9 +41,9 @@ Claims marked *(unverified)* couldn't be confirmed against a primary source.
 
 ## 4. Positioning
 
-**One-liner:** Brazework is where STEM builders show verified work, not résumés: the home for your club, your projects, and the people who'll hire you.
+**One-liner:** Brazework is the record of your work, signed by the people who saw it: your club's officers, a manager, a mentor. Companies find you by that proof, not a résumé.
 
-**Wedge:** university STEM club leaders: robotics, rocketry, ACM/IEEE, hackathon organizers, SWE/NSBE/SHPE. Win one campus deeply before the next ([PG, *Do Things That Don't Scale*](https://paulgraham.com/ds.html)).
+**Wedge (where we launch, not who it's for):** university club leaders, starting with engineering and science: robotics, rocketry, ACM/IEEE, hackathon organizers, SWE/NSBE/SHPE. Win one campus deeply before the next ([PG, *Do Things That Don't Scale*](https://paulgraham.com/ds.html)).
 
 **Atomic network:** the smallest network that is useful on its own ([Andrew Chen](https://techcrunch.com/2021/12/08/andrew-chen-of-a16z-on-how-startups-get-past-a-cold-start-to-survive-and-thrive)). For Brazework, that's one club of 30–100 members plus its sponsors and events.
 
@@ -59,7 +61,7 @@ Claims marked *(unverified)* couldn't be confirmed against a primary source.
 
 ## 5. Business model
 
-- **Students and clubs:** free.
+- **Builders and clubs:** free, whether they study or work.
 - **First revenue:** company sponsorship of club events and challenges, the budget campus recruiters already spend. Benchmarks: LinkedIn Recruiter Lite ~$170/mo ([Dover](https://www.dover.com/blog/linkedin-recruiter-lite-vs-professional)); Handshake Pro ~$450/mo *(unverified)*.
 - **Later:** individual premium (benchmark: LinkedIn Premium $29.99/mo), then a verified-expert marketplace.
 

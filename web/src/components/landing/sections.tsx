@@ -1,4 +1,4 @@
-import { Check } from "lucide-react";
+import { BadgeCheck, Check } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/forge";
 import { AppTour } from "./app-tour";
@@ -8,7 +8,8 @@ import { CompanySearch } from "./company-search";
 import { EmberDemo } from "./ember-demo";
 import { Faq } from "./faq";
 
-// The landing page's sections, in the order a cold visitor needs them: the app itself (to try), a
+// The landing page's sections, in the order a cold visitor needs them: who it's for (a student,
+// someone employed, someone working for themselves), the app itself (to try), a
 // build in 3D, why
 // proof matters now, Ember, what clubs get, what companies get and what it costs, and questions.
 // Each one is a heading, a few plain sentences and something to try; the demos are client components.
@@ -25,6 +26,42 @@ function Points({ items }: { items: [string, string][] }) {
     <dl className="mt-9 flex flex-col divide-y divide-line border-y border-line">
       {items.map(([t, b]) => <div key={t} className="py-4"><dt className="font-medium">{t}</dt><dd className="mt-1 text-[15px] leading-relaxed text-muted">{b}</dd></div>)}
     </dl>
+  );
+}
+
+// Who signs, wherever you are. The record is the same for a student, someone employed and someone
+// working for themselves; only the person who saw the work changes (a club's officers, or anyone
+// asked by email: supabase/vouches.sql). Examples, and the page says so.
+const STAGES = [
+  { when: "Studying", who: "Your club's officers sign what they saw you build. A professor, a TA or a lab lead can too.", work: "Line-following robot beat the course in 41.2 seconds", by: "Ben C.", as: "officer, Rocketry Club" },
+  { when: "Working", who: "A manager or a mentor signs from their work email. They don't need an account.", work: "Cut the pick-and-place cycle from 9.4 to 7.1 seconds", by: "Dana R.", as: "engineering manager, Voltline" },
+  { when: "On your own", who: "Whoever you built it for signs it, from their company's address: the person who saw it ship.", work: "Rebuilt a bike shop's checkout: 31% fewer abandoned carts", by: "Sam O.", as: "owner, Northside Bikes" },
+];
+
+export function Stages() {
+  return (
+    <section id="who" className="scroll-mt-20 border-t border-line py-16 sm:py-24">
+      <div className={WRAP}>
+        <h2 className={H2}>One record, wherever you build.</h2>
+        <p className={LEAD}>A signature needs one thing: someone who saw it happen. Who that is changes as you go. The record stays yours.</p>
+        <ul className="mt-10 grid grid-cols-1 overflow-hidden rounded-[1.25rem] border border-line bg-surface md:grid-cols-3 md:divide-x md:divide-line">
+          {STAGES.map((s, i) => (
+            <li key={s.when} className={cn("flex flex-col p-6 sm:p-7", i > 0 && "border-t border-line md:border-t-0")}>
+              <h3 className="text-2xl font-semibold tracking-tight">{s.when}</h3>
+              <p className="mt-2 flex-1 text-[15px] leading-relaxed text-muted">{s.who}</p>
+              <figure className="mt-6 rounded-xl bg-surface-2/70 px-4 py-3">
+                <p className="text-sm leading-snug font-medium">{s.work}</p>
+                <figcaption className="mt-2 flex items-start gap-1.5 text-xs leading-relaxed text-muted">
+                  <BadgeCheck className="mt-0.5 size-3.5 shrink-0 text-ok" aria-hidden="true" />
+                  <span>Verified by <span className="font-medium text-text-2">{s.by}</span>, {s.as}</span>
+                </figcaption>
+              </figure>
+            </li>
+          ))}
+        </ul>
+        <p className="mt-3 text-xs text-faint">Examples, to show how signed work reads.</p>
+      </div>
+    </section>
   );
 }
 
@@ -137,7 +174,7 @@ export function Companies() {
       <div className={cn(WRAP, "grid grid-cols-1 items-start gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:gap-16")}>
         <div>
           <h2 className={H2}>Search the work, not the résumé.</h2>
-          <p className={LEAD}>Find students by what they built and who signed it, not by keywords on a résumé anyone can generate.</p>
+          <p className={LEAD}>Find people by what they built and who signed it, students and working professionals alike, not by keywords on a résumé anyone can generate.</p>
           <Points items={[
             ["Only signed work shows up", "Every result names the club officer or the person who saw it happen, and when."],
             ["Ask, and they decide", "Your message waits in their Requests. The ones who reply want to talk."],
@@ -155,7 +192,7 @@ export function Companies() {
 }
 
 const PLANS = [
-  { name: "Students and clubs", price: "Free", note: "Always, with no ads", points: ["A profile built from signed work", "Run your club or study group: events, chat, roles, handoff", "Ember included", "Web and iPhone"], cta: { label: "Create your free account", href: "/signup" } },
+  { name: "Builders and clubs", price: "Free", note: "Always, with no ads", points: ["A record built from signed work, whether you study or work", "Run your club or study group: events, chat, roles, handoff", "Ember included", "Web and iPhone"], cta: { label: "Create your free account", href: "/signup" } },
   { name: "Companies", price: "Sponsor and recruit", note: "Pilots, set up with the founders", points: ["Sponsor a build challenge that clubs opt into", "Meet the winners, verified by their clubs", "Follow clubs and builders, and host events", "Search signed work (coming with Pro)"], cta: { label: "Talk to us", href: "#founding" } },
 ];
 

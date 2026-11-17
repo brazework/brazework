@@ -5,8 +5,9 @@ import { useState } from "react";
 import { cn } from "@/lib/forge";
 
 const QA = [
-  ["Is Brazework free?", "Yes, for students and clubs, always. Companies pay: they sponsor build challenges and, with a subscription, search and message verified builders."],
-  ["Who is it for?", "Anyone 18 or older studying or working in any field, the clubs they belong to, and the companies that hire from them. Students verify with a university email; companies with their work domain."],
+  ["Is Brazework free?", "Yes, for everyone who builds and for clubs, always. Companies pay: they sponsor build challenges and, with a subscription, search and message verified builders."],
+  ["Who is it for?", "Anyone 18 or older who builds things, in any field: students, people working in their field and people working for themselves. Also the clubs they belong to and the companies that hire from them. Students confirm a university email; companies their work domain."],
+  ["I already work. Is this for me?", "Yes. Choose Professional when you sign up, log what you build, and ask someone who saw it (a manager, a mentor, or anyone who was there) to sign it. We email a link to their work address, and they don't need an account."],
   ["What does \"verified\" mean?", "An organization vouched for it: officers confirm a milestone they saw happen, and Brazework records who verified it and when. It's proof of the work, not just of who you are."],
   ["I'm not in a club. Can I still get verified?", "Yes. Ask someone who saw the work (a professor, TA, lab PI, manager or mentor) to vouch for a milestone. We email their university or company address; they answer what they saw and how they know your work, and their name and domain go on your record. Free-mail addresses don't count, and you can't vouch for yourself."],
   ["What does the AI do?", "Ember, the assistant inside Brazework, plans meetings, drafts updates from real numbers, finds the right people and helps members keep their work on the record. It checks real Brazework data first and never acts without your approval. You can also connect the AI tools you already use, like Claude Code or Cursor, to log progress as you work; they can never verify anything."],

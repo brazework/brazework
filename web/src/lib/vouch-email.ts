@@ -10,7 +10,7 @@ export type Relationship = keyof typeof RELATIONSHIPS;
 const esc = (s: string) => s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]!);
 
 export function buildVouchEmail(p: { member: string; title: string; project: string; relationship: Relationship; link: string }) {
-  const who = p.member || "A student";
+  const who = p.member || "Someone";
   const subject = `${who} asked you to vouch for their work`;
   const as = RELATIONSHIPS[p.relationship];
   const text = [
@@ -20,7 +20,7 @@ export function buildVouchEmail(p: { member: string; title: string; project: str
     "It takes a minute: look at their evidence, then say in a sentence what you saw and how you know their work. No account needed.", "",
     `Vouch or decline: ${p.link}`, "",
     "The link works once and expires in 14 days. If you don't know them, ignore this email and nothing happens.", "",
-    "Brazework is where students keep a record of what they build, signed by people who saw it.",
+    "Brazework is where people keep a record of what they build, signed by people who saw it.",
   ].join("\n");
   const html = `<div style="font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.5;color:#111;max-width:520px">
 <p>Hi,</p>

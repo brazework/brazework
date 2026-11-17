@@ -175,7 +175,7 @@ function MilestoneDialog({ projectId, projectTitle, clubs, vouches, onClose, onS
         )) : (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_auto]">
             <Field label="Their email" hint="Their university or company address. We email them a link; they don't need an account.">
-              <input name="vouchEmail" type="email" required maxLength={254} autoComplete="off" placeholder="name@university.edu" className={inputCls} />
+              <input name="vouchEmail" type="email" required maxLength={254} autoComplete="off" placeholder="name@company.com" className={inputCls} />
             </Field>
             <Field label="They're">
               <select name="vouchRelationship" required defaultValue="professor" className={inputCls}>
