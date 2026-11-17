@@ -53,3 +53,24 @@ test("class year: filters to that year, and the chips offer only years someone h
   // Nobody has set one yet: no chips at all.
   assert.deepEqual(classYears(buildBuilders(rows, people)), []);
 });
+
+// Backed by GitHub (FIX-121): counted apart from signed work, never as verified, and ranked after it.
+const backedRow = (id: string, owner: string, title: string): VerifiedRow => ({
+  id, owner_id: owner, community_id: null, community_name: "", title, reviewer_name: "", reviewed_at: null, backed: true,
+  backing: { kind: "pull_request", repo_full_name: "cy/solver", ref: "12" }, projects: { title: `${title} project`, tags: [], tools: ["Rust"] },
+});
+
+test("backed work counts on its own, never as verified, and adds no club", () => {
+  const list = buildBuilders([...rows, backedRow("9", "c", "Sparse solver merged"), backedRow("8", "a", "Telemetry parser merged")], people);
+  const cy = list.find((b) => b.person.id === "c")!, ana = list.find((b) => b.person.id === "a")!;
+  assert.equal(cy.verified, 0); assert.equal(cy.backed, 1); assert.deepEqual(cy.clubs, []);
+  assert.equal(ana.verified, 1); assert.equal(ana.backed, 1);
+});
+
+test("signed work ranks above backed work; the minimum counts both only when backed work is shown", () => {
+  const list = buildBuilders([row("1", "a", "x", "2026-11-01T00:00:00Z", []), backedRow("9", "c", "a"), backedRow("8", "c", "b"), backedRow("7", "c", "c")], people);
+  assert.deepEqual(rankBuilders(list, { backed: true }).map((b) => b.person.id), ["a", "c"]);
+  assert.deepEqual(rankBuilders(list, {}).map((b) => b.person.id), ["a"], "signed only: people with only backed work don't appear");
+  assert.deepEqual(rankBuilders(list, { backed: true, min: 3 }).map((b) => b.person.id), ["c"]);
+  assert.ok(rankBuilders(list, { backed: true, q: "rust" }).some((b) => b.person.id === "c"), "backed work is searchable");
+});

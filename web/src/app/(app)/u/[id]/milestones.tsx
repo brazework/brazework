@@ -1,6 +1,6 @@
 "use client";
 import { AnimatePresence, motion } from "motion/react";
-import { BadgeCheck, Clock, Eye, EyeOff, ExternalLink, Flag, Loader2, Plus, Scale, Trash2, X, XCircle } from "lucide-react";
+import { BadgeCheck, Clock, ExternalLink, Eye, EyeOff, Flag, GitMerge, Loader2, Plus, Scale, Trash2, X, XCircle } from "lucide-react";
 import Link from "next/link";
 import { useActionState, useEffect, useRef, useState, useTransition } from "react";
 import { Celebrate } from "@/components/app/celebrate";
@@ -13,19 +13,25 @@ import { RELATIONSHIPS } from "@/lib/vouch-email";
 
 export type Milestone = {
   id: string; project_id: string; community_id: string | null; community_name: string; title: string; detail: string; evidence: string;
-  achieved_on: string; status: "draft" | "pending" | "verified" | "declined" | "refused" | "revoked" | "disputed"; reviewer_name: string; review_note: string;
+  achieved_on: string; status: "draft" | "logged" | "pending" | "verified" | "declined" | "refused" | "revoked" | "disputed"; reviewer_name: string; review_note: string;
   // With supabase/verification.sql:
   private?: boolean; revoked_reason?: string; reviewer_role?: string; reviewed_at?: string | null; escalated?: boolean;
   // With supabase/vouches.sql: "Name, Role · domain" when someone vouched instead of a club.
   vouched_by?: string;
+  // With supabase/backed.sql: what GitHub backs (one row, or none).
+  milestone_backings?: Backing | Backing[] | null;
 };
+export type Backing = { kind: "commit" | "pull_request" | "release"; repo_full_name: string; ref: string; url: string; checked_at: string };
+const backingOf = (m: Milestone): Backing | null => (Array.isArray(m.milestone_backings) ? m.milestone_backings[0] ?? null : m.milestone_backings ?? null);
+// "PR #12 in bencho/test-stand": what was checked, in a few words.
+const backedWhat = (b: Backing) => `${b.kind === "commit" ? `Commit ${b.ref.slice(0, 7)}` : b.kind === "pull_request" ? `PR #${b.ref}` : `Release ${b.ref}`} in ${b.repo_full_name}`;
 // `signers`: the officers who could sign your work there (lib/signers.ts); undefined when not loaded.
 export type Club = { id: string; name: string; signers?: string[] };
 
 const day = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
 
-// A project's milestones as a small timeline. Others only ever see verified ones (the database
-// hides the rest); the owner also sees what's waiting and what was declined, with the club's note.
+// A project's milestones as a small timeline. Others only ever see verified ones and logged ones
+// GitHub backs (the database hides the rest); the owner also sees what's waiting and what was declined, with the club's note.
 export function MilestoneTimeline({ items, own }: { items: Milestone[]; own: boolean }) {
   const [gone, setGone] = useState<Set<string>>(new Set());
   const [patch, setPatch] = useState<Record<string, Partial<Milestone>>>({});
@@ -42,8 +48,8 @@ export function MilestoneTimeline({ items, own }: { items: Milestone[]; own: boo
       <AnimatePresence initial={false}>
         {shown.map((m) => (
           <motion.li key={m.id} layout initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, height: 0 }} className="relative">
-            <span className={cn("absolute top-0.5 -left-[25px] grid size-[18px] place-items-center rounded-full ring-4 ring-surface", m.status === "verified" ? "bg-ok text-white" : m.status === "pending" || m.status === "disputed" || m.status === "draft" ? "bg-raised text-muted" : "bg-danger text-white")}>
-              {m.status === "verified" ? <BadgeCheck className="size-3" /> : m.status === "disputed" ? <Scale className="size-3" /> : m.status === "pending" || m.status === "draft" ? <Clock className="size-3" /> : <X className="size-3" />}
+            <span className={cn("absolute top-0.5 -left-[25px] grid size-[18px] place-items-center rounded-full ring-4 ring-surface", m.status === "verified" ? "bg-ok text-white" : m.status === "logged" ? "bg-info text-white" : m.status === "pending" || m.status === "disputed" || m.status === "draft" ? "bg-raised text-muted" : "bg-danger text-white")}>
+              {m.status === "verified" ? <BadgeCheck className="size-3" /> : m.status === "disputed" ? <Scale className="size-3" /> : m.status === "logged" ? <GitMerge className="size-3" /> : m.status === "pending" || m.status === "draft" ? <Clock className="size-3" /> : <X className="size-3" />}
             </span>
             <div className="flex items-start gap-2">
               <div className="min-w-0 flex-1">
@@ -66,11 +72,19 @@ export function MilestoneTimeline({ items, own }: { items: Milestone[]; own: boo
                   )}
                   {m.status === "pending" && <span className="inline-flex items-center gap-1 rounded-full bg-surface-2 px-2 py-0.5 text-muted"><Clock className="size-3" /> {m.community_id ? `Waiting for ${m.community_name}` : "Waiting for a vouch"}</span>}
                   {m.status === "draft" && <span className="inline-flex items-center gap-1 rounded-full bg-surface-2 px-2 py-0.5 text-muted">Draft</span>}
+                  {/* Backed by data, never "verified": a different colour, the word "Backed", and what was checked. */}
+                  {backingOf(m) && m.status !== "revoked" && (() => { const b = backingOf(m)!; return (
+                    <a href={b.url} target="_blank" rel="noopener noreferrer" data-backed title={`Checked with GitHub on ${new Date(b.checked_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}: made by this member's own GitHub account.`}
+                      className="inline-block max-w-full rounded-lg bg-[color-mix(in_oklab,var(--info)_13%,transparent)] px-2 py-0.5 font-medium text-info hover:underline">
+                      <GitMerge className="mr-1 inline size-3 align-[-2px]" />Backed by GitHub · {backedWhat(b)}
+                    </a>
+                  ); })()}
+                  {m.status === "logged" && !backingOf(m) && <span className="inline-flex items-center gap-1 rounded-full bg-surface-2 px-2 py-0.5 text-muted">Logged</span>}
                   {refused(m.status) && <span className="inline-flex items-center gap-1 rounded-full bg-[color-mix(in_oklab,var(--danger)_12%,transparent)] px-2 py-0.5 text-danger"><XCircle className="size-3" /> Not verified by {m.community_name}</span>}
                   {m.status === "revoked" && <span className="inline-flex items-center gap-1 rounded-full bg-[color-mix(in_oklab,var(--danger)_12%,transparent)] px-2 py-0.5 text-danger"><XCircle className="size-3" /> Revoked by {m.community_name}</span>}
                   {m.status === "disputed" && <span className="inline-flex items-center gap-1 rounded-full bg-surface-2 px-2 py-0.5 text-muted"><Scale className="size-3" /> Disputed · {m.escalated ? "with Brazework admins" : "with the club's owner"}</span>}
                   {m.evidence && <a href={m.evidence} target="_blank" rel="noopener noreferrer nofollow" className="inline-flex items-center gap-1 text-muted hover:text-text"><ExternalLink className="size-3" /> Evidence</a>}
-                  {own && m.status === "verified" && m.private !== undefined && (
+                  {own && (m.status === "verified" || (m.status === "logged" && backingOf(m))) && m.private !== undefined && (
                     <button type="button" onClick={() => start(async () => { const r = await setMilestoneVisible(m.id, !!m.private); setMsg(r.message); if (r.ok) setPatch((p) => ({ ...p, [m.id]: { private: !m.private } })); })} className="inline-flex items-center gap-1 text-muted hover:text-text">
                       {m.private ? <><EyeOff className="size-3" /> Only you · Show on profile</> : <><Eye className="size-3" /> On your profile · Hide</>}
                     </button>
@@ -104,7 +118,8 @@ const initial: MilestoneState = { ok: false, message: "" };
 
 // "Add milestone": what happened, when, a link to the evidence, and the club that saw it.
 // `vouches`: whether the database has vouches (supabase/vouches.sql); until then it's clubs only.
-export function AddMilestone({ projectId, projectTitle, clubs, vouches = false }: { projectId: string; projectTitle: string; clubs: Club[]; vouches?: boolean }) {
+// `backing`: whether "No one yet: back it with GitHub" is on (supabase/backed.sql run, GitHub App set up).
+export function AddMilestone({ projectId, projectTitle, clubs, vouches = false, backing = false }: { projectId: string; projectTitle: string; clubs: Club[]; vouches?: boolean; backing?: boolean }) {
   const [open, setOpen] = useState(false);
   const [sent, setSent] = useState(false);
   return (
@@ -113,15 +128,15 @@ export function AddMilestone({ projectId, projectTitle, clubs, vouches = false }
         {sent && <Celebrate pieces={16} />}
         <Flag className="size-3.5" /> Add milestone
       </button>
-      {open && <MilestoneDialog projectId={projectId} projectTitle={projectTitle} clubs={clubs} vouches={vouches} onClose={() => setOpen(false)} onSent={() => setSent(true)} />}
+      {open && <MilestoneDialog projectId={projectId} projectTitle={projectTitle} clubs={clubs} vouches={vouches} backing={backing} onClose={() => setOpen(false)} onSent={() => setSent(true)} />}
     </>
   );
 }
 
-function MilestoneDialog({ projectId, projectTitle, clubs, vouches, onClose, onSent }: { projectId: string; projectTitle: string; clubs: Club[]; vouches: boolean; onClose: () => void; onSent: () => void }) {
+function MilestoneDialog({ projectId, projectTitle, clubs, vouches, backing, onClose, onSent }: { projectId: string; projectTitle: string; clubs: Club[]; vouches: boolean; backing: boolean; onClose: () => void; onSent: () => void }) {
   const ref = useRef<HTMLDialogElement>(null);
   const [state, action, pending] = useActionState(addMilestone, initial);
-  const [by, setBy] = useState<"club" | "vouch">(clubs.length || !vouches ? "club" : "vouch");
+  const [by, setBy] = useState<"club" | "vouch" | "data">(clubs.length || !vouches ? "club" : "vouch");
   // Who can sign in the chosen club, said before you ask (not as an error after).
   const [clubId, setClubId] = useState(clubs[0]?.id ?? "");
   const club = clubs.find((c) => c.id === clubId);
@@ -135,7 +150,7 @@ function MilestoneDialog({ projectId, projectTitle, clubs, vouches, onClose, onS
         <div className="flex items-start justify-between gap-4">
           <div>
             <h2 className="text-xl font-semibold tracking-tight">Add a milestone</h2>
-            <p className="mt-1 text-sm text-muted">On <span className="font-medium text-text-2">{projectTitle}</span>. Someone who saw it confirms it happened, and it shows as verified on your profile.</p>
+            <p className="mt-1 text-sm text-muted">On <span className="font-medium text-text-2">{projectTitle}</span>. {by === "data" ? "We check it with GitHub, and if it's your own work it shows as backed on your profile." : "Someone who saw it confirms it happened, and it shows as verified on your profile."}</p>
           </div>
           <button type="button" onClick={onClose} aria-label="Close" className="grid size-8 shrink-0 place-items-center rounded-full text-faint hover:bg-hover hover:text-text"><X className="size-4" /></button>
         </div>
@@ -150,8 +165,8 @@ function MilestoneDialog({ projectId, projectTitle, clubs, vouches, onClose, onS
         {vouches && <fieldset>
           <legend className="text-sm font-medium">Who confirms it?</legend>
           <input type="hidden" name="verifyBy" value={by} />
-          <div role="radiogroup" className="mt-2 grid grid-cols-2 gap-2">
-            {([["club", "Your club", clubs.length ? "Its officers verify it" : "You're not in one yet"], ["vouch", "Someone who saw it", "A professor, TA, PI, manager or mentor"]] as const).map(([id, label, hint]) => (
+          <div role="radiogroup" className={cn("mt-2 grid grid-cols-1 gap-2", backing ? "sm:grid-cols-3" : "grid-cols-2")}>
+            {([["club", "Your club", clubs.length ? "Its officers verify it" : "You're not in one yet"], ["vouch", "Someone who saw it", "A professor, TA, PI, manager or mentor"], ...(backing ? [["data", "No one yet", "Back it with GitHub: your own commit, merged pull request or release"]] : [])] as [("club" | "vouch" | "data"), string, string][]).map(([id, label, hint]) => (
               <button key={id} type="button" role="radio" aria-checked={by === id} disabled={id === "club" && !clubs.length} onClick={() => setBy(id)}
                 className={cn("rounded-xl border p-3 text-left transition disabled:opacity-50", by === id ? "border-text bg-surface-2" : "border-line hover:border-line-strong")}>
                 <span className="block text-sm font-medium">{label}</span>
@@ -172,7 +187,7 @@ function MilestoneDialog({ projectId, projectTitle, clubs, vouches, onClose, onS
               </p>
             )}
           </Field>
-        )) : (
+        )) : by === "vouch" ? (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_auto]">
             <Field label="Their email" hint="Their university or company address. We email them a link; they don't need an account.">
               <input name="vouchEmail" type="email" required maxLength={254} autoComplete="off" placeholder="name@company.com" className={inputCls} />
@@ -183,15 +198,19 @@ function MilestoneDialog({ projectId, projectTitle, clubs, vouches, onClose, onS
               </select>
             </Field>
           </div>
+        ) : (
+          <p className="rounded-xl bg-surface-2 px-3 py-2 text-xs leading-relaxed text-text-2">
+            Paste a link to your own commit on the main branch, a merged pull request or a published release, in a repo linked to this project. We check it with GitHub; if it&apos;s yours, it shows as <span className="font-medium text-text">Backed by GitHub</span>. That isn&apos;t the same as signed: anyone reading your profile sees the difference.
+          </p>
         )}
         <label className="flex items-center gap-2 text-sm text-text-2">
           <input type="checkbox" name="showOnProfile" defaultChecked className="size-4 accent-[var(--accent)]" />
-          Show it on my profile once it&apos;s verified
+          Show it on my profile once it&apos;s {by === "data" ? "backed" : "verified"}
         </label>
         {state.message && !state.ok && <p role="alert" className="text-sm text-danger">{state.message}</p>}
         <div className="flex justify-end gap-2">
           <Button type="button" variant="ghost" onClick={onClose}>Cancel</Button>
-          <Button type="submit" disabled={pending || (by === "club" && !clubs.length)}>{pending ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />} {by === "club" ? "Ask for verification" : "Ask them to vouch"}</Button>
+          <Button type="submit" disabled={pending || (by === "club" && !clubs.length)}>{pending ? <Loader2 className="size-4 animate-spin" /> : <Plus className="size-4" />} {by === "club" ? "Ask for verification" : by === "vouch" ? "Ask them to vouch" : "Back it with GitHub"}</Button>
         </div>
       </form>
     </dialog>

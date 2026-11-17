@@ -1,3 +1,4 @@
+import { githubConfig } from "@/lib/github-app";
 import type { Metadata } from "next";
 import { ReportLink } from "@/components/report/report-dialog";
 import { BadgeCheck, BarChart3, Eye, FileText, FolderGit2, Lock, MapPin, MessageSquare, Trophy } from "lucide-react";
@@ -285,7 +286,7 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
                   content: (
                     <>
                       {mine && <div className="mb-4 flex items-center justify-between gap-3 rounded-3xl border border-dashed border-line-strong bg-surface/60 p-4"><p className="text-sm text-muted">Show what you&apos;ve built: a summary everyone sees, and a write-up you can keep private.</p><ProjectEditor interests={p.interests ?? []} copilot={copilotOn} stack={stackOn} specsOn={f.projectSpecs} /></div>}
-                      <ProjectGrid projects={projects} own={mine} interests={p.interests ?? []} copilot={copilotOn} clubs={msOn && mine ? myClubs : undefined} vouches={f.vouches} stack={stackOn} specsOn={f.projectSpecs} />
+                      <ProjectGrid projects={projects} own={mine} interests={p.interests ?? []} copilot={copilotOn} clubs={msOn && mine ? myClubs : undefined} vouches={f.vouches} backing={f.backed && !!githubConfig()} stack={stackOn} specsOn={f.projectSpecs} />
                       {!projects.length && <EmptyState icon={<FolderGit2 className="size-6" />} title={mine ? "Show what you've built" : "No projects yet"} body={mine ? "Add a project with a summary, what you did and a link. Keep the write-up private and share only the card if you like." : undefined} />}
                       {projects.some((x) => x.private) && !mine && <p className="mt-3 flex items-center gap-1.5 text-xs text-faint"><Lock className="size-3" /> Private projects show their card only.</p>}
                     </>

@@ -157,7 +157,7 @@ Every push to main runs checks, end-to-end, and the audit and secret scan (about
 | **Typecheck, lint, unit tests, build** | Types, lint rules and 35 unit tests pass; the production build succeeds and the smoke test serves the key pages |
 | **End-to-end** | A throwaway Supabase with every database step, all SQL rule tests, then 8 browser journeys (79 checks) as real members, failing on any Content-Security-Policy violation |
 | **Speed, accessibility and security scan** | Lighthouse budgets on public and logged-in pages (accessibility and best practices ≥ 90, no layout shift) and an OWASP ZAP scan of the running app that fails on any High-risk finding |
-| **Dependency audit and secret scan** | `npm audit` (high and critical) and gitleaks over the whole git history |
+| **Dependency audit and secret scan** | `npm audit` (high and critical, except dated exceptions in `web/audit-exceptions.json` that fail once they expire) and gitleaks over the whole git history |
 | **CodeQL** | Static security analysis (also weekly); fails on severity 7 or higher |
 
 On demand: `npm run load` (k6: 200 members browsing at once plus a sign-up burst). Weekly: Dependabot dependency updates.
