@@ -37,6 +37,8 @@ Status as of 2026-11-11. Linear issue IDs say what's open; the order to set ever
 | **Web analytics** | Landing-page visits and sign-up conversion (the admin dashboard covers in-app behavior) | Vercel Web Analytics, or PostHog | Free tier |
 | **Social handles** | Reserve @brazework everywhere | Instagram, TikTok, LinkedIn, X (FIX-61) | Free |
 | **Apple Developer Program** | Shipping the iPhone app (TestFlight, App Store) when it resumes | Apple, as the company | $99 a year |
+| **Sign in with Microsoft** | Many universities run student email on Microsoft 365, as others do on Google: one click with a school account would pass the student rule. Needs care: Microsoft's `email` claim isn't verified for every tenant, so follow Supabase's Azure guide on getting a verified email (Microsoft's `xms_edov` claim) and test with a personal Outlook account before turning it on | Azure (Entra ID) app, Supabase provider `azure` | Free |
+| **Sign in with Apple** | Required by the App Store (guideline 4.8) once the iPhone app offers Google or GitHub sign-in. Hide-my-email addresses can't pass the student rule, so they'd join as professionals | Apple Developer Program (above), Supabase provider `apple` | Included |
 
 ## The company (not legal advice: talk to a lawyer or a service like Clerky or Stripe Atlas; Linear FIX-64)
 
@@ -46,6 +48,53 @@ Needed before taking real money or raising, and asked for by YC:
 - **An EIN** (US tax ID) and a **business bank account** (for example Mercury). Stripe pays out there.
 - **Terms of Service and a Privacy Policy** reviewed by a lawyer. The plain-language privacy page (`/privacy`) is a start, not a substitute.
 - **Student data:** members are 18 or older and Brazework never pulls school records, but schools will ask how student data is handled. Keep [data-model.md](data-model.md) and `/privacy` current.
+
+## Sign in with Google, GitHub and LinkedIn (founders only)
+
+The code is in place: **Continue with Google / GitHub / LinkedIn** appears on `/login` and `/signup` for each provider that is switched on in Supabase (within 5 minutes, no deploy), and the button for a provider that's off never shows. Someone new through a provider lands on **Finish creating your account** in onboarding: account type, name (filled in from the provider) and birthday, held to the same rules as the email form by the database (`supabase/oauth-signup.sql`: 18 or older, a school email for a student account). Then onboarding as usual. A returning member goes straight in.
+
+**An email that already has a Brazework account.** Supabase links the provider to the existing account when the emails match (the provider's email is verified), so a member who signed up with `dana@hartford.edu` and a password, then clicks Continue with Google on that same school account, lands in their own account with their profile. Both ways of signing in work from then on. If that email/password account was never confirmed, Supabase removes the unconfirmed email sign-in when it links (its docs: it "will remove any other unconfirmed identities"): whoever controls the verified provider account owns the address, so nobody can pre-register someone else's email and wait for them. Going the other way, signing up with the email form for an address that's already used through Google says "An account with that email already exists"; the member logs in with Google, or uses **Forgot password?** to add a password.
+
+Each provider needs an app made by a founder, signed in as the company (`brazeworkhq@gmail.com`, or the `brazework` GitHub organization). **Paste client secrets only into Supabase (and Bitwarden), never into a file, chat, issue or pull request.** Every provider gets the same return address, Supabase's:
+
+```
+https://uwiwkjoonculpxjmzsfj.supabase.co/auth/v1/callback
+```
+
+**1. Google** (Google Cloud console, as the company Gmail)
+1. https://console.cloud.google.com → project picker → **New project** → name `Brazework` → Create, and select it.
+2. **Google Auth Platform → Branding** → Get started: App name `Brazework`, support email the company Gmail. Audience: **External**. Contact email: the company Gmail. Create.
+3. **Branding** again: app logo, home page `https://brazework.com`, privacy policy `https://brazework.com/privacy`. Authorized domains: `brazework.com` and `uwiwkjoonculpxjmzsfj.supabase.co`. Save.
+4. **Data Access → Add or remove scopes**: `openid`, `.../auth/userinfo.email`, `.../auth/userinfo.profile` (nothing else, so Google doesn't need to review the app). Save.
+5. **Audience → Publish app** (to "In production"). While it's in Testing, only listed test users can sign in.
+6. **Clients → Create client** → Web application, name `Brazework sign-in`. Authorized JavaScript origins: `https://brazework.com`. Authorized redirect URIs: the Supabase address above. Create.
+7. Copy the **Client ID**. Copy the **Client secret** straight into Supabase (step 4 below) and Bitwarden.
+
+**2. GitHub** (a new OAuth App in the `brazework` organization, not the Brazework GitHub App)
+1. https://github.com/organizations/brazework/settings/applications → **OAuth Apps → New OAuth App**.
+2. Application name `Brazework`, Homepage URL `https://brazework.com`, Authorization callback URL: the Supabase address above. Leave Device Flow off. Register application.
+3. Add the logo. **Generate a new client secret**, and copy it straight into Supabase and Bitwarden (GitHub shows it once). Copy the **Client ID**.
+
+Why not reuse the Brazework GitHub App (`infra/github-app.json`): Supabase's GitHub sign-in asks GitHub for the member's email addresses, which a GitHub App can only read with an extra "Email addresses" permission. Adding a permission makes every club that installed the App re-approve it. The App's one client secret is also what the repo integration uses (`GITHUB_APP_CLIENT_SECRET`), so sharing it means rotating one breaks the other, and the sign-in screen would show the App's repository-access wording to people who only want to log in. A plain OAuth App costs nothing and keeps sign-in separate.
+
+**3. LinkedIn** (needs a LinkedIn Company Page for Brazework, FIX-61, with a founder as its admin)
+1. https://www.linkedin.com/developers/apps → **Create app**: name `Brazework`, LinkedIn Page: Brazework, privacy policy URL `https://brazework.com/privacy`, logo. Agree and create.
+2. **Settings → Verify**: send the verification link to the Page admin and approve it.
+3. **Products → Sign In with LinkedIn using OpenID Connect → Request access** (granted at once). It brings the scopes `openid`, `profile` and `email`.
+4. **Auth → Authorized redirect URLs for your app → Add**: the Supabase address above. Update.
+5. Copy the **Client ID**, and the **Primary Client Secret** straight into Supabase and Bitwarden.
+
+**4. Switch them on in Supabase** (project FORGE)
+1. Dashboard → **Authentication → Sign In / Providers**.
+2. **Google**: enable, paste the Client ID (into "Client IDs") and the Client Secret, Save. **GitHub**: enable, Client ID, Client Secret, Save. **LinkedIn (OIDC)**: enable, Client ID, Client Secret, Save.
+3. Leave **Confirm email** on and the URL configuration as it is (`https://brazework.com/**` is already allowed).
+4. Within 5 minutes, open `https://brazework.com/signup` in a private window: the buttons are there. Try one with a personal account: you should land on **Finish creating your account**. Then delete that test account in Supabase (Authentication → Users) if you don't want it.
+
+**5. Write it down in the repo**, so a provider switched off or changed by mistake shows up as drift (`infra/check.mjs` reads each provider's on/off and client ID, never its secret):
+1. `SUPABASE_ACCESS_TOKEN=… node infra/check.mjs` lists the new values as drift.
+2. `SUPABASE_ACCESS_TOKEN=… node infra/check.mjs --capture`, then `git diff infra/desired.json`: only the six `external_*` lines should change. Commit it through a pull request.
+
+Pull-request previews: a provider sends people back to the preview's own address only if it's in Supabase's redirect list; otherwise they land on brazework.com and the sign-in says it expired. Test providers on brazework.com.
 
 ## Keys and where they live
 
@@ -58,6 +107,7 @@ Needed before taking real money or raising, and asked for by YC:
 | `STRIPE_SECRET_KEY`, `STRIPE_PRICE_CHALLENGE`, `STRIPE_PRICE_TALENT`, `STRIPE_WEBHOOK_SECRET` | Vercel env | Sponsorship payments |
 | `LINEAR_API_KEY` | GitHub Actions secret (not set yet) | The Linear sync workflow |
 | `linear_api_key` | Supabase Vault | The in-app feedback sync to Linear |
+| Google, GitHub and LinkedIn sign-in client secrets | Supabase → Authentication → Sign In / Providers (and Bitwarden), never Vercel or the repo | Supabase Auth, for "Continue with ..." |
 
 If a key ever leaks (pasted in a chat, committed, shown on screen): rotate it at the provider first, then update it where it lives. The CI secret scan catches keys committed to git, not keys pasted elsewhere.
 

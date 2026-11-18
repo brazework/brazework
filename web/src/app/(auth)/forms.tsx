@@ -7,6 +7,8 @@ import { Button, Field, inputCls } from "@/components/ui";
 import { cn } from "@/lib/forge";
 import { logIn, requestPasswordReset, resendConfirmation, signUp, updatePassword, type AuthState } from "./actions";
 import { submitWithoutReset } from "@/lib/submit";
+import { oauthMessage, type ProviderId } from "@/lib/oauth";
+import { ProviderButtons } from "./provider-buttons";
 
 function ErrorLine({ message }: { message: string }) {
   return (
@@ -63,7 +65,7 @@ function Notice({ tone, children }: { tone: "ok" | "danger"; children: React.Rea
   );
 }
 
-export function LoginForm({ next, confirmed, resetExpired }: { next?: string; confirmed?: boolean; resetExpired?: boolean }) {
+export function LoginForm({ next, confirmed, resetExpired, providers = [], oauth }: { next?: string; confirmed?: boolean; resetExpired?: boolean; providers?: ProviderId[]; oauth?: string }) {
   const [state, action, pending] = useActionState<AuthState, FormData>(logIn, { message: "" });
   return (
     <form onSubmit={submitWithoutReset(action)} className="rise-in flex flex-col gap-5">
@@ -73,6 +75,8 @@ export function LoginForm({ next, confirmed, resetExpired }: { next?: string; co
       </div>
       {confirmed && <Notice tone="ok"><MailCheck className="size-4 shrink-0" /> Your email is confirmed. Log in to continue.</Notice>}
       {resetExpired && <Notice tone="danger">Open the reset link in the same browser where you asked for it, or <Link href="/forgot" className="underline">ask for a new one</Link>.</Notice>}
+      {oauthMessage(oauth) && <Notice tone="danger">{oauthMessage(oauth)}</Notice>}
+      <ProviderButtons providers={providers} from="login" next={next} />
       <input type="hidden" name="next" value={next ?? "/feed"} />
       <Field label="Email"><input name="email" type="email" autoComplete="email" className={inputCls} required autoFocus /></Field>
       <div className="flex flex-col gap-1.5">
@@ -83,13 +87,14 @@ export function LoginForm({ next, confirmed, resetExpired }: { next?: string; co
         <PasswordInput id="login-password" name="password" autoComplete="current-password" />
       </div>
       <ErrorLine message={state.message} />
+      {providers.length > 0 && /don't match/.test(state.message) && <p className="-mt-2 text-sm text-muted">Signed up with a button above? Use it again: that account has no password here unless you <Link href="/forgot" className="text-accent hover:underline">set one</Link>.</p>}
       <Button type="submit" size="lg" disabled={pending}>{pending && <Loader2 className="size-4 animate-spin" />} Log in</Button>
       <p className="text-sm text-muted">New to Brazework? <Link href="/signup" className="text-accent hover:underline">Create an account</Link></p>
     </form>
   );
 }
 
-export function SignupForm({ invite, clubName }: { invite?: string; clubName?: string } = {}) {
+export function SignupForm({ invite, clubName, providers = [], oauth }: { invite?: string; clubName?: string; providers?: ProviderId[]; oauth?: string } = {}) {
   const [state, action, pending] = useActionState<AuthState, FormData>(signUp, { message: "" });
   const [type, setType] = useState<"student" | "professional" | "">("");
   const [emailValue, setEmailValue] = useState("");
@@ -107,6 +112,8 @@ export function SignupForm({ invite, clubName }: { invite?: string; clubName?: s
       <input type="hidden" name="accountType" value={type} />
       {invite && <input type="hidden" name="invite" value={invite} />}
       {clubName && <p className="rounded-2xl border border-line bg-surface-2 px-4 py-3 text-sm">You&apos;re joining <strong className="font-medium">{clubName}</strong>. Create your account and you&apos;ll land in the club once you&apos;re set up.</p>}
+      {oauthMessage(oauth) && <Notice tone="danger">{oauthMessage(oauth)}</Notice>}
+      <ProviderButtons providers={providers} from="signup" invite={invite} />
       <fieldset className="grid grid-cols-2 gap-3">
         <legend className="mb-2 text-sm font-medium text-text-2">How will you use Brazework?</legend>
         {choices.map((c) => (
