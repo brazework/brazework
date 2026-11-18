@@ -1,5 +1,5 @@
 "use client";
-import { BoxSelect, Component, DraftingCompass, Loader2, Maximize2, Minimize2, Pause, Rotate3d } from "lucide-react";
+import { BoxSelect, Component, DraftingCompass, Loader2, Maximize2, Minimize2, Pause, Play, Rotate3d } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/forge";
 import { VIEWS, dimTexts, sizeLabel, trianglesLabel, type Look, type V3, type ViewId } from "@/lib/model-view";
@@ -15,6 +15,7 @@ import { SAMPLE_EXT, type SampleId } from "./sample-models";
 // - It draws only while something moves (model-stage.ts), so a still model costs nothing.
 // - Inline, the wheel and a phone's up-down drag still scroll the page; zoom and pan are for full screen.
 // - Where WebGL can't start, it says so and still shows the model's size.
+// - The examples are alive (the robot drives, the gears turn): Play/Pause, off for reduced motion.
 type State = "idle" | "ready" | "nogl" | "error";
 type Info = { size: V3; triangles: number; parts: number };
 
@@ -29,6 +30,8 @@ export function ModelViewer({ url, name, sample, className }: { url?: string; na
   const [look, setLook] = useState<Look>("solid");
   const [apart, setApart] = useState(false);
   const [spinning, setSpinning] = useState(false);
+  const [canPlay, setCanPlay] = useState(false);
+  const [playing, setPlaying] = useState(false);
   const [native, setNative] = useState(false);
   const [pseudo, setPseudo] = useState(false);
   const full = native || pseudo;
@@ -53,7 +56,10 @@ export function ModelViewer({ url, name, sample, className }: { url?: string; na
         import("three/examples/jsm/controls/OrbitControls.js"), import("three/examples/jsm/environments/RoomEnvironment.js"), import("./model-stage"),
       ]);
       let object: import("three").Object3D;
-      if (sample) object = (await import("./sample-models")).buildSample(THREE, sample);
+      if (sample) {
+        const [{ buildSample }, { RoundedBoxGeometry }] = await Promise.all([import("./sample-models"), import("three/examples/jsm/geometries/RoundedBoxGeometry.js")]);
+        object = buildSample(THREE, sample, { RoundedBoxGeometry });
+      }
       else {
         const res = await fetch(url ?? "");
         if (!res.ok) throw new Error("fetch");
@@ -85,8 +91,10 @@ export function ModelViewer({ url, name, sample, className }: { url?: string; na
       setInfo(m);
       const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       try {
-        stage.current = createStage(THREE, { OrbitControls, RoomEnvironment }, el, object, { spin: !still, coarse: window.matchMedia("(pointer: coarse)").matches, still, dimText: dimTexts(ext, m.size), onSpin: (on) => { setSpinning(on); setView(null); } });
+        stage.current = createStage(THREE, { OrbitControls, RoomEnvironment }, el, object, { spin: !still, coarse: window.matchMedia("(pointer: coarse)").matches, still, snug: !!sample, dimText: dimTexts(ext, m.size), onSpin: (on) => { setSpinning(on); setView(null); } });
         setSpinning(!still);
+        setCanPlay(stage.current.live);
+        setPlaying(stage.current.live && !still);
         setState("ready");
       } catch { setState("nogl"); }
     })().catch(() => { if (!gone) setState("error"); });
@@ -153,7 +161,8 @@ export function ModelViewer({ url, name, sample, className }: { url?: string; na
             <button type="button" aria-pressed={look === "ghost"} onClick={() => draw("ghost")} aria-label="See through" title="See through: fade the surfaces and show the edges" className={tool}><BoxSelect className="size-4" /></button>
             <button type="button" aria-pressed={look === "blueprint"} onClick={() => draw("blueprint")} aria-label="Blueprint" title="Blueprint: a line drawing with the dimensions on it" className={tool}><DraftingCompass className="size-4" /></button>
             {info && info.parts > 1 && <button type="button" aria-pressed={apart} onClick={() => { setApart(!apart); stage.current?.setExplode(apart ? 0 : 0.55); }} aria-label="Explode" title="Explode: pull the parts apart" className={tool}><Component className="size-4" /></button>}
-            <button type="button" aria-pressed={spinning} onClick={() => { setSpinning(!spinning); stage.current?.setSpin(!spinning); }} aria-label="Turn slowly" title={spinning ? "Stop turning" : "Turn slowly"} className={tool}>{spinning ? <Pause className="size-4" /> : <Rotate3d className="size-4" />}</button>
+            {canPlay && <button type="button" aria-pressed={playing} onClick={() => { setPlaying(!playing); stage.current?.setPlay(!playing); }} aria-label="Play" title={playing ? "Pause: hold it still" : "Play: see it work"} className={tool}>{playing ? <Pause className="size-4" /> : <Play className="size-4" />}</button>}
+            <button type="button" aria-pressed={spinning} onClick={() => { setSpinning(!spinning); stage.current?.setSpin(!spinning); }} aria-label="Turn slowly" title={spinning ? "Stop turning" : "Turn slowly"} className={tool}><Rotate3d className="size-4" /></button>
             <button type="button" aria-pressed={full} onClick={toggleFull} aria-label="Full screen" title={full ? "Leave full screen" : "Full screen: zoom and pan"} className={tool}>{full ? <Minimize2 className="size-4" /> : <Maximize2 className="size-4" />}</button>
           </div>
         </div>
