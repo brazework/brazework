@@ -43,7 +43,7 @@ On 2026-11-12 we changed production by hand: the site URL, the redirect list, SM
 
 ## Next (FIX-82)
 
-1. **Nightly in CI:** a read-only drift check using scoped tokens stored as GitHub secrets, which opens a Linear issue on drift.
+1. **Nightly in CI (built, FIX-131):** `.github/workflows/infra-drift.yml` runs `check.mjs` every night at 07:40 UTC and opens or updates one "Infra drift" issue in Linear on drift. It switches on once the `VERCEL_TOKEN` repository secret is set (a Vercel token for the team); until then each run says so and passes.
 2. **Apply from the repo:** a reviewed change to `desired.json` is applied after merge, as `db-migrate.yml` does for SQL. Each apply changes only the keys the repo owns.
 
 ## The GitHub App (FIX-92)
