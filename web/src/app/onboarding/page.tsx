@@ -5,6 +5,8 @@ import { Suspense } from "react";
 import { Logo } from "@/components/ui";
 import { dbFeatures } from "@/lib/db-features";
 import { getViewer } from "@/lib/supabase/server";
+import { namesFrom, providerLabel } from "@/lib/oauth";
+import { FinishSignupForm } from "./finish-signup-form";
 import { OnboardingForm } from "./onboarding-form";
 
 export const metadata: Metadata = { title: "Set up your profile" };
@@ -27,8 +29,14 @@ export default function OnboardingPage() {
 }
 
 async function Onboarding() {
-  const { user, profile } = await getViewer();
+  const { supabase, user, profile } = await getViewer();
   if (!user) redirect("/login");
+  // New through Google, GitHub or LinkedIn: no profile until they give what the sign-up form asks.
+  if (!profile) {
+    const { data } = await supabase.auth.getClaims();
+    const claims = (data?.claims ?? {}) as { user_metadata?: unknown; app_metadata?: { provider?: string } };
+    return <FinishSignupForm email={user.email} provider={providerLabel(claims.app_metadata?.provider)} {...namesFrom(claims.user_metadata)} />;
+  }
   if (profile?.onboarded) redirect("/feed");
   const student = profile?.account_type === "student";
   // Graduation year is asked of students only, once supabase/grad-year.sql has run.

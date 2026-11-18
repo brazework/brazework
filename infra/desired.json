@@ -21,7 +21,13 @@
       "smtp_user": "resend",
       "smtp_admin_email": "hello@brazework.com",
       "smtp_sender_name": "Brazework",
-      "smtp_max_frequency": 60
+      "smtp_max_frequency": 60,
+      "external_google_enabled": false,
+      "external_google_client_id": null,
+      "external_github_enabled": false,
+      "external_github_client_id": null,
+      "external_linkedin_oidc_enabled": false,
+      "external_linkedin_oidc_client_id": null
     },
     "storage": {
       "fileSizeLimit": 262144000

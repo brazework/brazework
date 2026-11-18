@@ -4,7 +4,7 @@ Production's settings, written down in the repo, and a check that production sti
 
 **What's in here**
 - `desired.json`: the settings the repo owns.
-  - **Supabase:** auth (site URL, redirect list, SMTP, email limits, sign-up rules) and the storage file-size limit.
+  - **Supabase:** auth (site URL, redirect list, SMTP, email limits, sign-up rules, and which of Google, GitHub and LinkedIn sign-in are on, with their client IDs; never the secrets) and the storage file-size limit.
   - **Vercel `forge-app`:** root directory, the cron job, domains, and env var **names** with their environments.
   - **brazework.com DNS:** the email records.
 - `check.mjs`: reads the live settings, compares them with `desired.json`, and prints every difference. **It only reads; it never changes production.**

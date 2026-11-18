@@ -1,0 +1,67 @@
+"use client";
+import { Briefcase, GraduationCap, Loader2 } from "lucide-react";
+import Link from "next/link";
+import { useActionState, useState } from "react";
+import { Button, Field, inputCls } from "@/components/ui";
+import { cn } from "@/lib/forge";
+import { submitWithoutReset } from "@/lib/submit";
+import { finishSignup, type FinishState } from "./actions";
+
+// After "Continue with Google / GitHub / LinkedIn" for the first time: what the email sign-up form
+// asks for and the provider didn't give us. The names start from the provider's; the email is theirs.
+export function FinishSignupForm({ email, provider, firstName, lastName }: { email: string; provider: string; firstName: string; lastName: string }) {
+  const [state, action, pending] = useActionState<FinishState, FormData>(finishSignup, { message: "" });
+  const [type, setType] = useState<"student" | "professional" | "">("");
+  const choices = [
+    { id: "student", label: "Student", hint: "Your account there must be your university email.", icon: GraduationCap },
+    { id: "professional", label: "Professional", hint: "Employed, freelancing or building on your own.", icon: Briefcase },
+  ] as const;
+
+  return (
+    <div className="flex max-w-md flex-col gap-5">
+      <form onSubmit={submitWithoutReset(action)} className="flex flex-col gap-5">
+        <div>
+          <div className="text-[11px] font-medium tracking-[0.06em] text-accent uppercase">Step 2 of 4</div>
+          <h1 className="mt-2 text-3xl font-semibold tracking-tight">Finish creating your account</h1>
+          <p className="mt-2 text-muted">
+            Signed in with {provider} as <span className="text-text">{email}</span>. A few details, the same ones the sign-up form asks for.
+          </p>
+        </div>
+        <input type="hidden" name="accountType" value={type} />
+        <fieldset className="grid grid-cols-2 gap-3">
+          <legend className="mb-2 text-sm font-medium text-text-2">How will you use Brazework?</legend>
+          {choices.map((c) => (
+            <button
+              key={c.id}
+              type="button"
+              aria-pressed={type === c.id}
+              onClick={() => setType(c.id)}
+              className={cn("relative flex flex-col items-start gap-1 rounded-2xl border p-4 text-left transition", type === c.id ? "border-accent bg-accent/[0.07]" : "border-line hover:border-line-strong")}
+            >
+              <c.icon className={cn("size-5", type === c.id ? "text-accent" : "text-faint")} />
+              <span className="mt-1 font-medium">{c.label}</span>
+              <span className="text-xs text-muted">{c.hint}</span>
+            </button>
+          ))}
+        </fieldset>
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="First name"><input name="firstName" autoComplete="given-name" maxLength={80} defaultValue={firstName} className={inputCls} /></Field>
+          <Field label="Last name"><input name="lastName" autoComplete="family-name" maxLength={80} defaultValue={lastName} className={inputCls} /></Field>
+        </div>
+        <Field label="Birthday" hint="Private, never shown. Brazework is for people 18 and older."><input name="birthday" type="date" autoComplete="bday" className={inputCls} /></Field>
+        {state.message && <p role="alert" className="rounded-xl border border-danger/30 bg-danger/10 px-3.5 py-2.5 text-sm text-danger">{state.message}</p>}
+        {state.school && (
+          <p className="-mt-2 text-sm text-muted">
+            {email} isn&apos;t a university email. Log out and continue with your school account, or choose Professional. School not recognized?{" "}
+            <Link id="request-school" href={`/request-school?email=${encodeURIComponent(email)}`} className="text-accent hover:underline">Request your school</Link>
+          </p>
+        )}
+        {!type && <p className="-mb-2 text-xs text-muted">Choose <b className="font-medium text-text-2">Student</b> or <b className="font-medium text-text-2">Professional</b> above to continue.</p>}
+        <Button type="submit" size="lg" disabled={pending || !type}>{pending && <Loader2 className="size-4 animate-spin" />} {pending ? "Creating your account…" : "Continue"}</Button>
+      </form>
+      <form action="/auth/signout" method="post">
+        <p className="text-sm text-faint">Not the right account? <button type="submit" className="text-accent hover:underline">Log out and start over</button></p>
+      </form>
+    </div>
+  );
+}
