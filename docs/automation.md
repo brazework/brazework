@@ -1,19 +1,23 @@
 # Automation
 
-What runs by itself, what still needs a person, and what to add next. The goal: two founders ship fast without breaking things, and the board always matches reality. Status as of 2026-11-10; Linear IDs track what's open.
+What runs by itself, what still needs a person, and what to add next. The goal: two founders ship fast without breaking things, and the board always matches reality. Status as of 2026-11-18; Linear IDs track what's open. Reliability targets and error budgets are in [slo.md](slo.md).
 
 ## Runs by itself today ✅
 
 | What | When | Where it lives |
 |---|---|---|
-| **Typecheck, lint, 35 unit tests, production build, smoke test** | Every push to `main`, every PR, and weekly | `.github/workflows/web.yml` → checks |
-| **End-to-end suite:** a throwaway Supabase with every database step, all SQL rule tests, 8 browser journeys (79 checks), failing on any blocked resource | Same | web.yml → e2e (`npm run e2e`) |
+| **Typecheck, lint, unit tests (`web/tests`), production build, smoke test.** Required to merge | Every push to `main`, every PR, and weekly | `.github/workflows/web.yml` → checks |
+| **End-to-end suite:** a throwaway Supabase with every database step, all SQL rule tests (`supabase/tests`), every browser journey in `web/e2e`, failing on any blocked resource. Required to merge | Same | web.yml → e2e (`npm run e2e`) |
 | **Speed and accessibility budgets** (Lighthouse, public and logged-in pages) | Every PR, weekly and on demand (not every push, to save Actions minutes); locally `npm run quality` | web.yml → quality |
 | **Security scan of the running app** (OWASP ZAP, fails on High) | Same as above | web.yml → quality |
-| **Dependency audit and secret scan** (npm audit, gitleaks over all history) | Same | web.yml → security |
+| **Dependency audit and secret scan** (npm audit, gitleaks over all history). Required to merge | Same | web.yml → security |
 | **Code security analysis** (CodeQL, fails on severity ≥ 7) | Every PR, weekly and on demand | `.github/workflows/codeql.yml` |
+| **Pull requests merge themselves** once the required checks pass. `main` is protected (branches must be up to date), and merged branches are deleted | Every PR with auto-merge on | GitHub branch protection; how we ship: [CONTRIBUTING.md](../CONTRIBUTING.md) |
 | **Dependency updates** as grouped PRs; risky major upgrades pinned on purpose | Weekly (Mondays) | `.github/dependabot.yml` |
 | **Production deploy** of `main` | Every push to `main` | Vercel's GitHub app |
+| **Preview guard:** a preview build whose Supabase URL is production's stops with an explanation, so untested code never touches members' records. Until previews get their own database (FIX-83), every preview stops here on purpose; the "Vercel" check on a PR is red but not required | Every Vercel build | `web/src/lib/preview-guard.ts`, called from `web/next.config.ts` |
+| **Database steps in production:** after a merge that touches `supabase/`, asks production which steps it has, applies each missing one in `supabase/order.txt` order with the Supabase CLI, stops at the first error, then checks again. One run at a time. Never paste SQL into production by hand | Every merge to `main` touching `supabase/`, and Actions → Database steps (production) → Run workflow | `.github/workflows/db-migrate.yml` |
+| **Linear sync:** every commit on `main` linked to its issue, `Fixes FIX-n` closes it, untracked commits logged as Done issues | Every push to `main` | `.github/workflows/linear-sync.yml` |
 | **Member feedback → Linear:** themes, grades, a weekly review issue | As feedback arrives | In the database (pg_cron), `supabase/feedback*.sql` |
 | **The app adapts to the database:** features whose step hasn't run stay hidden instead of breaking | Every request | `web/src/lib/db-features.ts` |
 | **Weekly digest email** ("Your week") to every member who hasn't turned it off; never twice in a week (`digest_sends`). Check a run: Vercel → forge-app → Cron Jobs → logs, and Resend → Emails | Mondays 14:00 UTC | `web/vercel.json` → `/api/cron/digest` (needs `CRON_SECRET`, Linear FIX-86) |
@@ -26,7 +30,7 @@ What runs by itself, what still needs a person, and what to add next. The goal: 
 | What | Needs | Linear |
 |---|---|---|
 | **Infra drift, nightly** (read-only): `infra/check.mjs` compares production's Supabase, Vercel and DNS settings with `infra/desired.json`. Drift fails the run and opens or updates one "Infra drift" issue in Linear; a change made on purpose is blessed with `node infra/check.mjs --capture` and a PR. Every night at 07:40 UTC, and Actions → Infra drift → Run workflow (`.github/workflows/infra-drift.yml`) | The `VERCEL_TOKEN` repo secret (a Vercel token for the team; `SUPABASE_ACCESS_TOKEN` is already set). Until then the run says so and passes | FIX-131 |
-| **Linear sync:** every commit on `main` linked to its issue, `Fixes FIX-n` closes it, untracked commits logged as Done issues | The `LINEAR_API_KEY` repo secret (an admin adds it) | FIX-5, FIX-54 |
+| **Previews on their own database:** each PR gets a working preview on a staging Supabase instead of stopping at the preview guard | Unpause `brazework-staging` (about $10 a month on Supabase Pro), keep its steps in line with production, and point Vercel's Preview environment at it | FIX-83 |
 | **Linear ↔ GitHub:** PRs and commits shown on issues; weekly cycles; auto-close stale Backlog; **auto-archive closed issues** (keeps us under the Free plan's 250-issue limit) | Linear settings, a workspace admin, ~10 minutes | FIX-5 |
 | **Uptime alerts:** a text or email if the site or its database goes down | A free UptimeRobot monitor on `https://brazework.com/api/health` (200 = app and database up, 503 = not), every 5 minutes, alerting both founders | FIX-55 |
 | **Error reports:** every server and browser error, with the commit it happened on, scrubbed of personal data (`web/src/lib/sentry-scrub.ts`). Built and off until the DSN is set | A free Sentry project (platform: Next.js). In Vercel, Production: `NEXT_PUBLIC_SENTRY_DSN` turns it on (and adds the privacy page's "When something breaks" section); `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, `SENTRY_PROJECT` add readable stack traces (source maps, uploaded then deleted). Then redeploy | FIX-55 |
@@ -35,8 +39,7 @@ What runs by itself, what still needs a person, and what to add next. The goal: 
 
 | What | Why it isn't automatic (yet) | How |
 |---|---|---|
-| **Running database steps in production** | A migration on live data deserves a person watching; every step is additive and the health check confirms it | Supabase SQL Editor, in `supabase/order.txt` order (FIX-25) |
-| **Merging Dependabot PRs** | A person confirms green checks before main changes | `gh pr merge <n> --squash` |
+| **Merging Dependabot PRs** | A person confirms green checks before main changes | `gh pr merge <n> --squash --auto` |
 | **Approving or denying member feedback** | It's a product decision | The weekly Feedback review issue in Linear |
 | **The load test** | It's heavy, and useful before a big launch, not on every push | Actions → Load test, or `npm run load` |
 
@@ -45,18 +48,18 @@ What runs by itself, what still needs a person, and what to add next. The goal: 
 In this repo, Claude works from the Linear board (`.mcp.json` connects Linear; see `CLAUDE.md`):
 
 - **`/next`:** picks the next open step (title order, blockers done), builds it, tests it, ships it with the issue ID, and closes it.
-- **`/ship`:** the safe path to `main`: checks, a commit with the issue ID, rebase, push, watch CI, report.
+- **`/ship`:** the safe path to `main`: checks, a commit with the issue ID on a branch, a pull request with auto-merge, watch CI until it merges, report.
 - **`/standup`:** what shipped, what's in progress, what's next, what's blocked, and the state of CI. `/standup post` also writes each project's weekly update.
 
 ## What to add next
 
 In order of value. Each is filed in Linear when started.
 
-1. **Move the repo to a GitHub organization (FIX-54):** unblocks every admin-only setting below without waiting on one person.
-2. **Error monitoring** (Sentry) and **uptime alerts** (Better Stack or UptimeRobot): today we'd learn about a production error from a member. Free tiers; needs the accounts ([accounts.md](accounts.md)).
-3. **Auto-merge green Dependabot patch updates:** a small workflow plus the repo setting "Allow auto-merge" (admin, after FIX-54). Minor and major updates stay manual.
-5. **Migrations from CI:** apply new database steps with the Supabase CLI after CI passes, instead of by hand. Worth it once steps ship weekly; until then the manual step with the health check is safer.
-6. **Branch protection and pull requests** when a third person joins (FIX-4; checklist in CONTRIBUTING.md).
+1. **Previews on staging (FIX-83):** see the ⏳ table. Turns every PR's red "Vercel" check green and lets us click through a change before it merges.
+2. **Uptime alerts and error reports (FIX-55):** built; they need the accounts above. Today we'd learn about a production error from a member.
+3. **`VERCEL_TOKEN` for the nightly drift check (FIX-131):** one repo secret.
+4. **Auto-merge green Dependabot patch updates:** the repo already allows auto-merge; this needs a small workflow that turns it on for patch updates. Minor and major updates stay manual.
+5. **Apply infra settings from the repo (FIX-82):** a reviewed change to `infra/desired.json` applied after merge, as `db-migrate.yml` does for SQL.
 
 ## Tests on a laptop, same as CI
 
