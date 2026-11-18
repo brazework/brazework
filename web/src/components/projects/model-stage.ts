@@ -7,13 +7,17 @@ import { EDGE_LIMIT, cameraFor, explodeOffsets, fitDistance, type Look, type V3,
 // a product photo (an environment map for soft fill, one key light, a soft shadow on the ground),
 // frames it, and lets you look around. It draws only when something changes: a drag, a camera move,
 // a slow turn. A still model costs nothing, so a page can hold several.
+// A model can also come alive (sample-models.ts): `userData.live` moves it with time and
+// `userData.setting` is the world it stands in. It plays only in the normal look with the parts
+// together, and only while on screen; explode, see-through and blueprint show it at rest.
 // three.js is passed in: the shell loads it on demand, so this file adds nothing to pages without a model.
 
 type Three = typeof THREE_NS;
 type Obj = THREE_NS.Object3D;
 type Mesh = THREE_NS.Mesh;
 export type Libs = { OrbitControls: typeof Controls; RoomEnvironment: typeof Room };
-export type Stage = { setView(id: ViewId): void; setLook(look: Look): void; setExplode(amount: number): void; setSpin(on: boolean): void; setFull(on: boolean): void; dispose(): void };
+export type Stage = { live: boolean; setView(id: ViewId): void; setLook(look: Look): void; setExplode(amount: number): void; setSpin(on: boolean): void; setPlay(on: boolean): void; setFull(on: boolean): void; dispose(): void };
+type Live = (t: number) => void;
 
 const meshesOf = (o: Obj): Mesh[] => { const out: Mesh[] = []; o.traverse((c) => { if ((c as Mesh).isMesh) out.push(c as Mesh); }); return out; };
 const trianglesOf = (m: Mesh) => Math.floor((m.geometry.index ? m.geometry.index.count : m.geometry.getAttribute("position")?.count ?? 0) / 3);
@@ -36,7 +40,7 @@ export function measure(THREE: Three, object: Obj): { size: V3; triangles: numbe
 }
 
 /** Put `object` on a stage inside `el`. Throws if the browser can't start WebGL. */
-export function createStage(THREE: Three, { OrbitControls, RoomEnvironment }: Libs, el: HTMLElement, object: Obj, opts: { spin: boolean; coarse: boolean; still: boolean; dimText: [string, string, string]; onSpin: (on: boolean) => void }): Stage {
+export function createStage(THREE: Three, { OrbitControls, RoomEnvironment }: Libs, el: HTMLElement, object: Obj, opts: { spin: boolean; coarse: boolean; still: boolean; snug?: boolean; dimText: [string, string, string]; onSpin: (on: boolean) => void }): Stage {
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -61,6 +65,10 @@ export function createStage(THREE: Three, { OrbitControls, RoomEnvironment }: Li
   const radius = Math.max(size.length() / 2, 1e-6); // the sphere the model fits in
   const meshes = meshesOf(object);
   for (const m of meshes) { m.castShadow = true; m.receiveShadow = true; }
+  // The world it stands in, in the model's own coordinates (so it shares the pivot), outside what's measured.
+  const setting = object.userData.setting as THREE_NS.Group | undefined;
+  if (setting) { pivot.add(setting); setting.traverse((c) => { if ((c as Mesh).isMesh) (c as Mesh).receiveShadow = true; }); }
+  const live: Live[] = (object.userData.live as Live[] | undefined) ?? [];
 
   // Light: a soft room all around (reflections and fill), one key light for shape and the shadow.
   const pmrem = new THREE.PMREMGenerator(renderer);
@@ -78,11 +86,29 @@ export function createStage(THREE: Three, { OrbitControls, RoomEnvironment }: Li
   const sc = key.shadow.camera;
   sc.left = sc.bottom = -radius * 2.6; sc.right = sc.top = radius * 2.6; sc.near = radius * 0.1; sc.far = radius * 12;
   scene.add(key);
-  const ground = new THREE.Mesh(new THREE.PlaneGeometry(radius * 14, radius * 14), new THREE.ShadowMaterial({ opacity: 0.2 }));
+  // A rim light from behind and above: it outlines the silhouette, so a dark part reads against the backdrop.
+  const rim = new THREE.DirectionalLight(0xffffff, 1.15);
+  rim.position.set(-1.3, 1.5, -1.7).multiplyScalar(radius * 2);
+  scene.add(rim);
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(radius * 14, radius * 14), new THREE.ShadowMaterial({ opacity: 0.3 }));
   ground.rotation.x = -Math.PI / 2;
   ground.position.y = -size.y / 2 - radius * 0.002; // a hair under the base, so it never shows through
   ground.receiveShadow = true;
   scene.add(ground);
+  // The page's text colour, for drawings and the floor.
+  const ink = () => { const c = new THREE.Color(0x8a8f98); try { c.setStyle(getComputedStyle(el).color); } catch { /* keep the grey */ } return c; };
+  // A pool of light on the floor under the model, in the page's ink colour at a whisper, so it stands somewhere.
+  const glowTex = (() => {
+    const c = document.createElement("canvas"); c.width = c.height = 128;
+    const g = c.getContext("2d"), hex = ink().getHex(); // sRGB, as a canvas wants
+    if (g) { const r = g.createRadialGradient(64, 64, 0, 64, 64, 64); r.addColorStop(0, `rgba(${(hex >> 16) & 255},${(hex >> 8) & 255},${hex & 255},0.09)`); r.addColorStop(1, "rgba(0,0,0,0)"); g.fillStyle = r; g.fillRect(0, 0, 128, 128); }
+    return new THREE.CanvasTexture(c);
+  })();
+  const pool = new THREE.Mesh(new THREE.CircleGeometry(radius * 1.9, 48), new THREE.MeshBasicMaterial({ map: glowTex, transparent: true, depthWrite: false, toneMapped: false }));
+  pool.rotation.x = -Math.PI / 2;
+  pool.position.y = ground.position.y + radius * 0.001;
+  pool.renderOrder = -1;
+  scene.add(pool);
 
   const camera = new THREE.PerspectiveCamera(35, 1, radius / 50, radius * 80);
   const dims: V3 = [size.x, size.y, size.z];
@@ -98,12 +124,20 @@ export function createStage(THREE: Three, { OrbitControls, RoomEnvironment }: Li
   // Draw on demand. A frame is asked for by a drag, a camera move, a resize or the slow turn; once
   // nothing is changing the loop stops.
   let raf = 0, need = true, inTick = false, shown = true, gone = false;
+  // Play: time runs while it's on, in the normal look with the parts together. Off, or under another
+  // look, the model holds its rest pose (t = 0).
+  let playing = live.length > 0 && !opts.still, simT = 0, last = 0;
+  const simOn = () => playing && look === "solid" && exTo === 0 && exNow === 0;
+  const rest = () => { if (simT !== 0) { simT = 0; for (const f of live) f(0); need = true; } };
   let move: { from: V3; to: V3; t0: number } | null = null;
   let exNow = 0, exTo = 0; // how far apart the parts are, and where that's heading
   const ask = () => { need = true; if (!raf && !inTick && shown && !gone) raf = requestAnimationFrame(tick); };
   function tick(t: number) {
     raf = 0; inTick = true;
     let moving = false;
+    const dt = last ? Math.min(0.05, (t - last) / 1000) : 0;
+    last = t;
+    if (simOn()) { simT += dt; for (const f of live) f(simT); need = true; }
     if (move) {
       const k = Math.min(1, (t - move.t0) / 450), e = 1 - (1 - k) ** 3;
       // Turn around the model rather than cutting through it: blend the direction and the distance apart.
@@ -127,7 +161,8 @@ export function createStage(THREE: Three, { OrbitControls, RoomEnvironment }: Li
     const changed = controls.update();
     if (need || changed) { renderer.render(scene, camera); need = false; }
     inTick = false;
-    if ((moving || changed || controls.autoRotate) && shown && !gone) raf = requestAnimationFrame(tick);
+    if ((moving || changed || controls.autoRotate || simOn()) && shown && !gone) raf = requestAnimationFrame(tick);
+    else last = 0; // the clock stops with the loop, so a pause doesn't count as played time
   }
   controls.addEventListener("change", ask);
   controls.addEventListener("start", () => { move = null; if (controls.autoRotate) { controls.autoRotate = false; opts.onSpin(false); } });
@@ -140,7 +175,7 @@ export function createStage(THREE: Three, { OrbitControls, RoomEnvironment }: Li
     ask();
   };
   fit();
-  camera.position.set(...cameraFor("angled", dims, camera.aspect));
+  camera.position.set(...cameraFor("angled", dims, camera.aspect)).multiplyScalar(opts.snug ? 0.88 : 1);
   const ro = new ResizeObserver(fit);
   ro.observe(el);
   // Off screen, it rests.
@@ -156,7 +191,6 @@ export function createStage(THREE: Three, { OrbitControls, RoomEnvironment }: Li
   const PAPER = 0x17468a, LINE = 0xeef4ff;
   let look: Look = "solid";
   let paper: THREE_NS.MeshBasicMaterial | undefined, wire: THREE_NS.MeshBasicMaterial | undefined;
-  const ink = () => { const c = new THREE.Color(0x8a8f98); try { c.setStyle(getComputedStyle(el).color); } catch { /* keep the grey */ } return c; };
   const ghostOf = (m: THREE_NS.Material) => { const g = m.clone(); g.transparent = true; g.opacity = 0.14; g.depthWrite = false; return g; };
 
   // The blueprint's dimensions: a line along each of the box's three sides, set off from the model
@@ -201,7 +235,7 @@ export function createStage(THREE: Three, { OrbitControls, RoomEnvironment }: Li
     label(opts.dimText[1], [xl - gap * 0.95, 0, hz]);
   }
   // The dimensions sit outside the model, and exploded parts spread: both need a wider frame.
-  const pad = () => (1 + 0.7 * exTo) * (look === "blueprint" ? 1.24 : 1);
+  const pad = () => (1 + 0.7 * exTo) * (look === "blueprint" ? 1.24 : 1) * (opts.snug ? 0.88 : 1);
   const offNow = (): V3 => [camera.position.x - controls.target.x, camera.position.y - controls.target.y, camera.position.z - controls.target.z];
   // Move to the same angle (or the one a view change is heading for), at the distance that frames it now.
   function reframe() {
@@ -233,6 +267,7 @@ export function createStage(THREE: Three, { OrbitControls, RoomEnvironment }: Li
   controls.enablePan = false;
 
   return {
+    live: live.length > 0,
     setView(id) {
       const p = cameraFor(id, dims, camera.aspect), k = pad(), to: V3 = [p[0] * k, p[1] * k, p[2] * k];
       if (opts.still) { camera.position.set(...to); controls.target.set(0, 0, 0); move = null; }
@@ -240,7 +275,10 @@ export function createStage(THREE: Three, { OrbitControls, RoomEnvironment }: Li
       ask();
     },
     setLook(next) {
+      if (next !== "solid") rest();
       look = next;
+      if (setting) setting.visible = next === "solid";
+      pool.visible = next !== "blueprint";
       const lines = next !== "solid" && total <= EDGE_LIMIT;
       for (const k of kept) {
         if (next === "ghost") k.mesh.material = k.ghost ??= Array.isArray(k.solid) ? k.solid.map(ghostOf) : ghostOf(k.solid);
@@ -252,7 +290,10 @@ export function createStage(THREE: Three, { OrbitControls, RoomEnvironment }: Li
             : (wire ??= new THREE.MeshBasicMaterial({ color: LINE, wireframe: true, transparent: true, opacity: 0.5 }));
         } else k.mesh.material = k.solid;
         if (lines && !k.edges) {
-          k.edges = new THREE.LineSegments(new THREE.EdgesGeometry(k.mesh.geometry, 28), new THREE.LineBasicMaterial({ transparent: true }));
+          // Rounded boxes keep their sharp size for the drawing: crisp edges, not the rounding's facets.
+          const sharp = k.mesh.geometry.userData.sharp as V3 | undefined, src = sharp ? new THREE.BoxGeometry(...sharp) : k.mesh.geometry;
+          k.edges = new THREE.LineSegments(new THREE.EdgesGeometry(src, 28), new THREE.LineBasicMaterial({ transparent: true }));
+          if (sharp) src.dispose();
           k.mesh.add(k.edges);
         }
         if (k.edges) {
@@ -267,8 +308,9 @@ export function createStage(THREE: Three, { OrbitControls, RoomEnvironment }: Li
       drawing.visible = next === "blueprint" && exNow < 0.02;
       reframe();
     },
-    setExplode(amount) { exTo = Math.max(0, Math.min(1, amount)); reframe(); },
+    setExplode(amount) { if (amount > 0) rest(); exTo = Math.max(0, Math.min(1, amount)); reframe(); },
     setSpin(on) { controls.autoRotate = on && !opts.still; ask(); },
+    setPlay(on) { playing = on && live.length > 0; ask(); },
     setFull(on) { controls.enableZoom = on; controls.enablePan = on; setTouch(on); fit(); },
     dispose() {
       gone = true;
@@ -278,6 +320,13 @@ export function createStage(THREE: Three, { OrbitControls, RoomEnvironment }: Li
       const drop = (m: THREE_NS.Material | THREE_NS.Material[] | undefined) => (Array.isArray(m) ? m : m ? [m] : []).forEach((x) => x.dispose());
       for (const k of kept) { k.mesh.geometry.dispose(); drop(k.solid); drop(k.ghost); if (k.edges) { k.edges.geometry.dispose(); drop(k.edges.material); } }
       ground.geometry.dispose(); drop(ground.material); drop(paper); drop(wire);
+      pool.geometry.dispose(); drop(pool.material); glowTex.dispose();
+      setting?.traverse((o) => {
+        const m = o as Mesh;
+        if (!m.isMesh && !(o as THREE_NS.Line).isLine && !(o as THREE_NS.Sprite).isSprite) return;
+        if (!(o as THREE_NS.Sprite).isSprite) m.geometry.dispose(); // sprites share one built-in quad
+        for (const x of Array.isArray(m.material) ? m.material : [m.material]) { (x as THREE_NS.MeshStandardMaterial).map?.dispose(); x.dispose(); }
+      });
       drawing.traverse((o) => {
         const d = o as THREE_NS.LineSegments & THREE_NS.Sprite;
         if (d.isLineSegments) { d.geometry.dispose(); drop(d.material); }

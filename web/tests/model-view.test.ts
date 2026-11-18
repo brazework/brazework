@@ -128,3 +128,21 @@ test("every example on the landing page builds: several parts, a sensible size, 
     for (const v of [s.name, s.milestone, s.by]) assert.ok(v.trim().length > 3, s.id);
   }
 });
+
+test("every example comes alive, and t = 0 puts it back exactly as it was built", async () => {
+  // Built the way the page builds them: rounded boxes, which add triangles (the budget above still holds).
+  const { RoundedBoxGeometry } = await import("three/examples/jsm/geometries/RoundedBoxGeometry.js");
+  const still = ["chair"]; // a chair has nothing to run; it stands on its rug
+  for (const s of SAMPLES) {
+    const o = buildSample(THREE, s.id, { RoundedBoxGeometry });
+    const before = measure(THREE, o), live = (o.userData.live ?? []) as ((t: number) => void)[];
+    assert.ok(before.triangles < 60_000, `${s.id}: ${before.triangles} triangles with rounded boxes`);
+    assert.equal(live.length > 0, !still.includes(s.id), `${s.id} ${still.includes(s.id) ? "stands still" : "has motion"}`);
+    // Mid-everything: the robot on its line, the rocket mid-climb, the pendulum one run in.
+    for (const t of [0.5, 3, 6.4, 7.3, 12.5, 25]) for (const f of live) f(t);
+    for (const f of live) f(0);
+    const after = measure(THREE, o);
+    assert.deepEqual(after.size.map((v) => +v.toFixed(6)), before.size.map((v) => +v.toFixed(6)), `${s.id} is back at rest`);
+    assert.equal(after.triangles, before.triangles, `${s.id}: its world (the setting) isn't counted as the build`);
+  }
+});
