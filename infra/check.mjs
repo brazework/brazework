@@ -19,7 +19,10 @@ const DESIRED = join(HERE, "desired.json");
 const SB_PROJECT = "uwiwkjoonculpxjmzsfj", TEAM = "ixcoleman123", PROJECT = "forge-app", DOMAIN = "brazework.com";
 // The Supabase auth settings the repo owns. Anything else in Supabase is left alone.
 const AUTH_KEYS = ["site_url", "uri_allow_list", "disable_signup", "external_email_enabled", "mailer_autoconfirm", "mailer_secure_email_change_enabled",
-  "password_min_length", "rate_limit_email_sent", "smtp_host", "smtp_port", "smtp_user", "smtp_admin_email", "smtp_sender_name", "smtp_max_frequency"];
+  "password_min_length", "rate_limit_email_sent", "smtp_host", "smtp_port", "smtp_user", "smtp_admin_email", "smtp_sender_name", "smtp_max_frequency",
+  // Sign-in with Google, GitHub and LinkedIn: on or off, and which app. Never the client secrets.
+  "external_google_enabled", "external_google_client_id", "external_github_enabled", "external_github_client_id",
+  "external_linkedin_oidc_enabled", "external_linkedin_oidc_client_id"];
 
 async function supabase(path) {
   const token = process.env.SUPABASE_ACCESS_TOKEN;
@@ -48,7 +51,7 @@ async function live() {
   ]);
   return {
     supabase: {
-      auth: Object.fromEntries(AUTH_KEYS.map((k) => [k, k === "uri_allow_list" ? splitList(auth[k]) : auth[k] ?? null])),
+      auth: Object.fromEntries(AUTH_KEYS.map((k) => [k, k === "uri_allow_list" ? splitList(auth[k]) : auth[k] === "" ? null : auth[k] ?? null])),
       storage: { fileSizeLimit: storage.fileSizeLimit },
     },
     vercel: {

@@ -58,7 +58,8 @@ from (values
   (58, 'study-groups',    to_regprocedure('public.study_groups_ready()') is not null),
   (59, 'backed',          to_regprocedure('public.backed_ready()') is not null),
   (60, 'proof-cards',     to_regprocedure('public.proof_cards_ready()') is not null),
-  (61, 'witness-invites', to_regprocedure('public.witness_invites_ready()') is not null)
+  (61, 'witness-invites', to_regprocedure('public.witness_invites_ready()') is not null),
+  (62, 'oauth-signup',    to_regprocedure('public.oauth_signup_ready()') is not null)
 ) as s(step, file, present)
 order by step;
 
