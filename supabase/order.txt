@@ -70,3 +70,4 @@ study-groups
 backed
 proof-cards
 witness-invites
+oauth-signup
