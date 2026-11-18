@@ -25,14 +25,14 @@ No keys and no `.env.local`. Sign in as `maya@forge.test` (or josh@, ben@, cara@
 | Where | How it gets there | Which database | Who it can hurt |
 |---|---|---|---|
 | **Your laptop** | `npm run dev` | A private one in Docker, rebuilt from `supabase/order.txt` with test members (`npm run dev -- --fresh` starts it over) | Nobody |
-| **A preview** | Open a pull request: Vercel builds it and comments a link | Staging, a separate free Supabase project with no real members. It gets every database step before production does, and the nightly run wakes it if it's paused | Nobody |
+| **A pull request** | CI tests it on a throwaway database (no preview site: they're off for speed, `web/vercel.json`) | A fresh one in Docker, built from `supabase/order.txt` | Nobody |
 | **Production** | Merge: Vercel deploys `main`, and new database steps apply themselves | Production | Members, which is why everything above comes first |
 
-Two guards keep untested code off production's database, whatever anyone's settings say: a **preview** build pointed at it stops, and a **dev server** pointed at it refuses to start (`web/src/lib/preview-guard.ts`). You never need production's keys to work on Brazework.
+Two guards keep untested code off production's database, whatever anyone's settings say: a **preview** build pointed at it stops (if previews are ever switched back on), and a **dev server** pointed at it refuses to start (`web/src/lib/preview-guard.ts`). You never need production's keys to work on Brazework.
 
 ## Today: a pull request for every change, merged by CI
 
-`main` is protected: every change goes in through a pull request, and it merges itself once the required checks pass. A green pull request joins GitHub's **merge queue**, which tests it again on top of the latest `main` and merges it, so nobody has to update a branch that fell behind. Nobody waits on anyone (two people; CI is the gate). Josh and Ian work the same way, and so does Claude Code.
+`main` is protected: every change goes in through a pull request, and it merges itself once the required checks pass. Nobody waits on anyone (two people; CI is the gate). Josh and Ian work the same way, and so does Claude Code.
 
 1. Start from the latest main on a branch: `git switch main && git pull --rebase origin main && git switch -c fix-30-short-topic` (the Linear issue's ID and a few words).
 2. Make the change. Run the checks locally before you push:
