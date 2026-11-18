@@ -106,7 +106,8 @@ from (values
   (106, 'courses', to_regprocedure('public.courses_ready()') is not null),
   (107, 'ember-follow', to_regprocedure('public.ember_follow_ready()') is not null),
   (108, 'courses-b', to_regprocedure('public.courses_b_ready()') is not null),
-  (109, 'ember-card-counts', to_regprocedure('public.ember_card_counts_ready()') is not null)
+  (109, 'ember-card-counts', to_regprocedure('public.ember_card_counts_ready()') is not null),
+  (110, 'function-access', to_regprocedure('public.function_access_ready()') is not null)
 ) as s(step, file, present)
 order by step;
 
