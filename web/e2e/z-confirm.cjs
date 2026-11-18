@@ -78,6 +78,59 @@ async function unconfirmed(email) {
     await p.context().close();
   });
 
+  // Log in with a code instead of a password, then come back to a page that remembers how.
+  const ana = `ana${n}@gmail.com`;
+  {
+    const r = await fetch(`${SUPABASE}/auth/v1/admin/users`, { method: "POST", headers: { apikey: ANON, authorization: `Bearer ${SERVICE}`, "content-type": "application/json" }, body: JSON.stringify({ email: ana, password: "forge-test-pass-1", email_confirm: true }) });
+    if (!r.ok) throw new Error(`creating ${ana}: ${r.status}`);
+  }
+  const codeCtx = await b.newContext({ viewport: { width: 1280, height: 900 } });
+  const cp = await codeCtx.newPage();
+  await step("log in with an emailed 6-digit code instead of a password", async () => {
+    await go(cp, "/login");
+    await cp.getByRole("button", { name: "Email me a sign-in code instead" }).click();
+    await cp.fill('input[name="email"]', ana);
+    await cp.getByRole("button", { name: "Email me a code" }).click();
+    await cp.getByLabel("6-digit code").waitFor({ timeout: 15000 });
+    await cp.getByText(`If an account uses ${ana}`).waitFor();
+    // The code the email carries (locally there's no mail server, so ask Supabase for it).
+    const r = await fetch(`${SUPABASE}/auth/v1/admin/generate_link`, { method: "POST", headers: { apikey: ANON, authorization: `Bearer ${SERVICE}`, "content-type": "application/json" }, body: JSON.stringify({ type: "magiclink", email: ana }) });
+    const j = await r.json(); const otp = (j.properties ?? j).email_otp;
+    if (!/^\d{6}$/.test(otp || "")) throw new Error(`no code: ${JSON.stringify(j).slice(0, 160)}`);
+    await cp.getByLabel("6-digit code").fill(otp === "000000" ? "111111" : "000000");
+    await cp.getByRole("button", { name: "Log in", exact: true }).click();
+    await cp.getByText(/wrong or has expired/).waitFor({ timeout: 15000 });
+    await cp.getByLabel("6-digit code").fill(otp);
+    await Promise.all([cp.waitForURL((u) => !u.pathname.startsWith("/login"), { timeout: 20000 }), cp.getByRole("button", { name: "Log in", exact: true }).click()]);
+  }, cp);
+  await step("back on log-in, the page remembers the email and the code method ('Last used')", async () => {
+    await codeCtx.clearCookies();
+    await go(cp, "/login");
+    await cp.getByRole("button", { name: /Email me a code/ }).getByText("Last used").waitFor({ timeout: 10000 });
+    if ((await cp.locator('input[name="email"]').inputValue()) !== ana) throw new Error("email not remembered");
+    await cp.getByRole("button", { name: "Use a different account" }).click();
+    if ((await cp.locator('input[name="email"]').inputValue()) !== "") throw new Error("email not forgotten");
+    await cp.locator("#login-password").waitFor();
+  }, cp);
+  await codeCtx.close();
+
+  await step("asking for a code for an address with no account says the same as for one (no account lookup)", async () => {
+    const p = await (await b.newContext()).newPage();
+    await go(p, "/login");
+    await p.getByRole("button", { name: "Email me a sign-in code instead" }).click();
+    await p.fill('input[name="email"]', `nobody${n}@gmail.com`);
+    await p.getByRole("button", { name: "Email me a code" }).click();
+    await p.getByText(`If an account uses nobody${n}@gmail.com`).waitFor({ timeout: 15000 });
+    await p.context().close();
+  });
+
+  await step("from a club invite, log-in says so", async () => {
+    const p = await (await b.newContext()).newPage();
+    await go(p, "/login?next=%2Fjoin%2F0123456789abcdef");
+    await p.getByRole("heading", { name: "Log in to join the club" }).waitFor();
+    await p.context().close();
+  });
+
   await step("the sign-up page links the privacy page and says what comes next", async () => {
     const p = await (await b.newContext()).newPage();
     await go(p, "/signup");

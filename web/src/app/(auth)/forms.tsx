@@ -1,11 +1,12 @@
 "use client";
 import { AnimatePresence, motion } from "motion/react";
-import { Eye, EyeOff, Hammer, KeyRound, Loader2, MailCheck } from "lucide-react";
+import { Eye, EyeOff, Hammer, KeyRound, Loader2, Mail, MailCheck } from "lucide-react";
 import Link from "next/link";
-import { useActionState, useState, useTransition } from "react";
+import { useActionState, useEffect, useState, useTransition } from "react";
 import { Button, Field, inputCls } from "@/components/ui";
 import { cn } from "@/lib/forge";
-import { confirmWithCode, logIn, requestPasswordReset, resendConfirmation, signUp, updatePassword, type AuthState } from "./actions";
+import { confirmWithCode, logIn, logInWithCode, requestPasswordReset, resendConfirmation, sendLoginCode, signUp, updatePassword, type AuthState } from "./actions";
+import { forgetLastSignIn, readLastSignIn, saveLastSignIn, type LastSignIn } from "@/lib/last-signin";
 import { SignupSteps } from "@/components/signup-steps";
 import { submitWithoutReset } from "@/lib/submit";
 import { oauthMessage, type ProviderId } from "@/lib/oauth";
@@ -33,11 +34,13 @@ function strength(pw: string) {
 function PasswordInput({ id, name, autoComplete, autoFocus, meter = false }: { id?: string; name: string; autoComplete: string; autoFocus?: boolean; meter?: boolean }) {
   const [show, setShow] = useState(false);
   const [value, setValue] = useState("");
+  const [caps, setCaps] = useState(false);
   const s = strength(value);
+  const watchCaps = (e: React.KeyboardEvent) => setCaps(e.getModifierState("CapsLock"));
   return (
     <div>
     <div className="relative">
-      <input id={id} name={name} type={show ? "text" : "password"} autoComplete={autoComplete} autoFocus={autoFocus} value={value} onChange={(e) => setValue(e.target.value)} className={cn(inputCls, "pr-11")} />
+      <input id={id} name={name} type={show ? "text" : "password"} autoComplete={autoComplete} autoFocus={autoFocus} value={value} onChange={(e) => setValue(e.target.value)} onKeyDown={watchCaps} onKeyUp={watchCaps} onBlur={() => setCaps(false)} className={cn(inputCls, "pr-11")} />
       <button
         type="button"
         onClick={() => setShow((v) => !v)}
@@ -48,6 +51,7 @@ function PasswordInput({ id, name, autoComplete, autoFocus, meter = false }: { i
         {show ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
       </button>
     </div>
+    {caps && <p role="status" className="mt-1.5 text-xs text-amber-500">Caps Lock is on</p>}
     {meter && value && (
       <div className="mt-2 flex items-center gap-2" aria-live="polite">
         <span className="flex flex-1 gap-1" aria-hidden="true">{[1, 2, 3, 4].map((i) => <span key={i} className={cn("h-1 flex-1 rounded-full transition-colors", i <= s.score ? (value.length < 8 ? "bg-danger" : s.score >= 3 ? "bg-ok" : "bg-amber-500") : "bg-raised")} />)}</span>
@@ -66,30 +70,64 @@ function Notice({ tone, children }: { tone: "ok" | "danger"; children: React.Rea
   );
 }
 
+// Log in: Google / GitHub / LinkedIn when they're on, then email and password, or a 6-digit code by
+// email instead of the password. The method used last on this device is marked and its email filled
+// in (lib/last-signin.ts, this browser only).
 export function LoginForm({ next, confirmed, resetExpired, linkExpired, providers = [], oauth }: { next?: string; confirmed?: boolean; resetExpired?: boolean; linkExpired?: boolean; providers?: ProviderId[]; oauth?: string }) {
-  const [state, action, pending] = useActionState<AuthState, FormData>(logIn, { message: "" });
+  const [mode, setMode] = useState<"password" | "code">("password");
   const [email, setEmail] = useState("");
-  const [resent, setResent] = useState("");
-  const [resending, resend] = useTransition();
+  const [remembered, setRemembered] = useState<LastSignIn | null>(null);
+  useEffect(() => {
+    const last = readLastSignIn();
+    if (!last) return;
+    /* eslint-disable react-hooks/set-state-in-effect -- localStorage exists only after hydration */
+    setRemembered(last);
+    if (last.email) setEmail(last.email);
+    if (last.method === "code") setMode("code");
+    /* eslint-enable react-hooks/set-state-in-effect */
+  }, []);
+  const forget = () => { forgetLastSignIn(); setRemembered(null); setEmail(""); setMode("password"); };
+  const joining = next?.startsWith("/join/");
   return (
-    <form onSubmit={submitWithoutReset(action)} className="rise-in flex flex-col gap-5">
+    <div className="rise-in flex flex-col gap-5">
       <div>
-        <h1 className="text-3xl font-semibold tracking-tight">Welcome back</h1>
-        <p className="mt-2 text-muted">Log in to see what your field is building.</p>
+        <h1 className="text-3xl font-semibold tracking-tight">{joining ? "Log in to join the club" : "Welcome back"}</h1>
+        <p className="mt-2 text-muted">{joining ? "Your invite is waiting. Log in and you'll land in the club." : next && next !== "/feed" ? "Log in to pick up where you left off." : "Log in to see what your field is building."}</p>
       </div>
       {confirmed && <Notice tone="ok"><MailCheck className="size-4 shrink-0" /> Your email is confirmed. Log in to continue.</Notice>}
-      {linkExpired && <Notice tone="danger">That link was already used or has expired. Log in below; if your email isn&apos;t confirmed yet, you can send a new link.</Notice>}
+      {linkExpired && <Notice tone="danger">That link was already used or has expired. Log in below, or have a new code emailed to you.</Notice>}
       {resetExpired && <Notice tone="danger">Open the reset link in the same browser where you asked for it, or <Link href="/forgot" className="underline">ask for a new one</Link>.</Notice>}
       {oauthMessage(oauth) && <Notice tone="danger">{oauthMessage(oauth)}</Notice>}
       <ProviderButtons providers={providers} from="login" next={next} />
+      {mode === "password"
+        ? <PasswordLogin next={next} email={email} setEmail={setEmail} providers={providers} lastUsed={remembered?.method === "password"} onCode={() => setMode("code")} />
+        : <CodeLogin next={next} email={email} setEmail={setEmail} lastUsed={remembered?.method === "code"} onPassword={() => setMode("password")} />}
+      <div className="flex flex-col gap-1.5 text-sm text-muted">
+        {remembered?.email && <p>Not {remembered.email}? <button type="button" onClick={forget} className="text-accent hover:underline">Use a different account</button></p>}
+        <p>New to Brazework? <Link href="/signup" className="text-accent hover:underline">Create an account</Link></p>
+      </div>
+    </div>
+  );
+}
+
+function LastUsed() {
+  return <span className="ml-2 rounded-md bg-accent/10 px-1.5 py-0.5 text-[11px] font-medium text-accent">Last used</span>;
+}
+
+function PasswordLogin({ next, email, setEmail, providers, lastUsed, onCode }: { next?: string; email: string; setEmail: (v: string) => void; providers: ProviderId[]; lastUsed: boolean; onCode: () => void }) {
+  const [state, action, pending] = useActionState<AuthState, FormData>(logIn, { message: "" });
+  const [resent, setResent] = useState("");
+  const [resending, resend] = useTransition();
+  return (
+    <form onSubmit={(e) => { saveLastSignIn({ method: "password", email }); submitWithoutReset(action)(e); }} className="flex flex-col gap-5">
       <input type="hidden" name="next" value={next ?? "/feed"} />
-      <Field label="Email"><input name="email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} className={inputCls} required autoFocus /></Field>
+      <Field label="Email"><input name="email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} className={inputCls} required autoFocus={!email} /></Field>
       <div className="flex flex-col gap-1.5">
         <div className="flex items-baseline justify-between">
-          <label htmlFor="login-password" className="text-sm font-medium text-text-2">Password</label>
+          <label htmlFor="login-password" className="text-sm font-medium text-text-2">Password{lastUsed && <LastUsed />}</label>
           <Link href="/forgot" className="text-xs text-accent hover:underline">Forgot password?</Link>
         </div>
-        <PasswordInput id="login-password" name="password" autoComplete="current-password" />
+        <PasswordInput id="login-password" name="password" autoComplete="current-password" autoFocus={Boolean(email)} />
       </div>
       <ErrorLine message={state.message} />
       {/Confirm your email/.test(state.message) && (
@@ -102,7 +140,54 @@ export function LoginForm({ next, confirmed, resetExpired, linkExpired, provider
       )}
       {providers.length > 0 && /don't match/.test(state.message) && <p className="-mt-2 text-sm text-muted">Signed up with a button above? Use it again: that account has no password here unless you <Link href="/forgot" className="text-accent hover:underline">set one</Link>.</p>}
       <Button type="submit" size="lg" disabled={pending}>{pending && <Loader2 className="size-4 animate-spin" />} Log in</Button>
-      <p className="text-sm text-muted">New to Brazework? <Link href="/signup" className="text-accent hover:underline">Create an account</Link></p>
+      <Button type="button" variant="ghost" onClick={onCode} className="-mt-2"><Mail className="size-4" /> Email me a sign-in code instead</Button>
+    </form>
+  );
+}
+
+function CodeLogin({ next, email, setEmail, lastUsed, onPassword }: { next?: string; email: string; setEmail: (v: string) => void; lastUsed: boolean; onPassword: () => void }) {
+  const [sent, setSent] = useState(false);
+  const [code, setCode] = useState("");
+  const [message, setMessage] = useState("");
+  const [sending, send] = useTransition();
+  const [checking, check] = useTransition();
+  const ask = () => send(async () => { const r = await sendLoginCode(email, next); setMessage(r.message); if (r.sent) { setSent(true); setCode(""); } });
+  return (
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        if (!sent) return ask();
+        saveLastSignIn({ method: "code", email });
+        check(async () => setMessage((await logInWithCode(email, code, next)).message));
+      }}
+      className="flex flex-col gap-5"
+    >
+      <Field label="Email"><input name="email" type="email" autoComplete="email" value={email} onChange={(e) => { setEmail(e.target.value); setSent(false); }} className={inputCls} required autoFocus={!email} /></Field>
+      {sent && (
+        <div className="flex flex-col gap-1.5">
+          <label htmlFor="login-code" className="text-sm font-medium text-text-2">6-digit code{lastUsed && <LastUsed />}</label>
+          <input
+            id="login-code"
+            inputMode="numeric"
+            autoComplete="one-time-code"
+            maxLength={6}
+            autoFocus
+            value={code}
+            onChange={(e) => { setCode(e.target.value.replace(/[^0-9]/g, "").slice(0, 6)); setMessage(""); }}
+            placeholder="123456"
+            className={cn(inputCls, "font-mono text-lg tracking-[0.3em]")}
+          />
+          <span role="status" className="text-xs text-faint">If an account uses {email}, its code is on the way (check spam too). The email&apos;s link works as well.</span>
+        </div>
+      )}
+      <ErrorLine message={message} />
+      {sent
+        ? <Button type="submit" size="lg" disabled={checking || code.length !== 6}>{checking && <Loader2 className="size-4 animate-spin" />} Log in</Button>
+        : <Button type="submit" size="lg" disabled={sending || !email}>{sending && <Loader2 className="size-4 animate-spin" />} Email me a code{!sent && lastUsed && <LastUsed />}</Button>}
+      <div className="-mt-2 flex flex-wrap items-center justify-center gap-x-4 gap-y-1 text-sm">
+        {sent && <button type="button" onClick={ask} disabled={sending} className="text-accent hover:underline disabled:opacity-50">Send a new code</button>}
+        <button type="button" onClick={onPassword} className="text-muted hover:text-text"><KeyRound className="mr-1 inline size-3.5" />Use my password instead</button>
+      </div>
     </form>
   );
 }

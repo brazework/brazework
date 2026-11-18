@@ -102,6 +102,14 @@ Why not reuse the Brazework GitHub App (`infra/github-app.json`): Supabase's Git
 
 Until this is done, the email's old link still works, but only in the browser that signed up, and the email has no code to type.
 
+**7. The sign-in code email** (once, in Supabase, for "Email me a sign-in code" on `/login`)
+1. Dashboard → **Authentication → Emails → Magic Link**.
+2. Subject: `Your Brazework sign-in code`.
+3. Message body: paste the whole of [`supabase/templates/magic-link.html`](../supabase/templates/magic-link.html). Save.
+4. Check: on `https://brazework.com/login`, choose **Email me a sign-in code instead**, enter your address, and type the code from the email.
+
+Until this is done, the email holds only Supabase's default link (which works in the browser that asked for it) and no code to type.
+
 Pull-request previews: a provider sends people back to the preview's own address only if it's in Supabase's redirect list; otherwise they land on brazework.com and the sign-in says it expired. Test providers on brazework.com.
 
 ## Keys and where they live

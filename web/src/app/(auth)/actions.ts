@@ -4,12 +4,13 @@ import { z } from "zod";
 import { env } from "@/lib/env";
 import { EMAIL_RE, friendlyError } from "@/lib/forge";
 import { rememberInvite } from "@/lib/invites";
+import { safeNext as safePath } from "@/lib/oauth";
 import { createClient } from "@/lib/supabase/server";
 
 export type AuthState = { message: string; sent?: boolean };
 
 // Only same-site paths, so ?next= can't send people to another website.
-const safeNext = (v: FormDataEntryValue | null) => (typeof v === "string" && /^\/(?!\/)/.test(v) ? v : "/feed");
+const safeNext = (v: FormDataEntryValue | null) => safePath(v);
 
 export async function logIn(_: AuthState, form: FormData): Promise<AuthState> {
   const email = String(form.get("email") ?? "").trim();
@@ -62,6 +63,32 @@ export async function resendConfirmation(email: string): Promise<AuthState> {
   const supabase = await createClient();
   const { error } = await supabase.auth.resend({ type: "signup", email, options: { emailRedirectTo: `${env.siteUrl}/auth/callback?next=/onboarding` } });
   return { message: error ? friendlyError(error) : "Sent. Check your inbox (and spam)." };
+}
+
+// Log in without a password: Supabase emails a 6-digit code (and a link) to an existing account.
+// Never makes an account, and answers the same whether or not one exists, so the form can't be used
+// to find out who's a member. The code works on this page on any device; the link, once the
+// founders paste supabase/templates/magic-link.html, works on any device too.
+export async function sendLoginCode(email: string, next?: string): Promise<AuthState> {
+  const address = email.trim();
+  if (!EMAIL_RE.test(address)) return { message: "Enter a valid email address." };
+  const supabase = await createClient();
+  const { error } = await supabase.auth.signInWithOtp({
+    email: address,
+    options: { shouldCreateUser: false, emailRedirectTo: `${env.siteUrl}/auth/callback?next=${encodeURIComponent(safeNext(next ?? null))}` },
+  });
+  if (error && /rate limit|security purposes/i.test(error.message)) return { message: "A code was sent a moment ago. Wait a minute, then try again." };
+  return { message: "", sent: true };
+}
+
+export async function logInWithCode(email: string, code: string, next?: string): Promise<AuthState> {
+  const token = code.replace(/\D/g, "");
+  if (!EMAIL_RE.test(email.trim())) return { message: "Enter a valid email address." };
+  if (token.length !== 6) return { message: "Enter the 6 digits from the email." };
+  const supabase = await createClient();
+  const { error } = await supabase.auth.verifyOtp({ email: email.trim(), token, type: "email" });
+  if (error) return { message: /expired|invalid/i.test(error.message) ? "That code is wrong or has expired. Check the newest email, or send a new code." : friendlyError(error) };
+  redirect(safeNext(next ?? null));
 }
 
 // Always the same answer, so the form can't be used to find out who has an account.
