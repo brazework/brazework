@@ -4,6 +4,12 @@ Native SwiftUI app on the same Supabase backend as `web/`: same tables, same row
 
 `ForgeKit/` is the data layer (models, ranking, every read and write in `API.swift`, the feed and inbox stores). The app compiles those sources directly; `swift test` runs them on the Mac against the local stack. `Forge/` is the SwiftUI app.
 
+## The five places (redesign, November 2026)
+
+The tab bar matches the web app: **Today** (the feed, led by the one next step on your newest build; alerts are the bell at the top), **Build** (your builds: where each stands, built then signed, and one next step), **Club**, **Proof** (your signed work first, then your profile and settings) and **Inbox** (messages). Build and Proof read projects and milestones (`ForgeKit/Builds.swift`); starting a build and asking for a signature open the web for now.
+
+The table below describes the screens behind those tabs (it predates the rename: Feed is Today, You is Proof, Messages is Inbox, and Alerts is the bell on Today).
+
 ## What's in it
 
 | Tab | |

@@ -23,12 +23,12 @@ struct SignInView: View {
         VStack(alignment: .leading, spacing: 28) {
           Spacer(minLength: 60)
           VStack(alignment: .leading, spacing: 10) {
-            Text("FORGE").font(.footnote.weight(.bold)).tracking(4).foregroundStyle(p.muted)
-            (Text("Where\n") + Text("everyone in STEM").foregroundStyle(Palette.brand) + Text("\ngets found."))
+            Text("BRAZEWORK").font(.footnote.weight(.bold)).tracking(4).foregroundStyle(p.muted)
+            (Text("Prove what\n") + Text("you built.").foregroundStyle(p.muted))
               .font(.system(size: 42, weight: .bold, design: .default))
               .foregroundStyle(p.text)
               .lineSpacing(-2)
-            Text("Post what you build, get it verified by your club, and get noticed by the people who care about that work.")
+            Text("Log your work, get it signed by someone who saw it, and get found by the teams hiring for it.")
               .font(.callout).foregroundStyle(p.muted)
           }
           VStack(spacing: 12) {
@@ -46,7 +46,7 @@ struct SignInView: View {
             Button("Forgot password?") { forgot = true }.font(.footnote).foregroundStyle(p.muted)
           }
           HStack(spacing: 4) {
-            Text("New to Forge?").foregroundStyle(p.muted)
+            Text("New to Brazework?").foregroundStyle(p.muted)
             Button("Create an account") { signingUp = true }.fontWeight(.semibold)
           }
           .font(.subheadline)

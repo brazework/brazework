@@ -1,7 +1,9 @@
 import Observation
 import SwiftUI
 
-enum AppTab: String { case feed, clubs, messages, alerts, me }
+// The five places, as on the web: Today (feed), Build, Club (clubs), Proof (me), Inbox (messages).
+// Alerts are the bell on Today, not a tab.
+enum AppTab: String { case feed, build, clubs, me, messages }
 
 // Which tab is showing, shared so any screen can send you to another tab.
 @MainActor @Observable

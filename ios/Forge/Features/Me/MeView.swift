@@ -9,6 +9,7 @@ struct MeView: View {
   @State private var editing = false
   @State private var showSettings = false
   @State private var testReport: ReportTarget?
+  @State private var proof: [ProofItem]?
 
   var body: some View {
     NavigationStack {
@@ -34,6 +35,8 @@ struct MeView: View {
             .listRowBackground(p.surface)
           }
         }
+        // Proof leads: the work someone signed comes before everything else here.
+        Section { ProofList(items: proof).listRowBackground(p.surface) }
         Section("Look") {
           Picker("Appearance", selection: $appearance) {
             Text("System").tag("system"); Text("Light").tag("light"); Text("Dark").tag("dark")
@@ -74,7 +77,9 @@ struct MeView: View {
       }
       .scrollContentBackground(.hidden)
       .background(p.bg)
-      .navigationTitle("You")
+      .navigationTitle("Proof")
+      .task { if let me = session.userId { proof = await API.proof(of: me) } }
+      .refreshable { if let me = session.userId { proof = await API.proof(of: me) } }
       .sheet(isPresented: $editing) { if let me = session.profile { EditProfileView(profile: me) } }
       #if DEBUG
       .task {

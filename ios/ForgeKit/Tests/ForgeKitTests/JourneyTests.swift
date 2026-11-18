@@ -19,6 +19,21 @@ final class JourneyTests: XCTestCase {
     return try await supabase.auth.session.user.id
   }
 
+  // Build and Proof (ForgeKit/Builds.swift): Ben's seeded projects come back as builds with their
+  // counts, and his signed results as proof with who signed them.
+  func testBuildsAndProofForAMemberWithProjects() async throws {
+    let ben = try await signIn("ben")
+    let builds = try await API.myBuilds(me: ben)
+    XCTAssertGreaterThanOrEqual(builds.count, 3)
+    let stand = try XCTUnwrap(builds.first { $0.title == "Liquid engine test stand" })
+    XCTAssertGreaterThanOrEqual(stand.counts.verified, 1)
+    XCTAssertEqual(BuildLogic.stage(stand.counts), 2)
+    XCTAssertTrue(builds.contains { $0.isPrivate }, "your private builds are yours to see")
+    let proof = await API.proof(of: ben)
+    XCTAssertFalse(proof.isEmpty)
+    XCTAssertTrue(proof.allSatisfy { $0.signedBy.hasPrefix("Verified") })
+  }
+
   func testPostShowsFirstThenLikeSaveAndReply() async throws {
     let me = try await signIn("maya")
     let body = "Telemetry board talks to the ground station \(Self.stamp)"

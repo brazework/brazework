@@ -12,6 +12,7 @@ struct FeedView: View {
   @State private var going: Set<String> = []
   @State private var people: [Profile] = []
   @State private var clubs: [Club] = []
+  @State private var showAlerts = false
 
   struct SearchRoute: Hashable {}
   struct ComposeStart: Identifiable { let id = UUID(); let kind: String; let photo: Bool }
@@ -22,6 +23,8 @@ struct FeedView: View {
         ScrollView {
           LazyVStack(spacing: 12) {
             Color.clear.frame(height: 0).id("top")
+            // What needs you first: the one next step on your newest build.
+            NextStepCard { compose = ComposeStart(kind: "update", photo: false) }
             ComposerPrompt { kind, photo in compose = ComposeStart(kind: kind, photo: photo) }
             MessagesCard(entries: inbox)
             FeedFilterBar(store: store).padding(.top, 4)
@@ -69,9 +72,16 @@ struct FeedView: View {
         #endif
       }
       .background(p.bg)
-      .navigationTitle("Forge")
+      .navigationTitle("Today")
       .toolbarTitleDisplayMode(.inlineLarge)
       .toolbar {
+        // Alerts live here now (they were a tab): the bell, with a dot when something's new.
+        ToolbarItem(placement: .primaryAction) {
+          Button { showAlerts = true } label: {
+            Image(systemName: session.unreadAlerts > 0 ? "bell.badge" : "bell")
+          }
+          .accessibilityLabel(session.unreadAlerts > 0 ? "Alerts, \(session.unreadAlerts) new" : "Alerts")
+        }
         ToolbarItem(placement: .primaryAction) {
           NavigationLink { SearchView() } label: { Image(systemName: "magnifyingglass") }
             .accessibilityLabel("Search")
@@ -88,6 +98,7 @@ struct FeedView: View {
       .navigationDestination(for: ForgeEvent.self) { EventDetailView(event: $0) }
       .navigationDestination(for: Club.self) { ClubView(club: $0) }
       .navigationDestination(for: SearchRoute.self) { _ in SearchView() }
+      .sheet(isPresented: $showAlerts, onDismiss: { Task { await session.refreshBadges() } }) { AlertsView() }
       .refreshable { await reload(); await loadModules() }
       .task(id: store.tab) { await reload() }
       .task { await loadModules() }
