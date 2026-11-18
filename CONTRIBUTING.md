@@ -32,7 +32,7 @@ Two guards keep untested code off production's database, whatever anyone's setti
 
 ## Today: a pull request for every change, merged by CI
 
-`main` is protected: every change goes in through a pull request, and it merges itself once the required checks pass. Nobody waits on anyone (two people; CI is the gate). Josh and Ian work the same way, and so does Claude Code.
+`main` is protected: every change goes in through a pull request, and it merges itself once the required checks pass. A green pull request joins GitHub's **merge queue**, which tests it again on top of the latest `main` and merges it, so nobody has to update a branch that fell behind. Nobody waits on anyone (two people; CI is the gate). Josh and Ian work the same way, and so does Claude Code.
 
 1. Start from the latest main on a branch: `git switch main && git pull --rebase origin main && git switch -c fix-30-short-topic` (the Linear issue's ID and a few words).
 2. Make the change. Run the checks locally before you push:

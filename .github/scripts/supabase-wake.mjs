@@ -7,8 +7,10 @@
 // paid organization costs about $10 a month, so a paused one there is left alone and the run says so.
 // A project that's already running is used wherever it lives: someone chose to pay for it.
 //
-// Writes ready=true|false to $GITHUB_OUTPUT. Exits 1 only when Supabase answers with something wrong
-// (a failed restore, a project that's gone), never just because staging is asleep in a paid org.
+// Writes ready=true|false to $GITHUB_OUTPUT. Staging it can't reach (the token's account isn't in
+// staging's organization, or the project is gone) is a loud warning and ready=false, never a failure:
+// production must not be held back because the rehearsal couldn't happen. It exits 1 only when
+// staging answers with something wrong (a failed restore, a broken state), which is worth stopping for.
 //
 //   SUPABASE_ACCESS_TOKEN=… node .github/scripts/supabase-wake.mjs <project ref>
 import { appendFileSync } from "node:fs";
@@ -17,6 +19,9 @@ import { pathToFileURL } from "node:url";
 const RUNNING = new Set(["ACTIVE_HEALTHY"]);
 const ASLEEP = new Set(["INACTIVE", "PAUSED"]);
 const ON_THE_WAY = new Set(["COMING_UP", "RESTORING", "UPGRADING", "RESIZING", "ACTIVE_UNHEALTHY", "PAUSING", "GOING_DOWN", "UNKNOWN"]);
+
+/** HTTP statuses that mean "this token can't see staging": a setup problem, not a failed step. */
+export const unreachable = (httpStatus) => [401, 403, 404].includes(httpStatus);
 
 /**
  * What to do with a project, from its status and its organization's plan.
@@ -34,7 +39,7 @@ async function api(path, init = {}) {
     ...init,
     headers: { authorization: `Bearer ${process.env.SUPABASE_ACCESS_TOKEN}`, "content-type": "application/json", ...init.headers },
   });
-  if (!res.ok) throw new Error(`Supabase ${init.method ?? "GET"} ${path}: HTTP ${res.status} ${await res.text()}`);
+  if (!res.ok) throw Object.assign(new Error(`Supabase ${init.method ?? "GET"} ${path}: HTTP ${res.status} ${await res.text()}`), { httpStatus: res.status });
   const text = await res.text();
   return text ? JSON.parse(text) : {};
 }
@@ -51,8 +56,15 @@ async function main() {
     if (process.env.GITHUB_STEP_SUMMARY) appendFileSync(process.env.GITHUB_STEP_SUMMARY, `${note}\n\n`);
   };
 
-  const project = await api(`/projects/${ref}`);
-  const org = await api(`/organizations/${project.organization_slug ?? project.organization_id}`);
+  let project, org;
+  try {
+    project = await api(`/projects/${ref}`);
+    org = await api(`/organizations/${project.organization_slug ?? project.organization_id}`);
+  } catch (e) {
+    if (!unreachable(e.httpStatus)) throw e;
+    console.log(`::warning title=Staging skipped::The SUPABASE_ACCESS_TOKEN account can't reach staging (${ref}): HTTP ${e.httpStatus}. Invite that account to staging's organization (Administrator), then Run workflow again.`);
+    return out(false, `Staging (${ref}) couldn't be reached with this token (HTTP ${e.httpStatus}), so it was skipped and production went ahead. Invite the token's Supabase account to staging's organization as Administrator.`);
+  }
   let status = project.status;
   let restored = false;
   const deadline = Date.now() + 10 * 60_000;
