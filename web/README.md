@@ -7,13 +7,12 @@ The redesign of Brazework on **Next.js 16 + Tailwind CSS 4 + Supabase**. It live
 ```sh
 cd web
 npm install
-cp .env.example .env.local     # then fill in the two Supabase values
-npm run dev                    # http://localhost:3000
+npm run dev                    # a private local database (Docker), then http://localhost:3000
 ```
 
 | Command | What it does |
 |---|---|
-| `npm run dev` | Dev server (Turbopack) |
+| `npm run dev` | The local database (started if it isn't running) and the dev server on it. `-- --fresh` starts the database over |
 | `npm run typecheck` | Generates route types, then `tsc --noEmit` |
 | `npm run lint` | ESLint (Next + React Compiler rules) |
 | `npm run build` / `npm start` | Production build and server |
