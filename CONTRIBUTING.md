@@ -25,7 +25,7 @@ No keys and no `.env.local`. Sign in as `maya@forge.test` (or josh@, ben@, cara@
 | Where | How it gets there | Which database | Who it can hurt |
 |---|---|---|---|
 | **Your laptop** | `npm run dev` | A private one in Docker, rebuilt from `supabase/order.txt` with test members (`npm run dev -- --fresh` starts it over) | Nobody |
-| **A preview** | Open a pull request: Vercel builds it and comments a link | Staging, a separate Supabase project with no real members (FIX-83; until it's switched on, previews stop at the preview guard) | Nobody |
+| **A preview** | Open a pull request: Vercel builds it and comments a link | Staging, a separate free Supabase project with no real members. It gets every database step before production does, and the nightly run wakes it if it's paused | Nobody |
 | **Production** | Merge: Vercel deploys `main`, and new database steps apply themselves | Production | Members, which is why everything above comes first |
 
 Two guards keep untested code off production's database, whatever anyone's settings say: a **preview** build pointed at it stops, and a **dev server** pointed at it refuses to start (`web/src/lib/preview-guard.ts`). You never need production's keys to work on Brazework.
@@ -83,7 +83,7 @@ Everything lives in the Linear team **Forge**. Its key, `FIX` (it was `FOR`; old
 - Append its name to [`supabase/order.txt`](supabase/order.txt). That one list drives CI, the local test stack and production setup.
 - Add rule tests in `supabase/tests/<name>.test.sql` (run as real members inside a rolled-back transaction; see the existing ones).
 - Add a row for it in block 1 of `supabase/maintenance/health-check.sql` (it checks for one object the step creates, usually its `<name>_ready()` function), and a line in `docs/next-migration.md`.
-- **Production applies it by itself.** After the merge, `.github/workflows/db-migrate.yml` asks production which steps it has (that same health-check block, read-only), applies the missing ones in order, and checks again. Nobody pastes SQL. If it fails, the run's log shows which step and why; fix it in a new pull request, and the next merge (or Actions → Database steps → Run workflow) picks up where it stopped. It needs the `SUPABASE_ACCESS_TOKEN` repository secret. The workflow refuses to run if the newest step in `order.txt` has no health-check row, so a step can't be forgotten.
+- **Staging, then production, apply it by themselves.** After the merge, `.github/workflows/db-migrate.yml` gives it to staging first and to production only if staging took it cleanly. Each one is asked which steps it has (that same health-check block, read-only), applies the missing ones in order, and checks again. Nobody pastes SQL. If it fails, the run's log shows which step and why; fix it in a new pull request, and the next merge (or Actions → Database steps → Run workflow) picks up where it stopped. It needs the `SUPABASE_ACCESS_TOKEN` repository secret. The workflow refuses to run if the newest step in `order.txt` has no health-check row, so a step can't be forgotten.
 - Your laptop and the tests use the local stack: `npm run dev` and `npm run e2e` build it from `order.txt`, so a new step shows up locally as soon as you add it (`npm run dev -- --fresh`).
 
 ## Secrets

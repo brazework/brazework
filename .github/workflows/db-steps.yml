@@ -1,0 +1,96 @@
+name: Database steps (one project)
+
+# Applies the database steps one Supabase project is missing. db-migrate.yml calls it twice on every
+# merge that touches supabase/: staging first, then production only if staging took them. It asks
+# the project which steps it has (block 1 of supabase/maintenance/health-check.sql, read-only),
+# applies each missing one in step order with the Supabase CLI, stopping at the first error, then
+# checks again. Steps are additive and safe to re-run, and every one already passed CI (the e2e job
+# builds a fresh database from supabase/order.txt and runs supabase/tests/*.test.sql).
+on:
+  workflow_call:
+    inputs:
+      name:
+        description: "staging or production: shown in the logs and the summary"
+        required: true
+        type: string
+      project_ref:
+        required: true
+        type: string
+      wake:
+        description: "Wake the project first if it's paused in a free organization (.github/scripts/supabase-wake.mjs)"
+        required: false
+        type: boolean
+        default: false
+    secrets:
+      SUPABASE_ACCESS_TOKEN:
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  apply:
+    name: Apply missing steps to ${{ inputs.name }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      PROJECT_REF: ${{ inputs.project_ref }}
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_YES: "1"
+    steps:
+      - uses: actions/checkout@v7
+      - name: Check the token is set
+        run: |
+          if [ -z "$SUPABASE_ACCESS_TOKEN" ]; then
+            echo "::error::Add the SUPABASE_ACCESS_TOKEN repository secret (Settings → Secrets and variables → Actions), then Run workflow again."
+            exit 1
+          fi
+      - uses: actions/setup-node@v6
+        if: inputs.wake
+        with:
+          node-version: 22
+      # Free projects pause after about a week without use. This wakes one only in a free
+      # organization; asleep in a paid one, it says so and the steps below are skipped.
+      - name: Wake ${{ inputs.name }} if it's paused
+        id: wake
+        if: inputs.wake
+        run: node .github/scripts/supabase-wake.mjs "$PROJECT_REF"
+      # Pinned: "latest" asks GitHub's API which release that is, and shared runners get rate-limited
+      # there (FIX-94's step failed twice on it). Bump on purpose.
+      - uses: supabase/setup-cli@v1
+        if: steps.wake.outputs.ready != 'false'
+        with:
+          version: 3.1.0
+      - name: Which steps ${{ inputs.name }} has
+        id: before
+        if: steps.wake.outputs.ready != 'false'
+        run: |
+          # Block 1 of the health check: one row per step, "applied" or "missing".
+          awk '/^select step, file/{on=1} on{print} /order by step;/{if(on) exit}' supabase/maintenance/health-check.sql > /tmp/steps.sql
+          grep -q "order by step;" /tmp/steps.sql || { echo "::error::Couldn't find the step list in health-check.sql"; exit 1; }
+          # The newest step in order.txt has to be in the health check, or it would never be applied.
+          newest=$(grep -v '^\s*$' supabase/order.txt | tail -1)
+          grep -q "'$newest'" /tmp/steps.sql || { echo "::error::Step '$newest' (last in supabase/order.txt) isn't in supabase/maintenance/health-check.sql. Add its row there."; exit 1; }
+          supabase db query --remote="$PROJECT_REF" --read-only -f /tmp/steps.sql --output-format json > /tmp/before.json
+          jq -r '(.rows? // .) | .[] | select(.status != "applied") | "\(.step) \(.file)"' /tmp/before.json | sort -n > /tmp/missing.txt
+          echo "Missing in ${{ inputs.name }}:"; cat /tmp/missing.txt || true
+          echo "count=$(wc -l < /tmp/missing.txt | tr -d ' ')" >> "$GITHUB_OUTPUT"
+      - name: Apply them, in order
+        if: steps.wake.outputs.ready != 'false' && steps.before.outputs.count != '0'
+        run: |
+          while read -r step file; do
+            [ -f "supabase/$file.sql" ] || { echo "::error::Step $step: supabase/$file.sql doesn't exist"; exit 1; }
+            echo "::group::Step $step: supabase/$file.sql"
+            supabase db query --remote="$PROJECT_REF" --yes -f "supabase/$file.sql" > /dev/null
+            echo "::endgroup::"
+            echo "Applied step $step ($file)"
+          done < /tmp/missing.txt
+      - name: Check again
+        if: steps.wake.outputs.ready != 'false'
+        run: |
+          supabase db query --remote="$PROJECT_REF" --read-only -f /tmp/steps.sql --output-format json > /tmp/after.json
+          left=$(jq -r '(.rows? // .) | .[] | select(.status != "applied") | "\(.step) \(.file)"' /tmp/after.json)
+          total=$(jq -r '(.rows? // .) | length' /tmp/after.json)
+          if [ -n "$left" ]; then echo "::error::Still missing in ${{ inputs.name }} after applying: $left"; exit 1; fi
+          echo "${{ inputs.name }} has all $total steps." >> "$GITHUB_STEP_SUMMARY"
+          echo "${{ inputs.name }} has all $total steps."
