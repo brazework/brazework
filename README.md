@@ -44,16 +44,17 @@ People post what they build. Someone who saw the work happen verifies it: a club
 
 ### Run it locally
 
+You need Node 22 and Docker (OrbStack or Docker Desktop). No keys, no `.env.local`.
+
 ```sh
 cd web
 npm install
-e2e/local-supabase.sh up       # a private Supabase in Docker, with test members (password forge-test-pass-1)
-NEXT_PUBLIC_SUPABASE_URL=http://localhost:54321 NEXT_PUBLIC_SUPABASE_ANON_KEY="$(cat e2e/.anon-key)" npm run dev
-                               # http://localhost:3000, signed in as e.g. josh@forge.test
+npm run dev                    # a private database in Docker with test members, then http://localhost:3000
+                               # sign in as josh@, maya@, ben@ or cara@forge.test, password forge-test-pass-1
 e2e/local-supabase.sh down     # when you're done
 ```
 
-**Careful:** `web/.env.local` points at **production**, so a plain `npm run dev` talks to real member data. Always pass the local values as above (or use forge-staging), and never run tests or scripts that write against production. For a fresh `.env.local`, copy `web/.env.example`.
+`npm run dev` always uses the local database, whatever `web/.env.local` says, and a dev server pointed at production's database refuses to start. Where else your code runs (a preview per pull request, then production) is in [CONTRIBUTING.md](CONTRIBUTING.md#where-your-code-runs).
 
 ### Test it (the same commands CI runs)
 
