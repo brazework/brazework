@@ -9,7 +9,7 @@ cd web
 e2e/local-supabase.sh up                                # local Supabase with the test members
 docker exec -i forge-e2e-db psql -q -U postgres -h localhost -d postgres < ../ios/scripts/seed-ui-tests.sql
 FORGE_DEMO_SEED=1 node scripts/seed-demo.cjs            # example posts and replies (local only)
-NEXT_PUBLIC_SUPABASE_URL=http://localhost:54321 NEXT_PUBLIC_SUPABASE_ANON_KEY=$(cat e2e/.anon-key) npm run dev
+npm run dev                                             # the app on the local database
 ```
 
 Three browser windows: **Josh** (member), **Ben** (Rocketry Club owner) and **Cara** (admin of the verified company Acme Aerospace). Password for all: `forge-test-pass-1` (`josh@forge.test`, `ben@forge.test`, `cara@forge.test`). **Maya** (`maya@forge.test`) is a Brazework admin, for `/admin`.

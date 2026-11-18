@@ -2,7 +2,7 @@
 // Run: npm test
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { PRODUCTION_SUPABASE_REF, previewGuard } from "../src/lib/preview-guard";
+import { PRODUCTION_SUPABASE_REF, devGuard, previewGuard } from "../src/lib/preview-guard";
 
 const PROD = `https://${PRODUCTION_SUPABASE_REF}.supabase.co`;
 
@@ -27,4 +27,16 @@ test("a preview on another database, CI and local builds all go ahead", () => {
   assert.equal(previewGuard({ VERCEL_ENV: "preview" }), null);
   assert.equal(previewGuard({ NEXT_PUBLIC_SUPABASE_URL: "https://ci-placeholder.supabase.co" }), null);
   assert.equal(previewGuard({ NEXT_PUBLIC_SUPABASE_URL: "http://localhost:54321" }), null);
+});
+
+test("a dev server on production's database is stopped and pointed at npm run dev", () => {
+  const why = devGuard({ NODE_ENV: "development", NEXT_PUBLIC_SUPABASE_URL: PROD });
+  assert.ok(why);
+  assert.match(why, /npm run dev/);
+});
+
+test("a dev server on the local database, and production builds, go ahead", () => {
+  assert.equal(devGuard({ NODE_ENV: "development", NEXT_PUBLIC_SUPABASE_URL: "http://localhost:54321" }), null);
+  assert.equal(devGuard({ NODE_ENV: "production", NEXT_PUBLIC_SUPABASE_URL: PROD }), null);
+  assert.equal(devGuard({ NODE_ENV: "test", NEXT_PUBLIC_SUPABASE_URL: PROD }), null);
 });
