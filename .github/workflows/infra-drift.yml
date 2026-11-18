@@ -1,0 +1,61 @@
+name: Infra drift
+
+# Every night (and from Run workflow): is production still what the repo says? Runs infra/check.mjs
+# read-only against Supabase (auth, storage), Vercel (project, domains, cron, env var NAMES) and
+# brazework.com's DNS, and compares them with infra/desired.json (Linear FIX-131, step 2 of FIX-82).
+#   no drift       → passes
+#   drift          → the differences go in the run summary, one "Infra drift" issue is filed or
+#                    updated in Linear (.github/scripts/infra-drift.mjs), and the run fails so GitHub emails us
+#   couldn't read  → fails; never counted as "no drift"
+# Nothing here changes production. To bless a change on purpose: node infra/check.mjs --capture, then a PR.
+#
+# Needs repository secrets: SUPABASE_ACCESS_TOKEN (already used by db-migrate.yml), VERCEL_TOKEN (a
+# Vercel token for the team), and LINEAR_API_KEY to file issues. Until VERCEL_TOKEN is set, the run
+# says so and passes, so it doesn't fail every night before setup.
+on:
+  schedule:
+    - cron: "40 7 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: infra-drift
+  cancel-in-progress: true
+
+jobs:
+  drift:
+    name: Compare production with infra/desired.json
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          sparse-checkout: |
+            infra
+            .github/scripts
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - name: Check production (read-only)
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}
+        run: |
+          if [ -z "$VERCEL_TOKEN" ] || [ -z "$SUPABASE_ACCESS_TOKEN" ]; then
+            echo "::notice::Add the VERCEL_TOKEN and SUPABASE_ACCESS_TOKEN repository secrets to switch on the nightly drift check (FIX-131). Skipped."
+            echo "Skipped: VERCEL_TOKEN or SUPABASE_ACCESS_TOKEN isn't set (FIX-131)." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          set +e
+          node infra/check.mjs > /tmp/drift.txt 2>&1
+          code=$?
+          set -e
+          cat /tmp/drift.txt
+          { echo "## Infra drift"; echo; echo '```'; cat /tmp/drift.txt; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          if [ "$code" = 1 ]; then
+            node .github/scripts/infra-drift.mjs /tmp/drift.txt
+          fi
+          exit "$code"

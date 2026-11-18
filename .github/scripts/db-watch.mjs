@@ -9,6 +9,7 @@
 // Accept today's warnings as the new normal (after deciding each is fine):  … --write-baseline
 import { readFileSync, writeFileSync, existsSync, appendFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
+import { fileOrComment } from "./linear-issue.mjs";
 
 const BASELINE = new URL("../../supabase/maintenance/advisor-baseline.json", import.meta.url);
 const LEVELS = new Set(["WARN", "ERROR"]); // INFO (unused indexes and the like) moves too much to watch
@@ -87,27 +88,8 @@ const rows = (path) => {
   return Array.isArray(j) ? j : (j.rows ?? []);
 };
 
-async function linear(title, body) {
-  const KEY = process.env.LINEAR_API_KEY;
-  if (!KEY) return console.log("LINEAR_API_KEY isn't set: not filing in Linear.");
-  const TEAM_ID = process.env.LINEAR_TEAM_ID || "e9a4549f-0bad-4ef4-a105-e907d69ab2ca";
-  const gql = async (query, variables) => {
-    const res = await fetch("https://api.linear.app/graphql", { method: "POST", headers: { "Content-Type": "application/json", Authorization: KEY }, body: JSON.stringify({ query, variables }) });
-    const json = await res.json();
-    if (json.errors) throw new Error(json.errors.map((e) => e.message).join("; "));
-    return json.data;
-  };
-  // One open "Database watch" issue at a time: later runs comment on it instead of piling up.
-  const { issues } = await gql(`query($team: ID!) { issues(first: 5, filter: { team: { id: { eq: $team } }, title: { startsWith: "Database watch" }, state: { type: { nin: ["completed", "canceled"] } } }) { nodes { id identifier } } }`, { team: TEAM_ID });
-  const open = issues.nodes[0];
-  if (open) {
-    await gql(`mutation($i: CommentCreateInput!) { commentCreate(input: $i) { success } }`, { i: { issueId: open.id, body } });
-    console.log(`Commented on ${open.identifier}`);
-  } else {
-    const { issueCreate } = await gql(`mutation($i: IssueCreateInput!) { issueCreate(input: $i) { issue { identifier } } }`, { i: { teamId: TEAM_ID, title, description: body } });
-    console.log(`Filed ${issueCreate.issue.identifier}`);
-  }
-}
+// One open "Database watch" issue at a time: later runs comment on it instead of piling up.
+const linear = (title, body) => fileOrComment({ prefix: "Database watch", title, body });
 
 async function main() {
   const ref = process.env.PROJECT_REF || "uwiwkjoonculpxjmzsfj";

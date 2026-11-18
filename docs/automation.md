@@ -25,6 +25,7 @@ What runs by itself, what still needs a person, and what to add next. The goal: 
 
 | What | Needs | Linear |
 |---|---|---|
+| **Infra drift, nightly** (read-only): `infra/check.mjs` compares production's Supabase, Vercel and DNS settings with `infra/desired.json`. Drift fails the run and opens or updates one "Infra drift" issue in Linear; a change made on purpose is blessed with `node infra/check.mjs --capture` and a PR. Every night at 07:40 UTC, and Actions → Infra drift → Run workflow (`.github/workflows/infra-drift.yml`) | The `VERCEL_TOKEN` repo secret (a Vercel token for the team; `SUPABASE_ACCESS_TOKEN` is already set). Until then the run says so and passes | FIX-131 |
 | **Linear sync:** every commit on `main` linked to its issue, `Fixes FIX-n` closes it, untracked commits logged as Done issues | The `LINEAR_API_KEY` repo secret (an admin adds it) | FIX-5, FIX-54 |
 | **Linear ↔ GitHub:** PRs and commits shown on issues; weekly cycles; auto-close stale Backlog; **auto-archive closed issues** (keeps us under the Free plan's 250-issue limit) | Linear settings, a workspace admin, ~10 minutes | FIX-5 |
 | **Uptime alerts:** a text or email if the site or its database goes down | A free UptimeRobot monitor on `https://brazework.com/api/health` (200 = app and database up, 503 = not), every 5 minutes, alerting both founders | FIX-55 |

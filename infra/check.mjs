@@ -31,7 +31,8 @@ async function supabase(path) {
 async function vercel(path) {
   const sep = path.includes("?") ? "&" : "?";
   if (process.env.VERCEL_TOKEN) {
-    const r = await fetch(`https://api.vercel.com${path}${sep}teamId=${TEAM}`, { headers: { authorization: `Bearer ${process.env.VERCEL_TOKEN}` } });
+    // The REST API names a team by slug with `slug=` (`teamId=` takes the team_… id).
+    const r = await fetch(`https://api.vercel.com${path}${sep}slug=${TEAM}`, { headers: { authorization: `Bearer ${process.env.VERCEL_TOKEN}` } });
     if (!r.ok) throw new Error(`Vercel ${path}: ${r.status}`);
     return r.json();
   }
