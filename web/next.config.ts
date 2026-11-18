@@ -1,5 +1,10 @@
 import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs/config";
+import { previewGuard } from "./src/lib/preview-guard";
+
+// A preview build pointed at production's database stops here (lib/preview-guard.ts, FIX-83).
+const stopPreview = previewGuard(process.env);
+if (stopPreview) throw new Error(stopPreview);
 
 // Photos are served from this project's public Storage bucket only (supabase/media.sql).
 const supabase = process.env.NEXT_PUBLIC_SUPABASE_URL ? new URL(process.env.NEXT_PUBLIC_SUPABASE_URL) : null;
