@@ -20,7 +20,8 @@ test("each action kind has exactly one MCP tool; each drafts with a drafting tok
     assert.ok(!toolsFor(["read"]).some((x) => x.name === t.name), `${t.name} isn't offered to a read-only token`);
     assert.deepEqual(annotationsFor(t), { readOnlyHint: false, destructiveHint: false, idempotentHint: false, openWorldHint: false });
     const props = (t.inputSchema as { properties: Record<string, unknown> }).properties;
-    assert.ok(props.draft && props.source && props.source_key, `${t.name} takes draft, source and source_key`);
+    assert.ok(props.source && props.source_key, `${t.name} takes source and source_key`);
+    assert.equal(!!props.draft, !t.draftOnly, `${t.name}: a draft switch unless it's always a draft`);
     assert.match(t.description, /yes|drafts/i, `${t.name} says it waits for the member`);
   }
 });
@@ -87,4 +88,21 @@ test("RSVP: a draft becomes Ember's RSVP card (going or taking it back); the too
   assert.match(yes.next, /going to "Build night" \(Fri, 20 Nov 2026 23:00 UTC\), hosted by Rocketry Club/);
   assert.equal(yes.open, `${O}/events/ev1`);
   assert.match(nextStep("rsvp_event", { drafted: false, status: "not going", title: "Build night", url: "/events/ev1" }, O)!.next, /given back/);
+});
+
+test("clubs and messages: join, invite and message drafts become Ember's cards; replies are always drafts", () => {
+  assert.deepEqual(draftToProposal({ id: "j", kind: "join", payload: { club_id: "rkt", club_name: "Rocketry Club", privacy: "approval" } }), { id: "draft-j", kind: "join", club_id: "rkt", club_name: "Rocketry Club", privacy: "approval" });
+  assert.deepEqual(draftToProposal({ id: "i", kind: "invite", payload: { code: "0123456789abcdef", club_id: "sec", club_name: "Secret" } }), { id: "draft-i", kind: "invite", code: "0123456789abcdef", club_id: "sec", club_name: "Secret" });
+  const m = draftToProposal({ id: "m", kind: "message", payload: { person_id: "u1", name: "Josh", headline: "", body: "Sure." } });
+  assert.ok(m && m.kind === "message" && m.body === "Sure." && !m.accepts);
+  const r = draftToProposal({ id: "m2", kind: "message", payload: { person_id: "u1", name: "Josh", body: "Sure.", conversation_id: "c1", accepts_request: true } });
+  assert.ok(r && r.kind === "message" && r.accepts?.conversation_id === "c1", "a reply to a request says it accepts it");
+  assert.deepEqual(actionPayload("invite", { invite: "https://brazework.com/join/0123456789abcdef" }), { code: "https://brazework.com/join/0123456789abcdef" });
+  assert.deepEqual(actionPayload("message", { conversation_id: "c1", body: "Hi" }), { conversation_id: "c1", body: "Hi" });
+  const reply = MCP_TOOLS.find((t) => t.name === "draft_reply")!;
+  assert.equal(reply.draftOnly, true);
+  assert.match(nextStep("draft_reply", { drafted: true }, O)!.next, /press Confirm to send it/);
+  assert.match(nextStep("join_club", { drafted: false, status: "requested", title: "Secret", id: "sec", url: "/c/sec" }, O)!.next, /moderators approve/);
+  assert.match(nextStep("accept_invite", { drafted: false, status: "joined", title: "Secret", id: "sec", url: "/c/sec" }, O)!.next, /in Secret/);
+  assert.equal(MCP_TOOLS.find((t) => t.name === "my_inbox")!.needs, undefined, "my_inbox only reads");
 });

@@ -76,3 +76,4 @@ mcp-workflows
 waiting-cards
 tool-actions
 tool-rsvp
+tool-clubs-messages
