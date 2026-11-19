@@ -51,7 +51,7 @@ export function MilestoneTimeline({ items, own }: { items: Milestone[]; own: boo
       {msg && <li className="text-xs text-muted" role="status">{msg}</li>}
       <AnimatePresence initial={false}>
         {shown.map((m) => (
-          <motion.li key={m.id} layout initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, height: 0 }} className="relative">
+          <motion.li key={m.id} layout initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, height: 0 }} className={cn("relative", m.status === "pending" && "rounded-xl border border-dashed border-line-strong px-2.5 py-2")}>
             <span className={cn("absolute top-0.5 -left-[25px] grid size-[18px] place-items-center rounded-full ring-4 ring-surface", m.status === "verified" ? "bg-ok text-white" : m.status === "logged" ? "bg-info text-white" : m.status === "pending" || m.status === "disputed" || m.status === "draft" ? "bg-raised text-muted" : "bg-danger text-white")}>
               {m.status === "verified" ? <BadgeCheck className="size-3" /> : m.status === "disputed" ? <Scale className="size-3" /> : m.status === "logged" ? <GitMerge className="size-3" /> : m.status === "pending" || m.status === "draft" ? <Clock className="size-3" /> : <X className="size-3" />}
             </span>
