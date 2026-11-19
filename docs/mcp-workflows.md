@@ -6,6 +6,8 @@ Brazework's MCP server, an AI assistant (Claude Code, Claude Desktop, Cursor, VS
 reads the work where it already lives and drafts the post, milestone or signature request for you, with the
 proof attached. **Nothing goes out until you say yes.**
 
+The public version of this guide is **[brazework.com/ai](https://brazework.com/ai)**: readable signed out, built from the same lists as the server (`web/src/lib/ai-guide.ts`), so a new tool or prompt shows up there by itself.
+
 What it looks like:
 
 - You merge a pull request. CI is green. A GitHub Action leaves a draft milestone in Brazework with the pull request
@@ -80,6 +82,12 @@ it", or "waiting for a signature: ask with request_signature", or "waiting in yo
 says no (a Gmail address for a signer, a teammate, a weekly limit), the message says how to fix it, so your
 assistant can fix it or ask you.
 
+In assistants that show MCP Apps (Claude, ChatGPT, VS Code and Goose, per the MCP Apps launch), a
+milestone you log or draft shows as a **card in the chat**: the title, its proof, where it stands
+("Waiting for Rocketry Club", "Waiting for a signature", "In your drafts"), the next step, and **Open in
+Brazework**. The card is `ui://brazework/milestone-card` (`web/src/lib/mcp-card.ts`). It reaches nothing
+outside and only shows what the tool sent it. Other assistants show the same result as text.
+
 Your assistant can also read the playbooks directly as MCP resources: `brazework://playbooks` (the index)
 and `brazework://playbooks/<field>`, for example `brazework://playbooks/data-ai`.
 
@@ -93,6 +101,9 @@ and `brazework://playbooks/<field>`, for example `brazework://playbooks/data-ai`
 | `request_signature` | post | Email someone who saw the work a one-time link to sign a milestone. |
 | `create_project`, `update_project`, `add_teammate` | draft (does it with post) | Ask in plain words: "add my hopper project", "update the summary and specs", "put Josh on it". With a token that can post, they happen once you say yes in chat; otherwise (or with `draft: true`) they wait as cards in **Drafts** and on Ember's page. `update_project` changes only the fields given (summary, write-up, link, specs) on your own projects, and the card shows what it replaces. `add_teammate` adds someone who shares one of your clubs, as a teammate or a viewer (admins are made in the app). |
 | `rsvp_event` | draft (does it with post) | "Save me a spot at Thursday's build night", or "I can't make it" (`going: false`). Only events you can see that aren't over; ids come from `upcoming_events`. |
+| `join_club`, `accept_invite` | draft (does it with post) | "Join the robotics club", "accept this invite: brazework.com/join/…". A club that approves members gets a request, as in the app. |
+| `my_inbox` | read | Your conversations and message requests, newest first, or one conversation's last 20 messages. |
+| `draft_reply` | draft | A reply (or a first message) always waits in Drafts as a card: you read it and send it from Brazework. A tool never sends a message. |
 
 Scopes nest: read ⊂ draft ⊂ post. A token made before November 2026 keeps exactly what it had.
 
@@ -114,6 +125,9 @@ actions, by the same names (`supabase/tool-actions.sql`, `web/src/lib/tool-actio
 | Project summary, write-up, link, specs | `update_project` | card in Drafts | saved after your yes |
 | Teammate from your clubs | `add_teammate` | card in Drafts | added after your yes |
 | RSVP to an event, or take it back | `rsvp_event` (`going: false` to take it back) | card in Drafts | done after your yes |
+| Join a club (or ask to, if it approves members) | `join_club` | card in Drafts | done after your yes |
+| Accept a club invite link | `accept_invite` | card in Drafts | done after your yes |
+| A message or a reply | `draft_reply` | card in Drafts | **always a card**: you send it |
 
 ## Drafts and automations
 

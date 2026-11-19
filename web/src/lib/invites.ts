@@ -23,6 +23,16 @@ export async function acceptInvite(code: string): Promise<{ ok: boolean; message
   redirect(`/c/${encodeURIComponent(String(data))}?joined=1`);
 }
 
+// From a card (an AI tool's draft, supabase/tool-clubs-messages.sql): the same accept_invite(), no redirect.
+export async function acceptInviteCard(code: string): Promise<{ ok: boolean; message: string }> {
+  if (!CODE_RE.test(code)) return { ok: false, message: "That invite link isn't valid." };
+  const { supabase, user } = await getViewer();
+  if (!user) return { ok: false, message: "Log in again." };
+  const { data, error } = await supabase.rpc("accept_invite", { p_code: code });
+  if (error || !data) return { ok: false, message: error?.code === "P0001" || error?.code === "42501" ? error.message : friendlyError(error) };
+  return { ok: true, message: "" };
+}
+
 // Kept through sign-up and email confirmation (same browser), used once onboarding is done.
 export async function rememberInvite(code: string) {
   if (!CODE_RE.test(code)) return;

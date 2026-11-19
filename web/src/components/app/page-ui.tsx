@@ -12,7 +12,8 @@ export function PageHeader({ title, subtitle, actions }: { title: string; subtit
         <h1 className="text-[1.75rem] leading-tight font-semibold tracking-[-0.02em] text-text sm:text-[2rem]">{title}</h1>
         {subtitle && <p className="mt-1.5 max-w-2xl text-[15px] text-muted">{subtitle}</p>}
       </div>
-      {actions && <div className="flex items-center gap-2">{actions}</div>}
+      {/* Buttons wrap as whole buttons (on a phone "Find builders" broke onto two lines inside its button). */}
+      {actions && <div className="flex flex-wrap items-center gap-2 [&>a]:whitespace-nowrap [&>button]:whitespace-nowrap">{actions}</div>}
     </header>
   );
 }

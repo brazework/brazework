@@ -29,6 +29,8 @@ export function nextStep(tool: string, data: unknown, origin: string): { next: s
       return null; // Says its own next step (the email went out, and to whom).
   }
   // Actions shared with Ember (supabase/tool-actions.sql): drafted, or done with the member's yes.
+  if (tool === "draft_reply" && d.drafted === true && d.duplicate !== true)
+    return { next: "Waiting as a card in the member's Brazework drafts. They read it, edit it if they like, and press Confirm to send it. Nothing is sent before that.", open: site(origin, "/drafts") };
   if (d.drafted === true) {
     return d.duplicate === true
       ? { next: "This was drafted before (same source_key), so nothing new was added. It's still in the member's Brazework drafts.", open: site(origin, "/drafts") }
@@ -50,6 +52,12 @@ export function nextStep(tool: string, data: unknown, origin: string): { next: s
         ? { next: `The member's spot at "${str(d.title)}" is given back. The host's count goes down by one.`, open: url }
         : { next: `The member is going to "${str(d.title)}"${when ? ` (${when})` : ""}${str(d.host) ? `, hosted by ${str(d.host)}` : ""}. The event page has its chat and a calendar file.`, open: url };
     }
+    case "join_club":
+      return str(d.status) === "requested"
+        ? { next: `Asked to join ${str(d.title)}. Its moderators approve new members; the member is notified when they do.`, open: url }
+        : { next: `The member is in ${str(d.title)}. Next: its events (upcoming_events), or share work with it (post_update with club_id "${str(d.id)}").`, open: url };
+    case "accept_invite":
+      return { next: `The member is in ${str(d.title)}. Next: its events (upcoming_events), or say hello in it (post_update with club_id "${str(d.id)}").`, open: url };
     default:
       return null;
   }
@@ -67,6 +75,8 @@ const HINTS: [RegExp, string][] = [
   [/isn'?t waiting for proof|no longer exists/i, "Call my_projects: open_milestones lists the ones still waiting, with their ids."],
   [/aren'?t in any of your clubs/i, "Use search to find someone in one of the member's clubs (my_clubs), or let the member add them from the project's Team section in Brazework."],
   [/always left as a draft/i, "Call it again with draft: true; the member confirms it in Brazework."],
+  [/invite link has expired/i, "Ask the member for a fresh link from the club, or ask to join it instead (join_club)."],
+  [/already asked to join/i, "Nothing to do: the member is notified when the moderators answer."],
 ];
 
 /** The refusal, plus how to fix it when there's a choice to make. */

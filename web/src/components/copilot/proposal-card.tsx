@@ -14,9 +14,10 @@ import { addMilestone, reviewMilestone } from "@/lib/milestones";
 import { saveProject, updateProjectFields } from "@/lib/projects";
 import { addTeammate } from "@/lib/project-team";
 import { dismissDraft, settleDraft } from "@/lib/tool-drafts";
+import { acceptInviteCard } from "@/lib/invites";
 import { toggleFollow } from "@/lib/network";
 import { toggleRsvp } from "@/app/(app)/events/actions";
-import { messagePerson } from "@/lib/messages";
+import { acceptConversation, messagePerson } from "@/lib/messages";
 
 const field = "w-full rounded-xl border border-line bg-surface px-3 py-2 text-sm outline-none focus:border-line-strong";
 const HEAD = {
@@ -32,6 +33,7 @@ const HEAD = {
   message: { icon: MessageSquare, title: "Send a message", done: "Sent", href: "/messages", go: "Open the conversation" },
   project_edit: { icon: PencilLine, title: "Update a project", done: "Saved", href: "", go: "Open the project" },
   teammate: { icon: UserPlus, title: "Add a teammate", done: "Added", href: "", go: "Open the project" },
+  invite: { icon: Users, title: "Accept a club invite", done: "You're in", href: "", go: "Open the club" },
 } as const;
 // Shown under a field a card changes: what's there now.
 const was = (v: string) => <span className="block text-[11px] text-faint">Now: {v ? (v.length > 140 ? `${v.slice(0, 140)}…` : v) : "empty"}</span>;
@@ -51,7 +53,7 @@ export function ProposalCard({ p: initial, fromTool }: { p: Proposal; fromTool?:
   const [cid, setCid] = useState("");
   const [pending, start] = useTransition();
   const h = HEAD[p.kind];
-  const href = p.kind === "join" || p.kind === "club_post" ? `/c/${p.club_id}` : p.kind === "follow" ? `/u/${p.person_id}` : p.kind === "event" ? `/c/${p.club_id}?tab=events` : p.kind === "review" ? "/communities" : p.kind === "rsvp" ? `/events/${p.event_id}` : p.kind === "message" && cid ? `/messages/${cid}` : p.kind === "project_edit" || p.kind === "teammate" ? `/projects/${p.project_id}` : h.href;
+  const href = p.kind === "join" || p.kind === "club_post" || p.kind === "invite" ? `/c/${p.club_id}` : p.kind === "follow" ? `/u/${p.person_id}` : p.kind === "event" ? `/c/${p.club_id}?tab=events` : p.kind === "review" ? "/communities" : p.kind === "rsvp" ? `/events/${p.event_id}` : p.kind === "message" && cid ? `/messages/${cid}` : p.kind === "project_edit" || p.kind === "teammate" ? `/projects/${p.project_id}` : h.href;
   const set = (patch: Partial<Proposal>) => setP((cur) => ({ ...cur, ...patch }) as Proposal);
 
   const confirm = () => start(async () => {
@@ -85,10 +87,14 @@ export function ProposalCard({ p: initial, fromTool }: { p: Proposal; fromTool?:
       r = await toggleRsvp(p.event_id, !p.cancel);
     } else if (p.kind === "project_edit") {
       r = await updateProjectFields(p.project_id, { summary: p.summary, details: p.details, link: p.link, specs: p.specs });
+    } else if (p.kind === "invite") {
+      r = await acceptInviteCard(p.code);
     } else if (p.kind === "teammate") {
       r = await addTeammate(p.project_id, p.person_id, p.role);
     } else if (p.kind === "message") {
-      const res = await messagePerson(p.person_id, p.body);
+      // A reply to someone's message request accepts it first (the card says so), as in Messages.
+      const acc = p.accepts ? await acceptConversation(p.accepts.conversation_id) : { ok: true, message: "" };
+      const res = acc.ok ? await messagePerson(p.person_id, p.body) : { ...acc, cid: undefined };
       if (res.cid) setCid(res.cid);
       r = res;
     } else {
@@ -176,7 +182,7 @@ export function ProposalCard({ p: initial, fromTool }: { p: Proposal; fromTool?:
           )}
           {p.kind === "message" && (
             <>
-              <p className="text-xs text-muted">To <b className="font-medium text-text-2">{p.name}</b>{p.headline && ` · ${p.headline}`}. If you aren&apos;t connected, it arrives as a message request.</p>
+              <p className="text-xs text-muted">To <b className="font-medium text-text-2">{p.name}</b>{p.headline && ` · ${p.headline}`}. {p.accepts ? <> Sending it accepts their message request.</> : <> If you aren&apos;t connected, it arrives as a message request.</>}</p>
               <textarea aria-label="Message" value={p.body} onChange={(e) => set({ body: e.target.value })} maxLength={2000} rows={Math.min(6, 2 + Math.ceil(p.body.length / 70))} className={cn(field, "resize-y leading-relaxed")} />
             </>
           )}
@@ -195,6 +201,7 @@ export function ProposalCard({ p: initial, fromTool }: { p: Proposal; fromTool?:
               )}
             </>
           )}
+          {p.kind === "invite" && <p className="text-text-2">Join <b className="font-medium">{p.club_name}</b> with the invite link you were sent.</p>}
           {p.kind === "teammate" && <p className="text-text-2">Add <b className="font-medium">{p.name}</b>{p.headline && <span className="text-muted"> · {p.headline}</span>} to <b className="font-medium">{p.project_title}</b> as {p.role === "viewer" ? "a viewer (sees it, changes nothing)" : "a teammate (posts updates, logs milestones)"}.</p>}
           {p.kind === "follow" && <p className="text-text-2"><b className="font-medium">{p.name}</b>{p.headline && <span className="text-muted"> · {p.headline}</span>}</p>}
           {p.kind === "event" && (
