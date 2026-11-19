@@ -41,7 +41,7 @@ function Section({ id, title, desc, children }: { id: string; title: string; des
 async function Settings() {
   const { supabase, user, profile } = await getViewer();
   if (!user || !profile) redirect("/login");
-  const { copilotChats: saving, mcp: mcpOn, gradYear: gradYearOn } = await dbFeatures();
+  const { copilotChats: saving, mcp: mcpOn, gradYear: gradYearOn, accountType: canSwitch } = await dbFeatures();
   const tokens = mcpOn ? await listApiTokens() : [];
   const [ms, blocks, chatCount, ep, gy, ea] = await Promise.all([
     supabase.from("message_settings").select("requests_on, who_can_message").eq("user_id", user.id).maybeSingle(),
@@ -70,7 +70,7 @@ async function Settings() {
 
   return (
     <>
-      <Section id="profile" title="Profile" desc="What people see on your profile and posts."><ProfileSettings profile={profile} gradYear={gradYear} /></Section>
+      <Section id="profile" title="Profile" desc="What people see on your profile and posts."><ProfileSettings profile={profile} gradYear={gradYear} canSwitch={canSwitch} /></Section>
       <Section id="appearance" title="Appearance" desc="Light or dark, and the colour theme."><AppearanceSettings /></Section>
       {emailOn && <Section id="email" title="Email" desc="What Brazework sends to your inbox. Sign-in emails always come."><EmailSettings weekly={ep.data ? Boolean(ep.data.weekly_digest) : true} alerts={alerts} dailyDrafts={dailyDrafts} /></Section>}
       <Section id="messaging" title="Messaging and privacy" desc="Who can message you, and whether you show as online."><OnlineStatusSetting /><div className="my-6 border-t border-line" /><MessagingSettings requestsOn={ms.data ? Boolean(ms.data.requests_on) : true} who={(ms.data?.who_can_message as "everyone" | "communities" | "connections") ?? "everyone"} /></Section>

@@ -207,7 +207,7 @@ async function ProjectView({ params, searchParams }: { params: PageProps<"/proje
           <Panel className="p-6">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <h2 className="inline-flex items-center gap-2 text-lg font-semibold tracking-tight"><BadgeCheck className="size-5 text-ok" /> Milestones</h2>
-              <span className="text-xs text-muted">{own ? "Verified ones show to everyone; pending and declined ones only to you." : "Each one verified by an officer of the club who saw it happen."}</span>
+              <span className="text-xs text-muted">{own ? "Verified ones show to everyone; pending and declined ones only to you." : "Each one signed by someone who saw it happen: a club officer, a professor or a manager."}</span>
             </div>
             <ProjectDrafts drafts={drafts} projectTitle={p.title} clubName={new Map(myClubs.map((c) => [c.id, c.name]))} />
             {milestones.length > 0 && <MilestoneTimeline items={milestones} own={own} projectPrivate={!!p.private} />}

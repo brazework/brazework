@@ -35,6 +35,13 @@ export async function saveProfileSettings(_: SettingsState, form: FormData): Pro
   if (!user) return { ok: false, message: "Log in again." };
   const { error } = await supabase.from("profiles").update(row).eq("id", user.id);
   if (error) return { ok: false, message: friendlyError(error) };
+  // Studying or working (supabase/account-type.sql): the form only sends it once that step has run,
+  // and only a change is saved. Becoming a student needs a university email, as at sign-up.
+  const kind = form.get("account_type");
+  if ((kind === "student" || kind === "professional") && kind !== form.get("account_type_was")) {
+    const { error: e2 } = await supabase.rpc("set_account_type", { p_type: kind });
+    if (e2) { revalidatePath("/", "layout"); return { ok: false, message: e2.code === "P0001" ? e2.message : friendlyError(e2) }; }
+  }
   revalidatePath("/", "layout");
   return { ok: true, message: "Profile saved." };
 }

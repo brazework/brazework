@@ -78,7 +78,8 @@ from (values
   (78, 'tool-goals',      to_regprocedure('public.tool_goals_ready()') is not null),
   (79, 'tool-signer',     to_regprocedure('public.tool_signer_ready()') is not null),
   (80, 'brazework-messages', to_regprocedure('public.brazework_messages_ready()') is not null),
-  (81, 'mcp-oauth-post',  to_regprocedure('public.mcp_oauth_post_ready()') is not null)
+  (81, 'mcp-oauth-post',  to_regprocedure('public.mcp_oauth_post_ready()') is not null),
+  (82, 'account-type',    to_regprocedure('public.account_type_ready()') is not null)
 ) as s(step, file, present)
 order by step;
 

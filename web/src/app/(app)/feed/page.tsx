@@ -185,7 +185,7 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
     supabase.from("projects").select("id, title").eq("owner_id", user.id).order("updated_at", { ascending: false }).limit(20),
     supabase.from("community_members").select("communities(id, name)").eq("uid", user.id).limit(50),
   ]);
-  // No project yet: Home asks what you're building this semester (Linear FIX-71).
+  // No project yet: Home asks what you're building (this semester, for a student) (Linear FIX-71).
   const noProjects = !(myProjects ?? []).length;
   const nextStep = (guide?.loop ?? []).find((s) => !s.done)?.id;
   type ClubRef = { id: string; name: string };
@@ -324,7 +324,7 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
           {/* Home, top to bottom (section redesign, Nov 2026): the one next step, then one stream in the
               order you'd act on it (what your tools noticed, what needs you, what your clubs shipped,
               your goal), then the log-work box and the posts. Your builds live on Projects, not here. */}
-          {noProjects && <FirstBuild first={profile.first_name} chapter={chapter?.name} />}
+          {noProjects && <FirstBuild first={profile.first_name} chapter={chapter?.name} student={profile.account_type !== "professional"} />}
           {/* When the checklist's next step is the project, the card above already asks it, so the checklist waits. */}
           {startOpen && !(noProjects && nextStep === "project") ? <StartChecklist steps={guide?.loop ?? []} /> : noProjects ? null : <><Suspense fallback={<div className="h-14 shimmer rounded-2xl" aria-hidden="true" />}><NextStep /></Suspense></>}
           <Suspense fallback={<StreamSkeleton />}><HomeStream /></Suspense>

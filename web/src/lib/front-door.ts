@@ -70,3 +70,21 @@ export function guessField(text: string): string | null {
 export function firstHeadline(field: string, student: boolean): string {
   return student ? `${field} student` : field;
 }
+
+/**
+ * Home's first box (feed/first-build.tsx), worded for who's asking. A student is asked about the
+ * semester and told their club (or chapter) sees it; someone who works isn't, since many have no club.
+ */
+export function firstBuildCopy({ first, chapter, student }: { first: string; chapter?: string | null; student: boolean }) {
+  const name = first.trim();
+  if (!student) return {
+    ask: name ? `What are you working on, ${name}?` : "What are you working on?",
+    why: "It starts your record, and every update you post adds to it. The people who saw the work can sign it.",
+    example: "A checkout redesign",
+  };
+  return {
+    ask: name ? `What are you building this semester, ${name}?` : "What are you building this semester?",
+    why: `${chapter ? `It's how ${chapter} sees your work` : "It's how your club sees your work"}, and every update you post adds to it.`,
+    example: "A line-following robot",
+  };
+}

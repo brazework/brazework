@@ -12,7 +12,7 @@ export function Workbench({ projects, interests, copilot, stack, specsOn = false
     return (
       <section aria-label="Your projects" className="sheet-grid mt-6 rounded-2xl border border-dashed border-line-strong p-6">
         <h2 className="text-lg font-semibold tracking-tight">Start your first project</h2>
-        <p className="mt-1 max-w-xl text-sm text-muted">A project is anything you&apos;re building: a robot, a rocket, a model, an experiment, an app. Post updates as you go, and your club verifies the milestones.</p>
+        <p className="mt-1 max-w-xl text-sm text-muted">A project is anything you&apos;re building: a robot, a rocket, a model, an experiment, an app. Post updates as you go, and get each milestone signed by someone who saw it.</p>
         <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
           {[[Cpu, "Hardware", "A flight computer, a chassis, a test rig. Photos and specs, no repo needed."], [FlaskConical, "Research", "An experiment or model: what you measured and what it showed."], [Wrench, "Software", "An app, a tool or a library. Ember can import it from GitHub."]].map(([Icon, t, d]) => {
             const I = Icon as typeof Cpu;

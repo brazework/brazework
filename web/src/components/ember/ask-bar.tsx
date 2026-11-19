@@ -40,6 +40,8 @@ export function AskBar() {
   };
   const close = () => { stop(); setA(EMPTY); };
 
+  // Ember's own page has its composer: a second box to ask in would only compete with it.
+  if (path.startsWith("/copilot")) return null;
   return (
     <div>
       <GlobalSearch onAsk={ask} asking={busy} joined={!!a.q} />

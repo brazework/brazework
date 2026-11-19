@@ -1,16 +1,18 @@
 "use client";
 import { AnimatePresence, motion } from "motion/react";
 import type { Preset } from "@/lib/copilot-presets";
-import { ArrowRight, ArrowUp, BadgeCheck, CalendarCheck, CalendarDays, Check, Compass, Copy, CornerDownRight, FileText, GitBranch, History, Loader2, Megaphone, MessageSquare, Plus, Search, ShieldCheck, Square, ThumbsDown, ThumbsUp, Trash2, Users, X } from "lucide-react";
+import { ArrowRight, BadgeCheck, CalendarCheck, CalendarDays, Check, Compass, Copy, CornerDownRight, FileText, GitBranch, History, Loader2, Megaphone, Plus, Search, ShieldCheck, ThumbsDown, ThumbsUp, Trash2, Users, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useCopilot } from "@/components/copilot/use-copilot";
 import { cn } from "@/lib/forge";
 import { TOOL_LABEL, type Proposal } from "@/lib/copilot-agent";
 import { Ember } from "@/components/ember/ember";
+import { EmberComposer, type ComposerAction } from "@/components/copilot/composer";
 import { ProposalCard } from "@/components/copilot/proposal-card";
 import { LinkCards } from "@/components/copilot/link-cards";
 import { forgeLinks, splitNext } from "@/lib/copilot-text";
+import { emberActions, emberGreeting, type EmberAction } from "@/lib/ember-actions";
 import { deleteAllChats, deleteChat, loadChat, rateAnswer, saveChat, type ChatSummary, type SavedMsg } from "@/lib/copilot-chats";
 
 type Msg = { role: "user" | "assistant"; content: string; tools?: string[]; proposals?: Proposal[]; cards?: string[]; next?: string[] };
@@ -27,11 +29,11 @@ const ago = (iso: string) => {
 // The orb, front and centre, with a greeting: the empty state of the chat and the waiting state.
 function Hero({ title, sub, mood = "idle" }: { title: string; sub: string; mood?: "idle" | "thinking" | "happy" | "sleepy" }) {
   return (
-    <header className="flex flex-col items-center pt-6 text-center sm:pt-10">
+    <header className="flex flex-col items-center pt-2 text-center sm:pt-8">
       <motion.div initial={{ opacity: 0, scale: 0.85 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}>
-        <Ember size={112} mood={mood} label="Ember, your Brazework Copilot" />
+        <Ember size={72} mood={mood} label="Ember, your Brazework assistant" />
       </motion.div>
-      <h1 className="mt-5 text-3xl font-semibold tracking-tight sm:text-4xl">{title}</h1>
+      <h1 className="mt-4 text-[1.7rem] leading-tight font-semibold tracking-tight sm:text-4xl">{title}</h1>
       <p className="mt-2 max-w-md text-[15px] text-muted">{sub}</p>
     </header>
   );
@@ -100,7 +102,9 @@ export function Lookups({ tools, live }: { tools?: string[]; live: boolean }) {
 
 // The chat: a rail of your saved chats (when supabase/copilot-chats.sql has run), the conversation
 // with real Brazework cards under each answer, tap-to-ask follow-ups, and the confirm cards.
-export function CopilotChat({ first, field, initial = "", initialPreset = null, chats = [], chat = null, saving = false, fromTools = null }: { first: string; field: string; initial?: string; initialPreset?: Preset | null; chats?: ChatSummary[]; chat?: { id: string; title: string; messages: SavedMsg[] } | null; saving?: boolean; fromTools?: FromTools | null }) {
+const ACTION_ICON: Record<EmberAction["id"], ComposerAction["icon"]> = { log: BadgeCheck, post: FileText, github: GitBranch, sign: ShieldCheck, event: CalendarCheck, people: Users };
+
+export function CopilotChat({ first, field, student = true, initial = "", initialPreset = null, chats = [], chat = null, saving = false, fromTools = null }: { first: string; field: string; student?: boolean; initial?: string; initialPreset?: Preset | null; chats?: ChatSummary[]; chat?: { id: string; title: string; messages: SavedMsg[] } | null; saving?: boolean; fromTools?: FromTools | null }) {
   const { run, stop, busy, error, remaining } = useCopilot();
   const [msgs, setMsgs] = useState<Msg[]>(chat?.messages ?? []);
   const [chatId, setChatId] = useState<string | null>(chat?.id ?? null);
@@ -111,20 +115,7 @@ export function CopilotChat({ first, field, initial = "", initialPreset = null, 
   const end = useRef<HTMLDivElement>(null);
   useEffect(() => { end.current?.scrollIntoView({ behavior: "smooth", block: "end" }); }, [msgs]);
 
-  const GROUPS = [
-    { label: "Get it done", ideas: [
-      { icon: GitBranch, text: "Add my GitHub repo to my profile: github.com/" },
-      { icon: CalendarCheck, text: "Find an event this week that fits me and RSVP me." },
-    ] },
-    { label: "Meet people", ideas: [
-      { icon: Users, text: "Which clubs on Brazework fit me best? Help me join one." },
-      { icon: MessageSquare, text: `Find someone in ${field || "my field"} worth meeting and draft an intro message.` },
-    ] },
-    { label: "Build your record", ideas: [
-      { icon: BadgeCheck, text: "Help me get my latest milestone verified by my club." },
-      { icon: FileText, text: "Turn these notes into a project post: " },
-    ] },
-  ];
+  const actions: ComposerAction[] = emberActions({ field, student }).map((a) => ({ ...a, icon: ACTION_ICON[a.id] }));
 
   const send = async (text: string, preset?: Preset) => {
     const q = text.trim();
@@ -185,32 +176,8 @@ export function CopilotChat({ first, field, initial = "", initialPreset = null, 
   const lastAnswer = msgs.at(-1);
 
   const composer = (
-    <div className={cn(empty ? "mt-8" : "sticky bottom-[var(--m-bottom)] mt-4 md:bottom-4")}>
-      <form onSubmit={(e) => { e.preventDefault(); void send(input); }} className={cn("flex items-end gap-2 rounded-3xl p-2", empty ? "glass-card" : "glass")}>
-        <label htmlFor="copilot-input" className="sr-only">Ask Ember</label>
-        <textarea
-          id="copilot-input"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); void send(input); } }}
-          rows={1}
-          maxLength={4000}
-          autoFocus={empty}
-          placeholder={empty ? "Ask Ember anything about your work or field" : "Reply to Ember"}
-          style={{ outline: "none" }}
-          className="max-h-40 min-h-11 flex-1 resize-none bg-transparent px-3 py-2.5 text-[15px] placeholder:text-faint"
-        />
-        {busy ? (
-          <button type="button" onClick={stop} aria-label="Stop" className="grid size-11 place-items-center rounded-full border border-line text-text transition hover:bg-hover"><Square className="size-4 fill-current" /></button>
-        ) : (
-          <button type="submit" disabled={!input.trim()} aria-label="Send" className="bg-accent-grad grid size-11 place-items-center rounded-full text-on-accent transition active:scale-90 disabled:opacity-40"><ArrowUp className="size-5" /></button>
-        )}
-      </form>
-      {/* Plain disclosure, every time: what Ember is and what it can do on its own (nothing). */}
-      <p className="mt-2 flex items-center justify-center gap-1.5 text-center text-[11px] text-faint">
-        <ShieldCheck className="size-3.5 shrink-0" />
-        <span>Ember is AI and can be wrong. It only acts when you confirm a card.{saving ? " Chats are private to you and kept 180 days." : ""} <Link href="/settings#ember" className="underline underline-offset-2 hover:text-text">Privacy</Link></span>
-      </p>
+    <div className={cn(empty ? "mt-7" : "sticky bottom-[var(--m-bottom)] mt-4 md:bottom-4")}>
+      <EmberComposer value={input} onChange={setInput} onSend={(t) => void send(t)} onStop={stop} busy={busy} hero={empty} actions={empty ? actions : []} saving={saving} remaining={remaining} />
     </div>
   );
 
@@ -230,31 +197,11 @@ export function CopilotChat({ first, field, initial = "", initialPreset = null, 
         )}
         {empty ? (
           <>
-            <Hero title={`Hi ${first}, what are we building?`} sub="Ask for anything on Brazework. Ember looks it up, shows you the real clubs, events and people, then prepares the next step as a card you approve." mood={busy ? "thinking" : "idle"} />
-            {composer}
-            {fromTools && <FromYourTools {...fromTools} />}
-            <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
-              {GROUPS.map((g, gi) => (
-                <div key={g.label}>
-                  <h2 className="mb-2 px-1 text-xs font-medium tracking-wide text-faint uppercase">{g.label}</h2>
-                  <div className="flex flex-col gap-2">
-                    {g.ideas.map((idea, i) => (
-                      <motion.button
-                        key={idea.text}
-                        type="button"
-                        initial={{ opacity: 0, y: 12 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.1 + (gi * 2 + i) * 0.04 }}
-                        onClick={() => (idea.text.endsWith(": ") || idea.text.endsWith("/") ? (setInput(idea.text), document.getElementById("copilot-input")?.focus()) : void send(idea.text))}
-                        className="glass-card group flex items-start gap-3 rounded-2xl p-3 text-left text-sm transition duration-300 active:scale-[0.98]"
-                      >
-                        <span className="nav-tile grid size-8 shrink-0 place-items-center rounded-[10px] text-text-2 transition group-hover:text-text"><idea.icon className="size-4" /></span>
-                        <span className="pt-1 leading-snug text-text-2">{idea.text}</span>
-                      </motion.button>
-                    ))}
-                  </div>
-                </div>
-              ))}
+            {/* A new chat: the greeting and the box, a little above the middle of the page. */}
+            <div className="flex flex-1 flex-col justify-center pb-[8vh]">
+              <Hero title={emberGreeting(first)} sub="Say what you did or what you need. Ember looks it up on Brazework and prepares each step as a card you approve." mood={busy ? "thinking" : "idle"} />
+              {composer}
+              {fromTools && <FromYourTools {...fromTools} />}
             </div>
           </>
         ) : (
@@ -264,7 +211,7 @@ export function CopilotChat({ first, field, initial = "", initialPreset = null, 
             <button type="button" onClick={newChat} className="ml-auto inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium text-muted transition hover:bg-hover hover:text-text"><Plus className="size-3.5" /> New chat</button>
           </div>
         )}
-        <div className={cn("flex flex-1 flex-col gap-5", !empty && "mt-6")}>
+        <div className={cn("flex flex-col gap-5", !empty && "mt-6 flex-1")}>
           <AnimatePresence initial={false}>
             {msgs.map((m, i) => {
               const live = busy && i === msgs.length - 1;
@@ -311,7 +258,7 @@ export function CopilotChat({ first, field, initial = "", initialPreset = null, 
         </div>
         {error && <p role="alert" className="mt-3 text-sm text-danger">{error}</p>}
         {!empty && composer}
-        {remaining !== null && <p className="mt-1 text-center text-xs text-faint">{remaining} Copilot {remaining === 1 ? "request" : "requests"} left today</p>}
+        {remaining !== null && empty && <p className="mt-1 text-center text-xs text-faint">{remaining} Ember {remaining === 1 ? "request" : "requests"} left today</p>}
       </div>
     </div>
   );

@@ -10,7 +10,7 @@ import { getViewer } from "@/lib/supabase/server";
 import { draftToProposal, isCardKind, type ToolDraftRow } from "@/lib/tool-actions";
 import { CopilotChat, CopilotSoon, type FromTools } from "./copilot-client";
 
-export const metadata: Metadata = { title: "Copilot" };
+export const metadata: Metadata = { title: "Ember" };
 
 export default function CopilotPage({ searchParams }: PageProps<"/copilot">) {
   return (
@@ -33,7 +33,7 @@ async function Copilot({ searchParams }: { searchParams: PageProps<"/copilot">["
   const saving = (await dbFeatures()).copilotChats;
   const id = typeof sp.chat === "string" ? sp.chat : "";
   const [chats, chat] = saving ? await Promise.all([listChats(), id ? loadChat(id) : Promise.resolve(null)]) : [[], null];
-  return <CopilotChat first={profile.first_name} field={profile.field} initial={chat ? "" : q} initialPreset={chat ? null : preset} chats={chats} chat={chat} saving={saving} fromTools={await fromTools(supabase)} />;
+  return <CopilotChat first={profile.first_name} field={profile.field} student={profile.account_type !== "professional"} initial={chat ? "" : q} initialPreset={chat ? null : preset} chats={chats} chat={chat} saving={saving} fromTools={await fromTools(supabase)} />;
 }
 
 // What your AI tools drafted for you (supabase/tool-actions.sql), as Ember cards.
