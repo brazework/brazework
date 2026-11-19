@@ -76,3 +76,4 @@ mcp-workflows
 mcp-oauth
 waiting-cards
 money
+tool-actions

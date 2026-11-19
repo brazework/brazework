@@ -27,6 +27,23 @@ export function nextStep(tool: string, data: unknown, origin: string): { next: s
         : { next: "Waiting in the member's Brazework drafts. They can edit it there, then post it or dismiss it. Nothing goes out before that.", open: site(origin, "/drafts") };
     case "request_signature":
       return null; // Says its own next step (the email went out, and to whom).
+  }
+  // Actions shared with Ember (supabase/tool-actions.sql): drafted, or done with the member's yes.
+  if (d.drafted === true) {
+    return d.duplicate === true
+      ? { next: "This was drafted before (same source_key), so nothing new was added. It's still in the member's Brazework drafts.", open: site(origin, "/drafts") }
+      : { next: "Waiting as a card in the member's Brazework drafts (and on Ember's page). They can edit it there, then confirm or dismiss it. Nothing happens before that.", open: site(origin, "/drafts") };
+  }
+  const url = str(d.url) ? (str(d.url).startsWith("http") ? str(d.url) : site(origin, str(d.url))) : undefined;
+  switch (tool) {
+    case "create_project":
+      return { next: `"${str(d.title)}" is on the member's profile. Next: when something on it works, log a milestone (log_milestone with project_id "${str(d.id)}"), or add a teammate from their clubs (add_teammate).`, open: url };
+    case "update_project": {
+      const changed = Array.isArray(d.changed) ? (d.changed as string[]).join(", ") : "";
+      return { next: `Saved${changed ? ` (${changed})` : ""} on "${str(d.title)}". Open it to check how it reads.`, open: url };
+    }
+    case "add_teammate":
+      return { next: `${str(d.person)} is on "${str(d.title)}" as ${str(d.role) === "viewer" ? "a viewer" : "a teammate"}. Teammates can post updates and log milestones on it, but can't sign its milestones.`, open: url };
     default:
       return null;
   }
@@ -42,6 +59,8 @@ const HINTS: [RegExp, string][] = [
   [/30 drafts waiting/i, "The member has drafts to review first. Point them to Brazework → Drafts."],
   [/evidence/i, "Evidence is 1 to 8 https links: the commit, pull request, CI run, video, doc or report."],
   [/isn'?t waiting for proof|no longer exists/i, "Call my_projects: open_milestones lists the ones still waiting, with their ids."],
+  [/aren'?t in any of your clubs/i, "Use search to find someone in one of the member's clubs (my_clubs), or let the member add them from the project's Team section in Brazework."],
+  [/always left as a draft/i, "Call it again with draft: true; the member confirms it in Brazework."],
 ];
 
 /** The refusal, plus how to fix it when there's a choice to make. */
