@@ -2,7 +2,8 @@
 const http = require("http");
 // Auth and REST listen below Linux's ephemeral port range (32768-60999), so a busy CI machine's
 // outgoing connections can't already hold them (that failed a run with "address already in use").
-const routes = [["/auth/v1", 19999], ["/rest/v1", 13000]];
+const PORT = Number(process.env.GW_PORT || 54321);
+const routes = [["/auth/v1", Number(process.env.GW_AUTH_PORT || 19999)], ["/rest/v1", Number(process.env.GW_REST_PORT || 13000)]];
 const fs = require("fs");
 const LOG = process.env.GW_LOG;
 const crypto = require("crypto");
@@ -191,4 +192,4 @@ http.createServer((req, res) => {
   up.on("error", () => { if (res.headersSent) res.destroy(); else { res.writeHead(502); res.end(); } });
   if (req.method === "OPTIONS") { res.writeHead(204, { "access-control-allow-origin": req.headers.origin || "*", "access-control-allow-credentials": "true", "access-control-allow-headers": req.headers["access-control-request-headers"] || "*", "access-control-allow-methods": "GET,POST,PATCH,PUT,DELETE,OPTIONS" }); return res.end(); }
   req.pipe(up);
-}).listen(54321, () => console.log("gateway on 54321"));
+}).listen(PORT, () => console.log(`gateway on ${PORT}`));

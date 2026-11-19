@@ -1,50 +1,73 @@
 import { createHash, randomBytes } from "node:crypto";
-import { MCP_PROTOCOLS, MCP_TOOLS, absolutize, annotationsFor, mcpDb, scopeFlags, tokenHash, toolsFor } from "@/lib/mcp";
+import { MCP_PROTOCOLS, MCP_TOOLS, absolutize, annotationsFor, mcpDb, scopeFlags, sourceArgs, tokenHash, toolsFor } from "@/lib/mcp";
+import { actionPayload } from "@/lib/tool-actions";
 import { PLAYBOOKS, PLAYBOOK_INDEX_URI, PROMPTS, playbookMarkdown, playbookUri, playbooksIndexMarkdown, promptText } from "@/lib/mcp-playbooks";
 import { mailer } from "@/lib/email";
+import { CARD_HTML, CARD_MIME, CARD_URI, cardMeta, cardResourceMeta } from "@/lib/mcp-card";
 import { nextStep, withFix } from "@/lib/mcp-results";
 import { env } from "@/lib/env";
+import { linkSignIn, looksLikeJwt, oauthEnabled, resourceMetadataUrl } from "@/lib/mcp-oauth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { buildVouchEmail, type Relationship } from "@/lib/vouch-email";
 
 // POST /api/mcp: Brazework's MCP server (Streamable HTTP, JSON responses, no session state).
-// Clients send "Authorization: Bearer forge_…", a personal token from Settings → Your tools (/settings/tools).
+// Clients send "Authorization: Bearer forge_…", a personal token from Settings → Your tools (/settings/tools),
+// or sign in (lib/mcp-oauth.ts): the 401 points them to this server's OAuth metadata, and they come
+// back with a Supabase access token, which becomes that sign-in's own token row.
 // Tools (lib/mcp.ts) read and write through database functions that check the token; prompts and
 // resources (lib/mcp-playbooks.ts) are the field playbooks: slash commands that turn the member's work
 // in their own tools into posts, milestones and signature asks, always with their yes.
 type Msg = { jsonrpc?: string; id?: string | number | null; method?: string; params?: Record<string, unknown> };
 const rpc = (id: Msg["id"], body: { result?: unknown; error?: { code: number; message: string } }, status = 200) =>
   Response.json({ jsonrpc: "2.0", id: id ?? null, ...body }, { status, headers: { "Cache-Control": "no-store" } });
-const unauthorized = (message: string) =>
-  Response.json({ jsonrpc: "2.0", id: null, error: { code: -32001, message } }, { status: 401, headers: { "WWW-Authenticate": 'Bearer realm="Brazework", error="invalid_token"' } });
+// With the OAuth server on, a 401 also says where to sign in (RFC 9728), which is how clients like Claude,
+// Cursor and VS Code start one-click connect.
+async function unauthorized(message: string, origin: string) {
+  const meta = (await oauthEnabled()) ? `, resource_metadata="${resourceMetadataUrl(origin)}"` : "";
+  return Response.json({ jsonrpc: "2.0", id: null, error: { code: -32001, message } }, { status: 401, headers: { "WWW-Authenticate": `Bearer realm="Brazework", error="invalid_token"${meta}` } });
+}
 // Refusals say how to fix them (lib/mcp-results.ts), so the assistant can act on them or tell the member.
 const toolError = (id: Msg["id"], text: string) => rpc(id, { result: { content: [{ type: "text", text: withFix(text) }], isError: true } });
+
+const CARD_TOOLS = new Set(["log_milestone", "draft_milestone"]);
 
 const ABOUT = "Brazework is the record of what people build, signed by the people who saw it, and home base for their clubs.";
 function instructions(s: { canDraft: boolean; canPost: boolean }) {
   const reads = "These tools read the member's Brazework (profile and club-verified work, clubs, events, projects, notifications, search).";
   const playbooks = `For the tools people in each field use and the moments worth recording, read ${PLAYBOOK_INDEX_URI}; the prompts shipped, result, week, ask_signature and setup run the common workflows.`;
-  if (s.canPost) return `${ABOUT} ${reads} They can also post a build update (post_update), log a milestone (log_milestone) and ask someone to sign one (request_signature) as the member, or leave drafts for them to approve in Brazework (draft_post, draft_milestone). Ask the member before posting or sending anything, and write in their voice. ${playbooks} Results include links to open in Brazework.`;
-  if (s.canDraft) return `${ABOUT} ${reads} This token can't post: it leaves drafts (draft_post, draft_milestone) that the member edits and approves in Brazework, so nothing goes out without them. Write in their voice, with specifics. ${playbooks} Results include links to open in Brazework.`;
+  const acts = "add a project (create_project), update one (update_project), add a teammate from their clubs (add_teammate), RSVP to events (rsvp_event), join a club (join_club) and accept an invite (accept_invite)";
+  if (s.canPost) return `${ABOUT} ${reads} They can also post a build update (post_update), log a milestone (log_milestone), ask someone to sign one (request_signature), ${acts} as the member, or leave any of these as drafts for them to approve in Brazework (draft_post, draft_milestone, or draft: true). Ask the member before posting, sending or changing anything, and write in their voice. ${playbooks} Results include links to open in Brazework, and a next step.`;
+  if (s.canDraft) return `${ABOUT} ${reads} This token can't post: it leaves drafts that the member edits and approves in Brazework (draft_post, draft_milestone; and ${acts}, which wait as cards in their drafts and on Ember's page), so nothing happens without them. Write in their voice, with specifics. ${playbooks} Results include links to open in Brazework, and a next step.`;
   return `${ABOUT} ${reads} ${playbooks} Results include links to open in Brazework.`;
 }
+// Read before writing: my_inbox, then draft_reply. Messages are always drafts the member sends.
+const MESSAGES = " Replies (draft_reply) always wait in the member's drafts: they send them from Brazework.";
 
 export async function GET() {
   return new Response("Brazework's MCP server takes POST requests. Connect a tool in Brazework → Settings → Your tools.", { status: 405, headers: { Allow: "POST" } });
 }
 
 export async function POST(req: Request) {
+  const origin = new URL(req.url).origin;
   const token = (req.headers.get("authorization") ?? "").replace(/^Bearer\s+/i, "").trim();
-  if (!/^forge_[A-Za-z0-9_-]{20,80}$/.test(token)) return unauthorized("Add a Brazework token: Authorization: Bearer forge_…");
-  const hash = tokenHash(token);
   const db = mcpDb();
-  // Who the token is for and what it may do (supabase/mcp-writes.sql); before that step, every token reads.
-  let who = await db.rpc("mcp_token", { p_hash: hash });
+  let hash: string;
   let scopes: string[] = ["read"];
-  if (who.error?.code === "PGRST202") who = await db.rpc("mcp_user", { p_hash: hash });
-  else if (who.data) scopes = ((who.data as { scopes?: string[] }).scopes ?? ["read"]);
-  if (who.error) return rpc(null, { error: { code: -32603, message: who.error.code === "PGRST202" ? "AI tools aren't switched on on Brazework yet." : "Brazework couldn't check that token." } }, 503);
-  if (!who.data) return unauthorized("That token isn't valid any more. Make a new one in Brazework → Settings → Your tools.");
+  if (looksLikeJwt(token)) {
+    // Signed in from the assistant: this sign-in's token row (made on the first call).
+    const linked = await linkSignIn(token);
+    if (!linked.ok) return linked.status === 401 ? unauthorized(linked.message, origin) : rpc(null, { error: { code: -32603, message: linked.message } }, 503);
+    ({ hash, scopes } = linked);
+  } else {
+    if (!/^forge_[A-Za-z0-9_-]{20,80}$/.test(token)) return unauthorized("Sign in to Brazework from your assistant, or add a token from Brazework → Settings → Your tools: Authorization: Bearer forge_…", origin);
+    hash = tokenHash(token);
+    // Who the token is for and what it may do (supabase/mcp-writes.sql); before that step, every token reads.
+    let who = await db.rpc("mcp_token", { p_hash: hash });
+    if (who.error?.code === "PGRST202") who = await db.rpc("mcp_user", { p_hash: hash });
+    else if (who.data) scopes = ((who.data as { scopes?: string[] }).scopes ?? ["read"]);
+    if (who.error) return rpc(null, { error: { code: -32603, message: who.error.code === "PGRST202" ? "AI tools aren't switched on on Brazework yet." : "Brazework couldn't check that token." } }, 503);
+    if (!who.data) return unauthorized("That token isn't valid any more. Make a new one in Brazework → Settings → Your tools.", origin);
+  }
   const can = scopeFlags(scopes);
   const tools = toolsFor(scopes);
 
@@ -61,13 +84,14 @@ export async function POST(req: Request) {
         protocolVersion: MCP_PROTOCOLS.includes(asked) ? asked : MCP_PROTOCOLS[1],
         capabilities: { tools: { listChanged: false }, prompts: { listChanged: false }, resources: { listChanged: false } },
         serverInfo: { name: "brazework", title: "Brazework", version: "0.3.0" },
-        instructions: instructions(can),
+        instructions: instructions(can) + (can.canDraft ? MESSAGES : ""),
       } });
     }
     case "ping":
       return rpc(msg.id, { result: {} });
     case "tools/list":
-      return rpc(msg.id, { result: { tools: tools.map((t) => ({ name: t.name, title: t.title, description: t.description, inputSchema: t.inputSchema, annotations: annotationsFor(t) })) } });
+      // The milestone tools name the in-chat card (lib/mcp-card.ts); hosts without MCP Apps ignore it.
+      return rpc(msg.id, { result: { tools: tools.map((t) => ({ name: t.name, title: t.title, description: t.description, inputSchema: t.inputSchema, annotations: annotationsFor(t), ...(CARD_TOOLS.has(t.name) ? { _meta: cardMeta } : {}) })) } });
     case "prompts/list":
       return rpc(msg.id, { result: { prompts: PROMPTS } });
     case "prompts/get": {
@@ -83,9 +107,11 @@ export async function POST(req: Request) {
       return rpc(msg.id, { result: { resources: [
         { uri: PLAYBOOK_INDEX_URI, name: "playbooks", title: "Brazework playbooks", description: "One playbook per field: the tools that connect, the moments worth recording, who signs.", mimeType: "text/markdown" },
         ...PLAYBOOKS.map((p) => ({ uri: playbookUri(p), name: `playbook-${p.id}`, title: `${p.field} playbook`, description: `How people in ${p.field} turn their work into their Brazework record.`, mimeType: "text/markdown" })),
+        { uri: CARD_URI, name: "milestone-card", title: "Milestone card", description: "How a milestone looks in the chat, with its proof and what happens next.", mimeType: CARD_MIME },
       ] } });
     case "resources/read": {
       const uri = String(msg.params?.uri ?? "");
+      if (uri === CARD_URI) return rpc(msg.id, { result: { contents: [{ uri, mimeType: CARD_MIME, text: CARD_HTML, _meta: cardResourceMeta }] } });
       const p = PLAYBOOKS.find((x) => playbookUri(x) === uri);
       const text = uri === PLAYBOOK_INDEX_URI ? playbooksIndexMarkdown() : p ? playbookMarkdown(p) : null;
       if (!text) return rpc(msg.id, { error: { code: -32002, message: `Resource not found: ${uri}` } });
@@ -101,7 +127,10 @@ export async function POST(req: Request) {
       const input = (msg.params?.arguments ?? {}) as Record<string, unknown>;
       if (tool.name === "search" && String(input.query ?? "").trim().length < 2) return toolError(msg.id, "Give at least 2 characters to search for.");
       if (tool.name === "request_signature") return requestSignature(msg.id, hash, tool.args(input));
-      const { data, error } = await db.rpc(tool.rpc, { p_hash: hash, ...tool.args(input) });
+      // Actions shared with Ember (lib/tool-actions.ts): done with a token that posts, else drafted.
+      const { data, error } = tool.act
+        ? await db.rpc("mcp_act", { p_hash: hash, p_kind: tool.act, p_payload: actionPayload(tool.act, input), p_draft: tool.draftOnly === true || !can.canPost || input.draft === true, ...sourceArgs(input) })
+        : await db.rpc(tool.rpc, { p_hash: hash, ...tool.args(input) });
       // A rule the member's post broke (P0001: not your project, too fast, …) is said as it is.
       if (error) return toolError(msg.id, error.code === "P0001" ? error.message : error.code === "PGRST202" ? "That isn't switched on on Brazework yet. Try again in a few minutes." : "Brazework couldn't answer that right now. Try again.");
       return ok(msg.id, data, tool.name);

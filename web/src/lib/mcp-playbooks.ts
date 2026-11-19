@@ -300,7 +300,7 @@ export function promptText(name: string, args: Record<string, string | undefined
         "Get me started on Brazework: turn one thing I've really finished into my first milestone, in about a minute.",
         p ? fieldLine(p, args.field) : `Call me first to see my field and what's on my record, then read the matching playbook from ${PLAYBOOK_INDEX_URI}.`,
         "1. Look at the tools you can reach right now from that list, over my last 30 days: merged pull requests and releases, finished runs, exported reports, files I shipped. Pick the single strongest piece of finished work that has proof. If you can't reach any of them, ask me for one link that shows something I finished (a repo, a doc, a video).",
-        "2. Call my_projects and pick the project it belongs to. If I have none yet, tell me to type what I'm building in the box on Brazework's Today page (one line is enough), then come back.",
+        "2. Call my_projects and pick the project it belongs to. If I have none yet, tell me to type what I'm building in the box on Brazework's Home page (one line is enough), then come back.",
         `3. Write it as a milestone: the title is what was achieved, with numbers${ex ? `, like “${ex.example}”` : ""}; the evidence is 1 to 8 https links. Show it to me in a few lines.`,
         `4. ${writeLine(s, "milestone")}`,
         `5. ${signLine(s)}`,
