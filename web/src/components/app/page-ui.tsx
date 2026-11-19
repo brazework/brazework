@@ -2,6 +2,7 @@ import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/forge";
 import { Ember, type EmberMood } from "@/components/ember/ember";
+import { TabRow } from "@/components/app/tab-row";
 
 // Shared building blocks for signed-in pages, so every screen looks like one product.
 
@@ -49,7 +50,7 @@ export function EmptyState({ icon, title, body, action, mood = "idle" }: { icon?
 export function Tabs({ tabs, active }: { tabs: { id: string; label: string; href: string; count?: number }[]; active: string }) {
   return (
     // Redesign 2026-11: underline tabs (Linear/Vercel style): a hairline row, the current tab marked in ink.
-    <nav className="no-scrollbar flex gap-5 overflow-x-auto border-b border-line">
+    <TabRow active={active} className="no-scrollbar flex gap-5 overflow-x-auto border-b border-line">
       {tabs.map((t) => (
         <Link
           key={t.id}
@@ -64,7 +65,7 @@ export function Tabs({ tabs, active }: { tabs: { id: string; label: string; href
           {t.count ? <span className="rounded bg-raised px-1.5 font-mono text-[10px] text-text-2">{t.count}</span> : null}
         </Link>
       ))}
-    </nav>
+    </TabRow>
   );
 }
 

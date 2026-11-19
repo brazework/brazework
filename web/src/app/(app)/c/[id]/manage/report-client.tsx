@@ -35,7 +35,7 @@ export function ClubUpdate({ report, clubId, copilot }: { report: ClubReport; cl
   return (
     <section className="grad-edge rounded-3xl border p-5 shadow-[var(--shadow)]">
       <div className="flex flex-wrap items-center gap-3">
-        <div className="min-w-0 flex-1">
+        <div className="min-w-[min(100%,16rem)] flex-1">
           <h3 className="font-semibold">Write this week&apos;s update</h3>
           <p className="text-sm text-muted">A short post for the club from these numbers. You review it before it&apos;s posted.</p>
         </div>
