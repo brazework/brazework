@@ -24,6 +24,9 @@ create table if not exists public.mcp_oauth_apps (
 alter table public.mcp_oauth_apps enable row level security;
 drop policy if exists "own apps: read" on public.mcp_oauth_apps;
 create policy "own apps: read" on public.mcp_oauth_apps for select to authenticated using (user_id = auth.uid());
+-- Signed-in accounts without a profile read nothing (supabase/members-only.sql).
+drop policy if exists "members only" on public.mcp_oauth_apps;
+create policy "members only" on public.mcp_oauth_apps as restrictive for select to authenticated using ((select public.is_member()));
 revoke all on public.mcp_oauth_apps from anon, authenticated;
 grant select on public.mcp_oauth_apps to authenticated;
 
