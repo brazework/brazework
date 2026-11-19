@@ -83,13 +83,35 @@ export function billing(env: Env = process.env): BillingProvider {
   return stripe.enabled ? stripe : billingOff;
 }
 
-/** Can Plus be bought right now? Stripe is on and Plus has a price. Until then it's a waitlist. */
 /** Days of free trial on Plus checkout: PLUS_TRIAL_DAYS when it's a whole number from 1 to 90, otherwise none. */
 export function plusTrialDays(env: Env = process.env): number {
   const n = Number(env.PLUS_TRIAL_DAYS ?? "");
   return Number.isInteger(n) && n >= 1 && n <= 90 ? n : 0;
 }
 
+/** Can Plus be bought right now? Stripe is on and Plus has a price. Until then it's a waitlist. */
 export function plusOnSale(env: Env = process.env): boolean {
   return stripeProvider(env).enabled && Boolean(env[PLANS.plus.priceEnv]);
+}
+
+// Plus by the year (lib/pricing.ts PLUS.everyoneYear and .studentYear): optional Stripe prices. Without
+// them, yearly isn't offered and everyone pays monthly.
+export const PLUS_ANNUAL_PRICE_ENV = "STRIPE_PRICE_PLUS_ANNUAL";
+export const PLUS_STUDENT_ANNUAL_PRICE_ENV = "STRIPE_PRICE_PLUS_STUDENT_ANNUAL";
+
+/** Can Plus be bought by the year? On sale, with a yearly price set. */
+export function plusYearlyOnSale(env: Env = process.env): boolean {
+  return plusOnSale(env) && Boolean(env[PLUS_ANNUAL_PRICE_ENV]);
+}
+
+/** The price a member's Plus checkout uses (its env var name), or undefined for the one monthly price.
+ *  A student who asks for yearly without a student yearly price gets the student monthly price, so a
+ *  student never pays the full price by choosing a year. */
+export function plusPriceEnv({ student, yearly }: { student: boolean; yearly: boolean }, env: Env = process.env): string | undefined {
+  const set = (name: string) => (env[name] ? name : undefined);
+  if (yearly) {
+    const year = student ? set(PLUS_STUDENT_ANNUAL_PRICE_ENV) : set(PLUS_ANNUAL_PRICE_ENV);
+    if (year) return year;
+  }
+  return student ? set(PLUS_STUDENT_PRICE_ENV) : undefined;
 }

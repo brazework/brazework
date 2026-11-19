@@ -5,13 +5,13 @@ import { Suspense } from "react";
 import { Footer } from "@/components/landing/closing";
 import { ThemeChrome } from "@/components/theme-chrome";
 import { Logo } from "@/components/ui";
-import { plusOnSale } from "@/lib/billing";
+import { plusOnSale, plusYearlyOnSale } from "@/lib/billing";
 import { dbFeatures } from "@/lib/db-features";
 import { PLUS, PLUS_SOON, TIERS } from "@/lib/pricing";
 import { getViewer } from "@/lib/supabase/server";
 import { PlusButton } from "./plus-button";
 
-export const metadata: Metadata = { title: "Plus", description: "Every company that looked in the last 90 days, and more for your record. Free stays free." };
+export const metadata: Metadata = { title: "Plus", description: "Your signed work, ready for a performance review or a promotion case, and every company that looked in the last 90 days. Free stays free." };
 
 // /plus: what Plus adds, and the one button. On sale (Stripe on and STRIPE_PRICE_PLUS set), it goes
 // to checkout; until then it takes a place on the waitlist (lib/money.ts startPlus()).
@@ -36,19 +36,23 @@ export default function PlusPage({ searchParams }: PageProps<"/plus">) {
 // The before/after for what Plus does today (lib/pricing.ts), labelled as an example; the member's own
 // numbers are on their dashboard. What's coming is listed as coming, never sold as built (PLUS_SOON).
 const DIFF = [
+  { what: "Your review packet", free: "Your self-review, written from memory the week it's due.", plus: "12 signed results from January to June on one page, each with who signed it and their role." },
   { what: "Companies that looked", free: "This week: Acme Robotics. 3 more companies looked in the last 90 days.", plus: "All 90 days, by name: Acme Robotics, Northwind Aero, Hartwell Labs, Quarry Systems." },
 ];
 
 async function Plus({ searchParams }: { searchParams: PageProps<"/plus">["searchParams"] }) {
   const welcome = (await searchParams).welcome === "1";
-  const { supabase, user } = await getViewer();
+  const { supabase, user, profile } = await getViewer();
   const has = user && (await dbFeatures()).money ? Boolean((await supabase.rpc("has_plus")).data) : false;
   const onSale = plusOnSale();
+  // By the year, when its Stripe price is set: the button names the viewer's own price.
+  const yearly = onSale && plusYearlyOnSale();
+  const student = profile?.account_type === "student";
   const tier = TIERS.find((t) => t.id === "plus")!;
   return (
     <>
       <h1 className="text-[clamp(2rem,5vw,2.75rem)] leading-[1.05] font-semibold tracking-[-0.03em]">{PLUS.name}</h1>
-      <p className="mt-3 text-[15px] leading-relaxed text-muted">More from your record. Everything in Free stays free, for good.</p>
+      <p className="mt-3 text-[15px] leading-relaxed text-muted">Your signed work, ready for your next review or promotion, and every company that looked. Everything in Free stays free, for good.</p>
       <section className="mt-8 rounded-[1.25rem] border border-line bg-surface p-6 sm:p-8">
         <p className="text-3xl font-semibold tracking-tight">{tier.price}</p>
         <p className="mt-1 text-sm text-muted">{tier.note}</p>
@@ -59,7 +63,14 @@ async function Plus({ searchParams }: { searchParams: PageProps<"/plus">["search
           {has ? (
             <p role="status" className="flex items-start gap-2 text-[15px]"><Check className="mt-0.5 size-4 shrink-0 text-ok" /> {welcome ? "Welcome to Plus. It's on your account now." : "You have Plus."} <Link href="/dashboard" className="font-medium underline-offset-4 hover:underline">See who looked</Link></p>
           ) : user ? (
-            <PlusButton label={onSale ? `Get ${PLUS.name}` : "Join the waitlist"} />
+            yearly ? (
+              <div className="flex flex-wrap gap-3">
+                <PlusButton yearly label={`Get ${PLUS.name} for a year, $${student ? PLUS.studentYear : PLUS.everyoneYear}`} />
+                <PlusButton quiet label={`Monthly, $${student ? PLUS.student : PLUS.everyone}/mo`} />
+              </div>
+            ) : (
+              <PlusButton label={onSale ? `Get ${PLUS.name}` : "Join the waitlist"} />
+            )
           ) : (
             <Link href="/login?next=/plus" className="inline-flex h-11 items-center rounded-lg bg-accent px-5 text-[15px] font-medium text-on-accent hover:opacity-90">Log in to get {PLUS.name}</Link>
           )}

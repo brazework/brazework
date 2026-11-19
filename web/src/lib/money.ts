@@ -1,7 +1,7 @@
 "use server";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { PLUS_STUDENT_PRICE_ENV, billing, plusOnSale } from "@/lib/billing";
+import { billing, plusOnSale, plusPriceEnv } from "@/lib/billing";
 import { dbFeatures } from "@/lib/db-features";
 import { env } from "@/lib/env";
 import { friendlyError } from "@/lib/forge";
@@ -18,8 +18,9 @@ export type MoneyState = { ok: boolean; message: string };
 const reason = (e: { message?: string; code?: string }) => (e.code === "P0001" || e.code === "42501" ? e.message ?? friendlyError(e) : friendlyError(e));
 
 
-/** Plus: Stripe Checkout when it's on sale, otherwise a place on the waitlist. */
-export async function startPlus(): Promise<MoneyState> {
+/** Plus: Stripe Checkout when it's on sale, otherwise a place on the waitlist. `yearly`: by the year,
+ *  when that price is set (lib/billing.ts plusPriceEnv falls back to monthly otherwise). */
+export async function startPlus(yearly = false): Promise<MoneyState> {
   const { supabase, user, profile } = await getViewer();
   if (!user || !profile) redirect("/login?next=/plus");
   if (!(await dbFeatures()).money) return { ok: false, message: "Plus isn't open yet. Try again soon." };
@@ -28,7 +29,7 @@ export async function startPlus(): Promise<MoneyState> {
   if (plusOnSale()) {
     const pay = await billing().checkout({
       plan: "plus", userId: user.id, reference: user.id, email: user.email,
-      priceEnv: profile.account_type === "student" ? PLUS_STUDENT_PRICE_ENV : undefined,
+      priceEnv: plusPriceEnv({ student: profile.account_type === "student", yearly: yearly === true }),
       successUrl: `${env.siteUrl}/plus?welcome=1`, cancelUrl: `${env.siteUrl}/plus`,
     });
     if (pay.ok) redirect(pay.url);
