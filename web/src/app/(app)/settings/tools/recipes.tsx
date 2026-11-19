@@ -7,6 +7,7 @@ import { CONNECT_LABEL, PLAYBOOKS, playbookFor, type Connect } from "@/lib/mcp-p
 const TONE: Record<Connect, string> = { official: "bg-ok/12 text-ok", community: "bg-info/12 text-info", files: "bg-surface-2 text-muted" };
 const BECOMES = { milestone: "Milestone", result: "Result post", update: "Build update" } as const;
 const COMMANDS = [
+  { cmd: "/start", what: "your first minute → your first milestone, from real work" },
   { cmd: "/shipped", what: "finished work → a milestone with its proof" },
   { cmd: "/result", what: "a number → a result post" },
   { cmd: "/week", what: "your week → the 1–3 things worth recording" },

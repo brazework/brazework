@@ -38,7 +38,8 @@ scopes, signatures). Design: [superpowers/specs/2026-11-18-mcp-workflows-design.
 
 3. Connect the tools for your field (your section is below; **Recipes for your field** in Settings → Your tools shows
    the same list). Or type `/setup` and let your assistant walk you through it.
-4. Try it: `/shipped`, `/result` or `/week`.
+4. Type `/start`. In about a minute, it finds something you finished in the tools you've connected and turns it
+   into your first milestone, with its proof. After that: `/shipped`, `/result` or `/week`.
 
 ## The commands
 
@@ -48,6 +49,7 @@ takes an optional `field` (it defaults to the field on your profile) and reads y
 
 | Command | What it does |
 |---|---|
+| `start` | Your first minute: it reads your field, looks at the last 30 days in the tools you've connected, picks the strongest finished work that has proof, and turns it into your first milestone. It ends with the link. |
 | `shipped` | Finished work (a merged PR, a new version, a passed test) becomes a milestone with 1 to 8 evidence links, for your club to verify or for someone to sign. |
 | `result` | A number (a run, a test, a measurement, a sales total) becomes a result post with the specifics. |
 | `week` | Looks over the last 7 days in your connected tools and drafts the 1 to 3 things worth recording, without repeating what's already there. |
@@ -59,6 +61,11 @@ What each command does at the end depends on your token:
 - **Can post:** it shows you exactly what will appear and posts only after your yes.
 - **Drafts (the default):** it saves a draft. You approve the draft in Brazework.
 - **Read-only (older tokens):** it writes the text out for you to paste.
+
+Every write says what happens next and gives the link to open it: "Sent to Rocketry Club; its officers verify
+it", or "waiting for a signature: ask with request_signature", or "waiting in your drafts". When Brazework
+says no (a Gmail address for a signer, a teammate, a weekly limit), the message says how to fix it, so your
+assistant can fix it or ask you.
 
 Your assistant can also read the playbooks directly as MCP resources: `brazework://playbooks` (the index)
 and `brazework://playbooks/<field>`, for example `brazework://playbooks/data-ai`.
