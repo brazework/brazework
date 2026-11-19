@@ -8,25 +8,24 @@ import { avatarSrc, mediaUrl } from "@/lib/media";
 
 const KIND = { update: { icon: Megaphone, label: "Update" }, question: { icon: HelpCircle, label: "Question" }, result: { icon: FlaskConical, label: "Result" }, project: { icon: Rocket, label: "Project" } } as const;
 
-// A post as a cover card: its first photo, or a quiet panel with the post type. Not the accent: in dark
-// mode the accent is near-white, so a photo-less card became the brightest thing on the feed.
+// A post as a cover card: its first photo, or (no photo) its words, a little larger. Not the accent: in
+// dark mode the accent is near-white, so a photo-less card became the brightest thing on the feed.
 export function SpotlightCard({ post }: { post: Post }) {
   const k = KIND[post.kind] ?? KIND.update;
   const photo = post.media?.find((m) => m.type === "image");
   return (
     <Link prefetch={false} href={`/post/${post.id}`} className="grad-edge group flex w-[280px] flex-col overflow-hidden rounded-3xl border shadow-[var(--shadow)] transition duration-300">
-      <div className="relative h-40 overflow-hidden">
-        {photo ? (
+      {photo ? (
+        <div className="relative h-40 overflow-hidden">
           <Image src={mediaUrl(photo.path)} alt={photo.alt || ""} fill sizes="280px" className="object-cover transition duration-700 group-hover:scale-110" />
-        ) : (
-          <div className="absolute inset-0 grid place-items-center border-b border-line bg-surface-2 transition duration-700 group-hover:scale-110">
-            <k.icon className="size-10 text-faint" />
-          </div>
-        )}
-        <span className="absolute top-3 left-3 inline-flex items-center gap-1 rounded-full bg-black/55 px-2.5 py-1 text-[11px] font-medium text-white backdrop-blur"><k.icon className="size-3.5" /> {k.label}</span>
-      </div>
+          <span className="absolute top-3 left-3 inline-flex items-center gap-1 rounded-full bg-black/55 px-2.5 py-1 text-[11px] font-medium text-white backdrop-blur"><k.icon className="size-3.5" /> {k.label}</span>
+        </div>
+      ) : (
+        // No photo: the words are the card (a big grey panel with an icon read as a missing image).
+        <div className="px-4 pt-4"><span className="inline-flex items-center gap-1 rounded-full border border-line bg-surface-2 px-2.5 py-1 text-[11px] font-medium text-text-2"><k.icon className="size-3.5" /> {k.label}</span></div>
+      )}
       <div className="flex flex-1 flex-col p-4">
-        <p className="line-clamp-3 text-sm leading-relaxed text-text-2">{post.body}</p>
+        <p className={photo ? "line-clamp-3 text-sm leading-relaxed text-text-2" : "line-clamp-6 text-[15px] leading-relaxed text-text"}>{post.body}</p>
         <div className="mt-auto flex items-center gap-2 pt-4">
           <Avatar first={post.author_first} last={post.author_last} size={24} src={avatarSrc(post.author)} />
           <span className="min-w-0 flex-1 truncate text-xs font-medium">{post.author_first} {post.author_last}</span>
