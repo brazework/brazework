@@ -22,15 +22,23 @@ insert into public.organizations (id, type, name, domain, verification_status) v
   ('pt-acme', 'company', 'Acme Teaser', 'acme-pt.test', 'verified'),
   ('pt-shady', 'company', 'Suspended Co', 'shady-pt.test', 'suspended');
 insert into public.organization_admins (org_id, uid) values ('pt-acme', :'cara'), ('pt-shady', :'josh');
+-- Start from no views of Ben, so only the ones below count (the transaction rolls this back).
+delete from public.profile_views where profile_id = :'ben';
 insert into public.profile_views (profile_id, viewer, day, viewed_at) values
   (:'ben', :'cara', current_date - 20, now() - interval '20 days'),
   (:'ben', :'josh', current_date - 30, now() - interval '30 days');
+
+-- Cara and Josh may already run companies in the test data, so the expected count is every verified
+-- company either of them runs: what Ben's 90 days really hold, none of it in his 7-day window.
+select count(distinct o.name) as expect from public.organization_admins a join public.organizations o on o.id = a.org_id
+ where a.uid in (:'cara', :'josh') and o.type = 'company' and o.verification_status = 'verified' \gset
+select t.ok(:'expect'::int >= 1, 'at least one verified company looked');
 
 select t.as_('ben'); set local role authenticated;
 select public.my_company_viewers(90) as a \gset
 reset role;
 select t.ok(:'a'::jsonb -> 'companies' = '[]'::jsonb, 'on Free, a company from 20 days ago isn''t named');
-select t.ok((:'a'::jsonb ->> 'hidden')::int = 1, 'but it is counted: 1 more company looked');
+select t.ok((:'a'::jsonb ->> 'hidden')::int = :'expect'::int, 'but each verified company that looked is counted, exactly');
 select t.ok(position('Acme' in :'a') = 0 and position('Suspended' in :'a') = 0, 'the count never names anyone');
 
 -- Cara looks again today: now she's shown, and the same company isn't counted twice.
@@ -39,7 +47,10 @@ select t.as_('ben'); set local role authenticated;
 select public.my_company_viewers(90) as b \gset
 reset role;
 select t.ok(:'b'::jsonb -> 'companies' @> '[{"name": "Acme Teaser"}]'::jsonb, 'a company that looked this week is named');
-select t.ok((:'b'::jsonb ->> 'hidden')::int = 0, 'and isn''t also counted as hidden');
+select count(distinct o.name) as rest from public.organization_admins a join public.organizations o on o.id = a.org_id
+ where a.uid = :'josh' and o.type = 'company' and o.verification_status = 'verified'
+   and o.name not in (select o2.name from public.organization_admins a2 join public.organizations o2 on o2.id = a2.org_id where a2.uid = :'cara') \gset
+select t.ok((:'b'::jsonb ->> 'hidden')::int = :'rest'::int, 'a company shown this week isn''t also counted as hidden');
 
 -- With Plus, everything is shown and nothing is hidden.
 delete from public.profile_views where profile_id = :'ben' and viewer = :'cara' and viewed_at > now() - interval '1 day';
