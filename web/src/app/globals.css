@@ -487,3 +487,14 @@ select option { background-color: var(--surface); color: var(--text); }
     linear-gradient(90deg, rgba(255, 255, 255, 0.07) 1px, transparent 1px) 0 0 / 24px 24px,
     radial-gradient(120% 90% at 50% 0%, #1f5cad, #17468a 55%, #113567);
 }
+
+/* A drawing sheet's grid, in ink at a whisper (docs/design/app.md): behind a project's cover or an
+   empty state, once per page at most. It follows the theme: dark ink on light, light ink on dark. */
+.sheet-grid {
+  background-color: var(--surface-2);
+  background-image:
+    linear-gradient(color-mix(in oklab, var(--text) 6%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in oklab, var(--text) 6%, transparent) 1px, transparent 1px);
+  background-size: 24px 24px;
+  background-position: -1px -1px;
+}

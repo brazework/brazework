@@ -53,6 +53,21 @@ export function VerifiedStamp({ club, clubId, by, when, size = "md", className }
   );
 }
 
+// Not signed yet: a dashed ring where the seal will go, and who it's waiting for. Never green, so it
+// can't be mistaken for signed work (docs/design/app.md).
+export function WaitingStamp({ forWhom, since, size = "md", className }: { forWhom: string; since?: string | null; size?: "sm" | "md"; className?: string }) {
+  const d = size === "sm" ? 18 : 28;
+  return (
+    <span className={cn("inline-flex min-w-0 items-center gap-2", className)}>
+      <span aria-hidden="true" className="shrink-0 rounded-full border-2 border-dashed border-line-strong" style={{ width: d, height: d }} />
+      <span className="min-w-0 leading-tight">
+        <span className={cn("block truncate font-medium text-text-2", size === "sm" ? "text-xs" : "text-sm")}>Waiting for {forWhom}</span>
+        {since && <span suppressHydrationWarning className="block truncate text-[11px] text-faint">Asked {since}</span>}
+      </span>
+    </span>
+  );
+}
+
 // A Pro sign-off: the gold seal, who signed (name, title, employer), and what they checked.
 export function ProStamp({ name, title, employer, note, when, className }: { name: string; title: string; employer: string; note?: string | null; when?: string | null; className?: string }) {
   return (
