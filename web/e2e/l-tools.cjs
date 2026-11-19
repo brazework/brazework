@@ -185,7 +185,10 @@ const { step, browser, as, go, summary, BASE } = require("./lib.cjs");
 
   await step("Today says a draft is waiting; Ben edits it on /drafts and sends it to Rocketry Club; Maya sees it via GitHub Actions", async () => {
     await go(ben, "/feed");
-    await ben.getByRole("region", { name: "Waiting on you" }).getByRole("link", { name: /1 draft from your tools/ }).click();
+    // Today's triage (daily-triage.sql) lists it; editing happens on /drafts, through the card's Edit link.
+    const today = ben.getByRole("region", { name: "Your tools noticed 1 thing" });
+    await today.getByText("acme/rig #12 merged").waitFor({ timeout: 15000 });
+    await today.getByRole("link", { name: "Edit" }).click();
     await ben.waitForURL(/\/drafts/);
     const card = ben.locator("article").filter({ hasText: "via GitHub Actions" }).first();
     await card.getByText("acme/rig #12 merged").waitFor({ timeout: 15000 });
