@@ -27,33 +27,35 @@ type Physical = THREE_NS.MeshPhysicalMaterial;
 export type Live = (t: number) => void;
 export type Extras = { RoundedBoxGeometry?: typeof RoundedBox };
 
-/** The examples, in the order the landing page offers them: the field, the build, and the kind of
- *  milestone someone in that field would post and who would sign it. */
+/** The examples, in the order the landing page offers them: the field, the build, the result someone
+ *  in that field would record (with its number), and who confirmed it, the way Brazework does:
+ *  verified by a club its officers run, or signed by a person who saw the work (a professor, a
+ *  manager, a client, a mentor), named with their role. Students and working professionals alike. */
 export const SAMPLES = [
   // Engineering
-  { id: "robot", field: "Robotics", name: "Line-following robot", milestone: "Beat the course in 41.2 seconds", by: "Rocketry Club" },
-  { id: "rocket", field: "Aerospace", name: "Certification rocket", milestone: "Flew to 1,140 m and was recovered intact", by: "Rocketry Club" },
-  { id: "gearbox", field: "Mechanical", name: "Reduction gearbox", milestone: "Ran two hours under load without slipping", by: "Formula Racing Team" },
-  { id: "board", field: "Electronics", name: "Battery management board", milestone: "Passed bring-up with every cell balanced", by: "Solar Car Team" },
-  { id: "bridge", field: "Civil", name: "Balsa truss bridge", milestone: "Held 48 kg while weighing 62 g", by: "Civil Engineering Society" },
+  { id: "robot", field: "Robotics", name: "Line-following robot", milestone: "Ran the 12 m course in 41.2 s, best of three runs", by: "Rocketry Club", how: "verified" },
+  { id: "rocket", field: "Aerospace", name: "Certification rocket", milestone: "Level 1 flight: 1,140 m apogee, recovered intact", by: "J. Reyes, certification prefect", how: "signed" },
+  { id: "gearbox", field: "Mechanical", name: "Reduction gearbox", milestone: "Ran 2 hours at 40 N·m with no slip or heat damage", by: "Prof. Alvarez, Machine Design", how: "signed" },
+  { id: "board", field: "Electronics", name: "Battery management board", milestone: "Balanced all 12 cells within 5 mV at bring-up", by: "D. Ruiz, hardware lead (manager)", how: "signed" },
+  { id: "bridge", field: "Civil", name: "Balsa truss bridge", milestone: "Held 48 kg at 62 g, a 774 to 1 load ratio", by: "Civil Engineering Society", how: "verified" },
   // Computing
-  { id: "phone", field: "Software", name: "Campus shuttle tracker app", milestone: "Shipped to 2,100 weekly riders", by: "Software Engineering Club" },
-  { id: "cluster", field: "Computer science", name: "Four-node compute cluster", milestone: "Sorted 10 GB across four nodes in 94 seconds", by: "Computing Society" },
-  { id: "network", field: "Data & AI", name: "Crop disease classifier", milestone: "Reached 94% accuracy on the field-trial photos", by: "AI Society" },
+  { id: "phone", field: "Software", name: "Campus shuttle tracker app", milestone: "Shipped v2: 2,100 weekly riders, 99.6% crash-free", by: "M. Okoro, Transit Office (client)", how: "signed" },
+  { id: "cluster", field: "Computer science", name: "Four-node compute cluster", milestone: "Sorted 10 GB across four nodes in 94 s", by: "Dr. Okafor, Distributed Systems", how: "signed" },
+  { id: "network", field: "Data & AI", name: "Crop disease classifier", milestone: "94% accuracy on 1,800 field-trial photos", by: "Dr. Shah, agronomy lab PI", how: "signed" },
   // Sciences
-  { id: "knot", field: "Mathematics", name: "Trefoil knot model", milestone: "Presented at the undergraduate math seminar", by: "Math Society" },
-  { id: "pendulum", field: "Physics", name: "Double pendulum rig", milestone: "Tracked 200 runs and measured where chaos sets in", by: "Physics Society" },
-  { id: "crystal", field: "Chemistry", name: "Salt crystal lattice model", milestone: "Grew a 14 mm single crystal over three weeks", by: "Chemistry Club" },
-  { id: "helix", field: "Biology", name: "DNA double helix model", milestone: "Printed and used in the BIO 101 lab", by: "Dr. Lee, Biology" },
-  { id: "weather", field: "Environment", name: "Campus weather station", milestone: "Logged 90 days of readings without a gap", by: "Environmental Science Club" },
-  { id: "cubesat", field: "Space", name: "CubeSat structure", milestone: "Passed the vibration test at launch levels", by: "Space Systems Lab" },
-  { id: "hand", field: "Medicine", name: "3D-printed prosthetic hand", milestone: "Gripped and lifted a 500 g bottle in testing", by: "Biomedical Engineering Society" },
+  { id: "knot", field: "Mathematics", name: "Trefoil knot model", milestone: "Presented a proof of its tricolorability at seminar", by: "Prof. Chen, seminar host", how: "signed" },
+  { id: "pendulum", field: "Physics", name: "Double pendulum rig", milestone: "Tracked 200 runs and found where chaos sets in", by: "Physics Society", how: "verified" },
+  { id: "crystal", field: "Chemistry", name: "Salt crystal lattice model", milestone: "Grew a 14 mm single crystal over three weeks", by: "Chemistry Club", how: "verified" },
+  { id: "helix", field: "Biology", name: "DNA double helix model", milestone: "Printed for BIO 101 and used by 180 students", by: "Dr. Lee, Biology", how: "signed" },
+  { id: "weather", field: "Environment", name: "Campus weather station", milestone: "90 days of readings with no gaps, shared with the city", by: "City sustainability office (client)", how: "signed" },
+  { id: "cubesat", field: "Space", name: "CubeSat structure", milestone: "Passed the vibration test at launch levels", by: "Space Systems Lab", how: "verified" },
+  { id: "hand", field: "Medicine", name: "3D-printed prosthetic hand", milestone: "Lifted a 500 g bottle in 20 of 20 trials", by: "R. Patel, clinical mentor", how: "signed" },
   // Business, arts and society
-  { id: "cart", field: "Business", name: "Campus coffee cart", milestone: "Sold 1,200 cups in its first month", by: "Entrepreneurship Club" },
-  { id: "chair", field: "Design", name: "Flat-pack plywood chair", milestone: "Held 120 kg in the load test", by: "Industrial Design Studio" },
-  { id: "camera", field: "Media", name: "Documentary short", milestone: "Screened to 300 people at the fall showcase", by: "Film Club" },
-  { id: "chart", field: "Social science", name: "Campus rent survey", milestone: "412 responses, published and cited by the student senate", by: "Economics Society" },
-  { id: "blocks", field: "Education", name: "Tactile fraction kit", milestone: "Used in three fourth-grade classes this term", by: "Education Society" },
+  { id: "cart", field: "Business", name: "Campus coffee cart", milestone: "Sold 1,200 cups in month one at a 38% margin", by: "Small Business Center advisor", how: "signed" },
+  { id: "chair", field: "Design", name: "Flat-pack plywood chair", milestone: "Held 120 kg, cut from a single sheet", by: "Industrial Design Studio", how: "verified" },
+  { id: "camera", field: "Media", name: "Documentary short", milestone: "Screened to 300 people, selected by a regional festival", by: "Film Club", how: "verified" },
+  { id: "chart", field: "Social science", name: "Campus rent survey", milestone: "412 responses, cited by the student senate", by: "Prof. Ortiz, Economics", how: "signed" },
+  { id: "blocks", field: "Education", name: "Tactile fraction kit", milestone: "Used in three fourth-grade classes, quiz scores up 18%", by: "Ms. Hart, classroom teacher", how: "signed" },
 ] as const;
 export type SampleId = (typeof SAMPLES)[number]["id"];
 /** The format a sample's numbers are in, for the size readout (lib/model-view.ts, sizeLabel). */

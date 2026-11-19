@@ -1,6 +1,5 @@
 import Link from "next/link";
-import { ProfileCard } from "@/components/landing/profile-card";
-import { PROFESSIONS } from "@/components/landing/professions";
+import { AppMoment } from "@/components/auth/app-moment";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Logo } from "@/components/ui";
 
@@ -10,16 +9,12 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       <aside className="relative hidden overflow-hidden border-r border-line bg-surface-2/60 lg:block">
         <div className="flex h-full flex-col justify-between gap-10 p-12">
           <Link href="/" aria-label="Brazework home"><Logo /></Link>
-          <div className="relative mx-auto w-full max-w-[340px]" aria-hidden="true">
-            <ProfileCard p={PROFESSIONS[4]} className="absolute top-6 left-10 -rotate-6 opacity-60" />
-            <ProfileCard p={PROFESSIONS[0]} className="relative rotate-2" />
+          {/* The app's one moment, drawn with its own cards (components/auth/app-moment.tsx). */}
+          <div aria-hidden="true"><AppMoment /></div>
+          <div className="max-w-md">
+            <p className="text-[2.5rem] leading-[1.08] font-semibold tracking-tight text-balance">Your work, signed by the people who saw it.</p>
+            <p className="mt-4 text-[15px] leading-relaxed text-muted">Your AI drafts it from the tools you already use. You confirm it. A manager, a client, a professor or your club signs it, and it goes with you wherever you go next.</p>
           </div>
-          <blockquote className="max-w-md">
-            <p className="text-4xl leading-tight font-semibold tracking-tight">
-              Built by clubs. <span className="text-grad">Proven by work.</span>
-            </p>
-            <footer className="mt-4 text-sm text-faint">The network for students who build, in any major</footer>
-          </blockquote>
         </div>
       </aside>
       <ThemeToggle className="absolute top-5 right-5" />

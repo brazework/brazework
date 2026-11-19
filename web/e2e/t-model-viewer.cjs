@@ -59,7 +59,7 @@ const settled = (v) => v.evaluate((el) => new Promise((ok) => { const t = setInt
     for (const [field, build] of tries) {
       await sec.getByRole("tab", { name: field, exact: true }).click();
       await sec.locator("#build-example").getByText(build, { exact: true }).waitFor();
-      await sec.locator("#build-example").getByText("Verified by").waitFor();
+      await sec.locator("#build-example").getByText(/(Verified|Signed) by /).waitFor(); // a club, or a person who saw it
       if ((await settled(v)) === "error") throw new Error(`${field}: the example failed to load`);
       seen.add((await v.locator("[data-model-size]").innerText()).replace(/\s+/g, " ").trim());
     }

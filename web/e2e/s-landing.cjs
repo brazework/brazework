@@ -16,7 +16,7 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
     const stage = page.locator("#hero-preview");
     await hydrated(page.locator("#hero-build"));
     await stage.getByText("A line-following robot").waitFor();
-    // The AI moment: /shipped, the draft with its evidence, sent to the club, then the officer signs.
+    // The AI moment: asked in plain words, the draft with its evidence, sent to the club, then the officer verifies.
     await stage.getByText("Your AI drafts it").waitFor();
     await stage.getByText("Sent to Rocketry Club").waitFor({ timeout: 10000 });
     await stage.getByRole("list", { name: "Evidence" }).getByText(/github\.com/).waitFor();
@@ -25,11 +25,13 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
     await stage.getByText(/You're talking/).waitFor();
   }, page);
 
-  await step("hero: Replay starts over, and pressing Verify yourself signs it", async () => {
+  await step("hero: Replay tells it for someone else (an analyst whose manager signs), and pressing Sign yourself signs it", async () => {
     const stage = page.locator("#hero-preview");
     await stage.getByRole("button", { name: "Replay" }).click();
-    await stage.getByRole("button", { name: "Verify" }).click();
-    await stage.getByText("Verified", { exact: true }).waitFor();
+    await stage.getByRole("list", { name: "Evidence" }).getByText(/claude\.ai/).waitFor({ timeout: 10000 });
+    await stage.getByText("Dana Ruiz", { exact: true }).waitFor();
+    await stage.getByRole("button", { name: "Sign", exact: true }).click();
+    await stage.getByText("Signed", { exact: true }).waitFor();
     await stage.getByRole("button", { name: "Accept" }).waitFor({ timeout: 10000 });
   }, page);
 

@@ -16,6 +16,8 @@ import { SAMPLE_EXT, type SampleId } from "./sample-models";
 // - Inline, the wheel and a phone's up-down drag still scroll the page; zoom and pan are for full screen.
 // - Where WebGL can't start, it says so and still shows the model's size.
 // - The examples are alive (the robot drives, the gears turn): Play/Pause, off for reduced motion.
+// - The examples wear the slate finish (model-slate.ts): stone greys and crisp edges, like a studio
+//   render. A member's own file keeps its colours.
 type State = "idle" | "ready" | "nogl" | "error";
 type Info = { size: V3; triangles: number; parts: number };
 
@@ -91,7 +93,7 @@ export function ModelViewer({ url, name, sample, className }: { url?: string; na
       setInfo(m);
       const still = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
       try {
-        stage.current = createStage(THREE, { OrbitControls, RoomEnvironment }, el, object, { spin: !still, coarse: window.matchMedia("(pointer: coarse)").matches, still, snug: !!sample, dimText: dimTexts(ext, m.size), onSpin: (on) => { setSpinning(on); setView(null); } });
+        stage.current = createStage(THREE, { OrbitControls, RoomEnvironment }, el, object, { spin: !still, coarse: window.matchMedia("(pointer: coarse)").matches, still, snug: !!sample, slate: !!sample, dimText: dimTexts(ext, m.size), onSpin: (on) => { setSpinning(on); setView(null); } });
         setSpinning(!still);
         setCanPlay(stage.current.live);
         setPlaying(stage.current.live && !still);
@@ -132,7 +134,7 @@ export function ModelViewer({ url, name, sample, className }: { url?: string; na
   const tool = "grid size-8 place-items-center rounded-lg bg-surface/90 text-text-2 ring-1 ring-line transition hover:text-text aria-pressed:bg-accent aria-pressed:text-on-accent aria-pressed:ring-transparent";
 
   return (
-    <div ref={box} data-state={loading ? "loading" : state} data-look={look} data-model-viewer=""
+    <div ref={box} data-state={loading ? "loading" : state} data-look={look} data-finish={sample ? "slate" : undefined} data-model-viewer=""
       className={cn("model-bg @container relative w-full overflow-hidden text-text [&:fullscreen]:rounded-none", pseudo ? "fixed inset-0 z-[200] h-dvh" : className ?? "aspect-[4/3] rounded-2xl border border-line")}>
       {/* The picture sits between the readout and the controls (two rows of them when the viewer is narrow), so neither covers the model. */}
       <div ref={host} className="absolute inset-x-0 top-9 bottom-[5.75rem] @md:bottom-12" role="img" aria-label={`3D model: ${name}. Drag to turn it.`} />
