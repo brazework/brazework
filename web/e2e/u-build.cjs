@@ -74,6 +74,42 @@ const clean = () => psql(`delete from public.posts where body = '${NOTE}'; alter
     await phone.getByRole("navigation", { name: "Main" }).getByRole("link", { name: "Clubs, 1 to sign" }).waitFor({ timeout: 15000 });
   }, phone);
 
+  // The project page's Next strip (lib/next-step.ts; the flow redesign). A fresh project of Ben's, so the
+  // steps start from nothing: log the first milestone, then it waits for the club, named.
+  const nextClean = () => psql(`alter table public.milestones disable trigger user; delete from public.milestones where project_id = 'e2e-next'; alter table public.milestones enable trigger user; delete from public.projects where id = 'e2e-next';`);
+  nextClean();
+  psql(`insert into public.projects (id, owner_id, title, summary, status) select 'e2e-next', id, 'Thrust curve logger', 'Logs a motor''s thrust curve at 1 kHz.', 'in_progress' from auth.users where email = 'ben@forge.test';`);
+  await step("project page: with no milestones, Next says to log the first one, and the button is right there", async () => {
+    await go(ben, "/projects/e2e-next");
+    const next = ben.getByRole("region", { name: "Next" });
+    await next.getByText(/log your first milestone/i).waitFor({ timeout: 15000 });
+    await next.getByRole("button", { name: "Add milestone" }).click();
+    await ben.getByRole("dialog").first().waitFor();
+    if (!/\/projects\/e2e-next$/.test(ben.url())) throw new Error("adding a milestone left the page");
+    await ben.keyboard.press("Escape");
+  }, ben);
+  await step("project page: a waiting milestone moves Next to asking the club, and the header counts it", async () => {
+    psql(`alter table public.milestones disable trigger user;
+      insert into public.milestones (id, project_id, owner_id, community_id, community_name, title, detail, achieved_on, status) select 'e2e-next-m', 'e2e-next', id, 'rkt', 'Rocketry Club', 'Logged a full burn at 1 kHz', '', current_date, 'pending' from auth.users where email = 'ben@forge.test';
+      alter table public.milestones enable trigger user;`);
+    await go(ben, "/projects/e2e-next");
+    const next = ben.getByRole("region", { name: "Next" });
+    await next.getByText(/waiting for Rocketry Club/).waitFor({ timeout: 15000 });
+    const stands = ben.locator('dl[aria-label="Where it stands"]');
+    await stands.getByText("Rocketry Club").waitFor();
+    if (!/Waiting\s*1/.test(await stands.innerText())) throw new Error("the title block doesn't count the waiting milestone");
+    await ben.getByRole("heading", { name: "Milestones" }).waitFor();
+  }, ben);
+  await step("project page: a visitor sees no Next strip and no drafts", async () => {
+    const josh = await as(b, "josh@forge.test");
+    await go(josh, "/projects/p1");
+    await josh.getByRole("heading", { level: 1 }).first().waitFor({ timeout: 15000 });
+    if (await josh.getByRole("region", { name: "Next" }).count()) throw new Error("a visitor sees the Next strip");
+    if (await josh.getByRole("region", { name: "Drafts for this project" }).count()) throw new Error("a visitor sees drafts");
+    await josh.context().close();
+  }, ben);
+  nextClean();
+
   clean();
   await b.close();
   summary();
