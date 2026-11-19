@@ -20,8 +20,8 @@ export function AnswerForm({ token, domain }: { token: string; domain: string })
       {/* Witness invitations (FIX-129): the people who sign are builders too. */}
       <div className="mt-6 rounded-xl border border-line p-4">
         <p className="text-sm font-medium">Want a record like this for your own work?</p>
-        <p className="mt-1 text-sm text-muted">Log what you build, and the people who saw it sign it. Free.</p>
-        <Link href="/signup" className="mt-3 inline-flex h-10 items-center rounded-lg bg-accent px-4 text-sm font-medium text-on-accent hover:opacity-90">Start your record</Link>
+        <p className="mt-1 text-sm text-muted">Your AI drafts the proof from the tools you already use; the people who saw it sign. Free, always.</p>
+        <Link href="/signup?ref=signer" className="mt-3 inline-flex h-10 items-center rounded-lg bg-accent px-4 text-sm font-medium text-on-accent hover:opacity-90">Start your record</Link>
       </div>
     </>
   );
