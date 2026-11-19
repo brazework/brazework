@@ -167,6 +167,8 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
             <MetaLine parts={[membersLabel(c.member_count), PRIVACY_LABEL[c.privacy], c.field, TYPE_LABEL[c.type]]} />
             {study && studyLine(c) && <p className="mt-1 text-sm font-medium text-text-2">{studyLine(c)}</p>}
             {c.website && /^https?:\/\/\S+$/i.test(c.website) && <a href={c.website} target="_blank" rel="noopener noreferrer nofollow" className="mt-1 inline-flex items-center gap-1 text-xs text-text-2 hover:text-text hover:underline"><Globe className="size-3.5" /> {c.website.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "")}</a>}
+            {/* Money paths (lib/money.ts): a quiet line for visitors to a public club, never for its members. */}
+            {!me && !study && c.privacy === "public" && <Link href={`/book?kind=chapter&club=${encodeURIComponent(c.id)}`} className="mt-1 inline-flex text-xs text-muted underline-offset-4 hover:text-text hover:underline">Sponsor this chapter</Link>}
             <MemberFaces faces={faces} ids={members.map((m) => m.uid)} total={c.member_count} className="mt-3" />
           </div>
         </div>
