@@ -5,6 +5,11 @@ import { ALL_TOPICS, FIELDS, ageFrom, friendlyError } from "@/lib/forge";
 import { joinRememberedInvite } from "@/lib/invites";
 import { parseGradYear } from "@/lib/profile-meta";
 import { getViewer } from "@/lib/supabase/server";
+import { cleanBuild, firstHeadline, starterInterests } from "@/lib/front-door";
+import { addMilestone } from "@/lib/milestones";
+import { startProject } from "@/lib/projects";
+import { RELATIONSHIPS } from "@/lib/vouch-email";
+import { joinCommunity } from "../(app)/communities/actions";
 
 export type OnboardState = { message: string };
 export type FinishState = { message: string; school?: boolean };
@@ -68,4 +73,97 @@ export async function completeOnboarding(_: OnboardState, form: FormData): Promi
   // Someone already working may not have one, so they go straight to Today, which starts with their
   // work and a person who saw it (lib/guide-steps.ts). Clubs are still one tap away, under Club.
   redirect((await joinRememberedInvite()) ?? (profile?.account_type === "professional" ? "/feed" : "/onboarding/club"));
+}
+
+// Build-first onboarding (docs/superpowers/specs/2026-11-19-product-hunt-launch-design.md): the three
+// screens after About you (what you built, its proof, who saw it) are saved here at once, because a
+// milestone's evidence can't be changed after it's saved. Every rule is the app's own: startProject,
+// addMilestone (evidence, backing, the vouch guards and email, the club's membership) and, with no
+// proof or nobody to ask, a draft. If the ask fails, the project id comes back so a retry doesn't
+// start a second project.
+export type FirstBuildSigner = { kind: "none" } | { kind: "email"; email: string; relationship: string } | { kind: "club"; clubId: string };
+export type FirstBuildInput = { text: string; field: string; achievedOn: string; evidence: string; signer: FirstBuildSigner; projectId?: string };
+export type FirstBuildResult = { ok: false; message: string; projectId?: string; step?: "build" | "proof" | "signer" };
+
+const today = () => new Date().toISOString().slice(0, 10);
+const firstBuild = z.object({
+  text: z.string().transform(cleanBuild).refine((t) => t.length >= 3, "Say what you built, in a few words."),
+  field: z.string().refine((f) => FIELDS.includes(f), "Pick your field."),
+  achievedOn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Pick the date it happened.").refine((d) => d <= today(), "Pick a date that has already happened."),
+  evidence: z.string().trim().max(300).refine((v) => v === "" || /^https:\/\/\S+$/i.test(v), "Proof has to be a secure web link (https://…)."),
+  signer: z.discriminatedUnion("kind", [
+    z.object({ kind: z.literal("none") }),
+    z.object({ kind: z.literal("email"), email: z.string().trim().toLowerCase().email("Enter their email address.").max(254), relationship: z.enum(Object.keys(RELATIONSHIPS) as [string, ...string[]], { message: "Pick how they know your work." }) }),
+    z.object({ kind: z.literal("club"), clubId: z.string().regex(/^[A-Za-z0-9-]{1,64}$/, "Pick a club.") }),
+  ]),
+  projectId: z.string().regex(/^[A-Za-z0-9-]{1,64}$/).optional(),
+});
+
+export async function finishFirstBuild(input: FirstBuildInput): Promise<FirstBuildResult> {
+  const v = firstBuild.safeParse(input);
+  if (!v.success) {
+    const issue = v.error.issues[0];
+    const at = issue?.path[0];
+    return { ok: false, message: issue?.message ?? "Check the form.", step: at === "signer" ? "signer" : at === "evidence" ? "proof" : "build", projectId: input.projectId };
+  }
+  const d = v.data;
+  const { supabase, user, profile } = await getViewer();
+  if (!user) redirect("/login");
+  if (!profile) redirect("/onboarding");
+
+  if (!profile.onboarded) {
+    const { error } = await supabase.from("profiles").update({
+      headline: profile.headline?.trim() || firstHeadline(d.field, profile.account_type !== "professional"),
+      field: d.field, interests: starterInterests(d.field), onboarded: true,
+    }).eq("id", user.id);
+    if (error) return { ok: false, message: friendlyError(error), step: "build" };
+  }
+
+  // A retry after a failed ask reuses the project it already started.
+  let projectId = "";
+  if (d.projectId) {
+    const { data } = await supabase.from("projects").select("id").eq("id", d.projectId).eq("owner_id", user.id).maybeSingle();
+    projectId = data?.id ?? "";
+  }
+  if (!projectId) {
+    const started = await startProject(d.text);
+    if (!started.ok || !started.id) return { ok: false, message: started.message, step: "build" };
+    projectId = started.id;
+  }
+
+  // Joining through an invite link happens now, so that club can be the one asked.
+  await joinRememberedInvite();
+
+  const title = d.text.length <= 120 ? d.text : `${d.text.slice(0, 117).replace(/\s+\S*$/, "")}...`;
+  const asking = d.evidence !== "" && d.signer.kind !== "none";
+  if (asking) {
+    if (d.signer.kind === "club") {
+      const { data: member } = await supabase.from("community_members").select("community_id").eq("community_id", d.signer.clubId).eq("uid", user.id).maybeSingle();
+      if (!member) {
+        const joined = await joinCommunity(d.signer.clubId);
+        if (!joined.ok) return { ok: false, message: joined.message, step: "signer", projectId };
+        if (joined.state !== "member") return { ok: false, message: "That club approves new members first. Your request is in; ask someone by email for now, or finish and send it to the club once you're in.", step: "signer", projectId };
+      }
+    }
+    const form = new FormData();
+    form.set("projectId", projectId);
+    form.set("verifyBy", d.signer.kind === "club" ? "club" : "vouch");
+    form.set("communityId", d.signer.kind === "club" ? d.signer.clubId : "");
+    form.set("vouchEmail", d.signer.kind === "email" ? d.signer.email : "");
+    form.set("vouchRelationship", d.signer.kind === "email" ? d.signer.relationship : "");
+    form.set("title", title);
+    form.set("detail", "");
+    form.set("evidence", d.evidence);
+    form.set("achievedOn", d.achievedOn);
+    form.set("showOnProfile", "on");
+    const r = await addMilestone({ ok: false, message: "" }, form);
+    if (!r.ok) return { ok: false, message: r.message, step: "signer", projectId };
+  } else {
+    // Nothing to ask yet: a draft, on the record for its owner, ready for proof and a signer.
+    const row = { project_id: projectId, community_id: null, title, detail: "", evidence: d.evidence, achieved_on: d.achievedOn, status: "draft", private: false };
+    let { error } = await supabase.from("milestones").insert(row);
+    if (error && /private/.test(error.message ?? "")) ({ error } = await supabase.from("milestones").insert({ ...row, private: undefined }));
+    if (error) return { ok: false, message: error.code === "P0001" ? error.message : friendlyError(error), step: "proof", projectId };
+  }
+  redirect(`/u/${user.id}?welcome=1`);
 }
