@@ -9,6 +9,7 @@ import { ProjectIcon } from "../../projects/project-card";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
+import { ConfidentialWork } from "./confidential-work";
 import { CopyLink } from "@/components/app/copy-link";
 import { signersFor, type MemberRow } from "@/lib/signers";
 import { PlaceTabsRow } from "@/components/app/place-tabs";
@@ -289,6 +290,8 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
           )}
           {mine && f.goals && record && <GoalCard goal={goal} record={record} profileId={p.id} />}
 
+          {/* Proof without revealing (redacted-proof.sql): private signed work, as one line each. */}
+          {f.redactedProof && <Suspense fallback={null}><ConfidentialWork member={p.id} mine={mine} /></Suspense>}
           <section id="projects" data-tour="projects-tab" className="scroll-mt-24">
             <SwitchTabs
               name="Profile"

@@ -71,7 +71,8 @@ from (values
   (71, 'plus-teaser',     to_regprocedure('public.plus_teaser_ready()') is not null),
   (72, 'daily-triage',    to_regprocedure('public.daily_triage_ready()') is not null),
   (73, 'verify-links',    to_regprocedure('public.verify_links_ready()') is not null),
-  (74, 'signer-tools',    to_regprocedure('public.signer_tools_ready()') is not null)
+  (74, 'signer-tools',    to_regprocedure('public.signer_tools_ready()') is not null),
+  (75, 'redacted-proof',  to_regprocedure('public.redacted_proof_ready()') is not null)
 ) as s(step, file, present)
 order by step;
 
