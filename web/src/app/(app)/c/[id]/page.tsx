@@ -275,12 +275,12 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
           <Panel className="p-6">
             <Kicker>About</Kicker>
             <p className="mt-2 text-sm leading-relaxed whitespace-pre-wrap text-text-2">{c.about}</p>
-            {(c.topics ?? []).length > 0 && <div className="mt-4 flex flex-wrap gap-1.5">{c.topics.map((t) => <Link key={t} href={`/feed?tab=latest&tag=${encodeURIComponent(t)}`} className="rounded-full border border-line px-3 py-1 text-xs text-text-2 transition hover:border-transparent hover:bg-accent-grad hover:text-on-accent">#{t}</Link>)}</div>}
+            {(c.topics ?? []).length > 0 && <div className="mt-4 flex flex-wrap gap-1.5">{c.topics.map((t) => <Link key={t} href={`/feed?tab=latest&tag=${encodeURIComponent(t)}`} className="rounded-full border border-line px-3 py-1 text-xs text-text-2 transition hover:border-transparent hover:bg-text hover:text-surface">#{t}</Link>)}</div>}
             <div className="mt-6"><Kicker>Rules</Kicker></div>
             <ol className="mt-3 flex flex-col gap-2">
               {rulesOf(c.rules).map((r, i) => (
                 <li key={i} className="flex gap-3 rounded-2xl border border-line bg-surface-2/60 p-3.5 text-sm leading-relaxed text-text-2 transition hover:border-line-strong">
-                  <span className="bg-accent-grad grid size-6 shrink-0 place-items-center rounded-full text-xs font-semibold text-on-accent">{i + 1}</span>
+                  <span className="bg-text grid size-6 shrink-0 place-items-center rounded-full text-xs font-semibold text-surface">{i + 1}</span>
                   <span className="whitespace-pre-wrap">{r}</span>
                 </li>
               ))}

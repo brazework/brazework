@@ -41,7 +41,7 @@ export function WeekStrip({ events, now }: { events: Item[]; now: number }) {
               first ? "hover:border-line-strong hover:bg-hover" : "opacity-60",
             )}
           >
-            <span className="text-[10px] font-medium tracking-wide text-faint uppercase">{i === 0 ? "Today" : d.dow}</span>
+            <span className="text-xs font-medium text-muted">{i === 0 ? "Today" : d.dow}</span>
             <span className="text-lg leading-none font-semibold">{d.day}</span>
             <span className="flex h-1.5 items-center gap-0.5">
               {d.items.slice(0, 3).map((e) => <span key={e.id} className={cn("size-1.5 rounded-full", e.going ? "bg-accent" : "border border-line-strong")} />)}

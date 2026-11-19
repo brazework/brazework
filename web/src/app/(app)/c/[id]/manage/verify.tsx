@@ -132,7 +132,7 @@ export function RecentReviews({ items, isOwner = false }: { items: QueueItem[]; 
                 <div><span className="font-medium">{m.title}</span> <span className="text-muted">· {m.owner?.first_name} {m.owner?.last_name}</span></div>
                 {m.dispute_note && <p className="mt-2 rounded-xl bg-surface-2 px-3 py-2 text-text-2">&ldquo;{m.dispute_note}&rdquo;</p>}
                 <div className="mt-3 flex flex-wrap gap-2">
-                  <button type="button" disabled={pending} onClick={() => start(async () => { const r = await resolveDispute(m.id, true); setMsg(r.message); if (r.ok) setState((s) => ({ ...s, [m.id]: "verified" })); })} className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-accent-grad px-4 text-sm font-medium text-on-accent disabled:opacity-60"><BadgeCheck className="size-4" /> Uphold: verify it</button>
+                  <button type="button" disabled={pending} onClick={() => start(async () => { const r = await resolveDispute(m.id, true); setMsg(r.message); if (r.ok) setState((s) => ({ ...s, [m.id]: "verified" })); })} className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-text px-4 text-sm font-medium text-surface disabled:opacity-60"><BadgeCheck className="size-4" /> Uphold: verify it</button>
                   <button type="button" disabled={pending} onClick={() => start(async () => { const r = await resolveDispute(m.id, false); setMsg(r.message); if (r.ok) setState((s) => ({ ...s, [m.id]: "escalated" })); })} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-line px-4 text-sm disabled:opacity-60">Disagree: send to Brazework admins</button>
                 </div>
               </li>
