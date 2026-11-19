@@ -2,7 +2,7 @@ import Link from "next/link";
 import { cn } from "@/lib/forge";
 
 // Dense lists (docs/design/app.md): people, clubs, events, requests. One row each: a leading picture,
-// a title, one meta line, one trailing action. Rows are separated by hairlines inside one bordered box,
+// a title (two lines on a phone, one from sm up), one meta line, one trailing action. Rows are separated by hairlines inside one bordered box,
 // not boxed one by one. With `href` the whole row is a link (the trailing action sits outside it, so a
 // button there never triggers the link).
 
@@ -15,7 +15,7 @@ export function ListRow({ href, leading, title, meta, trailing }: { href?: strin
     <>
       {leading && <span className="shrink-0">{leading}</span>}
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-sm font-medium text-text">{title}</span>
+        <span className="line-clamp-2 block text-sm font-medium break-words text-text sm:line-clamp-1">{title}</span>
         {meta && <span className="block truncate text-xs text-muted">{meta}</span>}
       </span>
     </>
