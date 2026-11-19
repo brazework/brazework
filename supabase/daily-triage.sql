@@ -1,4 +1,4 @@
--- Step 66: daily triage of drafts on Today (docs/mcp-workflows.md, "Drafts"). Run after
+-- Step 67: daily triage of drafts on Today (docs/mcp-workflows.md, "Drafts"). Run after
 -- mcp-workflows.sql. Additive and safe to re-run.
 --
 -- 1. One tap per draft. triage_tool_draft() decides a draft the way Today's buttons say:

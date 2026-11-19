@@ -3,7 +3,7 @@
 // checked and never says "verified". Run: npm test
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { proofBadge, proofPostText, proofUrl, shareLinks, type PublicProof } from "@/lib/proof-card";
+import { proofBadge, proofPostText, proofUrl, shareLinks, waitingFor, type PublicProof } from "@/lib/proof-card";
 
 const base: PublicProof = {
   id: "abc", title: "Beat the course in 41.2 seconds", detail: "Best of 3 runs.", achieved_on: "2026-11-16", level: "signed", project: "Line-following robot",
@@ -30,4 +30,16 @@ test("links: the page, and posts to LinkedIn and X that carry it", () => {
   assert.equal(l.linkedin, "https://www.linkedin.com/sharing/share-offsite/?url=https%3A%2F%2Fbrazework.com%2Fp%2Fabc");
   assert.ok(l.x.startsWith("https://x.com/intent/post?text=") && l.x.includes("url=https%3A%2F%2Fbrazework.com%2Fp%2Fabc"));
   assert.equal(proofPostText(base), "Beat the course in 41.2 seconds. Verified by Ben Cho, Rocketry Club, on Brazework.");
+});
+
+test("a waiting card says plainly it isn't signed, and who was asked, never their address", () => {
+  const base = { id: "w", title: "Load cell calibrated", detail: "", achieved_on: "2026-11-19", project: "Rig", member: { id: "u", first: "Ben", last: "Cho", headline: "", avatar: "" }, witness: null, backing: null, image: null, shared_at: "" } as const;
+  const club = { ...base, level: "waiting" as const, waiting_for: { club: "Rocketry Club", asked: null } };
+  const prof = { ...base, level: "waiting" as const, waiting_for: { club: null, asked: { relationship: "professor", domain: "utexas.edu" } } };
+  assert.equal(proofBadge(club), "Not signed yet · waiting for Rocketry Club to verify");
+  assert.equal(proofBadge(prof), "Not signed yet · waiting for a professor at utexas.edu to sign");
+  assert.equal(waitingFor(prof), "a professor at utexas.edu");
+  assert.match(proofPostText(prof), /waiting for a professor at utexas\.edu to sign/);
+  assert.doesNotMatch(proofPostText(prof) + proofBadge(prof), /verified|signed by/i);
+  assert.match(proofBadge({ ...base, level: "waiting" as const, waiting_for: null }), /waiting for the person who saw it/);
 });
