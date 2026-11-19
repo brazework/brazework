@@ -204,7 +204,7 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
                   <BarChart3 className="size-4" /> <span className="sr-only sm:not-sr-only">Dashboard</span>
                 </Link>
               ) : preview ? (
-                <Link href={`/u/${p.id}`} className="bg-accent-grad inline-flex h-10 items-center gap-1.5 rounded-lg px-4 text-sm font-medium text-on-accent transition active:scale-95">Done previewing</Link>
+                <Link href={`/u/${p.id}`} className="bg-text inline-flex h-10 items-center gap-1.5 rounded-lg px-4 text-sm font-medium text-surface transition active:scale-95">Done previewing</Link>
               ) : (
                 rel && <ConnectButtons personId={p.id} firstName={p.first_name} relationship={rel} />
               )}
@@ -279,8 +279,8 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
           )}
           {mine ? (hideStrength ? null : <ProfileStrength steps={steps} />) : <SharedContext clubs={sharedClubs} mutual={mutual} mutualCount={mutualCount} />}
           {nowBuilding && (
-            <Link href={`/projects/${nowBuilding.id}`} className="glass-card group flex flex-col rounded-3xl p-5 transition">
-              <span className="flex items-center gap-2 text-xs font-medium tracking-wide text-faint uppercase"><span className="size-1.5 animate-pulse rounded-full bg-text" /> Now building</span>
+            <Link href={`/projects/${nowBuilding.id}`} className="border border-line bg-surface group flex flex-col rounded-2xl p-5 transition">
+              <span className="flex items-center gap-2 text-xs font-medium text-muted"><span className="size-1.5 animate-pulse rounded-full bg-text" /> Now building</span>
               <span className="mt-3 flex items-start gap-3">
                 <span className="nav-tile grid size-10 shrink-0 place-items-center rounded-xl text-text-2"><ProjectIcon tools={nowBuilding.tools} className="size-5" /></span>
                 <span className="min-w-0"><span className="block text-lg font-semibold tracking-tight group-hover:underline">{nowBuilding.title}</span><span className="mt-0.5 line-clamp-2 block text-sm text-text-2">{nowBuilding.summary}</span></span>
@@ -355,7 +355,7 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
           </SideCard>
           {p.interests?.length > 0 && (
             <SideCard title="Interests">
-              <div className="flex flex-wrap gap-1.5">{p.interests.map((t) => <Link key={t} href={`/feed?tab=latest&tag=${encodeURIComponent(t)}`} className="rounded-full border border-line bg-surface px-2.5 py-0.5 text-xs text-text-2 transition hover:border-transparent hover:bg-accent-grad hover:text-on-accent">#{t}</Link>)}</div>
+              <div className="flex flex-wrap gap-1.5">{p.interests.map((t) => <Link key={t} href={`/feed?tab=latest&tag=${encodeURIComponent(t)}`} className="rounded-full border border-line bg-surface px-2.5 py-0.5 text-xs text-text-2 transition hover:border-transparent hover:bg-text hover:text-surface">#{t}</Link>)}</div>
             </SideCard>
           )}
         </aside>

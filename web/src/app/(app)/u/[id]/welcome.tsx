@@ -26,7 +26,7 @@ export async function FirstMilestoneWelcome({ supabase, userId, milestone }: { s
     }
   }
   return (
-    <section aria-label="Welcome to Brazework" className="glass-card relative mb-4 overflow-hidden rounded-2xl p-5 sm:p-6">
+    <section aria-label="Welcome to Brazework" className="border border-line bg-surface relative mb-4 overflow-hidden rounded-2xl p-5 sm:p-6">
       <Celebrate pieces={22} />
       <div className="flex items-start gap-4">
         <span className="grid size-11 shrink-0 place-items-center rounded-2xl bg-text text-surface"><Icon className="size-5" /></span>
@@ -36,7 +36,7 @@ export async function FirstMilestoneWelcome({ supabase, userId, milestone }: { s
           <p className="mt-1 text-sm text-muted">{milestone?.status === "pending" ? <>Post it today: <strong className="font-medium text-text">Share</strong> on the milestone below makes a card that says it&apos;s waiting, and it becomes the signed card when they sign.</> : <>Once someone signs it, it gets a share card you can post anywhere.</>}</p>
           <div className="mt-4 flex flex-wrap items-center gap-2">
             <CopyLink path={`/u/${userId}`} label="Copy my profile link" />
-            <Link href="/feed" className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-accent-grad px-3.5 text-sm font-medium text-on-accent transition hover:opacity-90">Go to Today <ArrowRight className="size-4" /></Link>
+            <Link href="/feed" className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-text px-3.5 text-sm font-medium text-surface transition hover:opacity-90">Go to Today <ArrowRight className="size-4" /></Link>
           </div>
         </div>
       </div>
