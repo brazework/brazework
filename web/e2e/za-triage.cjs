@@ -3,7 +3,8 @@
 // 2. Without leaving Today, in about 30 seconds: Keep a milestone (it waits on the project for a
 //    signature), Send one to a club (he picks which), Post a post, Dismiss one. Ask to sign with email
 //    off in this stack says so and leaves the draft waiting.
-// 3. The page fits a phone (no sideways scroll), and a reload shows only what's left.
+// 3. The page fits a phone (no sideways scroll), and a reload shows only what's left. A project an
+//    assistant drafted gets a line on Today that opens it in Drafts.
 // 4. The daily reminder: off until he turns it on (from Today), then Settings shows it on, and the
 //    cron job counts him (dry run: email is off here) and refuses callers without the secret.
 const { execSync } = require("child_process");
@@ -88,6 +89,23 @@ const post = (body) => `jsonb_build_object('body', '${body}', 'kind', 'update', 
     if (wide > 1) throw new Error(`Today scrolls sideways on a phone by ${wide}px`);
     await go(page, "/feed");
     await page.getByRole("heading", { name: "Your tools noticed 1 thing" }).waitFor({ timeout: 15000 });
+  }, page);
+
+  await step("a project an assistant drafted is named on Today and opens in Drafts, never hidden", async () => {
+    const title = `Triage e2e: a project from Claude (${tag})`;
+    psql(`insert into public.tool_drafts (user_id, kind, payload, via, source) values ('${ben}', 'project', jsonb_build_object('title', '${title}', 'summary', 'Drafted in chat.', 'status', 'in_progress', 'tags', '[]'::jsonb), 'Claude', '')`);
+    await go(page, "/feed");
+    await page.getByRole("heading", { name: "Your tools noticed 2 things" }).waitFor({ timeout: 15000 });
+    const line = page.getByRole("link", { name: new RegExp(`A new project: .${title.replace(/[()]/g, "\\$&")}`) });
+    await line.waitFor({ timeout: 10000 });
+    await line.click();
+    await page.waitForURL(/\/drafts$/, { timeout: 15000 });
+    // Ember's card for it, with the title in its editable field.
+    await page.getByText("Add a project", { exact: true }).first().waitFor({ timeout: 15000 });
+    const shown = await page.getByRole("textbox").first().inputValue();
+    if (shown !== title) throw new Error(`Drafts shows "${shown}"`);
+    psql(`update public.tool_drafts set status = 'dismissed' where user_id = '${ben}' and kind = 'project' and status = 'waiting'`);
+    await go(page, "/feed");
   }, page);
 
   await step("the daily reminder: turned on from Today, shown in Settings", async () => {

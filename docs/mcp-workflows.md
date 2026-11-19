@@ -37,9 +37,18 @@ scopes, signatures). Design: [superpowers/specs/2026-11-18-mcp-workflows-design.
   sign in.
 - **Cursor, VS Code and others:** add an MCP server with that address.
 
-Your assistant opens Brazework's consent page. It says which app is asking and what the app can do
-(read, and leave drafts for you to approve), and you tap **Connect**. Each sign-in shows in **Settings →
-Your tools**, where you can turn on posting for it or disconnect it. This works once a founder has switched
+Your assistant opens Brazework's consent page. It says which app is asking and what it can read, and
+asks how it should add things to your record (`supabase/mcp-oauth-post.sql`):
+
+- **Add it when I say yes in chat** (the default): the assistant shows you exactly what it will add and
+  asks; your yes in the chat (and the assistant's own Allow prompt) is the approval, and it lands on your
+  record at once. Say "later" and it leaves a draft instead.
+- **Drafts only:** everything waits in **Drafts** for you to edit and approve in Brazework.
+
+Then you tap **Connect**. The choice is kept per app and carries over when the assistant signs in again.
+Each sign-in shows in **Settings → Your tools**, where **Can post** changes the same choice, or you can
+disconnect it. Drafts that Today can't decide in a tap (a project, a teammate, an RSVP) get one line on
+Today that links to Drafts, so nothing a tool left is hidden. This works once a founder has switched
 on the OAuth server (below). Until then, and for GitHub Actions and scripts, use a token:
 
 1. In Brazework, open **Settings → Your tools** and pick your assistant. Tap **Make token**. New tokens can

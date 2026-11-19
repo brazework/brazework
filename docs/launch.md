@@ -19,7 +19,8 @@ What the launch shows:
 - **The record:** milestones signed by the people who saw them (a club officer, a professor, a
   manager). The profile leads with a timeline of signed work over time.
 - **The assistant connection (MCP):** connect Claude or another assistant and log work by saying
-  what you did. Drafts wait for your OK, and signatures still come from people.
+  what you did. By default it adds things after your yes in the chat (or, if you pick "Drafts only"
+  when you connect, drafts wait for your OK in Brazework); signatures still come from people.
   [mcp-workflows.md](mcp-workflows.md) and the public guide at https://brazework.com/ai.
   - **Add to Claude** (the landing page's Connect section and `/ai`): the connector address with a
     copy button, the three steps in Claude, one tap for Cursor and VS Code, and the Claude Code

@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
-import { Check, FileText, PenLine, ShieldCheck, X } from "lucide-react";
+import { Check, FileText, ShieldCheck, X } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Logo } from "@/components/ui";
+import { dbFeatures } from "@/lib/db-features";
 import { getViewer } from "@/lib/supabase/server";
+import { CONSENT_MODES } from "./modes";
 import { decide } from "./actions";
 
 export const metadata: Metadata = { title: "Connect an AI assistant" };
@@ -30,10 +32,6 @@ export default function ConsentPage({ searchParams }: PageProps<"/oauth/consent"
   );
 }
 
-const CAN = [
-  { icon: FileText, text: "Read your Brazework: your profile, projects, clubs, events and notifications" },
-  { icon: PenLine, text: "Leave drafts of posts and milestones that wait for you to approve in Brazework" },
-];
 
 async function Consent({ searchParams }: { searchParams: PageProps<"/oauth/consent">["searchParams"] }) {
   const id = (await searchParams).authorization_id;
@@ -46,6 +44,8 @@ async function Consent({ searchParams }: { searchParams: PageProps<"/oauth/conse
   // Already approved before: straight back to the assistant.
   if (!("client" in data)) redirect(data.redirect_url);
   const app = data.client.name || "An AI assistant";
+  // Approve in chat (supabase/mcp-oauth-post.sql): until that step runs, every sign-in drafts.
+  const choose = (await dbFeatures()).mcpOauthPost;
   let host = "";
   try { host = new URL(data.redirect_uri).host; } catch {}
   return (
@@ -53,14 +53,32 @@ async function Consent({ searchParams }: { searchParams: PageProps<"/oauth/conse
       <span className="grid size-11 place-items-center rounded-2xl bg-text text-surface"><ShieldCheck className="size-5" /></span>
       <h1 className="mt-5 text-2xl font-semibold tracking-tight">Connect {app} to your Brazework?</h1>
       <p className="mt-2 text-sm text-muted">Signed in as <span className="text-text">{data.user.email}</span>{host ? <> · it returns to <span className="text-text">{host}</span></> : null}.</p>
-      <ul className="mt-6 flex flex-col gap-3 text-[15px] text-text-2">
-        {CAN.map(({ icon: Icon, text }) => <li key={text} className="flex gap-3"><Icon className="mt-0.5 size-4 shrink-0 text-accent" />{text}</li>)}
-      </ul>
-      <p className="mt-5 rounded-2xl bg-surface-2 px-4 py-3 text-sm text-muted">It can&apos;t post, email anyone or sign anything as you. To let it post after asking you, turn on &ldquo;Can post&rdquo; for it in Settings → Your tools, where you can also disconnect it at any time.</p>
-      <form action={decide} className="mt-7 flex flex-wrap gap-3">
+      <p className="mt-6 flex gap-3 text-[15px] text-text-2"><FileText className="mt-0.5 size-4 shrink-0 text-accent" />It can read your Brazework: your profile, projects, clubs, events and notifications.</p>
+      <form action={decide} className="mt-6">
         <input type="hidden" name="authorization_id" value={id} />
-        <button name="decision" value="approve" className="inline-flex h-11 items-center gap-2 rounded-lg bg-accent-grad px-5 text-[15px] font-medium text-on-accent hover:opacity-90"><Check className="size-4" /> Connect</button>
-        <button name="decision" value="deny" className="inline-flex h-11 items-center gap-2 rounded-lg border border-line px-5 text-[15px] hover:bg-hover"><X className="size-4" /> Not now</button>
+        {choose ? (
+          <fieldset>
+            <legend className="text-sm font-medium text-text">When it wants to add something to your record</legend>
+            <div className="mt-3 flex flex-col gap-2">
+              {CONSENT_MODES.map((m, i) => (
+                <label key={m.value} className="flex cursor-pointer gap-3 rounded-2xl border border-line p-4 transition hover:bg-hover has-[:checked]:border-accent has-[:checked]:bg-surface-2">
+                  <input type="radio" name="mode" value={m.value} defaultChecked={i === 0} className="mt-1 size-4 shrink-0 accent-accent" />
+                  <span className="min-w-0">
+                    <span className="block text-[15px] font-medium text-text">{m.label}{i === 0 && <span className="ml-2 text-xs font-normal text-muted">Recommended</span>}</span>
+                    <span className="mt-0.5 block text-sm text-muted">{m.detail}</span>
+                  </span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
+        ) : (
+          <p className="text-[15px] text-text-2">It can leave drafts of posts and milestones that wait for you to approve in Brazework.</p>
+        )}
+        <p className="mt-4 text-sm text-muted">It can&apos;t sign or verify anything as you. Change this, or disconnect it, any time in Settings → Your tools.</p>
+        <div className="mt-6 flex flex-wrap gap-3">
+          <button name="decision" value="approve" className="inline-flex h-11 items-center gap-2 rounded-lg bg-accent-grad px-5 text-[15px] font-medium text-on-accent hover:opacity-90"><Check className="size-4" /> Connect</button>
+          <button name="decision" value="deny" className="inline-flex h-11 items-center gap-2 rounded-lg border border-line px-5 text-[15px] hover:bg-hover"><X className="size-4" /> Not now</button>
+        </div>
       </form>
     </section>
   );
