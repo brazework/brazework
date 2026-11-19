@@ -8,6 +8,7 @@
 #
 #   npm run dev               reuse the local database if it's running (keeps what you made)
 #   npm run dev -- --fresh    start it over: every step again, only the test members
+#   npm run dev -- --demo     also load the demo members for the launch video (e2e/demo.sh)
 #   PORT=3100 npm run dev     another port
 set -euo pipefail
 cd "$(dirname "$0")/.."
@@ -20,12 +21,13 @@ if ! docker info >/dev/null 2>&1; then
 fi
 
 key() { cat "e2e/.$1-key" 2>/dev/null || true; }
-if [ "${1:-}" = "--fresh" ] || ! curl -sf -o /dev/null "$LOCAL/rest/v1/" -H "apikey: $(key anon)"; then
+if [ "${1:-}" = "--fresh" ] || [ "${1:-}" = "--demo" ] || ! curl -sf -o /dev/null "$LOCAL/rest/v1/" -H "apikey: $(key anon)"; then
   echo "Starting the local database (about a minute the first time)…"
   e2e/local-supabase.sh up
 else
   echo "Using the local database that's already running (npm run dev -- --fresh to start it over)."
 fi
+if [ "${1:-}" = "--demo" ]; then e2e/demo.sh; fi
 
 cat <<EOF
 
