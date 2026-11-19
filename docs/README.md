@@ -18,6 +18,7 @@
 
 ## Running it
 
+- [product-hunt.md](product-hunt.md): the Product Hunt launch kit (tagline, first comment, gallery, demo script, answers, launch-day checklist).
 - [launch.md](launch.md): turning it on in production, in order (database, test data, admins, schools, keys, checks).
 - [next-migration.md](next-migration.md): every database step with a one-line description. The order itself is [`supabase/order.txt`](../supabase/order.txt).
 - [github-org-move.md](github-org-move.md): moving the repo into the `brazework` GitHub organization (before, the move, the check script, undo).
