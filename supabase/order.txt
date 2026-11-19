@@ -76,4 +76,8 @@ mcp-workflows
 mcp-oauth
 waiting-cards
 money
+tool-actions
+tool-rsvp
+tool-clubs-messages
+plus-teaser
 daily-triage

@@ -1,6 +1,6 @@
 "use client";
 import { AnimatePresence, motion } from "motion/react";
-import { ArrowRight, BadgeCheck, CalendarCheck, CalendarPlus, Check, ExternalLink, Flag, Loader2, Megaphone, MessageSquare, Sparkles, UserPlus, Users, X } from "lucide-react";
+import { ArrowRight, BadgeCheck, CalendarCheck, CalendarPlus, Check, ExternalLink, Flag, Loader2, Megaphone, MessageSquare, PencilLine, Sparkles, UserPlus, Users, X } from "lucide-react";
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import { createPost } from "@/app/(app)/feed/actions";
@@ -11,10 +11,13 @@ import type { Proposal } from "@/lib/copilot-agent";
 import { EVENT_FORMATS, EVENT_TYPES } from "@/lib/events";
 import { cn } from "@/lib/forge";
 import { addMilestone, reviewMilestone } from "@/lib/milestones";
-import { saveProject } from "@/lib/projects";
+import { saveProject, updateProjectFields } from "@/lib/projects";
+import { addTeammate } from "@/lib/project-team";
+import { dismissDraft, settleDraft } from "@/lib/tool-drafts";
+import { acceptInviteCard } from "@/lib/invites";
 import { toggleFollow } from "@/lib/network";
 import { toggleRsvp } from "@/app/(app)/events/actions";
-import { messagePerson } from "@/lib/messages";
+import { acceptConversation, messagePerson } from "@/lib/messages";
 
 const field = "w-full rounded-xl border border-line bg-surface px-3 py-2 text-sm outline-none focus:border-line-strong";
 const HEAD = {
@@ -28,15 +31,21 @@ const HEAD = {
   project: { icon: Flag, title: "Add a project", done: "Added to your profile", href: "/profile#projects", go: "See your projects" },
   rsvp: { icon: CalendarCheck, title: "RSVP to an event", done: "You're going", href: "", go: "Open the event" },
   message: { icon: MessageSquare, title: "Send a message", done: "Sent", href: "/messages", go: "Open the conversation" },
+  project_edit: { icon: PencilLine, title: "Update a project", done: "Saved", href: "", go: "Open the project" },
+  teammate: { icon: UserPlus, title: "Add a teammate", done: "Added", href: "", go: "Open the project" },
+  invite: { icon: Users, title: "Accept a club invite", done: "You're in", href: "", go: "Open the club" },
 } as const;
+// Shown under a field a card changes: what's there now.
+const was = (v: string) => <span className="block text-[11px] text-faint">Now: {v ? (v.length > 140 ? `${v.slice(0, 140)}…` : v) : "empty"}</span>;
 
 // ISO time <-> the value a datetime-local input wants (the member's own timezone).
 const toLocal = (iso: string) => { const d = new Date(iso); return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16); };
 const fromLocal = (v: string) => new Date(v).toISOString();
 
-// A draft Copilot prepared. Nothing is saved until the member presses Confirm, which runs the
-// app's normal server action (with all its checks) as them.
-export function ProposalCard({ p: initial }: { p: Proposal }) {
+// A draft Copilot prepared, or one an AI tool left over MCP (fromTool: the same card, from /drafts and
+// Ember's page; supabase/tool-actions.sql). Nothing is saved until the member presses Confirm, which
+// runs the app's normal server action (with all its checks) as them; a tool's draft is then marked done.
+export function ProposalCard({ p: initial, fromTool }: { p: Proposal; fromTool?: { draftId: string; via: string; source: string } }) {
   const [p, setP] = useState(initial);
   const [state, setState] = useState<"open" | "done" | "dismissed">("open");
   const [msg, setMsg] = useState("");
@@ -44,7 +53,7 @@ export function ProposalCard({ p: initial }: { p: Proposal }) {
   const [cid, setCid] = useState("");
   const [pending, start] = useTransition();
   const h = HEAD[p.kind];
-  const href = p.kind === "join" || p.kind === "club_post" ? `/c/${p.club_id}` : p.kind === "follow" ? `/u/${p.person_id}` : p.kind === "event" ? `/c/${p.club_id}?tab=events` : p.kind === "review" ? "/communities" : p.kind === "rsvp" ? `/events/${p.event_id}` : p.kind === "message" && cid ? `/messages/${cid}` : h.href;
+  const href = p.kind === "join" || p.kind === "club_post" || p.kind === "invite" ? `/c/${p.club_id}` : p.kind === "follow" ? `/u/${p.person_id}` : p.kind === "event" ? `/c/${p.club_id}?tab=events` : p.kind === "review" ? "/communities" : p.kind === "rsvp" ? `/events/${p.event_id}` : p.kind === "message" && cid ? `/messages/${cid}` : p.kind === "project_edit" || p.kind === "teammate" ? `/projects/${p.project_id}` : h.href;
   const set = (patch: Partial<Proposal>) => setP((cur) => ({ ...cur, ...patch }) as Proposal);
 
   const confirm = () => start(async () => {
@@ -75,9 +84,17 @@ export function ProposalCard({ p: initial }: { p: Proposal }) {
     } else if (p.kind === "review") {
       r = await reviewMilestone(p.milestone_id, p.verify, p.note);
     } else if (p.kind === "rsvp") {
-      r = await toggleRsvp(p.event_id, true);
+      r = await toggleRsvp(p.event_id, !p.cancel);
+    } else if (p.kind === "project_edit") {
+      r = await updateProjectFields(p.project_id, { summary: p.summary, details: p.details, link: p.link, specs: p.specs });
+    } else if (p.kind === "invite") {
+      r = await acceptInviteCard(p.code);
+    } else if (p.kind === "teammate") {
+      r = await addTeammate(p.project_id, p.person_id, p.role);
     } else if (p.kind === "message") {
-      const res = await messagePerson(p.person_id, p.body);
+      // A reply to someone's message request accepts it first (the card says so), as in Messages.
+      const acc = p.accepts ? await acceptConversation(p.accepts.conversation_id) : { ok: true, message: "" };
+      const res = acc.ok ? await messagePerson(p.person_id, p.body) : { ...acc, cid: undefined };
       if (res.cid) setCid(res.cid);
       r = res;
     } else {
@@ -86,18 +103,24 @@ export function ProposalCard({ p: initial }: { p: Proposal }) {
       f.set("link", ""); f.set("community_id", p.club_id);
       r = await saveEvent({ ok: false, message: "" }, f);
     }
-    if (r.ok) setState("done");
-    else setMsg(r.message || "That didn't work. Check the details and try again.");
+    if (r.ok) {
+      if (fromTool) await settleDraft(fromTool.draftId);
+      setState("done");
+    } else setMsg(r.message || "That didn't work. Check the details and try again.");
+  });
+  const dismiss = () => start(async () => {
+    if (fromTool) await dismissDraft(fromTool.draftId);
+    setState("dismissed");
   });
 
   if (state === "dismissed") return <p className="mt-2 text-xs text-faint">Dismissed. Nothing was saved.</p>;
   return (
-    <motion.div layout initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className={cn("relative mt-3 rounded-2xl border p-4 text-sm whitespace-normal", state === "done" ? "border-[color-mix(in_oklab,var(--ok)_40%,transparent)] bg-[color-mix(in_oklab,var(--ok)_8%,transparent)]" : "grad-edge")}>
+    <motion.div layout role="group" aria-label={`${h.title}${fromTool ? ` from ${fromTool.via}` : ""}`} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} className={cn("relative mt-3 rounded-2xl border p-4 text-sm whitespace-normal", state === "done" ? "border-[color-mix(in_oklab,var(--ok)_40%,transparent)] bg-[color-mix(in_oklab,var(--ok)_8%,transparent)]" : "grad-edge")}>
       {state === "done" && <Celebrate />}
       <div className="flex items-center gap-2">
         <span className={cn("grid size-7 place-items-center rounded-lg", state === "done" ? "bg-ok text-white" : "bg-accent-grad text-on-accent")}>{state === "done" ? <Check className="size-4" /> : <h.icon className="size-4" />}</span>
-        <span className="font-semibold text-text">{state === "done" ? (held ? "Sent for review" : h.done) : h.title}</span>
-        {state === "open" && <span className="ml-auto inline-flex items-center gap-1 text-[11px] text-faint"><Sparkles className="size-3" /> Drafted by Ember · not saved yet</span>}
+        <span className="font-semibold text-text">{p.kind === "rsvp" && p.cancel ? (state === "done" ? "You're not going" : "Take back your RSVP") : state === "done" ? (held ? "Sent for review" : h.done) : h.title}</span>
+        {state === "open" && <span className="ml-auto inline-flex items-center gap-1 text-[11px] text-faint"><Sparkles className="size-3" /> Drafted by {fromTool ? fromTool.via : "Ember"} · not saved yet</span>}
       </div>
 
       {state === "done" ? (
@@ -159,10 +182,27 @@ export function ProposalCard({ p: initial }: { p: Proposal }) {
           )}
           {p.kind === "message" && (
             <>
-              <p className="text-xs text-muted">To <b className="font-medium text-text-2">{p.name}</b>{p.headline && ` · ${p.headline}`}. If you aren&apos;t connected, it arrives as a message request.</p>
+              <p className="text-xs text-muted">To <b className="font-medium text-text-2">{p.name}</b>{p.headline && ` · ${p.headline}`}. {p.accepts ? <> Sending it accepts their message request.</> : <> If you aren&apos;t connected, it arrives as a message request.</>}</p>
               <textarea aria-label="Message" value={p.body} onChange={(e) => set({ body: e.target.value })} maxLength={2000} rows={Math.min(6, 2 + Math.ceil(p.body.length / 70))} className={cn(field, "resize-y leading-relaxed")} />
             </>
           )}
+          {fromTool?.source && <p className="text-xs text-muted">{fromTool.source}</p>}
+          {p.kind === "project_edit" && (
+            <>
+              <p className="text-xs text-muted">On <b className="font-medium text-text-2">{p.project_title}</b>. Only these change.</p>
+              {p.summary !== undefined && <label className="text-xs text-muted">Summary<textarea aria-label="Summary" value={p.summary} onChange={(e) => set({ summary: e.target.value })} maxLength={600} rows={3} className={cn(field, "mt-1 resize-y")} />{was(p.before.summary)}</label>}
+              {p.details !== undefined && <label className="text-xs text-muted">Write-up<textarea aria-label="Write-up" value={p.details} onChange={(e) => set({ details: e.target.value })} maxLength={5000} rows={5} className={cn(field, "mt-1 resize-y")} />{was(p.before.details)}</label>}
+              {p.link !== undefined && <label className="text-xs text-muted">Link<input aria-label="Link" value={p.link} onChange={(e) => set({ link: e.target.value })} maxLength={300} className={cn(field, "mt-1")} />{was(p.before.link)}</label>}
+              {p.specs !== undefined && (
+                <div className="text-xs text-muted">Specs
+                  <ul className="mt-1 flex flex-wrap gap-1.5">{p.specs.map((x) => <li key={`${x.label}:${x.value}`} className="rounded-full bg-surface-2 px-2 py-0.5 text-text-2">{x.label}: {x.value}</li>)}</ul>
+                  {was(p.before.specs.map((x) => `${x.label}: ${x.value}`).join(", "))}
+                </div>
+              )}
+            </>
+          )}
+          {p.kind === "invite" && <p className="text-text-2">Join <b className="font-medium">{p.club_name}</b> with the invite link you were sent.</p>}
+          {p.kind === "teammate" && <p className="text-text-2">Add <b className="font-medium">{p.name}</b>{p.headline && <span className="text-muted"> · {p.headline}</span>} to <b className="font-medium">{p.project_title}</b> as {p.role === "viewer" ? "a viewer (sees it, changes nothing)" : "a teammate (posts updates, logs milestones)"}.</p>}
           {p.kind === "follow" && <p className="text-text-2"><b className="font-medium">{p.name}</b>{p.headline && <span className="text-muted"> · {p.headline}</span>}</p>}
           {p.kind === "event" && (
             <>
@@ -183,7 +223,7 @@ export function ProposalCard({ p: initial }: { p: Proposal }) {
             <button type="button" onClick={confirm} disabled={pending} className="bg-accent-grad inline-flex h-9 items-center gap-1.5 rounded-lg px-4 text-sm font-medium text-on-accent transition active:scale-95 disabled:opacity-50">
               {pending ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />} Confirm
             </button>
-            <button type="button" onClick={() => setState("dismissed")} className="inline-flex h-9 items-center gap-1 rounded-lg px-3 text-sm text-muted hover:text-text"><X className="size-4" /> Dismiss</button>
+            <button type="button" onClick={dismiss} disabled={pending} className="inline-flex h-9 items-center gap-1 rounded-lg px-3 text-sm text-muted hover:text-text"><X className="size-4" /> Dismiss</button>
           </div>
         </div>
       )}

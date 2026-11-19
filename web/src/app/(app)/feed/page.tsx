@@ -31,7 +31,7 @@ import { MessageDock } from "@/components/messages/dock";
 import { FeedRail } from "./rail";
 import { NextUp } from "./discover";
 
-export const metadata: Metadata = { title: "Today" };
+export const metadata: Metadata = { title: "Home" };
 
 
 export default function FeedPage({ searchParams }: PageProps<"/feed">) {

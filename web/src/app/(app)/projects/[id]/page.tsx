@@ -147,7 +147,11 @@ async function ProjectView({ params, searchParams }: { params: PageProps<"/proje
     <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
       <div className="flex min-w-0 flex-col gap-6">
         <section aria-label="Project" className="glass-card overflow-hidden rounded-2xl">
-          <div className="relative aspect-[16/8] min-h-48 overflow-hidden bg-[linear-gradient(135deg,#09090b,#1f1f22_55%,#09090b)] sm:aspect-[16/6]">
+          {/* The hero keeps its aspect ratio and grows for a long title. w-full: a min-height on an aspect-ratio box
+              widened it past a phone screen (2:1 at 192px tall = 384px). The 192px floor sits on the title block instead,
+              and the box has no overflow-hidden (the card clips its corners): an aspect ratio only yields to its content
+              when overflow is visible and min-height is auto. */}
+          <div className="relative flex aspect-[16/8] w-full flex-col justify-end bg-[linear-gradient(135deg,#09090b,#1f1f22_55%,#09090b)] sm:aspect-[16/6]">
             {cover ? (
               <Image src={mediaUrl(cover.path)} alt={cover.alt || ""} fill priority sizes="(min-width: 1280px) 900px, 100vw" className="object-cover" />
             ) : (
@@ -157,7 +161,7 @@ async function ProjectView({ params, searchParams }: { params: PageProps<"/proje
               </>
             )}
             <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/15 to-transparent" />
-            <div className="absolute inset-x-0 bottom-0 p-5 text-white sm:p-7">
+            <div className="relative flex min-h-48 flex-col justify-end p-5 text-white sm:p-7">
               <div className="flex flex-wrap items-center gap-2 text-xs">
                 {/* Live status: shipped, building (active in the last 3 weeks) or quiet, from real activity. */}
                 <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-2.5 py-1 font-medium backdrop-blur">
@@ -168,7 +172,7 @@ async function ProjectView({ params, searchParams }: { params: PageProps<"/proje
                 {verified.length > 0 && <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/90 px-2.5 py-1 font-medium text-white"><BadgeCheck className="size-3.5" /> {verified.length} club-verified</span>}
                 {p.private && <span className="rounded-full bg-white/15 px-2.5 py-1 backdrop-blur">Private</span>}
               </div>
-              <h1 className="mt-2 text-3xl font-semibold tracking-tight [text-shadow:0_2px_16px_rgb(0_0_0/0.4)] sm:text-[2.6rem] sm:leading-tight">{p.title}</h1>
+              <h1 className="mt-2 text-[1.75rem] leading-tight font-semibold tracking-tight text-balance break-words [text-shadow:0_2px_16px_rgb(0_0_0/0.4)] sm:text-[2.6rem] sm:leading-tight">{p.title}</h1>
             </div>
           </div>
           <div className="p-5 sm:p-7">

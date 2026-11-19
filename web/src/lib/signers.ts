@@ -22,5 +22,5 @@ export function signersFor(rows: MemberRow[], me: string): Map<string, string[]>
 export function signerNote(club: string, signers: string[]): { ok: boolean; text: string } {
   if (!signers.length) return { ok: false, text: `You're the only officer in ${club}, and you can't sign your own work. Make another member an officer, or ask someone who saw it instead.` };
   const shown = signers.slice(0, 2).join(", "), more = signers.length - 2;
-  return { ok: true, text: `${more > 0 ? `${shown} and ${more} more officer${more === 1 ? "" : "s"}` : signers.length === 2 ? signers.join(" or ") : shown} can sign this. They'll see it on Today.` };
+  return { ok: true, text: `${more > 0 ? `${shown} and ${more} more officer${more === 1 ? "" : "s"}` : signers.length === 2 ? signers.join(" or ") : shown} can sign this. They'll see it on Home.` };
 }

@@ -27,33 +27,35 @@ type Physical = THREE_NS.MeshPhysicalMaterial;
 export type Live = (t: number) => void;
 export type Extras = { RoundedBoxGeometry?: typeof RoundedBox };
 
-/** The examples, in the order the landing page offers them: the field, the build, and the kind of
- *  milestone someone in that field would post and who would sign it. */
+/** The examples, in the order the landing page offers them: the field, the build, the result someone
+ *  in that field would record (with its number), and who confirmed it, the way Brazework does:
+ *  verified by a club its officers run, or signed by a person who saw the work (a professor, a
+ *  manager, a client, a mentor), named with their role. Students and working professionals alike. */
 export const SAMPLES = [
   // Engineering
-  { id: "robot", field: "Robotics", name: "Line-following robot", milestone: "Beat the course in 41.2 seconds", by: "Rocketry Club" },
-  { id: "rocket", field: "Aerospace", name: "Certification rocket", milestone: "Flew to 1,140 m and was recovered intact", by: "Rocketry Club" },
-  { id: "gearbox", field: "Mechanical", name: "Reduction gearbox", milestone: "Ran two hours under load without slipping", by: "Formula Racing Team" },
-  { id: "board", field: "Electronics", name: "Battery management board", milestone: "Passed bring-up with every cell balanced", by: "Solar Car Team" },
-  { id: "bridge", field: "Civil", name: "Balsa truss bridge", milestone: "Held 48 kg while weighing 62 g", by: "Civil Engineering Society" },
+  { id: "robot", field: "Robotics", name: "Line-following robot", milestone: "Ran the 12 m course in 41.2 s, best of three runs", by: "Rocketry Club", how: "verified" },
+  { id: "rocket", field: "Aerospace", name: "Certification rocket", milestone: "Level 1 flight: 1,140 m apogee, recovered intact", by: "J. Reyes, certification prefect", how: "signed" },
+  { id: "gearbox", field: "Mechanical", name: "Reduction gearbox", milestone: "Ran 2 hours at 40 N·m with no slip or heat damage", by: "Prof. Alvarez, Machine Design", how: "signed" },
+  { id: "board", field: "Electronics", name: "Battery management board", milestone: "Balanced all 12 cells within 5 mV at bring-up", by: "D. Ruiz, hardware lead (manager)", how: "signed" },
+  { id: "bridge", field: "Civil", name: "Balsa truss bridge", milestone: "Held 48 kg at 62 g, a 774 to 1 load ratio", by: "Civil Engineering Society", how: "verified" },
   // Computing
-  { id: "phone", field: "Software", name: "Campus shuttle tracker app", milestone: "Shipped to 2,100 weekly riders", by: "Software Engineering Club" },
-  { id: "cluster", field: "Computer science", name: "Four-node compute cluster", milestone: "Sorted 10 GB across four nodes in 94 seconds", by: "Computing Society" },
-  { id: "network", field: "Data & AI", name: "Crop disease classifier", milestone: "Reached 94% accuracy on the field-trial photos", by: "AI Society" },
+  { id: "phone", field: "Software", name: "Campus shuttle tracker app", milestone: "Shipped v2: 2,100 weekly riders, 99.6% crash-free", by: "M. Okoro, Transit Office (client)", how: "signed" },
+  { id: "cluster", field: "Computer science", name: "Four-node compute cluster", milestone: "Sorted 10 GB across four nodes in 94 s", by: "Dr. Okafor, Distributed Systems", how: "signed" },
+  { id: "network", field: "Data & AI", name: "Crop disease classifier", milestone: "94% accuracy on 1,800 field-trial photos", by: "Dr. Shah, agronomy lab PI", how: "signed" },
   // Sciences
-  { id: "knot", field: "Mathematics", name: "Trefoil knot model", milestone: "Presented at the undergraduate math seminar", by: "Math Society" },
-  { id: "pendulum", field: "Physics", name: "Double pendulum rig", milestone: "Tracked 200 runs and measured where chaos sets in", by: "Physics Society" },
-  { id: "crystal", field: "Chemistry", name: "Salt crystal lattice model", milestone: "Grew a 14 mm single crystal over three weeks", by: "Chemistry Club" },
-  { id: "helix", field: "Biology", name: "DNA double helix model", milestone: "Printed and used in the BIO 101 lab", by: "Dr. Lee, Biology" },
-  { id: "weather", field: "Environment", name: "Campus weather station", milestone: "Logged 90 days of readings without a gap", by: "Environmental Science Club" },
-  { id: "cubesat", field: "Space", name: "CubeSat structure", milestone: "Passed the vibration test at launch levels", by: "Space Systems Lab" },
-  { id: "hand", field: "Medicine", name: "3D-printed prosthetic hand", milestone: "Gripped and lifted a 500 g bottle in testing", by: "Biomedical Engineering Society" },
+  { id: "knot", field: "Mathematics", name: "Drone inspection flight path", milestone: "Planned a 3D inspection path: 31% shorter, every face of the tower covered", by: "S. Kim, operations lead (client)", how: "signed" },
+  { id: "pendulum", field: "Physics", name: "Motion-sensor calibration rig", milestone: "Calibrated a client's motion sensors to within 0.5% error", by: "T. Nguyen, QA lead (client)", how: "signed" },
+  { id: "crystal", field: "Chemistry", name: "Cathode material study", milestone: "Screened 120 cathode coatings; the best kept 92% capacity after 500 cycles", by: "Dr. Haddad, R&D manager", how: "signed" },
+  { id: "helix", field: "Biology", name: "Gene-editing guide design", milestone: "Designed guides that reached 94% editing efficiency in the pilot", by: "Dr. Lee, lab director (manager)", how: "signed" },
+  { id: "weather", field: "Environment", name: "Campus weather station", milestone: "90 days of readings with no gaps, shared with the city", by: "City sustainability office (client)", how: "signed" },
+  { id: "cubesat", field: "Space", name: "CubeSat structure", milestone: "Passed the vibration test at launch levels", by: "Space Systems Lab", how: "verified" },
+  { id: "hand", field: "Medicine", name: "3D-printed prosthetic hand", milestone: "Lifted a 500 g bottle in 20 of 20 trials", by: "R. Patel, clinical mentor", how: "signed" },
   // Business, arts and society
-  { id: "cart", field: "Business", name: "Campus coffee cart", milestone: "Sold 1,200 cups in its first month", by: "Entrepreneurship Club" },
-  { id: "chair", field: "Design", name: "Flat-pack plywood chair", milestone: "Held 120 kg in the load test", by: "Industrial Design Studio" },
-  { id: "camera", field: "Media", name: "Documentary short", milestone: "Screened to 300 people at the fall showcase", by: "Film Club" },
-  { id: "chart", field: "Social science", name: "Campus rent survey", milestone: "412 responses, published and cited by the student senate", by: "Economics Society" },
-  { id: "blocks", field: "Education", name: "Tactile fraction kit", milestone: "Used in three fourth-grade classes this term", by: "Education Society" },
+  { id: "fulfillment", field: "Business", name: "Warehouse pick-and-pack station", milestone: "Re-slotted 1,800 SKUs: orders out 23% faster in a 6-week pilot", by: "L. Grant, Operations Director (client)", how: "signed" },
+  { id: "chair", field: "Design", name: "Flat-pack lounge chair", milestone: "Passed a 120 kg load test; the client ordered a 200-unit run", by: "A. Moreno, product lead (client)", how: "signed" },
+  { id: "camera", field: "Media", name: "Product launch film", milestone: "Launch film for a client: 410,000 views, 3.1% click-through", by: "K. Osei, marketing lead (client)", how: "signed" },
+  { id: "chart", field: "Social science", name: "Customer churn study", milestone: "40 customer interviews; three churn drivers adopted in the Q3 roadmap", by: "Dr. Ortiz, head of research (manager)", how: "signed" },
+  { id: "blocks", field: "Education", name: "Fractions learning kit", milestone: "Adopted by 3 schools; unit quiz scores up 18%", by: "M. Gómez, district curriculum lead", how: "signed" },
 ] as const;
 export type SampleId = (typeof SAMPLES)[number]["id"];
 /** The format a sample's numbers are in, for the size readout (lib/model-view.ts, sizeLabel). */
@@ -61,7 +63,7 @@ export const SAMPLE_EXT = "glb";
 
 export function buildSample(THREE: Three, id: SampleId, extras: Extras = {}): THREE_NS.Object3D {
   const k = kit(THREE, SAMPLES.find((s) => s.id === id)?.name ?? "Example", extras);
-  ({ robot, rocket, gearbox, board, bridge, phone, cluster, network, knot, pendulum, crystal, helix, weather, cubesat, hand, cart, chair, camera, chart, blocks })[id](THREE, k);
+  ({ robot, rocket, gearbox, board, bridge, phone, cluster, network, knot, pendulum, crystal, helix, weather, cubesat, hand, fulfillment, chair, camera, chart, blocks })[id](THREE, k);
   return k.root;
 }
 
@@ -416,7 +418,7 @@ function bridge(THREE: Three, { part, add, box, cyl, beam, mat, live }: Kit) {
   });
 }
 
-// Biology: a double helix on a stand, the kind a lab prints to teach base pairing. It turns on its stand.
+// Biology: a double helix on a stand, standing for a gene-editing project (the guides target a stretch of it). It turns on its stand.
 function helix(THREE: Three, { part, add, cyl, rod, mat, live }: Kit) {
   const blue = mat(0x2f6fde, 0.4), orange = mat(0xe8833a, 0.4), stand = mat(0x2a2d34, 0.55, 0.2);
   const pairs = [[mat(0x34a36b, 0.45), mat(0xd94f4f, 0.45)], [mat(0xe2b93b, 0.45), mat(0x7a5cd6, 0.45)]];
@@ -574,7 +576,7 @@ function network(THREE: Three, { part, add, box, cyl, rod, mat, live }: Kit) {
   });
 }
 
-// Mathematics: a trefoil, the simplest knot that can't be untied, on a stand. It turns slowly, so you see it never crosses itself.
+// Mathematics: a trefoil on a stand, standing for a planned 3D flight path (one closed loop that never crosses itself). It turns slowly.
 function knot(THREE: Three, { part, add, cyl, mat, live }: Kit) {
   const k = add(part("Knot"), new THREE.TorusKnotGeometry(0.04, 0.0105, 220, 24, 2, 3), mat(0x7a5cd6, 0.25, 0.15), 0, 0.105, 0);
   const stand = part("Stand");
@@ -583,9 +585,9 @@ function knot(THREE: Three, { part, add, cyl, mat, live }: Kit) {
   live((t) => { k.rotation.y = t * 0.4; k.rotation.x = 0.18 * Math.sin(t * 0.5); });
 }
 
-// Physics: a double pendulum on a frame, with an encoder on the pivot. It runs the real equations of
+// Physics: a double pendulum on a frame, with an encoder on the pivot: a calibration rig that throws motion sensors through chaotic motion. It runs the real equations of
 // motion (point masses, RK4): released with a flick, run after run, each a little different, and the
-// tip leaves a trace. That sensitivity is the chaos the milestone measured.
+// tip leaves a trace. That chaos is what puts the sensors through every kind of motion.
 function pendulum(THREE: Three, { part, add, box, cyl, beam, mat, live, setting }: Kit) {
   const alu = mat(0xb9bec7, 0.4, 0.85), dark = mat(0x2a2d34, 0.55, 0.3), steel = mat(0xc9ced6, 0.28, 1), brass = mat(0xc0994f, 0.3, 1), red = mat(0xd3372c, 0.4);
   const frame = part("Frame");
@@ -656,7 +658,7 @@ function pendulum(THREE: Three, { part, add, box, cyl, beam, mat, live, setting 
   });
 }
 
-// Chemistry: the lattice of table salt, sodium and chloride ions alternating in a cube, turning on its posts.
+// Chemistry: an ionic lattice, two kinds of ion alternating in a cube, standing for a cathode material study. It turns on its posts.
 function crystal(THREE: Three, { part, add, box, rod, mat, live }: Kit) {
   const na = part("Sodium ions"), cl = part("Chloride ions"), bonds = part("Bonds"), S = 0.03, Y = 0.05;
   const naM = mat(0x8e6fd8, 0.3, 0.1), clM = mat(0x49b36b, 0.3, 0.1), bondM = mat(0xb9bec7, 0.4, 0.6);
@@ -812,54 +814,59 @@ function hand(THREE: Three, { part, add, box, cyl, mat, live }: Kit) {
   });
 }
 
-// Business: a coffee cart, the kind a student venture sells from on the quad. On the paving, steam rising off the machine.
-function cart(THREE: Three, { part, add, box, cyl, rod, mat, live, setting, paint, puffs }: Kit) {
-  const wood = mat(0xb5814f, 0.7), topM = mat(0xe8dcc8, 0.5), frame = mat(0x22252b, 0.5, 0.4), red = mat(0xc8402f, 0.6), cream = mat(0xf3ece0, 0.6), steel = mat(0xc9ced6, 0.25, 1), rubber = mat(0x0e0e10, 0.9), chalk = mat(0x1d2420, 0.8), white = mat(0xffffff, 0.5);
-  const body = part("Body");
-  add(body, box(1.3, 0.62, 0.72), wood, 0, 0.72, 0);
-  for (const x of [-0.45, 0, 0.45]) add(body, box(0.02, 0.56, 0.01), frame, x, 0.72, 0.365);
-  add(body, box(0.05, 0.41, 0.05), frame, 0.6, 0.205, 0.3);
-  add(body, box(0.05, 0.41, 0.05), frame, 0.6, 0.205, -0.3);
-  rod(body, [0.65, 0.95, -0.3], [0.9, 1.0, -0.3], 0.018, frame, 12);
-  rod(body, [0.65, 0.95, 0.3], [0.9, 1.0, 0.3], 0.018, frame, 12);
-  rod(body, [0.9, 1.0, -0.3], [0.9, 1.0, 0.3], 0.018, frame, 12);
-  for (const z of [-0.42, 0.42]) {
-    const w = part(z < 0 ? "Left wheel" : "Right wheel");
-    add(w, new THREE.TorusGeometry(0.33, 0.03, 16, 56), rubber, -0.3, 0.36, z);
-    add(w, cyl(0.05, 0.07, 24), steel, -0.3, 0.36, z).rotation.x = Math.PI / 2;
-    for (let i = 0; i < 6; i++) { const a = (i / 6) * Math.PI; rod(w, [-0.3 + 0.32 * Math.cos(a), 0.36 + 0.32 * Math.sin(a), z], [-0.3 - 0.32 * Math.cos(a), 0.36 - 0.32 * Math.sin(a), z], 0.008, steel, 8); }
+// Business: a warehouse pick-and-pack station, the kind of operations project a company hires for:
+// two bays of racking with bins and pick-to-light indicators, a roller conveyor carrying cartons, and a
+// packing bench with a scale, a label printer and its screen. Playing it, cartons ride the conveyor and
+// the pick lights step from bin to bin, the way the re-slotted pick path runs.
+function fulfillment(THREE: Three, { part, add, box, cyl, mat, live }: Kit) {
+  const upright = mat(0xe8742a, 0.5, 0.3), steel = mat(0x8a9099, 0.35, 0.8), deck = mat(0xb9bec6, 0.45, 0.6), binA = mat(0x2f6fde, 0.55), binB = mat(0x3a3f47, 0.6),
+    roller = mat(0xc9ced6, 0.3, 1), carton = mat(0xc49a6c, 0.85), top = mat(0xdedad2, 0.6), dark = mat(0x1d2025, 0.5),
+    screen = mat(0x9fd3ff, 0.3, 0, { emissive: 0x9fd3ff, emissiveIntensity: 0.4 });
+  // Racking: three upright frames, four beam levels, a steel deck on each.
+  const rack = part("Pick racking");
+  const x0 = -1.15, x1 = 0.45, zb = -0.6, zf = -0.15, H = 1.8;
+  for (const x of [x0, (x0 + x1) / 2, x1]) for (const z of [zb, zf]) add(rack, box(0.05, H, 0.05), upright, x, H / 2, z);
+  const levels = [0.08, 0.62, 1.16, 1.7];
+  for (const y of levels) {
+    for (const z of [zb, zf]) add(rack, box(x1 - x0 + 0.05, 0.05, 0.04), upright, (x0 + x1) / 2, y, z);
+    add(rack, box(x1 - x0, 0.02, zf - zb), deck, (x0 + x1) / 2, y + 0.035, (zb + zf) / 2);
   }
-  add(part("Counter"), box(1.4, 0.04, 0.82), topM, 0, 1.05, 0);
-  const canopy = part("Canopy");
-  for (const [x, z] of [[-0.64, -0.36], [0.64, -0.36], [-0.64, 0.36], [0.64, 0.36]]) rod(canopy, [x, 1.07, z], [x, 2.0, z], 0.016, frame, 10);
-  for (let i = 0; i < 8; i++) { const s = add(canopy, box(0.185, 0.02, 1.0), i % 2 ? cream : red, -0.6475 + i * 0.185, 2.05, 0.06); s.rotation.x = 0.16; }
-  const machine = part("Espresso machine");
-  add(machine, box(0.42, 0.32, 0.34), steel, -0.32, 1.23, -0.12);
-  add(machine, box(0.36, 0.03, 0.14), frame, -0.32, 1.1, 0.1);
-  for (const x of [-0.42, -0.22]) add(machine, cyl(0.022, 0.08, 16), frame, x, 1.16, 0.08);
-  const cups = part("Cups");
-  for (const x of [0.2, 0.32, 0.44]) for (let i = 0; i < 4; i++) add(cups, cyl(0.03, 0.03, 20, 0.04), white, x, 1.085 + i * 0.022, 0.22);
-  const menu = part("Menu board");
-  add(menu, box(0.5, 0.36, 0.02), chalk, 0.25, 1.68, -0.36);
-  for (let i = 0; i < 4; i++) add(menu, box(0.3 - i * 0.04, 0.02, 0.004), white, 0.2, 1.78 - i * 0.065, -0.348);
-  // Paving slabs on the quad.
-  const slabs = paint(512, 512, (g) => {
-    g.fillStyle = "#6e6a64"; g.fillRect(0, 0, 512, 512);
-    for (let r = 0; r < 8; r++) for (let c = 0; c < 8; c++) { const v = 150 + ((r * 31 + c * 17) % 5) * 8; g.fillStyle = `rgb(${v},${v - 4},${v - 10})`; g.fillRect(c * 64 + 3, r * 64 + 3, 58, 58); }
+  // Bins on the three lower levels, each with a pick-to-light on the beam in front of it.
+  const bins = part("Bins and pick lights");
+  const lights: Mesh[] = [];
+  levels.slice(0, 3).forEach((y, li) => {
+    for (let i = 0; i < 6; i++) {
+      const x = x0 + 0.14 + i * 0.264;
+      add(bins, box(0.22, 0.2, 0.38), (i + li) % 3 === 0 ? binB : binA, x, y + 0.145, (zb + zf) / 2);
+      lights.push(add(bins, box(0.08, 0.03, 0.02), mat(0xffb020, 0.4, 0, { emissive: 0xffb020, emissiveIntensity: 0.1 }), x, y, zf + 0.035));
+    }
   });
-  slabs.wrapS = slabs.wrapT = THREE.RepeatWrapping; slabs.repeat.set(2.4, 1.8);
-  const ground = new THREE.Mesh(new THREE.PlaneGeometry(2.4, 1.8), new THREE.MeshStandardMaterial({ map: slabs, roughness: 0.95 }));
-  ground.rotation.x = -Math.PI / 2;
-  setting().add(ground);
-  const steam = puffs(setting(), 16, 0xf4f4f2);
+  // Conveyor: side rails on legs, rollers across.
+  const conv = part("Conveyor");
+  const cx0 = -1.1, cx1 = 0.6, cz = 0.35, cy = 0.78, cw = 0.5;
+  for (const z of [cz - cw / 2, cz + cw / 2]) add(conv, box(cx1 - cx0, 0.08, 0.04), steel, (cx0 + cx1) / 2, cy, z);
+  for (const x of [cx0 + 0.1, (cx0 + cx1) / 2, cx1 - 0.1]) for (const z of [cz - cw / 2, cz + cw / 2]) add(conv, box(0.04, cy - 0.04, 0.04), steel, x, (cy - 0.04) / 2, z);
+  for (let x = cx0 + 0.06; x < cx1 - 0.03; x += 0.09) add(conv, cyl(0.025, cw - 0.04, 20), roller, x, cy + 0.02, cz).rotation.x = Math.PI / 2;
+  // Cartons riding it.
+  const cartons = part("Cartons");
+  const run = cx1 - cx0 - 0.4;
+  const boxes = [0, 1, 2, 3].map((i) => add(cartons, box(0.3, 0.2 + (i % 2) * 0.06, 0.3), carton, cx0 + 0.2 + i * 0.4, cy + 0.145 + (i % 2) * 0.03, cz));
+  // Packing bench: top, legs, scale, label printer, and the screen with tomorrow's wave on it.
+  const pack = part("Packing station");
+  const px = 0.95, pz = 0.25;
+  add(pack, box(0.6, 0.04, 0.7), top, px, 0.9, pz);
+  for (const dx of [-0.26, 0.26]) for (const dz of [-0.31, 0.31]) add(pack, box(0.04, 0.88, 0.04), steel, px + dx, 0.44, pz + dz);
+  add(pack, box(0.26, 0.04, 0.26), dark, px - 0.11, 0.94, pz + 0.1);
+  add(pack, box(0.16, 0.12, 0.2), dark, px + 0.17, 0.98, pz + 0.15);
+  add(pack, box(0.03, 0.4, 0.03), steel, px + 0.08, 1.1, pz - 0.28);
+  add(pack, box(0.4, 0.26, 0.03), dark, px + 0.08, 1.38, pz - 0.27);
+  add(pack, box(0.36, 0.22, 0.005), screen, px + 0.08, 1.38, pz - 0.253);
   live((t) => {
-    steam.forEach((m, i) => {
-      const life = 3.2, age = (t + (i / steam.length) * life) % life;
-      m.visible = true;
-      m.position.set(-0.24 + 0.04 * Math.sin(age * 1.7 + i), 1.4 + 0.16 * age, -0.16 + 0.03 * Math.cos(age * 1.3 + i));
-      m.scale.setScalar(0.05 + 0.11 * age);
-      m.material.opacity = 0.4 * (1 - age / life) * clamp01(age * 3);
-    });
+    // Cartons loop along the conveyor; at t = 0 they're back where they were built.
+    boxes.forEach((b, i) => { b.position.x = cx0 + 0.2 + ((i * 0.4 + t * 0.25) % run); });
+    // The pick path: one light at a time, bin to bin. None lit at rest.
+    const on = t > 0 ? Math.floor(t * 1.4) % lights.length : -1;
+    lights.forEach((l, i) => { glow(l).emissiveIntensity = i === on ? 2.4 : 0.1; });
   });
 }
 
