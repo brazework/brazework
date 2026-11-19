@@ -3,6 +3,7 @@ import { Check, Copy, Link2, Loader2, Share2 } from "lucide-react";
 import { useState, useTransition } from "react";
 import { Button } from "@/components/ui";
 import { cn } from "@/lib/forge";
+import { useTimeZone } from "../../../events/local-time";
 import { createInvite, revokeInvite, type Invite } from "../../../communities/actions";
 
 const DURATIONS: [number | null, string][] = [[1, "1 day"], [7, "7 days"], [30, "30 days"], [null, "Never"]];
@@ -12,6 +13,7 @@ const status = (i: Invite) =>
   i.revoked ? "Turned off" : i.expires_at && Date.parse(i.expires_at) <= Date.now() ? "Expired" : i.max_uses !== null && i.uses >= i.max_uses ? "Used up" : "Active";
 
 export function InviteLinks({ cid, clubName, origin, invites }: { cid: string; clubName: string; origin: string; invites: Invite[] }) {
+  const tz = useTimeZone(); // UTC on the server and at hydration, then the viewer's zone
   const [days, setDays] = useState<number | null>(7);
   const [limit, setLimit] = useState<number | null>(null);
   const [pending, start] = useTransition();
@@ -61,7 +63,7 @@ export function InviteLinks({ cid, clubName, origin, invites }: { cid: string; c
                 <div className="min-w-0 flex-1">
                   <div className="truncate font-mono text-sm">{url(i.code).replace(/^https?:\/\//, "")}</div>
                   <div className="text-xs text-faint">
-                    {st} · {i.uses}{i.max_uses !== null ? ` of ${i.max_uses}` : ""} joined{i.expires_at && active ? ` · expires ${new Date(i.expires_at).toLocaleDateString("en-US", { month: "short", day: "numeric" })}` : ""}
+                    {st} · {i.uses}{i.max_uses !== null ? ` of ${i.max_uses}` : ""} joined{i.expires_at && active ? ` · expires ${new Date(i.expires_at).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: tz })}` : ""}
                   </div>
                 </div>
                 {active && (

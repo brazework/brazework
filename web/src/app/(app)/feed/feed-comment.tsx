@@ -45,7 +45,7 @@ export function FeedComment({ postId, c, me, postIsMine, onReply }: { postId: st
       <Link prefetch={false} href={`/u/${c.author_id}`} tabIndex={-1} aria-hidden="true" className="shrink-0"><Avatar first={c.author_first} last={c.author_last} size={c.parent_id ? 24 : 28} /></Link>
       <div className="min-w-0 flex-1">
         <div className="inline-block max-w-full rounded-2xl bg-surface-2/70 px-3 py-2">
-          <div className="text-xs"><Link prefetch={false} href={`/u/${c.author_id}`} className="font-medium text-text hover:underline">{`${c.author_first} ${c.author_last}`.trim()}</Link> <span className="text-faint">· {timeAgo(c.created_at)}{c.edited_at ? " · edited" : ""}</span></div>
+          <div className="text-xs"><Link prefetch={false} href={`/u/${c.author_id}`} className="font-medium text-text hover:underline">{`${c.author_first} ${c.author_last}`.trim()}</Link> <span suppressHydrationWarning className="text-faint">· {timeAgo(c.created_at)}{c.edited_at ? " · edited" : ""}</span></div>
           {editing ? (
             <form onSubmit={(e) => { e.preventDefault(); save(); }} className="mt-1">
               <label htmlFor={`fe-${c.id}`} className="sr-only">Edit your comment</label>

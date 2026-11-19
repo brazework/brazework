@@ -40,6 +40,18 @@ async function saved(page, path, text) {
     await go(josh, dm);
     await josh.getByText("Come to launch day Saturday.").first().waitFor({ timeout: 15000 });
   }, josh);
+  // The server renders in UTC; a member 14 hours ahead must get the same first render (no hydration
+  // failure), then their own clock: message times are formatted with useTimeZone (events/local-time).
+  await step("a thread opened far from UTC hydrates cleanly and shows local times", async () => {
+    const far = await as(b, "josh@forge.test", { width: 1440, height: 950 }, { timezoneId: "Pacific/Kiritimati" });
+    far.errs.length = 0;
+    await go(far, dm);
+    await far.getByText("Come to launch day Saturday.").first().waitFor({ timeout: 15000 });
+    await far.waitForTimeout(1000);
+    const bad = far.errs.find((e) => /hydrat/i.test(e));
+    if (bad) throw new Error(bad.split("\n")[0]);
+    await far.context().close();
+  }, josh);
   await step("Josh sends a post to Ben", async () => {
     await go(josh, "/feed?tab=latest");
     // The feed comes in pages (FIX-77): scroll down to it, as a person would.

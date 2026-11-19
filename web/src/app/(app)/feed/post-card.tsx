@@ -305,7 +305,7 @@ function BuildStrip({ project, own }: { project: PostProject; own: boolean }) {
             <span className="truncate">{project.title}</span>
             {project.private && <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-line px-2 py-0.5 text-[10px] text-muted"><Lock className="size-3" /> Private</span>}
           </span>
-          <span className="block text-xs text-faint">{project.status === "completed" ? `Completed${project.year ? ` ${project.year}` : ""}` : `In progress · updated ${timeAgo(project.updated_at)}`}</span>
+          <span suppressHydrationWarning className="block text-xs text-faint">{project.status === "completed" ? `Completed${project.year ? ` ${project.year}` : ""}` : `In progress · updated ${timeAgo(project.updated_at)}`}</span>
         </span>
         {v.n > 0 ? (
           <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[color-mix(in_oklab,var(--ok)_12%,transparent)] px-2.5 py-1 text-xs font-medium text-ok" title={`Verified by ${v.clubs.join(", ")}`}>

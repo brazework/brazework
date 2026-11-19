@@ -103,7 +103,7 @@ export function ProjectFiles({ projectId, items, me, ownerId, variant = "folder"
                 <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-surface-2"><Icon className="size-4 text-muted" /></span>
                 <button type="button" onClick={() => open(d, !["pdf", "text"].includes(kindOfFile(d.name) ?? ""))} className="min-w-0 flex-1 text-left">
                   <span className="block truncate text-sm font-medium hover:underline">{d.name}</span>
-                  <span className="block truncate text-xs text-muted">{[extOf(d.name).toUpperCase(), sizeLabel(d.size), variant === "folder" ? timeAgo(d.created_at) : ""].filter(Boolean).join(" · ")}</span>
+                  <span suppressHydrationWarning className="block truncate text-xs text-muted">{[extOf(d.name).toUpperCase(), sizeLabel(d.size), variant === "folder" ? timeAgo(d.created_at) : ""].filter(Boolean).join(" · ")}</span>
                 </button>
                 <button type="button" onClick={() => open(d, true)} aria-label={`Download ${d.name}`} title="Download" className="grid size-8 shrink-0 place-items-center rounded-full text-faint transition hover:bg-hover hover:text-text"><Download className="size-4" /></button>
                 <RemoveBtn it={d} />
