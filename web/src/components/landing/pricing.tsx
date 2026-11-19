@@ -28,7 +28,6 @@ function TierCard({ t, first }: { t: Tier; first: boolean }) {
     <div className={cn("flex flex-col p-6 sm:p-8", !first && "border-t border-line md:border-t-0")}>
       <div className="flex items-center gap-2">
         <h4 className="text-sm font-medium text-muted">{t.name}</h4>
-        {t.soon && <span className="rounded-full bg-accent/10 px-2 py-0.5 text-[11px] font-medium text-accent">Coming soon</span>}
       </div>
       <p className="mt-2 text-3xl font-semibold tracking-tight">{t.price}</p>
       <p className="mt-1 text-sm text-muted">{t.note}</p>

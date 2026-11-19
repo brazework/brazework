@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { WhoLooked } from "./who-looked";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { PageHeader, Skeleton, Tabs } from "@/components/app/page-ui";
@@ -75,6 +76,7 @@ async function Dashboard({ searchParams }: { searchParams: PageProps<"/dashboard
   const reports = (await Promise.all(((clubRows.data ?? []) as { community_id: string }[]).map(async (c) => ({ id: c.community_id, report: await loadClubReport(supabase, c.community_id, features) }))))
     .filter((x): x is { id: string; report: ClubReport } => !!x.report);
 
-  return <DashboardView r={r} range={range} likes={likes} comments={comments} follows={follows} views={views} reports={reports} userId={user.id} />;
+  // Who looked, by company (supabase/money.sql): 7 days on Free, 90 with Plus.
+  return <><DashboardView r={r} range={range} likes={likes} comments={comments} follows={follows} views={views} reports={reports} userId={user.id} />{features.money && <WhoLooked supabase={supabase} />}</>;
 }
 
