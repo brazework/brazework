@@ -12,6 +12,7 @@ What runs by itself, what still needs a person, and what to add next. The goal: 
 | **Security scan of the running app** (OWASP ZAP, fails on High) | Same as above | web.yml → quality |
 | **Dependency audit and secret scan** (npm audit, gitleaks over all history). Required to merge | Same | web.yml → security |
 | **Code security analysis** (CodeQL, fails on severity ≥ 7) | Every PR, weekly and on demand | `.github/workflows/codeql.yml` |
+| **No preview deployments** (for speed): Vercel builds `main` only (`web/vercel.json` → `ignoreCommand`). Every pull request is tested by CI on a throwaway database instead | Every pull request | `web/vercel.json` |
 | **Pull requests merge themselves** once the required checks pass. `main` is protected (branches must be up to date), and merged branches are deleted | Every PR with auto-merge on | GitHub branch protection; how we ship: [CONTRIBUTING.md](../CONTRIBUTING.md) |
 | **Dependency updates** as grouped PRs; risky major upgrades pinned on purpose | Weekly (Mondays) | `.github/dependabot.yml` |
 | **Production deploy** of `main` | Every push to `main` | Vercel's GitHub app |
@@ -30,7 +31,6 @@ What runs by itself, what still needs a person, and what to add next. The goal: 
 | What | Needs | Linear |
 |---|---|---|
 | **Infra drift, nightly** (read-only): `infra/check.mjs` compares production's Supabase, Vercel and DNS settings with `infra/desired.json`. Drift fails the run and opens or updates one "Infra drift" issue in Linear; a change made on purpose is blessed with `node infra/check.mjs --capture` and a PR. Every night at 07:40 UTC, and Actions → Infra drift → Run workflow (`.github/workflows/infra-drift.yml`) | The `VERCEL_TOKEN` repo secret (a Vercel token for the team; `SUPABASE_ACCESS_TOKEN` is already set). Until then the run says so and passes | FIX-131 |
-| **Previews on their own database:** each PR gets a working preview on staging instead of stopping at the preview guard | An owner moves `brazework-staging` into a free Supabase organization (Settings → General → Transfer project), so it costs nothing; then Vercel's Preview environment points at it. Its steps are kept in line by `db-migrate.yml` already | FIX-83 |
 | **Linear ↔ GitHub:** PRs and commits shown on issues; weekly cycles; auto-close stale Backlog; **auto-archive closed issues** (keeps us under the Free plan's 250-issue limit) | Linear settings, a workspace admin, ~10 minutes | FIX-5 |
 | **Uptime alerts:** a text or email if the site or its database goes down | A free UptimeRobot monitor on `https://brazework.com/api/health` (200 = app and database up, 503 = not), every 5 minutes, alerting both founders | FIX-55 |
 | **Error reports:** every server and browser error, with the commit it happened on, scrubbed of personal data (`web/src/lib/sentry-scrub.ts`). Built and off until the DSN is set | A free Sentry project (platform: Next.js). In Vercel, Production: `NEXT_PUBLIC_SENTRY_DSN` turns it on (and adds the privacy page's "When something breaks" section); `SENTRY_AUTH_TOKEN`, `SENTRY_ORG`, `SENTRY_PROJECT` add readable stack traces (source maps, uploaded then deleted). Then redeploy | FIX-55 |

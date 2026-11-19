@@ -16,8 +16,7 @@ name: Web (Next.js)
 # so a docs-only pull request isn't left waiting for checks that never start.
 on:
   pull_request:
-  # The merge queue (main's ruleset): a pull request whose checks passed is tested again on top of
-  # the latest main, and merges only if the required checks pass there too. Nobody updates branches.
+  # Ready for GitHub's merge queue, if main's ruleset ever turns it on (it's off: one test run per PR is faster).
   merge_group:
   push:
     branches: [main]
