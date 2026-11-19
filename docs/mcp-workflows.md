@@ -131,12 +131,22 @@ actions, by the same names (`supabase/tool-actions.sql`, `web/src/lib/tool-actio
 
 ## Drafts and automations
 
-**Drafts** (`/drafts`, and "N drafts from your tools" under *Waiting on you* on Today) are where anything a tool
+**Drafts** (`/drafts`, and "Your tools noticed N things" on Today) are where anything a tool
 couldn't ask you about waits. Each one shows the tool it came from and why (for example "GitHub Actions ·
 acme/rig #12 merged"). You can edit it, then **Post** (or **Send to club** / **Log it** for a milestone), or
 **Dismiss** it. Approving checks it again and makes it as you, under the same rules as anything you make in
 the app: posting pace, milestone limits, your own projects, clubs you're in. Nobody else can see your drafts.
 A tool can leave at most 20 an hour, and at most 30 can wait at once.
+
+**Daily triage.** Today opens with "Your tools noticed N things": the five newest drafts, each decided in one
+tap without leaving the page, built for a phone. A milestone gets **Keep** (logged on its project, waiting for
+proof), **Send to club** (its officers are asked to verify; you pick the club when you're in more than one),
+**Ask to sign** (kept, and the person who saw it gets the signature email: a university or company address,
+with every guard from *Signatures* below) or **Dismiss**. A post gets **Post**, **Post to club** or
+**Dismiss**. Editing stays on `/drafts`. If email can't go out, Ask to sign says so and the draft keeps
+waiting. An optional email (Settings → Email → *Drafts from your tools, daily*, or the link under the list on
+Today; off by default) arrives at most once a day, only when a draft came in since the last one, and says only
+how many and from which tools, never what a draft says.
 
 **GitHub Actions** (Settings → Your tools → GitHub Actions) is an automation, not an assistant. Its token can
 only read and leave drafts; it can never be switched to post. Pick the project, and the club that verifies
