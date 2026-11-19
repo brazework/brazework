@@ -1,6 +1,6 @@
 import SwiftUI
 
-// Build: what you're making (the web's Build place). Each build is a card with where it stands on the
+// Projects: what you're making (the web's Projects place). Each project (a Build here) is a card with where it stands on the
 // way from built to signed and the one thing worth doing next (ForgeKit/Builds.swift, the same rule
 // as the web). Logging an update opens the composer; asking for a signature opens the build on the
 // web for now, where the evidence and the club are picked.
@@ -24,7 +24,7 @@ struct BuildView: View {
                 BuildCard(build: b, log: { compose = true }, open: { openURL(Env.web("projects/\(b.id)")) })
               }
               Button { openURL(Env.web("projects")) } label: {
-                Label("Start a new build", systemImage: "plus")
+                Label("Start a new project", systemImage: "plus")
                   .font(.subheadline.weight(.medium)).foregroundStyle(p.muted)
                   .frame(maxWidth: .infinity, minHeight: 48)
                   .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).strokeBorder(p.border, style: StrokeStyle(lineWidth: 1, dash: [5, 4])))
@@ -38,7 +38,7 @@ struct BuildView: View {
         .padding(.horizontal, 16).padding(.top, 4).padding(.bottom, 24)
       }
       .background(p.bg)
-      .navigationTitle("Build")
+      .navigationTitle("Projects")
       .toolbarTitleDisplayMode(.inlineLarge)
       .refreshable { await load() }
       .task { await load() }
@@ -59,7 +59,7 @@ private struct BuildRecord: View {
   var body: some View {
     let signed = builds.reduce(0) { $0 + $1.counts.verified }, waiting = builds.reduce(0) { $0 + $1.counts.waiting }
     HStack(spacing: 10) {
-      stat("\(builds.count)", builds.count == 1 ? "build" : "builds", p.text)
+      stat("\(builds.count)", builds.count == 1 ? "project" : "projects", p.text)
       stat("\(signed)", signed == 1 ? "signed result" : "signed results", signed > 0 ? .green : p.text)
       if waiting > 0 { stat("\(waiting)", "waiting", p.text) }
     }
@@ -163,13 +163,13 @@ private struct EmptyBuilds: View {
         Image(systemName: "hammer").font(.title2).foregroundStyle(p.text)
         Text("What are you building?").font(.title3.weight(.bold)).foregroundStyle(p.text)
         Text("A robot, a rig, a model, an app. Start it once, then log what you build and get results signed by someone who saw them.").font(.subheadline).foregroundStyle(p.muted)
-        Button("Start your first build", systemImage: "arrow.up.right", action: start).buttonStyle(PrimaryButtonStyle()).padding(.top, 4)
+        Button("Start your first project", systemImage: "arrow.up.right", action: start).buttonStyle(PrimaryButtonStyle()).padding(.top, 4)
       }
     }
   }
 }
 
-// Today's first card: the one thing most worth doing, from your newest build.
+// Home's first card: the one thing most worth doing, from your newest project.
 struct NextStepCard: View {
   @Environment(Session.self) private var session
   @Environment(AppNav.self) private var nav
@@ -218,7 +218,7 @@ struct NextStepCard: View {
   }
 }
 
-// Proof: the results someone signed, newest first. The first thing on the Proof tab.
+// The record: the results someone signed, newest first. The first thing on the Record tab.
 struct ProofList: View {
   let items: [ProofItem]?
   @Environment(\.palette) private var p
@@ -231,7 +231,7 @@ struct ProofList: View {
       }
       if let items {
         if items.isEmpty {
-          Text("Nothing signed yet. Log a result on a build and ask someone who saw it to sign it.").font(.subheadline).foregroundStyle(p.muted)
+          Text("Nothing signed yet. Log a result on a project and ask someone who saw it to sign it.").font(.subheadline).foregroundStyle(p.muted)
         } else {
           ForEach(items) { m in
             HStack(alignment: .top, spacing: 10) {

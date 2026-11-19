@@ -35,7 +35,7 @@ struct MeView: View {
             .listRowBackground(p.surface)
           }
         }
-        // Proof leads: the work someone signed comes before everything else here.
+        // The record leads: the work someone signed comes before everything else here.
         Section { ProofList(items: proof).listRowBackground(p.surface) }
         Section("Look") {
           Picker("Appearance", selection: $appearance) {
@@ -77,7 +77,7 @@ struct MeView: View {
       }
       .scrollContentBackground(.hidden)
       .background(p.bg)
-      .navigationTitle("Proof")
+      .navigationTitle("Record")
       .task { if let me = session.userId { proof = await API.proof(of: me) } }
       .refreshable { if let me = session.userId { proof = await API.proof(of: me) } }
       .sheet(isPresented: $editing) { if let me = session.profile { EditProfileView(profile: me) } }

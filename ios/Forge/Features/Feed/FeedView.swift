@@ -72,7 +72,7 @@ struct FeedView: View {
         #endif
       }
       .background(p.bg)
-      .navigationTitle("Today")
+      .navigationTitle("Home")
       .toolbarTitleDisplayMode(.inlineLarge)
       .toolbar {
         // Alerts live here now (they were a tab): the bell, with a dot when something's new.

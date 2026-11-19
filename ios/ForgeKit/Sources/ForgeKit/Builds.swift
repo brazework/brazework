@@ -1,6 +1,6 @@
 import Foundation
 
-// Your builds and your proof on iPhone (the web's Build and Proof places). A build is a project of
+// Your builds and your proof on iPhone (the web's Projects and Record places). A build is a project of
 // yours with where it stands on the way from built to signed; the one next step is the same rule
 // the web uses (web/src/lib/build-step.ts), ported so both say the same thing. Reads only: logging
 // an update uses the composer, and asking for a signature opens the project on the web for now.

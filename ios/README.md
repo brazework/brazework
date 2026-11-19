@@ -6,9 +6,9 @@ Native SwiftUI app on the same Supabase backend as `web/`: same tables, same row
 
 ## The five places (redesign, November 2026)
 
-The tab bar matches the web app: **Today** (the feed, led by the one next step on your newest build; alerts are the bell at the top), **Build** (your builds: where each stands, built then signed, and one next step), **Club**, **Proof** (your signed work first, then your profile and settings) and **Inbox** (messages). Build and Proof read projects and milestones (`ForgeKit/Builds.swift`); starting a build and asking for a signature open the web for now.
+The tab bar matches the web app's five places (`web/src/lib/places.ts`): **Home** (the feed, led by the one next step on your newest project; alerts are the bell at the top), **Projects** (what you're making: where each project stands, built then signed, and one next step), **Clubs**, **Record** (your signed work first, then your profile and settings) and **Inbox** (messages). Projects and Record read projects and milestones (`ForgeKit/Builds.swift`); starting a project and asking for a signature open the web for now. In code the tabs keep their older names (`AppTab.feed`, `.build`, `.clubs`, `.me`, `.messages`) so `FORGE_TEST_TAB` and links don't change.
 
-The table below describes the screens behind those tabs (it predates the rename: Feed is Today, You is Proof, Messages is Inbox, and Alerts is the bell on Today).
+The table below describes the screens behind those tabs (it predates the rename: Feed is Home, You is Record, Messages is Inbox, and Alerts is the bell on Home).
 
 ## What's in it
 

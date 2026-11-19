@@ -39,12 +39,12 @@ struct MainTabs: View {
   var body: some View {
     TabView(selection: $nav.tab) {
       // The same five places as the web, each answering one question: what needs me, what am I
-      // making, what's my team doing, what have I proven, who's reaching out.
-      Tab("Today", systemImage: "sun.max", value: AppTab.feed) { FeedView() }
+      // making, what's my team doing, what have I done and who signed it, who's reaching out.
+      Tab("Home", systemImage: "house", value: AppTab.feed) { FeedView() }
         .badge(session.unreadAlerts)
-      Tab("Build", systemImage: "hammer", value: AppTab.build) { BuildView() }
-      Tab("Club", systemImage: "person.3", value: AppTab.clubs) { ClubsView() }
-      Tab("Proof", systemImage: "checkmark.seal", value: AppTab.me) { MeView() }
+      Tab("Projects", systemImage: "hammer", value: AppTab.build) { BuildView() }
+      Tab("Clubs", systemImage: "person.3", value: AppTab.clubs) { ClubsView() }
+      Tab("Record", systemImage: "checkmark.seal", value: AppTab.me) { MeView() }
       Tab("Inbox", systemImage: "tray", value: AppTab.messages) { MessagesView() }
         .badge(session.unreadMessages)
     }

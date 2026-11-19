@@ -19,7 +19,7 @@ final class JourneyTests: XCTestCase {
     return try await supabase.auth.session.user.id
   }
 
-  // Build and Proof (ForgeKit/Builds.swift): Ben's seeded projects come back as builds with their
+  // Projects and Record (ForgeKit/Builds.swift): Ben's seeded projects come back as builds with their
   // counts, and his signed results as proof with who signed them.
   func testBuildsAndProofForAMemberWithProjects() async throws {
     let ben = try await signIn("ben")
