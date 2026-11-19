@@ -14,6 +14,7 @@ import type { RecordTimeline, TimelineMark } from "@/lib/record-timeline";
 // The detail line under the chart shows one result at a time: the latest one to start, then whichever
 // mark is hovered, focused or tapped. It sits below the lanes rather than in a floating tooltip, so it
 // reads the same with a finger. On phones each project's name sits above its lane (no sideways scroll).
+// Every mark is a 24×24 tap target (e2e/m-layout.cjs); an update's dot stays small inside its own.
 
 export function RecordTimelineChart({ data, own, goal }: { data: RecordTimeline; own: boolean; goal?: string | null }) {
   const lanes = data.lanes;
@@ -64,7 +65,7 @@ export function RecordTimelineChart({ data, own, goal }: { data: RecordTimeline;
                         onClick={() => setActive(key)}
                         aria-label={`${label(m)}: ${m.title}, ${m.when}`}
                         aria-pressed={key === active}
-                        className={cn("absolute top-1/2 grid -translate-1/2 place-items-center rounded-full outline-offset-2 transition-transform hover:scale-125 focus-visible:scale-125", m.kind === "post" ? "z-0 size-4" : "z-10 size-6", key === active && m.kind !== "post" && "scale-125")}
+                        className={cn("absolute top-1/2 grid -translate-1/2 place-items-center rounded-full outline-offset-2 transition-transform hover:scale-125 focus-visible:scale-125", m.kind === "post" ? "z-0 size-6" : "z-10 size-6", key === active && m.kind !== "post" && "scale-125")}
                         style={{ left: `${m.x * 100}%` }}
                       >
                         <Mark kind={m.kind} />
