@@ -432,4 +432,46 @@ enum API {
     try await supabase.from("notifications").select().eq("user_id", value: me).order("created_at", ascending: false).limit(100).execute().value
   }
   static func markAlertsRead() async { _ = try? await supabase.rpc("mark_notifications_read").execute() }
+
+  // MARK: Home's next step
+  /// This week's goal (WeekGoal.swift), from the same rows the web's loadLoop reads
+  /// (web/src/lib/week-load.ts), so Home on iPhone suggests what Home on the web does. Row-level
+  /// security limits every read to what you can see. Throws when your clubs or projects can't be
+  /// read, rather than suggesting you join a club you're already in.
+  static func weekGoal(me: UUID, now: Date = .now) async throws -> WeekGoal {
+    struct Member: Decodable { struct C: Decodable { let id: String }; let role: String; let communities: C? }
+    struct P: Decodable { let id: String; let title: String; let status: String; let updatedAt: Date }
+    struct T: Decodable { let createdAt: Date }
+    struct W: Decodable { let communityId: String }
+    struct L: Decodable { let projectId: String; let createdAt: Date }
+    let thisWeek = iso(WeekLogic.weekStart(now))
+    async let members: [Member] = supabase.from("community_members").select("role, communities(id)").eq("uid", value: me).limit(50).execute().value
+    async let projects: [P] = supabase.from("projects").select("id, title, status, updated_at").eq("owner_id", value: me).order("updated_at", ascending: false).limit(5).execute().value
+    async let anyMilestone = try? await supabase.from("milestones").select("id", head: true, count: .exact).eq("owner_id", value: me).execute().count
+    // Shown work this week: a post or a milestone of yours since Monday (the streak's thisWeek).
+    async let posts: [T]? = try? await supabase.from("posts").select("created_at").eq("author_id", value: me).gte("created_at", value: thisWeek).limit(20).execute().value
+    async let asked: [T]? = try? await supabase.from("milestones").select("created_at").eq("owner_id", value: me).gte("created_at", value: thisWeek).limit(20).execute().value
+    let clubs = try await members, mine = try await projects
+    let clubIds = clubs.compactMap(\.communities?.id)
+    let officerOf = clubs.filter { isOfficer($0.role) }.compactMap(\.communities?.id)
+    // Others waiting on you: pending milestones in clubs you run, not your own.
+    let waiting: [W] = officerOf.isEmpty ? [] : (try? await supabase.from("milestones").select("community_id").eq("status", value: "pending").in("community_id", values: officerOf).neq("owner_id", value: me).limit(200).execute().value) ?? []
+    // Your quietest active project: the longest since its last update post (or since it changed).
+    let rows = mine.map { WeekLogic.ProjectRow(id: $0.id, title: $0.title, status: $0.status, updatedAt: $0.updatedAt) }
+    let active = rows.filter { $0.status != "completed" }.map(\.id)
+    var lastPost: [String: Date] = [:]
+    if !active.isEmpty {
+      let last: [L] = (try? await supabase.from("posts").select("project_id, created_at").eq("author_id", value: me).in("project_id", values: active).order("created_at", ascending: false).limit(50).execute().value) ?? []
+      for r in last where lastPost[r.projectId] == nil { lastPost[r.projectId] = r.createdAt }
+    }
+    let input = WeekInput(
+      toVerify: WeekLogic.topWaiting(waiting.map(\.communityId)),
+      quietProject: WeekLogic.quietest(rows, lastPost: lastPost, now: now),
+      hasClub: !clubIds.isEmpty,
+      hasProject: !mine.isEmpty,
+      hasMilestone: (await anyMilestone ?? 0) > 0
+    )
+    let shown = WeekLogic.shownThisWeek(((await posts) ?? []).map(\.createdAt) + ((await asked) ?? []).map(\.createdAt), now: now)
+    return WeekLogic.goal(input, shownThisWeek: shown)
+  }
 }

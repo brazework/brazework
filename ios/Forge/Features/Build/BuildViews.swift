@@ -176,55 +176,6 @@ private struct EmptyBuilds: View {
   }
 }
 
-// Home's first card: the one thing most worth doing, from your newest project.
-struct NextStepCard: View {
-  @Environment(Session.self) private var session
-  @Environment(AppNav.self) private var nav
-  @Environment(\.palette) private var p
-  @Environment(\.openURL) private var openURL
-  var log: () -> Void
-  @State private var builds: [Build]?
-
-  var body: some View {
-    Group {
-      if let builds {
-        if let b = builds.first {
-          let step = BuildLogic.next(b.counts)
-          card(eyebrow: "Next step · \(b.title)", text: step.label, button: step.kind == .verify ? "Verify" : step.kind == .waiting ? "Open" : "Log") {
-            switch step.kind {
-            case .log: log()
-            case .verify: openURL(Env.web("projects/\(b.id)"))
-            case .waiting: nav.tab = .build
-            }
-          }
-        } else {
-          card(eyebrow: "Next step", text: "Add what you're building", button: "Start") { openURL(Env.web("projects")) }
-        }
-      } else {
-        // Something to hang the load on while the builds arrive (an empty group never appears, so
-        // its task would never run).
-        Color.clear.frame(height: 1)
-      }
-    }
-    .task { if let me = session.userId { builds = (try? await API.myBuilds(me: me)) ?? [] } }
-  }
-
-  private func card(eyebrow: String, text: String, button: String, action: @escaping () -> Void) -> some View {
-    HStack(spacing: 12) {
-      VStack(alignment: .leading, spacing: 3) {
-        Text(eyebrow.uppercased()).font(.caption2.weight(.semibold)).kerning(0.6).foregroundStyle(p.faint).lineLimit(1)
-        Text(text).font(.headline).foregroundStyle(p.text)
-      }
-      Spacer(minLength: 0)
-      Button(action: action) { Label(button, systemImage: "arrow.right").labelStyle(.titleAndIcon) }.buttonStyle(PrimaryButtonStyle()).frame(maxWidth: 132)
-    }
-    .padding(16)
-    .background(p.surface, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
-    .overlay(RoundedRectangle(cornerRadius: 22, style: .continuous).strokeBorder(p.border, lineWidth: 0.5))
-    .accessibilityElement(children: .contain).accessibilityLabel("Next step")
-  }
-}
-
 // The record: the results someone signed, newest first. The first thing on the Record tab.
 struct ProofList: View {
   let items: [ProofItem]?

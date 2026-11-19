@@ -34,6 +34,22 @@ final class JourneyTests: XCTestCase {
     XCTAssertTrue(proof.allSatisfy { $0.signedBy.hasPrefix("Verified") })
   }
 
+  // Home's next step (API.weekGoal, WeekGoal.swift): the seeded members each get the web's answer.
+  // Cara is in no club; Josh and Maya are in clubs with no project of their own; Ben has projects,
+  // signed results and posts this week (an update on his active project once the week turns).
+  func testHomeNextStepForEachSeededMember() async throws {
+    let cara = try await API.weekGoal(me: try await signIn("cara"))
+    XCTAssertEqual(cara.id, "join")
+    XCTAssertEqual(cara.text, "Join your club, so its officers can verify your work")
+    let josh = try await API.weekGoal(me: try await signIn("josh"))
+    XCTAssertEqual(josh.id, "project")
+    let maya = try await API.weekGoal(me: try await signIn("maya"))
+    XCTAssertEqual(maya.id, "project", "an officer with nothing waiting gets her own next step")
+    let ben = try await API.weekGoal(me: try await signIn("ben"))
+    XCTAssertTrue(["done", "update"].contains(ben.id), "Ben: \(ben.id)")
+    if ben.id == "update" { XCTAssertEqual(ben.text, "Post an update on Liquid engine test stand") }
+  }
+
   func testPostShowsFirstThenLikeSaveAndReply() async throws {
     let me = try await signIn("maya")
     let body = "Telemetry board talks to the ground station \(Self.stamp)"
