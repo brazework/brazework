@@ -107,3 +107,29 @@ test("docs/mcp-workflows.md covers every field, every prompt and the drafts and 
   for (const t of ["draft_post", "draft_milestone", "request_signature", "/drafts"]) assert.ok(doc.includes(t), `docs: ${t}`);
   assert.ok(readFileSync(join(ROOT, "docs", "README.md"), "utf8").includes("mcp-workflows.md"), "linked from the docs index");
 });
+
+// Fixtures: every field's playbook through every prompt, for each kind of token. A prompt may only
+// name tools that token is offered, so the assistant is never told to call something it can't.
+test("every field × every prompt × every token names only tools that token has", () => {
+  const scopes: [string, string[]][] = [["post", ["read", "draft", "post"]], ["draft", ["read", "draft"]], ["read", ["read"]]];
+  const named = MCP_TOOLS.map((t) => t.name).filter((n) => n.includes("_"));
+  for (const p of PLAYBOOKS) for (const def of PROMPTS) for (const [label, sc] of scopes) {
+    const text = promptText(def.name, { field: p.field, what: "the thing I finished", who: "Dr. Lee" }, scopeFlags(sc));
+    assert.ok(text && text.length > 80, `${def.name}/${p.id}/${label} renders`);
+    const offered = new Set(toolsFor(sc).map((t) => t.name));
+    for (const n of named) if (new RegExp(`\\b${n}\\b`).test(text!)) assert.ok(offered.has(n), `${def.name}/${p.id}/${label} names ${n}, which a ${label} token doesn't have`);
+    if (def.arguments?.some((a) => a.name === "field")) assert.ok(text!.includes(playbookUri(p)), `${def.name}/${p.id} points to its playbook`);
+  }
+});
+
+test("start: the first minute finds real finished work and ends with the link", () => {
+  const post = scopeFlags(["read", "draft", "post"]), draft = scopeFlags(["read", "draft"]);
+  const t = promptText("start", { field: "Data & AI" }, post)!;
+  assert.match(t, /my_projects/);
+  assert.match(t, /last 30 days/);
+  assert.match(t, /request_signature/);
+  assert.match(t, /link from the result/);
+  assert.match(promptText("start", {}, draft)!, /Call me first/);
+  assert.doesNotMatch(promptText("start", { field: "Data & AI" }, draft)!, /request_signature/);
+  assert.equal(PROMPTS[0].name, "start", "start is listed first");
+});

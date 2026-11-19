@@ -2,6 +2,7 @@ import { createHash, randomBytes } from "node:crypto";
 import { MCP_PROTOCOLS, MCP_TOOLS, absolutize, annotationsFor, mcpDb, scopeFlags, tokenHash, toolsFor } from "@/lib/mcp";
 import { PLAYBOOKS, PLAYBOOK_INDEX_URI, PROMPTS, playbookMarkdown, playbookUri, playbooksIndexMarkdown, promptText } from "@/lib/mcp-playbooks";
 import { mailer } from "@/lib/email";
+import { nextStep, withFix } from "@/lib/mcp-results";
 import { env } from "@/lib/env";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { buildVouchEmail, type Relationship } from "@/lib/vouch-email";
@@ -16,7 +17,8 @@ const rpc = (id: Msg["id"], body: { result?: unknown; error?: { code: number; me
   Response.json({ jsonrpc: "2.0", id: id ?? null, ...body }, { status, headers: { "Cache-Control": "no-store" } });
 const unauthorized = (message: string) =>
   Response.json({ jsonrpc: "2.0", id: null, error: { code: -32001, message } }, { status: 401, headers: { "WWW-Authenticate": 'Bearer realm="Brazework", error="invalid_token"' } });
-const toolError = (id: Msg["id"], text: string) => rpc(id, { result: { content: [{ type: "text", text }], isError: true } });
+// Refusals say how to fix them (lib/mcp-results.ts), so the assistant can act on them or tell the member.
+const toolError = (id: Msg["id"], text: string) => rpc(id, { result: { content: [{ type: "text", text: withFix(text) }], isError: true } });
 
 const ABOUT = "Brazework is the record of what people build, signed by the people who saw it, and home base for their clubs.";
 function instructions(s: { canDraft: boolean; canPost: boolean }) {
@@ -102,15 +104,18 @@ export async function POST(req: Request) {
       const { data, error } = await db.rpc(tool.rpc, { p_hash: hash, ...tool.args(input) });
       // A rule the member's post broke (P0001: not your project, too fast, …) is said as it is.
       if (error) return toolError(msg.id, error.code === "P0001" ? error.message : error.code === "PGRST202" ? "That isn't switched on on Brazework yet. Try again in a few minutes." : "Brazework couldn't answer that right now. Try again.");
-      return ok(msg.id, data);
+      return ok(msg.id, data, tool.name);
     }
     default:
       return rpc(msg.id, { error: { code: -32601, message: `Method not found: ${msg.method}` } });
   }
 }
 
-function ok(id: Msg["id"], data: unknown) {
-  const out = absolutize(data, env.siteUrl);
+// Writes also say what happens next and where to see it (lib/mcp-results.ts).
+function ok(id: Msg["id"], data: unknown, tool = "") {
+  const plain = absolutize(data, env.siteUrl);
+  const step = nextStep(tool, plain, env.siteUrl);
+  const out = step && plain && typeof plain === "object" && !Array.isArray(plain) ? { ...plain, ...step } : plain;
   const structured = Array.isArray(out) ? { items: out } : out;
   return rpc(id, { result: { content: [{ type: "text", text: JSON.stringify(out, null, 2) }], structuredContent: structured } });
 }
