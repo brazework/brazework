@@ -1,5 +1,4 @@
 "use server";
-import { revalidatePath } from "next/cache";
 import { friendlyError } from "@/lib/forge";
 import { getViewer } from "@/lib/supabase/server";
 
@@ -21,8 +20,8 @@ export async function approveDraft(id: string, edit: { body?: string; title?: st
   const { data, error } = await supabase.rpc("approve_tool_draft", { p_id: id, p_body: edit.body ?? null, p_title: edit.title ?? null, p_detail: edit.detail ?? null });
   if (error) return { ok: false, message: reason(error) };
   const r = data as { kind: string; url: string; status: string };
-  revalidatePath("/drafts");
-  revalidatePath("/feed");
+  // No revalidatePath: it would refresh this page and take the card (and what happened) away. Every
+  // page that shows drafts is rendered per request, so the next visit is current.
   return {
     ok: true, url: r.url,
     message: r.kind === "post" ? "Posted." : r.status === "pending" ? "Logged. Your club's officers have been asked to verify it." : "Logged. Ask the person who saw it to vouch for it from the project.",
@@ -34,6 +33,5 @@ export async function dismissDraft(id: string): Promise<DraftResult> {
   const { supabase } = await getViewer();
   const { data, error } = await supabase.rpc("dismiss_tool_draft", { p_id: id });
   if (error || data !== true) return { ok: false, message: error ? reason(error) : "That draft was already handled." };
-  revalidatePath("/drafts");
   return { ok: true, message: "Dismissed." };
 }

@@ -53,7 +53,7 @@ revoke execute on function public.set_api_token_post(uuid, boolean) from anon, p
 grant execute on function public.set_api_token_post(uuid, boolean) to authenticated;
 
 create or replace function public.api_token_tool(p_name text) returns text
-language sql immutable as $$
+language sql immutable set search_path = public as $$
   select case
     when p_name ilike 'Claude Code%' then 'Claude Code'
     when p_name ilike 'Cursor%' then 'Cursor'
@@ -86,7 +86,7 @@ end $$;
 
 -- Up to 3 topics, cleaned as the app cleans them.
 create or replace function public.tool_tags(p_tags text[]) returns text[]
-language sql immutable as $$
+language sql immutable set search_path = public as $$
   select coalesce((select array_agg(x order by o) from (
     select distinct on (lower(btrim(x))) btrim(x) as x, o from unnest(coalesce(p_tags, '{}')) with ordinality u(x, o)
     where btrim(x) ~ '^[A-Za-z0-9][A-Za-z0-9 &+./-]{0,39}$' order by lower(btrim(x)), o) s), '{}')
@@ -94,7 +94,7 @@ $$;
 
 -- Evidence: up to 8 distinct https links, each a commit (GitHub/GitLab) or a link, in the order given.
 create or replace function public.tool_evidence(p_links text[]) returns jsonb
-language sql immutable as $$
+language sql immutable set search_path = public as $$
   select coalesce(jsonb_agg(jsonb_build_object('type',
            case when u ~ '^https://(github\.com|gitlab\.com)/[^/]+/[^/]+/(-/)?commits?/' then 'commit' else 'link' end, 'url', u) order by o), '[]')
   from (select u, min(o) as o from (select btrim(x) as u, o from unnest(coalesce(p_links, '{}')) with ordinality e(x, o)) s
@@ -219,6 +219,9 @@ create index if not exists tool_drafts_user_idx on public.tool_drafts (user_id, 
 alter table public.tool_drafts enable row level security;
 drop policy if exists "your drafts" on public.tool_drafts;
 create policy "your drafts" on public.tool_drafts for select to authenticated using (user_id = (select auth.uid()));
+-- members-only.sql (FIX-138): signed-in accounts read nothing until they're members.
+drop policy if exists "members only" on public.tool_drafts;
+create policy "members only" on public.tool_drafts as restrictive for select to authenticated using ((select public.is_member()));
 revoke all on public.tool_drafts from anon, authenticated;
 grant select on public.tool_drafts to authenticated;
 
@@ -332,5 +335,5 @@ end $$;
 grant execute on function public.mcp_request_vouch(text, text, text, text, text) to anon, authenticated;
 
 -- ---------- So the app (and the health check) can tell this step has run ----------
-create or replace function public.mcp_workflows_ready() returns boolean language sql stable as $$ select true $$;
+create or replace function public.mcp_workflows_ready() returns boolean language sql stable set search_path = public as $$ select true $$;
 grant execute on function public.mcp_workflows_ready() to authenticated;
