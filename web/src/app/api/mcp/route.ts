@@ -2,6 +2,7 @@ import { createHash, randomBytes } from "node:crypto";
 import { MCP_PROTOCOLS, MCP_TOOLS, absolutize, annotationsFor, mcpDb, scopeFlags, sourceArgs, tokenHash, toolsFor } from "@/lib/mcp";
 import { actionPayload } from "@/lib/tool-actions";
 import { findBuilders, talentAsk, type TalentData } from "@/lib/mcp-talent";
+import { goalSummary, type GoalRead } from "@/lib/mcp-goal";
 import { PLAYBOOKS, PLAYBOOK_INDEX_URI, PROMPTS, playbookMarkdown, playbookUri, playbooksIndexMarkdown, promptText } from "@/lib/mcp-playbooks";
 import { mailer } from "@/lib/email";
 import { nextStep, withFix } from "@/lib/mcp-results";
@@ -128,6 +129,8 @@ export async function POST(req: Request) {
         : await db.rpc(tool.rpc, { p_hash: hash, ...tool.args(input) });
       // find_builders: /talent's rows from the database, ranked by /talent's own code (lib/mcp-talent.ts).
       if (tool.name === "find_builders" && data) return ok(msg.id, findBuilders(data as TalentData, talentAsk(input)), tool.name);
+      // my_goal: the path and next step with the app's own goalPath() (lib/mcp-goal.ts).
+      if (tool.name === "my_goal" && data) return ok(msg.id, goalSummary(data as GoalRead), tool.name);
       // A rule the member's post broke (P0001: not your project, too fast, …) is said as it is.
       if (error) return toolError(msg.id, error.code === "P0001" ? error.message : error.code === "PGRST202" ? "That isn't switched on on Brazework yet. Try again in a few minutes." : "Brazework couldn't answer that right now. Try again.");
       return ok(msg.id, data, tool.name);

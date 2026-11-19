@@ -144,6 +144,22 @@ Thursday's meeting", "recap last week for the club". The `club_week` prompt does
 |---|---|
 | `club_week` | Ember's brief for your club, turned into this week's update (default), a meeting plan (`what: meeting plan`, and offers to draft the meeting itself) or a recap (`what: recap`), saved as a draft announcement. |
 
+## Your goal
+
+Tell your assistant what you're working toward: "I want a summer internship in power electronics". It asks
+whether companies should see that (some people look quietly), then sets it (`set_goal`, with a token that can
+post). From then on:
+
+- `my_goal` shows your progress ("2 of 3 signed toward a summer internship in power electronics"), the path
+  (build, get it signed, get found) and the one next step, the same ones Brazework shows you.
+- `/start`, `/shipped`, `/week` and `career_fair` read it first, put the work that fits it first, and end each
+  draft with one line, **"Toward your goal: …"**, saying why it matters.
+- It uses only real signals: your record, what it reads in your tools, and job descriptions you paste. No
+  invented market data, no promises, no telling you who to become. It suggests and drafts; you decide.
+- With no goal set, it offers one once, in a line, and otherwise works as before.
+
+`reach_goal` closes it with a line about how you got there; `drop_goal` stops it quietly.
+
 ## Career fairs and résumés
 
 Ask "get me ready for the career fair" and the `career_fair` prompt chains the tools, asking you before

@@ -285,6 +285,19 @@ function writeLine(s: Scopes, kind: "milestone" | "post"): string {
   return READ_ONLY;
 }
 
+// Goal-aware drafting (supabase/tool-goals.sql, lib/mcp-goal.ts): read the member's goal first, rank by
+// it, and say why each draft matters, using only real signals. Shared by /start, /shipped, /week and
+// career_fair (lib/mcp-intent-prompts.ts). Names set_goal only for a token that has it.
+export function goalLine(s: Scopes): string {
+  const offer = s.canPost ? "offer once, in one line, to set one (set_goal, after they choose whether companies should see it)" : "mention once, in one line, that they can set one in Brazework (on their profile)";
+  return [
+    "Before you draft, call my_goal. If the member has a goal, rank what you find by it (work in that field, and what fills the next step on its path first),",
+    "and end each draft with one line, \"Toward your goal: …\", saying why it matters, e.g. \"your strongest signed controls result; ask Prof. Lee to sign the next one\".",
+    "Use only real signals: their own record, what you read in their tools, and job descriptions they paste. No invented market data, no promises of outcomes, no telling them who to become.",
+    `If they have no goal, ${offer}, then carry on as usual.`,
+  ].join(" ");
+}
+
 // After a milestone with no club: who signs it. Only a token that can post may email someone.
 function signLine(s: Scopes): string {
   if (s.canPost) return "If there's no club, offer to ask the person who saw it to sign (request_signature), and only send it after I say who and yes.";
@@ -303,6 +316,7 @@ export function promptText(name: string, args: Record<string, string | undefined
       return [
         "Get me started on Brazework: turn one thing I've really finished into my first milestone, in about a minute.",
         p ? fieldLine(p, args.field) : `Call me first to see my field and what's on my record, then read the matching playbook from ${PLAYBOOK_INDEX_URI}.`,
+        goalLine(s),
         "1. Look at the tools you can reach right now from that list, over my last 30 days: merged pull requests and releases, finished runs, exported reports, files I shipped. Pick the single strongest piece of finished work that has proof. If you can't reach any of them, ask me for one link that shows something I finished (a repo, a doc, a video).",
         "2. Call my_projects and pick the project it belongs to. If I have none yet, tell me to type what I'm building in the box on Brazework's Today page (one line is enough), then come back.",
         `3. Write it as a milestone: the title is what was achieved, with numbers${ex ? `, like “${ex.example}”` : ""}; the evidence is 1 to 8 https links. Show it to me in a few lines.`,
@@ -314,6 +328,7 @@ export function promptText(name: string, args: Record<string, string | undefined
       return [
         `I just finished something${what} and want it on my Brazework record as a milestone.`,
         fieldLine(p, args.field),
+        goalLine(s),
         "1. Find the concrete outcome and its proof in my tools: the merged pull request and its CI run, the new version, the test video or log, the report. Numbers beat adjectives.",
         "2. Call my_projects to pick the project, and my_clubs to pick the club that saw it. If no club did, leave the club out: it then waits for a signature from whoever saw it.",
         `3. Write the title as what was achieved, with numbers${ex ? `, like “${ex.example}”` : ""}; the detail as how it was done and measured; the evidence as 1 to 8 https links.`,
@@ -333,6 +348,7 @@ export function promptText(name: string, args: Record<string, string | undefined
       return [
         "Recap my last 7 days for my Brazework record.",
         fieldLine(p, args.field),
+        goalLine(s),
         "1. Look through what you can reach for the week: merged work, versions, runs, tests, results, launches. Call my_projects to see what's already recorded, so you don't repeat it.",
         "2. Pick the 1 to 3 things most worth recording, and for each say whether it's a milestone (something achieved, with proof) or a post (an update or result).",
         s.canDraft || s.canPost
