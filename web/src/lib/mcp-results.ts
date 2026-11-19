@@ -58,6 +58,8 @@ export function nextStep(tool: string, data: unknown, origin: string): { next: s
       return str(d.status) === "requested"
         ? { next: `Asked to join ${str(d.title)}. Its moderators approve new members; the member is notified when they do.`, open: url }
         : { next: `The member is in ${str(d.title)}. Next: its events (upcoming_events), or share work with it (post_update with club_id "${str(d.id)}").`, open: url };
+    case "follow_person":
+      return { next: `The member follows ${str(d.title)}: their posts and signed work show in the member's feed.`, open: url };
     case "accept_invite":
       return { next: `The member is in ${str(d.title)}. Next: its events (upcoming_events), or say hello in it (post_update with club_id "${str(d.id)}").`, open: url };
     default:
@@ -77,6 +79,7 @@ const HINTS: [RegExp, string][] = [
   [/isn'?t waiting for proof|no longer exists/i, "Call my_projects: open_milestones lists the ones still waiting, with their ids."],
   [/aren'?t in any of your clubs/i, "Use search to find someone in one of the member's clubs (my_clubs), or let the member add them from the project's Team section in Brazework."],
   [/always left as a draft/i, "Call it again with draft: true; the member confirms it in Brazework."],
+  [/admins of a verified company or school/i, "Company search is for verified organizations. The member can register theirs at brazework.com/org with a work email."],
   [/admins and owner can host/i, "A moderator can still draft an announcement (draft_announcement) and ask an admin to publish the event."],
   [/moderators, admins and owner/i, "Only officers can do this. my_clubs shows the member's role in each club."],
   [/invite link has expired/i, "Ask the member for a fresh link from the club, or ask to join it instead (join_club)."],

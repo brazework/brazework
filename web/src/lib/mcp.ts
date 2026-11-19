@@ -130,7 +130,7 @@ export const mcpDb = () => createSupabase(env.supabaseUrl, env.supabaseAnonKey, 
 
 // Links in results ("/c/abc") become absolute, so they work outside Brazework.
 export function absolutize(value: unknown, origin: string): unknown {
-  if (typeof value === "string") return /^\/(c|u|events|projects|post|messages)\//.test(value) ? origin + value : value;
+  if (typeof value === "string") return /^\/(c|u|events|projects|post|messages|p|v)\//.test(value) ? origin + value : value;
   if (Array.isArray(value)) return value.map((v) => absolutize(v, origin));
   if (value && typeof value === "object") return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, absolutize(v, origin)]));
   return value;
@@ -255,6 +255,36 @@ MCP_TOOLS.push(
       starts_at: { type: "string", format: "date-time", description: "e.g. 2026-12-03T18:00:00-05:00" },
       ends_at: { type: "string", format: "date-time" },
     }, ["club_id", "title", "starts_at"], true),
+    rpc: "mcp_act", args: () => ({}),
+  },
+);
+
+// Step 69 (supabase/tool-talent.sql): a résumé from signed work, company search (/talent's data and
+// ranking, for verified company and school admins), and following someone (Ember's last card kind).
+MCP_TOOLS.push(
+  {
+    name: "my_resume", title: "My résumé from signed work",
+    description: "The member's signed (and GitHub-backed) work, project by project: each result, who signed it, and a link anyone can open (its public proof card when the member shared it, else the project). Use it to write a résumé or portfolio section; never add work that isn't here, and say which results have no public link yet.",
+    inputSchema: none, rpc: "mcp_resume", args: () => ({}),
+  },
+  {
+    name: "find_builders", title: "Find builders by signed work (verified companies)",
+    description: "For admins of a verified company or school only: builders ranked by their signed work, exactly as Brazework's Find builders page (/talent) ranks them, with the same privacy rules (only public signed work on projects anyone can open, and profile fields every member sees). Filter by skills or work words, field, club, class year, what they're open to, a minimum number of signed results, and level (signed, or signed_or_backed to include work GitHub backs, labelled as such).",
+    inputSchema: { type: "object", properties: {
+      query: { type: "string", maxLength: 120, description: "Skills or work, e.g. \"STM32 flight computer\"." },
+      field: { type: "string", maxLength: 60, description: "A field, e.g. Mechanical." },
+      club: { type: "string", maxLength: 120, description: "A club's name or id." },
+      class_year: { type: "integer", minimum: 1950, maximum: 2100 },
+      open_to: { type: "string", enum: ["internships", "full_time", "research", "co_founder", "collaborators", "mentoring"] },
+      min_signed: { type: "integer", minimum: 1, maximum: 20, description: "At least this many signed results." },
+      level: { type: "string", enum: ["signed", "signed_or_backed"], description: "signed (default) or signed_or_backed." },
+    }, additionalProperties: false },
+    rpc: "mcp_talent_rows", args: (i) => ({ p_backed: i.level === "signed_or_backed" }),
+  },
+  {
+    name: "follow_person", writes: true, needs: "draft", act: "follow", title: "Follow someone",
+    description: "Follow someone on Brazework (their id from search → people) so their work shows in the member's feed. Follow only after the member says yes; with a token that can't post, it waits as a card in their drafts.",
+    inputSchema: actSchema({ person_id: { type: "string", description: "Their id, from search (people → id)." } }, ["person_id"]),
     rpc: "mcp_act", args: () => ({}),
   },
 );

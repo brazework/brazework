@@ -347,6 +347,30 @@ const { step, browser, as, go, summary, BASE } = require("./lib.cjs");
     psql(`delete from public.posts where body = '${body}'; delete from public.events where title = 'Static fire night ${stamp}'`); // Rocketry as later journeys expect it
   }, ben);
 
+  await step("career: Ben's résumé lists his signed work with links; /career_fair chains the tools; Acme (a verified company) finds Ben by signed work in Claude as on /talent; Ben's members can't search", async () => {
+    const cv = (await call("my_resume", {}, cc)).structuredContent;
+    const lines = (cv?.projects ?? []).flatMap((p) => p.signed ?? []);
+    if (!lines.length || !lines.every((l) => l.signed_by && /^http/.test(l.link ?? ""))) throw new Error(`my_resume: ${JSON.stringify(cv).slice(0, 240)}`);
+    const fair = (await (await mcp("prompts/get", { name: "career_fair", arguments: { event: "Spring Career Fair" } }, cc)).json()).result?.messages?.[0]?.content?.text ?? "";
+    if (!/request_signature/.test(fair) || !/rsvp_event/.test(fair) || !/my_resume/.test(fair)) throw new Error(`career_fair: ${fair.slice(0, 200)}`);
+    // Cara administers Acme Aerospace, a verified company (e2e/seed.sql); her assistant has a token.
+    const caraToken = `forge_cara${"x".repeat(30)}${stamp}`;
+    psql(`insert into public.api_tokens (user_id, name, token_hash, prefix, scopes) select id, 'Claude Code', encode(sha256('${caraToken}'::bytea), 'hex'), 'forge_cara', '{read}' from auth.users where email = 'cara@forge.test'`);
+    const found = (await call("find_builders", { query: "static fire" }, caraToken)).structuredContent;
+    if (found?.company !== "Acme Aerospace" || found.builders?.[0]?.name !== "Ben Cho" || !/\/u\//.test(found.builders[0].url ?? "") || found.builders[0].work?.[0]?.level !== "signed") throw new Error(`find_builders: ${JSON.stringify(found).slice(0, 300)}`);
+    // /talent shows Cara the same first result for the same search.
+    const cara = await as(b, "cara@forge.test");
+    await go(cara, "/talent?q=static+fire");
+    const first = (await cara.locator("main article").first().textContent({ timeout: 15000 })) ?? "";
+    if (!first.includes("Ben Cho")) throw new Error(`/talent's first result isn't Ben: ${first.slice(0, 80)}`);
+    await cara.context().close();
+    const no = await call("find_builders", { query: "static fire" }, cc);
+    if (!no?.isError || !/verified company or school/.test(no.content[0].text)) throw new Error("someone who isn't a company admin could search");
+    const f = (await call("follow_person", { person_id: psql("select id from auth.users where email = 'cara@forge.test'") }, cc)).structuredContent;
+    if (f?.status !== "following" || !/follows Cara/.test(f.next ?? "")) throw new Error(`follow_person: ${JSON.stringify(f).slice(0, 200)}`);
+    psql(`delete from public.follows where follower = '${process.env.BEN_ID}' and target in (select id from auth.users where email = 'cara@forge.test'); update public.api_tokens set revoked_at = now() where prefix = 'forge_cara'`);
+  }, ben);
+
   await step("FIX-92: a club's Integrations tab shows how work comes in (GitHub, members' AI tools), and no Discord", async () => {
     await go(ben, "/c/rkt/manage?tab=integrations"); // Ben owns Rocketry Club
     const main = ben.locator("main");
