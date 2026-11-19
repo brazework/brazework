@@ -57,7 +57,7 @@ jobs:
         run: node .github/scripts/supabase-wake.mjs "$PROJECT_REF"
       # Pinned: "latest" asks GitHub's API which release that is, and shared runners get rate-limited
       # there (FIX-94's step failed twice on it). Bump on purpose.
-      - uses: supabase/setup-cli@v1
+      - uses: supabase/setup-cli@v3
         if: steps.wake.outputs.ready != 'false'
         with:
           version: 3.1.0
