@@ -5,7 +5,7 @@
 // written to the run's summary, filed or updated as one Linear issue ("Database watch"), and fails
 // the run so GitHub emails us. It never changes the database: fixes go in as a new step, by PR.
 //
-// Run by hand:  SUPABASE_ACCESS_TOKEN=… node .github/scripts/db-watch.mjs
+// Run by hand (a read-only token, as SUPABASE_WATCH_TOKEN is):  SUPABASE_ACCESS_TOKEN=… node .github/scripts/db-watch.mjs
 // Accept today's warnings as the new normal (after deciding each is fine):  … --write-baseline
 import { readFileSync, writeFileSync, existsSync, appendFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
@@ -75,6 +75,9 @@ async function advisors(ref, token) {
   const out = [];
   for (const kind of ["security", "performance"]) {
     const res = await fetch(`https://api.supabase.com/v1/projects/${ref}/advisors/${kind}`, { headers: { Authorization: `Bearer ${token}` } });
+    if (res.status === 401 || res.status === 403) {
+      throw new Error(`The token can't read Supabase's ${kind} advisors (HTTP ${res.status}: ${await res.text()}). This is the token, not the database: SUPABASE_WATCH_TOKEN needs Advisors (Read) on this project.`);
+    }
     if (!res.ok) throw new Error(`Supabase ${kind} advisors: HTTP ${res.status} ${await res.text()}`);
     const body = await res.json();
     out.push(...(body.lints ?? body.result?.lints ?? []));
