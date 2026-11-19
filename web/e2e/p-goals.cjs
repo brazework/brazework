@@ -30,6 +30,12 @@ const ben = psql("select id from auth.users where email = 'ben@forge.test'");
     await page.getByText("a summer internship in power electronics").first().waitFor({ timeout: 15000 });
   }, page);
 
+  await step("Your week checks in on the goal: how much is signed, under the goal card", async () => {
+    await go(page, "/feed");
+    const rail = page.getByRole("complementary", { name: "Your week and what's coming up" });
+    await rail.getByText(/^\d of 3 signed toward your goal\./).waitFor({ timeout: 15000 });
+  }, page);
+
   const josh = await as(b, "josh@forge.test");
   await step("Josh sees what Ben is working toward", async () => {
     await go(josh, `/u/${ben}`);
