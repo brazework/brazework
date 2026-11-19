@@ -89,3 +89,20 @@ test("Plus trial: off unless a founder sets PLUS_TRIAL_DAYS, and only on Plus", 
   await stripeProvider({ ...env, PLUS_TRIAL_DAYS: "" }, fetcher as never).checkout({ plan: "plus", userId: "u2", reference: "u2", successUrl: "https://forge.test/a", cancelUrl: "https://forge.test/b" });
   assert.equal(sent?.get("subscription_data[trial_period_days]"), null, "no setting, no trial");
 });
+
+test("Plus yearly: the yearly price when it's set, the monthly one otherwise, and never a student at the full price", async () => {
+  const { plusPriceEnv, plusYearlyOnSale, PLUS_ANNUAL_PRICE_ENV, PLUS_STUDENT_ANNUAL_PRICE_ENV } = await import("@/lib/billing");
+  const base = { STRIPE_SECRET_KEY: "sk_test_x", STRIPE_PRICE_PLUS: "m", STRIPE_PRICE_PLUS_STUDENT: "ms" };
+  const all = { ...base, STRIPE_PRICE_PLUS_ANNUAL: "y", STRIPE_PRICE_PLUS_STUDENT_ANNUAL: "ys" };
+  assert.equal(plusPriceEnv({ student: false, yearly: true }, all), PLUS_ANNUAL_PRICE_ENV);
+  assert.equal(plusPriceEnv({ student: true, yearly: true }, all), PLUS_STUDENT_ANNUAL_PRICE_ENV);
+  assert.equal(plusPriceEnv({ student: true, yearly: false }, all), PLUS_STUDENT_PRICE_ENV);
+  assert.equal(plusPriceEnv({ student: false, yearly: false }, all), undefined, "the one monthly price");
+  // No student yearly price: a student asking for yearly pays the student monthly price, never $96.
+  assert.equal(plusPriceEnv({ student: true, yearly: true }, { ...base, STRIPE_PRICE_PLUS_ANNUAL: "y" }), PLUS_STUDENT_PRICE_ENV);
+  // No yearly price at all: yearly isn't offered, and asking for it falls back to monthly.
+  assert.equal(plusYearlyOnSale(base), false);
+  assert.equal(plusPriceEnv({ student: false, yearly: true }, base), undefined);
+  assert.equal(plusYearlyOnSale(all), true);
+  assert.equal(plusYearlyOnSale({ STRIPE_PRICE_PLUS_ANNUAL: "y" }), false, "not without Stripe and the monthly price");
+});

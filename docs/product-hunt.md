@@ -129,6 +129,10 @@ payments, create these in Stripe (test mode first), then add them in Vercel (Pro
   - **Plus:** monthly, $12, → `STRIPE_PRICE_PLUS`. Optionally, a second monthly price of $6 for students
     → `STRIPE_PRICE_PLUS_STUDENT` (without it, students pay the one price). The name and prices live in
     `web/src/lib/pricing.ts`.
+  - **Plus by the year (optional):** yearly, $96, → `STRIPE_PRICE_PLUS_ANNUAL`, and yearly, $48, for students
+    → `STRIPE_PRICE_PLUS_STUDENT_ANNUAL`. With the first one set, `/plus` offers a year next to monthly. A
+    student never pays $96: without the student yearly price, a student's yearly choice checks out at the
+    student monthly price.
   - **Find builders seat:** monthly, $300, → `STRIPE_PRICE_TALENT`.
   - **Sponsored challenge:** one-time, $1,000, → `STRIPE_PRICE_CHALLENGE`.
 - [ ] `STRIPE_SECRET_KEY`: the secret key (`sk_live_…`, or `sk_test_…` while testing).

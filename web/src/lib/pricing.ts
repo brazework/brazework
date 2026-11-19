@@ -6,8 +6,15 @@
 // runtime (lib/billing.ts plusOnSale(): Stripe on and STRIPE_PRICE_PLUS set); until then /plus takes
 // a place on the waitlist. Never call it "Pro": Pro means pro verification, a professional at a
 // verified company signing a milestone (supabase/pro-verification.sql).
+//
+// What Plus is for (Nov 19): students pay to be found (every company that looked); professionals pay
+// to be recognized at work (the review packet: their signed work, ready for a review or promotion).
 
-export const PLUS = { name: "Plus", student: 6, everyone: 12 };
+import { FEATURE_ACCESS } from "@/lib/plans";
+
+// Monthly, and by the year at a third off: review cycles come once or twice a year, so a year is the
+// natural unit for a professional. Yearly checkout needs its Stripe prices (lib/billing.ts plusPriceEnv).
+export const PLUS = { name: "Plus", student: 6, everyone: 12, studentYear: 48, everyoneYear: 96 };
 // What Plus will add but doesn't yet. Every page that lists Plus marks these "coming soon", so nobody
 // pays for something that isn't built. Move an item out of this list when it ships.
 export const PLUS_SOON = ["Your own profile link", "A PDF portfolio of your signed work", "More AI drafts from your tools"];
@@ -32,8 +39,15 @@ export const TIERS: Tier[] = [
     cta: { label: "Log your first build", href: "/signup" },
   },
   {
-    id: "plus", audience: "builders", name: PLUS.name, price: `$${PLUS.student}/mo`, note: `For students. $${PLUS.everyone}/mo for everyone else.`,
-    points: ["Everything in Free", "Every company that looked in the last 90 days, not just this week", ...PLUS_SOON.map((x) => `${x} (coming soon)`)],
+    id: "plus", audience: "builders", name: PLUS.name, price: `$${PLUS.student}/mo`,
+    note: `For students, or $${PLUS.studentYear} a year. Professionals: $${PLUS.everyone}/mo, or $${PLUS.everyoneYear} a year.`,
+    points: [
+      "Everything in Free",
+      // Free while it's a Plus preview (lib/plans.ts), and the card says so: one word there changes both.
+      `Review packets: your signed work over any period, ready for a performance review or a promotion case${FEATURE_ACCESS.reviewPacket === "plus-preview" ? " (free for everyone during launch)" : ""}`,
+      "Every company that looked in the last 90 days, not just this week",
+      ...PLUS_SOON.map((x) => `${x} (coming soon)`),
+    ],
     cta: { label: "Get Plus", href: "/plus" },
   },
   {

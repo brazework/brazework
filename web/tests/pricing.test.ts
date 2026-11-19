@@ -39,3 +39,11 @@ test("Plus never sells what isn't built: everything still coming is marked comin
   for (const soon of PLUS_SOON) assert.ok(plus.points.includes(`${soon} (coming soon)`), soon);
   assert.ok(plus.points.some((p) => p.includes("90 days") && !p.includes("coming soon")), "who looked over 90 days is built");
 });
+
+test("Plus leads with the review packet, says plainly it's free during launch, and shows the yearly prices", () => {
+  const plus = TIERS.find((t) => t.id === "plus")!;
+  assert.match(plus.points[1], /review packet/i, "the packet is the first thing Plus adds");
+  assert.match(plus.points[1], /free for everyone during launch/, "it's a Plus preview today, and says so");
+  assert.ok(plus.note.includes(`$${PLUS.studentYear}`) && plus.note.includes(`$${PLUS.everyoneYear}`), plus.note);
+  assert.ok(PLUS.everyoneYear < PLUS.everyone * 12 && PLUS.studentYear < PLUS.student * 12, "a year costs less than twelve months");
+});
