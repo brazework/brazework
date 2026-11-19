@@ -9,6 +9,7 @@ import { cn } from "@/lib/forge";
 import { signerNote } from "@/lib/signers";
 import { addMilestone, disputeMilestone, removeMilestone, setMilestoneVisible, shareMilestone, type MilestoneState } from "@/lib/milestones";
 import { proofPostText, proofUrl, shareLinks } from "@/lib/proof-card";
+import { PublicLine } from "./public-line";
 import { submitWithoutReset } from "@/lib/submit";
 import { RELATIONSHIPS } from "@/lib/vouch-email";
 
@@ -23,6 +24,8 @@ export type Milestone = {
   milestone_backings?: Backing | Backing[] | null;
   // With supabase/proof-cards.sql: when the member shared it as a public link (/p/<id>), or null.
   shared_at?: string | null;
+  // With supabase/redacted-proof.sql: the one line other members see for private signed work (owner only).
+  public_line?: string;
 };
 export type Backing = { kind: "commit" | "pull_request" | "release"; repo_full_name: string; ref: string; url: string; checked_at: string };
 const backingOf = (m: Milestone): Backing | null => (Array.isArray(m.milestone_backings) ? m.milestone_backings[0] ?? null : m.milestone_backings ?? null);
@@ -35,7 +38,7 @@ const day = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString("en-US"
 
 // A project's milestones as a small timeline. Others only ever see verified ones and logged ones
 // GitHub backs (the database hides the rest); the owner also sees what's waiting and what was declined, with the club's note.
-export function MilestoneTimeline({ items, own }: { items: Milestone[]; own: boolean }) {
+export function MilestoneTimeline({ items, own, projectPrivate = false }: { items: Milestone[]; own: boolean; projectPrivate?: boolean }) {
   const [gone, setGone] = useState<Set<string>>(new Set());
   const [patch, setPatch] = useState<Record<string, Partial<Milestone>>>({});
   const [disputing, setDisputing] = useState<string | null>(null);
@@ -93,6 +96,8 @@ export function MilestoneTimeline({ items, own }: { items: Milestone[]; own: boo
                       {m.private ? <><EyeOff className="size-3" /> Only you · Show on profile</> : <><Eye className="size-3" /> On your profile · Hide</>}
                     </button>
                   )}
+                  {/* Proof without revealing (redacted-proof.sql): one public line for private signed work. */}
+                  {own && m.status === "verified" && (m.private || projectPrivate) && m.public_line !== undefined && <PublicLine id={m.id} line={m.public_line} />}
                   {/* Proof cards (FIX-128): share a signed or backed result as a public link. */}
                   {own && m.shared_at !== undefined && (m.status === "verified" || (m.status === "logged" && backingOf(m))) && (
                     <button type="button" onClick={() => setSharing(m.id)} className="inline-flex items-center gap-1 font-medium text-text-2 hover:text-text">

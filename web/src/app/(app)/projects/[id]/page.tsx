@@ -213,7 +213,7 @@ async function ProjectView({ params, searchParams }: { params: PageProps<"/proje
               <h2 className="inline-flex items-center gap-2 text-lg font-semibold tracking-tight"><BadgeCheck className="size-5 text-ok" /> Proof</h2>
               <span className="text-xs text-muted">{own ? "Verified ones show to everyone; pending and declined ones only to you." : "Each one verified by an officer of the club who saw it happen."}</span>
             </div>
-            {milestones.length > 0 && <MilestoneTimeline items={milestones} own={own} />}
+            {milestones.length > 0 && <MilestoneTimeline items={milestones} own={own} projectPrivate={!!p.private} />}
             {/* Teammates log their own milestones on it here (the owner does it from their profile). */}
             {builder && !own && myClubs.length > 0 && <div className="mt-4"><AddMilestone projectId={p.id} projectTitle={p.title} clubs={myClubs} /></div>}
             {own && verified.length === 0 && (

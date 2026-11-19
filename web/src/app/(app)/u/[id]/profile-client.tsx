@@ -90,7 +90,7 @@ export function ProjectCard({ project, own, interests, copilot = false, clubs, v
       <p className="mt-3 text-sm leading-relaxed text-text-2">{project.summary}</p>
       {project.tags.length > 0 && <div className="mt-3 flex flex-wrap gap-1.5">{project.tags.map((t) => <span key={t} className="rounded-full bg-surface-2 px-2.5 py-0.5 text-xs text-text-2">#{t}</span>)}</div>}
       {!!project.tools?.length && <p className="mt-2 truncate text-xs text-muted"><span className="text-faint">Built with</span> {project.tools.slice(0, 5).join(" · ")}{project.tools.length > 5 ? ` +${project.tools.length - 5}` : ""}</p>}
-      {project.milestones && <MilestoneTimeline items={project.milestones} own={own} />}
+      {project.milestones && <MilestoneTimeline items={project.milestones} own={own} projectPrivate={project.private} />}
       {own && clubs && <div className="mt-3"><AddMilestone projectId={project.id} projectTitle={project.title} clubs={clubs} vouches={vouches} backing={backing} /></div>}
       {(project.details || link) && (
         <button onClick={() => setOpen((v) => !v)} aria-expanded={open} className="mt-4 inline-flex items-center gap-1.5 self-start rounded-full bg-surface-2 px-3 py-1.5 text-xs font-medium text-text-2 transition hover:bg-hover hover:text-text">

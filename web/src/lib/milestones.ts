@@ -170,3 +170,14 @@ export async function setMilestoneVisible(id: string, visible: boolean): Promise
   revalidatePath(`/u/${user.id}`);
   return { ok: true, message: visible ? "Shown on your profile." : "Hidden from your profile." };
 }
+
+// Proof without revealing confidential work (supabase/redacted-proof.sql): the one public line a private
+// milestone shows other members. Only the owner writes it; the database checks it.
+export async function setPublicLine(id: string, line: string): Promise<MilestoneState> {
+  const { supabase, user } = await getViewer();
+  if (!user) return { ok: false, message: "Log in again." };
+  const { data, error } = await supabase.rpc("set_public_line", { p_id: id, p_line: line.slice(0, 200) });
+  if (error) return { ok: false, message: error.code === "P0001" ? error.message : error.code === "42501" ? "Only the owner writes this line." : friendlyError(error) };
+  revalidatePath(`/u/${user.id}`);
+  return { ok: true, message: data ? "Saved. Other members see this line, not the milestone." : "Cleared." };
+}
