@@ -293,7 +293,8 @@ const { step, browser, as, go, summary, BASE } = require("./lib.cjs");
     psql(`insert into public.messages (conversation_id, sender_id, body) values ('${conv}', '${process.env.JOSH_ID}', 'Can you look at my thrust curve before Friday? ${stamp}')`);
     const inbox = (await call("my_inbox", {}, readOnly)).structuredContent?.items ?? [];
     const row = inbox.find((c) => c.conversation_id === conv);
-    if (!row || row.kind !== "request to you" || !row.unread || !row.url?.startsWith("http")) throw new Error(`my_inbox: ${JSON.stringify(inbox).slice(0, 240)}`);
+    // A request if they've never talked; an ordinary conversation if an earlier journey connected them.
+    if (!row || !["request to you", "conversation"].includes(row.kind) || !row.unread || row.last_from !== "them" || !row.url?.startsWith("http")) throw new Error(`my_inbox: ${JSON.stringify(inbox).slice(0, 240)}`);
     const thread = (await call("my_inbox", { conversation_id: conv }, readOnly)).structuredContent;
     if (thread?.messages?.[0]?.from !== "them") throw new Error(`the conversation: ${JSON.stringify(thread).slice(0, 200)}`);
     const reply = (await call("draft_reply", { conversation_id: conv, body: `Sure, send it over. ${stamp}` }, cc)).structuredContent;
