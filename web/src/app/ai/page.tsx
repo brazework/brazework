@@ -1,13 +1,11 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Suspense } from "react";
 import { Footer } from "@/components/landing/closing";
 import { H2 } from "@/components/landing/sections";
 import { ThemeChrome } from "@/components/theme-chrome";
 import { Logo } from "@/components/ui";
 import { ASSISTANTS, COMMANDS, FIELDS, FLOW, FOR_EVERYONE, RULES, toolGroups } from "@/lib/ai-guide";
-import { env } from "@/lib/env";
-import { oauthEnabled } from "@/lib/mcp-oauth";
+import { ConnectSlot } from "@/components/connect/connect-live";
 
 export const metadata: Metadata = {
   title: "Connect your AI",
@@ -20,7 +18,6 @@ export const metadata: Metadata = {
 // it comes from the code's own lists (lib/ai-guide.ts): a tool or prompt the server gains shows up here.
 // Static, apart from one small part that says whether one-click sign-in is switched on yet.
 export default function AiGuidePage() {
-  const endpoint = `${env.siteUrl.replace(/\/$/, "")}/api/mcp`;
   return (
     <div className="landing min-h-dvh">
       <ThemeChrome landing />
@@ -46,15 +43,15 @@ export default function AiGuidePage() {
           ))}
         </ol>
 
-        <section aria-labelledby="setup" className="mt-20 grid gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
+        <section aria-labelledby="setup" className="mt-20 grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.2fr)]">
           <div>
             <h2 id="setup" className="text-2xl font-semibold tracking-tight">Set it up in two minutes</h2>
             <p className="mt-3 text-[15px] leading-relaxed text-muted">Brazework is an MCP server, the open standard AI assistants use to connect to apps. It works with {ASSISTANTS.slice(0, -1).join(", ")} and {ASSISTANTS.at(-1)}, and with Claude on the web and desktop.</p>
           </div>
-          <div className="flex flex-col gap-4">
-            <Suspense fallback={<OneClick on={null} endpoint={endpoint} />}><OneClickLive endpoint={endpoint} /></Suspense>
+          <div className="flex min-w-0 flex-col gap-4">
+            <ConnectSlot />
             <div className="rounded-2xl border border-line bg-surface p-5">
-              <h3 className="font-semibold">With a token</h3>
+              <h3 className="font-semibold">Or with a token</h3>
               <p className="mt-1.5 text-[15px] leading-relaxed text-muted">In Brazework, open Settings → Your tools and pick your assistant. Brazework makes a token and gives you the exact command or link to add it, filled in. You choose whether it can post for you or only leave drafts, and you can revoke it at any time.</p>
             </div>
           </div>
@@ -137,17 +134,3 @@ export default function AiGuidePage() {
   );
 }
 
-// One-click sign-in (lib/mcp-oauth.ts): live once a founder switches the OAuth server on in Supabase.
-async function OneClickLive({ endpoint }: { endpoint: string }) {
-  return <OneClick on={await oauthEnabled()} endpoint={endpoint} />;
-}
-function OneClick({ on, endpoint }: { on: boolean | null; endpoint: string }) {
-  return (
-    <div className="rounded-2xl border border-line bg-surface p-5">
-      <h3 className="font-semibold">With one-click sign-in{on === false && <span className="ml-2 text-sm font-normal text-faint">not switched on yet</span>}</h3>
-      <p className="mt-1.5 text-[15px] leading-relaxed text-muted">Add Brazework as a connector in your assistant (in Claude: Settings → Connectors → Add custom connector) with this address, then sign in to Brazework when it asks. No token to copy.</p>
-      <p className="mt-3 rounded-lg bg-surface-2 px-3 py-2 font-mono text-sm break-all">{endpoint}</p>
-      {on === false && <p className="mt-2 text-sm text-faint">Until it is, use a token (below).</p>}
-    </div>
-  );
-}
