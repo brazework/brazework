@@ -83,19 +83,27 @@ const HINTS: [RegExp, string][] = [
   [/30 drafts waiting/i, "The member has drafts to review first. Point them to Brazework → Drafts."],
   [/evidence/i, "Evidence is 1 to 8 https links: the commit, pull request, CI run, video, doc or report."],
   [/isn'?t waiting for proof|no longer exists/i, "Call my_projects: open_milestones lists the ones still waiting, with their ids."],
-  [/aren'?t in any of your clubs/i, "Use search to find someone in one of the member's clubs (my_clubs), or let the member add them from the project's Team section in Brazework."],
+  [/aren'?t in any of your clubs/i, "Use search to find someone in one of the member's clubs (my_clubs)."],
   [/always left as a draft/i, "Call it again with draft: true; the member confirms it in Brazework."],
   [/whether companies should see this goal/i, "Ask: \"Should companies searching Brazework see this goal, or keep it to you?\" Then call set_goal again with visible."],
   [/changed your goal a lot today/i, "This is a limit, not an error. Try again tomorrow."],
   [/admins of a verified company or school/i, "Company search is for verified organizations. The member can register theirs at brazework.com/org with a work email."],
   [/admins and owner can host/i, "A moderator can still draft an announcement (draft_announcement) and ask an admin to publish the event."],
-  [/moderators, admins and owner/i, "Only officers can do this. my_clubs shows the member's role in each club."],
-  [/invite link has expired/i, "Ask the member for a fresh link from the club, or ask to join it instead (join_club)."],
-  [/already asked to join/i, "Nothing to do: the member is notified when the moderators answer."],
+  [/moderators, admins and owner/i, "my_clubs shows the member's role in each club."],
+  [/invite link has expired/i, "Or ask to join the club instead (join_club)."],
+  [/already asked to join/i, "Nothing to do: the member is notified."],
 ];
 
-/** The refusal, plus how to fix it when there's a choice to make. */
+// What a hint points the assistant to: a tool (my_clubs, join_club) or a page (/org).
+const POINTERS = /\b[a-z]+(?:_[a-z]+)+\b|\/org\b/g;
+
+/** The refusal, plus how to fix it when there's a choice to make. A hint only adds what the refusal
+ *  doesn't already say: one pointing where the message already points (the database's own refusals
+ *  often name my_clubs or /org) is left off, so the assistant never reads the same advice twice. */
 export function withFix(message: string): string {
   const hint = HINTS.find(([re]) => re.test(message))?.[1];
-  return hint ? `${message} ${hint}` : message;
+  if (!hint) return message;
+  const pointers = hint.match(POINTERS) ?? [];
+  if (pointers.some((p) => message.includes(p))) return message;
+  return `${message} ${hint}`;
 }

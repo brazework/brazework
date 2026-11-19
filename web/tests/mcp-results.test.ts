@@ -33,3 +33,16 @@ test("refusals keep the database's words and add the fix when there's a choice",
   assert.match(withFix("You've sent 10 asks this week. Try again in a few days."), /a limit, not an error/);
   assert.equal(withFix("Write between 1 and 3,000 characters."), "Write between 1 and 3,000 characters.");
 });
+
+test("a hint never repeats what the refusal already says", () => {
+  const announce = "Only a club's moderators, admins and owner draft its announcements. my_clubs shows your role in each.";
+  assert.equal(withFix(announce), announce, "the database already points to my_clubs");
+  const search = "Finding builders is for admins of a verified company or school. Register yours at Brazework → /org.";
+  assert.equal(withFix(search), search, "the database already points to /org");
+  const review = "Only the club's moderators, admins and owner can review milestones.";
+  assert.equal(withFix(review), `${review} my_clubs shows the member's role in each club.`, "a pointer the message lacks is added, without restating it");
+  const host = "Only a club's admins and owner can host its events. my_clubs shows your role in each.";
+  assert.match(withFix(host), /draft_announcement/, "a hint that adds a different way forward stays");
+  const invite = "This invite link has expired or was turned off. Ask for a new one.";
+  assert.equal(withFix(invite), `${invite} Or ask to join the club instead (join_club).`);
+});

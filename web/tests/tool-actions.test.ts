@@ -155,6 +155,21 @@ test("find_builders ranks exactly as /talent does, by club name or id, and label
   assert.equal(talentAsk({ class_year: "2027", min_signed: 99 }).min_signed, 20);
 });
 
+test("find_builders names who signed: the person who vouched, else the officer, else the club", () => {
+  const base = { owner_id: "u1", community_id: null, community_name: "", reviewer_role: "professor", reviewed_at: "2026-11-01T00:00:00Z", projects: { title: "Bench", tags: ["Battery"], tools: ["Python"] } };
+  const rows: VerifiedRow[] = [
+    { ...base, id: "v1", title: "Cathode study", reviewer_name: "", vouched_by: "Dr. Elena Ruiz, Assistant Professor · stateu.edu" },
+    { ...base, id: "v2", title: "Cell cycling", reviewer_name: "Maya Patel", community_id: "rkt", community_name: "Rocketry Club", reviewer_role: "Officer", reviewed_at: "2026-10-01T00:00:00Z" },
+    { ...base, id: "v3", title: "Old rig", reviewer_name: "", community_id: "rkt", community_name: "Rocketry Club", reviewed_at: "2026-09-01T00:00:00Z" },
+  ];
+  const people: Person[] = [{ id: "u1", first_name: "Priya", last_name: "Shah", headline: "", field: "Chemistry" }];
+  const work = findBuilders({ org: { name: "Acme", type: "company" }, rows, people }, talentAsk({})).builders[0].work;
+  const by = Object.fromEntries(work.map((w) => [w.title, "signed_by" in w ? w.signed_by : undefined]));
+  assert.equal(by["Cathode study"], "Dr. Elena Ruiz, Assistant Professor · stateu.edu", "a vouched line is never blank");
+  assert.equal(by["Cell cycling"], "Maya Patel");
+  assert.equal(by["Old rig"], "Rocketry Club");
+});
+
 test("follow: the last Ember card a tool couldn't reach; career_fair asks before each write and names only the token's tools", () => {
   assert.deepEqual(draftToProposal({ id: "f", kind: "follow", payload: { person_id: "u1", name: "Cara Diaz", headline: "" } }), { id: "draft-f", kind: "follow", person_id: "u1", name: "Cara Diaz", headline: "" });
   const post = promptText("career_fair", { event: "Spring Engineering Career Fair" }, { canDraft: true, canPost: true })!;
