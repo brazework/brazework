@@ -7,6 +7,7 @@ import { test } from "node:test";
 import { MCP_TOOLS, annotationsFor, toolsFor } from "@/lib/mcp";
 import { nextStep, withFix } from "@/lib/mcp-results";
 import { CARD_KINDS, actionPayload, appTopics, draftToProposal, isCardKind } from "@/lib/tool-actions";
+import { promptText } from "@/lib/mcp-playbooks";
 
 const O = "https://brazework.com";
 const acts = MCP_TOOLS.filter((t) => t.act);
@@ -105,4 +106,30 @@ test("clubs and messages: join, invite and message drafts become Ember's cards; 
   assert.match(nextStep("join_club", { drafted: false, status: "requested", title: "Secret", id: "sec", url: "/c/sec" }, O)!.next, /moderators approve/);
   assert.match(nextStep("accept_invite", { drafted: false, status: "joined", title: "Secret", id: "sec", url: "/c/sec" }, O)!.next, /in Secret/);
   assert.equal(MCP_TOOLS.find((t) => t.name === "my_inbox")!.needs, undefined, "my_inbox only reads");
+});
+
+test("officers: event and announcement drafts become Ember's cards; both are always drafts; the brief only reads", () => {
+  const e = draftToProposal({ id: "e", kind: "event", payload: { club_id: "rkt", club_name: "Rocketry Club", title: "Static fire", type: "Workshop", format: "In person", location: "", topic: "Aerospace", starts_at: "2026-12-03T23:00:00Z", ends_at: "2026-12-04T01:00:00Z", description: "" } });
+  assert.ok(e && e.kind === "event" && e.title === "Static fire" && e.ends_at === "2026-12-04T01:00:00Z");
+  const odd = draftToProposal({ id: "e2", kind: "event", payload: { club_id: "rkt", title: "x", topic: "Rocketry", starts_at: "2026-12-03T23:00:00Z", ends_at: "2026-12-04T01:00:00Z" } });
+  assert.ok(odd && odd.kind === "event" && odd.topic === "", "a club topic that isn't one of the app's is left out, as Ember does (the event form refuses it)");
+  const a = draftToProposal({ id: "a", kind: "club_post", payload: { club_id: "rkt", club_name: "Rocketry Club", body: "Build night moves to Thursday." } });
+  assert.deepEqual(a, { id: "draft-a", kind: "club_post", club_id: "rkt", club_name: "Rocketry Club", body: "Build night moves to Thursday.", postKind: "update" });
+  for (const n of ["draft_event", "draft_announcement"]) assert.equal(MCP_TOOLS.find((t) => t.name === n)!.draftOnly, true, n);
+  assert.equal(MCP_TOOLS.find((t) => t.name === "club_brief")!.needs, undefined);
+  assert.deepEqual(actionPayload("event", { club_id: "rkt", title: "T", starts_at: "2026-12-03T18:00:00-05:00", draft: true }), { club_id: "rkt", title: "T", starts_at: "2026-12-03T18:00:00-05:00" });
+  assert.match(nextStep("draft_event", { drafted: true }, O)!.next, /publish it to the club/);
+  assert.match(withFix("Only a club's admins and owner can host its events. my_clubs shows your role in each."), /draft_announcement/);
+});
+
+test("club_week: a meeting plan offers to draft the meeting; a read token writes it out; nobody is told to verify", () => {
+  const draft = promptText("club_week", { what: "meeting plan" }, { canDraft: true, canPost: false })!;
+  assert.match(draft, /club_brief/);
+  assert.match(draft, /draft_announcement/);
+  assert.match(draft, /draft_event/);
+  assert.match(draft, /Don't verify/);
+  const read = promptText("club_week", {}, { canDraft: false, canPost: false })!;
+  assert.doesNotMatch(read, /draft_/);
+  assert.match(read, /this week's update/);
+  assert.match(promptText("club_week", { what: "recap" }, { canDraft: true, canPost: true })!, /recap of the club's last week/);
 });

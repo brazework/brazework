@@ -9,7 +9,7 @@ import { saveEvent } from "@/app/(app)/org/actions";
 import { Celebrate } from "@/components/app/celebrate";
 import type { Proposal } from "@/lib/copilot-agent";
 import { EVENT_FORMATS, EVENT_TYPES } from "@/lib/events";
-import { cn } from "@/lib/forge";
+import { ALL_TOPICS, cn } from "@/lib/forge";
 import { addMilestone, reviewMilestone } from "@/lib/milestones";
 import { saveProject, updateProjectFields } from "@/lib/projects";
 import { addTeammate } from "@/lib/project-team";
@@ -214,6 +214,7 @@ export function ProposalCard({ p: initial, fromTool }: { p: Proposal; fromTool?:
                 <label className="text-xs text-muted">Ends<input type="datetime-local" value={toLocal(p.ends_at)} onChange={(e) => e.target.value && set({ ends_at: fromLocal(e.target.value) })} className={cn(field, "mt-1")} /></label>
                 <label className="text-xs text-muted">Type<select value={p.type} onChange={(e) => set({ type: e.target.value })} className={cn(field, "mt-1")}>{EVENT_TYPES.map((t) => <option key={t}>{t}</option>)}</select></label>
                 <label className="text-xs text-muted">Format<select value={p.format} onChange={(e) => set({ format: e.target.value })} className={cn(field, "mt-1")}>{EVENT_FORMATS.map((t) => <option key={t}>{t}</option>)}</select></label>
+                <label className="text-xs text-muted sm:col-span-2">Topic<select aria-label="Topic" value={p.topic} onChange={(e) => set({ topic: e.target.value })} className={cn(field, "mt-1")}><option value="" disabled>Pick a topic</option>{ALL_TOPICS.map((t) => <option key={t}>{t}</option>)}</select></label>
               </div>
               <input aria-label="Location" value={p.location} onChange={(e) => set({ location: e.target.value })} maxLength={160} placeholder="Where (room, building or link)" className={field} />
             </>

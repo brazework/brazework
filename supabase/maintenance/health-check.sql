@@ -65,7 +65,8 @@ from (values
   (66, 'waiting-cards',   to_regprocedure('public.waiting_cards_ready()') is not null),
   (67, 'tool-actions',    to_regprocedure('public.tool_actions_ready()') is not null),
   (68, 'tool-rsvp',       to_regprocedure('public.tool_rsvp_ready()') is not null),
-  (69, 'tool-clubs-messages', to_regprocedure('public.tool_clubs_messages_ready()') is not null)
+  (69, 'tool-clubs-messages', to_regprocedure('public.tool_clubs_messages_ready()') is not null),
+  (70, 'tool-officers',   to_regprocedure('public.tool_officers_ready()') is not null)
 ) as s(step, file, present)
 order by step;
 

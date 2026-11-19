@@ -29,6 +29,8 @@ export function nextStep(tool: string, data: unknown, origin: string): { next: s
       return null; // Says its own next step (the email went out, and to whom).
   }
   // Actions shared with Ember (supabase/tool-actions.sql): drafted, or done with the member's yes.
+  if ((tool === "draft_event" || tool === "draft_announcement") && d.drafted === true && d.duplicate !== true)
+    return { next: "Waiting as a card in the member's Brazework drafts. They check it there and publish it to the club; nothing goes out before that.", open: site(origin, "/drafts") };
   if (tool === "draft_reply" && d.drafted === true && d.duplicate !== true)
     return { next: "Waiting as a card in the member's Brazework drafts. They read it, edit it if they like, and press Confirm to send it. Nothing is sent before that.", open: site(origin, "/drafts") };
   if (d.drafted === true) {
@@ -75,6 +77,8 @@ const HINTS: [RegExp, string][] = [
   [/isn'?t waiting for proof|no longer exists/i, "Call my_projects: open_milestones lists the ones still waiting, with their ids."],
   [/aren'?t in any of your clubs/i, "Use search to find someone in one of the member's clubs (my_clubs), or let the member add them from the project's Team section in Brazework."],
   [/always left as a draft/i, "Call it again with draft: true; the member confirms it in Brazework."],
+  [/admins and owner can host/i, "A moderator can still draft an announcement (draft_announcement) and ask an admin to publish the event."],
+  [/moderators, admins and owner/i, "Only officers can do this. my_clubs shows the member's role in each club."],
   [/invite link has expired/i, "Ask the member for a fresh link from the club, or ask to join it instead (join_club)."],
   [/already asked to join/i, "Nothing to do: the member is notified when the moderators answer."],
 ];

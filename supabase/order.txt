@@ -77,3 +77,4 @@ waiting-cards
 tool-actions
 tool-rsvp
 tool-clubs-messages
+tool-officers

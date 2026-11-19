@@ -1,3 +1,5 @@
+import { INTENT_PROMPTS, intentPromptText } from "@/lib/mcp-intent-prompts";
+
 // Field playbooks for Brazework's MCP server (docs/mcp-workflows.md): for each of the 20 fields the
 // landing page shows (components/projects/sample-models.ts, SAMPLES), the tools people in it really
 // use, how an assistant reaches each one, the moments worth recording, and who signs them. The MCP
@@ -261,6 +263,7 @@ export const PROMPTS: PromptDef[] = [
   { name: "ask_signature", title: "Ask someone to sign", description: "Ask the professor, PI, manager or mentor who saw your work to sign one of your milestones.", arguments: [{ name: "who", description: "Who saw it, e.g. “Dr. Lee, my lab PI”.", required: false }] },
   { name: "setup", title: "Connect my tools", description: "Which of your field's tools your assistant can reach, and how to connect them in a few minutes.", arguments: [FIELD_ARG] },
 ];
+PROMPTS.push(...INTENT_PROMPTS);
 
 export type Scopes = { canDraft: boolean; canPost: boolean };
 
@@ -289,6 +292,7 @@ function signLine(s: Scopes): string {
 }
 
 /** The message a prompt sends, for this member's field and what their token may do. */
+// The intent prompts (club_week, career_fair) live in lib/mcp-intent-prompts.ts.
 export function promptText(name: string, args: Record<string, string | undefined>, s: Scopes): string | null {
   const p = playbookFor(args.field);
   const what = args.what?.trim() ? ` (${args.what.trim().slice(0, 300)})` : "";
@@ -353,6 +357,6 @@ export function promptText(name: string, args: Record<string, string | undefined
         "4. For work I want recorded without me asking, point me to Brazework → Settings → Your tools → GitHub Actions: it leaves drafts for me to approve.",
       ].join("\n");
     default:
-      return null;
+      return intentPromptText(name, args, s);
   }
 }

@@ -31,7 +31,7 @@ function instructions(s: { canDraft: boolean; canPost: boolean }) {
   return `${ABOUT} ${reads} ${playbooks} Results include links to open in Brazework.`;
 }
 // Read before writing: my_inbox, then draft_reply. Messages are always drafts the member sends.
-const MESSAGES = " Replies (draft_reply) always wait in the member's drafts: they send them from Brazework.";
+const MESSAGES = " Replies (draft_reply) always wait in the member's drafts: they send them from Brazework. Club officers can read a club's weekly brief (club_brief) and draft an announcement or an event (draft_announcement, draft_event) that they publish from Brazework; verifying milestones stays in Brazework.";
 
 export async function GET() {
   return new Response("Brazework's MCP server takes POST requests. Connect a tool in Brazework → Settings → Your tools.", { status: 405, headers: { Allow: "POST" } });

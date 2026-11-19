@@ -107,6 +107,25 @@ actions, by the same names (`supabase/tool-actions.sql`, `web/src/lib/tool-actio
 | Join a club (or ask to, if it approves members) | `join_club` | card in Drafts | done after your yes |
 | Accept a club invite link | `accept_invite` | card in Drafts | done after your yes |
 | A message or a reply | `draft_reply` | card in Drafts | **always a card**: you send it |
+| A club announcement (officers) | `draft_announcement` | card in Drafts | **always a card**: you post it |
+| A club event (club admins) | `draft_event` | card in Drafts | **always a card**: you publish it |
+
+## For club officers
+
+If you're a moderator, admin or owner of a club, ask in plain words: "how was Rocketry's week?", "plan
+Thursday's meeting", "recap last week for the club". The `club_week` prompt does it in one go.
+
+- `club_brief` is Ember's weekly brief (the same numbers as Manage → Report and Ember's club report):
+  members and new joiners, posts this week vs last, the top post, events coming up and just past,
+  milestones verified and waiting, join requests. Moderators and up.
+- `draft_announcement` drafts a post in the club; `draft_event` drafts an event. Both always wait as cards
+  in your Drafts: you publish them. Events follow the app's rule: a club's admins and owner host them, so a
+  moderator drafts the announcement and asks an admin.
+- Verifying milestones stays in Brazework. The brief says how many wait and links the Verify tab.
+
+| Prompt | What it does |
+|---|---|
+| `club_week` | Ember's brief for your club, turned into this week's update (default), a meeting plan (`what: meeting plan`, and offers to draft the meeting itself) or a recap (`what: recap`), saved as a draft announcement. |
 
 ## Drafts and automations
 
