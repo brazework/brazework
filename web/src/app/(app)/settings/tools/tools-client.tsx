@@ -2,20 +2,26 @@
 import { Orb } from "@/components/landing/orb";
 import { ArrowLeft, ArrowUpRight, Check, CircleDot, Copy, FileCode2, KeyRound, Loader2, Lock, PenLine, ShieldCheck, Sparkles, Terminal, X } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
+import Link from "next/link";
 import { useCallback, useEffect, useState, useTransition } from "react";
 import { Button } from "@/components/ui";
 import { createApiToken, listApiTokens, revokeApiToken, setTokenCanPost, type ApiToken } from "@/lib/api-tokens";
 import { cn, timeAgo } from "@/lib/forge";
-import { TOOLS, isConnected, setupSteps, toolFor, type Step, type ToolInfo } from "@/lib/tool-setup";
+import { TOOLS, draftsOnly, isConnected, setupSteps, toolFor, type Step, type ToolInfo } from "@/lib/tool-setup";
+import { FieldRecipes } from "./recipes";
 
 // What an agent can do with Brazework today (the MCP server's read tools, lib/mcp.ts).
 const CAN = ["Your profile and club-verified work", "Your clubs and this week's events", "Your projects and their milestones", "Your notifications", "Search clubs and people"];
 const ASK = ["What's on in my clubs this week?", "Which of my projects still need a verified milestone?", "Find people in robotics I should meet."];
 
 // `writes`: tools may post for you once you allow it (supabase/mcp-writes.sql has run).
-export function ToolsHub({ tokens, endpoint, writes = false }: { tokens: ApiToken[]; endpoint: string; writes?: boolean }) {
+// `drafts`: tools can leave drafts you approve, and GitHub Actions can be connected (supabase/mcp-workflows.sql).
+type Project = { id: string; title: string };
+type Club = { id: string; name: string };
+export function ToolsHub({ tokens, endpoint, writes = false, drafts = false, projects = [], clubs = [], field = "" }: { tokens: ApiToken[]; endpoint: string; writes?: boolean; drafts?: boolean; projects?: Project[]; clubs?: Club[]; field?: string }) {
   const [list, setList] = useState(tokens);
   const [open, setOpen] = useState<ToolInfo | null>(null);
+  const tools = TOOLS.filter((t) => drafts || !draftsOnly(t.id));
   const active = list.filter((t) => !t.revoked_at);
   const statusFor = (tool: ToolInfo) => {
     const mine = active.filter((t) => toolFor(t.name)?.id === tool.id);
@@ -52,16 +58,18 @@ export function ToolsHub({ tokens, endpoint, writes = false }: { tokens: ApiToke
             </ul>
           </div>
         </div>
-        {writes && (
+        {drafts ? (
+          <p className="relative mt-4 flex items-start gap-2 rounded-2xl bg-surface-2 px-3.5 py-3 text-sm text-text-2"><PenLine className="mt-0.5 size-4 shrink-0 text-muted" /><span><strong className="font-medium text-text">It turns your work into your record.</strong> Type <code className="font-mono text-[13px]">/shipped</code>, <code className="font-mono text-[13px]">/result</code> or <code className="font-mono text-[13px]">/week</code> in your assistant and it drafts the post or milestone from your own tools, with the proof. It waits in <Link href="/drafts" className="font-medium text-text underline-offset-4 hover:underline">Drafts</Link> for you to approve, or, if you let a tool post, it shows you first and asks.</span></p>
+        ) : writes && (
           <p className="relative mt-4 flex items-start gap-2 rounded-2xl bg-surface-2 px-3.5 py-3 text-sm text-text-2"><PenLine className="mt-0.5 size-4 shrink-0 text-muted" /><span><strong className="font-medium text-text">If you let it,</strong> it can also post a build update for you, or log a milestone with its evidence for your club to verify. It asks you first, and the post or milestone says which tool made it.</span></p>
         )}
-        <p className="relative mt-5 flex items-center gap-2 border-t border-line pt-4 text-xs text-muted"><ShieldCheck className="size-3.5 shrink-0" /> {writes ? "Read-only unless you turn on posting for a tool. Nothing is ever changed or deleted." : "Read-only: it can't post or change anything."} Each tool gets its own token you can revoke here.</p>
+        <p className="relative mt-5 flex items-center gap-2 border-t border-line pt-4 text-xs text-muted"><ShieldCheck className="size-3.5 shrink-0" /> {drafts ? "Nothing goes out without you: tools leave drafts, unless you turn on posting for one. Nothing is ever changed or deleted." : writes ? "Read-only unless you turn on posting for a tool. Nothing is ever changed or deleted." : "Read-only: it can't post or change anything."} Each tool gets its own token you can revoke here.</p>
       </section>
 
       {/* The tools. */}
       <section aria-label="Tools you can connect">
         <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          {TOOLS.map((t) => {
+          {tools.map((t) => {
             const s = statusFor(t);
             return (
               <li key={t.id}>
@@ -98,16 +106,23 @@ export function ToolsHub({ tokens, endpoint, writes = false }: { tokens: ApiToke
 
       <Connected tokens={active} writes={writes} onRevoke={async (id) => { await revokeApiToken(id); await refresh(); }} onPost={async (id, on) => { await setTokenCanPost(id, on); await refresh(); }} />
 
+      {drafts && <FieldRecipes initialField={field} />}
+
       <AnimatePresence>
-        {open && <SetupSheet key={open.id} tool={open} endpoint={endpoint} tokens={active} writes={writes} onClose={close} onChange={refresh} />}
+        {open && <SetupSheet key={open.id} tool={open} endpoint={endpoint} tokens={active} writes={writes} projects={projects} clubs={clubs} onClose={close} onChange={refresh} />}
       </AnimatePresence>
     </div>
   );
 }
 
 // Connecting one tool: make its token, follow its steps, and see it connect.
-function SetupSheet({ tool, endpoint, tokens, writes, onClose, onChange }: { tool: ToolInfo; endpoint: string; tokens: ApiToken[]; writes: boolean; onClose: () => void; onChange: () => Promise<void> }) {
+function SetupSheet({ tool, endpoint, tokens, writes, projects, clubs, onClose, onChange }: { tool: ToolInfo; endpoint: string; tokens: ApiToken[]; writes: boolean; projects: Project[]; clubs: Club[]; onClose: () => void; onChange: () => Promise<void> }) {
   const [canPost, setCanPost] = useState(false);
+  // An automation (GitHub Actions) only ever leaves drafts, into one of your projects, and optionally
+  // for one of your clubs to verify once you approve them.
+  const automation = draftsOnly(tool.id);
+  const [project, setProject] = useState(projects[0]?.id ?? "");
+  const [club, setClub] = useState("");
   const [token, setToken] = useState<{ id: string; value: string } | null>(null);
   const [msg, setMsg] = useState("");
   const [pending, start] = useTransition();
@@ -137,7 +152,7 @@ function SetupSheet({ tool, endpoint, tokens, writes, onClose, onChange }: { too
 
   const create = () => start(async () => {
     setMsg("");
-    const r = await createApiToken(tool.tokenName, canPost);
+    const r = await createApiToken(tool.tokenName, canPost && !automation);
     if (!r.ok || !r.token) { setMsg(r.message || "Couldn't make a token. Try again."); return; }
     setToken({ id: r.id ?? "", value: r.token });
     await onChange();
@@ -162,9 +177,26 @@ function SetupSheet({ tool, endpoint, tokens, writes, onClose, onChange }: { too
           <StepRow n={1} done={Boolean(token)} title={token ? "Token made" : `Make a token for ${tool.name}`}>
             {!token ? (
               <>
-                <p className="text-sm text-text-2">A private key that lets {tool.name} read your Brazework. It&apos;s shown once; you can revoke it any time.</p>
-                {writes && <PostSwitch on={canPost} onChange={setCanPost} tool={tool.name} className="mt-3" />}
-                <Button onClick={create} disabled={pending || full} className="mt-3">{pending ? <Loader2 className="size-4 animate-spin" /> : <KeyRound className="size-4" />} Make token</Button>
+                <p className="text-sm text-text-2">{automation
+                  ? <>A private key that lets {tool.name} leave drafts in your Brazework, and nothing more: it can&apos;t post. You approve each one in Drafts. It&apos;s shown once; you can revoke it any time.</>
+                  : <>A private key that lets {tool.name} read your Brazework. It&apos;s shown once; you can revoke it any time.</>}</p>
+                {automation && (projects.length ? (<>
+                  <label className="mt-3 block text-sm"><span className="font-medium">Which project its drafts go to</span>
+                    <select value={project} onChange={(e) => setProject(e.target.value)} aria-label="Project for drafts" className="mt-1.5 h-10 w-full rounded-lg border border-line bg-surface px-3 text-[15px]">
+                      {projects.map((p) => <option key={p.id} value={p.id}>{p.title}</option>)}
+                    </select>
+                  </label>
+                  {clubs.length > 0 && (
+                    <label className="mt-3 block text-sm"><span className="font-medium">Which club verifies them</span>
+                      <select value={club} onChange={(e) => setClub(e.target.value)} aria-label="Club to verify" className="mt-1.5 h-10 w-full rounded-lg border border-line bg-surface px-3 text-[15px]">
+                        <option value="">None: I&apos;ll ask someone to vouch</option>
+                        {clubs.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
+                      </select>
+                    </label>
+                  )}
+                </>) : <p className="mt-3 text-sm text-muted">Make a project first, so its drafts have somewhere to go. <Link href="/projects" className="font-medium text-text underline-offset-4 hover:underline">Projects</Link></p>)}
+                {writes && !automation && <PostSwitch on={canPost} onChange={setCanPost} tool={tool.name} className="mt-3" />}
+                <Button onClick={create} disabled={pending || full || (automation && !project)} className="mt-3">{pending ? <Loader2 className="size-4 animate-spin" /> : <KeyRound className="size-4" />} Make token</Button>
                 {full && <p className="mt-2 text-xs text-muted">You have 5 active tokens. Revoke one below first.</p>}
                 {msg && <p role="alert" className="mt-2 text-xs text-danger">{msg}</p>}
               </>
@@ -172,13 +204,13 @@ function SetupSheet({ tool, endpoint, tokens, writes, onClose, onChange }: { too
           </StepRow>
 
           <StepRow n={2} done={connected} dim={!token} title={`Add Brazework to ${tool.name}`}>
-            {token ? <div className="space-y-4">{setupSteps(tool.id, endpoint, token.value).map((s, i) => <StepView key={i} step={s} />)}</div>
+            {token ? <div className="space-y-4">{setupSteps(tool.id, endpoint, token.value, { project, club }).map((s, i) => <StepView key={i} step={s} />)}</div>
               : <p className="text-sm text-muted">Your steps appear here once the token is made.</p>}
           </StepRow>
 
           <StepRow n={3} done={connected} dim={!token} title={connected ? `${tool.name} is connected` : "Check it works"}>
             {connected ? (
-              <p className="text-sm text-text-2">Try asking it: <span className="text-text">&ldquo;{canPost ? "Post an update about what I just shipped on my project." : ASK[0]}&rdquo;</span></p>
+              <p className="text-sm text-text-2">{automation ? <>Merge a pull request: its milestone draft appears in <Link href="/drafts" className="font-medium text-text underline-offset-4 hover:underline">Drafts</Link>.</> : <>Try asking it: <span className="text-text">&ldquo;{canPost ? "Post an update about what I just shipped on my project." : ASK[0]}&rdquo;</span></>}</p>
             ) : token ? (
               <p role="status" className="inline-flex items-center gap-2 text-sm text-muted"><Loader2 className="size-3.5 animate-spin" /> Waiting for {tool.name}&apos;s first request…</p>
             ) : <p className="text-sm text-muted">We&apos;ll show it here the moment {tool.name} connects.</p>}
@@ -250,7 +282,9 @@ function Connected({ tokens, writes, onRevoke, onPost }: { tokens: ApiToken[]; w
                 <p className="truncate text-sm font-medium">{t.name}</p>
                 <p className="truncate text-xs text-faint"><span className="font-mono">{t.prefix}…</span> · {on ? <span className="text-ok">used {timeAgo(t.last_used_at!)}</span> : "not used yet"}</p>
               </div>
-              {writes && <PostSwitch on={Boolean(t.scopes?.includes("post"))} onChange={(on) => start(() => onPost(t.id, on))} tool={t.name} compact disabled={pending} />}
+              {writes && (tool && draftsOnly(tool.id)
+                ? <span className="hidden shrink-0 text-xs text-muted sm:inline">Drafts only</span>
+                : <PostSwitch on={Boolean(t.scopes?.includes("post"))} onChange={(on) => start(() => onPost(t.id, on))} tool={t.name} compact disabled={pending} />)}
               <button type="button" disabled={pending} onClick={() => { if (!confirm(`Revoke "${t.name}"? It stops working right away.`)) return; start(() => onRevoke(t.id)); }}
                 className="inline-flex h-8 shrink-0 items-center rounded-lg border border-line px-3 text-xs font-medium transition hover:border-danger hover:text-danger">Revoke</button>
             </li>

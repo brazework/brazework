@@ -17,7 +17,7 @@ export type Place = { id: PlaceId; label: string; href: string; match: string[];
 export const PLACES: Place[] = [
   {
     id: "today", label: "Today", href: "/feed", badge: "notifications",
-    match: ["/feed", "/post", "/notifications", "/saved"],
+    match: ["/feed", "/post", "/notifications", "/saved", "/drafts"],
     tabs: [
       { id: "today", label: "Today", href: "/feed" },
       { id: "notifications", label: "Notifications", href: "/notifications", badge: "notifications", tour: "bell" },

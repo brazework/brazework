@@ -75,7 +75,8 @@ test("log_milestone writes (never destroys), needs evidence, and passes it throu
   const log = MCP_TOOLS.find((t) => t.name === "log_milestone");
   assert.ok(log?.writes);
   assert.equal(annotationsFor(log!).destructiveHint, false);
-  assert.deepEqual(log!.inputSchema.required, ["project_id", "club_id", "title", "evidence"]);
+  // The club is optional since supabase/mcp-workflows.sql: with none, it waits for a signature.
+  assert.deepEqual(log!.inputSchema.required, ["project_id", "title", "evidence"]);
   const many = Array.from({ length: 10 }, (_, i) => `https://example.com/${i}`);
   const a = log!.args({ project_id: "p1", club_id: "rkt", title: "Static fire", evidence: [...many, 3], achieved_on: "2026-11-01" }) as { p_evidence: string[]; p_achieved_on: string | null };
   assert.equal(a.p_evidence.length, 8, "at most 8 links");
@@ -83,4 +84,30 @@ test("log_milestone writes (never destroys), needs evidence, and passes it throu
   assert.equal((log!.args({ project_id: "p1", club_id: "rkt", title: "x", evidence: [], achieved_on: "soon" }) as { p_achieved_on: string | null }).p_achieved_on, null, "a bad date means today");
   const review = MCP_TOOLS.find((t) => t.name === "my_review_requests");
   assert.equal(annotationsFor(review!).readOnlyHint, true);
+});
+
+// GitHub Actions (docs/mcp-workflows.md): an automation that only leaves drafts.
+test("GitHub Actions: the token goes in a repo secret; the workflow drafts a milestone on a merged PR, safely", async () => {
+  const { actionsWorkflow, draftsOnly } = await import("@/lib/tool-setup");
+  assert.ok(draftsOnly("github-actions") && !draftsOnly("claude-code"));
+  assert.equal(toolFor("GitHub Actions")?.id, "github-actions");
+  const [secret, file] = setupSteps("github-actions", URL_, TOKEN, { project: "p1" });
+  assert.equal(secret.kind === "command" && secret.text, `gh secret set BRAZEWORK_TOKEN --body "${TOKEN}"`);
+  assert.equal(file.kind === "file" && file.path, ".github/workflows/brazework.yml");
+  const yml = file.kind === "file" ? file.text : "";
+  assert.ok(!yml.includes(TOKEN), "the workflow never contains the token, only the secret's name");
+  assert.match(yml, /if: github\.event\.pull_request\.merged == true/);
+  assert.match(yml, /BRAZEWORK_TOKEN: \$\{\{ secrets\.BRAZEWORK_TOKEN \}\}/);
+  assert.match(yml, /"draft_milestone"/);
+  assert.match(yml, /--arg project "p1"/);
+  assert.match(yml, /source_key: \$key/);
+  assert.match(yml, new RegExp(`curl -sSf ${URL_.replace(/\./g, "\\.")} `));
+  // The PR's title only ever reaches the script through env: never as ${{ … }} inside run.
+  const run = yml.slice(yml.indexOf("run: |"));
+  assert.doesNotMatch(run, /\$\{\{/, "no expressions inside the script");
+  assert.match(actionsWorkflow(URL_, `p1"; rm -rf ~ #`), /--arg project "p1rm-rf"/, "a project id can't break out of its quotes");
+  assert.match(actionsWorkflow(URL_, ""), /YOUR-PROJECT-ID/);
+  assert.match(yml, /--arg club ""/, "no club: the approved milestone waits for a vouch");
+  assert.match(actionsWorkflow(URL_, "p1", "rkt"), /--arg club "rkt"/);
+  assert.match(actionsWorkflow(URL_, "p1", "rkt"), /club_id: \$club/);
 });

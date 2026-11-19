@@ -59,7 +59,9 @@ from (values
   (59, 'backed',          to_regprocedure('public.backed_ready()') is not null),
   (60, 'proof-cards',     to_regprocedure('public.proof_cards_ready()') is not null),
   (61, 'witness-invites', to_regprocedure('public.witness_invites_ready()') is not null),
-  (62, 'oauth-signup',    to_regprocedure('public.oauth_signup_ready()') is not null)
+  (62, 'oauth-signup',    to_regprocedure('public.oauth_signup_ready()') is not null),
+  (63, 'members-only',    exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'verification_events' and policyname = 'members only')),
+  (64, 'mcp-workflows',   to_regprocedure('public.mcp_workflows_ready()') is not null)
 ) as s(step, file, present)
 order by step;
 
