@@ -3,10 +3,12 @@
 // a pasted token. The assistant here is this script, doing what Claude, Cursor or VS Code do:
 // 1. /api/mcp without a token says where to sign in (RFC 9728), and the metadata names Supabase Auth.
 // 2. The app registers itself (dynamic client registration) and sends Ben to authorize, with PKCE.
-// 3. Ben sees Brazework's consent page (which app, what it can do) and connects.
+// 3. Ben sees Brazework's consent page (which app, what it can do, and how it adds things: after his
+//    yes in chat by default, or drafts only) and connects with drafts only.
 // 4. The code becomes an access token, and the MCP tools answer as Ben: reading and drafting, not posting.
 // 5. Settings lists the sign-in; revoking it stops the assistant at once.
 // 6. "Not now" sends the assistant away with access_denied.
+// 7. Keeping the default (add after a yes in chat), the assistant can add to his record (supabase/mcp-oauth-post.sql).
 const crypto = require("crypto");
 const { BASE, step, browser, as, go, summary } = require("./lib.cjs");
 const AUTH = "http://localhost:54321/auth/v1";
@@ -45,7 +47,10 @@ const b64url = (buf) => buf.toString("base64url");
     await ben.goto(authorizeUrl("s1"));
     await ben.waitForURL(/\/oauth\/consent\?authorization_id=/, { timeout: 20000 });
     await ben.getByRole("heading", { name: "Connect Test Assistant to your Brazework?" }).waitFor({ timeout: 15000 });
-    await ben.getByText(/can't post, email anyone or sign anything as you/).waitFor();
+    await ben.getByText(/can't sign or verify anything as you/).waitFor();
+    // Adding after a yes in chat is the default; Ben picks drafts only for this one.
+    if (!(await ben.getByRole("radio", { name: /Add it when I say yes in chat/ }).isChecked())) throw new Error("approve in chat isn't the default");
+    await ben.getByRole("radio", { name: /Drafts only/ }).check();
     await ben.getByRole("button", { name: "Connect" }).click();
     const url = new URL(await back);
     if (url.searchParams.get("state") !== "s1" || !url.searchParams.get("code")) throw new Error(`callback: ${url}`);
@@ -86,6 +91,22 @@ const b64url = (buf) => buf.toString("base64url");
     await ben.getByRole("button", { name: "Not now" }).click();
     const url = new URL(await back);
     if (url.searchParams.get("error") !== "access_denied" || url.searchParams.get("state") !== "s2") throw new Error(`denied callback: ${url}`);
+  }, ben);
+
+  await step("with the default (add after a yes in chat), the assistant can add to Ben's record and is told to ask first", async () => {
+    const chat = await register("Chat Assistant");
+    await ben.unroute(`${CB}**`);
+    const back = landing(ben);
+    await ben.goto(authorizeUrl("s3", chat.client_id));
+    await ben.waitForURL(/\/oauth\/consent\?authorization_id=/, { timeout: 20000 });
+    await ben.getByRole("button", { name: "Connect" }).click();
+    const url = new URL(await back);
+    const tok = await (await fetch(`${AUTH}/oauth/token`, { method: "POST", headers: { "content-type": "application/x-www-form-urlencoded" }, body: new URLSearchParams({ grant_type: "authorization_code", code: url.searchParams.get("code"), redirect_uri: CB, client_id: chat.client_id, code_verifier: verifier }) })).json();
+    if (!tok.access_token) throw new Error(`token: ${JSON.stringify(tok).slice(0, 200)}`);
+    const init = await (await mcp("initialize", { protocolVersion: "2025-06-18" }, tok.access_token)).json();
+    if (!/wait for their yes in the chat/.test(init.result?.instructions ?? "")) throw new Error(`instructions: ${init.result?.instructions?.slice(0, 200)}`);
+    const names = ((await (await mcp("tools/list", {}, tok.access_token)).json()).result?.tools ?? []).map((t) => t.name);
+    if (!names.includes("post_update") || !names.includes("log_milestone") || !names.includes("draft_milestone")) throw new Error(`tools: ${names.join()}`);
   }, ben);
 
   await step("a browser session's token (not an app's) can't use the MCP server", async () => {

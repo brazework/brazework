@@ -34,6 +34,23 @@ export function triageDone(action: Exclude<TriageAction, "sign">, kind: "post" |
   return action === "club" ? `Sent to ${club ?? "your club"} to verify.` : "Kept on your project. Ask someone to sign it when you're ready.";
 }
 
+// Drafts Today can't decide in a tap (a project, a teammate, an RSVP… from Ember or a connected
+// assistant): one line that says what's waiting and links to Drafts, so nothing a tool left is hidden.
+const OTHER: Record<string, string> = {
+  project: "a new project", project_edit: "a change to a project", teammate: "a teammate to add", rsvp: "an RSVP",
+  join: "a club to join", invite: "an invite to accept", message: "a reply", event: "a club event",
+  club_post: "a club announcement", follow: "someone to follow",
+};
+/** What the newest of the other drafts is, in words: "a new project". */
+export const otherDraftLabel = (kind: string) => OTHER[kind] ?? "a draft";
+/** The line on Today for `n` other drafts, newest first: "A new project: “Brazework”" or "3 more in Drafts, newest a new project". */
+export function waitingElsewhere(n: number, newest: { kind: string; title?: string | null } | null): string {
+  if (n < 1) return "";
+  const label = otherDraftLabel(newest?.kind ?? "");
+  const title = newest?.title?.trim() ? `: \u201c${newest.title.trim().slice(0, 80)}\u201d` : "";
+  return n === 1 ? `${label.charAt(0).toUpperCase()}${label.slice(1)}${title}` : `${n} more in Drafts, newest ${label}${title}`;
+}
+
 // ---------- The once-a-day reminder ----------
 export type ReminderRow = { first_name: string; waiting: number; fresh: number; tools: { via: string; n: number }[] };
 

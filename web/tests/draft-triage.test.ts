@@ -3,7 +3,7 @@
 // new, names tools but never copies a draft, and isn't sent when nothing arrived. Run: npm test
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { buildDraftReminder, defaultClub, reminderSources, triageActions, triageDone, triageHeading } from "@/lib/draft-triage";
+import { buildDraftReminder, defaultClub, otherDraftLabel, reminderSources, triageActions, triageDone, triageHeading, waitingElsewhere } from "@/lib/draft-triage";
 
 const CLUBS = [{ id: "rkt", name: "Rocketry Club" }, { id: "rob", name: "Robotics Society" }];
 
@@ -60,4 +60,13 @@ test("the reminder links to Today and Settings, and never copies a draft", () =>
   assert.match(e.text, /https:\/\/brazework\.test\/settings#email/);
   assert.doesNotMatch(e.html, /<Code>/, "tool names are escaped in HTML");
   assert.equal(buildDraftReminder({ first_name: "", waiting: 1, fresh: 1, tools: [{ via: "Zed", n: 1 }] }, "https://x.test")!.subject, "Your tools noticed 1 new thing for your record");
+});
+
+test("a project an assistant drafted is named on Today, so it's never hidden in Drafts", () => {
+  assert.equal(waitingElsewhere(1, { kind: "project", title: "Brazework" }), "A new project: \u201cBrazework\u201d");
+  assert.equal(waitingElsewhere(1, { kind: "rsvp", title: null }), "An RSVP");
+  assert.equal(waitingElsewhere(3, { kind: "teammate", title: "  " }), "3 more in Drafts, newest a teammate to add");
+  assert.equal(waitingElsewhere(0, null), "");
+  assert.equal(otherDraftLabel("something-new"), "a draft");
+  assert.ok(waitingElsewhere(1, { kind: "project", title: "x".repeat(200) }).length < 100, "a long title is cut");
 });
