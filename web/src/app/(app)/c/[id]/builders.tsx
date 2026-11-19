@@ -108,7 +108,7 @@ export async function BuildersThisTerm({ cid }: { cid: string }) {
                 <span className="w-4 text-center font-mono text-xs text-faint tabular-nums">{i + 1}</span>
                 <Avatar first={p.first} last={p.last} size={28} />
                 <span className="w-28 min-w-0 shrink-0 truncate text-sm font-medium group-hover:underline sm:w-36">{`${p.first} ${p.last}`.trim() || "A member"}</span>
-                <span className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-surface-2"><span className="block h-full rounded-full bg-text" style={{ width: `${Math.max(8, (p.n / max) * 100)}%` }} /></span>
+                <span className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-surface-2"><span className="block h-full rounded-full bg-faint" style={{ width: `${Math.max(8, (p.n / max) * 100)}%` }} /></span>
                 <span className="w-6 text-right font-mono text-xs tabular-nums">{p.n}</span>
               </Link>
             </li>
