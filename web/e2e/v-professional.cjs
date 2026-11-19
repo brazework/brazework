@@ -39,18 +39,21 @@ const { step, browser, go, closeTour, hydrated, summary } = require("./lib.cjs")
     await page.getByText("Check your inbox").first().waitFor({ timeout: 20000 });
   }, page);
 
-  await step("About you: choosing Professional makes it a three-step path (no club step)", async () => {
+  await step("About you: the way in is five steps for everyone; setting up a profile instead is three (no club step)", async () => {
     await go(page, "/feed");
     await page.waitForURL(/onboarding/, { timeout: 15000 });
     await page.getByRole("heading", { name: "About you" }).waitFor({ timeout: 15000 });
-    await page.getByText("Step 2 of 4").waitFor();
+    await page.getByText("Step 2 of 5").waitFor();
     await hydrated(page.getByRole("button", { name: /professional/i }));
     await page.getByRole("button", { name: /professional/i }).click();
     await page.getByText("Employed, freelancing or building on your own.").waitFor();
-    await page.getByText("Step 2 of 3").waitFor();
+    await page.getByText("Step 2 of 5").waitFor();
     await page.fill('input[name="firstName"]', "Pat"); await page.fill('input[name="lastName"]', "Okoro");
     await page.fill('input[name="birthday"]', "1996-03-12");
     await page.getByRole("button", { name: "Continue" }).click();
+    await page.getByText("Step 3 of 5").waitFor({ timeout: 20000 });
+    await hydrated(page.getByRole("link", { name: /Set up your profile instead/ }));
+    await page.getByRole("link", { name: /Set up your profile instead/ }).click();
     await page.getByText("Step 3 of 3").waitFor({ timeout: 20000 });
   }, page);
 

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { isMediaUrl } from "@/lib/media";
 import { ExternalLink, FileCheck2 } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -61,6 +62,11 @@ async function Vouch({ params }: { params: PageProps<"/vouch/[token]">["params"]
         {v.project && <p className="text-xs font-medium text-faint">{v.project}</p>}
         <h1 className="mt-0.5 text-lg font-semibold tracking-tight">{v.title}</h1>
         {v.detail && <p className="mt-1.5 text-sm leading-relaxed text-text-2">{v.detail}</p>}
+        {/* Proof uploaded to Brazework (a photo from onboarding) shows as the photo itself. */}
+        {links.filter(isMediaUrl).map((u) => (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img key={`img-${u}`} src={u} alt="Their proof" className="mt-3 max-h-80 w-auto rounded-lg border border-line object-contain" />
+        ))}
         {links.length > 0 && (
           <ul className="mt-3 flex flex-col gap-1.5">
             {links.map((u) => (
