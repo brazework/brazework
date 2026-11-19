@@ -133,8 +133,12 @@ payments, create these in Stripe (test mode first), then add them in Vercel (Pro
     → `STRIPE_PRICE_PLUS_STUDENT_ANNUAL`. With the first one set, `/plus` offers a year next to monthly. A
     student never pays $96: without the student yearly price, a student's yearly choice checks out at the
     student monthly price.
-  - **Find builders seat:** monthly, $300, → `STRIPE_PRICE_TALENT`.
-  - **Sponsored challenge:** one-time, $1,000, → `STRIPE_PRICE_CHALLENGE`.
+  - **Find builders:** yearly, $15,000, → `STRIPE_PRICE_TALENT`. One price for the whole plan (2 seats
+    and 2 chapter sponsorships), not per seat: checkout always buys a quantity of 1.
+  - **Sponsored challenge:** one-time, $5,000, → `STRIPE_PRICE_CHALLENGE`. That's the starting price;
+    a bigger challenge is invoiced.
+  - Chapter sponsorships ($2,500 a semester) and schools have no Stripe price: they come in as requests
+    and are invoiced. Prices match `web/src/lib/pricing.ts`.
 - [ ] `STRIPE_SECRET_KEY`: the secret key (`sk_live_…`, or `sk_test_…` while testing).
 - [ ] A webhook endpoint at `https://brazework.com/api/billing/webhook` for the events
   `checkout.session.completed` and `customer.subscription.deleted`. Put its signing secret in
