@@ -5,13 +5,30 @@ const { BASE, step, browser, as, go, closeTour, hydrated, summary } = require(".
   const page = await ctx.newPage(); page.errs = []; page.on("pageerror", (e) => page.errs.push(e.message));
   const email = `dana${Date.now() % 100000}@forge.edu`;
   const schoolDomain = `college${Date.now() % 100000}.qc.ca`;
-  await step("a student email the app doesn't recognize offers 'Request your school'", async () => {
+  // About you: the second step for every way in (account type, name, birthday), after an account
+  // made with just an email and a password. Locally the email is confirmed at once.
+  async function aboutYou(kind, first, last, birthday) {
+    await go(page, "/onboarding");
+    await page.getByRole("heading", { name: "About you" }).waitFor({ timeout: 15000 });
+    await hydrated(page.getByRole("button", { name: new RegExp(kind, "i") }));
+    await page.getByRole("button", { name: new RegExp(kind, "i") }).click();
+    await page.fill('input[name="firstName"]', first); await page.fill('input[name="lastName"]', last);
+    await page.fill('input[name="birthday"]', birthday);
+    await page.getByRole("button", { name: "Continue" }).click();
+  }
+  await step("sign-up asks only for an email and a password, step 1 of 4", async () => {
     await go(page, "/signup");
-    await page.getByRole("button", { name: /student/i }).first().click();
-    await page.fill('input[name="firstName"]', "Sam"); await page.fill('input[name="lastName"]', "Roy");
-    await page.fill('input[name="birthday"]', "2003-05-01");
+    await page.getByText("Step 1 of 4").waitFor();
+    for (const gone of ["firstName", "lastName", "birthday"]) if (await page.locator(`input[name="${gone}"]`).count()) throw new Error(`/signup still asks for ${gone}`);
+    if (await page.getByRole("button", { name: /^Student/ }).count()) throw new Error("/signup still asks student or professional");
+    await page.getByText("Student? Use your university email").waitFor();
+  }, page);
+  await step("a student email the app doesn't recognize offers 'Request your school' (on About you)", async () => {
+    await go(page, "/signup");
     await page.fill('input[name="email"]', `sam@${schoolDomain}`); await page.fill('input[name="password"]', "forge-test-pass-1");
     await page.locator('button[type="submit"]').click();
+    await page.getByText("Check your inbox").first().waitFor({ timeout: 20000 });
+    await aboutYou("student", "Sam", "Roy", "2003-05-01");
     await page.getByText(/Use your university email/).waitFor({ timeout: 15000 });
     await page.locator("#request-school").click();
     await page.waitForURL(/\/request-school/);
@@ -20,9 +37,11 @@ const { BASE, step, browser, as, go, closeTour, hydrated, summary } = require(".
     await page.getByRole("button", { name: "Request my school" }).click();
     await page.getByText(/^Requested\./).waitFor({ timeout: 15000 });
     require("fs").writeFileSync(require("path").join(__dirname, ".results", "school-domain.txt"), schoolDomain);
+    await ctx.clearCookies();
   }, page);
   // The front door: what a visitor types on the landing page lands on the path card, and rides into
-  // sign-up in the link (lib/front-door.ts). It's waiting in the first-build box once they're in (below).
+  // sign-up in the link (lib/front-door.ts), where it says it came along. It's waiting in the
+  // first-build box once they're in (below).
   const BUILD = "A line-following robot for the fall expo";
   await step("landing: typing what you're building puts it on the card and into the sign-up link", async () => {
     await go(page, "/");
@@ -33,23 +52,26 @@ const { BASE, step, browser, as, go, closeTour, hydrated, summary } = require(".
     await page.getByRole("link", { name: /Start with this build/ }).click();
     await page.waitForURL((u) => u.pathname === "/signup" && u.searchParams.get("build") === BUILD, { timeout: 20000 });
     await page.getByRole("heading", { name: "Create your account" }).waitFor({ timeout: 15000 });
+    await page.getByText("Starting with").waitFor();
+    await page.getByText(BUILD).first().waitFor();
     await page.waitForFunction((b) => localStorage.getItem("brazework-build") === b, BUILD, { timeout: 15000 });
   }, page);
   await step("sign up as a new student", async () => {
-    await go(page, "/signup");
-    await page.getByRole("button", { name: /student/i }).first().click();
-    await page.fill('input[name="firstName"]', "Dana"); await page.fill('input[name="lastName"]', "Reyes");
-    await page.fill('input[name="birthday"]', "2003-05-01");
+    // Still on the page the landing link opened (the landing page stays mounted, hidden, so ask by role).
     await page.fill('input[name="email"]', email); await page.fill('input[name="password"]', "forge-test-pass-1");
-    await page.locator('button[type="submit"]').click();
+    await page.getByRole("button", { name: "Create account" }).click();
     await page.waitForLoadState("networkidle");
   }, page);
-  await step("sign-up asks to confirm the email", async () => {
+  await step("sign-up asks to confirm the email, by link on any device or by code", async () => {
     await page.getByText("Check your inbox").first().waitFor({ timeout: 20000 });
+    await page.getByLabel("Or enter the 6-digit code from the email").waitFor();
   }, page);
-  await step("once confirmed (auto-confirmed locally), the app opens on onboarding", async () => {
+  await step("once confirmed (auto-confirmed locally), the app opens on About you, then onboarding", async () => {
     await go(page, "/feed");
     await page.waitForURL(/onboarding/, { timeout: 15000 });
+    await page.getByText("Step 2 of 4").waitFor({ timeout: 15000 });
+    await aboutYou("student", "Dana", "Reyes", "2003-05-01");
+    await page.getByText("Step 3 of 4").waitFor({ timeout: 20000 });
     await page.waitForFunction(() => { const el = document.querySelector('input[name="headline"]'); return el && Object.keys(el).some((k) => k.startsWith("__reactProps")); }, null, { timeout: 15000 });
   }, page);
   await step("finish onboarding (field, 3 interests)", async () => {

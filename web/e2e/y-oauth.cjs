@@ -76,10 +76,10 @@ async function providerNewcomer(email, name) {
   const ola = `ola${n}@gmail.com`;
   await providerNewcomer(ola, "Ola Ade");
   const p = await as(b, ola);
-  await step("a provider newcomer lands on 'Finish creating your account', names filled in from GitHub", async () => {
+  await step("a provider newcomer lands on 'About you', names filled in from GitHub", async () => {
     await go(p, "/feed");
     await p.waitForURL(/\/onboarding$/, { timeout: 15000 });
-    await p.getByRole("heading", { name: "Finish creating your account" }).waitFor({ timeout: 15000 });
+    await p.getByRole("heading", { name: "About you" }).waitFor({ timeout: 15000 });
     await p.getByText(`Signed in with GitHub as ${ola}`).waitFor();
     if ((await p.locator('input[name="firstName"]').inputValue()) !== "Ola" || (await p.locator('input[name="lastName"]').inputValue()) !== "Ade") throw new Error("names not prefilled");
   }, p);

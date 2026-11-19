@@ -4,6 +4,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { SignupSteps } from "@/components/signup-steps";
 import { Logo } from "@/components/ui";
 import { COMMUNITY_COLS, type Community } from "@/lib/communities";
 import { getViewer } from "@/lib/supabase/server";
@@ -46,12 +47,12 @@ async function FindYourClub() {
 
   return (
     <>
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-xs font-medium tracking-[0.06em] text-faint uppercase">Step 4 of 4</p>
+      <div className="flex items-end justify-between gap-3">
+        <SignupSteps at="club" className="w-full max-w-xs" />
         {/* On phones the cards are long; skipping shouldn't need a scroll. */}
         <Link href="/feed" className="text-sm text-muted hover:text-text sm:hidden">Skip</Link>
       </div>
-      <h1 className="text-grad mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">Find your club</h1>
+      <h1 className="text-grad mt-4 text-3xl font-semibold tracking-tight sm:text-4xl">Find your club</h1>
       <p className="mt-3 max-w-xl text-[15px] leading-relaxed text-muted">Your club&apos;s officers are the people who verify what you build, so it&apos;s the first thing to set up. Join yours, or start it if it isn&apos;t here yet.</p>
       {clubs.length > 0 ? (
         <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">

@@ -5,7 +5,7 @@ import { Suspense } from "react";
 import { Logo } from "@/components/ui";
 import { dbFeatures } from "@/lib/db-features";
 import { getViewer } from "@/lib/supabase/server";
-import { namesFrom, providerLabel } from "@/lib/oauth";
+import { isProvider, namesFrom, providerLabel } from "@/lib/oauth";
 import { FinishSignupForm } from "./finish-signup-form";
 import { OnboardingForm } from "./onboarding-form";
 
@@ -31,11 +31,13 @@ export default function OnboardingPage() {
 async function Onboarding() {
   const { supabase, user, profile } = await getViewer();
   if (!user) redirect("/login");
-  // New through Google, GitHub or LinkedIn: no profile until they give what the sign-up form asks.
+  // Signed up but no profile yet: "About you" (account type, name, birthday) comes first, for every
+  // way in. A provider's sign-up starts the names from what it shared.
   if (!profile) {
     const { data } = await supabase.auth.getClaims();
     const claims = (data?.claims ?? {}) as { user_metadata?: unknown; app_metadata?: { provider?: string } };
-    return <FinishSignupForm email={user.email} provider={providerLabel(claims.app_metadata?.provider)} {...namesFrom(claims.user_metadata)} />;
+    const via = claims.app_metadata?.provider;
+    return <FinishSignupForm email={user.email} provider={isProvider(via) ? providerLabel(via) : undefined} {...namesFrom(claims.user_metadata)} />;
   }
   if (profile?.onboarded) redirect("/feed");
   const student = profile?.account_type === "student";
