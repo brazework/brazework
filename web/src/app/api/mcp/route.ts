@@ -4,6 +4,7 @@ import { actionPayload } from "@/lib/tool-actions";
 import { findBuilders, talentAsk, type TalentData } from "@/lib/mcp-talent";
 import { PLAYBOOKS, PLAYBOOK_INDEX_URI, PROMPTS, playbookMarkdown, playbookUri, playbooksIndexMarkdown, promptText } from "@/lib/mcp-playbooks";
 import { mailer } from "@/lib/email";
+import { CARD_HTML, CARD_MIME, CARD_URI, cardMeta, cardResourceMeta } from "@/lib/mcp-card";
 import { nextStep, withFix } from "@/lib/mcp-results";
 import { env } from "@/lib/env";
 import { linkSignIn, looksLikeJwt, oauthEnabled, resourceMetadataUrl } from "@/lib/mcp-oauth";
@@ -28,6 +29,8 @@ async function unauthorized(message: string, origin: string) {
 }
 // Refusals say how to fix them (lib/mcp-results.ts), so the assistant can act on them or tell the member.
 const toolError = (id: Msg["id"], text: string) => rpc(id, { result: { content: [{ type: "text", text: withFix(text) }], isError: true } });
+
+const CARD_TOOLS = new Set(["log_milestone", "draft_milestone"]);
 
 const ABOUT = "Brazework is the record of what people build, signed by the people who saw it, and home base for their clubs.";
 function instructions(s: { canDraft: boolean; canPost: boolean }) {
@@ -88,7 +91,8 @@ export async function POST(req: Request) {
     case "ping":
       return rpc(msg.id, { result: {} });
     case "tools/list":
-      return rpc(msg.id, { result: { tools: tools.map((t) => ({ name: t.name, title: t.title, description: t.description, inputSchema: t.inputSchema, annotations: annotationsFor(t) })) } });
+      // The milestone tools name the in-chat card (lib/mcp-card.ts); hosts without MCP Apps ignore it.
+      return rpc(msg.id, { result: { tools: tools.map((t) => ({ name: t.name, title: t.title, description: t.description, inputSchema: t.inputSchema, annotations: annotationsFor(t), ...(CARD_TOOLS.has(t.name) ? { _meta: cardMeta } : {}) })) } });
     case "prompts/list":
       return rpc(msg.id, { result: { prompts: PROMPTS } });
     case "prompts/get": {
@@ -104,9 +108,11 @@ export async function POST(req: Request) {
       return rpc(msg.id, { result: { resources: [
         { uri: PLAYBOOK_INDEX_URI, name: "playbooks", title: "Brazework playbooks", description: "One playbook per field: the tools that connect, the moments worth recording, who signs.", mimeType: "text/markdown" },
         ...PLAYBOOKS.map((p) => ({ uri: playbookUri(p), name: `playbook-${p.id}`, title: `${p.field} playbook`, description: `How people in ${p.field} turn their work into their Brazework record.`, mimeType: "text/markdown" })),
+        { uri: CARD_URI, name: "milestone-card", title: "Milestone card", description: "How a milestone looks in the chat, with its proof and what happens next.", mimeType: CARD_MIME },
       ] } });
     case "resources/read": {
       const uri = String(msg.params?.uri ?? "");
+      if (uri === CARD_URI) return rpc(msg.id, { result: { contents: [{ uri, mimeType: CARD_MIME, text: CARD_HTML, _meta: cardResourceMeta }] } });
       const p = PLAYBOOKS.find((x) => playbookUri(x) === uri);
       const text = uri === PLAYBOOK_INDEX_URI ? playbooksIndexMarkdown() : p ? playbookMarkdown(p) : null;
       if (!text) return rpc(msg.id, { error: { code: -32002, message: `Resource not found: ${uri}` } });
