@@ -84,7 +84,7 @@ test("tools follow scopes: read gets reads only, draft adds drafts, post adds ev
   // Actions shared with Ember (supabase/tool-actions.sql) draft with a drafting token and act with a posting one.
   const acts = MCP_TOOLS.filter((t) => t.act).map((t) => t.name);
   assert.deepEqual(names(["read", "draft"]).filter((n) => !reads.includes(n)).sort(), ["draft_milestone", "draft_post", ...acts].sort());
-  assert.deepEqual(names(["read", "post"]).filter((n) => !reads.includes(n)).sort(), ["draft_milestone", "draft_post", "log_milestone", "post_update", "request_signature", ...acts].sort());
+  assert.deepEqual(names(["read", "post"]).filter((n) => !reads.includes(n)).sort(), ["draft_milestone", "draft_post", "drop_goal", "log_milestone", "post_update", "reach_goal", "request_signature", "set_goal", ...acts].sort());
   for (const t of toolsFor(["read", "draft", "post"]).filter((x) => x.needs)) assert.equal(annotationsFor(t).destructiveHint, false, `${t.name} only adds`);
   assert.deepEqual(scopeFlags(["read", "post"]), { canPost: true, canDraft: true }, "an older post token can draft");
 });

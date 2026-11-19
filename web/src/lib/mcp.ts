@@ -288,3 +288,35 @@ MCP_TOOLS.push(
     rpc: "mcp_act", args: () => ({}),
   },
 );
+
+// Step 73 (supabase/tool-goals.sql): the member's goal. my_goal reads it with the app's own path
+// (lib/mcp-goal.ts); setting, reaching or dropping it needs a token that may post and the member's yes.
+// Whether companies see a goal is never assumed: set_goal requires visible, which the member chose.
+MCP_TOOLS.push(
+  {
+    name: "my_goal", title: "My goal and my path to it",
+    description: "What the member is working toward (an internship, a first job, grad school, a research lab, a competition or funding, in a field they named), their progress (e.g. \"2 of 3 signed toward a summer internship in power electronics\"), the path, the one next step, and their own signed and open work ranked by how well it fits the goal. Read it before drafting, to say why each draft matters. Only the member's own record: never invent market data or promise outcomes.",
+    inputSchema: none, rpc: "mcp_goal", args: () => ({}),
+  },
+  {
+    name: "set_goal", writes: true, needs: "post", title: "Set the member's goal",
+    description: "Set what the member is working toward, replacing any current goal. First ask them, in plain words, whether companies should see it (some people look quietly): visible shows it to companies searching and adds the matching \"Open to\" on their profile; hidden keeps it to them. Set it only after they say yes to the goal and choose.",
+    inputSchema: { type: "object", properties: {
+      kind: { type: "string", enum: ["internship", "job", "grad", "research", "competition", "funding"], description: "internship, job (first full-time role), grad (grad school), research (a lab), competition or funding." },
+      target: { type: "string", maxLength: 80, description: "The field, in the member's words, e.g. \"power electronics\"." },
+      visible: { type: "boolean", description: "The member's choice: true lets companies see it, false keeps it private." },
+    }, required: ["kind", "visible"], additionalProperties: false },
+    rpc: "mcp_set_goal", args: (i) => ({ p_kind: String(i.kind ?? ""), p_target: typeof i.target === "string" ? i.target : "", p_visible: typeof i.visible === "boolean" ? i.visible : null }),
+  },
+  {
+    name: "reach_goal", writes: true, needs: "post", title: "Mark the goal reached",
+    description: "Close the member's goal as reached, with a line about how in their words (\"Accepted an offer at Volt Systems\"). Only when they tell you so.",
+    inputSchema: { type: "object", properties: { note: { type: "string", maxLength: 160, description: "How they got there." } }, additionalProperties: false },
+    rpc: "mcp_reach_goal", args: (i) => ({ p_note: typeof i.note === "string" ? i.note : "" }),
+  },
+  {
+    name: "drop_goal", writes: true, needs: "post", title: "Stop working toward the goal",
+    description: "Drop the member's current goal without marking it reached, when they ask to.",
+    inputSchema: none, rpc: "mcp_drop_goal", args: () => ({}),
+  },
+);

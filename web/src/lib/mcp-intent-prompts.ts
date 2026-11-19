@@ -1,4 +1,4 @@
-import type { PromptDef, Scopes } from "@/lib/mcp-playbooks";
+import { goalLine, type PromptDef, type Scopes } from "@/lib/mcp-playbooks";
 
 // Prompts that chain the intent tools (supabase/tool-*.sql, docs/mcp-workflows.md). Each one adapts
 // to what the token may do and names only tools that token is offered (tests/mcp-playbooks.test.ts
@@ -38,6 +38,7 @@ export function intentPromptText(name: string, args: Record<string, string | und
       const ev = args.event?.trim() ? `“${args.event.trim().slice(0, 160)}”` : "the next career fair or employer session on Brazework";
       return [
         `Get me ready for ${ev}. Go step by step, and ask me before anything that writes.`,
+        goalLine(s),
         "1. Call upcoming_events (90 days) and find it, and the employer session if it has its own event. If more than one could match, ask me which.",
         "2. Call my_projects. List my projects, and for each one the open_milestones still waiting for a club or a signature.",
         s.canPost
