@@ -4,7 +4,7 @@ import { ReportLink } from "@/components/report/report-dialog";
 import { BadgeCheck, BarChart3, Eye, FileText, FolderGit2, Lock, MapPin, MessageSquare, Trophy } from "lucide-react";
 import { CommunityBadge } from "../../communities/_components/badge";
 import { ActivityGrid } from "@/components/profile/activity";
-import { cn, requestTime } from "@/lib/forge";
+import { requestTime } from "@/lib/forge";
 import { ProjectIcon } from "../../projects/project-card";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
