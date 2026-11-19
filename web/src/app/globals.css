@@ -481,6 +481,11 @@ select option { background-color: var(--surface); color: var(--text); }
 /* Dark: a lit backdrop a step brighter than the page, or a dark model disappears into it. */
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .model-bg { background: radial-gradient(120% 85% at 50% 0%, #4a4a4a, #2e2e2e 60%, #222222); } }
 :root[data-theme="dark"] .model-bg { background: radial-gradient(120% 85% at 50% 0%, #4a4a4a, #2e2e2e 60%, #222222); }
+/* Slate finish (the example models, model-slate.ts): a cool studio sweep behind stone-grey parts.
+   Blueprint still wins: the selectors skip it. */
+.model-bg[data-finish="slate"]:not([data-look="blueprint"]) { background: radial-gradient(120% 85% at 50% 0%, #f3f5f7, #dde2e7 62%, #cbd1d8); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .model-bg[data-finish="slate"]:not([data-look="blueprint"]) { background: radial-gradient(120% 85% at 50% 0%, #4a515a, #2d3239 60%, #1f2328); } }
+:root[data-theme="dark"] .model-bg[data-finish="slate"]:not([data-look="blueprint"]) { background: radial-gradient(120% 85% at 50% 0%, #4a515a, #2d3239 60%, #1f2328); }
 /* Blueprint mode: blue paper with a drawing grid, the same in both themes (it's a drawing, not a surface). */
 .model-bg[data-look="blueprint"], :root .model-bg[data-look="blueprint"] {
   background:
