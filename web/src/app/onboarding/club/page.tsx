@@ -48,7 +48,7 @@ async function FindYourClub() {
   return (
     <>
       <div className="flex items-end justify-between gap-3">
-        <SignupSteps at="club" className="w-full max-w-xs" />
+        <SignupSteps at="club" path="profile" className="w-full max-w-xs" />
         {/* On phones the cards are long; skipping shouldn't need a scroll. */}
         <Link href="/feed" className="text-sm text-muted hover:text-text sm:hidden">Skip</Link>
       </div>

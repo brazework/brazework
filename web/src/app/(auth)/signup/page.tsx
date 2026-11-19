@@ -8,6 +8,7 @@ import type { ProviderId } from "@/lib/oauth";
 import { SignupForm } from "../forms";
 import { RememberBuild } from "./remember-build";
 import { RememberGoal } from "./remember-goal";
+import { ProductHuntWelcome } from "@/components/launch/product-hunt-welcome";
 
 export const metadata: Metadata = { title: "Create your account" };
 
@@ -29,7 +30,7 @@ async function WithInvite({ searchParams }: { searchParams: PageProps<"/signup">
   // Shown on the form too ("Starting with …"), so it's plain it came along.
   const typed = typeof sp.build === "string" ? cleanBuild(sp.build) : "";
   const build = typed ? <RememberBuild build={typed} /> : null;
-  return <>{goal}{build}<InviteForm invite={sp.invite} providers={providers} oauth={oauth} build={typed || undefined} /></>;
+  return <><ProductHuntWelcome place="signup" />{goal}{build}<InviteForm invite={sp.invite} providers={providers} oauth={oauth} build={typed || undefined} /></>;
 }
 
 async function InviteForm({ invite, providers, oauth, build }: { invite: string | string[] | undefined; providers: ProviderId[]; oauth?: string; build?: string }) {
