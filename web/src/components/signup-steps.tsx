@@ -1,23 +1,23 @@
 import { cn } from "@/lib/forge";
 
-// Where a newcomer is on the way in, the same on every step: Account (sign up and confirm the
-// email) → About you → Your work → Your club. "Your club" is the students' step (their officers
-// verify their work), so a professional's path has three steps; until we know which they are, it
-// shows four. Server- and client-renderable: no hooks.
-export type SignupStep = "account" | "about" | "work" | "club";
-const ALL: { id: SignupStep; label: string }[] = [
-  { id: "account", label: "Account" },
-  { id: "about", label: "About you" },
-  { id: "work", label: "Your work" },
-  { id: "club", label: "Your club" },
-];
+// Where a newcomer is on the way in, the same on every step. The way in is build-first (the
+// Product Hunt launch, docs/superpowers/specs/2026-11-19-product-hunt-launch-design.md): Account →
+// About you → Your build → Proof → Who saw it, for students and professionals alike. Someone who
+// hasn't built anything yet can set up their profile instead: Account → About you → Your work →
+// Your club (students only; a club's officers verify their work). Server- and client-renderable.
+export type SignupStep = "account" | "about" | "build" | "proof" | "signer" | "work" | "club";
+export type SignupPath = "build" | "profile";
+const LABEL: Record<SignupStep, string> = {
+  account: "Account", about: "About you", build: "Your build", proof: "Proof", signer: "Who saw it", work: "Your work", club: "Your club",
+};
 
-export function signupSteps(club: boolean) {
-  return ALL.filter((s) => club || s.id !== "club");
+export function signupSteps(path: SignupPath = "build", student = true): { id: SignupStep; label: string }[] {
+  const ids: SignupStep[] = path === "build" ? ["account", "about", "build", "proof", "signer"] : ["account", "about", "work", ...(student ? (["club"] as const) : [])];
+  return ids.map((id) => ({ id, label: LABEL[id] }));
 }
 
-export function SignupSteps({ at, club = true, className }: { at: SignupStep; club?: boolean; className?: string }) {
-  const steps = signupSteps(club);
+export function SignupSteps({ at, path = "build", student = true, className }: { at: SignupStep; path?: SignupPath; student?: boolean; className?: string }) {
+  const steps = signupSteps(path, student);
   const i = Math.max(0, steps.findIndex((s) => s.id === at));
   return (
     <div className={cn("flex flex-col gap-2", className)}>

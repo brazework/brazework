@@ -40,6 +40,7 @@ import { CoverBanner, ProfilePhoto } from "@/components/media/profile-media";
 import { OnlineLabel, WithPresence } from "@/components/presence/presence";
 import { EditBasics, ProjectEditor, ProjectGrid, type ProjectView } from "./profile-client";
 import type { Club, Milestone } from "./milestones";
+import { FirstMilestoneWelcome } from "./welcome";
 
 export const metadata: Metadata = { title: "Profile" };
 
@@ -63,7 +64,8 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
   const own = user.id === id;
   // "Preview" (?view=visitor, Linear FIX-21): your own profile the way another member sees it, without
   // the owner's tools and with private or unverified work left out. Nothing is recorded as a view.
-  const preview = own && (await searchParams).view === "visitor";
+  const sp = await searchParams;
+  const preview = own && sp.view === "visitor";
   const mine = own && !preview;
   const hideStrength = mine && (await cookies()).has(`${DISMISS_PREFIX}profile-strength`);
   const f = await dbFeatures();
@@ -176,6 +178,7 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
     <div id="top" className="scroll-mt-24">
       {/* Your own profile is the first page of Proof: its other pages are a click away (lib/places.ts). */}
       {mine && <Suspense fallback={<PlaceTabsRow place="proof" active="profile" />}><OwnProofTabs /></Suspense>}
+      {mine && sp.welcome === "1" && <FirstMilestoneWelcome supabase={supabase} userId={user.id} milestone={ms[0]} />}
       {preview && (
         <p role="status" className="mb-4 flex items-start gap-2 rounded-2xl border border-line bg-surface-2/70 px-4 py-3 text-sm text-text-2">
           <Eye className="mt-0.5 size-4 shrink-0" /> This is how other members see your profile. Private projects, private milestones and anything not yet verified are left out.

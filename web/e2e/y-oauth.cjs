@@ -107,6 +107,8 @@ async function providerNewcomer(email, name) {
   await step("a professional finishes sign-up, then onboarding, then lands on the feed", async () => {
     await p.fill('input[name="birthday"]', "1994-03-03");
     await p.getByRole("button", { name: "Continue" }).click();
+    await hydrated(p.getByRole("link", { name: /Set up your profile instead/ }));
+    await p.getByRole("link", { name: /Set up your profile instead/ }).click();
     await p.getByRole("heading", { name: /What do you build/ }).waitFor({ timeout: 20000 });
     await p.fill('input[name="headline"]', "Firmware engineer");
     await Promise.all([p.waitForURL((u) => u.pathname === "/feed", { timeout: 30000 }), p.getByRole("button", { name: "Enter Brazework" }).click()]);
@@ -130,6 +132,8 @@ async function providerNewcomer(email, name) {
     await k.getByRole("button", { name: /Student/ }).click();
     await k.fill('input[name="birthday"]', "2004-09-09");
     await k.getByRole("button", { name: "Continue" }).click();
+    await hydrated(k.getByRole("link", { name: /Set up your profile instead/ }));
+    await k.getByRole("link", { name: /Set up your profile instead/ }).click();
     await k.getByRole("heading", { name: /What do you build/ }).waitFor({ timeout: 20000 });
     await k.fill('input[name="headline"]', "Electrical Engineering, sophomore");
     await Promise.all([k.waitForURL(/\/onboarding\/club/, { timeout: 30000 }), k.getByRole("button", { name: "Enter Brazework" }).click()]);
