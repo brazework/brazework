@@ -23,6 +23,8 @@ import { buildLog, inThirtySeconds, lastActivity, liveStatus, weeklyActivity, ty
 import { AboutBuild, ActivityStrip, BuildLogTimeline, ThirtySeconds } from "./build-log-view";
 import { MakePublic, TeamList } from "./team";
 import { GitHubConnect } from "./github-connect";
+import { RecentWork } from "./recent-work";
+import { loadRecentWork } from "@/lib/recent-work-load";
 import { OrganizeWithEmber } from "./organize";
 import { copilotEnabled } from "@/lib/copilot";
 import { ProjectFiles, type ProjectFileItem } from "@/components/projects/project-files";
@@ -145,6 +147,8 @@ async function ProjectView({ params, searchParams }: { params: PageProps<"/proje
   const useCounts = stackOn && tools.length ? await Promise.all(tools.map((t) => supabase.from("projects").select("id", { count: "exact", head: true }).eq("private", false).contains("tools", [t]))) : [];
   const uses = Object.fromEntries(tools.map((t, i) => [t, useCounts[i]?.count ?? 1]));
   const emberOn = own && stackOn && (await copilotEnabled());
+  // For the owner, once a repo is linked and backing is on: what GitHub already knows they shipped.
+  const recent = own && ghOn && f.backed && repos.length > 0 && githubConfig() ? await loadRecentWork(p.id, user.id) : [];
   // The cover is the newest photo from its updates; the gallery is every photo and video.
   const gallery = posts.flatMap((x) => (x.media ?? []) as MediaItem[]).slice(0, 12);
   const cover = gallery.find((m) => m.type === "image");
@@ -198,6 +202,9 @@ async function ProjectView({ params, searchParams }: { params: PageProps<"/proje
 
         {/* Next: the one most useful step for whoever builds it (lib/next-step.ts). */}
         {next && <ProjectNext step={next} add={addMilestone} message={asker ? { id: asker.uid, name: `${asker.first_name} ${asker.last_name ? `${asker.last_name[0]}.` : ""}`.trim() } : null} shared={next.kind === "share_signed" && !!milestones.find((m) => m.id === next.milestoneId)?.shared_at} />}
+
+        {/* Their own merged pull requests from the last 90 days, one tap from the record (lib/recent-work-pick.ts). */}
+        {recent.length > 0 && <RecentWork projectId={p.id} items={recent} />}
 
         {/* Milestones: what was signed, by whom, and what's waiting; drafts for it right here. */}
         {(milestones.length > 0 || builder) && (

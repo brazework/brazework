@@ -108,6 +108,19 @@ export async function recentHistory(c: GitHubConfig, installationId: number, rep
   ];
 }
 
+// A GitHub account's login, by its id (ids don't change; logins can, so it's looked up, not stored).
+// Kept for an hour: the project page asks for it to tell which merged pull requests are the member's own.
+const logins = new Map<number, { login: string; until: number }>();
+export async function githubLogin(c: GitHubConfig, installationId: number, userId: number): Promise<string> {
+  const hit = logins.get(userId);
+  if (hit && hit.until > Date.now()) return hit.login;
+  const t = await installationToken(c, installationId);
+  const u = await gh<{ login: string }>(c, `/user/${encodeURIComponent(String(userId))}`, t);
+  const login = typeof u.login === "string" ? u.login : "";
+  if (login) logins.set(userId, { login, until: Date.now() + 3600e3 });
+  return login;
+}
+
 /** What GitHub says about one piece of evidence (lib/backing.ts judges it): who made it, and for a
  *  pull request or release whether it's final. A commit counts only once it has landed on the
  *  repo's default branch, so a throwaway branch or a fork doesn't back anything. A release published

@@ -6,7 +6,8 @@
 // "Verified", and names the reviewers who approved that pull request on GitHub (approved-by.sql);
 // someone else's work, an unmerged commit and the same PR twice are refused in plain
 // words and nothing is saved; Maya sees the backed milestone on his profile; a company sees it only
-// when it asks for "Signed or backed", labelled as not signed.
+// when it asks for "Signed or backed", labelled as not signed. And his last 90 days: his own merged
+// pull requests are offered on the project page and one tap adds them, the private repo's hidden.
 const crypto = require("crypto"), http = require("http"), { execSync } = require("child_process");
 const { step, browser, as, go, summary } = require("./lib.cjs");
 const psql = (sql) => execSync("docker exec -i forge-e2e-db psql -U postgres -h localhost -d postgres -v ON_ERROR_STOP=1 -qtA", { input: sql }).toString().trim();
@@ -38,6 +39,16 @@ function startGitHub() {
       { user: { id: 603, login: "kim-ito", type: "User" }, state: "DISMISSED", submitted_at: "2026-11-02T08:00:00Z" },
       { user: { id: 501, login: "bencho", type: "User" }, state: "APPROVED", submitted_at: "2026-11-01T12:00:00Z" },
       { user: { id: 900, login: "ci-approver[bot]", type: "Bot" }, state: "APPROVED", submitted_at: "2026-11-01T12:30:00Z" },
+    ]);
+    // Your last 90 days (lib/recent-work-pick.ts): Ben's login, and two more merged pull requests of
+    // his. #21 is in the open with Sam's approval; #22 says its repo is private and two people approved.
+    if (url.pathname === "/user/501") return json(200, { login: "bencho", id: 501 });
+    if (url.pathname === `${r}/pulls/21`) return json(200, { user: { id: 501 }, merged: true, base: { repo: { private: false } } });
+    if (url.pathname === `${r}/pulls/21/reviews`) return json(200, [{ user: { id: 601, login: "sam-rivera", type: "User" }, state: "APPROVED", submitted_at: "2026-11-10T11:00:00Z" }]);
+    if (url.pathname === `${r}/pulls/22`) return json(200, { user: { id: 501 }, merged: true, base: { repo: { private: true } } });
+    if (url.pathname === `${r}/pulls/22/reviews`) return json(200, [
+      { user: { id: 601, login: "sam-rivera", type: "User" }, state: "APPROVED", submitted_at: "2026-11-12T11:00:00Z" },
+      { user: { id: 602, login: "lee-park", type: "User" }, state: "APPROVED", submitted_at: "2026-11-12T12:00:00Z" },
     ]);
     if (url.pathname === `${r}/pulls/13`) return json(200, { user: { id: 777 }, merged: true });
     if (url.pathname === `${r}/pulls/14`) return json(200, { user: { id: 501 }, merged: false });
@@ -120,11 +131,42 @@ function startGitHub() {
     if (psql(`select count(*) from public.milestone_backings where kind = 'release' and ref = 'v1.0'`) !== "1") throw new Error("the release wasn't backed");
   }, page);
 
+  await step("your last 90 days: his own merged pull requests are offered on the project, and one tap puts them on his record", async () => {
+    // What linking the repo logs (lib/github-actions.ts): two of Ben's merges and a teammate's.
+    psql(`insert into public.build_events (project_id, repo_id, kind, title, url, actor, ref, occurred_at, source_id) values
+      ('p1', 4242, 'pr_merged', 'Merged #21: Thrust curve fit within 1.5%', 'https://github.com/${REPO}/pull/21', 'bencho', '21', now() - interval '6 days', 'pr:21'),
+      ('p1', 4242, 'pr_merged', 'Merged #22: Valve timing controller', 'https://github.com/${REPO}/pull/22', 'bencho', '22', now() - interval '3 days', 'pr:22'),
+      ('p1', 4242, 'pr_merged', 'Merged #23: A teammate''s change', 'https://github.com/${REPO}/pull/23', 'someone-else', '23', now() - interval '2 days', 'pr:23'),
+      ('p1', 4242, 'pr_merged', 'Merged #20: Long ago', 'https://github.com/${REPO}/pull/20', 'bencho', '20', now() - interval '120 days', 'pr:20')
+      on conflict do nothing;`);
+    await go(page, "/projects/p1");
+    const card = page.getByRole("region", { name: "From GitHub: your last 90 days" });
+    await card.waitFor({ timeout: 20000 });
+    const list = card.getByRole("list", { name: "Pull requests you merged" });
+    if ((await list.getByRole("checkbox").count()) !== 2) throw new Error("offered: " + (await list.innerText()).replace(/\s+/g, " "));
+    await list.getByText("Valve timing controller").waitFor();
+    await list.getByText("Thrust curve fit within 1.5%").waitFor();
+    if (await card.getByText(/teammate|Long ago|Telemetry parser/).count()) throw new Error("a teammate's, an old or an already-backed pull request is offered");
+    await card.getByRole("button", { name: "Add 2 to my record" }).click();
+    await page.getByRole("status").filter({ hasText: "Added 2 to your record, backed by GitHub. 1 is from a private repo, so only you see it until you choose to show it." }).waitFor({ timeout: 30000 });
+    const rows = psql(`select m.title || '|' || m.status || '|' || m.private || '|' || b.approvals || '|' || array_to_string(b.approvers, ',') || '|' || b.repo_private
+      from public.milestones m join public.milestone_backings b on b.milestone_id = m.id where b.ref in ('21', '22') order by b.ref`).split("\n");
+    if (rows[0] !== "Thrust curve fit within 1.5%|logged|false|1|sam-rivera|false") throw new Error("the public one: " + rows[0]);
+    if (rows[1] !== "Valve timing controller|logged|true|2||true") throw new Error("the private one should be hidden, with a count and no names: " + rows[1]);
+    await go(page, "/projects/p1");
+    if (await page.getByRole("region", { name: "From GitHub: your last 90 days" }).count()) throw new Error("the card still offers what was just added");
+    await page.locator("[data-backed]").filter({ hasText: "PR #21" }).locator("[data-approved]").filter({ hasText: "approved by @sam-rivera" }).first().waitFor({ timeout: 15000 });
+    await page.locator("[data-backed]").filter({ hasText: "PR #22" }).locator("[data-approved]").filter({ hasText: "approved by 2 reviewers" }).first().waitFor({ timeout: 15000 });
+  }, page);
+
   await step("another member sees Ben's backed work on his profile, labelled", async () => {
     const maya = await as(b, MAYA);
     await go(maya, `/u/${ben}`);
     await maya.locator("[data-backed]").filter({ hasText: "PR #12" }).first().waitFor({ timeout: 15000 });
     if (await maya.getByText("Someone else's parser").count()) throw new Error("refused work shows");
+    // What he added from his last 90 days: the public one shows; the private repo's stays his own.
+    await maya.locator("[data-backed]").filter({ hasText: "PR #21" }).first().waitFor({ timeout: 15000 });
+    if (await maya.getByText("Valve timing controller").count()) throw new Error("work from a private repo shows to another member");
     await maya.context().close();
   }, page);
 
