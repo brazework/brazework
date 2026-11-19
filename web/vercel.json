@@ -3,6 +3,7 @@
   "ignoreCommand": "[ \"$VERCEL_ENV\" != \"production\" ]",
   "crons": [
     { "path": "/api/cron/digest", "schedule": "0 14 * * 1" },
-    { "path": "/api/cron/alerts", "schedule": "7 * * * *" }
+    { "path": "/api/cron/alerts", "schedule": "7 * * * *" },
+    { "path": "/api/cron/signers", "schedule": "0 15 * * *" }
   ]
 }
