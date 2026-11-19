@@ -12,7 +12,7 @@ export default function NotFound() {
         <Ember size={112} mood="surprised" className="mt-10" label="Ember looking surprised" />
         <p className="mt-4 font-mono text-sm tracking-[0.2em] text-accent">404</p>
         <h1 className="mt-3 text-5xl font-semibold tracking-tight">
-          Nothing forged <span className="text-shine">here yet.</span>
+          Nothing <span className="text-shine">built here.</span>
         </h1>
         <p className="mt-4 max-w-md text-muted">That page doesn&apos;t exist, or it moved. The work is this way.</p>
         <div className="mt-8 flex gap-3">

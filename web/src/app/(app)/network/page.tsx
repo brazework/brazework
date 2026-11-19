@@ -148,7 +148,7 @@ async function Suggested({ me, interests, field, known }: { me: string; interest
     .sort((a, b) => b.shared.length - a.shared.length || Number(b.field === field) - Number(a.field === field))
     .slice(0, 20);
 
-  if (!people.length) return <EmptyState icon={<Users className="size-5" />} title="No suggestions right now" body="As more people join in your fields, they'll show up here." />;
+  if (!people.length) return <EmptyState icon={<Users className="size-5" />} title="No suggestions right now" body="As more people join in your fields, they'll show up here. People in your clubs are the quickest first connections." action={<Link href="/communities" className="text-sm underline underline-offset-4">Find your club</Link>} />;
   return (
     <>
       <p className="mb-3 text-sm text-muted">Based on your field and interests.</p>

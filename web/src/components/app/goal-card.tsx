@@ -36,7 +36,7 @@ function GoalPicker({ current, reached, onDone, compact }: { current: Goal | nul
     if (r.ok) { try { localStorage.removeItem(SUGGESTED); } catch {} onDone(); }
   });
   return (
-    <section aria-label="Your goal" className={cn("glass-card rounded-2xl", compact ? "p-4" : "p-5")}>
+    <section aria-label="Your goal" className={cn("border border-line bg-surface rounded-2xl", compact ? "p-4" : "p-5")}>
       {reached && !current && (
         <p className="mb-3 flex items-start gap-2 rounded-xl bg-[color-mix(in_oklab,var(--ok)_12%,transparent)] px-3 py-2 text-sm text-ok">
           <PartyPopper className="mt-0.5 size-4 shrink-0" /> <span><b className="font-semibold">Reached {goalTitle(reached)}.</b>{reached.met_note ? ` ${reached.met_note}` : ""}</span>
@@ -80,7 +80,7 @@ function GoalPath({ goal, record, profileId, onChange, compact }: { goal: Goal; 
   const [msg, setMsg] = useState("");
   const [pending, start] = useTransition();
   return (
-    <section aria-label="Your goal" className={cn("glass-card rounded-2xl", compact ? "p-4" : "p-5")}>
+    <section aria-label="Your goal" className={cn("border border-line bg-surface rounded-2xl", compact ? "p-4" : "p-5")}>
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p className="text-xs font-medium text-muted">Working toward</p>
@@ -146,8 +146,9 @@ function Ring({ value, label }: { value: number; label: string }) {
   return (
     <span className="relative grid size-10 shrink-0 place-items-center" aria-label={`${label} steps done`}>
       <svg viewBox="0 0 36 36" className="absolute inset-0 size-full -rotate-90" aria-hidden="true">
-        <circle cx="18" cy="18" r={r} fill="none" stroke="var(--line)" strokeWidth="3" />
-        <circle cx="18" cy="18" r={r} fill="none" stroke="var(--text)" strokeWidth="3" strokeLinecap="round" strokeDasharray={c} strokeDashoffset={c * (1 - value)} className="transition-[stroke-dashoffset] duration-700" />
+        <circle cx="18" cy="18" r={r} fill="none" stroke="var(--border-strong)" strokeWidth="3" />
+        {/* The track used var(--line), which isn't a CSS variable (only the Tailwind token is), so it never drew; and at 0 a round cap draws a dot. */}
+        {value > 0 && <circle cx="18" cy="18" r={r} fill="none" stroke="var(--text)" strokeWidth="3" strokeLinecap="round" strokeDasharray={c} strokeDashoffset={c * (1 - value)} className="transition-[stroke-dashoffset] duration-700" />}
       </svg>
       <span className="text-[10px] font-semibold tabular-nums">{label}</span>
     </span>
