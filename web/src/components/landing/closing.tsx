@@ -40,6 +40,7 @@ export function Footer() {
           <Link href="/login" className="hover:text-text">Log in</Link>
           <Link href="/signup" className="hover:text-text">Sign up</Link>
           <Link href="/pricing" className="hover:text-text">Pricing</Link>
+          <Link href="/ai" className="hover:text-text">Connect your AI</Link>
           <Link href="/#founding" className="hover:text-text">Founding clubs</Link>
           <Link href="/privacy" className="hover:text-text">Privacy</Link>
           <a href="#top" className="hover:text-text">Back to top</a>
