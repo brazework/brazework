@@ -1,4 +1,4 @@
-import { BadgeCheck, Check } from "lucide-react";
+import { BadgeCheck } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/forge";
 import { AppTour } from "./app-tour";
@@ -7,6 +7,7 @@ import { ClubSetupDemo } from "./club-setup-demo";
 import { CompanySearch } from "./company-search";
 import { EmberDemo } from "./ember-demo";
 import { Faq } from "./faq";
+import { PricingTiers } from "./pricing";
 
 // The landing page's sections, in the order a cold visitor needs them: who it's for (a student,
 // someone employed, someone working for themselves), the app itself (to try), a
@@ -191,29 +192,13 @@ export function Companies() {
   );
 }
 
-const PLANS = [
-  { name: "Builders and clubs", price: "Free", note: "Always, with no ads", points: ["A record built from signed work, whether you study or work", "Run your club or study group: events, chat, roles, handoff", "Ember included", "Web and iPhone"], cta: { label: "Create your free account", href: "/signup" } },
-  { name: "Companies", price: "Sponsor and recruit", note: "Pilots, set up with the founders", points: ["Sponsor a build challenge that clubs opt into", "Meet the winners, verified by their clubs", "Follow clubs and builders, and host events", "Search signed work (coming with Pro)"], cta: { label: "Talk to us", href: "#founding" } },
-];
-
 export function Pricing() {
   return (
     <section id="pricing" className={cn(SEC, BAND)}>
       <div className={WRAP}>
         <h2 className={H2}>Free for the people who build. Paid by the people who hire.</h2>
-        <div className="mt-10 grid grid-cols-1 overflow-hidden rounded-[1.25rem] border border-line bg-surface md:grid-cols-2 md:divide-x md:divide-line">
-          {PLANS.map((p, i) => (
-            <div key={p.name} className={cn("flex flex-col p-6 sm:p-8", i > 0 && "border-t border-line md:border-t-0")}>
-              <h3 className="text-sm font-medium text-muted">{p.name}</h3>
-              <p className="mt-2 text-3xl font-semibold tracking-tight">{p.price}</p>
-              <p className="mt-1 text-sm text-muted">{p.note}</p>
-              <ul className="mt-6 flex flex-1 flex-col gap-2.5 text-[15px] text-text-2">
-                {p.points.map((x) => <li key={x} className="flex gap-2.5"><Check className="mt-1 size-4 shrink-0 text-ok" />{x}</li>)}
-              </ul>
-              <Link href={p.cta.href} className={cn("mt-8 inline-flex h-11 items-center justify-center self-start rounded-lg px-5 text-[15px] font-medium transition", i === 0 ? "bg-accent text-on-accent hover:opacity-90" : "border border-line-strong hover:bg-hover")}>{p.cta.label}</Link>
-            </div>
-          ))}
-        </div>
+        <PricingTiers className="mt-10" />
+        <p className="mt-8 text-[15px] text-muted">Every price, and what&apos;s coming: <Link href="/pricing" className="font-medium text-text underline-offset-4 hover:underline">Pricing</Link>.</p>
       </div>
     </section>
   );

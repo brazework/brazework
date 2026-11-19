@@ -6,6 +6,7 @@ import { Nav } from "@/components/landing/nav";
 import { Organizations } from "@/components/landing/organizations";
 import { Clubs, Companies, EmberSection, FaqSection, Pricing, ShowBuild, Stages, Tour, Why } from "@/components/landing/sections";
 import { ThemeChrome } from "@/components/theme-chrome";
+import { ProductHuntWelcome } from "@/components/launch/product-hunt-welcome";
 
 // The marketing page (redesign 2026-11, Linear FIX-117): the product, to try, instead of a
 // description of it. In the order a cold visitor needs it: what it is, with your own build getting
@@ -19,6 +20,7 @@ export default function Landing() {
       <Nav />
       <ThemeChrome landing />
       <main>
+        <ProductHuntWelcome place="landing" />
         <Hero />
         <Stages />
         <Tour />

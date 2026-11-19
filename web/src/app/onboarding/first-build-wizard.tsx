@@ -2,7 +2,7 @@
 import { AnimatePresence, motion } from "motion/react";
 import { ArrowLeft, ArrowRight, Building2, Camera, Check, Clock, Link2, Loader2, Mail, Users, X } from "lucide-react";
 import Link from "next/link";
-import { useEffect, useRef, useState, useTransition } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, useTransition } from "react";
 import { SignupSteps } from "@/components/signup-steps";
 import { Button, Field, inputCls } from "@/components/ui";
 import { BUILD_KEY, cleanBuild, guessField } from "@/lib/front-door";
@@ -34,27 +34,30 @@ function initial(student: boolean): State {
   return { step: "build", text: "", field: TOPICS[0].name, fieldTouched: false, achievedOn: today(), proof: "link", link: "", photo: "", signer: "email", email: "", relationship: student ? "professor" : "manager", clubId: "" };
 }
 
+// Where they left off in this tab, or else the build they typed on the landing page (browser only).
+function load(student: boolean): State {
+  const base = initial(student);
+  if (typeof window === "undefined") return base;
+  try {
+    const saved = JSON.parse(sessionStorage.getItem(KEY) ?? "null") as Partial<State> | null;
+    if (saved && typeof saved.text === "string") return { ...base, ...saved };
+    const carried = cleanBuild(localStorage.getItem(BUILD_KEY) ?? "");
+    if (carried) return { ...base, text: carried, field: guessField(carried) ?? base.field };
+  } catch {}
+  return base;
+}
+const noStore = () => () => {};
+
 export function FirstBuildWizard({ firstName, student, userId, clubs }: { firstName: string; student: boolean; userId: string; clubs: WizardClub[] }) {
-  const [s, setS] = useState<State>(() => initial(student));
-  const [ready, setReady] = useState(false);
+  // The server renders a placeholder; the browser renders the wizard, from what this tab remembers.
+  const ready = useSyncExternalStore(noStore, () => true, () => false);
+  const [s, setS] = useState<State>(() => load(student));
   const [error, setError] = useState("");
   const [pending, start] = useTransition();
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
   const set = (patch: Partial<State>) => setS((p) => ({ ...p, ...patch }));
 
-  // Pick up where they left off in this tab, or the build they typed on the landing page.
-  useEffect(() => {
-    let saved: State | null = null;
-    try { saved = JSON.parse(sessionStorage.getItem(KEY) ?? "null"); } catch {}
-    if (saved && typeof saved.text === "string") setS({ ...initial(student), ...saved });
-    else {
-      let carried = "";
-      try { carried = cleanBuild(localStorage.getItem(BUILD_KEY) ?? ""); } catch {}
-      if (carried) setS((p) => ({ ...p, text: carried, field: guessField(carried) ?? p.field }));
-    }
-    setReady(true);
-  }, [student]);
   useEffect(() => { if (ready) try { sessionStorage.setItem(KEY, JSON.stringify(s)); } catch {} }, [s, ready]);
 
   const setText = (text: string) => setS((p) => ({ ...p, text, field: p.fieldTouched ? p.field : guessField(text) ?? p.field }));

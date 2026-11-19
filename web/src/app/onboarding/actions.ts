@@ -111,14 +111,6 @@ export async function finishFirstBuild(input: FirstBuildInput): Promise<FirstBui
   if (!user) redirect("/login");
   if (!profile) redirect("/onboarding");
 
-  if (!profile.onboarded) {
-    const { error } = await supabase.from("profiles").update({
-      headline: profile.headline?.trim() || firstHeadline(d.field, profile.account_type !== "professional"),
-      field: d.field, interests: starterInterests(d.field), onboarded: true,
-    }).eq("id", user.id);
-    if (error) return { ok: false, message: friendlyError(error), step: "build" };
-  }
-
   // A retry after a failed ask reuses the project it already started.
   let projectId = "";
   if (d.projectId) {
@@ -164,6 +156,15 @@ export async function finishFirstBuild(input: FirstBuildInput): Promise<FirstBui
     let { error } = await supabase.from("milestones").insert(row);
     if (error && /private/.test(error.message ?? "")) ({ error } = await supabase.from("milestones").insert({ ...row, private: undefined }));
     if (error) return { ok: false, message: error.code === "P0001" ? error.message : friendlyError(error), step: "proof", projectId };
+  }
+  // Last, so the onboarding page (which re-renders when a step above revalidates) stays on the
+  // wizard until everything is saved, and a retry still finds it.
+  if (!profile.onboarded) {
+    const { error } = await supabase.from("profiles").update({
+      headline: profile.headline?.trim() || firstHeadline(d.field, profile.account_type !== "professional"),
+      field: d.field, interests: starterInterests(d.field), onboarded: true,
+    }).eq("id", user.id);
+    if (error) return { ok: false, message: friendlyError(error), step: "build", projectId };
   }
   redirect(`/u/${user.id}?welcome=1`);
 }
