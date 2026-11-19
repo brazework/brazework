@@ -74,6 +74,7 @@ oauth-signup
 members-only
 mcp-workflows
 waiting-cards
+money
 tool-actions
 tool-rsvp
 tool-clubs-messages

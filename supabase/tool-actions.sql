@@ -1,5 +1,5 @@
--- Step 67: one set of actions behind your AI tools and Ember (docs/mcp-workflows.md). Run after
--- waiting-cards.sql. Additive and safe to re-run.
+-- Step 68: one set of actions behind your AI tools and Ember (docs/mcp-workflows.md). Run after
+-- money.sql. Additive and safe to re-run.
 --
 -- Ember (the in-app agent) prepares actions as approve-first cards; MCP tools (Claude, Cursor, …)
 -- leave drafts or act with the member's yes. Both now speak the same action kinds, named after

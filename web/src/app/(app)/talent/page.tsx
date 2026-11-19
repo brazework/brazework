@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SeatsLine } from "./seats-line";
 import { BadgeCheck, Building2, GitMerge, Search, Send, Trophy, UsersRound } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -125,6 +126,7 @@ async function Talent({ searchParams }: { searchParams: PageProps<"/talent">["se
         {backedOn && <input type="hidden" name="level" value="backed" />}
         <button className="h-8 rounded-lg bg-accent px-3 text-xs font-medium text-on-accent">Search</button>
       </form>
+      {f.money && <SeatsLine paid={sp.seats === "1"} />}
       {f.backed && (
         <div className="no-scrollbar mt-3 flex gap-1.5 overflow-x-auto" aria-label="Proof">
           <Link href={href({ level: "" })} className={chip(!backedOn)}>Signed only</Link>
