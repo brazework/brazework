@@ -1,7 +1,10 @@
 import Observation
 import SwiftUI
 
-enum AppTab: String { case feed, clubs, messages, alerts, me }
+// The five places, as on the web (web/src/lib/places.ts): Home (feed), Projects (build), Clubs (clubs),
+// Record (me), Inbox (messages). The case names are the old ones so FORGE_TEST_TAB and links keep
+// working; only the labels changed. Alerts are the bell on Home, not a tab.
+enum AppTab: String { case feed, build, clubs, me, messages }
 
 // Which tab is showing, shared so any screen can send you to another tab.
 @MainActor @Observable

@@ -29,7 +29,7 @@ targets:
     info:
       path: Forge/Resources/Info.plist
       properties:
-        CFBundleDisplayName: Forge
+        CFBundleDisplayName: Brazework
         CFBundleShortVersionString: "$(MARKETING_VERSION)"
         CFBundleVersion: "$(CURRENT_PROJECT_VERSION)"
         UILaunchScreen:

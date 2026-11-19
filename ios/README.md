@@ -1,8 +1,16 @@
-# Forge for iPhone
+# Brazework for iPhone
 
 Native SwiftUI app on the same Supabase backend as `web/`: same tables, same row-level security, same feed ranking (`FeedRank.swift` is a port of `web/src/lib/feed-rank.ts`, with tests that pin the numbers).
 
+Members see Brazework everywhere (the home-screen name, sign-up, copy). The code keeps its older Forge names (`ForgeKit`, the `Forge` scheme, `FORGE_*` settings, bundle id `com.shualabs.forge`), as the web keeps `/feed` and `forge.test`; changing the bundle id would make it a different app in the App Store.
+
 `ForgeKit/` is the data layer (models, ranking, every read and write in `API.swift`, the feed and inbox stores). The app compiles those sources directly; `swift test` runs them on the Mac against the local stack. `Forge/` is the SwiftUI app.
+
+## The five places (redesign, November 2026)
+
+The tab bar matches the web app's five places (`web/src/lib/places.ts`): **Home** (the feed, led by the one next step on your newest project; alerts are the bell at the top), **Projects** (what you're making: where each project stands, built then signed, and one next step), **Clubs**, **Record** (your signed work first, then your profile and settings) and **Inbox** (messages). Projects and Record read projects and milestones (`ForgeKit/Builds.swift`); starting a project and asking for a signature open the web for now. In code the tabs keep their older names (`AppTab.feed`, `.build`, `.clubs`, `.me`, `.messages`) so `FORGE_TEST_TAB` and links don't change.
+
+The table below describes the screens behind those tabs (it predates the rename: Feed is Home, You is Record, Messages is Inbox, and Alerts is the bell on Home).
 
 ## What's in it
 

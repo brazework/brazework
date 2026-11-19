@@ -33,8 +33,8 @@ enum FeedRank {
     if sources.contains(.follow) { return followName.map { "Because you follow \($0)" } ?? "From someone you follow" }
     if let m = p.tags.first(where: { interests.contains($0) }) { return "Matches your interest: \(m)" }
     if p.kind == "question" && p.commentCount == 0 { return "Unanswered question" }
-    if p.likeCount + p.commentCount >= 5 { return "Popular on Forge" }
-    return "New on Forge"
+    if p.likeCount + p.commentCount >= 5 { return "Popular on Brazework" }
+    return "New on Brazework"
   }
 
   static func rank(_ sources: [FeedSource: [Post]], interests: [String], now: Date) -> [RankedPost] {

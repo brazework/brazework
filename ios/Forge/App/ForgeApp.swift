@@ -38,13 +38,15 @@ struct MainTabs: View {
 
   var body: some View {
     TabView(selection: $nav.tab) {
-      Tab("Feed", systemImage: "house", value: AppTab.feed) { FeedView() }
-      Tab("Clubs", systemImage: "person.3", value: AppTab.clubs) { ClubsView() }
-      Tab("Messages", systemImage: "bubble.left.and.bubble.right", value: AppTab.messages) { MessagesView() }
-        .badge(session.unreadMessages)
-      Tab("Alerts", systemImage: "bell", value: AppTab.alerts) { AlertsView() }
+      // The same five places as the web, each answering one question: what needs me, what am I
+      // making, what's my team doing, what have I done and who signed it, who's reaching out.
+      Tab("Home", systemImage: "house", value: AppTab.feed) { FeedView() }
         .badge(session.unreadAlerts)
-      Tab("You", systemImage: "person.crop.circle", value: AppTab.me) { MeView() }
+      Tab("Projects", systemImage: "hammer", value: AppTab.build) { BuildView() }
+      Tab("Clubs", systemImage: "person.3", value: AppTab.clubs) { ClubsView() }
+      Tab("Record", systemImage: "checkmark.seal", value: AppTab.me) { MeView() }
+      Tab("Inbox", systemImage: "tray", value: AppTab.messages) { MessagesView() }
+        .badge(session.unreadMessages)
     }
     .tabBarMinimizeBehavior(.onScrollDown)
     .environment(nav)

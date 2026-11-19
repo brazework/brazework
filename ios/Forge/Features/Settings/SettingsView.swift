@@ -209,7 +209,7 @@ struct ReportSheet: View {
           Section {
             VStack(alignment: .leading, spacing: 6) {
               Label("Thanks for telling us", systemImage: "checkmark.shield.fill").font(.headline).foregroundStyle(p.text)
-              Text("The Forge team reviews every report. You can also block them so you don't see them again.").font(.subheadline).foregroundStyle(p.muted)
+              Text("The Brazework team reviews every report. You can also block them so you don't see them again.").font(.subheadline).foregroundStyle(p.muted)
             }
             .padding(.vertical, 4)
           }

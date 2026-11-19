@@ -43,7 +43,7 @@ func friendly(_ error: Error) -> String {
   if text.contains("posts_media") { return "Something's wrong with those attachments. Remove them and try again." }
   if text.contains("column \"media\"") || text.contains("'media' column") { return "Photos and video aren't turned on yet." }
   if text.contains("row-level security") || text.contains("42501") { return "You don't have permission to do that." }
-  if text.contains("NSURLErrorDomain") || text.contains("offline") || text.contains("Could not connect") { return "Can't reach Forge. Check your connection." }
+  if text.contains("NSURLErrorDomain") || text.contains("offline") || text.contains("Could not connect") { return "Can't reach Brazework. Check your connection." }
   if text.contains("already registered") || text.contains("user_already_exists") || text.contains("already exists") { return "An account with this email already exists. Log in instead." }
   if text.contains("Invalid login credentials") { return "That email and password don't match." }
   if text.contains("Email not confirmed") { return "Confirm your email first (check your inbox)." }

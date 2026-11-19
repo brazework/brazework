@@ -5,7 +5,7 @@ struct InboxEntry: Identifiable, Hashable, Sendable {
   enum Target: Hashable, Sendable { case dm(InboxItem), chat(GroupChat) }
   let target: Target
   var id: String { switch target { case .dm(let d): "dm:\(d.id)"; case .chat(let c): "chat:\(c.id)" } }
-  var title: String { switch target { case .dm(let d): d.name.isEmpty ? "Forge member" : d.name; case .chat(let c): c.title } }
+  var title: String { switch target { case .dm(let d): d.name.isEmpty ? "Brazework member" : d.name; case .chat(let c): c.title } }
   var preview: String { switch target { case .dm(let d): d.preview.isEmpty ? "No messages yet" : d.preview; case .chat(let c): c.preview } }
   var at: Date? { switch target { case .dm(let d): d.at; case .chat(let c): c.lastAt } }
   var unread: Bool { switch target { case .dm(let d): d.unread; case .chat(let c): c.unread } }

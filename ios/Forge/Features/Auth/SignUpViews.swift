@@ -30,14 +30,14 @@ struct SignUpView: View {
           Button { Task { await next() } } label: { if busy { ProgressView().tint(p.onAccent) } else { Text(step < 2 ? "Continue" : "Create account") } }
             .buttonStyle(PrimaryButtonStyle())
             .disabled(busy)
-          Text("By creating an account you agree to Forge's terms and privacy policy. Members must be 18 or older.")
+          Text("By creating an account you agree to Brazework's terms and privacy policy. Members must be 18 or older.")
             .font(.caption).foregroundStyle(p.faint)
         }
         .padding(24)
       }
       .scrollDismissesKeyboard(.interactively)
       .background(p.bg)
-      .navigationTitle("Join Forge")
+      .navigationTitle("Join Brazework")
       .navigationBarTitleDisplayMode(.inline)
       .toolbar {
         ToolbarItem(placement: .cancellationAction) {
@@ -85,7 +85,7 @@ struct SignUpView: View {
       field { TextField("Last name", text: $form.lastName).textContentType(.familyName).focused($focus, equals: .last).submitLabel(.done) }
       Text("Birthday").font(.subheadline.weight(.semibold)).foregroundStyle(p.text).padding(.top, 6)
       DatePicker("Birthday", selection: $form.birthday, in: ...Date.now, displayedComponents: .date).datePickerStyle(.compact).labelsHidden()
-      Text("Not shown on your profile. Forge is for people 18 and over.").font(.caption).foregroundStyle(p.faint)
+      Text("Not shown on your profile. Brazework is for people 18 and older.").font(.caption).foregroundStyle(p.faint)
     }
     .onAppear { focus = .first }
   }
@@ -200,7 +200,7 @@ struct OnboardingView: View {
         VStack(alignment: .leading, spacing: 22) {
           VStack(alignment: .leading, spacing: 6) {
             Text("Welcome, \(session.profile?.firstName ?? "")").font(.largeTitle.weight(.bold)).foregroundStyle(p.text)
-            Text("Three quick things so Forge can show you the right people, clubs and work.").foregroundStyle(p.muted)
+            Text("Three quick things so Brazework can show you the right people, clubs and work.").foregroundStyle(p.muted)
           }
           VStack(alignment: .leading, spacing: 8) {
             Text(session.profile?.accountType == "student" ? "Your major" : "What you do").font(.headline).foregroundStyle(p.text)
