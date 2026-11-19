@@ -140,8 +140,9 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
         <div className="flex flex-wrap items-start gap-4">
           <CommunityBadge id={c.id} name={c.name} size={84} logo={c.logo_path} accent={c.accent} className="relative z-10 -mt-16 border-4 border-surface shadow-[var(--shadow)] transition duration-300 hover:-rotate-6 hover:scale-105" />
           {/* Actions beside the badge, like a profile; the name and details get the full width below, so four
-              buttons never squeeze a club's name onto two lines. */}
-          <div className="ml-auto flex flex-wrap items-center justify-end gap-2">
+              buttons never squeeze a club's name onto two lines. On a phone they take the row under the badge
+              (beside an 84px badge they wrapped one at a time, leaving Leave alone on its own line). */}
+          <div className="flex w-full flex-wrap items-center gap-2 sm:ml-auto sm:w-auto sm:justify-end">
             <CopyLink path={`/c/${c.id}`} label="Share" />
             {me && groupChats && (
               <form action={openClubChat.bind(null, c.id)}>
