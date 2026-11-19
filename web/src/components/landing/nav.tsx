@@ -9,7 +9,7 @@ import { cn } from "@/lib/forge";
 
 const LINKS = [
   { href: "#app", label: "The app" },
-  { href: "#ember", label: "Ember" },
+  { href: "#ember", label: "AI agent" },
   { href: "#clubs", label: "Clubs" },
   { href: "#companies", label: "Companies" },
   { href: "#pricing", label: "Pricing" },
