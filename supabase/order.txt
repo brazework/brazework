@@ -80,5 +80,6 @@ tool-actions
 tool-rsvp
 tool-clubs-messages
 plus-teaser
+daily-triage
 tool-officers
 tool-talent

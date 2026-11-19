@@ -53,6 +53,9 @@ async function Settings() {
     // Before email-alerts.sql these columns don't exist; the alert switches stay hidden.
     supabase.from("email_prefs").select("alert_messages, alert_requests, alert_comments").eq("user_id", user.id).maybeSingle(),
   ]);
+  // Before daily-triage.sql there's no daily_drafts column; the switch stays hidden.
+  const dd = (await dbFeatures()).dailyTriage ? await supabase.from("email_prefs").select("daily_drafts").eq("user_id", user.id).maybeSingle() : null;
+  const dailyDrafts = dd && !dd.error ? Boolean((dd.data as { daily_drafts?: boolean } | null)?.daily_drafts) : undefined;
   // undefined hides the field (grad-year.sql hasn't run); null means not set.
   const gradYear = gradYearOn ? ((gy.data as { grad_year: number | null } | null)?.grad_year ?? null) : undefined;
   const emailOn = !ep.error;
@@ -69,7 +72,7 @@ async function Settings() {
     <>
       <Section id="profile" title="Profile" desc="What people see on your profile and posts."><ProfileSettings profile={profile} gradYear={gradYear} /></Section>
       <Section id="appearance" title="Appearance" desc="Light or dark, and the colour theme."><AppearanceSettings /></Section>
-      {emailOn && <Section id="email" title="Email" desc="What Brazework sends to your inbox. Sign-in emails always come."><EmailSettings weekly={ep.data ? Boolean(ep.data.weekly_digest) : true} alerts={alerts} /></Section>}
+      {emailOn && <Section id="email" title="Email" desc="What Brazework sends to your inbox. Sign-in emails always come."><EmailSettings weekly={ep.data ? Boolean(ep.data.weekly_digest) : true} alerts={alerts} dailyDrafts={dailyDrafts} /></Section>}
       <Section id="messaging" title="Messaging and privacy" desc="Who can message you, and whether you show as online."><OnlineStatusSetting /><div className="my-6 border-t border-line" /><MessagingSettings requestsOn={ms.data ? Boolean(ms.data.requests_on) : true} who={(ms.data?.who_can_message as "everyone" | "communities" | "connections") ?? "everyone"} /></Section>
       <Section id="blocked" title="Blocked people" desc="People who can't message you or see your activity."><BlockedList people={blocked} /></Section>
       <Section id="ember" title="Ember and your data" desc="What Brazework's AI teammate can see, what it can do, and your chats with it."><EmberSettings saving={saving} chats={chatCount.count ?? 0} /></Section>

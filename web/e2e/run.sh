@@ -14,7 +14,7 @@ fail=0
 for t in ../supabase/tests/*.test.sql; do
   echo "== $t"; docker exec -i forge-e2e-db psql -U postgres -h localhost -d postgres -v ON_ERROR_STOP=1 -q < "$t" 2>&1 | grep -E "FAILED|ERROR|passed" ; [ "${PIPESTATUS[0]}" = 0 ] || fail=1
 done
-for spec in e2e/a-signup-post.cjs e2e/ab-build-first.cjs e2e/ac-money.cjs e2e/b-clubs-events.cjs e2e/c-messages-projects.cjs e2e/d-search-settings.cjs e2e/e-chat.cjs e2e/f-dock.cjs e2e/h-challenges.cjs e2e/i-chapters.cjs e2e/j-pro.cjs e2e/k-feed-budget.cjs e2e/l-tools.cjs e2e/la-mcp-oauth.cjs e2e/lb-mcp-card.cjs e2e/m-layout.cjs e2e/n-github.cjs e2e/o-vouch.cjs e2e/p-goals.cjs e2e/q-study.cjs e2e/r-officer-setup.cjs e2e/s-landing.cjs e2e/t-model-viewer.cjs e2e/u-build.cjs e2e/v-professional.cjs e2e/w-backed.cjs e2e/x-proof.cjs e2e/y-oauth.cjs e2e/z-confirm.cjs e2e/g-account.cjs; do
+for spec in e2e/a-signup-post.cjs e2e/ab-build-first.cjs e2e/ac-money.cjs e2e/b-clubs-events.cjs e2e/c-messages-projects.cjs e2e/d-search-settings.cjs e2e/e-chat.cjs e2e/f-dock.cjs e2e/h-challenges.cjs e2e/i-chapters.cjs e2e/j-pro.cjs e2e/k-feed-budget.cjs e2e/l-tools.cjs e2e/la-mcp-oauth.cjs e2e/lb-mcp-card.cjs e2e/m-layout.cjs e2e/n-github.cjs e2e/o-vouch.cjs e2e/p-goals.cjs e2e/q-study.cjs e2e/r-officer-setup.cjs e2e/s-landing.cjs e2e/t-model-viewer.cjs e2e/u-build.cjs e2e/v-professional.cjs e2e/w-backed.cjs e2e/x-proof.cjs e2e/y-oauth.cjs e2e/z-confirm.cjs e2e/za-triage.cjs e2e/g-account.cjs; do
   echo "== $spec"; node "$spec" | tee /tmp/forge-e2e-out.txt; grep -q "^FAIL" /tmp/forge-e2e-out.txt && fail=1
 done
 echo; [ $fail = 0 ] && echo "All end-to-end checks passed." || { echo "Some checks failed: screenshots in e2e/.results/"; exit 1; }

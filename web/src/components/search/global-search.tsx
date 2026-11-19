@@ -10,14 +10,17 @@ import { ConnectDialog } from "@/components/network/connect-dialog";
 import { Avatar } from "@/components/ui";
 import { Ember } from "@/components/ember/ember";
 import { membersLabel, PRIVACY_LABEL } from "@/lib/communities";
+import { ASK_PLACEHOLDER, askShortcut } from "@/lib/ember-bar";
 import { cn } from "@/lib/forge";
 import { respondToRequest, sendConnectionRequest } from "@/lib/network";
 import { searchForge, type CommunityHit, type PersonHit, type SearchResults } from "@/lib/search";
 
 // The search bar at the top of every signed-in page: people, communities, projects, events and posts
 // as you type, with Connect and Join right in the results, and a hand-off to Copilot for questions. Enter (or "See all results") opens /search.
-// Press "/" anywhere to jump to it.
-export function GlobalSearch() {
+// Press "/" anywhere to jump to it. Inside the Ask Ember bar (components/ember/ask-bar.tsx) it gets
+// `onAsk`: then Enter, and the "Ask Ember" row, ask Ember right here instead of opening a page.
+// `joined`: Ember's answer hangs from the bar (ask-bar.tsx), so the bar's lower corners square off.
+export function GlobalSearch({ onAsk, asking = false, joined = false }: { onAsk?: (text: string) => void; asking?: boolean; joined?: boolean } = {}) {
   const router = useRouter();
   const path = usePathname();
   const listId = useId();
@@ -47,9 +50,7 @@ export function GlobalSearch() {
   useEffect(() => {
     const onDown = (e: MouseEvent) => { if (box.current && !box.current.contains(e.target as Node)) setOpen(false); };
     const onKey = (e: KeyboardEvent) => {
-      const t = e.target as HTMLElement | null;
-      const typing = t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName));
-      if (e.key === "/" && !typing && !e.metaKey && !e.ctrlKey) { e.preventDefault(); input.current?.focus(); setOpen(true); }
+      if (askShortcut({ key: e.key, metaKey: e.metaKey, ctrlKey: e.ctrlKey, altKey: e.altKey, target: e.target as HTMLElement | null })) { e.preventDefault(); input.current?.focus(); setOpen(true); }
     };
     document.addEventListener("mousedown", onDown);
     window.addEventListener("keydown", onKey);
@@ -76,25 +77,31 @@ export function GlobalSearch() {
   // Only show answers for what is typed now; anything older reads as still searching.
   const cur = res && res.query === query ? res : null;
   const nothing = cur && !cur.people.length && !cur.communities.length && !cur.projects.length && !cur.events.length && !cur.posts.length;
-  const askRow = cur && (
-    <Link data-result href={`/copilot?q=${encodeURIComponent(query)}`} className="flex items-center gap-3 rounded-lg px-2.5 py-2.5 text-sm transition hover:bg-hover focus:bg-hover focus:outline-none">
+  const askInside = (
+    <>
       <span className="bg-accent-grad grid size-9 shrink-0 place-items-center rounded-xl text-on-accent"><Sparkles className="size-4" /></span>
-      <span className="min-w-0"><span className="block truncate font-medium">Ask Ember: &ldquo;{query}&rdquo;</span><span className="block text-xs text-faint">Answers with clubs, events and people from Brazework</span></span>
-    </Link>
+      <span className="min-w-0"><span className="block truncate font-medium">Ask Ember: &ldquo;{query}&rdquo;</span><span className="block text-xs text-faint">{onAsk ? "Answers here, and drafts what you did for you to approve" : "Answers with clubs, events and people from Brazework"}</span></span>
+      {onAsk && <kbd className="ml-auto hidden font-mono text-[10px] text-faint sm:block" aria-hidden="true">↵</kbd>}
+    </>
   );
+  const rowCls = "flex w-full items-center gap-3 rounded-lg px-2.5 py-2.5 text-left text-sm transition hover:bg-hover focus:bg-hover focus:outline-none";
+  const askHere = () => { if (!onAsk || !query) return; onAsk(query); setQ(""); setOpen(false); };
+  const askRow = onAsk
+    ? <button type="button" data-result onClick={askHere} className={rowCls}>{askInside}</button>
+    : cur && <Link data-result href={`/copilot?q=${encodeURIComponent(query)}`} className={rowCls}>{askInside}</Link>;
 
   return (
     <div ref={box} className="relative" onKeyDown={onKeyDown}>
       <form
         role="search"
-        aria-label="Search Brazework"
-        onSubmit={(e) => { e.preventDefault(); if (query) { setOpen(false); router.push(`/search?q=${encodeURIComponent(query)}`); } }}
-        className="flex h-10 items-center gap-2.5 rounded-lg border border-line bg-surface px-3 transition hover:border-line-strong focus-within:border-line-strong focus-within:ring-[3px] focus-within:ring-text/8"
+        aria-label={onAsk ? "Ask Ember or search Brazework" : "Search Brazework"}
+        onSubmit={(e) => { e.preventDefault(); if (!query) return; if (onAsk) askHere(); else { setOpen(false); router.push(`/search?q=${encodeURIComponent(query)}`); } }}
+        className={cn("flex h-10 items-center gap-2.5 rounded-lg border border-line bg-surface px-3 transition hover:border-line-strong focus-within:border-line-strong focus-within:ring-[3px] focus-within:ring-text/8", joined && "rounded-b-none")}
       >
         {/* The Ember bar (redesign stage 1): one bar to search, jump anywhere or ask Ember. Typing searches
             right here; the button at the end (or ⌘K) opens the palette, the way into Ember. */}
-        {loading ? <Loader2 className="size-[18px] shrink-0 animate-spin text-faint" /> : <span className="grid size-[18px] shrink-0 place-items-center" aria-hidden="true"><Ember size={18} /></span>}
-        <label htmlFor="forge-search" className="sr-only">Search Brazework</label>
+        {loading || asking ? <Loader2 className="size-[18px] shrink-0 animate-spin text-faint" /> : <span className="grid size-[18px] shrink-0 place-items-center" aria-hidden="true"><Ember size={18} /></span>}
+        <label htmlFor="forge-search" className="sr-only">{onAsk ? "Ask Ember or search Brazework" : "Search Brazework"}</label>
         <input
           ref={input}
           id="forge-search"
@@ -103,7 +110,7 @@ export function GlobalSearch() {
           value={q}
           onChange={(e) => { setQ(e.target.value); setOpen(true); }}
           onFocus={() => setOpen(true)}
-          placeholder="Ask Ember, search, or jump anywhere"
+          placeholder={onAsk ? ASK_PLACEHOLDER : "Ask Ember, search, or jump anywhere"}
           autoComplete="off"
           aria-controls={showPanel ? listId : undefined}
           className="min-w-0 flex-1 bg-transparent text-[15px] outline-none placeholder:text-faint [&::-webkit-search-cancel-button]:hidden"
@@ -111,9 +118,9 @@ export function GlobalSearch() {
         {q ? (
           <button type="button" onClick={() => { setQ(""); input.current?.focus(); }} aria-label="Clear search" className="grid size-7 place-items-center rounded-full text-faint hover:bg-hover hover:text-text"><X className="size-4" /></button>
         ) : (
-          <button type="button" onClick={() => window.dispatchEvent(new Event("forge:palette"))} aria-label="Ask Ember, or jump anywhere (Command K)"
+          <button type="button" onClick={() => window.dispatchEvent(new Event("forge:palette"))} aria-label={onAsk ? "Jump anywhere (Command K)" : "Ask Ember, or jump anywhere (Command K)"}
             className="hidden shrink-0 items-center gap-1.5 rounded-md px-1.5 py-1 text-xs text-muted transition hover:bg-hover hover:text-text sm:inline-flex">
-            Ask Ember <kbd className="rounded border border-line px-1 py-px font-mono text-[10px] text-faint" aria-hidden="true">⌘K</kbd>
+            {onAsk ? "Jump" : "Ask Ember"} <kbd className="rounded border border-line px-1 py-px font-mono text-[10px] text-faint" aria-hidden="true">⌘K</kbd>
           </button>
         )}
       </form>
@@ -132,7 +139,7 @@ export function GlobalSearch() {
               {cur ? `${cur.people.length} people, ${cur.communities.length} communities, ${cur.projects.length} projects, ${cur.events.length} events, ${cur.posts.length} posts` : "Searching"}
             </p>
             {!cur && <div className="flex items-center gap-2 px-3 py-4 text-sm text-muted"><Loader2 className="size-4 animate-spin" /> Searching…</div>}
-            {cur?.question && askRow}
+            {(onAsk || cur?.question) && askRow}
             {cur && cur.topics.length > 0 && (
               <div className="flex flex-wrap items-center gap-1.5 px-3 pt-2 pb-1">
                 {cur.topics.map((t) => <Link key={t} data-result href={`/feed?tab=latest&tag=${encodeURIComponent(t)}`} className="inline-flex items-center gap-1 rounded-full bg-surface-2 px-2.5 py-1 text-xs text-text-2 transition hover:bg-hover"><Hash className="size-3" /> {t}</Link>)}
@@ -184,7 +191,7 @@ export function GlobalSearch() {
                 ))}</ul>
               </section>
             )}
-            {cur && !cur.question && askRow}
+            {!onAsk && cur && !cur.question && askRow}
             {cur && !nothing && (
               <Link data-result href={`/search?q=${encodeURIComponent(query)}`} className="mt-1 flex items-center justify-center gap-2 rounded-lg px-2.5 py-2.5 text-sm text-muted transition hover:bg-hover hover:text-text focus:bg-hover focus:outline-none">
                 <Search className="size-4" /> See all results for &ldquo;{query}&rdquo;
