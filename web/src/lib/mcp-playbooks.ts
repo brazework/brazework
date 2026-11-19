@@ -254,6 +254,7 @@ const FIELD_ARG: PromptArg = { name: "field", description: "Your field, e.g. Mec
 const WHAT_ARG: PromptArg = { name: "what", description: "What happened, in a few words (optional: your assistant can look).", required: false };
 
 export const PROMPTS: PromptDef[] = [
+  { name: "start", title: "Get me started", description: "Your first minute: find something you really finished in the tools you've connected, and turn it into your first milestone, with its proof, ready for the person who saw it to sign.", arguments: [FIELD_ARG] },
   { name: "shipped", title: "I shipped something", description: "Turn work you just finished (a merged PR, a new version, a passed test) into a milestone with evidence, for your club to verify or someone to sign.", arguments: [FIELD_ARG, WHAT_ARG] },
   { name: "result", title: "I got a result", description: "Turn a number (a run, a test, a measurement, a sales total) into a result post with specifics.", arguments: [FIELD_ARG, WHAT_ARG] },
   { name: "week", title: "Recap my week", description: "Look over the last 7 days in your connected tools and draft the 1–3 things worth recording.", arguments: [FIELD_ARG] },
@@ -281,6 +282,12 @@ function writeLine(s: Scopes, kind: "milestone" | "post"): string {
   return READ_ONLY;
 }
 
+// After a milestone with no club: who signs it. Only a token that can post may email someone.
+function signLine(s: Scopes): string {
+  if (s.canPost) return "If there's no club, offer to ask the person who saw it to sign (request_signature), and only send it after I say who and yes.";
+  return "If there's no club, tell me to ask the person who saw it from the milestone in Brazework (“Ask someone to vouch”): this token can't email anyone for me.";
+}
+
 /** The message a prompt sends, for this member's field and what their token may do. */
 export function promptText(name: string, args: Record<string, string | undefined>, s: Scopes): string | null {
   const p = playbookFor(args.field);
@@ -288,6 +295,17 @@ export function promptText(name: string, args: Record<string, string | undefined
   const ex = p?.moments.find((m) => m.becomes === "milestone") ?? p?.moments[0];
   const exR = p?.moments.find((m) => m.becomes === "result") ?? p?.moments[0];
   switch (name) {
+    case "start":
+      return [
+        "Get me started on Brazework: turn one thing I've really finished into my first milestone, in about a minute.",
+        p ? fieldLine(p, args.field) : `Call me first to see my field and what's on my record, then read the matching playbook from ${PLAYBOOK_INDEX_URI}.`,
+        "1. Look at the tools you can reach right now from that list, over my last 30 days: merged pull requests and releases, finished runs, exported reports, files I shipped. Pick the single strongest piece of finished work that has proof. If you can't reach any of them, ask me for one link that shows something I finished (a repo, a doc, a video).",
+        "2. Call my_projects and pick the project it belongs to. If I have none yet, tell me to type what I'm building in the box on Brazework's Today page (one line is enough), then come back.",
+        `3. Write it as a milestone: the title is what was achieved, with numbers${ex ? `, like “${ex.example}”` : ""}; the evidence is 1 to 8 https links. Show it to me in a few lines.`,
+        `4. ${writeLine(s, "milestone")}`,
+        `5. ${signLine(s)}`,
+        "6. End with the link from the result, and one line on what I could record next from my field's playbook.",
+      ].join("\n");
     case "shipped":
       return [
         `I just finished something${what} and want it on my Brazework record as a milestone.`,
@@ -296,7 +314,7 @@ export function promptText(name: string, args: Record<string, string | undefined
         "2. Call my_projects to pick the project, and my_clubs to pick the club that saw it. If no club did, leave the club out: it then waits for a signature from whoever saw it.",
         `3. Write the title as what was achieved, with numbers${ex ? `, like “${ex.example}”` : ""}; the detail as how it was done and measured; the evidence as 1 to 8 https links.`,
         `4. ${writeLine(s, "milestone")}`,
-        "5. If there's no club, offer to ask the person who saw it to sign (request_signature), and only send it after I say who and yes.",
+        `5. ${signLine(s)}`,
       ].join("\n");
     case "result":
       return [
