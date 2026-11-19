@@ -376,6 +376,23 @@ const { step, browser, as, go, summary, BASE } = require("./lib.cjs");
     psql(`delete from public.follows where follower = '${process.env.BEN_ID}' and target in (select id from auth.users where email = 'cara@forge.test'); update public.api_tokens set revoked_at = now() where prefix = 'forge_cara'`);
   }, ben);
 
+  await step("goals: Ben sets a quiet goal from chat (visibility must be his choice), my_goal shows his progress and ranks his work by it, and /week drafts toward it", async () => {
+    const asked = await call("set_goal", { kind: "internship", target: "liquid rocket engines" }, cc);
+    if (!asked?.isError || !/whether companies should see/.test(asked.content[0].text)) throw new Error("set_goal assumed whether companies see the goal");
+    const set = (await call("set_goal", { kind: "internship", target: "liquid rocket engines", visible: false }, cc)).structuredContent;
+    if (set?.status !== "set" || !/kept private/.test(set.next ?? "")) throw new Error(`set_goal: ${JSON.stringify(set).slice(0, 200)}`);
+    const draftOnly = await call("set_goal", { kind: "job", visible: true }, readOnly);
+    if (!draftOnly?.isError) throw new Error("a drafting token set a goal");
+    const g = (await call("my_goal", {}, cc)).structuredContent;
+    if (!/signed toward a summer internship in liquid rocket engines$/.test(g?.progress ?? "") || !g.next || !Array.isArray(g.path) || g.visible_to_companies !== false) throw new Error(`my_goal: ${JSON.stringify(g).slice(0, 300)}`);
+    if (!(g.strongest?.[0]?.relevance > 0) || !/engine/i.test(g.strongest[0].project)) throw new Error(`the engine work should rank first: ${JSON.stringify(g.strongest?.slice(0, 2))}`);
+    const week = (await (await mcp("prompts/get", { name: "week", arguments: {} }, cc)).json()).result?.messages?.[0]?.content?.text ?? "";
+    if (!/call my_goal/.test(week) || !/Toward your goal: …/.test(week)) throw new Error(`/week isn't goal-aware: ${week.slice(0, 200)}`);
+    if (psql(`select visible::text from public.member_goals where uid = '${process.env.BEN_ID}' and status = 'active'`) !== "false") throw new Error("the goal isn't quiet");
+    const dropped = (await call("drop_goal", {}, cc)).structuredContent;
+    if (dropped?.status !== "dropped") throw new Error(`drop_goal: ${JSON.stringify(dropped).slice(0, 200)}`);
+  }, ben);
+
   await step("FIX-92: a club's Integrations tab shows how work comes in (GitHub, members' AI tools), and no Discord", async () => {
     await go(ben, "/c/rkt/manage?tab=integrations"); // Ben owns Rocketry Club
     const main = ben.locator("main");

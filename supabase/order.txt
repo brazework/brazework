@@ -86,4 +86,5 @@ signer-tools
 redacted-proof
 tool-officers
 tool-talent
+tool-goals
 tool-signer

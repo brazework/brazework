@@ -1,4 +1,4 @@
--- Step 78: who signed it, when a person signed (docs/mcp-workflows.md). Run after tool-talent.sql.
+-- Step 79: who signed it, when a person signed (docs/mcp-workflows.md). Run after tool-goals.sql.
 -- Additive and safe to re-run.
 --
 -- Work a professor, manager or mentor signed through a vouch (vouches.sql answer_vouch) carries its signer
