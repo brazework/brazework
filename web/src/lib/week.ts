@@ -74,7 +74,7 @@ export function buildLoopSteps(w: WeekInput, s: { shownThisWeek: boolean; verifi
   const quiet = w.quietProject;
   const steps: Omit<LoopStep, "state">[] = [
     {
-      id: "build", title: "Build",
+      id: "build", title: "Log your work",
       line: s.shownThisWeek ? "You shared your work this week" : !w.hasProject ? "Add what you're building: a robot, a rig, a model, an app" : quiet ? `Post an update on ${quiet.title}` : "Share what you built this week",
       cta: s.shownThisWeek ? null : !w.hasProject ? { label: "Add a project", href: "/projects" } : quiet ? { label: "Post an update", href: `/feed?project=${quiet.id}#composer` } : { label: "Post", href: "/feed#composer" },
     },
@@ -83,7 +83,7 @@ export function buildLoopSteps(w: WeekInput, s: { shownThisWeek: boolean; verifi
       line: s.verified > 0
         ? `${plural(s.verified, "milestone")} verified by your club${w.myPending ? ` · ${w.myPending} waiting` : ""}`
         : w.myPending > 0 ? `${plural(w.myPending, "milestone")} waiting for your club` : !w.hasClub ? "Join your club, so its officers can verify your work" : "Ask your club to verify a milestone",
-      cta: s.verified > 0 || w.myPending > 0 ? { label: "See your proof", href: `/u/${s.me}#proof` } : !w.hasClub ? { label: "Find your club", href: "/communities?tab=discover" } : { label: "Ask your club", href: "/projects" },
+      cta: s.verified > 0 || w.myPending > 0 ? { label: "See your record", href: `/u/${s.me}#proof` } : !w.hasClub ? { label: "Find your club", href: "/communities?tab=discover" } : { label: "Ask your club", href: "/projects" },
     },
     {
       id: "found", title: "Get found",
