@@ -36,7 +36,7 @@ export function findBuilders(d: TalentData, a: TalentAsk) {
       clubs: b.clubs.map((c) => c.name), skills: b.skills.slice(0, 10), open_to: b.person.open_to ?? [],
       work: b.latest.filter((r) => backed || !r.backed).slice(0, 3).map((r) => ({
         title: r.title, project: r.projects?.title ?? "",
-        ...(r.backed ? { level: "backed by GitHub, not signed" } : { level: "signed", signed_by: r.reviewer_name || r.community_name, ...(r.reviewer_role && { role: r.reviewer_role }) }),
+        ...(r.backed ? { level: "backed by GitHub, not signed" } : { level: "signed", signed_by: r.vouched_by || r.reviewer_name || r.community_name, ...(r.reviewer_role && { role: r.reviewer_role }) }),
       })),
       url: `/u/${b.person.id}`,
     })),

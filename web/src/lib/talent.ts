@@ -10,6 +10,8 @@ export type VerifiedRow = {
   community_name: string;
   title: string;
   reviewer_name: string;
+  // Who vouched, when a person signed rather than a club (vouches.sql): "Dr. Elena Ruiz, Assistant Professor · stateu.edu".
+  vouched_by?: string;
   reviewer_role?: string | null;
   reviewed_at: string | null;
   // Backed by GitHub, not signed (FIX-121).
