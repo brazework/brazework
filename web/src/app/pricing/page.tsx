@@ -16,7 +16,7 @@ export const metadata: Metadata = {
 // the questions people ask about it. Static.
 const QUESTIONS: [string, string][] = [
   ["Is the free plan really free?", "Yes. Your record, every signature, your clubs, and being found by companies are free for good, with no ads. Companies pay so builders don't have to."],
-  [`What is ${PLUS.name}?`, `An optional upgrade for people who want more from their record: every company that looked in the last 90 days, your own profile link, a PDF portfolio of your signed work, and more AI drafts from your tools. It's $${PLUS.student} a month for students and $${PLUS.everyone} for everyone else; if it isn't open when you look, join the waitlist at that price. Nothing in Free moves to ${PLUS.name}.`],
+  [`What is ${PLUS.name}?`, `An optional upgrade for people who want more from their record. Today it shows every company that looked in the last 90 days; coming soon are your own profile link, a PDF portfolio of your signed work, and more AI drafts from your tools. It's $${PLUS.student} a month for students and $${PLUS.everyone} for everyone else; if it isn't open when you look, join the waitlist at that price. Nothing in Free moves to ${PLUS.name}.`],
   ["Why do signatures matter?", "Anyone can type a claim. A milestone on Brazework is signed by someone who saw the work: a club's officers, a professor, a manager. That's what a company can trust."],
   ["Who pays for networks and schools?", "The national network or the school, priced per active chapter, so a small network pays little. Every club stays free either way."],
   ["How do companies start?", "Book a pilot: name your company and we reply within a day, to the email on your Brazework account. Seats and sponsorships are set up with you."],

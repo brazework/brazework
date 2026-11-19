@@ -17,7 +17,8 @@ export async function WaitingOnYou() {
     supabase.from("connections").select("*", { count: "exact", head: true }).eq("to_id", user.id).eq("status", "pending"),
     // Drafts your tools left for you (supabase/mcp-workflows.sql). Before that step the table is
     // missing, the count comes back empty and nothing shows.
-    (async () => (await dbFeatures()).mcpWorkflows ? supabase.from("tool_drafts").select("*", { count: "exact", head: true }).eq("status", "waiting") : { count: 0 })(),
+    // Once daily-triage.sql has run they have their own section on Today (triage.tsx), so not here too.
+    (async () => { const f = await dbFeatures(); return f.mcpWorkflows && !f.dailyTriage ? supabase.from("tool_drafts").select("*", { count: "exact", head: true }).eq("status", "waiting") : { count: 0 }; })(),
   ]);
   const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
   const items = [

@@ -18,7 +18,7 @@ const ASK = ["What's on in my clubs this week?", "Which of my projects still nee
 // `drafts`: tools can leave drafts you approve, and GitHub Actions can be connected (supabase/mcp-workflows.sql).
 type Project = { id: string; title: string };
 type Club = { id: string; name: string };
-export function ToolsHub({ tokens, endpoint, writes = false, drafts = false, projects = [], clubs = [], field = "" }: { tokens: ApiToken[]; endpoint: string; writes?: boolean; drafts?: boolean; projects?: Project[]; clubs?: Club[]; field?: string }) {
+export function ToolsHub({ tokens, endpoint, writes = false, drafts = false, projects = [], clubs = [], field = "", signIn = false }: { tokens: ApiToken[]; endpoint: string; writes?: boolean; drafts?: boolean; projects?: Project[]; clubs?: Club[]; field?: string; signIn?: boolean }) {
   const [list, setList] = useState(tokens);
   const [open, setOpen] = useState<ToolInfo | null>(null);
   const tools = TOOLS.filter((t) => drafts || !draftsOnly(t.id));
@@ -65,6 +65,9 @@ export function ToolsHub({ tokens, endpoint, writes = false, drafts = false, pro
         )}
         <p className="relative mt-5 flex items-center gap-2 border-t border-line pt-4 text-xs text-muted"><ShieldCheck className="size-3.5 shrink-0" /> {drafts ? "Nothing goes out without you: tools leave drafts, unless you turn on posting for one. Nothing is ever changed or deleted." : writes ? "Read-only unless you turn on posting for a tool. Nothing is ever changed or deleted." : "Read-only: it can't post or change anything."} Each tool gets its own token you can revoke here.</p>
       </section>
+
+      {/* One-click connect (lib/mcp-oauth.ts): add the address, sign in, approve. No token to copy. */}
+      {signIn && <SignInCard endpoint={endpoint} />}
 
       {/* The tools. */}
       <section aria-label="Tools you can connect">
@@ -307,5 +310,28 @@ function PostSwitch({ on, onChange, tool, compact, disabled, className }: { on: 
         <span className="text-sm"><span className="font-medium">Let it post updates for me</span><span className="block text-xs text-muted">Updates and milestones for your club to verify. It asks first, and they say &ldquo;via {tool}&rdquo;.</span></span>
       )}
     </label>
+  );
+}
+
+// Shown once the OAuth server is switched on in Supabase: assistants that sign in need only the address.
+function SignInCard({ endpoint }: { endpoint: string }) {
+  const [copied, setCopied] = useState(false);
+  const cmd = `claude mcp add --transport http brazework ${endpoint}`;
+  const copy = async (text: string) => { try { await navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 1600); } catch {} };
+  return (
+    <section aria-labelledby="sign-in-connect" className="rounded-3xl border border-line bg-surface p-6 sm:p-7">
+      <h2 id="sign-in-connect" className="text-lg font-semibold tracking-tight">Sign in from your assistant, no token</h2>
+      <p className="mt-1 text-sm text-text-2">Add Brazework by its address. Your assistant opens Brazework, you approve it, and you&apos;re connected. It starts reading and leaving drafts; you can turn on posting for it below.</p>
+      <div className="mt-4 flex flex-wrap items-center gap-2">
+        <code className="min-w-0 flex-1 truncate rounded-lg bg-surface-2 px-3 py-2 font-mono text-[13px]">{endpoint}</code>
+        <button type="button" onClick={() => copy(endpoint)} className="inline-flex h-9 items-center rounded-lg border border-line px-3 text-sm hover:bg-hover">{copied ? "Copied" : "Copy address"}</button>
+      </div>
+      <ul className="mt-4 space-y-1.5 text-sm text-text-2">
+        <li><strong className="font-medium text-text">Claude</strong> (web and desktop): Settings → Connectors → Add custom connector, and paste the address.</li>
+        <li><strong className="font-medium text-text">Claude Code:</strong> <button type="button" onClick={() => copy(cmd)} className="font-mono text-[13px] underline-offset-4 hover:underline">{cmd}</button>, then <code className="font-mono text-[13px]">/mcp</code> to sign in.</li>
+        <li><strong className="font-medium text-text">Cursor, VS Code and others:</strong> add an MCP server with this address; they ask you to sign in.</li>
+      </ul>
+      <p className="mt-3 text-xs text-muted">GitHub Actions and scripts still use a token: pick them below.</p>
+    </section>
   );
 }

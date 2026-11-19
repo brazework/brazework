@@ -50,3 +50,6 @@ e2e/.project-files/
 .zap/
 .lighthouseci/
 .load/
+
+# Named local stacks run their own gateway copy (e2e/local-supabase.sh).
+e2e/.gateway-*.cjs

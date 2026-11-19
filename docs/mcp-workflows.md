@@ -6,6 +6,8 @@ Brazework's MCP server, an AI assistant (Claude Code, Claude Desktop, Cursor, VS
 reads the work where it already lives and drafts the post, milestone or signature request for you, with the
 proof attached. **Nothing goes out until you say yes.**
 
+The public version of this guide is **[brazework.com/ai](https://brazework.com/ai)**: readable signed out, built from the same lists as the server (`web/src/lib/ai-guide.ts`), so a new tool or prompt shows up there by itself.
+
 What it looks like:
 
 - You merge a pull request. CI is green. A GitHub Action leaves a draft milestone in Brazework with the pull request
@@ -26,6 +28,19 @@ The code: `web/src/app/api/mcp/route.ts` (the server), `web/src/lib/mcp.ts` (too
 scopes, signatures). Design: [superpowers/specs/2026-11-18-mcp-workflows-design.md](superpowers/specs/2026-11-18-mcp-workflows-design.md).
 
 ## Set it up in 2 minutes
+
+**The fastest way: sign in, no token.** Add Brazework to your assistant by its address,
+`https://<your Brazework>/api/mcp`:
+
+- **Claude (web and desktop):** Settings → Connectors → Add custom connector.
+- **Claude Code:** `claude mcp add --transport http brazework https://<your Brazework>/api/mcp`, then `/mcp` to
+  sign in.
+- **Cursor, VS Code and others:** add an MCP server with that address.
+
+Your assistant opens Brazework's consent page. It says which app is asking and what the app can do
+(read, and leave drafts for you to approve), and you tap **Connect**. Each sign-in shows in **Settings →
+Your tools**, where you can turn on posting for it or disconnect it. This works once a founder has switched
+on the OAuth server (below). Until then, and for GitHub Actions and scripts, use a token:
 
 1. In Brazework, open **Settings → Your tools** and pick your assistant. Tap **Make token**. New tokens can
    read your Brazework and leave drafts for you to approve. Turn on *Let it post updates for me* only if you
@@ -67,6 +82,12 @@ it", or "waiting for a signature: ask with request_signature", or "waiting in yo
 says no (a Gmail address for a signer, a teammate, a weekly limit), the message says how to fix it, so your
 assistant can fix it or ask you.
 
+In assistants that show MCP Apps (Claude, ChatGPT, VS Code and Goose, per the MCP Apps launch), a
+milestone you log or draft shows as a **card in the chat**: the title, its proof, where it stands
+("Waiting for Rocketry Club", "Waiting for a signature", "In your drafts"), the next step, and **Open in
+Brazework**. The card is `ui://brazework/milestone-card` (`web/src/lib/mcp-card.ts`). It reaches nothing
+outside and only shows what the tool sent it. Other assistants show the same result as text.
+
 Your assistant can also read the playbooks directly as MCP resources: `brazework://playbooks` (the index)
 and `brazework://playbooks/<field>`, for example `brazework://playbooks/data-ai`.
 
@@ -78,17 +99,54 @@ and `brazework://playbooks/<field>`, for example `brazework://playbooks/data-ai`
 | `draft_post`, `draft_milestone` | draft | Leave a post or a milestone in your **Drafts**. Same fields as the live tools, plus `source` (shown on the draft) and `source_key` (send the same key again and you get the first draft back, so re-runs never duplicate). |
 | `post_update`, `log_milestone` | post | Post, or log a milestone, straight away after asking you. `log_milestone` no longer needs a club: with no club, the milestone waits for a signature. |
 | `request_signature` | post | Email someone who saw the work a one-time link to sign a milestone. |
+| `create_project`, `update_project`, `add_teammate` | draft (does it with post) | Ask in plain words: "add my hopper project", "update the summary and specs", "put Josh on it". With a token that can post, they happen once you say yes in chat; otherwise (or with `draft: true`) they wait as cards in **Drafts** and on Ember's page. `update_project` changes only the fields given (summary, write-up, link, specs) on your own projects, and the card shows what it replaces. `add_teammate` adds someone who shares one of your clubs, as a teammate or a viewer (admins are made in the app). |
+| `rsvp_event` | draft (does it with post) | "Save me a spot at Thursday's build night", or "I can't make it" (`going: false`). Only events you can see that aren't over; ids come from `upcoming_events`. |
+| `join_club`, `accept_invite` | draft (does it with post) | "Join the robotics club", "accept this invite: brazework.com/join/…". A club that approves members gets a request, as in the app. |
+| `my_inbox` | read | Your conversations and message requests, newest first, or one conversation's last 20 messages. |
+| `draft_reply` | draft | A reply (or a first message) always waits in Drafts as a card: you read it and send it from Brazework. A tool never sends a message. |
 
 Scopes nest: read ⊂ draft ⊂ post. A token made before November 2026 keeps exactly what it had.
 
+## Ember and your tools: one set of actions
+
+Ember (the agent in Brazework) prepares actions as approve-first cards. Your AI tools now use the same
+actions, by the same names (`supabase/tool-actions.sql`, `web/src/lib/tool-actions.ts`):
+
+- **A draft from Claude is an Ember card.** What a tool drafts (a project, an edit, a teammate, …) shows on
+  `/drafts` and under *Waiting from your tools* on Ember's page as the card Ember would have shown. Edit it,
+  then **Confirm**: it runs the app's own action, exactly as when Ember proposed it, and the draft is done.
+- **What Ember can prepare, a tool can draft.** Each action has one check in the database
+  (`tool_check_<kind>`), run as you, under the same rules as the app; actions a posting token may do straight
+  away also have `tool_do_<kind>`. `mcp_act` is the tool's way in.
+
+| Action (card) | MCP tool | Without a token that posts | With one |
+|---|---|---|---|
+| New project | `create_project` | card in Drafts | added after your yes |
+| Project summary, write-up, link, specs | `update_project` | card in Drafts | saved after your yes |
+| Teammate from your clubs | `add_teammate` | card in Drafts | added after your yes |
+| RSVP to an event, or take it back | `rsvp_event` (`going: false` to take it back) | card in Drafts | done after your yes |
+| Join a club (or ask to, if it approves members) | `join_club` | card in Drafts | done after your yes |
+| Accept a club invite link | `accept_invite` | card in Drafts | done after your yes |
+| A message or a reply | `draft_reply` | card in Drafts | **always a card**: you send it |
+
 ## Drafts and automations
 
-**Drafts** (`/drafts`, and "N drafts from your tools" under *Waiting on you* on Today) are where anything a tool
+**Drafts** (`/drafts`, and "Your tools noticed N things" on Today) are where anything a tool
 couldn't ask you about waits. Each one shows the tool it came from and why (for example "GitHub Actions ·
 acme/rig #12 merged"). You can edit it, then **Post** (or **Send to club** / **Log it** for a milestone), or
 **Dismiss** it. Approving checks it again and makes it as you, under the same rules as anything you make in
 the app: posting pace, milestone limits, your own projects, clubs you're in. Nobody else can see your drafts.
 A tool can leave at most 20 an hour, and at most 30 can wait at once.
+
+**Daily triage.** Today opens with "Your tools noticed N things": the five newest drafts, each decided in one
+tap without leaving the page, built for a phone. A milestone gets **Keep** (logged on its project, waiting for
+proof), **Send to club** (its officers are asked to verify; you pick the club when you're in more than one),
+**Ask to sign** (kept, and the person who saw it gets the signature email: a university or company address,
+with every guard from *Signatures* below) or **Dismiss**. A post gets **Post**, **Post to club** or
+**Dismiss**. Editing stays on `/drafts`. If email can't go out, Ask to sign says so and the draft keeps
+waiting. An optional email (Settings → Email → *Drafts from your tools, daily*, or the link under the list on
+Today; off by default) arrives at most once a day, only when a draft came in since the last one, and says only
+how many and from which tools, never what a draft says.
 
 **GitHub Actions** (Settings → Your tools → GitHub Actions) is an automation, not an assistant. Its token can
 only read and leave drafts; it can never be switched to post. Pick the project, and the club that verifies
@@ -122,7 +180,8 @@ is withdrawn.
 - Post, send or ask anything without your yes. Drafts wait for your tap. Tools that can post are told to show
   you first.
 - Verify or sign anything. Clubs and people do that, in Brazework.
-- Change or delete anything you've made.
+- Delete anything, or change anything someone else made. It changes your own projects only when you ask
+  (`update_project`), and only the fields you named.
 - Claim more than it can reach. Each field's tools below are marked **Official MCP server** (the vendor's),
   **Community MCP server** (someone else's open-source server: read it before you install it) or **Reads your
   exports** (no server: your assistant reads the files or command output you point it to). Checked in November 2026.
@@ -486,4 +545,29 @@ Moments worth recording:
 - **Learners improve** → result post: “Post-test scores rose 18 points across 64 students”. Proof: the aggregate results (never individual students).
 
 Who signs: the cooperating teacher, the school's principal or the course instructor. Try `/shipped` with the field Education.
+
+## How signing in works (for founders)
+
+Brazework uses Supabase Auth's OAuth 2.1 server (public beta) as its authorization server:
+
+1. A client calls `/api/mcp` with no token. The 401's `WWW-Authenticate` points to
+   `/.well-known/oauth-protected-resource/api/mcp` (RFC 9728), which names `<Supabase URL>/auth/v1`.
+2. The client registers itself (dynamic client registration) and sends the member to Supabase's
+   authorize endpoint with PKCE. Supabase sends them to `/oauth/consent` in the app.
+3. Connecting (or Not now) goes back to the client. The client trades the code for an access token and
+   calls `/api/mcp` with it.
+4. The first call makes that sign-in's own token row (`supabase/mcp-oauth.sql`). Its hash is keyed with
+   a server-only secret, so every tool, scope and limit works as it does for a pasted token.
+
+**Founder step (once, per Supabase project: staging, then production).** Nothing changes until it's done.
+In Supabase → **Authentication → OAuth Server**:
+
+- Turn the OAuth server on.
+- Set **Authorization Path** to `/oauth/consent`. Check that Authentication → URL Configuration → Site URL
+  is the app's address.
+- Turn on **dynamic OAuth apps** (dynamic client registration), so assistants can register themselves.
+
+Then open Settings → Your tools: "Sign in from your assistant, no token" appears within five minutes. To
+check it: `curl -i -X POST https://<your Brazework>/api/mcp` should answer 401 with a `resource_metadata`
+link.
 

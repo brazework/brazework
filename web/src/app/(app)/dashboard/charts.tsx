@@ -20,10 +20,13 @@ export function Bars({ series, unit, label, height = "h-40" }: { series: Point[]
   const max = Math.max(1, ...series.map((s) => s.value));
   const total = series.reduce((n, s) => n + s.value, 0);
   if (!series.length) return null;
+  // Nothing yet: a line that says so, not an empty pair of axes.
+  if (!total) return <p className="mt-4 rounded-xl border border-dashed border-line px-4 py-6 text-center text-sm text-muted">No {label.toLowerCase()} in this period yet.</p>;
   return (
     <figure className="mt-4">
       <div className={cn("relative flex gap-[2px] pl-8", height)} role="img" aria-label={`${label} per ${unit}: ${total} in total, highest ${max}`}>
-        {[0, Math.ceil(max / 2), max].map((t) => (
+        {/* A Set, because a top of 1 makes the middle line 1 too (two lines, one label). */}
+        {[...new Set([0, Math.ceil(max / 2), max])].map((t) => (
           <div key={t} className="pointer-events-none absolute inset-x-0 flex items-center" style={{ bottom: `${(t / max) * 100}%` }}>
             <span className="w-7 pr-1.5 text-right font-mono text-[10px] text-faint tabular-nums">{t}</span>
             <span className="h-px flex-1 bg-line" />

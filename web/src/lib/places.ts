@@ -1,12 +1,14 @@
 import { onPage } from "@/lib/nav-match";
 
-// The five places of the signed-in app (redesign stage 1). Each answers one question:
-//   Today  what needs me right now?      Build  what am I making?      Club  what's my team doing?
-//   Proof  what have I proven, and who looked?                         Inbox who's reaching out?
+// The five places of the signed-in app (redesign stage 1; renamed in the flow redesign, 2026-11-19,
+// docs/superpowers/specs/2026-11-19-app-flow-redesign-design.md). Each answers one question:
+//   Home   what needs me right now?     Projects  what am I making?     Clubs  what's my team doing?
+//   Record what have I done, and who signed it?                         Inbox  who's reaching out?
+// The routes kept their old names (/feed, /communities, /profile) so no link breaks.
 // Every page lives inside one of them. This is the single list the sidebar, the phone tab bar and the
 // place tabs read, so "you are here" can't disagree between them. Pure, and tested (tests/places.test.ts).
 
-export type PlaceId = "today" | "build" | "club" | "proof" | "inbox";
+export type PlaceId = "home" | "projects" | "clubs" | "record" | "inbox";
 // `signing`: results members have asked your clubs to sign, when you're one of their officers.
 export type BadgeKey = "notifications" | "messages" | "invites" | "signing";
 // `tour`: a tour anchor (data-tour) that moved onto this tab when the More drawer went away.
@@ -16,18 +18,18 @@ export type Place = { id: PlaceId; label: string; href: string; match: string[];
 
 export const PLACES: Place[] = [
   {
-    id: "today", label: "Today", href: "/feed", badge: "notifications",
+    id: "home", label: "Home", href: "/feed", badge: "notifications",
     match: ["/feed", "/post", "/notifications", "/saved", "/drafts"],
     tabs: [
-      { id: "today", label: "Today", href: "/feed" },
+      { id: "home", label: "Home", href: "/feed" },
       { id: "notifications", label: "Notifications", href: "/notifications", badge: "notifications", tour: "bell" },
       { id: "saved", label: "Saved", href: "/saved" },
     ],
   },
   // One page today (the workbench above Explore); it gets its own tabs when stage 2 splits it.
-  { id: "build", label: "Build", href: "/projects", match: ["/projects"], tabs: [] },
+  { id: "projects", label: "Projects", href: "/projects", match: ["/projects"], tabs: [] },
   {
-    id: "club", label: "Club", href: "/communities", badge: "signing",
+    id: "clubs", label: "Clubs", href: "/communities", badge: "signing",
     match: ["/communities", "/c", "/events", "/org", "/challenges", "/chapters"],
     tabs: [
       { id: "clubs", label: "Clubs", href: "/communities" },
@@ -36,7 +38,7 @@ export const PLACES: Place[] = [
     ],
   },
   {
-    id: "proof", label: "Proof", href: "/profile", badge: "invites",
+    id: "record", label: "Record", href: "/profile", badge: "invites",
     match: ["/profile", "/u", "/dashboard", "/analytics", "/network", "/settings", "/pro"],
     tabs: [
       { id: "profile", label: "Profile", href: "/profile" },

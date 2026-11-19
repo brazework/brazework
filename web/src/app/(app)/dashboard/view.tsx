@@ -6,6 +6,7 @@ import { Kicker } from "@/components/ui";
 import { Ember } from "@/components/ember/ember";
 import type { ClubReport } from "@/lib/club-report";
 import { cn, timeAgo } from "@/lib/forge";
+import { pluralize } from "@/lib/events";
 import { Bars, Sparkline, type Point, type Unit } from "./charts";
 
 export const RANGES = [["7d", "7 days"], ["30d", "30 days"], ["90d", "90 days"], ["1y", "12 months"]] as const;
@@ -43,7 +44,7 @@ export function DashboardView({ r, range, likes, comments, follows, views, repor
   return (
     <>
       <PageHeader
-        title="Dashboard"
+        title="Analytics"
         subtitle={<span className="inline-flex items-center gap-1.5"><Lock className="size-3.5" /> Only you can see this. How your work is landing on Brazework.</span>}
         actions={<Link href={`/u/${userId}`} className="text-sm text-muted hover:text-text">Your profile</Link>}
       />
@@ -67,16 +68,16 @@ export function DashboardView({ r, range, likes, comments, follows, views, repor
           );
         })}
       </ul>
-      <p className="mt-2 text-xs text-faint">Also: {(r.current?.viewers ?? 0).toLocaleString("en-US")} unique viewers and {(r.current?.connections ?? 0).toLocaleString("en-US")} new connections in the last {label}.</p>
+      <p className="mt-2 text-xs text-faint">Also: {pluralize(r.current?.viewers ?? 0, "unique viewer")} and {pluralize(r.current?.connections ?? 0, "new connection")} in the last {label}.</p>
 
       {quiet && (
         <Panel className="mt-4 flex flex-wrap items-center gap-4 p-5">
           <Ember size={52} mood="idle" />
-          <div className="min-w-0 flex-1">
+          <div className="min-w-[min(100%,16rem)] flex-1">
             <div className="font-semibold">Quiet {label}. Let&apos;s change that.</div>
             <p className="mt-0.5 text-sm text-muted">Posts with a result or a photo get the most replies. Ember can find a club to join or turn your notes into a post.</p>
           </div>
-          <Link href={`/copilot?q=${encodeURIComponent("How can I get more people to see my work on Brazework? Look at my profile and suggest three concrete next steps.")}`} className="bg-accent-grad inline-flex h-10 items-center gap-1.5 rounded-lg px-4 text-sm font-medium text-on-accent">Ask Ember <ArrowRight className="size-4" /></Link>
+          <Link href={`/copilot?q=${encodeURIComponent("How can I get more people to see my work on Brazework? Look at my profile and suggest three concrete next steps.")}`} className="bg-accent-grad inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-lg px-4 text-sm font-medium text-on-accent sm:w-auto">Ask Ember <ArrowRight className="size-4" /></Link>
         </Panel>
       )}
 
@@ -99,7 +100,7 @@ export function DashboardView({ r, range, likes, comments, follows, views, repor
                       <span className="line-clamp-2 text-sm text-text-2 group-hover:text-text">{p.body}</span>
                       <span className="mt-1.5 flex items-center gap-2">
                         <span className="h-1.5 rounded-full bg-text/80" style={{ width: `${Math.max(4, ((p.likes + p.comments) / best) * 60)}%` }} aria-hidden="true" />
-                        <span className="font-mono text-[11px] whitespace-nowrap text-faint">{p.likes} likes · {p.comments} comments · {timeAgo(p.created_at)}</span>
+                        <span className="font-mono text-[11px] whitespace-nowrap text-faint">{pluralize(p.likes, "like")} · {pluralize(p.comments, "comment")} · {timeAgo(p.created_at)}</span>
                       </span>
                     </Link>
                   </li>

@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { createClient as createSupabase } from "@supabase/supabase-js";
 import { env } from "@/lib/env";
+import type { CardKind } from "@/lib/tool-actions";
 
 // Brazework as an MCP server (supabase/mcp.sql). Each tool is a database function that checks the
 // member's token first and returns only what they could already see in the app. A token allowed to
@@ -11,7 +12,8 @@ export const tokenHash = (token: string) => createHash("sha256").update(token).d
 
 // needs: the scope a tool needs beyond reading. "draft" leaves something in the member's drafts for
 // them to approve in Brazework (supabase/mcp-workflows.sql); "post" acts as them straight away.
-type Tool = { name: string; title: string; description: string; inputSchema: Record<string, unknown>; rpc: string; args: (input: Record<string, unknown>) => Record<string, unknown>; writes?: boolean; needs?: "draft" | "post" };
+// act: an action kind shared with Ember (supabase/tool-actions.sql): drafted, or done with a token that posts.
+type Tool = { name: string; title: string; description: string; inputSchema: Record<string, unknown>; rpc: string; args: (input: Record<string, unknown>) => Record<string, unknown>; writes?: boolean; needs?: "draft" | "post"; act?: CardKind; draftOnly?: boolean };
 const none = { type: "object", properties: {}, additionalProperties: false };
 
 export const MCP_TOOLS: Tool[] = [
@@ -75,21 +77,21 @@ const SOURCE = {
 };
 const liveTool = (name: string) => MCP_TOOLS.find((t) => t.name === name)!;
 const withSource = (schema: Record<string, unknown>) => ({ ...schema, properties: { ...(schema.properties as Record<string, unknown>), ...SOURCE } });
-const src = (i: Record<string, unknown>) => ({ p_source: typeof i.source === "string" ? i.source.slice(0, 140) : "", p_source_key: typeof i.source_key === "string" && i.source_key.trim() ? i.source_key.trim().slice(0, 200) : null });
+export const sourceArgs = (i: Record<string, unknown>) => ({ p_source: typeof i.source === "string" ? i.source.slice(0, 140) : "", p_source_key: typeof i.source_key === "string" && i.source_key.trim() ? i.source_key.trim().slice(0, 200) : null });
 MCP_TOOLS.push(
   {
     name: "draft_post", writes: true, needs: "draft", title: "Draft a build update for the member to approve",
     description: "Leave a post (an update, result or question) in the member's Brazework drafts. Nothing is posted until they approve it in Brazework, where they can edit it first. Use this when you can't ask them now (an automation, a scheduled run), or when they'd rather review it later. Same fields as post_update, plus source and source_key.",
     inputSchema: withSource(liveTool("post_update").inputSchema),
     rpc: "mcp_draft_post",
-    args: (i) => ({ ...liveTool("post_update").args(i), ...src(i) }),
+    args: (i) => ({ ...liveTool("post_update").args(i), ...sourceArgs(i) }),
   },
   {
     name: "draft_milestone", writes: true, needs: "draft", title: "Draft a milestone for the member to approve",
     description: "Leave a milestone in the member's Brazework drafts. When they approve it, it goes to the club to verify (club_id) or waits for a signature (no club). Use it for work that just landed, like a merged pull request with CI green, when you can't ask the member now. Same fields as log_milestone, plus source and source_key.",
     inputSchema: withSource(liveTool("log_milestone").inputSchema),
     rpc: "mcp_draft_milestone",
-    args: (i) => ({ ...liveTool("log_milestone").args(i), ...src(i) }),
+    args: (i) => ({ ...liveTool("log_milestone").args(i), ...sourceArgs(i) }),
   },
   {
     name: "request_signature", writes: true, needs: "post", title: "Ask someone who saw the work to sign a milestone",
@@ -127,8 +129,95 @@ export const mcpDb = () => createSupabase(env.supabaseUrl, env.supabaseAnonKey, 
 
 // Links in results ("/c/abc") become absolute, so they work outside Brazework.
 export function absolutize(value: unknown, origin: string): unknown {
-  if (typeof value === "string") return /^\/(c|u|events|projects|post)\//.test(value) ? origin + value : value;
+  if (typeof value === "string") return /^\/(c|u|events|projects|post|messages)\//.test(value) ? origin + value : value;
   if (Array.isArray(value)) return value.map((v) => absolutize(v, origin));
   if (value && typeof value === "object") return Object.fromEntries(Object.entries(value).map(([k, v]) => [k, absolutize(v, origin)]));
   return value;
 }
+
+// Step 65 (supabase/tool-actions.sql): the member's intents, as Ember's cards. Each of these is one
+// action kind shared with Ember (lib/tool-actions.ts). A token that may post does it once the member
+// says yes in chat; a token that drafts (or draft: true) leaves it as a card the member confirms in
+// Brazework (/drafts, and on Ember's page). The database checks it as the member either way.
+const DRAFT_ARG = { draft: { type: "boolean", description: "Leave it in the member's Brazework drafts for them to confirm, instead of doing it now. Always the case for a token that can't post." } };
+const actSchema = (properties: Record<string, unknown>, required: string[], draftOnly = false) => ({ type: "object", properties: { ...properties, ...(draftOnly ? {} : DRAFT_ARG), ...SOURCE }, required, additionalProperties: false });
+MCP_TOOLS.push(
+  {
+    name: "create_project", writes: true, needs: "draft", act: "project", title: "Add a project to the member's profile",
+    description: "Add a new project to the member's Brazework profile: what they're building, in a title and a one-paragraph summary, optionally a write-up, a link (repo or demo), up to 3 topics and whether it's done. Check my_projects first so you don't add one they already have. Show the member the title and summary and add it only after they say yes; with a token that can't post, it waits in their drafts. The result links to the project; next, log milestones on it.",
+    inputSchema: actSchema({
+      title: { type: "string", minLength: 1, maxLength: 120, description: "The project's name, e.g. \"Liquid engine test stand\"." },
+      summary: { type: "string", minLength: 1, maxLength: 600, description: "One paragraph: what it is and what it does, in the member's words." },
+      details: { type: "string", maxLength: 5000, description: "The longer write-up (optional)." },
+      link: { type: "string", maxLength: 300, pattern: "^https?://", description: "The repo, demo or doc." },
+      tags: { type: "array", items: { type: "string", maxLength: 40 }, maxItems: 3, description: "Up to 3 of Brazework's topics (unknown ones are dropped)." },
+      status: { type: "string", enum: ["in_progress", "completed"], description: "in_progress unless it's finished." },
+      year: { type: "string", pattern: "^\\d{4}$", description: "The year it was finished, when completed." },
+    }, ["title", "summary"]),
+    rpc: "mcp_act", args: () => ({}),
+  },
+  {
+    name: "update_project", writes: true, needs: "draft", act: "project_edit", title: "Update a project's summary, write-up, link or specs",
+    description: "Change the summary, write-up (details), link or specs of one of the member's own projects (ids from my_projects). Only the fields you pass change; specs replace the whole list. The draft card shows what it replaces. Show the member the new text and save only after they say yes; with a token that can't post, it waits in their drafts. Never rewrite a project the member didn't ask you to.",
+    inputSchema: actSchema({
+      project_id: { type: "string", description: "One of the member's projects, from my_projects." },
+      summary: { type: "string", minLength: 1, maxLength: 600, description: "The new one-paragraph summary." },
+      details: { type: "string", maxLength: 5000, description: "The new write-up." },
+      link: { type: "string", maxLength: 300, description: "The new link (https://…), or empty to remove it." },
+      specs: { type: "array", maxItems: 16, items: { type: "object", properties: { label: { type: "string", minLength: 1, maxLength: 40 }, value: { type: "string", minLength: 1, maxLength: 80 } }, required: ["label", "value"], additionalProperties: false }, description: "The full list of specs, e.g. [{\"label\":\"Thrust\",\"value\":\"1.2 kN\"}]." },
+    }, ["project_id"]),
+    rpc: "mcp_act", args: () => ({}),
+  },
+  {
+    name: "add_teammate", writes: true, needs: "draft", act: "teammate", title: "Add a teammate from the member's clubs to a project",
+    description: "Put someone who shares one of the member's clubs on one of their projects (ids from my_projects; the person's id from search → people). As a teammate (member: posts updates, logs milestones) or a viewer (sees a private project). Teammates can't sign each other's milestones. Confirm the person and the project with the member and add them only after they say yes; with a token that can't post, it waits in their drafts. Admins are made in Brazework only.",
+    inputSchema: actSchema({
+      project_id: { type: "string", description: "One of the member's projects, from my_projects." },
+      person_id: { type: "string", description: "Their id, from search (people → id). They must be in one of the member's clubs." },
+      role: { type: "string", enum: ["member", "viewer"], description: "member (default) or viewer." },
+    }, ["project_id", "person_id"]),
+    rpc: "mcp_act", args: () => ({}),
+  },
+  // Step 66 (supabase/tool-rsvp.sql).
+  {
+    name: "rsvp_event", writes: true, needs: "draft", act: "rsvp", title: "RSVP to an event, or take the RSVP back",
+    description: "Save the member a spot at an upcoming event (ids from upcoming_events), or with going: false take back a spot they have. Only events they can see that aren't over. Tell the member which event and when, and RSVP only after they say yes; with a token that can't post, it waits as a card in their drafts.",
+    inputSchema: actSchema({
+      event_id: { type: "string", description: "The event's id, from upcoming_events." },
+      going: { type: "boolean", description: "true (default) to go; false to take back the member's spot." },
+    }, ["event_id"]),
+    rpc: "mcp_act", args: () => ({}),
+  },
+);
+
+// Step 67 (supabase/tool-clubs-messages.sql): clubs and messages. A reply is always a draft: the
+// member reads it and sends it from Brazework, so a tool never sends a message.
+MCP_TOOLS.push(
+  {
+    name: "join_club", writes: true, needs: "draft", act: "join", title: "Join a club, or ask to join one",
+    description: "Join a public club (ids from search → clubs), or ask to join one whose moderators approve members. Tell the member which club and join only after they say yes; with a token that can't post, it waits as a card in their drafts.",
+    inputSchema: actSchema({ club_id: { type: "string", description: "The club's id, from search (clubs → id) or its link /c/<id>." } }, ["club_id"]),
+    rpc: "mcp_act", args: () => ({}),
+  },
+  {
+    name: "accept_invite", writes: true, needs: "draft", act: "invite", title: "Accept a club invite link",
+    description: "Join a club through an invite link someone sent the member (https://brazework.com/join/<code>, or just the code). Name the club to the member and accept only after they say yes; with a token that can't post, it waits as a card in their drafts.",
+    inputSchema: actSchema({ invite: { type: "string", maxLength: 300, description: "The invite link or its 16-character code." } }, ["invite"]),
+    rpc: "mcp_act", args: () => ({}),
+  },
+  {
+    name: "my_inbox", title: "My messages", description: "The member's conversations and message requests, newest first: who, the last message, whether it's unread, and whether it's a request to them. Pass conversation_id for that conversation's last 20 messages, to draft a reply that fits (draft_reply).",
+    inputSchema: { type: "object", properties: { conversation_id: { type: "string", description: "One conversation, from a first call without it." } }, additionalProperties: false },
+    rpc: "mcp_inbox", args: (i) => ({ p_conversation: typeof i.conversation_id === "string" && i.conversation_id ? i.conversation_id : null }),
+  },
+  {
+    name: "draft_reply", writes: true, needs: "draft", act: "message", draftOnly: true, title: "Draft a message for the member to send",
+    description: "Draft a reply in one of the member's conversations (conversation_id from my_inbox), or a first message to someone (person_id from search). It always waits as a card in the member's drafts: they read it, edit it and send it from Brazework. Write it in their voice, short and specific.",
+    inputSchema: actSchema({
+      conversation_id: { type: "string", description: "A conversation from my_inbox." },
+      person_id: { type: "string", description: "Or a person's id, from search, for a first message." },
+      body: { type: "string", minLength: 1, maxLength: 2000, description: "The message, in the member's voice." },
+    }, ["body"], true),
+    rpc: "mcp_act", args: () => ({}),
+  },
+);

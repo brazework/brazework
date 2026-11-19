@@ -10,14 +10,14 @@ import { getViewer } from "@/lib/supabase/server";
 import type { Point } from "./charts";
 import { DashboardView, RANGES, type Range, type Result } from "./view";
 
-export const metadata: Metadata = { title: "Dashboard" };
+export const metadata: Metadata = { title: "Analytics" };
 
 // Your dashboard: how your work is landing (views, likes, comments, followers over time), your top
 // posts, who's looking, and, for club leaders, each club's week. Only you can see it.
 export default function DashboardPage({ searchParams }: PageProps<"/dashboard">) {
   return (
     <div className="mx-auto max-w-3xl xl:max-w-6xl">
-      <Suspense fallback={<><PageHeader title="Dashboard" /><Skeleton className="mt-6 h-[620px]" /></>}>
+      <Suspense fallback={<><PageHeader title="Analytics" /><Skeleton className="mt-6 h-[620px]" /></>}>
         <Dashboard searchParams={searchParams} />
       </Suspense>
     </div>
@@ -46,7 +46,7 @@ async function Dashboard({ searchParams }: { searchParams: PageProps<"/dashboard
   if (error || !data)
     return (
       <>
-        <PageHeader title="Dashboard" />
+        <PageHeader title="Analytics" />
         <div className="mt-6">{tabs}</div>
         <p role="alert" className="mt-6 text-sm text-danger">{friendlyError(error)}</p>
       </>
