@@ -82,4 +82,5 @@ tool-clubs-messages
 plus-teaser
 daily-triage
 verify-links
+signer-tools
 tool-officers

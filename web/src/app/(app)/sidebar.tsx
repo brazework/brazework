@@ -199,6 +199,7 @@ function YouMenu({ first, last, userId, avatar, collapsed, path }: { first: stri
           <motion.div id="you-menu" aria-label="You" initial={{ opacity: 0, y: 6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 6 }} transition={{ duration: 0.15 }}
             className={cn(menuCls, "absolute bottom-[calc(100%+6px)] left-0 z-50 w-56")}>
             <Link href="/profile" onClick={() => setOpen(false)} className={menuItemCls}><UserRound className="size-4" /> View profile</Link>
+            <Link href="/signed" onClick={() => setOpen(false)} className={menuItemCls}><BadgeCheck className="size-4" /> What you&apos;ve signed</Link>
             <Link href="/settings" onClick={() => setOpen(false)} className={menuItemCls}><Settings className="size-4" /> Settings</Link>
             <div className="flex items-center justify-between px-2.5 py-1 text-sm text-text-2">Appearance <ThemeToggle className={TOP_BTN} /></div>
             <button type="button" onClick={() => { setOpen(false); setUpdates(true); }} className={menuItemCls}><Sparkles className="size-4" /> What&apos;s new</button>

@@ -1,4 +1,4 @@
--- Step 74: club officers from their AI tools (docs/mcp-workflows.md). Run after verify-links.sql.
+-- Step 75: club officers from their AI tools (docs/mcp-workflows.md). Run after signer-tools.sql.
 -- Additive and safe to re-run.
 --
 -- Two more action kinds shared with Ember's cards (tool-actions.sql), both drafts only (no

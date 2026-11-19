@@ -118,7 +118,7 @@ async function Explore({ searchParams }: { searchParams: PageProps<"/projects">[
     const s = p.toString();
     return `/projects${s ? `?${s}` : ""}`;
   };
-  const chip = (on: boolean) => cn("shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium whitespace-nowrap transition", on ? "border-transparent bg-accent-grad text-on-accent" : "border-line bg-surface/70 text-muted hover:text-text");
+  const chip = (on: boolean) => cn("shrink-0 rounded-full border px-3 py-1.5 text-xs font-medium whitespace-nowrap transition", on ? "border-transparent bg-text text-surface" : "border-line bg-surface text-muted hover:text-text");
 
   return (
     <>
@@ -134,7 +134,7 @@ async function Explore({ searchParams }: { searchParams: PageProps<"/projects">[
         {verifiedOnly && <input type="hidden" name="verified" value="1" />}
         <Search className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-faint" />
         <label htmlFor="pq" className="sr-only">Search projects</label>
-        <input id="pq" name="q" defaultValue={q} placeholder="Search projects: rover, PCB, CRISPR, flight computer…" className="glass-card h-12 w-full rounded-lg pr-4 pl-11 text-[15px] outline-none placeholder:text-faint" />
+        <input id="pq" name="q" defaultValue={q} placeholder="Search projects: rover, PCB, CRISPR, flight computer…" className="h-12 w-full rounded-lg border border-line bg-surface pr-4 pl-11 text-[15px] outline-none transition placeholder:text-faint hover:border-line-strong focus:border-line-strong focus:ring-[3px] focus:ring-text/8" />
       </form>
       <div className="no-scrollbar -mx-1 mt-4 flex gap-1.5 overflow-x-auto px-1 pb-1">
         <Link href={href({ verified: verifiedOnly ? "" : "1" })} className={chip(verifiedOnly)}><span className="inline-flex items-center gap-1"><BadgeCheck className="size-3.5" /> Club-verified</span></Link>
