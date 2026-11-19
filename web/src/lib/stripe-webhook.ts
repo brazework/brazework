@@ -21,13 +21,23 @@ export function verifyStripeSignature(payload: string, header: string | null, se
 }
 
 // What a paid checkout means for Brazework: which challenge, and Stripe's reference for the session.
-export type Paid = { plan: string; reference: string; sessionId: string };
+export type Paid = { plan: string; reference: string; sessionId: string; userId: string; subscriptionId: string };
 export function paidCheckout(event: unknown): Paid | null {
-  const e = event as { type?: string; data?: { object?: { id?: string; payment_status?: string; metadata?: Record<string, string> } } };
+  const e = event as { type?: string; data?: { object?: { id?: string; payment_status?: string; subscription?: string | null; metadata?: Record<string, string> } } };
   const o = e?.data?.object;
   if (e?.type !== "checkout.session.completed" || o?.payment_status !== "paid" || !o.id) return null;
   const plan = o.metadata?.plan ?? "";
   const reference = o.metadata?.reference ?? "";
   if (!plan || !reference) return null;
-  return { plan, reference, sessionId: o.id };
+  return { plan, reference, sessionId: o.id, userId: o.metadata?.user_id ?? "", subscriptionId: typeof o.subscription === "string" ? o.subscription : "" };
+}
+
+// A Plus subscription that ended (canceled, or unpaid for good): whose, from the metadata checkout set.
+export type Ended = { plan: string; userId: string; subscriptionId: string };
+export function endedSubscription(event: unknown): Ended | null {
+  const e = event as { type?: string; data?: { object?: { id?: string; metadata?: Record<string, string> } } };
+  const o = e?.data?.object;
+  if (e?.type !== "customer.subscription.deleted" || !o?.id) return null;
+  const plan = o.metadata?.plan ?? "", userId = o.metadata?.user_id ?? "";
+  return plan && userId ? { plan, userId, subscriptionId: o.id } : null;
 }

@@ -1,4 +1,4 @@
--- Step 69: clubs and messages from your AI tools (docs/mcp-workflows.md). Run after tool-rsvp.sql.
+-- Step 70: clubs and messages from your AI tools (docs/mcp-workflows.md). Run after tool-rsvp.sql.
 -- Additive and safe to re-run.
 --
 -- Three more action kinds shared with Ember's cards (tool-actions.sql), and a read:
