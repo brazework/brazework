@@ -61,4 +61,5 @@ reset role;
 select t.ok(:'c'::jsonb -> 'companies' @> '[{"name": "Acme Teaser"}]'::jsonb and (:'c'::jsonb ->> 'hidden')::int = 0, 'with Plus, the company from 20 days ago is named and nothing is hidden');
 select t.ok(position('Suspended' in :'c') = 0, 'a suspended company never shows, even with Plus');
 
+\echo 'plus-teaser: all passed'
 rollback;
