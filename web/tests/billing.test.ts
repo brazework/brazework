@@ -1,7 +1,7 @@
 // Billing never charges without real keys, and Stripe gets exactly what it needs. Run: npm test
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { billing, stripeProvider, type CheckoutInput } from "@/lib/billing";
+import { PLUS_STUDENT_PRICE_ENV, billing, plusOnSale, stripeProvider, type CheckoutInput } from "@/lib/billing";
 
 const input: CheckoutInput = { plan: "challenge", orgId: "org1", reference: "ch1", successUrl: "https://forge.test/ok", cancelUrl: "https://forge.test/no" };
 
@@ -43,4 +43,33 @@ test("a Stripe error is reported, not swallowed", async () => {
   const s = stripeProvider({ STRIPE_SECRET_KEY: "sk_test_x", STRIPE_PRICE_CHALLENGE: "price_1" }, async () => ({ ok: false, json: async () => ({ error: { message: "No such price" } }) }));
   const r = await s.checkout(input);
   assert.equal(r.ok === false && r.message, "No such price");
+});
+
+test("Plus: a subscription for the member, with the student price when there is one, and metadata on the subscription", async () => {
+  let sent: URLSearchParams | undefined;
+  const env = { STRIPE_SECRET_KEY: "sk_test_x", STRIPE_PRICE_PLUS: "price_plus", STRIPE_PRICE_PLUS_STUDENT: "price_plus_student" };
+  const s = stripeProvider(env, async (_url, init) => { sent = init.body as URLSearchParams; return { ok: true, json: async () => ({ id: "cs_p", url: "https://checkout.stripe.com/c/cs_p" }) }; });
+  const r = await s.checkout({ plan: "plus", userId: "u1", reference: "u1", priceEnv: PLUS_STUDENT_PRICE_ENV, successUrl: "https://forge.test/plus?welcome=1", cancelUrl: "https://forge.test/plus" });
+  assert.equal(r.ok, true);
+  assert.equal(sent?.get("mode"), "subscription");
+  assert.equal(sent?.get("line_items[0][price]"), "price_plus_student");
+  assert.equal(sent?.get("metadata[user_id]"), "u1");
+  assert.equal(sent?.get("subscription_data[metadata][user_id]"), "u1");
+  assert.equal(sent?.get("subscription_data[metadata][plan]"), "plus");
+  await s.checkout({ plan: "plus", userId: "u2", reference: "u2", successUrl: "https://forge.test/a", cancelUrl: "https://forge.test/b" });
+  assert.equal(sent?.get("line_items[0][price]"), "price_plus", "no student price asked for: the one price");
+  await stripeProvider({ STRIPE_SECRET_KEY: "sk_test_x", STRIPE_PRICE_PLUS: "price_plus" }, async (_u, init) => { sent = init.body as URLSearchParams; return { ok: true, json: async () => ({ id: "x", url: "https://checkout.stripe.com/x" }) }; })
+    .checkout({ plan: "plus", userId: "u3", reference: "u3", priceEnv: PLUS_STUDENT_PRICE_ENV, successUrl: "https://forge.test/a", cancelUrl: "https://forge.test/b" });
+  assert.equal(sent?.get("line_items[0][price]"), "price_plus", "no student price set: students pay the one price");
+});
+
+test("Plus is on sale only with a Stripe key and a Plus price; a challenge stays a one-time payment", async () => {
+  assert.equal(plusOnSale({}), false);
+  assert.equal(plusOnSale({ STRIPE_SECRET_KEY: "sk_test_x" }), false);
+  assert.equal(plusOnSale({ STRIPE_PRICE_PLUS: "price_plus" }), false);
+  assert.equal(plusOnSale({ STRIPE_SECRET_KEY: "sk_test_x", STRIPE_PRICE_PLUS: "price_plus" }), true);
+  let sent: URLSearchParams | undefined;
+  await stripeProvider({ STRIPE_SECRET_KEY: "sk_test_x", STRIPE_PRICE_CHALLENGE: "price_1" }, async (_u, init) => { sent = init.body as URLSearchParams; return { ok: true, json: async () => ({ id: "x", url: "https://checkout.stripe.com/x" }) }; }).checkout(input);
+  assert.equal(sent?.get("mode"), "payment");
+  assert.equal(sent?.has("subscription_data[metadata][plan]"), false);
 });

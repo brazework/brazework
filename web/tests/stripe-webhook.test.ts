@@ -2,7 +2,7 @@
 import assert from "node:assert/strict";
 import { createHmac } from "node:crypto";
 import { test } from "node:test";
-import { paidCheckout, verifyStripeSignature } from "@/lib/stripe-webhook";
+import { endedSubscription, paidCheckout, verifyStripeSignature } from "@/lib/stripe-webhook";
 
 const secret = "whsec_test";
 const body = JSON.stringify({ type: "checkout.session.completed", data: { object: { id: "cs_1", payment_status: "paid", metadata: { plan: "challenge", reference: "ch1" } } } });
@@ -27,8 +27,17 @@ test("any one matching v1 signature is enough (Stripe rotates secrets)", () => {
 });
 
 test("only paid checkouts with Brazework metadata count", () => {
-  assert.deepEqual(paidCheckout(JSON.parse(body)), { plan: "challenge", reference: "ch1", sessionId: "cs_1" });
+  assert.deepEqual(paidCheckout(JSON.parse(body)), { plan: "challenge", reference: "ch1", sessionId: "cs_1", userId: "", subscriptionId: "" });
   assert.equal(paidCheckout({ type: "checkout.session.completed", data: { object: { id: "cs_2", payment_status: "unpaid", metadata: { plan: "challenge", reference: "ch1" } } } }), null);
   assert.equal(paidCheckout({ type: "payment_intent.succeeded", data: { object: { id: "pi_1" } } }), null);
   assert.equal(paidCheckout({ type: "checkout.session.completed", data: { object: { id: "cs_3", payment_status: "paid", metadata: {} } } }), null);
+});
+
+test("a paid Plus checkout says whose it is and its subscription; an ended one is found by its metadata", () => {
+  const uid = "11111111-2222-3333-4444-555555555555";
+  assert.deepEqual(paidCheckout({ type: "checkout.session.completed", data: { object: { id: "cs_9", payment_status: "paid", subscription: "sub_9", metadata: { plan: "plus", reference: uid, user_id: uid } } } }),
+    { plan: "plus", reference: uid, sessionId: "cs_9", userId: uid, subscriptionId: "sub_9" });
+  assert.deepEqual(endedSubscription({ type: "customer.subscription.deleted", data: { object: { id: "sub_9", metadata: { plan: "plus", user_id: uid } } } }), { plan: "plus", userId: uid, subscriptionId: "sub_9" });
+  assert.equal(endedSubscription({ type: "customer.subscription.deleted", data: { object: { id: "sub_8", metadata: {} } } }), null);
+  assert.equal(endedSubscription({ type: "customer.subscription.updated", data: { object: { id: "sub_9", metadata: { plan: "plus", user_id: uid } } } }), null);
 });
