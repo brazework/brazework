@@ -82,10 +82,10 @@ async function Events({ searchParams }: { searchParams: PageProps<"/events">["se
         actions={<HostMenu clubs={hostClubs} orgAdmin={isAdmin} />}
       />
       {next && tab === "upcoming" && !topic && (
-        <Link href={`/events/${next.id}`} className="glass-card group mt-6 flex flex-wrap items-center gap-4 rounded-3xl p-5 transition">
-          <span className="bg-accent-grad grid size-12 shrink-0 place-items-center rounded-2xl text-on-accent"><CalendarCheck className="size-5" /></span>
+        <Link href={`/events/${next.id}`} className="border border-line bg-surface group mt-6 flex flex-wrap items-center gap-4 rounded-2xl p-5 transition">
+          <span className="bg-text grid size-12 shrink-0 place-items-center rounded-2xl text-surface"><CalendarCheck className="size-5" /></span>
           <span className="min-w-0 flex-1">
-            <span className="block text-xs font-medium tracking-wide text-faint uppercase">Up next for you{nextBadge ? ` · ${nextBadge.text}` : ""}</span>
+            <span className="block text-xs font-medium text-muted">Up next for you{nextBadge ? ` · ${nextBadge.text}` : ""}</span>
             <span className="mt-0.5 block truncate text-lg font-semibold">{next.title}</span>
             <span className="block truncate text-sm text-muted"><LocalTime kind="full" value={next.starts_at} /> · {whereLabel(next)}</span>
           </span>
@@ -114,7 +114,7 @@ async function Events({ searchParams }: { searchParams: PageProps<"/events">["se
       <div className="mt-6 flex flex-col gap-3">
         {groups.map((g) => (
           <section key={g.k} aria-label={g.label || undefined} className="flex flex-col gap-3">
-            {g.label && <h2 className="mt-2 flex items-center gap-2 text-xs font-medium tracking-wide text-faint uppercase">{g.k === "now" && <span className="size-1.5 animate-pulse rounded-full bg-emerald-500" />}{g.label} <span className="font-normal">· {g.items.length}</span></h2>}
+            {g.label && <h2 className="mt-2 flex items-center gap-2 text-xs font-medium text-muted">{g.k === "now" && <span className="size-1.5 animate-pulse rounded-full bg-emerald-500" />}{g.label} <span className="font-normal">· {g.items.length}</span></h2>}
             {g.items.map(card)}
           </section>
         ))}

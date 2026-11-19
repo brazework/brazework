@@ -17,15 +17,15 @@ export function EventCard({ event: e, going, saved, now, match = "", friends = [
   const over = isOver(e, now);
   const badge = whenBadge(e, now);
   return (
-    <article id={`ev-${e.id}`} className="glass-card grid scroll-mt-24 grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-3 rounded-3xl p-4 transition duration-300 sm:flex sm:p-5">
-      <div className={cn("flex w-14 shrink-0 flex-col self-start items-center justify-center rounded-2xl py-2 text-center transition-colors", marks.going ? "bg-accent-grad text-on-accent" : "bg-raised")}>
-        <span className={cn("font-mono text-[10px] tracking-widest uppercase", marks.going ? "opacity-80" : "text-muted")}>{d.mon}</span>
+    <article id={`ev-${e.id}`} className="border border-line bg-surface grid scroll-mt-24 grid-cols-[auto_minmax(0,1fr)] gap-x-4 gap-y-3 rounded-2xl p-4 transition duration-300 sm:flex sm:p-5">
+      <div className={cn("flex w-14 shrink-0 flex-col self-start items-center justify-center rounded-2xl py-2 text-center transition-colors", marks.going ? "bg-text text-surface" : "bg-raised")}>
+        <span className={cn("font-mono text-[10px]", marks.going ? "opacity-80" : "text-muted")}>{d.mon}</span>
         <span className="text-2xl leading-none font-semibold">{d.day}</span>
         <span className={cn("mt-0.5 text-[10px]", marks.going ? "opacity-80" : "text-faint")}>{marks.going ? "Going" : d.dow}</span>
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-x-2 text-xs text-faint">
-          <span className="font-mono tracking-wide uppercase">{e.type}</span> · <span>{e.topic}</span>
+          <span className="capitalize">{e.type}</span> · <span>{e.topic}</span>
           {badge && <span className={cn("ml-1 inline-flex items-center gap-1 rounded-full px-2 py-px text-[11px] font-medium", badge.live ? "bg-emerald-500/12 text-emerald-500" : "bg-surface-2 text-text-2")}>{badge.live && <span className="size-1.5 animate-pulse rounded-full bg-emerald-500" />}{badge.text}</span>}
           {mine && <span className="inline-flex items-center gap-1 rounded-full bg-surface-2 px-2 py-px text-[11px] text-text-2"><UsersRound className="size-3" /> Your club</span>}
           {match && !mine && <span className="inline-flex items-center gap-1 rounded-full bg-surface-2 px-2 py-px text-[11px] text-text-2"><Sparkles className="size-3" /> Matches {match}</span>}

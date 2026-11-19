@@ -83,4 +83,5 @@ plus-teaser
 daily-triage
 verify-links
 signer-tools
+redacted-proof
 tool-officers

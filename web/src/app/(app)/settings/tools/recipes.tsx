@@ -20,7 +20,7 @@ export function FieldRecipes({ initialField }: { initialField: string }) {
   const [id, setId] = useState(playbookFor(initialField)?.id ?? PLAYBOOKS[0].id);
   const p = PLAYBOOKS.find((x) => x.id === id) ?? PLAYBOOKS[0];
   return (
-    <section aria-label="Recipes for your field" className="glass-card rounded-3xl p-5 sm:p-6">
+    <section aria-label="Recipes for your field" className="border border-line bg-surface rounded-2xl p-5 sm:p-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h2 className="text-lg font-semibold tracking-tight">Recipes for your field</h2>
@@ -36,7 +36,7 @@ export function FieldRecipes({ initialField }: { initialField: string }) {
 
       <div className="mt-5 grid gap-5 lg:grid-cols-[1fr_1.2fr]">
         <div>
-          <p className="flex items-center gap-1.5 text-xs font-medium tracking-wide text-faint uppercase"><Plug className="size-3.5" /> Your tools</p>
+          <p className="flex items-center gap-1.5 text-xs font-medium text-muted"><Plug className="size-3.5" /> Your tools</p>
           <ul className="mt-2 space-y-2">
             {p.tools.map((t) => (
               <li key={t.name} className="text-sm">
@@ -47,7 +47,7 @@ export function FieldRecipes({ initialField }: { initialField: string }) {
           </ul>
         </div>
         <div>
-          <p className="flex items-center gap-1.5 text-xs font-medium tracking-wide text-faint uppercase"><Sparkles className="size-3.5" /> Moments worth recording</p>
+          <p className="flex items-center gap-1.5 text-xs font-medium text-muted"><Sparkles className="size-3.5" /> Moments worth recording</p>
           <ul className="mt-2 space-y-3">
             {p.moments.map((m) => (
               <li key={m.example} className="rounded-2xl border border-line p-3 text-sm">
@@ -62,7 +62,7 @@ export function FieldRecipes({ initialField }: { initialField: string }) {
       </div>
 
       <div className="mt-5 border-t border-line pt-4">
-        <p className="text-xs font-medium tracking-wide text-faint uppercase">In your assistant</p>
+        <p className="text-xs font-medium text-muted">In your assistant</p>
         <ul className="mt-2 grid gap-1.5 text-sm sm:grid-cols-2">
           {COMMANDS.map((c) => <li key={c.cmd} className="text-text-2"><code className="font-mono text-[13px] text-text">{c.cmd}</code> {c.what}</li>)}
         </ul>

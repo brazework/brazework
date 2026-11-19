@@ -77,7 +77,7 @@ async function Org() {
           <div className="mt-8"><Kicker>Your school&apos;s clubs · {ourClubs.length}</Kicker></div>
           <ul className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
             {ourClubs.map((c) => (
-              <li key={c.community_id}><Link href={`/c/${c.community_id}`} className="glass-card flex items-center justify-between gap-3 rounded-2xl px-4 py-3 text-sm transition hover:border-line-strong"><span className="truncate font-medium">{c.communities?.name ?? "A club"}</span><span className="shrink-0 text-xs text-muted">{c.communities?.member_count ?? 0} members</span></Link></li>
+              <li key={c.community_id}><Link href={`/c/${c.community_id}`} className="border border-line bg-surface flex items-center justify-between gap-3 rounded-2xl px-4 py-3 text-sm transition hover:border-line-strong"><span className="truncate font-medium">{c.communities?.name ?? "A club"}</span><span className="shrink-0 text-xs text-muted">{c.communities?.member_count ?? 0} members</span></Link></li>
             ))}
             {!ourClubs.length && <li className="text-sm text-muted">No verified clubs yet.</li>}
           </ul>

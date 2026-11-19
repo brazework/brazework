@@ -27,7 +27,7 @@ export const dbFeatures = cache(async (): Promise<Features> => {
 
 async function probe() {
   const supabase = await createClient();
-  const [ev, po, inv, cop, ms, gc, st, cp, mn, cc, px, mcp, cx, pp, vf, ho, chl, spc, gy, clm, vc, wl, pf, puf, chp, prv, fpg, mcw, mcm, wlk, ghb, vch, gol, cth, pax, skl, stg, bkd, pcd, mwf, wtc, mny, moa, tac, dtr] = await Promise.all([
+  const [ev, po, inv, cop, ms, gc, st, cp, mn, cc, px, mcp, cx, pp, vf, ho, chl, spc, gy, clm, vc, wl, pf, puf, chp, prv, fpg, mcw, mcm, wlk, ghb, vch, gol, cth, pax, skl, stg, bkd, pcd, mwf, wtc, mny, moa, tac, dtr, rdp] = await Promise.all([
     supabase.from("events").select("community_id").limit(1),
     supabase.from("posts").select("media").limit(1),
     supabase.from("community_invites").select("code").limit(1),
@@ -73,8 +73,9 @@ async function probe() {
     supabase.rpc("mcp_oauth_ready"),
     supabase.rpc("tool_actions_ready"),
     supabase.rpc("daily_triage_ready"),
+    supabase.rpc("redacted_proof_ready"),
   ]);
-  return { clubEvents: !missing(ev.error), media: !missing(po.error), invites: !missing(inv.error), copilot: !missing(cop.error), milestones: !missing(ms.error), groupChats: !missing(gc.error), projectTools: !missing(st.error), clubProfile: !missing(cp.error), mentions: !missing(mn.error), copilotChats: !missing(cc.error), profileExtras: !missing(px.error), mcp: !missing(mcp.error), chatExtras: !missing(cx.error), projectPosts: !missing(pp.error), verification: !missing(vf.error), handoff: !missing(ho.error), challenges: !missing(chl.error), projectSpecs: !missing(spc.error), gradYear: !missing(gy.error), clubClaims: !missing(clm.error), videoCaptions: !missing(vc.error), weeklyLoop: !missing(wl.error), projectFiles: !missing(pf.error), updateFiles: !missing(puf.error), chapters: !missing(chp.error), proVerification: !missing(prv.error), feedPages: !missing(fpg.error), mcpWrites: !missing(mcw.error), mcpMilestones: !missing(mcm.error), whoLooked: !missing(wlk.error), github: !missing(ghb.error), vouches: !missing(vch.error), goals: !missing(gol.error), commentThreads: !missing(cth.error), projectAccess: !missing(pax.error), schoolLinks: !missing(skl.error), studyGroups: !missing(stg.error), backed: !missing(bkd.error), proofCards: !missing(pcd.error), mcpWorkflows: !missing(mwf.error), waitingCards: !missing(wtc.error), money: !missing(mny.error), mcpOauth: !missing(moa.error), toolActions: !missing(tac.error), dailyTriage: !missing(dtr.error) };
+  return { clubEvents: !missing(ev.error), media: !missing(po.error), invites: !missing(inv.error), copilot: !missing(cop.error), milestones: !missing(ms.error), groupChats: !missing(gc.error), projectTools: !missing(st.error), clubProfile: !missing(cp.error), mentions: !missing(mn.error), copilotChats: !missing(cc.error), profileExtras: !missing(px.error), mcp: !missing(mcp.error), chatExtras: !missing(cx.error), projectPosts: !missing(pp.error), verification: !missing(vf.error), handoff: !missing(ho.error), challenges: !missing(chl.error), projectSpecs: !missing(spc.error), gradYear: !missing(gy.error), clubClaims: !missing(clm.error), videoCaptions: !missing(vc.error), weeklyLoop: !missing(wl.error), projectFiles: !missing(pf.error), updateFiles: !missing(puf.error), chapters: !missing(chp.error), proVerification: !missing(prv.error), feedPages: !missing(fpg.error), mcpWrites: !missing(mcw.error), mcpMilestones: !missing(mcm.error), whoLooked: !missing(wlk.error), github: !missing(ghb.error), vouches: !missing(vch.error), goals: !missing(gol.error), commentThreads: !missing(cth.error), projectAccess: !missing(pax.error), schoolLinks: !missing(skl.error), studyGroups: !missing(stg.error), backed: !missing(bkd.error), proofCards: !missing(pcd.error), mcpWorkflows: !missing(mwf.error), waitingCards: !missing(wtc.error), money: !missing(mny.error), mcpOauth: !missing(moa.error), toolActions: !missing(tac.error), dailyTriage: !missing(dtr.error), redactedProof: !missing(rdp.error) };
 }
 
 export async function eventCols(): Promise<string> {
@@ -99,5 +100,7 @@ export async function milestoneCols(): Promise<string> {
   // backed.sql: what GitHub backs (lib/backing.ts).
   const withBacking = f.backed ? `${withVouch}, milestone_backings(kind, repo_full_name, ref, url, checked_at)` : withVouch;
   // proof-cards.sql: whether the member shares it as a public link (/p/<id>).
-  return f.proofCards ? `${withBacking}, shared_at` : withBacking;
+  const withShare = f.proofCards ? `${withBacking}, shared_at` : withBacking;
+  // redacted-proof.sql: the line a private milestone shows other members (only the owner reads it here).
+  return f.redactedProof ? `${withShare}, public_line` : withShare;
 }

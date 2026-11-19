@@ -95,8 +95,8 @@ export function CreateCommunity({ interests, field, term, startType = "field" }:
     {/* What members will see in Discover, updating as you type. */}
     <aside className="hidden lg:block" aria-label="Preview">
       <div className="sticky top-24">
-        <div className="mb-2 text-xs font-medium tracking-wide text-faint uppercase">Preview</div>
-        <div className="glass-card overflow-hidden rounded-3xl">
+        <div className="mb-2 text-xs font-medium text-muted">Preview</div>
+        <div className="border border-line bg-surface overflow-hidden rounded-2xl">
           <div className="cover-empty h-20" />
           <div className="flex gap-3 p-4">
             <CommunityBadge id="preview" name={name || "Your club"} className="relative z-10 -mt-9 border-4 border-surface" />
