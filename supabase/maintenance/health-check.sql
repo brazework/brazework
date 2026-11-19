@@ -63,7 +63,8 @@ from (values
   (63, 'members-only',    exists (select 1 from pg_policies where schemaname = 'public' and tablename = 'verification_events' and policyname = 'members only')),
   (64, 'mcp-workflows',   to_regprocedure('public.mcp_workflows_ready()') is not null),
   (66, 'waiting-cards',   to_regprocedure('public.waiting_cards_ready()') is not null),
-  (69, 'signer-tools',    to_regprocedure('public.signer_tools_ready()') is not null)
+  (67, 'money',           to_regprocedure('public.money_ready()') is not null),
+  (70, 'signer-tools',    to_regprocedure('public.signer_tools_ready()') is not null)
 ) as s(step, file, present)
 order by step;
 

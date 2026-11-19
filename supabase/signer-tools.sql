@@ -1,4 +1,4 @@
--- Step 69: making signing worthwhile for signers. Run after mcp-workflows.sql. Additive and safe to
+-- Step 70: making signing worthwhile for signers. Run after mcp-workflows.sql. Additive and safe to
 -- re-run. Every rule in vouches.sql and mcp-workflows.sql (mcp_request_vouch) still applies: this step
 -- changes how a signer reaches the asks and sees their own record, never what an ask or a vouch needs.
 --

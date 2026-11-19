@@ -74,4 +74,5 @@ oauth-signup
 members-only
 mcp-workflows
 waiting-cards
+money
 signer-tools
