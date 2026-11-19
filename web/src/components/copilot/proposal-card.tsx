@@ -82,7 +82,7 @@ export function ProposalCard({ p: initial, fromTool }: { p: Proposal; fromTool?:
     } else if (p.kind === "review") {
       r = await reviewMilestone(p.milestone_id, p.verify, p.note);
     } else if (p.kind === "rsvp") {
-      r = await toggleRsvp(p.event_id, true);
+      r = await toggleRsvp(p.event_id, !p.cancel);
     } else if (p.kind === "project_edit") {
       r = await updateProjectFields(p.project_id, { summary: p.summary, details: p.details, link: p.link, specs: p.specs });
     } else if (p.kind === "teammate") {
@@ -113,7 +113,7 @@ export function ProposalCard({ p: initial, fromTool }: { p: Proposal; fromTool?:
       {state === "done" && <Celebrate />}
       <div className="flex items-center gap-2">
         <span className={cn("grid size-7 place-items-center rounded-lg", state === "done" ? "bg-ok text-white" : "bg-accent-grad text-on-accent")}>{state === "done" ? <Check className="size-4" /> : <h.icon className="size-4" />}</span>
-        <span className="font-semibold text-text">{state === "done" ? (held ? "Sent for review" : h.done) : h.title}</span>
+        <span className="font-semibold text-text">{p.kind === "rsvp" && p.cancel ? (state === "done" ? "You're not going" : "Take back your RSVP") : state === "done" ? (held ? "Sent for review" : h.done) : h.title}</span>
         {state === "open" && <span className="ml-auto inline-flex items-center gap-1 text-[11px] text-faint"><Sparkles className="size-3" /> Drafted by {fromTool ? fromTool.via : "Ember"} · not saved yet</span>}
       </div>
 

@@ -75,3 +75,16 @@ test("refusals about clubs and draft-only actions say how to fix them", () => {
   assert.match(withFix("They aren't in any of your clubs. Add people you don't share a club with from the project in Brazework."), /search/);
   assert.match(withFix("That one is always left as a draft: the member sends it from Brazework. Draft it instead."), /draft: true/);
 });
+
+test("RSVP: a draft becomes Ember's RSVP card (going or taking it back); the tool sends going as a boolean", () => {
+  const go = draftToProposal({ id: "r1", kind: "rsvp", payload: { event_id: "ev1", title: "Build night", starts_at: "2026-11-20T23:00:00Z", where: "Hangar", going: 4, cancel: false } });
+  assert.deepEqual(go, { id: "draft-r1", kind: "rsvp", event_id: "ev1", title: "Build night", starts_at: "2026-11-20T23:00:00Z", where: "Hangar", going: 4, cancel: false });
+  const back = draftToProposal({ id: "r2", kind: "rsvp", payload: { event_id: "ev1", cancel: true } });
+  assert.ok(back && back.kind === "rsvp" && back.cancel === true);
+  assert.deepEqual(actionPayload("rsvp", { event_id: "ev1" }), { event_id: "ev1", going: true });
+  assert.deepEqual(actionPayload("rsvp", { event_id: "ev1", going: false }), { event_id: "ev1", going: false });
+  const yes = nextStep("rsvp_event", { drafted: false, status: "going", title: "Build night", host: "Rocketry Club", starts_at: "2026-11-20T23:00:00Z", url: "/events/ev1" }, O)!;
+  assert.match(yes.next, /going to "Build night" \(Fri, 20 Nov 2026 23:00 UTC\), hosted by Rocketry Club/);
+  assert.equal(yes.open, `${O}/events/ev1`);
+  assert.match(nextStep("rsvp_event", { drafted: false, status: "not going", title: "Build night", url: "/events/ev1" }, O)!.next, /given back/);
+});

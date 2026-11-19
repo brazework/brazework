@@ -178,4 +178,14 @@ MCP_TOOLS.push(
     }, ["project_id", "person_id"]),
     rpc: "mcp_act", args: () => ({}),
   },
+  // Step 66 (supabase/tool-rsvp.sql).
+  {
+    name: "rsvp_event", writes: true, needs: "draft", act: "rsvp", title: "RSVP to an event, or take the RSVP back",
+    description: "Save the member a spot at an upcoming event (ids from upcoming_events), or with going: false take back a spot they have. Only events they can see that aren't over. Tell the member which event and when, and RSVP only after they say yes; with a token that can't post, it waits as a card in their drafts.",
+    inputSchema: actSchema({
+      event_id: { type: "string", description: "The event's id, from upcoming_events." },
+      going: { type: "boolean", description: "true (default) to go; false to take back the member's spot." },
+    }, ["event_id"]),
+    rpc: "mcp_act", args: () => ({}),
+  },
 );

@@ -25,7 +25,7 @@ const ABOUT = "Brazework is the record of what people build, signed by the peopl
 function instructions(s: { canDraft: boolean; canPost: boolean }) {
   const reads = "These tools read the member's Brazework (profile and club-verified work, clubs, events, projects, notifications, search).";
   const playbooks = `For the tools people in each field use and the moments worth recording, read ${PLAYBOOK_INDEX_URI}; the prompts shipped, result, week, ask_signature and setup run the common workflows.`;
-  const acts = "add a project (create_project), update one (update_project) and add a teammate from their clubs (add_teammate)";
+  const acts = "add a project (create_project), update one (update_project), add a teammate from their clubs (add_teammate) and RSVP to events (rsvp_event)";
   if (s.canPost) return `${ABOUT} ${reads} They can also post a build update (post_update), log a milestone (log_milestone), ask someone to sign one (request_signature), ${acts} as the member, or leave any of these as drafts for them to approve in Brazework (draft_post, draft_milestone, or draft: true). Ask the member before posting, sending or changing anything, and write in their voice. ${playbooks} Results include links to open in Brazework, and a next step.`;
   if (s.canDraft) return `${ABOUT} ${reads} This token can't post: it leaves drafts that the member edits and approves in Brazework (draft_post, draft_milestone; and ${acts}, which wait as cards in their drafts and on Ember's page), so nothing happens without them. Write in their voice, with specifics. ${playbooks} Results include links to open in Brazework, and a next step.`;
   return `${ABOUT} ${reads} ${playbooks} Results include links to open in Brazework.`;

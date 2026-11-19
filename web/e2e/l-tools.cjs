@@ -267,6 +267,27 @@ const { step, browser, as, go, summary, BASE } = require("./lib.cjs");
     psql(`delete from public.projects where title in ('Hopper drone ${stamp}', 'Thrust stand v2 ${stamp}')`);
   }, ben);
 
+  await step("intents: Ben asks for a spot at Rocketry Club's build night; the draft waits as Ember's RSVP card, he confirms, then Claude Code gives the spot back", async () => {
+    const ev = `mcp-ev-${stamp}`;
+    psql(`insert into public.events (id, community_id, title, type, format, topic, location, starts_at, ends_at) values ('${ev}', 'rkt', 'Build night ${stamp}', 'Workshop', 'In person', 'Aerospace', 'Hangar 2', now() + interval '2 days', now() + interval '2 days 2 hours')`);
+    const listed = (await call("upcoming_events", { days: 7 }, readOnly)).structuredContent?.items ?? [];
+    if (!listed.some((e) => e.id === ev)) throw new Error("upcoming_events doesn't list the build night");
+    const d = (await call("rsvp_event", { event_id: ev }, readOnly)).structuredContent;
+    if (d?.drafted !== true) throw new Error(`rsvp_event as a draft: ${JSON.stringify(d).slice(0, 200)}`);
+    await go(ben, "/drafts");
+    const card = ben.getByRole("group", { name: "RSVP to an event from Cursor" });
+    await card.getByText(`Build night ${stamp}`).waitFor({ timeout: 15000 });
+    await card.getByRole("button", { name: "Confirm" }).click();
+    await card.getByText("You're going").waitFor({ timeout: 15000 });
+    if (psql(`select count(*) from public.event_rsvps where event_id = '${ev}' and user_id = '${process.env.BEN_ID}'`) !== "1") throw new Error("Ben isn't going after confirming");
+    const back = (await call("rsvp_event", { event_id: ev, going: false }, cc)).structuredContent;
+    if (back?.status !== "not going" || !/given back/.test(back.next ?? "") || !back.open?.endsWith(`/events/${ev}`)) throw new Error(`taking the RSVP back: ${JSON.stringify(back).slice(0, 200)}`);
+    const twice = await call("rsvp_event", { event_id: ev, going: false }, cc);
+    if (!twice?.isError || !/nothing to cancel/.test(twice.content[0].text)) throw new Error("a second take-back wasn't refused clearly");
+    if (psql(`select rsvp_count from public.events where id = '${ev}'`) !== "0") throw new Error("the count didn't go back down");
+    psql(`delete from public.events where id = '${ev}'`); // leave Rocketry's calendar as later journeys expect it
+  }, ben);
+
   await step("FIX-92: a club's Integrations tab shows how work comes in (GitHub, members' AI tools), and no Discord", async () => {
     await go(ben, "/c/rkt/manage?tab=integrations"); // Ben owns Rocketry Club
     const main = ben.locator("main");

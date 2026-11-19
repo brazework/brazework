@@ -7,7 +7,7 @@ import { ALL_TOPICS } from "@/lib/forge";
 // server, the pages and tests share it (tests/tool-actions.test.ts).
 
 /** Kinds a tool can leave as a draft. post and milestone keep their own card (drafts/draft-card.tsx). */
-export const CARD_KINDS = ["project", "project_edit", "teammate"] as const;
+export const CARD_KINDS = ["project", "project_edit", "teammate", "rsvp"] as const;
 export type CardKind = (typeof CARD_KINDS)[number];
 export const isCardKind = (k: string): k is CardKind => (CARD_KINDS as readonly string[]).includes(k);
 
@@ -41,6 +41,8 @@ export function draftToProposal(d: Pick<ToolDraftRow, "id" | "kind" | "payload">
     }
     case "teammate":
       return { id, kind: "teammate", project_id: s(p.project_id, 64), project_title: s(p.project_title, 120), person_id: s(p.person_id, 36), name: s(p.name, 120), headline: s(p.headline, 200), role: p.role === "viewer" ? "viewer" : "member" };
+    case "rsvp":
+      return { id, kind: "rsvp", event_id: s(p.event_id, 64), title: s(p.title, 200), starts_at: s(p.starts_at, 40), where: s(p.where, 200), going: typeof p.going === "number" ? p.going : 0, cancel: p.cancel === true };
     default:
       return null;
   }
@@ -60,5 +62,7 @@ export function actionPayload(kind: CardKind, i: Record<string, unknown>): Recor
     }
     case "teammate":
       return { project_id: str("project_id") ?? "", person_id: str("person_id") ?? "", role: str("role") ?? "member" };
+    case "rsvp":
+      return { event_id: str("event_id") ?? "", going: i.going !== false };
   }
 }
