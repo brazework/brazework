@@ -15,6 +15,12 @@ import { FEATURE_ACCESS } from "@/lib/plans";
 // Monthly, and by the year at a third off: review cycles come once or twice a year, so a year is the
 // natural unit for a professional. Yearly checkout needs its Stripe prices (lib/billing.ts plusPriceEnv).
 export const PLUS = { name: "Plus", student: 6, everyone: 12, studentYear: 48, everyoneYear: 96 };
+// What a school pays: a flat portal and a seat for each advisor who uses it. Never per club or
+// chapter, so a school never has a reason to keep a club off Brazework (founders, 2026-11-19).
+export const SCHOOL = { portal: 6000, seatsIncluded: 2, perAdvisor: 1200 };
+/** A school's yearly price for this many advisors (the portal includes the first seats). */
+export const schoolPrice = (advisors: number) => SCHOOL.portal + Math.max(0, Math.ceil(advisors) - SCHOOL.seatsIncluded) * SCHOOL.perAdvisor;
+const usd = (n: number) => `$${n.toLocaleString("en-US")}`;
 // What Plus will add but doesn't yet. Every page that lists Plus marks these "coming soon", so nobody
 // pays for something that isn't built. Move an item out of this list when it ships.
 export const PLUS_SOON = ["Your own profile link", "A PDF portfolio of your signed work", "More AI drafts from your tools"];
@@ -28,7 +34,7 @@ export type Tier = {
 export const AUDIENCES: { id: Audience; label: string; line: string }[] = [
   { id: "builders", label: "Builders", line: "Students and professionals. The record is free, forever." },
   { id: "companies", label: "Companies", line: "Find people by work someone signed, not by keywords they typed." },
-  { id: "organizations", label: "Clubs, networks and schools", line: "Free for every club. Networks and schools get a portal across their chapters." },
+  { id: "organizations", label: "Clubs, networks and schools", line: "Free for every club. Schools pay for a portal and their advisors, never per club." },
 ];
 
 // Each audience has one primary call to action (featured); the other card's is quieter.
@@ -51,13 +57,13 @@ export const TIERS: Tier[] = [
     cta: { label: "Get Plus", href: "/plus" },
   },
   {
-    id: "talent", audience: "companies", name: "Find builders", price: "From $300", note: "Per seat, per month", featured: true,
-    points: ["Search members by signed work, field, school and class year", "Message them in their Requests", "Follow clubs and builders", "They see that you looked, so it starts warm"],
+    id: "talent", audience: "companies", name: "Find builders", price: "$15,000", note: "Per year, for 2 seats and 2 chapter sponsorships", featured: true,
+    points: ["Search members by signed work, field, school and class year", "Message them in their Requests", "Two chapters sponsored each semester, your pick", "They see that you looked, so it starts warm"],
     cta: { label: "Book a pilot", href: "/book?kind=talent" },
   },
   {
-    id: "sponsor", audience: "companies", name: "Sponsor a chapter or a challenge", price: "From $1,000", note: "Per chapter, per semester",
-    points: ["Your name on a chapter's page and its members' signed work", "Or post a build challenge that clubs opt into", "Meet the members who win, signed by their clubs", "Reporting on who took part and what they built"],
+    id: "sponsor", audience: "companies", name: "Sponsor a chapter or a challenge", price: "$2,500", note: "Per chapter, per semester. 70% goes to the club.",
+    points: ["Your name on a chapter's page and its members' signed work", "Or post a build challenge that clubs opt into, from $5,000", "Meet the members who win, signed by their clubs", "Reporting on who took part and what they built"],
     cta: { label: "Sponsor a chapter", href: "/book?kind=chapter" },
   },
   {
@@ -66,8 +72,8 @@ export const TIERS: Tier[] = [
     cta: { label: "Bring your club", href: "/#founding" },
   },
   {
-    id: "network", audience: "organizations", name: "Networks and schools", price: "Per active chapter", note: "Set up with the founders", featured: true,
-    points: ["A portal across every chapter and campus", "Every chapter's members and their signed work, in one place", "Reporting: what members built and who signed it", "Sponsor reports your partners can read"],
+    id: "network", audience: "organizations", name: "Schools and networks", price: usd(SCHOOL.portal), note: `Per year for a school, with ${SCHOOL.seatsIncluded} advisor seats. ${usd(SCHOOL.perAdvisor)} per extra advisor.`, featured: true,
+    points: ["Every club included, however many join", "Your school's official account and its verified clubs", "Advisors approve clubs and follow what they build", "Reporting: what members built and who signed it", "The first 10 schools get their first semester free", "National networks: a portal across chapters, priced with the founders"],
     cta: { label: "Book a demo", href: "/book?kind=school" },
   },
 ];
@@ -81,6 +87,6 @@ export const SALES: Record<SalesKind, { label: string; ask: string; org: string 
   talent: { label: "Search seats for my company", ask: "A pilot of Find builders: search signed work and message members.", org: "Company" },
   chapter: { label: "Sponsor a chapter", ask: "Your name on a chapter, with reporting on what its members build.", org: "Company" },
   challenge: { label: "Sponsor a build challenge", ask: "A challenge clubs opt into, and the members who win it.", org: "Company" },
-  school: { label: "A demo for my school or network", ask: "A portal across your chapters, with reporting.", org: "School or network" },
+  school: { label: "A demo for my school or network", ask: "A portal for your school's clubs and advisors, with reporting. Every club included.", org: "School or network" },
   plus: { label: "Join the Plus waitlist", ask: "We'll email you when Plus opens, at the launch price.", org: null },
 };

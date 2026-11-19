@@ -5,7 +5,9 @@ import { PricingTiers } from "@/components/landing/pricing";
 import { H2 } from "@/components/landing/sections";
 import { ThemeChrome } from "@/components/theme-chrome";
 import { Logo } from "@/components/ui";
-import { PLUS } from "@/lib/pricing";
+import { PLUS, SCHOOL, schoolPrice } from "@/lib/pricing";
+
+const usd = (n: number) => `$${n.toLocaleString("en-US")}`;
 
 export const metadata: Metadata = {
   title: "Pricing",
@@ -18,7 +20,8 @@ const QUESTIONS: [string, string][] = [
   ["Is the free plan really free?", "Yes. Your record, every signature, your clubs, and being found by companies are free for good, with no ads. Companies pay so builders don't have to."],
   [`What is ${PLUS.name}?`, `An optional upgrade for people who want more from their record. Today it shows every company that looked in the last 90 days; coming soon are your own profile link, a PDF portfolio of your signed work, and more AI drafts from your tools. It's $${PLUS.student} a month for students and $${PLUS.everyone} for everyone else; if it isn't open when you look, join the waitlist at that price. Nothing in Free moves to ${PLUS.name}.`],
   ["Why do signatures matter?", "Anyone can type a claim. A milestone on Brazework is signed by someone who saw the work: a club's officers, a professor, a manager. That's what a company can trust."],
-  ["Who pays for networks and schools?", "The national network or the school, priced per active chapter, so a small network pays little. Every club stays free either way."],
+  ["What do schools pay?", `A flat ${usd(SCHOOL.portal)} a year for the school's portal with ${SCHOOL.seatsIncluded} advisor seats, then ${usd(SCHOOL.perAdvisor)} a year for each extra advisor: a campus with 8 advisors pays ${usd(schoolPrice(8))}. Never per club, so every club stays free and welcome. The first 10 schools get their first semester free. National networks are priced with the founders.`],
+  ["Where does sponsorship money go?", "70% of a chapter sponsorship goes to the club, for its builds, events and travel. Brazework keeps 30% for the reporting and the platform. Sponsors never choose whose work gets signed."],
   ["How do companies start?", "Book a pilot: name your company and we reply within a day, to the email on your Brazework account. Seats and sponsorships are set up with you."],
 ];
 
