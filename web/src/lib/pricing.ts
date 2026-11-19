@@ -62,8 +62,8 @@ export const TIERS: Tier[] = [
     cta: { label: "Book a pilot", href: "/book?kind=talent" },
   },
   {
-    id: "sponsor", audience: "companies", name: "Sponsor a chapter or a challenge", price: "$2,500", note: "Per chapter, per semester. 70% goes to the club.",
-    points: ["Your name on a chapter's page and its members' signed work", "Or post a build challenge that clubs opt into, from $5,000", "Meet the members who win, signed by their clubs", "Reporting on who took part and what they built"],
+    id: "sponsor", audience: "companies", name: "Sponsor a chapter or a challenge", price: "$2,500", note: "Per chapter, per semester. All of it goes to the club.",
+    points: ["Your name on a chapter's page and its members' signed work", "Or post a build challenge that clubs opt into, from $5,000. Prizes go to the winners in full.", "Meet the members who win, signed by their clubs", "Reporting on who took part and what they built"],
     cta: { label: "Sponsor a chapter", href: "/book?kind=chapter" },
   },
   {

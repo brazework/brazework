@@ -46,6 +46,13 @@ test("schools pay for a portal and their advisors, never per club or chapter", a
   assert.ok(school.points.some((p) => /every club included/i.test(p)));
 });
 
+test("a chapter sponsorship goes to the club in full: Brazework takes no cut", () => {
+  const sponsor = TIERS.find((t) => t.id === "sponsor")!;
+  assert.match(sponsor.note, /all of it goes to the club/i);
+  // Money meant for a club is never split with Brazework (founders, 2026-11-19).
+  for (const t of TIERS) assert.ok(!/\b\d{1,2}% (goes )?to the club\b/i.test(`${t.note} ${t.points.join(" ")}`), t.id);
+});
+
 test("Plus never sells what isn't built: everything still coming is marked coming soon", async () => {
   const { PLUS_SOON } = await import("@/lib/pricing");
   const plus = TIERS.find((t) => t.id === "plus")!;
