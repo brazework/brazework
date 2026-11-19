@@ -67,6 +67,7 @@ takes an optional `field` (it defaults to the field on your profile) and reads y
 | `start` | Your first minute: it reads your field, looks at the last 30 days in the tools you've connected, picks the strongest finished work that has proof, and turns it into your first milestone. It ends with the link. |
 | `shipped` | Finished work (a merged PR, a new version, a passed test) becomes a milestone with 1 to 8 evidence links, for your club to verify or for someone to sign. |
 | `result` | A number (a run, a test, a measurement, a sales total) becomes a result post with the specifics. |
+| `standup` | Writes today's standup (Done, Next, Blocked) from what your tools show since your last working day, and saves it to your drafts with `source_key` `standup:<date>`, so running it twice makes one. It never posts by itself, even with a token that can. |
 | `week` | Looks over the last 7 days in your connected tools and drafts the 1 to 3 things worth recording, without repeating what's already there. |
 | `ask_signature` | Asks the professor, TA, PI, manager or mentor who saw your work to sign one of your milestones. |
 | `setup` | Lists your field's tools and how your assistant reaches each one (official server, community server, or your exports). |

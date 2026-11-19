@@ -1,7 +1,8 @@
 import { githubConfig } from "@/lib/github-app";
+import { canUse } from "@/lib/plans";
 import type { Metadata } from "next";
 import { ReportLink } from "@/components/report/report-dialog";
-import { BadgeCheck, BarChart3, Eye, FileText, FolderGit2, Lock, MapPin, MessageSquare, Trophy } from "lucide-react";
+import { BadgeCheck, BarChart3, ClipboardList, Eye, FileText, FolderGit2, Lock, MapPin, MessageSquare, Trophy } from "lucide-react";
 import { CommunityBadge } from "../../communities/_components/badge";
 import { ActivityGrid } from "@/components/profile/activity";
 import { requestTime } from "@/lib/forge";
@@ -197,6 +198,8 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
             <div className="flex flex-wrap items-center gap-2">
               <CopyLink path={`/u/${p.id}`} label="Share" />
               <Link href={`/u/${p.id}/resume`} className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-line bg-surface px-4 text-sm transition hover:bg-hover active:scale-95"><FileText className="size-4" /> Résumé</Link>
+              {/* The review packet (lib/review-packet.ts): your signed work over a period, for a performance review. */}
+              {mine && canUse("reviewPacket", user) && <Link href={`/u/${p.id}/review`} className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-line bg-surface px-4 text-sm transition hover:bg-hover active:scale-95"><ClipboardList className="size-4" /> Review packet</Link>}
               {mine && (
                 <Link href={`/u/${p.id}?view=visitor`} title="Preview as a visitor" className="inline-flex h-10 w-10 items-center justify-center gap-1.5 rounded-lg border border-line bg-surface text-sm transition hover:bg-hover active:scale-95 sm:w-auto sm:px-4"><Eye className="size-4" /> <span className="sr-only sm:not-sr-only">Preview</span></Link>
               )}

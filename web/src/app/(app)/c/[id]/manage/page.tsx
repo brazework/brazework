@@ -97,7 +97,7 @@ async function Manage({ params, searchParams }: { params: PageProps<"/c/[id]/man
         {tab === "report" && report && <ReportView r={report} clubId={id} copilot={copilotOn} />}
         {tab === "report" && rank(role) >= 4 && <div className="mt-4"><ShareReport clubId={id} token={shareToken} /></div>}
         {tab === "verify" && (((queue.data ?? []) as unknown as QueueItem[]).length ? <VerifyQueue items={(queue.data ?? []) as unknown as QueueItem[]} /> : (
-          <EmptyState icon={<BadgeCheck className="size-6" />} title="Nothing to verify" body="When members ask the club to vouch for a milestone (a test, a build, a result), it shows up here." />
+          <EmptyState icon={<BadgeCheck className="size-6" />} title="Nothing to verify" body="When members ask the club to vouch for a milestone (a test, a build, a result), it shows up here. Members ask from a milestone on their project page." action={<Link href={`/c/${id}`} className="text-sm underline underline-offset-4">Remind the club in a post</Link>} />
         ))}
         {tab === "verify" && <RecentReviews items={(reviewed.data ?? []) as unknown as QueueItem[]} isOwner={rank(role) >= 5} />}
         {tab === "invite" && <Panel className="p-6"><InviteLinks cid={id} clubName={c.name} origin={env.siteUrl} invites={(invites.data ?? []) as Invite[]} /></Panel>}
@@ -111,7 +111,7 @@ async function Manage({ params, searchParams }: { params: PageProps<"/c/[id]/man
               </div>
             ))}
           </Panel>
-        ) : <EmptyState title="No requests waiting" body="People who ask to join show up here." />)}
+        ) : <EmptyState title="No requests waiting" body="People who ask to join show up here. An invite link lets people join without waiting for approval." action={features.invites ? <Link href={`/c/${id}/manage?tab=invite`} className="text-sm underline underline-offset-4">Make an invite link</Link> : undefined} />)}
 
         {tab === "members" && (
           <Panel className="divide-y divide-line p-0">
@@ -132,7 +132,7 @@ async function Manage({ params, searchParams }: { params: PageProps<"/c/[id]/man
 
         {tab === "bans" && (((bans.data ?? []) as Ban[]).length ? (
           <Panel className="divide-y divide-line p-0">{((bans.data ?? []) as Ban[]).map((b) => <BanRow key={b.uid} cid={id} uid={b.uid} name={b.name} at={timeAgo(b.at)} />)}</Panel>
-        ) : <EmptyState title="No one is banned" />)}
+        ) : <EmptyState title="No one is banned" body="Banned people are removed and can't rejoin. To ban someone, use Ban next to their name in Members." action={<Link href={`/c/${id}/manage?tab=members`} className="text-sm underline underline-offset-4">Open Members</Link>} />)}
 
         {tab === "settings" && features.media && features.clubProfile && <Panel className="mb-4 p-6"><h2 className="mb-4 text-base font-semibold">Club look</h2><ClubLook cid={id} name={c.name} logo={c.logo_path} tagline={c.tagline} website={c.website} accent={c.accent} userId={user.id} /></Panel>}
         {tab === "settings" && features.media && <Panel className="mb-4 p-6"><ClubCoverUpload cid={id} path={c.cover_path} userId={user.id} /></Panel>}
@@ -143,10 +143,12 @@ async function Manage({ params, searchParams }: { params: PageProps<"/c/[id]/man
           <HandOff cid={id} role={role ?? "member"} candidates={((members.data ?? []) as Member[]).filter((m) => rank(m.role) < rank(role)).map((m) => ({ uid: m.uid, name: `${m.first_name} ${m.last_name}`.trim() || "Member", role: m.role }))} />
         )}
         {tab === "roles" && (
+          // Six roles don't fit a phone: the table scrolls sideways with the permission column pinned.
           <Panel className="overflow-x-auto p-0">
-            <table className="w-full text-sm">
-              <thead><tr className="border-b border-line text-left"><th className="px-5 py-3 font-medium">Permission</th>{ROLES.map((r) => <th key={r} className="px-3 py-3 text-center text-xs text-muted">{ROLE_LABEL[r]}</th>)}</tr></thead>
-              <tbody>{PERMS.map(([key, label]) => <tr key={key} className="border-b border-line last:border-0"><td className="px-5 py-3 text-text-2">{label}</td>{ROLES.map((r) => <td key={r} className="px-3 py-3 text-center">{can(r, key) ? "✓" : <span className="text-faint">—</span>}</td>)}</tr>)}</tbody>
+            <p className="px-5 pt-4 text-xs text-muted sm:hidden">Swipe the table to see every role.</p>
+            <table className="w-full min-w-[34rem] text-sm">
+              <thead><tr className="border-b border-line text-left"><th className="sticky left-0 z-10 bg-surface px-5 py-3 font-medium">Permission</th>{ROLES.map((r) => <th key={r} className="px-3 py-3 text-center text-xs text-muted">{ROLE_LABEL[r]}</th>)}</tr></thead>
+              <tbody>{PERMS.map(([key, label]) => <tr key={key} className="border-b border-line last:border-0"><td className="sticky left-0 z-10 w-44 bg-surface px-5 py-3 text-text-2">{label}</td>{ROLES.map((r) => <td key={r} className="px-3 py-3 text-center">{can(r, key) ? "✓" : <span className="text-faint">—</span>}</td>)}</tr>)}</tbody>
             </table>
           </Panel>
         )}

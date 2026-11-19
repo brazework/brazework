@@ -28,7 +28,7 @@ export function SchoolLinkPanel({ cid, link, canEdit }: { cid: string; link: Sch
             {link.status === "verified" && <span className="inline-flex items-center gap-1.5 font-medium text-ok"><BadgeCheck className="size-4" /> Verified club of {link.school_name}</span>}
             {link.status === "pending" && <span className="inline-flex items-center gap-1.5 font-medium"><Clock className="size-4 text-muted" /> Waiting for review: {link.school_name}</span>}
             {link.status === "declined" && <span className="inline-flex items-center gap-1.5 font-medium text-danger"><XCircle className="size-4" /> Not verified: {link.school_name}</span>}
-            <span className="text-xs text-faint">{link.school_domain} · asked {timeAgo(link.requested_at)}</span>
+            <span suppressHydrationWarning className="text-xs text-faint">{link.school_domain} · asked {timeAgo(link.requested_at)}</span>
           </div>
           {link.status === "declined" && link.decision_note && <p className="mt-2 text-sm text-text-2">&ldquo;{link.decision_note}&rdquo;</p>}
           {link.status === "pending" && <p className="mt-2 text-xs text-muted">The school reviews this once Brazework has set up its official account; until then the Brazework team does.</p>}
