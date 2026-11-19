@@ -26,7 +26,8 @@ docker run -d --name forge-e2e-auth --network forge-e2e -p 127.0.0.1:19999:9999 
   -e GOTRUE_JWT_SECRET=$SECRET -e GOTRUE_JWT_EXP=3600 -e GOTRUE_JWT_AUD=authenticated -e GOTRUE_JWT_DEFAULT_GROUP_NAME=authenticated \
   -e GOTRUE_JWT_ADMIN_ROLES=service_role -e GOTRUE_MAILER_AUTOCONFIRM=true -e GOTRUE_EXTERNAL_EMAIL_ENABLED=true -e GOTRUE_DISABLE_SIGNUP=false \
   -e GOTRUE_EXTERNAL_GITHUB_ENABLED=true -e GOTRUE_EXTERNAL_GITHUB_CLIENT_ID=brazework-e2e -e GOTRUE_EXTERNAL_GITHUB_SECRET=e2e-placeholder \
-  -e GOTRUE_EXTERNAL_GITHUB_REDIRECT_URI=http://localhost:54321/auth/v1/callback "$AUTH" >/dev/null
+  -e GOTRUE_EXTERNAL_GITHUB_REDIRECT_URI=http://localhost:54321/auth/v1/callback \
+  -e GOTRUE_OAUTH_SERVER_ENABLED=true -e GOTRUE_OAUTH_SERVER_AUTHORIZATION_PATH=/oauth/consent -e GOTRUE_OAUTH_SERVER_ALLOW_DYNAMIC_REGISTRATION=true "$AUTH" >/dev/null
 until curl -sf http://localhost:19999/health >/dev/null; do sleep 1; done
 # Every SQL file, in order (supabase/order.txt is the one list; CI and production follow it too).
 FILES=$(grep -v '^#' ../supabase/order.txt | grep -v '^$')
