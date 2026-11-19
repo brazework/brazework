@@ -65,7 +65,8 @@ from (values
   (65, 'mcp-oauth',       to_regprocedure('public.mcp_oauth_ready()') is not null),
   (66, 'waiting-cards',   to_regprocedure('public.waiting_cards_ready()') is not null),
   (67, 'money',           to_regprocedure('public.money_ready()') is not null),
-  (68, 'tool-actions',    to_regprocedure('public.tool_actions_ready()') is not null)
+  (68, 'tool-actions',    to_regprocedure('public.tool_actions_ready()') is not null),
+  (69, 'tool-rsvp',       to_regprocedure('public.tool_rsvp_ready()') is not null)
 ) as s(step, file, present)
 order by step;
 

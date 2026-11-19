@@ -38,7 +38,7 @@ export type Proposal = { id: string } & (
   | { kind: "club_post"; club_id: string; club_name: string; body: string; postKind: "update" | "question" | "result" | "project" }
   | { kind: "project"; title: string; summary: string; details: string; link: string; tags: string[]; status: "in_progress" | "completed"; year: string; source: string }
   | { kind: "review"; milestone_id: string; club_name: string; member: string; title: string; detail: string; evidence: string; verify: boolean; note: string }
-  | { kind: "rsvp"; event_id: string; title: string; starts_at: string; where: string; going: number }
+  | { kind: "rsvp"; event_id: string; title: string; starts_at: string; where: string; going: number; cancel?: boolean }
   | { kind: "message"; person_id: string; name: string; headline: string; body: string }
   // From AI tools over MCP too (supabase/tool-actions.sql): the same kinds, so a tool's draft is an Ember card.
   | { kind: "project_edit"; project_id: string; project_title: string; summary?: string; details?: string; link?: string; specs?: Spec[]; before: { summary: string; details: string; link: string; specs: Spec[] } }
