@@ -112,7 +112,7 @@ export async function recentHistory(c: GitHubConfig, installationId: number, rep
  *  pull request or release whether it's final. A commit counts only once it has landed on the
  *  repo's default branch, so a throwaway branch or a fork doesn't back anything. A release published
  *  by a bot (CI release tools) counts for whoever made the commit it tags. */
-export async function githubFacts(c: GitHubConfig, installationId: number, ev: { fullName: string; kind: "commit" | "pull_request" | "release"; ref: string }, defaultBranch: string): Promise<{ authorId: number | null; merged?: boolean; draft?: boolean; landed?: boolean }> {
+export async function githubFacts(c: GitHubConfig, installationId: number, ev: { fullName: string; kind: "commit" | "pull_request" | "release"; ref: string }, defaultBranch: string): Promise<{ authorId: number | null; merged?: boolean; draft?: boolean; landed?: boolean; reviews?: { user: { id: number; login: string; type?: string } | null; state: string; submitted_at?: string | null }[]; repoPrivate?: boolean }> {
   const t = await installationToken(c, installationId);
   const repo = `/repos/${ev.fullName}`;
   if (ev.kind === "commit") {
@@ -121,8 +121,14 @@ export async function githubFacts(c: GitHubConfig, installationId: number, ev: {
     return { authorId: commit.author?.id ?? null, landed: ["identical", "behind"].includes(cmp.status) };
   }
   if (ev.kind === "pull_request") {
-    const pr = await gh<{ user: { id: number } | null; merged: boolean }>(c, `${repo}/pulls/${encodeURIComponent(ev.ref)}`, t);
-    return { authorId: pr.user?.id ?? null, merged: pr.merged };
+    const pr = await gh<{ user: { id: number } | null; merged: boolean; base?: { repo?: { private?: boolean } } }>(c, `${repo}/pulls/${encodeURIComponent(ev.ref)}`, t);
+    // Who approved it (lib/backing.ts approversOf). The backing never depends on this: if GitHub
+    // won't say, the pull request is still backed, with no approvals. A repo counts as private
+    // unless GitHub says it's public, so a reviewer's name is never shown by mistake.
+    const reviews = pr.merged
+      ? await gh<{ user: { id: number; login: string; type?: string } | null; state: string; submitted_at?: string | null }[]>(c, `${repo}/pulls/${encodeURIComponent(ev.ref)}/reviews?per_page=100`, t).catch(() => [])
+      : [];
+    return { authorId: pr.user?.id ?? null, merged: pr.merged, reviews: Array.isArray(reviews) ? reviews : [], repoPrivate: pr.base?.repo?.private !== false };
   }
   const rel = await gh<{ author: { id: number; type?: string } | null; draft: boolean }>(c, `${repo}/releases/tags/${encodeURIComponent(ev.ref)}`, t);
   if (rel.author?.type === "Bot") {

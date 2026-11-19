@@ -3,7 +3,8 @@
 // A stand-in GitHub on :3999 answers for that repo: PR #12 is his and merged, PR #13 is someone
 // else's, commit c0ffee1 is his but only on a branch, release v1.0 was published by a CI bot from
 // his commit. Checks: "No one yet" backs his own merged work and shows "Backed by GitHub", never
-// "Verified"; someone else's work, an unmerged commit and the same PR twice are refused in plain
+// "Verified", and names the reviewers who approved that pull request on GitHub (approved-by.sql);
+// someone else's work, an unmerged commit and the same PR twice are refused in plain
 // words and nothing is saved; Maya sees the backed milestone on his profile; a company sees it only
 // when it asks for "Signed or backed", labelled as not signed.
 const crypto = require("crypto"), http = require("http"), { execSync } = require("child_process");
@@ -26,7 +27,18 @@ function startGitHub() {
     }
     if (auth !== "Bearer inst-token-backed") return json(401, {});
     const r = `/repos/${REPO}`;
-    if (url.pathname === `${r}/pulls/12`) return json(200, { user: { id: 501 }, merged: true });
+    if (url.pathname === `${r}/pulls/12`) return json(200, { user: { id: 501 }, merged: true, base: { repo: { private: false } } });
+    // Who reviewed PR #12: Sam approved; Lee asked for changes, then approved; Kim's approval was
+    // dismissed; a bot and Ben himself "approved" too. Only Sam and Lee count (lib/backing.ts).
+    if (url.pathname === `${r}/pulls/12/reviews`) return json(200, [
+      { user: { id: 601, login: "sam-rivera", type: "User" }, state: "APPROVED", submitted_at: "2026-11-01T11:00:00Z" },
+      { user: { id: 602, login: "lee-park", type: "User" }, state: "CHANGES_REQUESTED", submitted_at: "2026-11-01T09:00:00Z" },
+      { user: { id: 602, login: "lee-park", type: "User" }, state: "APPROVED", submitted_at: "2026-11-02T09:00:00Z" },
+      { user: { id: 603, login: "kim-ito", type: "User" }, state: "APPROVED", submitted_at: "2026-11-01T08:00:00Z" },
+      { user: { id: 603, login: "kim-ito", type: "User" }, state: "DISMISSED", submitted_at: "2026-11-02T08:00:00Z" },
+      { user: { id: 501, login: "bencho", type: "User" }, state: "APPROVED", submitted_at: "2026-11-01T12:00:00Z" },
+      { user: { id: 900, login: "ci-approver[bot]", type: "Bot" }, state: "APPROVED", submitted_at: "2026-11-01T12:30:00Z" },
+    ]);
     if (url.pathname === `${r}/pulls/13`) return json(200, { user: { id: 777 }, merged: true });
     if (url.pathname === `${r}/pulls/14`) return json(200, { user: { id: 501 }, merged: false });
     if (url.pathname === `${r}/commits/c0ffee1`) return json(200, { sha: "c0ffee1000000000000000000000000000000000", author: { id: 501 } });
@@ -70,6 +82,19 @@ function startGitHub() {
     if (psql(`select status from public.milestones where title = 'Telemetry parser merged'`) !== "logged") throw new Error("it should be logged, asking nobody");
   }, page);
 
+  await step("the pull request's reviewers on GitHub are named as having approved it, with nobody asked to sign", async () => {
+    const kept = psql(`select approvals || '|' || array_to_string(approvers, ',') || '|' || repo_private from public.milestone_backings where kind = 'pull_request' and ref = '12'`);
+    if (kept !== "2|sam-rivera,lee-park|false") throw new Error("approvals kept: " + kept);
+    const badge = page.locator("[data-backed]").filter({ hasText: "PR #12" }).first();
+    await badge.locator("[data-approved]").filter({ hasText: "approved by @sam-rivera and @lee-park" }).waitFor({ timeout: 15000 });
+    const text = await page.locator("li").filter({ has: badge }).first().innerText();
+    if (/Verified|Signed by|Vouched/.test(text)) throw new Error("an approval on GitHub reads as a signature: " + text.replace(/\s+/g, " ").slice(0, 200));
+    // Only the approval part: the repo is bencho/flight-computer, so the whole line names Ben's account.
+    const approved = await badge.locator("[data-approved]").innerText();
+    if (/kim-ito|bencho|ci-approver/.test(approved)) throw new Error("someone who didn't approve is named: " + approved);
+    if (!/isn't a signature given to Brazework/.test((await badge.getAttribute("title")) ?? "")) throw new Error("the badge doesn't say what an approval is");
+  }, page);
+
   await step("someone else's work, an unmerged pull request and a commit only on a branch are refused, and nothing is saved", async () => {
     for (const [title, link, says] of [
       ["Someone else's parser", `https://github.com/${REPO}/pull/13`, /someone else made this/],
@@ -111,7 +136,7 @@ function startGitHub() {
     await cara.waitForURL(/level=backed/);
     const card = cara.locator("article").filter({ hasText: "Telemetry parser merged" }).first();
     await card.waitFor({ timeout: 15000 }).catch(async (e) => { console.log("PAGE:", cara.url(), (await cara.locator("main").innerText()).replace(/\s+/g, " ").slice(0, 600)); throw e; });
-    await card.getByText(/Backed by GitHub · PR #12 in bencho\/flight-computer · not signed/).waitFor();
+    await card.getByText(/Backed by GitHub · PR #12 in bencho\/flight-computer · approved by @sam-rivera and @lee-park · not signed/).waitFor();
     await card.getByText(/backed/).first().waitFor();
   }, cara);
   await cara.context().close();

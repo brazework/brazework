@@ -1,5 +1,5 @@
 import { githubConfig, githubFacts } from "@/lib/github-app";
-import { judgeBacking, parseGitHubEvidence, type BackingReason } from "@/lib/backing";
+import { approvalsFor, judgeBacking, parseGitHubEvidence, type BackingReason } from "@/lib/backing";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 // Server only: asks GitHub whether a milestone's evidence is the member's own work, and records the
@@ -7,7 +7,8 @@ import { createAdminClient } from "@/lib/supabase/admin";
 // Every "no" comes back as a reason, never an exception, so a GitHub outage can't break adding a
 // milestone that goes to a club or a person.
 
-export type BackingFacts = { kind: "commit" | "pull_request" | "release"; url: string; fullName: string; ref: string; githubUserId: number };
+// approvals, approvers: who approved a pull request on GitHub (lib/backing.ts); none for a commit or release.
+export type BackingFacts = { kind: "commit" | "pull_request" | "release"; url: string; fullName: string; ref: string; githubUserId: number; approvals: number; approvers: string[]; repoPrivate: boolean };
 
 /** Checks the evidence for a member's project. Nothing is written here. */
 export async function checkBacking(evidence: string, projectId: string, memberId: string): Promise<{ ok: true; facts: BackingFacts } | { ok: false; reason: BackingReason }> {
@@ -27,7 +28,9 @@ export async function checkBacking(evidence: string, projectId: string, memberId
     const facts = await githubFacts(c, repo.installation_id, ev, repo.default_branch);
     const verdict = judgeBacking(ev.kind, facts, memberGithubId);
     if (!verdict.ok) return verdict;
-    return { ok: true, facts: { kind: ev.kind, url: evidence.trim(), fullName: repo.full_name, ref: ev.ref, githubUserId: memberGithubId } };
+    const repoPrivate = facts.repoPrivate !== false;
+    const approved = ev.kind === "pull_request" ? approvalsFor(facts.reviews ?? [], facts.authorId, repoPrivate) : { approvals: 0, approvers: [] };
+    return { ok: true, facts: { kind: ev.kind, url: evidence.trim(), fullName: repo.full_name, ref: ev.ref, githubUserId: memberGithubId, ...approved, repoPrivate } };
   } catch {
     return { ok: false, reason: "unreachable" };
   }
@@ -38,6 +41,9 @@ export async function checkBacking(evidence: string, projectId: string, memberId
 export async function recordBacking(milestoneId: string, f: BackingFacts): Promise<boolean> {
   const db = createAdminClient();
   if (!db) return false;
-  const { error } = await db.from("milestone_backings").insert({ milestone_id: milestoneId, kind: f.kind, url: f.url, repo_full_name: f.fullName, ref: f.ref, github_user_id: f.githubUserId });
+  const row = { milestone_id: milestoneId, kind: f.kind, url: f.url, repo_full_name: f.fullName, ref: f.ref, github_user_id: f.githubUserId };
+  const { error } = await db.from("milestone_backings").insert({ ...row, approvals: f.approvals, approvers: f.approvers, repo_private: f.repoPrivate });
+  // Before supabase/approved-by.sql has run the new columns don't exist: back it as before.
+  if (error && ["PGRST204", "42703"].includes(error.code ?? "")) return !(await db.from("milestone_backings").insert(row)).error;
   return !error;
 }

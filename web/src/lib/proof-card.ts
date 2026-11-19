@@ -3,11 +3,13 @@
 // only public-safe fields of results their owner chose to share. Pure, so the wording is tested
 // (tests/proof-card.test.ts). A backed result never says "verified": only a person signs.
 
+import { approvedLine } from "@/lib/backing";
 export type PublicProof = {
   id: string; title: string; detail: string; achieved_on: string; level: "signed" | "backed" | "waiting"; project: string;
   member: { id: string; first: string; last: string; headline: string; avatar: string };
   witness: { name: string; role: string; club: string; vouched_by: string; at: string | null; signed_count?: number } | null;
-  backing: { kind: "commit" | "pull_request" | "release"; repo: string; ref: string; url: string } | null;
+  // approvals, approvers: who approved the pull request on GitHub (supabase/approved-by.sql).
+  backing: { kind: "commit" | "pull_request" | "release"; repo: string; ref: string; url: string; approvals?: number | null; approvers?: string[] | null } | null;
   image: string | null; shared_at: string;
   // A waiting card (supabase/waiting-cards.sql): who was asked. Never their address.
   waiting_for?: { club: string | null; asked: { relationship: string; domain: string } | null } | null;
@@ -32,7 +34,8 @@ export function proofBadge(p: PublicProof): string {
   }
   if (p.level === "backed" && p.backing) {
     const what = p.backing.kind === "commit" ? `commit ${p.backing.ref.slice(0, 7)}` : p.backing.kind === "pull_request" ? `PR #${p.backing.ref}` : `release ${p.backing.ref}`;
-    return `Backed by GitHub · ${what} in ${p.backing.repo}`;
+    const approved = approvedLine(p.backing);
+    return `Backed by GitHub · ${what} in ${p.backing.repo}${approved ? ` · ${approved}` : ""}`;
   }
   const w = p.witness;
   if (!w) return "Signed";
@@ -45,7 +48,7 @@ export const proofUrl = (site: string, id: string) => `${site.replace(/\/$/, "")
 
 /** What a post says: the result, and who stands behind it. */
 export function proofPostText(p: PublicProof): string {
-  if (p.level === "backed") return `${p.title}. Backed by GitHub on Brazework.`;
+  if (p.level === "backed") return `${p.title}. Backed by GitHub${approvedLine(p.backing) ? `, ${approvedLine(p.backing)}` : ""}, on Brazework.`;
   if (p.level === "waiting") return `${p.title}. On my Brazework record, waiting for ${waitingFor(p) || "the person who saw it"} to sign.`;
   const w = p.witness;
   const who = w?.vouched_by ? w.vouched_by.split(",")[0] : w?.name;

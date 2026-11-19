@@ -130,7 +130,9 @@ screens (your build, the proof, who saw it), and the waiting card.
   sponsorship goes to the club in full. See `/pricing`.
 - **"Isn't GitHub my proof?"** A repo shows code exists. It doesn't say what it changed (latency down
   from 820 to 310 ms) or that a person who was there stands behind it. And AI writes more of the code
-  every month. What's signed here is the outcome, by someone who saw it.
+  every month. What's signed here is the outcome, by someone who saw it. And where GitHub already
+  has a witness, we use it: connect a repo and a merged pull request shows who approved it there
+  ("approved by @sam"), with nobody asked to sign anything.
 - **"Is it only for engineers?"** No. We lead with engineers here because you ship software and your
   tools already connect. The same record works for students and their clubs, researchers, designers,
   analysts and teachers: anyone whose work a person can sign.

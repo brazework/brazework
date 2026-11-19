@@ -43,3 +43,15 @@ test("a waiting card says plainly it isn't signed, and who was asked, never thei
   assert.doesNotMatch(proofPostText(prof) + proofBadge(prof), /verified|signed by/i);
   assert.match(proofBadge({ ...base, level: "waiting" as const, waiting_for: null }), /waiting for the person who saw it/);
 });
+
+test("a backed pull request names who approved it on GitHub, and still isn't called signed", () => {
+  const b: PublicProof = { ...base, level: "backed", witness: null, backing: { kind: "pull_request", repo: "acme/checkout", ref: "1187", url: "https://github.com/acme/checkout/pull/1187", approvals: 2, approvers: ["sam-rivera", "lee-park"] } };
+  assert.equal(proofBadge(b), "Backed by GitHub · PR #1187 in acme/checkout · approved by @sam-rivera and @lee-park");
+  assert.equal(proofPostText(b), `${b.title}. Backed by GitHub, approved by @sam-rivera and @lee-park, on Brazework.`);
+  // A private repo: how many, never who.
+  assert.equal(proofBadge({ ...b, backing: { ...b.backing!, approvals: 3, approvers: [] } }), "Backed by GitHub · PR #1187 in acme/checkout · approved by 3 reviewers");
+  // Nobody approved, or a card from before approvals were read: as it was.
+  assert.equal(proofBadge({ ...b, backing: { ...b.backing!, approvals: 0, approvers: [] } }), "Backed by GitHub · PR #1187 in acme/checkout");
+  assert.equal(proofBadge({ ...b, backing: { kind: "pull_request", repo: "acme/checkout", ref: "1187", url: "https://github.com/acme/checkout/pull/1187" } }), "Backed by GitHub · PR #1187 in acme/checkout");
+  for (const t of [proofBadge(b), proofPostText(b)]) assert.doesNotMatch(t, /verified|signed|vouched/i);
+});
