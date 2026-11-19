@@ -44,6 +44,12 @@ export function nextStep(tool: string, data: unknown, origin: string): { next: s
     }
     case "add_teammate":
       return { next: `${str(d.person)} is on "${str(d.title)}" as ${str(d.role) === "viewer" ? "a viewer" : "a teammate"}. Teammates can post updates and log milestones on it, but can't sign its milestones.`, open: url };
+    case "rsvp_event": {
+      const when = str(d.starts_at) ? new Date(str(d.starts_at)).toUTCString().replace(/:00 GMT$/, " UTC") : "";
+      return str(d.status) === "not going"
+        ? { next: `The member's spot at "${str(d.title)}" is given back. The host's count goes down by one.`, open: url }
+        : { next: `The member is going to "${str(d.title)}"${when ? ` (${when})` : ""}${str(d.host) ? `, hosted by ${str(d.host)}` : ""}. The event page has its chat and a calendar file.`, open: url };
+    }
     default:
       return null;
   }

@@ -2,7 +2,7 @@
 -- says how many more verified companies looked in the 90 days before that, so a member sees what Plus
 -- would show them before anyone asks for money. Only a count, never which companies: naming them is
 -- what Plus is. Never estimated or rounded up: it's the real number, and 0 means no prompt at all.
--- Run after tool-actions.sql. Additive: it redefines my_company_viewers() with one more field, `hidden`.
+-- Run after tool-rsvp.sql. Additive: it redefines my_company_viewers() with one more field, `hidden`.
 create or replace function public.my_company_viewers(p_days integer default 90) returns jsonb
 language sql stable security definer set search_path = public as $$
   with lim as (select least(greatest(coalesce(p_days, 7), 1), case when public.has_plus() then 90 else 7 end) as days),
