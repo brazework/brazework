@@ -1,4 +1,4 @@
--- Approve in chat (docs/mcp-workflows.md). Run after mcp-oauth.sql. Additive.
+-- Approve in chat (docs/mcp-workflows.md). Run after mcp-oauth.sql and mcp-workflows.sql. Additive.
 --
 -- On the consent page the member now picks how a connected assistant adds things:
 --   * "When I say yes in chat" (the default): the sign-in gets read + post. The assistant shows what

@@ -74,7 +74,6 @@ oauth-signup
 members-only
 mcp-workflows
 mcp-oauth
-mcp-oauth-post
 waiting-cards
 money
 tool-actions
@@ -90,3 +89,4 @@ tool-talent
 tool-goals
 tool-signer
 brazework-messages
+mcp-oauth-post

@@ -88,4 +88,5 @@ set local role anon;
 select t.refused($$select public.remember_oauth_app('c1a0de00-0000-4000-8000-00000000c1a1', 'X', true)$$, '42501', 'signed-out callers can''t call it');
 reset role;
 
+\echo 'mcp-oauth-post: all passed'
 rollback;
