@@ -8,6 +8,7 @@ import { mailer } from "@/lib/email";
 import { CARD_HTML, CARD_MIME, CARD_URI, cardMeta, cardResourceMeta } from "@/lib/mcp-card";
 import { nextStep, withFix } from "@/lib/mcp-results";
 import { env } from "@/lib/env";
+import { mcpServerInfo } from "@/lib/mcp-identity";
 import { linkSignIn, looksLikeJwt, oauthEnabled, resourceMetadataUrl } from "@/lib/mcp-oauth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { buildVouchEmail, type Relationship } from "@/lib/vouch-email";
@@ -85,7 +86,7 @@ export async function POST(req: Request) {
       return rpc(msg.id, { result: {
         protocolVersion: MCP_PROTOCOLS.includes(asked) ? asked : MCP_PROTOCOLS[1],
         capabilities: { tools: { listChanged: false }, prompts: { listChanged: false }, resources: { listChanged: false } },
-        serverInfo: { name: "brazework", title: "Brazework", version: "0.3.0" },
+        serverInfo: mcpServerInfo(env.siteUrl),
         instructions: instructions(can) + (can.canDraft ? MESSAGES : ""),
       } });
     }
