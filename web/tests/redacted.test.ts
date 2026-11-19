@@ -22,3 +22,9 @@ test("the month, or nothing", () => {
   assert.equal(redactedMonth("nope"), "");
   assert.equal(redactedText(r({ month: "" })), "Shipped a payments migration · signed by a manager at a verified company");
 });
+
+test("a work address at a company that isn't verified is never called verified", () => {
+  const work = redactedSigner(r({ signer: { kind: "vouch", role: "manager", org: "work" } }));
+  assert.equal(work, "signed by a manager at a company (not verified)");
+  assert.doesNotMatch(work, /a verified company/);
+});
