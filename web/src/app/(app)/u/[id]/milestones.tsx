@@ -4,6 +4,7 @@ import { BadgeCheck, Clock, ExternalLink, Eye, EyeOff, Flag, GitMerge, Loader2, 
 import Link from "next/link";
 import { useActionState, useEffect, useRef, useState, useTransition } from "react";
 import { Celebrate } from "@/components/app/celebrate";
+import { FreshSeal } from "@/components/app/fresh-seal";
 import { Button, Field, inputCls } from "@/components/ui";
 import { cn } from "@/lib/forge";
 import { signerNote } from "@/lib/signers";
@@ -69,17 +70,17 @@ export function MilestoneTimeline({ items, own, projectPrivate = false }: { item
                   {/* The badge: who verified it, their role, the club and when. */}
                   {m.status === "verified" && m.vouched_by && (
                     <span className="inline-block max-w-full rounded-lg bg-[color-mix(in_oklab,var(--ok)_14%,transparent)] px-2 py-0.5 font-medium text-ok">
-                      <BadgeCheck className="mr-1 inline size-3 align-[-2px]" />Vouched for by {m.vouched_by}{m.reviewed_at ? ` · ${new Date(m.reviewed_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" })}` : ""}
+                      <FreshSeal id={m.id} at={m.reviewed_at}><BadgeCheck className="block size-3" /></FreshSeal>Vouched for by {m.vouched_by}{m.reviewed_at ? ` · ${new Date(m.reviewed_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" })}` : ""}
                     </span>
                   )}
                   {m.status === "verified" && !m.vouched_by && (
                     // Inline text, not flex: on a phone the sentence wraps as one line of text instead of
                     // splitting into columns (each text piece was its own flex item).
                     <span className="inline-block max-w-full rounded-lg bg-[color-mix(in_oklab,var(--ok)_14%,transparent)] px-2 py-0.5 font-medium text-ok">
-                      <BadgeCheck className="mr-1 inline size-3 align-[-2px]" />Verified{m.reviewer_name ? ` by ${m.reviewer_name}` : ""}{m.reviewer_role ? ` (${m.reviewer_role})` : ""}, <Link href={`/c/${m.community_id}`} className="hover:underline">{m.community_name}</Link>{m.reviewed_at ? ` · ${new Date(m.reviewed_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" })}` : ""}
+                      <FreshSeal id={m.id} at={m.reviewed_at}><BadgeCheck className="block size-3" /></FreshSeal>Verified{m.reviewer_name ? ` by ${m.reviewer_name}` : ""}{m.reviewer_role ? ` (${m.reviewer_role})` : ""}, <Link href={`/c/${m.community_id}`} className="hover:underline">{m.community_name}</Link>{m.reviewed_at ? ` · ${new Date(m.reviewed_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" })}` : ""}
                     </span>
                   )}
-                  {m.status === "pending" && <span className="inline-flex items-center gap-1 rounded-full bg-surface-2 px-2 py-0.5 text-muted"><Clock className="size-3" /> {m.community_id ? `Waiting for ${m.community_name}` : "Waiting for a vouch"}</span>}
+                  {m.status === "pending" && <span data-waiting className="inline-flex items-center gap-1 rounded-full border border-dashed border-wait/60 bg-[color-mix(in_oklab,var(--wait)_9%,transparent)] px-2 py-0.5 font-medium text-wait"><Clock className="size-3" /> {m.community_id ? `Waiting for ${m.community_name}` : "Waiting for a vouch"}</span>}
                   {m.status === "draft" && <span className="inline-flex items-center gap-1 rounded-full bg-surface-2 px-2 py-0.5 text-muted">Draft</span>}
                   {/* Backed by data, never "verified": a different colour, the word "Backed", and what was checked. */}
                   {backingOf(m) && m.status !== "revoked" && (() => { const b = backingOf(m)!; return (

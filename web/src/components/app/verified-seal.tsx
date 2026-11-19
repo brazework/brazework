@@ -59,7 +59,7 @@ export function WaitingStamp({ forWhom, since, size = "md", className }: { forWh
   const d = size === "sm" ? 18 : 28;
   return (
     <span className={cn("inline-flex min-w-0 items-center gap-2", className)}>
-      <span aria-hidden="true" className="shrink-0 rounded-full border-2 border-dashed border-line-strong" style={{ width: d, height: d }} />
+      <span aria-hidden="true" className="shrink-0 rounded-full border-2 border-dashed border-wait" style={{ width: d, height: d }} />
       <span className="min-w-0 leading-tight">
         <span className={cn("block truncate font-medium text-text-2", size === "sm" ? "text-xs" : "text-sm")}>Waiting for {forWhom}</span>
         {since && <span suppressHydrationWarning className="block truncate text-[11px] text-faint">Asked {since}</span>}
