@@ -288,6 +288,40 @@ const { step, browser, as, go, summary, BASE } = require("./lib.cjs");
     psql(`delete from public.events where id = '${ev}'`); // leave Rocketry's calendar as later journeys expect it
   }, ben);
 
+  await step("intents: Ben's assistant reads Josh's message and drafts a reply; it waits as Ember's message card and goes only when Ben confirms. Claude Code joins a club and accepts an invite", async () => {
+    const conv = psql(`begin; select set_config('request.jwt.claim.sub', '${process.env.JOSH_ID}', true) is not null; select public.start_conversation('${process.env.BEN_ID}'); commit;`).split("\n").filter((l) => /^[0-9a-f-]{36}$/.test(l))[0];
+    psql(`insert into public.messages (conversation_id, sender_id, body) values ('${conv}', '${process.env.JOSH_ID}', 'Can you look at my thrust curve before Friday? ${stamp}')`);
+    const inbox = (await call("my_inbox", {}, readOnly)).structuredContent?.items ?? [];
+    const row = inbox.find((c) => c.conversation_id === conv);
+    // A request if they've never talked; an ordinary conversation if an earlier journey connected them.
+    if (!row || !["request to you", "conversation"].includes(row.kind) || !row.unread || row.last_from !== "them" || !row.url?.startsWith("http")) throw new Error(`my_inbox: ${JSON.stringify(inbox).slice(0, 240)}`);
+    const thread = (await call("my_inbox", { conversation_id: conv }, readOnly)).structuredContent;
+    if (thread?.messages?.[0]?.from !== "them") throw new Error(`the conversation: ${JSON.stringify(thread).slice(0, 200)}`);
+    const before = psql(`select count(*) from public.messages where conversation_id = '${conv}'`); // an earlier journey may have talked here already
+    const reply = (await call("draft_reply", { conversation_id: conv, body: `Sure, send it over. ${stamp}` }, cc)).structuredContent;
+    if (reply?.drafted !== true || !/press Confirm to send it/.test(reply.next ?? "")) throw new Error(`draft_reply (even with a token that posts) must be a draft: ${JSON.stringify(reply).slice(0, 200)}`);
+    if (psql(`select count(*) from public.messages where conversation_id = '${conv}'`) !== before) throw new Error("a reply was sent before Ben confirmed");
+    await go(ben, "/drafts");
+    const card = ben.getByRole("group", { name: "Send a message from Claude Code" });
+    await card.getByText("Josh Menzies").waitFor({ timeout: 15000 });
+    await card.getByRole("button", { name: "Confirm" }).click();
+    await card.getByText("Sent", { exact: true }).waitFor({ timeout: 15000 });
+    if (psql(`select sender_id from public.messages where conversation_id = '${conv}' and body = 'Sure, send it over. ${stamp}'`) !== process.env.BEN_ID) throw new Error("Ben's confirmed reply wasn't sent as Ben");
+    const club = `mcp-club-${stamp}`, closed = `mcp-closed-${stamp}`, code = `${stamp}`.padStart(16, "a").slice(-16).replace(/[^0-9a-f]/g, "a");
+    psql(`insert into public.communities (id, name, type, privacy) values ('${club}', 'Hopper Lab ${stamp}', 'project', 'public'), ('${closed}', 'Closed Lab ${stamp}', 'project', 'approval');
+          insert into public.community_members (community_id, uid, role) values ('${club}', '${process.env.JOSH_ID}', 'owner'), ('${closed}', '${process.env.JOSH_ID}', 'owner');
+          insert into public.community_invites (code, community_id, created_by) values ('${code}', '${closed}', '${process.env.JOSH_ID}');`);
+    const joined = (await call("join_club", { club_id: club }, cc)).structuredContent;
+    if (joined?.status !== "joined" || !/The member is in Hopper Lab/.test(joined.next ?? "")) throw new Error(`join_club: ${JSON.stringify(joined).slice(0, 200)}`);
+    const asked = (await call("join_club", { club_id: closed }, cc)).structuredContent;
+    if (asked?.status !== "requested") throw new Error(`asking to join a club that approves members: ${JSON.stringify(asked).slice(0, 200)}`);
+    psql(`delete from public.community_requests where community_id = '${closed}'`);
+    const inv = (await call("accept_invite", { invite: `${BASE}/join/${code}` }, cc)).structuredContent;
+    if (inv?.status !== "joined") throw new Error(`accept_invite: ${JSON.stringify(inv).slice(0, 200)}`);
+    if (psql(`select count(*) from public.community_members where uid = '${process.env.BEN_ID}' and community_id in ('${club}', '${closed}')`) !== "2") throw new Error("Ben isn't in both clubs");
+    psql(`delete from public.communities where id in ('${club}', '${closed}')`); // Ben's clubs as later journeys expect them
+  }, ben);
+
   await step("FIX-92: a club's Integrations tab shows how work comes in (GitHub, members' AI tools), and no Discord", async () => {
     await go(ben, "/c/rkt/manage?tab=integrations"); // Ben owns Rocketry Club
     const main = ben.locator("main");

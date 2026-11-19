@@ -101,6 +101,9 @@ and `brazework://playbooks/<field>`, for example `brazework://playbooks/data-ai`
 | `request_signature` | post | Email someone who saw the work a one-time link to sign a milestone. |
 | `create_project`, `update_project`, `add_teammate` | draft (does it with post) | Ask in plain words: "add my hopper project", "update the summary and specs", "put Josh on it". With a token that can post, they happen once you say yes in chat; otherwise (or with `draft: true`) they wait as cards in **Drafts** and on Ember's page. `update_project` changes only the fields given (summary, write-up, link, specs) on your own projects, and the card shows what it replaces. `add_teammate` adds someone who shares one of your clubs, as a teammate or a viewer (admins are made in the app). |
 | `rsvp_event` | draft (does it with post) | "Save me a spot at Thursday's build night", or "I can't make it" (`going: false`). Only events you can see that aren't over; ids come from `upcoming_events`. |
+| `join_club`, `accept_invite` | draft (does it with post) | "Join the robotics club", "accept this invite: brazework.com/join/…". A club that approves members gets a request, as in the app. |
+| `my_inbox` | read | Your conversations and message requests, newest first, or one conversation's last 20 messages. |
+| `draft_reply` | draft | A reply (or a first message) always waits in Drafts as a card: you read it and send it from Brazework. A tool never sends a message. |
 
 Scopes nest: read ⊂ draft ⊂ post. A token made before November 2026 keeps exactly what it had.
 
@@ -122,6 +125,9 @@ actions, by the same names (`supabase/tool-actions.sql`, `web/src/lib/tool-actio
 | Project summary, write-up, link, specs | `update_project` | card in Drafts | saved after your yes |
 | Teammate from your clubs | `add_teammate` | card in Drafts | added after your yes |
 | RSVP to an event, or take it back | `rsvp_event` (`going: false` to take it back) | card in Drafts | done after your yes |
+| Join a club (or ask to, if it approves members) | `join_club` | card in Drafts | done after your yes |
+| Accept a club invite link | `accept_invite` | card in Drafts | done after your yes |
+| A message or a reply | `draft_reply` | card in Drafts | **always a card**: you send it |
 
 ## Drafts and automations
 
