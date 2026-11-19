@@ -74,3 +74,5 @@ oauth-signup
 members-only
 mcp-workflows
 mcp-oauth
+waiting-cards
+money
