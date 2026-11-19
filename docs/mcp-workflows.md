@@ -78,8 +78,27 @@ and `brazework://playbooks/<field>`, for example `brazework://playbooks/data-ai`
 | `draft_post`, `draft_milestone` | draft | Leave a post or a milestone in your **Drafts**. Same fields as the live tools, plus `source` (shown on the draft) and `source_key` (send the same key again and you get the first draft back, so re-runs never duplicate). |
 | `post_update`, `log_milestone` | post | Post, or log a milestone, straight away after asking you. `log_milestone` no longer needs a club: with no club, the milestone waits for a signature. |
 | `request_signature` | post | Email someone who saw the work a one-time link to sign a milestone. |
+| `create_project`, `update_project`, `add_teammate` | draft (does it with post) | Ask in plain words: "add my hopper project", "update the summary and specs", "put Josh on it". With a token that can post, they happen once you say yes in chat; otherwise (or with `draft: true`) they wait as cards in **Drafts** and on Ember's page. `update_project` changes only the fields given (summary, write-up, link, specs) on your own projects, and the card shows what it replaces. `add_teammate` adds someone who shares one of your clubs, as a teammate or a viewer (admins are made in the app). |
 
 Scopes nest: read ⊂ draft ⊂ post. A token made before November 2026 keeps exactly what it had.
+
+## Ember and your tools: one set of actions
+
+Ember (the agent in Brazework) prepares actions as approve-first cards. Your AI tools now use the same
+actions, by the same names (`supabase/tool-actions.sql`, `web/src/lib/tool-actions.ts`):
+
+- **A draft from Claude is an Ember card.** What a tool drafts (a project, an edit, a teammate, …) shows on
+  `/drafts` and under *Waiting from your tools* on Ember's page as the card Ember would have shown. Edit it,
+  then **Confirm**: it runs the app's own action, exactly as when Ember proposed it, and the draft is done.
+- **What Ember can prepare, a tool can draft.** Each action has one check in the database
+  (`tool_check_<kind>`), run as you, under the same rules as the app; actions a posting token may do straight
+  away also have `tool_do_<kind>`. `mcp_act` is the tool's way in.
+
+| Action (card) | MCP tool | Without a token that posts | With one |
+|---|---|---|---|
+| New project | `create_project` | card in Drafts | added after your yes |
+| Project summary, write-up, link, specs | `update_project` | card in Drafts | saved after your yes |
+| Teammate from your clubs | `add_teammate` | card in Drafts | added after your yes |
 
 ## Drafts and automations
 
@@ -122,7 +141,8 @@ is withdrawn.
 - Post, send or ask anything without your yes. Drafts wait for your tap. Tools that can post are told to show
   you first.
 - Verify or sign anything. Clubs and people do that, in Brazework.
-- Change or delete anything you've made.
+- Delete anything, or change anything someone else made. It changes your own projects only when you ask
+  (`update_project`), and only the fields you named.
 - Claim more than it can reach. Each field's tools below are marked **Official MCP server** (the vendor's),
   **Community MCP server** (someone else's open-source server: read it before you install it) or **Reads your
   exports** (no server: your assistant reads the files or command output you point it to). Checked in November 2026.

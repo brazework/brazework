@@ -74,3 +74,4 @@ oauth-signup
 members-only
 mcp-workflows
 waiting-cards
+tool-actions
