@@ -26,8 +26,11 @@ export async function createApiToken(name: string, canPost = false): Promise<{ o
   if (!user) return { ok: false, message: "Log in again." };
   const token = `forge_${randomBytes(30).toString("base64url")}`;
   const args = { p_name: label, p_hash: tokenHash(token), p_prefix: token.slice(0, 12) };
-  const { data, error } = canPost && (await dbFeatures()).mcpWrites
-    ? await supabase.rpc("create_api_token", { ...args, p_scopes: ["read", "post"] })
+  // New tokens can leave drafts for you to approve (supabase/mcp-workflows.sql); posting is the switch.
+  const f = await dbFeatures();
+  const scopes = canPost && f.mcpWrites ? ["read", "post"] : f.mcpWorkflows ? ["read", "draft"] : null;
+  const { data, error } = scopes
+    ? await supabase.rpc("create_api_token", { ...args, p_scopes: scopes })
     : await supabase.rpc("create_api_token", args);
   if (error) return { ok: false, message: error.code === "P0001" ? error.message : friendlyError(error) };
   revalidatePath("/settings");

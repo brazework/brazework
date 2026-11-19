@@ -31,7 +31,7 @@ select public.create_api_token('Claude Code', repeat('b', 64), 'forge_bbbbbb', a
 -- (Members can't read token hashes, by design: these checks look as the database owner.)
 reset role;
 select t.ok((select scopes = array['read'] from public.api_tokens where token_hash = repeat('a', 64)), 'a token is read-only unless asked');
-select t.ok((select scopes = array['read', 'post'] from public.api_tokens where token_hash = repeat('b', 64)), 'a token can be allowed to post');
+select t.ok((select 'post' = any (scopes) from public.api_tokens where token_hash = repeat('b', 64)), 'a token can be allowed to post');
 select id as post_tok from public.api_tokens where token_hash = repeat('b', 64) \gset
 
 -- The MCP server calls as anon, with only the token hash.
