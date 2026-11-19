@@ -1,4 +1,4 @@
--- Step 70: club officers from their AI tools (docs/mcp-workflows.md). Run after tool-clubs-messages.sql.
+-- Step 71: club officers from their AI tools (docs/mcp-workflows.md). Run after tool-clubs-messages.sql.
 -- Additive and safe to re-run.
 --
 -- Two more action kinds shared with Ember's cards (tool-actions.sql), both drafts only (no

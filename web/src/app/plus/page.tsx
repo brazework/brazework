@@ -1,0 +1,65 @@
+import type { Metadata } from "next";
+import { Check } from "lucide-react";
+import Link from "next/link";
+import { Suspense } from "react";
+import { Footer } from "@/components/landing/closing";
+import { ThemeChrome } from "@/components/theme-chrome";
+import { Logo } from "@/components/ui";
+import { plusOnSale } from "@/lib/billing";
+import { dbFeatures } from "@/lib/db-features";
+import { PLUS, TIERS } from "@/lib/pricing";
+import { getViewer } from "@/lib/supabase/server";
+import { PlusButton } from "./plus-button";
+
+export const metadata: Metadata = { title: "Plus", description: "Every company that looked in the last 90 days, and more for your record. Free stays free." };
+
+// /plus: what Plus adds, and the one button. On sale (Stripe on and STRIPE_PRICE_PLUS set), it goes
+// to checkout; until then it takes a place on the waitlist (lib/money.ts startPlus()).
+export default function PlusPage({ searchParams }: PageProps<"/plus">) {
+  return (
+    <div className="landing min-h-dvh">
+      <ThemeChrome landing />
+      <header className="mx-auto flex max-w-6xl items-center justify-between px-5 py-5 sm:px-6">
+        <Link href="/" aria-label="Brazework home"><Logo /></Link>
+        <Link href="/pricing" className="text-sm text-muted hover:text-text">Pricing</Link>
+      </header>
+      <main className="mx-auto max-w-xl px-5 pt-8 pb-24 sm:px-6">
+        <Suspense fallback={<div className="h-96 shimmer rounded-3xl" aria-busy="true" />}>
+          <Plus searchParams={searchParams} />
+        </Suspense>
+      </main>
+      <Footer />
+    </div>
+  );
+}
+
+async function Plus({ searchParams }: { searchParams: PageProps<"/plus">["searchParams"] }) {
+  const welcome = (await searchParams).welcome === "1";
+  const { supabase, user } = await getViewer();
+  const has = user && (await dbFeatures()).money ? Boolean((await supabase.rpc("has_plus")).data) : false;
+  const onSale = plusOnSale();
+  const tier = TIERS.find((t) => t.id === "plus")!;
+  return (
+    <>
+      <h1 className="text-[clamp(2rem,5vw,2.75rem)] leading-[1.05] font-semibold tracking-[-0.03em]">{PLUS.name}</h1>
+      <p className="mt-3 text-[15px] leading-relaxed text-muted">More from your record. Everything in Free stays free, for good.</p>
+      <section className="mt-8 rounded-[1.25rem] border border-line bg-surface p-6 sm:p-8">
+        <p className="text-3xl font-semibold tracking-tight">{tier.price}</p>
+        <p className="mt-1 text-sm text-muted">{tier.note}</p>
+        <ul className="mt-6 flex flex-col gap-2.5 text-[15px] text-text-2">
+          {tier.points.map((x) => <li key={x} className="flex gap-2.5"><Check className="mt-1 size-4 shrink-0 text-ok" />{x}</li>)}
+        </ul>
+        <div className="mt-8">
+          {has ? (
+            <p role="status" className="flex items-start gap-2 text-[15px]"><Check className="mt-0.5 size-4 shrink-0 text-ok" /> {welcome ? "Welcome to Plus. It's on your account now." : "You have Plus."} <Link href="/dashboard" className="font-medium underline-offset-4 hover:underline">See who looked</Link></p>
+          ) : user ? (
+            <PlusButton label={onSale ? `Get ${PLUS.name}` : "Join the waitlist"} />
+          ) : (
+            <Link href="/login?next=/plus" className="inline-flex h-11 items-center rounded-lg bg-accent px-5 text-[15px] font-medium text-on-accent hover:opacity-90">Log in to get {PLUS.name}</Link>
+          )}
+          {!has && !onSale && <p className="mt-3 text-sm text-muted">{PLUS.name} opens soon. Join the waitlist and we&apos;ll email you, at the launch price.</p>}
+        </div>
+      </section>
+    </>
+  );
+}

@@ -226,12 +226,12 @@ async function Admin() {
         <div className="mt-3 flex flex-col gap-2">
           {(queue ?? []).map((q) => (
             <Panel key={q.id as number} className="p-4 text-sm">
-              <span className="font-medium">{({ dispute: "Escalated dispute", verify_outlier: "Unusual verification volume", duplicate_club: "Possible duplicate club", report: "Report" } as Record<string, string>)[q.kind as string] ?? q.kind}</span>
+              <span className="font-medium">{({ dispute: "Escalated dispute", verify_outlier: "Unusual verification volume", duplicate_club: "Possible duplicate club", report: "Report", sales: "Sales request" } as Record<string, string>)[q.kind as string] ?? q.kind}</span>
               <span className="ml-2 text-xs text-faint">{new Date(q.created_at as string).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" })}</span>
               {q.detail && <p className="mt-1 text-text-2">{q.detail as string}</p>}
             </Panel>
           ))}
-          {!queue?.length && <EmptyState title="The queue is clear" body="Escalated disputes and unusual verification patterns land here." />}
+          {!queue?.length && <EmptyState title="The queue is clear" body="Escalated disputes, unusual verification patterns and sales requests (pilots, sponsorships, demos, the Plus waitlist) land here." />}
         </div>
       </section>
     </div>

@@ -1,4 +1,4 @@
--- Step 68: RSVP from your AI tools (docs/mcp-workflows.md). Run after tool-actions.sql. Additive and
+-- Step 69: RSVP from your AI tools (docs/mcp-workflows.md). Run after tool-actions.sql. Additive and
 -- safe to re-run.
 --
 -- One more action kind shared with Ember's cards (tool-actions.sql): rsvp. going: true saves the
