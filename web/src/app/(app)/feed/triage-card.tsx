@@ -5,13 +5,13 @@ import { useState, useTransition } from "react";
 import { Button, inputCls, selectPillCls } from "@/components/ui";
 import { defaultClub, triageActions, triageDone, type TriageAction, type TriageClub } from "@/lib/draft-triage";
 import { cn, timeAgo } from "@/lib/forge";
-import { askToSignDraft, dismissDraft, triageDraft, type ToolDraft } from "@/lib/tool-drafts";
+import { askToSignDraft, dismissDraft, triageDraft, type TriageDraft } from "@/lib/tool-drafts";
 import { RELATIONSHIPS } from "@/lib/vouch-email";
 
 // One draft on Today, decided in a tap (supabase/daily-triage.sql): Keep, Send to club, Ask to sign or
 // Dismiss for a milestone; Post, Post to club or Dismiss for a post. Big targets, no page change; a
 // tap that needs one more answer (which club, whose email) opens it in place. Editing lives on /drafts.
-export function TriageCard({ draft, project, clubs }: { draft: ToolDraft; project: string | null; clubs: TriageClub[] }) {
+export function TriageCard({ draft, project, clubs }: { draft: TriageDraft; project: string | null; clubs: TriageClub[] }) {
   const p = draft.payload;
   const isPost = draft.kind === "post";
   const [open, setOpen] = useState<"club" | "sign" | null>(null);

@@ -3,7 +3,7 @@ import Link from "next/link";
 import { dbFeatures } from "@/lib/db-features";
 import { triageHeading, type TriageClub } from "@/lib/draft-triage";
 import { getViewer } from "@/lib/supabase/server";
-import type { ToolDraft } from "@/lib/tool-drafts";
+import type { TriageDraft } from "@/lib/tool-drafts";
 import { ReminderToggle } from "./triage-reminder";
 import { TriageCard } from "./triage-card";
 
@@ -17,11 +17,13 @@ export async function DraftTriage() {
   const { supabase, user } = await getViewer();
   if (!user || !(await dbFeatures()).dailyTriage) return null;
   const [drafts, mine, prefs] = await Promise.all([
-    supabase.from("tool_drafts").select("id, kind, via, source, created_at, payload", { count: "exact" }).eq("status", "waiting").order("created_at", { ascending: false }).limit(SHOWN),
+    supabase.from("tool_drafts").select("id, kind, via, source, created_at, payload", { count: "exact" }).eq("status", "waiting").in("kind", ["post", "milestone"]).order("created_at", { ascending: false }).limit(SHOWN),
     supabase.from("community_members").select("role, communities(id, name)").eq("uid", user.id).in("role", MEMBER_ROLES).limit(50),
     supabase.from("email_prefs").select("daily_drafts").eq("user_id", user.id).maybeSingle(),
   ]);
-  const list = (drafts.data ?? []) as ToolDraft[];
+  // Triage decides posts and milestones; the other kinds (RSVPs, replies, project edits from Ember and
+  // the tools) wait on /drafts, where each has its own card.
+  const list = (drafts.data ?? []) as TriageDraft[];
   const total = drafts.count ?? list.length;
   if (!list.length) return null;
   const clubs = ((mine.data ?? []) as unknown as { communities: TriageClub | null }[])

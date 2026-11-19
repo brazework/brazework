@@ -11,6 +11,8 @@ export type ToolDraft = {
   payload: Record<string, unknown> & { body?: string; kind?: string; tags?: string[]; title?: string; detail?: string; evidence?: { type: string; url: string }[]; achieved_on?: string; project_id?: string | null; club_id?: string | null };
 };
 export type DraftResult = { ok: boolean; message: string; url?: string };
+/** A post or milestone draft: the two kinds Today's triage decides (other kinds wait on /drafts). */
+export type TriageDraft = ToolDraft & { kind: "post" | "milestone" };
 
 const reason = (e: { message?: string; code?: string }) => (e.code === "P0001" ? e.message ?? friendlyError(e) : e.code === "42501" ? "That draft isn't yours." : friendlyError(e));
 const idOk = (id: string) => /^[0-9a-f-]{36}$/i.test(id);
