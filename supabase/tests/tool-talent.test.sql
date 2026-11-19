@@ -57,8 +57,12 @@ select t.ok((select bool_and(s->>'level' = 'signed' and s->>'signed_by' is not n
 select t.ok(not exists (select 1 from jsonb_array_elements(current_setting('t.cv')::jsonb->'projects') p, jsonb_array_elements(p->'signed') s where s->>'milestone_id' = 'm3'),
   '... and nothing Ben keeps private');
 update public.milestones set shared_at = now() where id = 'm1';
-select t.ok((select s->>'link' = '/p/m1' and (s->>'public_card')::boolean from jsonb_array_elements(public.mcp_resume(repeat('b', 64))->'projects') p, jsonb_array_elements(p->'signed') s where s->>'milestone_id' = 'm1'),
-  'a shared result links to its public proof card');
+-- A shared result links to its proof card (/p/<id>); once verify pages exist (verify-links.sql, which runs
+-- before this step on main), signed public work links to its verify page (/v/<id>) instead.
+select t.ok((select s->>'link' = case when to_regprocedure('public.public_verify(text)') is null then '/p/m1' else '/v/m1' end
+                    and (s->>'public_card')::boolean
+             from jsonb_array_elements(public.mcp_resume(repeat('b', 64))->'projects') p, jsonb_array_elements(p->'signed') s where s->>'milestone_id' = 'm1'),
+  'a shared result links to its public page: the proof card, or the verify page once that step has run');
 -- Once the verify pages step has run (verify-links.sql), signed public work links to /v/<id>.
 do $$ begin
   if to_regprocedure('public.public_verify(text)') is null then
