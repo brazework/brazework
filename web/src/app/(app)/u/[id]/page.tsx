@@ -16,6 +16,7 @@ import { OwnProofTabs } from "@/components/app/place-tabs-counted";
 import { GoalCard, GoalLine } from "@/components/app/goal-card";
 import { loadGoal, loadRecord } from "@/lib/goal-load";
 import { Seal } from "@/components/app/verified-seal";
+import { TitleBlock } from "@/components/app/title-block";
 import { EmptyState, Panel, Skeleton } from "@/components/app/page-ui";
 import { MemberFaces } from "@/components/network/member-faces";
 import { classOf, openToLabel, type ProfileLink } from "@/lib/profile-meta";
@@ -229,26 +230,15 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
           <div className="mt-5 flex flex-wrap items-end gap-x-8 gap-y-4">
             {/* The record leads (section redesign): how much of the work someone signed, in the seal's
                 green, then what's still waiting (yours only) and the rest. No count-up: nothing changed. */}
-            <ul aria-label="Record" className="flex flex-wrap items-center gap-x-6 gap-y-3">
-              {stats.map((st) => {
-                const signed = st.href === "#proof";
-                return (
-                  <li key={st.label}>
-                    {/* In-page tabs (#projects) need a plain anchor so the hashchange reaches the tabs. */}
-                    <a href={st.href} className="group inline-flex items-center gap-2.5 rounded-lg transition">
-                      {signed && (st.n > 0 ? <Seal size={30} /> : <span aria-hidden="true" className="size-[30px] rounded-full border-2 border-dashed border-line-strong" />)}
-                      <span className="leading-tight">
-                        <span className={cn("block font-semibold tracking-tight tabular-nums", signed ? "text-2xl" : "text-lg", signed && st.n > 0 ? "text-ok" : "text-text")}>{st.n}</span>
-                        <span className="block text-xs text-muted group-hover:text-text">{st.label}</span>
-                      </span>
-                    </a>
-                  </li>
-                );
-              })}
-              {mine && waiting > 0 && (
-                <li><a href="#proof" className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-line-strong px-3 py-1 text-xs text-muted transition hover:text-text">{waiting} waiting for a signature</a></li>
-              )}
-            </ul>
+            <TitleBlock label="Record" className="w-full sm:w-auto sm:min-w-96" cells={[
+              ...stats.map((st) => ({
+                label: st.label,
+                tone: st.href === "#proof" && st.n > 0 ? ("ok" as const) : undefined,
+                // In-page tabs (#projects) need a plain anchor so the hashchange reaches the tabs.
+                value: <a href={st.href} className="inline-flex items-center gap-1.5 hover:underline">{st.href === "#proof" && st.n > 0 && <Seal size={16} />}{st.n}</a>,
+              })),
+              ...(mine && waiting > 0 ? [{ label: "Waiting", value: <a href="#proof" className="hover:underline">{waiting} to be signed</a> }] : []),
+            ]} />
             {wins.length > 0 && (
               <div className="flex flex-wrap gap-1.5" aria-label="Challenge wins">
                 {wins.slice(0, 3).map((w) => (
