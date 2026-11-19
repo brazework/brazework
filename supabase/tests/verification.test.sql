@@ -102,7 +102,7 @@ select t.ok(public.resolve_dispute(current_setting('t.m2'), false, 'Still not co
 reset role;
 select t.ok((select count(*) = 1 from public.admin_queue where kind = 'dispute' and subject_id = current_setting('t.m2') and status = 'open'), 'the dispute is in the admin queue');
 select t.as_('cara'); set local role authenticated;
-select t.must_fail($$select public.admin_resolve_dispute(current_setting('t.m2'), true, 'ok')$$, 'Forge admins only');
+select t.must_fail($$select public.admin_resolve_dispute(current_setting('t.m2'), true, 'ok')$$, 'Brazework admins only');
 reset role;
 insert into public.forge_admins (uid) values (current_setting('t.cara')::uuid);
 select t.as_('cara'); set local role authenticated;

@@ -38,7 +38,7 @@ select t.ok((select count(*) = 2 and bool_and(reported = current_setting('t.ben'
 select t.as_('ben'); set local role authenticated;
 select t.must_fail($$insert into public.content_reports (kind, target_id, reason) values ('project', 'p1', 'spam')$$, 'can''t report yourself');
 select t.ok((select count(*) = 0 from public.content_reports where kind = 'project' and target_id = 'p1'), 'the reported member can''t see who reported them');
-select t.must_fail($$select public.resolve_report((select max(id) from public.content_reports), 'dismissed')$$, 'Forge admins only');
+select t.must_fail($$select public.resolve_report((select max(id) from public.content_reports), 'dismissed')$$, 'Brazework admins only');
 
 -- A Forge admin sees them with detail and resolves one.
 reset role; select t.as_('maya'); set local role authenticated;
