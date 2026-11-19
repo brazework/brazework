@@ -31,7 +31,7 @@ export function tourHint(place: Place, t: Tour): { text: string; go: Place | nul
   if (!t.accepted) {
     return place === "inbox"
       ? { text: "A company found the signed work. Accept the request.", go: null, done: false }
-      : { text: "Signed. It's on Maya's record now, and a company noticed: open Inbox.", go: "inbox", done: false };
+      : { text: "Signed, so Maya's Record shows it now, and a company noticed: open Inbox.", go: "inbox", done: false };
   }
   return { text: "That's the loop: built, signed, found.", go: null, done: true };
 }
