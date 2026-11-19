@@ -22,12 +22,12 @@ export function DraftCard({ draft, project, club }: { draft: ToolDraft; project:
 
   const approve = () => start(async () => {
     setError("");
-    const r = await approveDraft(draft.id, isPost ? { body } : { title, detail });
+    const r = await approveDraft(draft.id, isPost ? { body } : { title, detail }).catch(() => ({ ok: false, message: "That didn't go through. Check your connection and try again.", url: undefined }));
     if (r.ok) setDone({ message: r.message, url: r.url }); else setError(r.message);
   });
   const dismiss = () => start(async () => {
     setError("");
-    const r = await dismissDraft(draft.id);
+    const r = await dismissDraft(draft.id).catch(() => ({ ok: false, message: "That didn't go through. Check your connection and try again." }));
     if (r.ok) setDone({ message: r.message, dismissed: true }); else setError(r.message);
   });
 
