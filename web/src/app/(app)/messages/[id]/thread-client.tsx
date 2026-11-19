@@ -94,7 +94,7 @@ export function ThreadScroll({ msgs, me, cid, otherName = "", reactions = [], ex
           const quoted = m.reply_to ? byId.get(m.reply_to) : undefined;
           return (
             <li key={m.id} className={cn("flex flex-col", joinsPrev ? "mt-0.5" : "mt-3", mineRx.length && "mb-1")}>
-              {showDay && <span className="glass-card mb-3 self-center rounded-full px-3 py-0.5 text-[11px] text-faint">{d}</span>}
+              {showDay && <span className="mb-3 self-center px-3 py-0.5 text-xs text-faint">{d}</span>}
               <div className={cn("group/msg relative max-w-[78%]", mine ? "self-end" : "self-start")}>
               {extras && !isPending && (
                 <MessageTools
@@ -108,7 +108,7 @@ export function ThreadScroll({ msgs, me, cid, otherName = "", reactions = [], ex
               )}
               <div onClick={(e) => { if (extras && !(e.target as Element).closest("a,button")) setActive((a) => (a === m.id ? null : m.id)); }} className={cn(
                 "px-3.5 py-2 text-[15px] leading-relaxed whitespace-pre-wrap transition-opacity",
-                mine ? "bg-accent-grad text-on-accent" : "glass-card text-text",
+                mine ? "bg-text text-surface" : "border border-line bg-surface text-text",
                 mine ? cn("rounded-3xl", joinsPrev && "rounded-tr-md", joinsNext && "rounded-br-md") : cn("rounded-3xl", joinsPrev && "rounded-tl-md", joinsNext && "rounded-bl-md"),
                 isPending && "opacity-60",
               )}>
@@ -125,7 +125,7 @@ export function ThreadScroll({ msgs, me, cid, otherName = "", reactions = [], ex
       {rx.error && <p role="alert" className="mt-2 text-center text-xs text-danger" onClick={rx.clearError}>{rx.error}</p>}
       {typing && (
         <div className="mt-3 flex items-center gap-2 text-xs text-muted">
-          <span className="glass-card inline-flex gap-1 rounded-lg px-3 py-2.5" aria-hidden="true">{[0, 1, 2].map((k) => <span key={k} className="size-1.5 animate-bounce rounded-full bg-muted" style={{ animationDelay: `${k * 120}ms` }} />)}</span>
+          <span className="inline-flex gap-1 rounded-lg border border-line bg-surface px-3 py-2.5" aria-hidden="true">{[0, 1, 2].map((k) => <span key={k} className="size-1.5 animate-bounce rounded-full bg-muted" style={{ animationDelay: `${k * 120}ms` }} />)}</span>
           {otherName || "They"} is typing…
         </div>
       )}
@@ -168,7 +168,7 @@ export function Composer({ cid, placeholder }: { cid: string; placeholder: strin
     <form onSubmit={(e) => { e.preventDefault(); send(); }} className="border-t border-line p-3">
       {error && <p role="alert" className="mb-2 px-1 text-xs text-danger">{error}</p>}
       {reply && <ReplyBar target={reply} onCancel={() => setReply(null)} />}
-      <div className="glass-card flex items-end gap-2 rounded-3xl p-1.5">
+      <div className="flex items-end gap-2 rounded-2xl border border-line bg-surface p-1.5 focus-within:border-line-strong">
         <label htmlFor="msg" className="sr-only">Message</label>
         <textarea
           ref={input}
@@ -182,7 +182,7 @@ export function Composer({ cid, placeholder }: { cid: string; placeholder: strin
           style={{ outline: "none" }}
           className="max-h-40 min-h-10 flex-1 resize-none bg-transparent px-3 py-2 text-[15px] text-text placeholder:text-faint"
         />
-        <button type="submit" disabled={!body.trim()} aria-label="Send" className="bg-accent-grad grid size-10 shrink-0 place-items-center rounded-full text-on-accent transition active:scale-90 disabled:opacity-40">
+        <button type="submit" disabled={!body.trim()} aria-label="Send" className="bg-text text-surface grid size-10 shrink-0 place-items-center rounded-full transition active:scale-90 disabled:opacity-40">
           {pending ? <Loader2 className="size-4 animate-spin" /> : <ArrowUp className="size-4" />}
         </button>
       </div>
