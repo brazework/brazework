@@ -114,7 +114,16 @@ export function ConvList({ convs, requestsOn, groups = null }: { convs: Conv[]; 
         ))}
         {!shown.length && (
           <li className="p-6 text-sm text-muted">
-            {needle ? <>Nothing matches &ldquo;{q}&rdquo;.</> : tab === "requests" ? "No message requests. You're all caught up." : tab === "unread" ? "No unread messages." : "No conversations yet. Message someone from their profile or your network."}
+            {needle ? <>Nothing matches &ldquo;{q}&rdquo;.</> : tab === "requests" ? "No message requests. You're all caught up." : tab === "unread" ? "No unread messages." : (
+              // The first conversation needs a person: point at where people are.
+              <>
+                No conversations yet. Message someone from their profile, or find people in your field and your clubs.
+                <span className="mt-3 flex flex-wrap gap-2">
+                  <Link href="/network?tab=suggested" className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-accent px-3.5 text-sm font-medium text-on-accent"><Users className="size-4" /> Find people</Link>
+                  <Link href="/communities" className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-line px-3.5 text-sm font-medium text-text transition hover:bg-hover">Your clubs</Link>
+                </span>
+              </>
+            )}
           </li>
         )}
       </ul>

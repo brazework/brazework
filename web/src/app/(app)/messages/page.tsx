@@ -49,6 +49,13 @@ async function Starts() {
   return (
     <div className="mx-auto max-w-lg">
       <Intro />
+      {/* No club chats and nobody in a club yet: say where the first conversation can come from. */}
+      {!rooms.length && !people.length && (
+        <div className="mt-5 flex flex-wrap justify-center gap-2">
+          <Link href="/network?tab=suggested" className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-accent px-3.5 text-sm font-medium text-on-accent"><Users className="size-4" /> Find people</Link>
+          <Link href="/communities?tab=discover" className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-line px-3.5 text-sm font-medium transition hover:bg-hover">Join a club</Link>
+        </div>
+      )}
       {rooms.length > 0 && (
         <section className="mt-8">
           <h2 className="mb-2 text-sm font-semibold">Your club chats</h2>

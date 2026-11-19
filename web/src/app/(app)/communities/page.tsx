@@ -93,7 +93,12 @@ async function Communities({ searchParams }: { searchParams: PageProps<"/communi
           <Link href="/communities?tab=discover" className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-line px-4 text-sm font-medium transition hover:bg-hover"><Search className="size-4" /> Find a club</Link>
           {f.studyGroups && <Link href="/communities?tab=create&type=study" className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-line px-4 text-sm font-medium transition hover:bg-hover"><BookOpen className="size-4" /> Start a study group</Link>}
           <Link href="/communities?tab=create" className="bg-text inline-flex h-10 items-center gap-1.5 rounded-lg px-4 text-sm font-medium text-surface"><Plus className="size-4" /> Start a club</Link>
-        </> : <Link href="/communities?tab=mine" className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-line px-4 text-sm font-medium transition hover:bg-hover"><ArrowLeft className="size-4" /> Your clubs</Link>}
+        </> : <>
+          {/* Someone in no club yet: "Your clubs" would open an empty list, so Find offers starting one instead. */}
+          {joined.length > 0 ? <Link href="/communities?tab=mine" className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-line px-4 text-sm font-medium transition hover:bg-hover"><ArrowLeft className="size-4" /> Your clubs</Link>
+            : tab === "create" && <Link href="/communities?tab=discover" className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-line px-4 text-sm font-medium transition hover:bg-hover"><ArrowLeft className="size-4" /> Find a club</Link>}
+          {tab === "discover" && <Link href="/communities?tab=create" className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-line px-4 text-sm font-medium transition hover:bg-hover"><Plus className="size-4" /> Start a club</Link>}
+        </>}
       />
       <div className="mt-6">
         {tab === "mine" && (
