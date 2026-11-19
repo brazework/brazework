@@ -32,7 +32,7 @@ const backedWhat = (b: Backing) => `${b.kind === "commit" ? `Commit ${b.ref.slic
 // `signers`: the officers who could sign your work there (lib/signers.ts); undefined when not loaded.
 export type Club = { id: string; name: string; signers?: string[] };
 
-const day = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+const day = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
 
 // A project's milestones as a small timeline. Others only ever see verified ones and logged ones
 // GitHub backs (the database hides the rest); the owner also sees what's waiting and what was declined, with the club's note.
@@ -65,21 +65,21 @@ export function MilestoneTimeline({ items, own }: { items: Milestone[]; own: boo
                   {/* The badge: who verified it, their role, the club and when. */}
                   {m.status === "verified" && m.vouched_by && (
                     <span className="inline-block max-w-full rounded-lg bg-[color-mix(in_oklab,var(--ok)_14%,transparent)] px-2 py-0.5 font-medium text-ok">
-                      <BadgeCheck className="mr-1 inline size-3 align-[-2px]" />Vouched for by {m.vouched_by}{m.reviewed_at ? ` · ${new Date(m.reviewed_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}` : ""}
+                      <BadgeCheck className="mr-1 inline size-3 align-[-2px]" />Vouched for by {m.vouched_by}{m.reviewed_at ? ` · ${new Date(m.reviewed_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" })}` : ""}
                     </span>
                   )}
                   {m.status === "verified" && !m.vouched_by && (
                     // Inline text, not flex: on a phone the sentence wraps as one line of text instead of
                     // splitting into columns (each text piece was its own flex item).
                     <span className="inline-block max-w-full rounded-lg bg-[color-mix(in_oklab,var(--ok)_14%,transparent)] px-2 py-0.5 font-medium text-ok">
-                      <BadgeCheck className="mr-1 inline size-3 align-[-2px]" />Verified{m.reviewer_name ? ` by ${m.reviewer_name}` : ""}{m.reviewer_role ? ` (${m.reviewer_role})` : ""}, <Link href={`/c/${m.community_id}`} className="hover:underline">{m.community_name}</Link>{m.reviewed_at ? ` · ${new Date(m.reviewed_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}` : ""}
+                      <BadgeCheck className="mr-1 inline size-3 align-[-2px]" />Verified{m.reviewer_name ? ` by ${m.reviewer_name}` : ""}{m.reviewer_role ? ` (${m.reviewer_role})` : ""}, <Link href={`/c/${m.community_id}`} className="hover:underline">{m.community_name}</Link>{m.reviewed_at ? ` · ${new Date(m.reviewed_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" })}` : ""}
                     </span>
                   )}
                   {m.status === "pending" && <span className="inline-flex items-center gap-1 rounded-full bg-surface-2 px-2 py-0.5 text-muted"><Clock className="size-3" /> {m.community_id ? `Waiting for ${m.community_name}` : "Waiting for a vouch"}</span>}
                   {m.status === "draft" && <span className="inline-flex items-center gap-1 rounded-full bg-surface-2 px-2 py-0.5 text-muted">Draft</span>}
                   {/* Backed by data, never "verified": a different colour, the word "Backed", and what was checked. */}
                   {backingOf(m) && m.status !== "revoked" && (() => { const b = backingOf(m)!; return (
-                    <a href={b.url} target="_blank" rel="noopener noreferrer" data-backed title={`Checked with GitHub on ${new Date(b.checked_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}: made by this member's own GitHub account.`}
+                    <a href={b.url} target="_blank" rel="noopener noreferrer" data-backed title={`Checked with GitHub on ${new Date(b.checked_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" })}: made by this member's own GitHub account.`}
                       className="inline-block max-w-full rounded-lg bg-[color-mix(in_oklab,var(--info)_13%,transparent)] px-2 py-0.5 font-medium text-info hover:underline">
                       <GitMerge className="mr-1 inline size-3 align-[-2px]" />Backed by GitHub · {backedWhat(b)}
                     </a>
