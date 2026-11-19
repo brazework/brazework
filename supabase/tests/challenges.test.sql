@@ -46,7 +46,7 @@ select t.must_fail($$select public.publish_challenge(current_setting('t.ch'))$$,
 select t.must_fail($$update public.challenges set sponsorship = 'paid' where id = current_setting('t.ch')$$, 'permission denied');
 select t.ok(public.request_sponsorship(current_setting('t.ch')) = 'requested', 'Cara requests a sponsorship');
 select t.ok((select count(*) = 1 and bool_and(status = 'requested' and plan = 'challenge') from public.billing_requests where challenge_id = current_setting('t.ch')), 'the request is recorded for billing');
-select t.must_fail($$select public.set_sponsorship(current_setting('t.ch'), 'pilot')$$, 'Forge admins only');
+select t.must_fail($$select public.set_sponsorship(current_setting('t.ch'), 'pilot')$$, 'Brazework admins only');
 reset role;
 insert into public.forge_admins (uid) values (current_setting('t.maya')::uuid) on conflict do nothing;
 select t.as_('maya'); set local role authenticated;
@@ -84,7 +84,7 @@ select t.ok((select count(*) = 1 and bool_and(placement = 1) from public.challen
 
 -- Admin metrics are Forge admins' only.
 reset role; select t.as_('ben'); set local role authenticated;
-select t.must_fail($$select public.admin_metrics()$$, 'Forge admins only');
+select t.must_fail($$select public.admin_metrics()$$, 'Brazework admins only');
 reset role; select t.as_('maya'); set local role authenticated;
 select t.ok((public.admin_metrics() ->> 'challenge_entries')::int >= 1, 'a Forge admin sees the metrics');
 

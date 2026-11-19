@@ -34,7 +34,7 @@ select t.ok((select asks = 2 and status = 'open' from public.school_requests whe
 
 -- Only Forge admins decide; adding lists the school, so its students can sign up.
 select t.as_('josh'); set local role authenticated;
-select t.must_fail($$select public.decide_school_request((select max(id) from public.school_requests), true)$$, 'Forge admins only');
+select t.must_fail($$select public.decide_school_request((select max(id) from public.school_requests), true)$$, 'Brazework admins only');
 select t.ok((select count(*) = 0 from public.school_requests), 'members can''t read requests');
 reset role; select t.as_('maya'); set local role authenticated;
 select t.ok(public.decide_school_request((select id from public.school_requests where domain = 'cegep-test.qc.ca'), true) = 'added', 'a Forge admin adds it');

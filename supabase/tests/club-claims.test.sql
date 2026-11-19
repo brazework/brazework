@@ -32,7 +32,7 @@ select t.as_('josh'); set local role authenticated;
 select set_config('t.claim', public.request_club_claim('rkt', 'President, Rocketry Club', 'The club page on the university site lists me as president: https://example.edu/clubs/rocketry')::text, false);
 select t.must_fail($$select public.request_club_claim('rkt', 'President', 'Asking a second time for the same club')$$, 'already asked');
 select t.must_fail($$select public.request_club_claim('rob', 'P', 'Too short a role title')$$, 'check constraint');
-select t.must_fail($$select public.decide_club_claim(current_setting('t.claim')::bigint, true)$$, 'Forge admins only');
+select t.must_fail($$select public.decide_club_claim(current_setting('t.claim')::bigint, true)$$, 'Brazework admins only');
 select t.ok((select count(*) = 1 from public.club_claims where claimant = current_setting('t.josh')::uuid), 'you can see your own claim');
 reset role;
 

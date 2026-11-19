@@ -34,7 +34,7 @@ delete from public.posts where author_id = :'josh'::uuid and created_at > now() 
 select t.as_('josh'); set local role authenticated;
 insert into public.posts (body, kind) values ('Pace test one', 'update');
 insert into public.posts (body, kind) values ('Pace test two', 'update');
-select t.must_fail($$insert into public.posts (body, kind) values ('Pace test three', 'update')$$, 'faster than Forge allows');
+select t.must_fail($$insert into public.posts (body, kind) values ('Pace test three', 'update')$$, 'faster than Brazework allows');
 select t.ok((select count(*) = 2 from public.posts where body like 'Pace test%'), 'the third post in an hour is refused');
 
 -- A company admin's weekly message requests are capped (here at zero).

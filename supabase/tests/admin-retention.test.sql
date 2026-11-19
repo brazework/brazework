@@ -28,7 +28,7 @@ grant execute on all functions in schema t to authenticated;
 
 -- Only Forge admins can read it.
 select t.as_('josh'); set local role authenticated;
-select t.must_fail($$select public.admin_retention()$$, 'Forge admins only');
+select t.must_fail($$select public.admin_retention()$$, 'Brazework admins only');
 reset role;
 
 -- A cohort from three weeks ago: Josh and Ben joined then; Josh comes back the week after.
