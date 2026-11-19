@@ -150,7 +150,7 @@ const { step, browser, as, go, summary, BASE } = require("./lib.cjs");
     if (!/wait for my yes\. Then call log_milestone/.test(posting) || !/brazework:\/\/playbooks\/aerospace/.test(posting)) throw new Error(`a posting token's /shipped: ${posting.slice(0, 200)}`);
     if (!/Save it with draft_milestone/.test(drafting)) throw new Error(`a drafting token's /shipped: ${drafting.slice(0, 200)}`);
     const res = (await (await mcp("resources/list", {}, cc)).json()).result?.resources ?? [];
-    if (res.length !== 21) throw new Error(`${res.length} resources`);
+    if (res.filter((r) => r.mimeType === "text/markdown").length !== 21 || !res.some((r) => r.uri === "ui://brazework/milestone-card")) throw new Error(`${res.length} resources: ${res.map((r) => r.uri).slice(-3).join()}`);
     const md = (await (await mcp("resources/read", { uri: "brazework://playbooks/data-ai" }, cc)).json()).result?.contents?.[0]?.text ?? "";
     if (!md.startsWith("# Data & AI") || !md.includes("Weights & Biases")) throw new Error(`playbook: ${md.slice(0, 80)}`);
   }, ben);

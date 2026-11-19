@@ -80,6 +80,12 @@ it", or "waiting for a signature: ask with request_signature", or "waiting in yo
 says no (a Gmail address for a signer, a teammate, a weekly limit), the message says how to fix it, so your
 assistant can fix it or ask you.
 
+In assistants that show MCP Apps (Claude, ChatGPT, VS Code and Goose, per the MCP Apps launch), a
+milestone you log or draft shows as a **card in the chat**: the title, its proof, where it stands
+("Waiting for Rocketry Club", "Waiting for a signature", "In your drafts"), the next step, and **Open in
+Brazework**. The card is `ui://brazework/milestone-card` (`web/src/lib/mcp-card.ts`). It reaches nothing
+outside and only shows what the tool sent it. Other assistants show the same result as text.
+
 Your assistant can also read the playbooks directly as MCP resources: `brazework://playbooks` (the index)
 and `brazework://playbooks/<field>`, for example `brazework://playbooks/data-ai`.
 
