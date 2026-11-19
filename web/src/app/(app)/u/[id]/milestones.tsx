@@ -99,7 +99,7 @@ export function MilestoneTimeline({ items, own, projectPrivate = false }: { item
                   {/* Proof without revealing (redacted-proof.sql): one public line for private signed work. */}
                   {own && m.status === "verified" && (m.private || projectPrivate) && m.public_line !== undefined && <PublicLine id={m.id} line={m.public_line} />}
                   {/* Proof cards (FIX-128): share a signed or backed result as a public link. */}
-                  {own && m.shared_at !== undefined && (m.status === "verified" || (m.status === "logged" && backingOf(m))) && (
+                  {own && m.shared_at !== undefined && (m.status === "verified" || m.status === "pending" || (m.status === "logged" && backingOf(m))) && (
                     <button type="button" onClick={() => setSharing(m.id)} className="inline-flex items-center gap-1 font-medium text-text-2 hover:text-text">
                       <Share2 className="size-3" /> {m.shared_at ? "Shared · Link" : "Share"}
                     </button>
@@ -140,7 +140,7 @@ function ShareProof({ m, onClose, onChange }: { m: Milestone; onClose: () => voi
   useEffect(() => { ref.current?.showModal(); }, []);
   const url = typeof window === "undefined" ? `/p/${m.id}` : proofUrl(window.location.origin, m.id);
   const b = backingOf(m);
-  const text = proofPostText({ id: m.id, title: m.title, detail: m.detail, achieved_on: m.achieved_on, level: m.status === "verified" ? "signed" : "backed", project: "",
+  const text = proofPostText({ id: m.id, title: m.title, detail: m.detail, achieved_on: m.achieved_on, level: m.status === "verified" ? "signed" : m.status === "pending" ? "waiting" : "backed", project: "",
     member: { id: "", first: "", last: "", headline: "", avatar: "" },
     witness: m.status === "verified" ? { name: m.reviewer_name, role: m.reviewer_role ?? "", club: m.community_name, vouched_by: m.vouched_by ?? "", at: m.reviewed_at ?? null } : null,
     backing: b ? { kind: b.kind, repo: b.repo_full_name, ref: b.ref, url: b.url } : null, image: null, shared_at: "" });
@@ -159,7 +159,7 @@ function ShareProof({ m, onClose, onChange }: { m: Milestone; onClose: () => voi
         </div>
         {!m.shared_at ? (
           <>
-            <p className="text-sm leading-relaxed text-text-2">Anyone with the link sees this result, your name and headline, and {m.status === "verified" ? "who signed it" : "what GitHub checked"}. It also shows on your profile. You can stop sharing at any time.</p>
+            <p className="text-sm leading-relaxed text-text-2">Anyone with the link sees this result, your name and headline, and {m.status === "verified" ? "who signed it" : m.status === "pending" ? "that it's waiting for a signature (once it's signed, the same link shows who signed it)" : "what GitHub checked"}. It also shows on your profile. You can stop sharing at any time.</p>
             <button type="button" disabled={pending} onClick={() => set(true)} className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-accent px-5 text-[15px] font-medium text-on-accent hover:opacity-90 disabled:opacity-60">{pending ? <Loader2 className="size-4 animate-spin" /> : <Share2 className="size-4" />} Create link</button>
           </>
         ) : (

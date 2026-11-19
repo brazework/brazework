@@ -29,7 +29,7 @@ export function ProductHuntWelcome({ place }: { place: "landing" | "signup" }) {
       <span aria-hidden className="grid size-7 shrink-0 place-items-center rounded-full bg-[#ff6154] text-[13px] font-bold text-white">P</span>
       <p className="min-w-0 flex-1 pr-6">
         <b className="font-semibold">Welcome, Product Hunt.</b>{" "}
-        {place === "landing" ? "Type what you built and sign up: it's on your record, waiting for a signature, in about 90 seconds. Free, always." : "Two fields here, then three quick screens and your first build is on your record."}
+        {place === "landing" ? "Your AI drafts the proof; a person who saw it signs. Type what you built and sign up: it's on your record in about 90 seconds. Free, always." : "Two fields here, then three quick screens and your first build is on your record."}
       </p>
       <button type="button" onClick={close} aria-label="Close" className="absolute top-2 right-2 grid size-7 place-items-center rounded-full text-muted hover:bg-hover hover:text-text"><X className="size-4" /></button>
     </div>
