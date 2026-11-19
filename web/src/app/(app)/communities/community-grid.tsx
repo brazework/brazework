@@ -40,14 +40,14 @@ export function CommunityGrid({ items, discover = false, initialQuery = "", empt
           <div className="relative">
             <Search className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-faint" />
             <label htmlFor="cq" className="sr-only">Search communities</label>
-            <input id="cq" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search by name, field or topic" className="glass-card h-12 w-full rounded-lg pr-11 pl-11 text-[15px] outline-none transition placeholder:text-faint" />
+            <input id="cq" value={q} onChange={(e) => setQ(e.target.value)} placeholder="Search by name, field or topic" className="border border-line bg-surface h-12 w-full rounded-lg pr-11 pl-11 text-[15px] outline-none transition placeholder:text-faint" />
             {q && <button type="button" onClick={() => setQ("")} aria-label="Clear search" className="absolute top-1/2 right-3 grid size-7 -translate-y-1/2 place-items-center rounded-full text-faint hover:bg-hover hover:text-text"><X className="size-4" /></button>}
           </div>
           {fields.length > 1 && (
             <div className="no-scrollbar -mx-1 flex gap-1.5 overflow-x-auto px-1">
               {[null, ...fields].map((f) => (
                 <button key={f ?? "all"} type="button" aria-pressed={field === f} onClick={() => setField(f)} className={cn("relative shrink-0 rounded-full border px-3.5 py-1.5 text-xs font-medium transition active:scale-95", field === f ? "border-transparent text-on-accent" : "border-line bg-surface text-muted hover:text-text")}>
-                  {field === f && <motion.span layoutId={`field-${discover ? "d" : "m"}`} className="bg-accent-grad absolute inset-0 rounded-full" transition={{ type: "spring", stiffness: 420, damping: 34 }} />}
+                  {field === f && <motion.span layoutId={`field-${discover ? "d" : "m"}`} className="bg-text absolute inset-0 rounded-full" transition={{ type: "spring", stiffness: 420, damping: 34 }} />}
                   <span className="relative">{f ?? "All fields"}</span>
                 </button>
               ))}
@@ -71,7 +71,7 @@ export function CommunityGrid({ items, discover = false, initialQuery = "", empt
 
 export function CommunityCard({ c, role, joinable, pulse }: { c: Community; role?: Role; joinable: boolean; pulse?: Pulse }) {
   return (
-    <article className="glass-card group relative flex h-full flex-col overflow-hidden rounded-3xl transition duration-300">
+    <article className="border border-line bg-surface group relative flex h-full flex-col overflow-hidden rounded-2xl transition duration-300">
       <div className="relative h-24 overflow-hidden border-b border-line">
         {c.cover_path ? <Image src={mediaUrl(c.cover_path)} alt="" fill sizes="(min-width: 640px) 440px, 100vw" className="object-cover transition duration-500 group-hover:scale-105" /> : <div className="cover-empty absolute inset-0 transition duration-500 group-hover:scale-110" style={{ backgroundImage: accentTint(c.accent) }} />}
         {pulse && pulse.week > 0 && <span className="absolute top-2.5 right-2.5 inline-flex items-center gap-1 rounded-full bg-bg/75 px-2 py-0.5 text-[11px] font-medium text-text backdrop-blur"><Flame className="size-3 text-accent" /> {pulse.week} this week</span>}
@@ -102,7 +102,7 @@ export function CommunityCard({ c, role, joinable, pulse }: { c: Community; role
                 </Link>
               )}
               <div className="flex flex-wrap gap-1.5">
-                {(pulse?.verify ?? 0) > 0 && <Link href={`/c/${c.id}/manage?tab=verify`} className="bg-accent-grad inline-flex h-8 items-center gap-1.5 rounded-lg px-3 text-xs font-semibold text-on-accent"><ShieldCheck className="size-3.5" /> {pulse!.verify} to verify</Link>}
+                {(pulse?.verify ?? 0) > 0 && <Link href={`/c/${c.id}/manage?tab=verify`} className="bg-text inline-flex h-8 items-center gap-1.5 rounded-lg px-3 text-xs font-semibold text-surface"><ShieldCheck className="size-3.5" /> {pulse!.verify} to verify</Link>}
                 <Link href={`/c/${c.id}?tab=events`} className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-line px-3 text-xs font-medium transition hover:bg-hover"><CalendarDays className="size-3.5" /> Events</Link>
                 {role !== "member" && <Link href={`/c/${c.id}/manage`} className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-line px-3 text-xs font-medium transition hover:bg-hover"><Settings2 className="size-3.5" /> Manage</Link>}
               </div>
@@ -135,7 +135,7 @@ function QuickJoin({ c }: { c: Community }) {
           if (r.ok) setState(c.privacy === "public" ? "joined" : "requested");
           else setMsg(r.message);
         })}
-        className="bg-accent-grad inline-flex h-9 items-center gap-1.5 rounded-lg px-4 text-sm font-medium text-on-accent transition active:scale-95 disabled:opacity-60"
+        className="bg-text inline-flex h-9 items-center gap-1.5 rounded-lg px-4 text-sm font-medium text-surface transition active:scale-95 disabled:opacity-60"
       >
         {pending && <Loader2 className="size-4 animate-spin" />} {c.privacy === "public" ? "Join" : "Ask to join"}
       </button>

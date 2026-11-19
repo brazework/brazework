@@ -9,7 +9,6 @@ import { Suspense } from "react";
 import { LiveRefresh } from "@/components/app/live-refresh";
 import { Celebrate } from "@/components/app/celebrate";
 import { CopyLink } from "@/components/app/copy-link";
-import { CountUp } from "@/components/app/count-up";
 import { EmptyState, Panel, Skeleton, Tabs } from "@/components/app/page-ui";
 import { Kicker } from "@/components/ui";
 import { PRIVACY_LABEL, TYPE_LABEL, can, membersLabel, rank, type CommunityPost } from "@/lib/communities";
@@ -29,6 +28,9 @@ import { ChapterInvite, ChapterLine } from "./chapter";
 import { MemberFaces, type Face } from "@/components/network/member-faces";
 import { leadCounts, studyLine, type LeadRow } from "@/lib/study";
 import { StudyLeads } from "./study-leads";
+import { NextUp } from "./next-up";
+import { List, ListRow } from "@/components/app/list";
+import { TitleBlock } from "@/components/app/title-block";
 import { ClubSetup } from "./setup";
 import { clubSetupSteps } from "@/lib/guide";
 import { reusableInvite, setupProgress, type InviteRow } from "@/lib/club-setup";
@@ -126,7 +128,7 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
   return (
     <>
       <Panel className="overflow-hidden p-0">
-        <div className="relative h-44 overflow-hidden border-b border-line sm:h-56">
+        <div className="relative h-32 overflow-hidden border-b border-line sm:h-48">
           {c.cover_path ? (
             <Image src={mediaUrl(c.cover_path)} alt="" fill sizes="(min-width: 768px) 768px, 100vw" className="object-cover" priority />
           ) : (
@@ -147,7 +149,7 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
               </form>
             )}
             {rank(role) >= 2 && invitesOn && (
-              <Link href={`/c/${c.id}/manage?tab=invite`} className="bg-accent-grad inline-flex h-10 items-center gap-1.5 rounded-lg px-4 text-sm font-medium text-on-accent transition active:scale-95"><UserPlus className="size-4" /> Invite</Link>
+              <Link href={`/c/${c.id}/manage?tab=invite`} className="inline-flex h-10 items-center gap-1.5 rounded-lg bg-text px-4 text-sm font-medium text-surface transition active:scale-95"><UserPlus className="size-4" /> Invite</Link>
             )}
             {rank(role) >= 2 && (
               <Link href={`/c/${c.id}/manage`} className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-line px-4 text-sm transition hover:bg-hover"><Settings className="size-4" /> Manage</Link>
@@ -172,43 +174,30 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
           </div>
         </div>
         <p className="mt-4 text-[15px] leading-relaxed text-text-2">{c.about}</p>
-        <ul className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
-          {[
-            { n: c.member_count, label: c.member_count === 1 ? "Member" : "Members" },
-            { n: thisWeek, label: "Posts this week" },
-            ...(msOn ? [{ n: verifiedTerm ?? 0, label: "Verified this term" }] : [{ n: posts.length, label: posts.length === 1 ? "Post" : "Posts" }]),
-            { n: upcomingEvents.length, label: "Upcoming" },
-          ].map((st) => (
-            <li key={st.label} className="glass-card rounded-2xl px-3 py-3 text-center">
-              <span className="block text-2xl font-semibold tracking-tight"><CountUp to={st.n} /></span>
-              <span className="block text-xs text-muted">{st.label}</span>
-            </li>
-          ))}
-        </ul>
+        {/* Where the club stands, as a drawing's title block (it was four big tiles). */}
+        <TitleBlock label="This club now" className="mt-5" cells={[
+          { label: "Members", value: c.member_count },
+          { label: "Posts this week", value: thisWeek },
+          ...(msOn ? [{ label: "Signed this term", value: verifiedTerm ?? 0, tone: (verifiedTerm ?? 0) > 0 ? ("ok" as const) : undefined }] : []),
+          { label: "Coming up", value: upcomingEvents.length ? `${upcomingEvents.length} ${upcomingEvents.length === 1 ? "event" : "events"}` : "Nothing yet" },
+        ]} />
+        {me && nextEvent && !officer && <NextUp event={nextEvent} going={goingSet.has(nextEvent.id)} now={now} />}
         {showSetup && <ClubSetup cid={c.id} name={c.name} steps={setupSteps} origin={env.siteUrl} invite={setupInvite} />}
         {officer && (
-          <section aria-label="To do" className="mt-4 rounded-3xl border border-line bg-surface p-4">
-            <h2 className="text-xs font-medium tracking-wide text-faint uppercase">To do</h2>
-            <ul className="mt-2 grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+          <section aria-label="To do" className="mt-5">
+            <h2 className="mb-2 text-sm font-semibold">To do</h2>
+            <List label="Officer to-dos">
               {[
                 { n: toVerify.count ?? 0, label: "milestones to verify", href: `/c/${c.id}/manage?tab=verify`, show: msOn },
                 { n: joinReqs.count ?? 0, label: "join requests", href: `/c/${c.id}/manage?tab=requests`, show: can(role, "approve") },
                 { n: (held.data ?? []).length, label: "held posts to review", href: `/c/${c.id}?tab=held`, show: isMod },
               ].filter((t) => t.show).map((t) => (
-                <li key={t.label}>
-                  <Link href={t.href} className="flex items-center gap-2.5 rounded-2xl px-3 py-2.5 text-sm transition hover:bg-hover">
-                    <span className={t.n ? "grid min-w-7 place-items-center rounded-full bg-accent-grad px-2 py-0.5 text-xs font-semibold text-on-accent tabular-nums" : "grid min-w-7 place-items-center rounded-full bg-surface-2 px-2 py-0.5 text-xs text-faint tabular-nums"}>{t.n}</span>
-                    <span className={t.n ? "text-text" : "text-muted"}>{t.label}</span>
-                  </Link>
-                </li>
+                <ListRow key={t.label} href={t.href} title={<span className={t.n ? "text-text" : "font-normal text-muted"}>{t.label}</span>}
+                  leading={<span className={t.n ? "grid h-6 min-w-6 place-items-center rounded-full bg-text px-1.5 text-xs font-semibold text-bg tabular-nums" : "grid h-6 min-w-6 place-items-center rounded-full bg-surface-2 px-1.5 text-xs text-faint tabular-nums"}>{t.n}</span>} />
               ))}
-              <li>
-                <Link href={nextEvent ? `/events/${nextEvent.id}` : `/c/${c.id}?tab=events`} className="flex items-center gap-2.5 rounded-2xl px-3 py-2.5 text-sm transition hover:bg-hover">
-                  <CalendarDays className="size-4 shrink-0 text-faint" />
-                  <span className="min-w-0 truncate text-text-2">{nextEvent ? `Next: ${nextEvent.title}` : "No event planned. Host one"}</span>
-                </Link>
-              </li>
-            </ul>
+              <ListRow href={nextEvent ? `/events/${nextEvent.id}` : `/c/${c.id}?tab=events`} leading={<span className="grid size-6 place-items-center"><CalendarDays className="size-4 text-faint" /></span>}
+                title={<span className="font-normal text-text-2">{nextEvent ? `Next: ${nextEvent.title}` : "No event planned. Host one"}</span>} />
+            </List>
           </section>
         )}
         {study && <StudyLeads cid={c.id} me={user.id} member={!!me} people={leadPeople} />}
@@ -286,12 +275,12 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
           <Panel className="p-6">
             <Kicker>About</Kicker>
             <p className="mt-2 text-sm leading-relaxed whitespace-pre-wrap text-text-2">{c.about}</p>
-            {(c.topics ?? []).length > 0 && <div className="mt-4 flex flex-wrap gap-1.5">{c.topics.map((t) => <Link key={t} href={`/feed?tab=latest&tag=${encodeURIComponent(t)}`} className="rounded-full border border-line px-3 py-1 text-xs text-text-2 transition hover:border-transparent hover:bg-accent-grad hover:text-on-accent">#{t}</Link>)}</div>}
+            {(c.topics ?? []).length > 0 && <div className="mt-4 flex flex-wrap gap-1.5">{c.topics.map((t) => <Link key={t} href={`/feed?tab=latest&tag=${encodeURIComponent(t)}`} className="rounded-full border border-line px-3 py-1 text-xs text-text-2 transition hover:border-transparent hover:bg-text hover:text-surface">#{t}</Link>)}</div>}
             <div className="mt-6"><Kicker>Rules</Kicker></div>
             <ol className="mt-3 flex flex-col gap-2">
               {rulesOf(c.rules).map((r, i) => (
                 <li key={i} className="flex gap-3 rounded-2xl border border-line bg-surface-2/60 p-3.5 text-sm leading-relaxed text-text-2 transition hover:border-line-strong">
-                  <span className="bg-accent-grad grid size-6 shrink-0 place-items-center rounded-full text-xs font-semibold text-on-accent">{i + 1}</span>
+                  <span className="bg-text grid size-6 shrink-0 place-items-center rounded-full text-xs font-semibold text-surface">{i + 1}</span>
                   <span className="whitespace-pre-wrap">{r}</span>
                 </li>
               ))}

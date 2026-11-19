@@ -210,7 +210,7 @@ async function ProjectView({ params, searchParams }: { params: PageProps<"/proje
               <span className="text-xs text-muted">{own ? "Verified ones show to everyone; pending and declined ones only to you." : "Each one verified by an officer of the club who saw it happen."}</span>
             </div>
             <ProjectDrafts drafts={drafts} projectTitle={p.title} clubName={new Map(myClubs.map((c) => [c.id, c.name]))} />
-            {milestones.length > 0 && <MilestoneTimeline items={milestones} own={own} />}
+            {milestones.length > 0 && <MilestoneTimeline items={milestones} own={own} projectPrivate={!!p.private} />}
             {/* Everyone building it adds milestones here (the Next strip has the button when it's the first). */}
             {addMilestone && next?.kind !== "first_milestone" && <div className="mt-4">{addMilestone}</div>}
           </Panel>

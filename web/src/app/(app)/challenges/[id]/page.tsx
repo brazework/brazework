@@ -62,14 +62,14 @@ async function ChallengeView({ params }: { params: PageProps<"/challenges/[id]">
   return (
     <div className="mx-auto max-w-3xl">
       <Link href="/challenges" className="inline-flex items-center gap-1 text-sm text-muted hover:text-text"><ArrowLeft className="size-4" /> Challenges</Link>
-      <header className="glass-card relative mt-4 overflow-hidden rounded-3xl p-6">
+      <header className="border border-line bg-surface relative mt-4 overflow-hidden rounded-2xl p-6">
         <div className="relative">
           <div className="flex flex-wrap items-center gap-2 text-xs text-faint">
             <span className="inline-flex items-center gap-1"><Building2 className="size-3.5" /> {c.organizations?.name ?? "Sponsor"}</span>
             <span className="rounded-full bg-surface-2 px-2 py-0.5 text-[11px] text-text-2">{STATUS_LABEL[c.status]}</span>
             {isSponsor && <span className="rounded-full bg-surface-2 px-2 py-0.5 text-[11px] text-text-2">{SPONSOR_LABEL[c.sponsorship]}</span>}
           </div>
-          <h1 className="text-grad mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">{c.title}</h1>
+          <h1 className="text-text mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">{c.title}</h1>
           <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-text-2">
             {c.prize && <span className="inline-flex items-center gap-1.5 font-medium text-text"><Trophy className="size-4" /> {c.prize}</span>}
             <span className="inline-flex items-center gap-1.5"><CalendarClock className="size-4" /> Due <LocalTime kind="full-clock" value={c.deadline} />{c.status === "open" ? ` · ${left} ${left === 1 ? "day" : "days"} left` : ""}</span>
@@ -113,8 +113,8 @@ async function ChallengeView({ params }: { params: PageProps<"/challenges/[id]">
               const p = who.get(e.uid);
               const v = vcount(e.project_id);
               return (
-                <article key={e.id} className="glass-card flex flex-wrap items-center gap-3 rounded-2xl p-4">
-                  {e.placement && <span className="bg-accent-grad grid size-9 shrink-0 place-items-center rounded-full text-xs font-semibold text-on-accent">{PLACE[e.placement - 1]}</span>}
+                <article key={e.id} className="border border-line bg-surface flex flex-wrap items-center gap-3 rounded-2xl p-4">
+                  {e.placement && <span className="bg-text grid size-9 shrink-0 place-items-center rounded-full text-xs font-semibold text-surface">{PLACE[e.placement - 1]}</span>}
                   <Avatar first={p?.first_name ?? ""} last={p?.last_name ?? ""} size={36} />
                   <div className="min-w-0 flex-1">
                     <Link href={`/projects/${e.project_id}`} className="block truncate font-medium hover:underline">{e.projects?.title ?? "Private project"}</Link>

@@ -92,7 +92,7 @@ async function Communities({ searchParams }: { searchParams: PageProps<"/communi
         actions={tab === "mine" ? <>
           <Link href="/communities?tab=discover" className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-line px-4 text-sm font-medium transition hover:bg-hover"><Search className="size-4" /> Find a club</Link>
           {f.studyGroups && <Link href="/communities?tab=create&type=study" className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-line px-4 text-sm font-medium transition hover:bg-hover"><BookOpen className="size-4" /> Start a study group</Link>}
-          <Link href="/communities?tab=create" className="bg-accent-grad inline-flex h-10 items-center gap-1.5 rounded-lg px-4 text-sm font-medium text-on-accent"><Plus className="size-4" /> Start a club</Link>
+          <Link href="/communities?tab=create" className="bg-text inline-flex h-10 items-center gap-1.5 rounded-lg px-4 text-sm font-medium text-surface"><Plus className="size-4" /> Start a club</Link>
         </> : <Link href="/communities?tab=mine" className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-line px-4 text-sm font-medium transition hover:bg-hover"><ArrowLeft className="size-4" /> Your clubs</Link>}
       />
       <div className="mt-6">

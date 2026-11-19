@@ -22,11 +22,11 @@ export function ProSetup({ employer, groups }: { employer: string; groups: { nam
     <form onSubmit={(e) => { e.preventDefault(); setError(""); start(async () => { const r = await becomePro(title, areas); if (r.ok) router.refresh(); else setError(r.message); }); }}>
       <Panel className="p-5 sm:p-6">
         <div className="flex items-center gap-3"><Seal size={34} tone="pro" /><div><p className="text-xs text-faint">Your employer, from your email</p><p className="text-lg font-semibold">{employer}</p></div></div>
-        <label htmlFor="pro-title" className="mt-6 block text-xs font-medium tracking-wide text-faint uppercase">Your role</label>
+        <label htmlFor="pro-title" className="mt-6 block text-xs font-medium text-muted">Your role</label>
         <input id="pro-title" value={title} onChange={(e) => setTitle(e.target.value)} maxLength={80} placeholder="Senior Mechanical Engineer"
           className="mt-2 h-11 w-full rounded-2xl border border-line bg-surface px-4 text-[16px] outline-none focus:border-line-strong" />
         <fieldset className="mt-6">
-          <legend className="text-xs font-medium tracking-wide text-faint uppercase">Areas you can judge <span className="normal-case">({areas.length}/5)</span></legend>
+          <legend className="text-xs font-medium text-muted">Areas you can judge <span className="normal-case">({areas.length}/5)</span></legend>
           <div className="mt-2 flex flex-col gap-3">
             {groups.map((g) => (
               <div key={g.name}>
@@ -58,7 +58,7 @@ export function ReviewCard({ m }: { m: QueueItem }) {
   const [pending, start] = useTransition();
   const left = MIN - note.trim().length;
   return (
-    <article aria-label={`Review: ${m.title}`} className="glass-card rounded-3xl p-5">
+    <article aria-label={`Review: ${m.title}`} className="border border-line bg-surface rounded-2xl p-5">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <VerifiedStamp club={m.community_name} clubId={m.community_id} by={m.reviewer_name} size="sm" />
         {m.matches && <span className="rounded-full bg-surface-2 px-2 py-0.5 text-[11px] text-muted">In your areas</span>}

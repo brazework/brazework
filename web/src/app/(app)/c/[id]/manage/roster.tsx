@@ -38,7 +38,7 @@ export async function Roster({ cid }: { cid: string }) {
         <Block label="Posted this week" icon={<PenLine className="size-4 text-muted" />} n={posted.length}>
           {posted.length ? <p className="text-sm text-text-2">{posted.slice(0, 12).map((p) => p.name).join(", ")}{posted.length > 12 ? ` and ${posted.length - 12} more` : ""}</p> : none("Nobody yet this week. Post yours first.")}
         </Block>
-        <Block label="On a streak" icon={<Flame className="size-4 text-orange-500" />} n={streaks.length}>
+        <Block label="On a streak" icon={<Flame className="size-4 text-muted" />} n={streaks.length}>
           {streaks.length ? (
             <ul className="flex flex-col gap-1">{streaks.slice(0, 6).map((p) => (
               <li key={p.uid} className="flex items-center gap-2 text-sm"><Link href={`/u/${p.uid}`} className="min-w-0 flex-1 truncate hover:underline">{p.name}</Link><span className="shrink-0 text-xs text-muted tabular-nums">{p.streak.weeks} weeks{p.streak.thisWeek ? "" : " · due"}</span></li>

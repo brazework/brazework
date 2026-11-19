@@ -4,18 +4,20 @@ import { ReportLink } from "@/components/report/report-dialog";
 import { BadgeCheck, BarChart3, Eye, FileText, FolderGit2, Lock, MapPin, MessageSquare, Trophy } from "lucide-react";
 import { CommunityBadge } from "../../communities/_components/badge";
 import { ActivityGrid } from "@/components/profile/activity";
-import { cn, requestTime } from "@/lib/forge";
+import { requestTime } from "@/lib/forge";
 import { ProjectIcon } from "../../projects/project-card";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
+import { ConfidentialWork } from "./confidential-work";
 import { CopyLink } from "@/components/app/copy-link";
 import { signersFor, type MemberRow } from "@/lib/signers";
 import { PlaceTabsRow } from "@/components/app/place-tabs";
 import { OwnProofTabs } from "@/components/app/place-tabs-counted";
 import { GoalCard, GoalLine } from "@/components/app/goal-card";
 import { loadGoal, loadRecord } from "@/lib/goal-load";
-import { CountUp } from "@/components/app/count-up";
+import { Seal } from "@/components/app/verified-seal";
+import { TitleBlock } from "@/components/app/title-block";
 import { EmptyState, Panel, Skeleton } from "@/components/app/page-ui";
 import { MemberFaces } from "@/components/network/member-faces";
 import { classOf, openToLabel, type ProfileLink } from "@/lib/profile-meta";
@@ -149,6 +151,7 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
   const joined = new Date(p.created_at).toLocaleDateString("en-US", { month: "long", year: "numeric" });
   const openTo = p.open_to ?? [];
   const links = p.links ?? [];
+  const waiting = ms.filter((m) => m.status === "pending").length;
   const stats: { n: number; label: string; href: string }[] = [
     ...(msOn ? [{ n: proof.length + led.length, label: "Signed results", href: "#proof" }] : []),
     { n: projects.length, label: projects.length === 1 ? "Project" : "Projects", href: "#projects" },
@@ -202,7 +205,7 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
                   <BarChart3 className="size-4" /> <span className="sr-only sm:not-sr-only">Dashboard</span>
                 </Link>
               ) : preview ? (
-                <Link href={`/u/${p.id}`} className="bg-accent-grad inline-flex h-10 items-center gap-1.5 rounded-lg px-4 text-sm font-medium text-on-accent transition active:scale-95">Done previewing</Link>
+                <Link href={`/u/${p.id}`} className="bg-text inline-flex h-10 items-center gap-1.5 rounded-lg px-4 text-sm font-medium text-surface transition active:scale-95">Done previewing</Link>
               ) : (
                 rel && <ConnectButtons personId={p.id} firstName={p.first_name} relationship={rel} />
               )}
@@ -226,18 +229,17 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
           )}
 
           <div className="mt-5 flex flex-wrap items-end gap-x-8 gap-y-4">
-            <ul className="grid grid-cols-3 gap-2 sm:w-96">
-              {stats.map((st) => (
-                <li key={st.label}>
-                  {/* In-page tabs (#projects) need a plain anchor so the hashchange reaches the tabs. */}
-                  {/* The signed count is the number that matters here, so it stands out once there is one. */}
-                  <a href={st.href} className={cn("block rounded-2xl border px-3 py-3 text-center transition active:scale-95", st.href === "#proof" && st.n > 0 ? "border-transparent bg-[color-mix(in_oklab,var(--ok)_12%,transparent)] hover:bg-[color-mix(in_oklab,var(--ok)_18%,transparent)]" : "border-line bg-surface-2/60 hover:border-line-strong hover:bg-surface")}>
-                    <span className={cn("block text-2xl font-semibold tracking-tight", st.href === "#proof" && st.n > 0 && "text-ok")}><CountUp to={st.n} /></span>
-                    <span className="block text-xs text-muted">{st.label}</span>
-                  </a>
-                </li>
-              ))}
-            </ul>
+            {/* The record leads (section redesign): how much of the work someone signed, in the seal's
+                green, then what's still waiting (yours only) and the rest. No count-up: nothing changed. */}
+            <TitleBlock label="Record" className="w-full sm:w-auto sm:min-w-96" cells={[
+              ...stats.map((st) => ({
+                label: st.label,
+                tone: st.href === "#proof" && st.n > 0 ? ("ok" as const) : undefined,
+                // In-page tabs (#projects) need a plain anchor so the hashchange reaches the tabs.
+                value: <a href={st.href} className="inline-flex items-center gap-1.5 hover:underline">{st.href === "#proof" && st.n > 0 && <Seal size={16} />}{st.n}</a>,
+              })),
+              ...(mine && waiting > 0 ? [{ label: "Waiting", value: <a href="#proof" className="hover:underline">{waiting} to be signed</a> }] : []),
+            ]} />
             {wins.length > 0 && (
               <div className="flex flex-wrap gap-1.5" aria-label="Challenge wins">
                 {wins.slice(0, 3).map((w) => (
@@ -268,10 +270,18 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
         <div className="flex min-w-0 flex-col gap-6">
           {/* Proof leads: the work someone signed comes before everything else on the page. */}
           {msOn && <div id="proof" className="scroll-mt-24"><ProofTimeline items={proof} own={mine} led={led} /></div>}
+          {/* Who looked (yours only): the honest count, and where to see who (the dashboard). */}
+          {mine && record && (
+            <section aria-label="Who looked" className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border border-line bg-surface px-4 py-3">
+              <Eye className="size-4 shrink-0 text-muted" />
+              <p className="min-w-0 flex-1 text-sm text-text-2">{record.looked ? `${record.looked} ${record.looked === 1 ? "person" : "people"} looked at your record this month` : "Nobody has looked at your record yet this month. Your link is how they find it."}</p>
+              {record.looked ? <Link href="/dashboard" className="shrink-0 text-xs font-medium text-text underline-offset-4 hover:underline">See who looked</Link> : <CopyLink path={`/u/${p.id}`} label="Copy your link" />}
+            </section>
+          )}
           {mine ? (hideStrength ? null : <ProfileStrength steps={steps} />) : <SharedContext clubs={sharedClubs} mutual={mutual} mutualCount={mutualCount} />}
           {nowBuilding && (
-            <Link href={`/projects/${nowBuilding.id}`} className="glass-card group flex flex-col rounded-3xl p-5 transition">
-              <span className="flex items-center gap-2 text-xs font-medium tracking-wide text-faint uppercase"><span className="size-1.5 animate-pulse rounded-full bg-text" /> Now building</span>
+            <Link href={`/projects/${nowBuilding.id}`} className="border border-line bg-surface group flex flex-col rounded-2xl p-5 transition">
+              <span className="flex items-center gap-2 text-xs font-medium text-muted"><span className="size-1.5 animate-pulse rounded-full bg-text" /> Now building</span>
               <span className="mt-3 flex items-start gap-3">
                 <span className="nav-tile grid size-10 shrink-0 place-items-center rounded-xl text-text-2"><ProjectIcon tools={nowBuilding.tools} className="size-5" /></span>
                 <span className="min-w-0"><span className="block text-lg font-semibold tracking-tight group-hover:underline">{nowBuilding.title}</span><span className="mt-0.5 line-clamp-2 block text-sm text-text-2">{nowBuilding.summary}</span></span>
@@ -280,6 +290,8 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
           )}
           {mine && f.goals && record && <GoalCard goal={goal} record={record} profileId={p.id} />}
 
+          {/* Proof without revealing (redacted-proof.sql): private signed work, as one line each. */}
+          {f.redactedProof && <Suspense fallback={null}><ConfidentialWork member={p.id} mine={mine} /></Suspense>}
           <section id="projects" data-tour="projects-tab" className="scroll-mt-24">
             <SwitchTabs
               name="Profile"
@@ -346,7 +358,7 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
           </SideCard>
           {p.interests?.length > 0 && (
             <SideCard title="Interests">
-              <div className="flex flex-wrap gap-1.5">{p.interests.map((t) => <Link key={t} href={`/feed?tab=latest&tag=${encodeURIComponent(t)}`} className="rounded-full border border-line bg-surface px-2.5 py-0.5 text-xs text-text-2 transition hover:border-transparent hover:bg-accent-grad hover:text-on-accent">#{t}</Link>)}</div>
+              <div className="flex flex-wrap gap-1.5">{p.interests.map((t) => <Link key={t} href={`/feed?tab=latest&tag=${encodeURIComponent(t)}`} className="rounded-full border border-line bg-surface px-2.5 py-0.5 text-xs text-text-2 transition hover:border-transparent hover:bg-text hover:text-surface">#{t}</Link>)}</div>
             </SideCard>
           )}
         </aside>

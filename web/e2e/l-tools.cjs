@@ -190,7 +190,7 @@ const { step, browser, as, go, summary, BASE } = require("./lib.cjs");
     if (rows !== `1|GitHub Actions|Merged: ${prTitle}`) throw new Error(`drafts: ${rows}`);
   }, ben);
 
-  await step("Today says a draft is waiting; Ben edits it on /drafts and sends it to Rocketry Club; Maya sees it via GitHub Actions", async () => {
+  await step("Home says a draft is waiting; Ben edits it on /drafts and sends it to Rocketry Club; Maya sees it via GitHub Actions", async () => {
     await go(ben, "/feed");
     // Today's triage (daily-triage.sql) lists it; editing happens on /drafts, through the card's Edit link.
     const today = ben.getByRole("region", { name: "Your tools noticed 1 thing" });
