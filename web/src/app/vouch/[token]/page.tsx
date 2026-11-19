@@ -6,8 +6,9 @@ import { Suspense } from "react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Logo } from "@/components/ui";
 import { RELATIONSHIPS } from "@/lib/vouch-email";
-import { previewVouch } from "@/lib/vouches";
+import { previewVouch, vouchInbox } from "@/lib/vouches";
 import { AnswerForm } from "./answer-form";
+import { MoreAsks } from "./more-asks";
 
 // /vouch/<token>: someone a member asked (a professor, TA, PI, manager, mentor) vouches for one
 // milestone, or declines (supabase/vouches.sql, Linear FIX-94). Works signed out: the link, emailed to
@@ -37,18 +38,24 @@ export default function VouchPage({ params }: PageProps<"/vouch/[token]">) {
 
 async function Vouch({ params }: { params: PageProps<"/vouch/[token]">["params"] }) {
   const { token } = await params;
-  const v = await previewVouch(token);
+  // Other asks to the same address (signer-tools.sql): shown while this link is live, or for a day after it's used.
+  const [v, more] = await Promise.all([previewVouch(token), vouchInbox(token)]);
+  const domain = v?.email.split("@")[1] ?? "";
   if (!v || v.state !== "asked") {
     const why = !v ? "This link isn't valid." : v.state === "expired" ? "This link has expired." : v.state === "vouched" ? "You've already vouched for this. Thank you." : v.state === "declined" ? "You declined this one." : "This ask was closed.";
     return (
-      <section className="rounded-2xl border border-line bg-surface p-7 shadow-[var(--shadow)]">
-        <h1 className="text-xl font-semibold tracking-tight">{why}</h1>
-        <p className="mt-2 text-sm text-muted">If they still need a vouch, they can send you a new link from Brazework.</p>
-      </section>
+      <>
+        <section className="rounded-2xl border border-line bg-surface p-7 shadow-[var(--shadow)]">
+          <h1 className="text-xl font-semibold tracking-tight">{why}</h1>
+          <p className="mt-2 text-sm text-muted">If they still need a vouch, they can send you a new link from Brazework.</p>
+        </section>
+        {more.length > 0 && <MoreAsks token={token} asks={more} domain={domain} />}
+      </>
     );
   }
   const links = [v.evidence, ...v.evidence_items.map((e) => e.url ?? "")].filter((u): u is string => /^https:\/\//.test(u));
   return (
+    <>
     <section className="rounded-2xl border border-line bg-surface p-6 shadow-[var(--shadow)] sm:p-7">
       <p className="text-sm text-muted"><b className="font-semibold text-text">{v.member || "Someone"}</b> listed you as {RELATIONSHIPS[v.relationship]} who saw this happen.</p>
       <div className="mt-4 rounded-xl border border-line bg-surface-2/60 p-4">
@@ -68,7 +75,9 @@ async function Vouch({ params }: { params: PageProps<"/vouch/[token]">["params"]
           </ul>
         )}
       </div>
-      <AnswerForm token={token} domain={v.email.split("@")[1] ?? ""} />
+      <AnswerForm token={token} domain={domain} email={v.email} />
     </section>
+    {more.length > 0 && <MoreAsks token={token} asks={more} domain={domain} />}
+    </>
   );
 }
