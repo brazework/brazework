@@ -10,6 +10,10 @@ export const metadata: Metadata = { title: "Local outbox", robots: { index: fals
 // so a demo can open a signature link on camera. 404 everywhere else: it needs BRAZEWORK_LOCAL_OUTBOX=1
 // and a localhost Supabase, which production never has.
 export default function OutboxPage() {
+  // Checked here, before anything renders, so it's a real 404 everywhere the outbox is off. Inside the
+  // streamed part below, notFound() came after the page had already started as a 200 (production
+  // showed an empty "Local outbox" heading, with nothing in it).
+  if (!outboxOn()) notFound();
   return (
     <main className="mx-auto max-w-2xl px-5 py-10">
       <h1 className="text-2xl font-semibold tracking-tight">Local outbox</h1>
@@ -24,7 +28,6 @@ const LINK = /https?:\/\/[^\s<>"')]+/g;
 
 async function Outbox() {
   await connection();
-  if (!outboxOn()) notFound();
   const { readFile } = await import("node:fs/promises");
   const raw = await readFile(outboxFile(), "utf8").catch(() => "");
   const mail = raw.split("\n").filter(Boolean).map((l) => { try { return JSON.parse(l) as Sent; } catch { return null; } })
