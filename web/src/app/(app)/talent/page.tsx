@@ -6,6 +6,7 @@ import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { EmptyState, PageHeader, Panel, Skeleton, chipCls } from "@/components/app/page-ui";
 import { Avatar, Button } from "@/components/ui";
+import { approvedLine } from "@/lib/backing";
 import { dbFeatures } from "@/lib/db-features";
 import { OPEN_TO, classOf, openToLabel } from "@/lib/profile-meta";
 import { getViewer } from "@/lib/supabase/server";
@@ -58,6 +59,8 @@ async function Talent({ searchParams }: { searchParams: PageProps<"/talent">["se
   const year = f.gradYear && typeof sp.year === "string" && /^\d{4}$/.test(sp.year) ? Number(sp.year) : 0;
   // "Signed or backed" (FIX-121): also logged work GitHub backs, labelled as such. Signed only by default.
   const backedOn = f.backed && sp.level === "backed";
+  // approved-by.sql: who approved a backed pull request on GitHub.
+  const approvedOn = f.approvedBy;
 
   // Only verified work the member made public (the database enforces this for everyone).
   let mq = supabase.from("milestones")
@@ -69,7 +72,7 @@ async function Talent({ searchParams }: { searchParams: PageProps<"/talent">["se
   if (backedOn) {
     // Readable only while the member shows it and the project can be seen (supabase/backed.sql).
     const { data: backedData } = await supabase.from("milestones")
-      .select("id, owner_id, community_id, community_name, title, reviewer_name, reviewed_at, projects(title, tags, tools), milestone_backings!inner(kind, repo_full_name, ref)")
+      .select(`id, owner_id, community_id, community_name, title, reviewer_name, reviewed_at, projects(title, tags, tools), milestone_backings!inner(kind, repo_full_name, ref${approvedOn ? ", approvals, approvers" : ""})`)
       .eq("status", "logged").eq("private", false).limit(1000);
     const one = <T,>(v: T | T[] | null | undefined) => (Array.isArray(v) ? v[0] ?? null : v ?? null);
     rows = [...rows, ...((backedData ?? []) as unknown as (VerifiedRow & { milestone_backings: VerifiedRow["backing"] | VerifiedRow["backing"][] })[]).map((r) => ({ ...r, backed: true, backing: one(r.milestone_backings) }))];
@@ -182,7 +185,7 @@ async function Talent({ searchParams }: { searchParams: PageProps<"/talent">["se
                   <li key={r.id} className="rounded-2xl border border-line bg-surface px-3 py-2 text-sm">
                     <span className="block truncate font-medium">{r.title}</span>
                     {r.backed
-                      ? <span className="block truncate text-xs text-info">Backed by GitHub{r.backing ? ` · ${r.backing.kind === "commit" ? `commit ${r.backing.ref.slice(0, 7)}` : r.backing.kind === "pull_request" ? `PR #${r.backing.ref}` : `release ${r.backing.ref}`} in ${r.backing.repo_full_name}` : ""} · not signed</span>
+                      ? <span className="block truncate text-xs text-info">Backed by GitHub{r.backing ? ` · ${r.backing.kind === "commit" ? `commit ${r.backing.ref.slice(0, 7)}` : r.backing.kind === "pull_request" ? `PR #${r.backing.ref}` : `release ${r.backing.ref}`} in ${r.backing.repo_full_name}` : ""}{approvedLine(r.backing) ? ` · ${approvedLine(r.backing)}` : ""} · not signed</span>
                       : <span className="block truncate text-xs text-faint">Verified by {r.reviewer_name || "an officer"}{r.reviewer_role ? ` (${r.reviewer_role})` : ""}, {r.community_name}{r.reviewed_at ? ` · ${new Date(r.reviewed_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" })}` : ""}</span>}
                   </li>
                 ))}

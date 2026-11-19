@@ -16,7 +16,7 @@ export type VerifiedRow = {
   reviewed_at: string | null;
   // Backed by GitHub, not signed (FIX-121).
   backed?: boolean;
-  backing?: { kind: "commit" | "pull_request" | "release"; repo_full_name: string; ref: string } | null;
+  backing?: { kind: "commit" | "pull_request" | "release"; repo_full_name: string; ref: string; approvals?: number | null; approvers?: string[] | null } | null;
   projects: { title: string; tags: string[] | null; tools: string[] | null } | null;
 };
 

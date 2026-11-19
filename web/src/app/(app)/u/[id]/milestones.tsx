@@ -8,6 +8,7 @@ import { Button, Field, inputCls } from "@/components/ui";
 import { cn } from "@/lib/forge";
 import { signerNote } from "@/lib/signers";
 import { addMilestone, disputeMilestone, removeMilestone, setMilestoneVisible, shareMilestone, type MilestoneState } from "@/lib/milestones";
+import { approvedLine } from "@/lib/backing";
 import { proofPostText, proofUrl, shareLinks } from "@/lib/proof-card";
 import { PublicLine } from "./public-line";
 import { VerifyLinkButton } from "./verify-link";
@@ -28,7 +29,7 @@ export type Milestone = {
   // With supabase/redacted-proof.sql: the one line other members see for private signed work (owner only).
   public_line?: string;
 };
-export type Backing = { kind: "commit" | "pull_request" | "release"; repo_full_name: string; ref: string; url: string; checked_at: string };
+export type Backing = { kind: "commit" | "pull_request" | "release"; repo_full_name: string; ref: string; url: string; checked_at: string; approvals?: number | null; approvers?: string[] | null };
 const backingOf = (m: Milestone): Backing | null => (Array.isArray(m.milestone_backings) ? m.milestone_backings[0] ?? null : m.milestone_backings ?? null);
 // "PR #12 in bencho/test-stand": what was checked, in a few words.
 const backedWhat = (b: Backing) => `${b.kind === "commit" ? `Commit ${b.ref.slice(0, 7)}` : b.kind === "pull_request" ? `PR #${b.ref}` : `Release ${b.ref}`} in ${b.repo_full_name}`;
@@ -82,9 +83,9 @@ export function MilestoneTimeline({ items, own, projectPrivate = false }: { item
                   {m.status === "draft" && <span className="inline-flex items-center gap-1 rounded-full bg-surface-2 px-2 py-0.5 text-muted">Draft</span>}
                   {/* Backed by data, never "verified": a different colour, the word "Backed", and what was checked. */}
                   {backingOf(m) && m.status !== "revoked" && (() => { const b = backingOf(m)!; return (
-                    <a href={b.url} target="_blank" rel="noopener noreferrer" data-backed title={`Checked with GitHub on ${new Date(b.checked_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" })}: made by this member's own GitHub account.`}
+                    <a href={b.url} target="_blank" rel="noopener noreferrer" data-backed title={`Checked with GitHub on ${new Date(b.checked_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" })}: made by this member's own GitHub account.${approvedLine(b) ? " A reviewer approved this pull request on GitHub; that isn't a signature given to Brazework." : ""}`}
                       className="inline-block max-w-full rounded-lg bg-[color-mix(in_oklab,var(--info)_13%,transparent)] px-2 py-0.5 font-medium text-info hover:underline">
-                      <GitMerge className="mr-1 inline size-3 align-[-2px]" />Backed by GitHub · {backedWhat(b)}
+                      <GitMerge className="mr-1 inline size-3 align-[-2px]" />Backed by GitHub · {backedWhat(b)}{approvedLine(b) && <span data-approved> · {approvedLine(b)}</span>}
                     </a>
                   ); })()}
                   {m.status === "logged" && !backingOf(m) && <span className="inline-flex items-center gap-1 rounded-full bg-surface-2 px-2 py-0.5 text-muted">Logged</span>}
@@ -146,7 +147,7 @@ function ShareProof({ m, onClose, onChange }: { m: Milestone; onClose: () => voi
   const text = proofPostText({ id: m.id, title: m.title, detail: m.detail, achieved_on: m.achieved_on, level: m.status === "verified" ? "signed" : m.status === "pending" ? "waiting" : "backed", project: "",
     member: { id: "", first: "", last: "", headline: "", avatar: "" },
     witness: m.status === "verified" ? { name: m.reviewer_name, role: m.reviewer_role ?? "", club: m.community_name, vouched_by: m.vouched_by ?? "", at: m.reviewed_at ?? null } : null,
-    backing: b ? { kind: b.kind, repo: b.repo_full_name, ref: b.ref, url: b.url } : null, image: null, shared_at: "" });
+    backing: b ? { kind: b.kind, repo: b.repo_full_name, ref: b.ref, url: b.url, approvals: b.approvals ?? 0, approvers: b.approvers ?? [] } : null, image: null, shared_at: "" });
   const links = shareLinks(url, text);
   const set = (on: boolean) => start(async () => { const r = await shareMilestone(m.id, on); setMsg(r.message); if (r.ok) onChange(on ? new Date().toISOString() : null, on ? false : !!m.private); });
   const btn = "inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-line px-3.5 text-sm font-medium transition hover:border-line-strong hover:bg-hover";

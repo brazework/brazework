@@ -80,7 +80,8 @@ from (values
   (80, 'brazework-messages', to_regprocedure('public.brazework_messages_ready()') is not null),
   (81, 'mcp-oauth-post',  to_regprocedure('public.mcp_oauth_post_ready()') is not null),
   (82, 'account-type',    to_regprocedure('public.account_type_ready()') is not null),
-  (83, 'work-email-signers', to_regprocedure('public.work_email_signers_ready()') is not null)
+  (83, 'work-email-signers', to_regprocedure('public.work_email_signers_ready()') is not null),
+  (84, 'approved-by',     to_regprocedure('public.approved_by_ready()') is not null)
 ) as s(step, file, present)
 order by step;
 
