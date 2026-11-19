@@ -15,7 +15,7 @@ import { PlaceTabsRow } from "@/components/app/place-tabs";
 import { OwnProofTabs } from "@/components/app/place-tabs-counted";
 import { GoalCard, GoalLine } from "@/components/app/goal-card";
 import { loadGoal, loadRecord } from "@/lib/goal-load";
-import { CountUp } from "@/components/app/count-up";
+import { Seal } from "@/components/app/verified-seal";
 import { EmptyState, Panel, Skeleton } from "@/components/app/page-ui";
 import { MemberFaces } from "@/components/network/member-faces";
 import { classOf, openToLabel, type ProfileLink } from "@/lib/profile-meta";
@@ -149,6 +149,7 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
   const joined = new Date(p.created_at).toLocaleDateString("en-US", { month: "long", year: "numeric" });
   const openTo = p.open_to ?? [];
   const links = p.links ?? [];
+  const waiting = ms.filter((m) => m.status === "pending").length;
   const stats: { n: number; label: string; href: string }[] = [
     ...(msOn ? [{ n: proof.length + led.length, label: "Signed results", href: "#proof" }] : []),
     { n: projects.length, label: projects.length === 1 ? "Project" : "Projects", href: "#projects" },
@@ -226,17 +227,27 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
           )}
 
           <div className="mt-5 flex flex-wrap items-end gap-x-8 gap-y-4">
-            <ul className="grid grid-cols-3 gap-2 sm:w-96">
-              {stats.map((st) => (
-                <li key={st.label}>
-                  {/* In-page tabs (#projects) need a plain anchor so the hashchange reaches the tabs. */}
-                  {/* The signed count is the number that matters here, so it stands out once there is one. */}
-                  <a href={st.href} className={cn("block rounded-2xl border px-3 py-3 text-center transition active:scale-95", st.href === "#proof" && st.n > 0 ? "border-transparent bg-[color-mix(in_oklab,var(--ok)_12%,transparent)] hover:bg-[color-mix(in_oklab,var(--ok)_18%,transparent)]" : "border-line bg-surface-2/60 hover:border-line-strong hover:bg-surface")}>
-                    <span className={cn("block text-2xl font-semibold tracking-tight", st.href === "#proof" && st.n > 0 && "text-ok")}><CountUp to={st.n} /></span>
-                    <span className="block text-xs text-muted">{st.label}</span>
-                  </a>
-                </li>
-              ))}
+            {/* The record leads (section redesign): how much of the work someone signed, in the seal's
+                green, then what's still waiting (yours only) and the rest. No count-up: nothing changed. */}
+            <ul aria-label="Record" className="flex flex-wrap items-center gap-x-6 gap-y-3">
+              {stats.map((st) => {
+                const signed = st.href === "#proof";
+                return (
+                  <li key={st.label}>
+                    {/* In-page tabs (#projects) need a plain anchor so the hashchange reaches the tabs. */}
+                    <a href={st.href} className="group inline-flex items-center gap-2.5 rounded-lg transition">
+                      {signed && (st.n > 0 ? <Seal size={30} /> : <span aria-hidden="true" className="size-[30px] rounded-full border-2 border-dashed border-line-strong" />)}
+                      <span className="leading-tight">
+                        <span className={cn("block font-semibold tracking-tight tabular-nums", signed ? "text-2xl" : "text-lg", signed && st.n > 0 ? "text-ok" : "text-text")}>{st.n}</span>
+                        <span className="block text-xs text-muted group-hover:text-text">{st.label}</span>
+                      </span>
+                    </a>
+                  </li>
+                );
+              })}
+              {mine && waiting > 0 && (
+                <li><a href="#proof" className="inline-flex items-center gap-1.5 rounded-full border border-dashed border-line-strong px-3 py-1 text-xs text-muted transition hover:text-text">{waiting} waiting for a signature</a></li>
+              )}
             </ul>
             {wins.length > 0 && (
               <div className="flex flex-wrap gap-1.5" aria-label="Challenge wins">
@@ -268,6 +279,14 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
         <div className="flex min-w-0 flex-col gap-6">
           {/* Proof leads: the work someone signed comes before everything else on the page. */}
           {msOn && <div id="proof" className="scroll-mt-24"><ProofTimeline items={proof} own={mine} led={led} /></div>}
+          {/* Who looked (yours only): the honest count, and where to see who (the dashboard). */}
+          {mine && record && (
+            <section aria-label="Who looked" className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border border-line bg-surface px-4 py-3">
+              <Eye className="size-4 shrink-0 text-muted" />
+              <p className="min-w-0 flex-1 text-sm text-text-2">{record.looked ? `${record.looked} ${record.looked === 1 ? "person" : "people"} looked at your record this month` : "Nobody has looked at your record yet this month. Your link is how they find it."}</p>
+              {record.looked ? <Link href="/dashboard" className="shrink-0 text-xs font-medium text-text underline-offset-4 hover:underline">See who looked</Link> : <CopyLink path={`/u/${p.id}`} label="Copy your link" />}
+            </section>
+          )}
           {mine ? (hideStrength ? null : <ProfileStrength steps={steps} />) : <SharedContext clubs={sharedClubs} mutual={mutual} mutualCount={mutualCount} />}
           {nowBuilding && (
             <Link href={`/projects/${nowBuilding.id}`} className="glass-card group flex flex-col rounded-3xl p-5 transition">
