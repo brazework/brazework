@@ -3,12 +3,14 @@ import { AppMoment } from "@/components/auth/app-moment";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Logo } from "@/components/ui";
 
+// The logo links home without prefetching it: someone signing in rarely goes back to the landing page,
+// and its prefetch kept the network busy for seconds after a sign-in returned (y-oauth.cjs).
 export default function AuthLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="relative isolate grid grid-cols-1 min-h-dvh lg:grid-cols-[1fr_1.1fr]">
       <aside className="relative hidden overflow-hidden border-r border-line bg-surface-2/60 lg:block">
         <div className="flex h-full flex-col justify-between gap-10 p-12">
-          <Link href="/" aria-label="Brazework home"><Logo /></Link>
+          <Link href="/" prefetch={false} aria-label="Brazework home"><Logo /></Link>
           {/* The app's one moment, drawn with its own cards (components/auth/app-moment.tsx). */}
           <div aria-hidden="true"><AppMoment /></div>
           <div className="max-w-md">
@@ -20,7 +22,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
       <ThemeToggle className="absolute top-5 right-5" />
       <main className="flex items-center justify-center px-6 py-16">
         <div className="w-full max-w-md">
-          <Link href="/" aria-label="Brazework home" className="mb-10 inline-block lg:hidden"><Logo /></Link>
+          <Link href="/" prefetch={false} aria-label="Brazework home" className="mb-10 inline-block lg:hidden"><Logo /></Link>
           {children}
         </div>
       </main>
