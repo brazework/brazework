@@ -7,7 +7,7 @@ import { ALL_TOPICS } from "@/lib/forge";
 // server, the pages and tests share it (tests/tool-actions.test.ts).
 
 /** Kinds a tool can leave as a draft. post and milestone keep their own card (drafts/draft-card.tsx). */
-export const CARD_KINDS = ["project", "project_edit", "teammate", "rsvp", "join", "invite", "message"] as const;
+export const CARD_KINDS = ["project", "project_edit", "teammate", "rsvp", "join", "invite", "message", "event", "club_post"] as const;
 export type CardKind = (typeof CARD_KINDS)[number];
 export const isCardKind = (k: string): k is CardKind => (CARD_KINDS as readonly string[]).includes(k);
 
@@ -50,6 +50,11 @@ export function draftToProposal(d: Pick<ToolDraftRow, "id" | "kind" | "payload">
     case "message":
       return { id, kind: "message", person_id: s(p.person_id, 36), name: s(p.name, 120), headline: s(p.headline, 200), body: s(p.body, 2000),
         ...(p.accepts_request === true && typeof p.conversation_id === "string" && { accepts: { conversation_id: p.conversation_id } }) };
+    case "event":
+      return { id, kind: "event", club_id: s(p.club_id, 64), club_name: s(p.club_name, 120), title: s(p.title, 120), description: s(p.description, 2000), type: s(p.type, 40) || "Workshop",
+        format: s(p.format, 20) || "In person", location: s(p.location, 160), topic: appTopics([p.topic])[0] ?? "", starts_at: s(p.starts_at, 40), ends_at: s(p.ends_at, 40) };
+    case "club_post":
+      return { id, kind: "club_post", club_id: s(p.club_id, 64), club_name: s(p.club_name, 120), body: s(p.body, 3000), postKind: "update" };
     default:
       return null;
   }
@@ -73,6 +78,10 @@ export function actionPayload(kind: CardKind, i: Record<string, unknown>): Recor
       return { event_id: str("event_id") ?? "", going: i.going !== false };
     case "join":
       return { club_id: str("club_id") ?? "" };
+    case "event":
+      return Object.fromEntries(["club_id", "title", "description", "type", "format", "location", "topic", "starts_at", "ends_at"].flatMap((k) => (str(k) !== undefined ? [[k, str(k)]] : [])));
+    case "club_post":
+      return { club_id: str("club_id") ?? "", body: str("body") ?? "" };
     case "invite":
       return { code: str("invite") ?? str("code") ?? "" };
     case "message":

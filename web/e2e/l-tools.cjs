@@ -325,6 +325,33 @@ const { step, browser, as, go, summary, BASE } = require("./lib.cjs");
     psql(`delete from public.communities where id in ('${club}', '${closed}')`); // Ben's clubs as later journeys expect them
   }, ben);
 
+  await step("officers: Ben (Rocketry's owner) reads Ember's weekly brief over MCP, drafts an announcement and an event; both wait as Ember's cards and go out only when he confirms", async () => {
+    const brief = (await call("club_brief", { club_id: "rkt" }, cc)).structuredContent;
+    if (brief?.club !== "Rocketry Club" || typeof brief.posts?.this_week !== "number" || !brief.can_host_events || !/manage\?tab=verify$/.test(brief.milestones?.review_in_brazework ?? "")) throw new Error(`club_brief: ${JSON.stringify(brief).slice(0, 240)}`);
+    const body = `This week at Rocketry: ${brief.members} members, ${brief.posts.this_week} posts. Build night Thursday! ${stamp}`;
+    const ann = (await call("draft_announcement", { club_id: "rkt", body }, cc)).structuredContent;
+    if (ann?.drafted !== true || !/publish it to the club/.test(ann.next ?? "")) throw new Error(`draft_announcement must be a draft, even with a token that posts: ${JSON.stringify(ann).slice(0, 200)}`);
+    const starts = new Date(Date.now() + 5 * 864e5).toISOString();
+    const ev = (await call("draft_event", { club_id: "rkt", title: `Static fire night ${stamp}`, type: "Workshop", format: "In person", location: "Test range", starts_at: starts }, cc)).structuredContent;
+    if (ev?.drafted !== true) throw new Error(`draft_event: ${JSON.stringify(ev).slice(0, 200)}`);
+    if (psql(`select (select count(*) from public.posts where body = '${body}') + (select count(*) from public.events where title = 'Static fire night ${stamp}')`) !== "0") throw new Error("something went out before Ben confirmed");
+    await go(ben, "/drafts");
+    const post = ben.getByRole("group", { name: "Post in your club from Claude Code" });
+    await post.getByLabel("Club post text").waitFor({ timeout: 15000 });
+    await post.getByRole("button", { name: "Confirm" }).click();
+    await post.getByText(/^(Posted|Sent for review)$/).waitFor({ timeout: 15000 });
+    const event = ben.getByRole("group", { name: "Host a club event from Claude Code" });
+    await event.getByLabel("Event title").waitFor({ timeout: 15000 });
+    // Rocketry's own topic isn't one of the app's, so the card asks for one (as the event form does).
+    if ((await event.getByLabel("Topic").inputValue()) === "") await event.getByLabel("Topic").selectOption("Aerospace");
+    await event.getByRole("button", { name: "Confirm" }).click();
+    await event.getByText("Published").waitFor({ timeout: 15000 });
+    if (psql(`select (select community_id from public.posts where body = '${body}') || '|' || (select community_id || ':' || status from public.events where title = 'Static fire night ${stamp}')`) !== "rkt|rkt:published") throw new Error("the confirmed announcement and event aren't in Rocketry Club");
+    const prompts = (await (await mcp("prompts/list", {}, cc)).json()).result?.prompts ?? [];
+    if (!prompts.some((p) => p.name === "club_week")) throw new Error("no club_week prompt");
+    psql(`delete from public.posts where body = '${body}'; delete from public.events where title = 'Static fire night ${stamp}'`); // Rocketry as later journeys expect it
+  }, ben);
+
   await step("FIX-92: a club's Integrations tab shows how work comes in (GitHub, members' AI tools), and no Discord", async () => {
     await go(ben, "/c/rkt/manage?tab=integrations"); // Ben owns Rocketry Club
     const main = ben.locator("main");

@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { createClient as createSupabase } from "@supabase/supabase-js";
 import { env } from "@/lib/env";
+import { EVENT_FORMATS, EVENT_TYPES } from "@/lib/events";
 import type { CardKind } from "@/lib/tool-actions";
 
 // Brazework as an MCP server (supabase/mcp.sql). Each tool is a database function that checks the
@@ -218,6 +219,42 @@ MCP_TOOLS.push(
       person_id: { type: "string", description: "Or a person's id, from search, for a first message." },
       body: { type: "string", minLength: 1, maxLength: 2000, description: "The message, in the member's voice." },
     }, ["body"], true),
+    rpc: "mcp_act", args: () => ({}),
+  },
+);
+
+// Step 68 (supabase/tool-officers.sql): club officers. Drafts only: an officer publishes from the card.
+// Verifying stays in Brazework (my_review_requests lists what waits, with where to review it).
+MCP_TOOLS.push(
+  {
+    name: "club_brief", title: "This week in a club (officers)",
+    description: "For a club's moderators and up: Ember's weekly brief for one of their clubs (ids from my_clubs): members and new joiners, posts this week vs last, the top post and most active members, events coming up and just past, milestones verified and waiting for review, join requests. Use its numbers as they are for an update, a meeting plan or a recap; never invent any.",
+    inputSchema: { type: "object", properties: { club_id: { type: "string", description: "One of the member's clubs where they're a moderator or above, from my_clubs." } }, required: ["club_id"], additionalProperties: false },
+    rpc: "mcp_club_brief", args: (i) => ({ p_club: String(i.club_id ?? "") }),
+  },
+  {
+    name: "draft_announcement", writes: true, needs: "draft", act: "club_post", draftOnly: true, title: "Draft a club announcement (officers)",
+    description: "For a club's moderators and up: draft a post in the club (the weekly update, a meeting plan, a recap, a welcome). It always waits as a card in the member's drafts; they edit and post it from Brazework. Use club_brief's numbers; never invent any.",
+    inputSchema: actSchema({
+      club_id: { type: "string", description: "The club, from my_clubs (moderator or above)." },
+      body: { type: "string", minLength: 1, maxLength: 3000, description: "The post, in the member's voice." },
+    }, ["club_id", "body"], true),
+    rpc: "mcp_act", args: () => ({}),
+  },
+  {
+    name: "draft_event", writes: true, needs: "draft", act: "event", draftOnly: true, title: "Draft a club event (club admins)",
+    description: `For a club's admins and owner (who host its events in Brazework): draft an event. It always waits as a card in their drafts; they check it and publish it. type is one of ${EVENT_TYPES.join(", ")}; format one of ${EVENT_FORMATS.join(", ")}. Times are ISO 8601 with the timezone offset (ask the member's timezone if you don't know it); with no end it lasts 2 hours.`,
+    inputSchema: actSchema({
+      club_id: { type: "string", description: "The club, from my_clubs (admin or owner)." },
+      title: { type: "string", minLength: 1, maxLength: 120 },
+      description: { type: "string", maxLength: 2000 },
+      type: { type: "string", enum: [...EVENT_TYPES] },
+      format: { type: "string", enum: [...EVENT_FORMATS] },
+      location: { type: "string", maxLength: 160, description: "Room, building or link." },
+      topic: { type: "string", maxLength: 60, description: "One of Brazework's topics (e.g. Aerospace); left out, the club's own is used, or the member picks one on the card." },
+      starts_at: { type: "string", format: "date-time", description: "e.g. 2026-12-03T18:00:00-05:00" },
+      ends_at: { type: "string", format: "date-time" },
+    }, ["club_id", "title", "starts_at"], true),
     rpc: "mcp_act", args: () => ({}),
   },
 );
