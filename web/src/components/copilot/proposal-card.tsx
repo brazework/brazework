@@ -9,6 +9,7 @@ import { saveEvent } from "@/app/(app)/org/actions";
 import { Celebrate } from "@/components/app/celebrate";
 import type { Proposal } from "@/lib/copilot-agent";
 import { EVENT_FORMATS, EVENT_TYPES } from "@/lib/events";
+import { cardLabels, cardSummary } from "@/lib/ember-bar";
 import { ALL_TOPICS, cn } from "@/lib/forge";
 import { addMilestone, reviewMilestone } from "@/lib/milestones";
 import { saveProject, updateProjectFields } from "@/lib/projects";
@@ -45,19 +46,27 @@ const fromLocal = (v: string) => new Date(v).toISOString();
 // A draft Copilot prepared, or one an AI tool left over MCP (fromTool: the same card, from /drafts and
 // Ember's page; supabase/tool-actions.sql). Nothing is saved until the member presses Confirm, which
 // runs the app's normal server action (with all its checks) as them; a tool's draft is then marked done.
-export function ProposalCard({ p: initial, fromTool }: { p: Proposal; fromTool?: { draftId: string; via: string; source: string } }) {
+// `inline`: in a page (under the Ask Ember bar, or a project's own drafts), the card is a short summary
+// with buttons that say what happens ("Log and send to club", "Edit", "Not now"); Edit opens the fields.
+export function ProposalCard({ p: initial, fromTool, inline = false }: { p: Proposal; fromTool?: { draftId: string; via: string; source: string }; inline?: boolean }) {
   const [p, setP] = useState(initial);
   const [state, setState] = useState<"open" | "done" | "dismissed">("open");
   const [msg, setMsg] = useState("");
   const [held, setHeld] = useState("");
   const [cid, setCid] = useState("");
   const [pending, start] = useTransition();
+  const [editing, setEditing] = useState(false);
   const h = HEAD[p.kind];
+  const labels = cardLabels(p.kind, inline);
+  const short = inline && !editing ? cardSummary(p) : null;
   const href = p.kind === "join" || p.kind === "club_post" || p.kind === "invite" ? `/c/${p.club_id}` : p.kind === "follow" ? `/u/${p.person_id}` : p.kind === "event" ? `/c/${p.club_id}?tab=events` : p.kind === "review" ? "/communities" : p.kind === "rsvp" ? `/events/${p.event_id}` : p.kind === "message" && cid ? `/messages/${cid}` : p.kind === "project_edit" || p.kind === "teammate" ? `/projects/${p.project_id}` : h.href;
   const set = (patch: Partial<Proposal>) => setP((cur) => ({ ...cur, ...patch }) as Proposal);
 
   const confirm = () => start(async () => {
     setMsg("");
+    // Optimistic: the card shows it's done at once, and goes back with the reason if the server says no.
+    setState("done");
+    try {
     let r: { ok: boolean; message: string };
     if (p.kind === "post") {
       const f = new FormData();
@@ -105,8 +114,8 @@ export function ProposalCard({ p: initial, fromTool }: { p: Proposal; fromTool?:
     }
     if (r.ok) {
       if (fromTool) await settleDraft(fromTool.draftId);
-      setState("done");
-    } else setMsg(r.message || "That didn't work. Check the details and try again.");
+    } else { setState("open"); setMsg(r.message || "That didn't work. Check the details and try again."); }
+    } catch { setState("open"); setMsg("That didn't work. Check your connection and try again."); }
   });
   const dismiss = () => start(async () => {
     if (fromTool) await dismissDraft(fromTool.draftId);
@@ -130,6 +139,14 @@ export function ProposalCard({ p: initial, fromTool }: { p: Proposal; fromTool?:
         </>
       ) : (
         <div className="mt-3 flex flex-col gap-2.5">
+          {short && (
+            <div className="text-text-2">
+              <p className="font-medium text-text">{short.title}</p>
+              {short.lines.map((l) => <p key={l} className="mt-0.5 text-xs text-muted">{l}</p>)}
+              {short.link && <a href={short.link} target="_blank" rel="noopener noreferrer nofollow" className="mt-1 inline-flex max-w-full items-center gap-1 truncate text-xs font-medium text-text underline underline-offset-4"><ExternalLink className="size-3 shrink-0" /> {short.link.replace(/^https?:\/\//, "")}</a>}
+            </div>
+          )}
+          {!short && <>
           {p.kind === "post" && (
             <>
               <textarea aria-label="Post text" value={p.body} onChange={(e) => set({ body: e.target.value })} maxLength={3000} rows={Math.min(8, 2 + Math.ceil(p.body.length / 70))} className={cn(field, "resize-y leading-relaxed")} />
@@ -219,12 +236,14 @@ export function ProposalCard({ p: initial, fromTool }: { p: Proposal; fromTool?:
               <input aria-label="Location" value={p.location} onChange={(e) => set({ location: e.target.value })} maxLength={160} placeholder="Where (room, building or link)" className={field} />
             </>
           )}
+          </>}
           <AnimatePresence>{msg && <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} role="alert" className="text-xs text-danger">{msg}</motion.p>}</AnimatePresence>
           <div className="flex items-center gap-2">
             <button type="button" onClick={confirm} disabled={pending} className="bg-accent-grad inline-flex h-9 items-center gap-1.5 rounded-lg px-4 text-sm font-medium text-on-accent transition active:scale-95 disabled:opacity-50">
-              {pending ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />} Confirm
+              {pending ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />} {labels.confirm}
             </button>
-            <button type="button" onClick={dismiss} disabled={pending} className="inline-flex h-9 items-center gap-1 rounded-lg px-3 text-sm text-muted hover:text-text"><X className="size-4" /> Dismiss</button>
+            {labels.edit && short && <button type="button" onClick={() => setEditing(true)} disabled={pending} className="inline-flex h-9 items-center gap-1 rounded-lg border border-line px-3 text-sm text-text-2 transition hover:bg-hover hover:text-text"><PencilLine className="size-4" /> {labels.edit}</button>}
+            <button type="button" onClick={dismiss} disabled={pending} className="inline-flex h-9 items-center gap-1 rounded-lg px-3 text-sm text-muted hover:text-text"><X className="size-4" /> {labels.dismiss}</button>
           </div>
         </div>
       )}

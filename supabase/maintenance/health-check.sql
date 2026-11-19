@@ -69,9 +69,10 @@ from (values
   (69, 'tool-rsvp',       to_regprocedure('public.tool_rsvp_ready()') is not null),
   (70, 'tool-clubs-messages', to_regprocedure('public.tool_clubs_messages_ready()') is not null),
   (71, 'plus-teaser',     to_regprocedure('public.plus_teaser_ready()') is not null),
-  (72, 'tool-officers',   to_regprocedure('public.tool_officers_ready()') is not null),
-  (73, 'tool-talent',     to_regprocedure('public.tool_talent_ready()') is not null),
-  (74, 'tool-goals',      to_regprocedure('public.tool_goals_ready()') is not null)
+  (72, 'daily-triage',    to_regprocedure('public.daily_triage_ready()') is not null),
+  (73, 'tool-officers',   to_regprocedure('public.tool_officers_ready()') is not null),
+  (74, 'tool-talent',     to_regprocedure('public.tool_talent_ready()') is not null),
+  (75, 'tool-goals',      to_regprocedure('public.tool_goals_ready()') is not null)
 ) as s(step, file, present)
 order by step;
 

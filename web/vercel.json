@@ -3,6 +3,7 @@
   "ignoreCommand": "[ \"$VERCEL_ENV\" = \"preview\" ] || { [ -n \"$VERCEL_GIT_COMMIT_REF\" ] && [ \"$VERCEL_GIT_COMMIT_REF\" != \"main\" ]; }",
   "crons": [
     { "path": "/api/cron/digest", "schedule": "0 14 * * 1" },
-    { "path": "/api/cron/alerts", "schedule": "7 * * * *" }
+    { "path": "/api/cron/alerts", "schedule": "7 * * * *" },
+    { "path": "/api/cron/drafts", "schedule": "30 13 * * *" }
   ]
 }
