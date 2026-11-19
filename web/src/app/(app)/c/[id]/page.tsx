@@ -128,17 +128,17 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
   return (
     <>
       <Panel className="overflow-hidden p-0">
-        <div className="relative h-32 overflow-hidden border-b border-line sm:h-48">
+        <div className="relative h-24 overflow-hidden border-b border-line sm:h-36">
           {c.cover_path ? (
             <Image src={mediaUrl(c.cover_path)} alt="" fill sizes="(min-width: 768px) 768px, 100vw" className="object-cover" priority />
           ) : (
             <div className="cover-empty absolute inset-0" style={{ backgroundImage: accentTint(c.accent) }} />
           )}
-          <div className="absolute inset-x-0 bottom-0 h-20 bg-gradient-to-t from-black/25 to-transparent" aria-hidden="true" />
+          <div className="absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-black/25 to-transparent" aria-hidden="true" />
         </div>
         <div className="p-6">
         <div className="flex flex-wrap items-start gap-4">
-          <CommunityBadge id={c.id} name={c.name} size={84} logo={c.logo_path} accent={c.accent} className="relative z-10 -mt-16 border-4 border-surface shadow-[var(--shadow)] transition duration-300 hover:-rotate-6 hover:scale-105" />
+          <CommunityBadge id={c.id} name={c.name} size={72} logo={c.logo_path} accent={c.accent} className="relative z-10 -mt-12 border-4 border-surface shadow-[var(--shadow)] transition duration-300 hover:-rotate-6 hover:scale-105" />
           {/* Actions beside the badge, like a profile; the name and details get the full width below, so four
               buttons never squeeze a club's name onto two lines. On a phone they take the row under the badge
               (beside an 84px badge they wrapped one at a time, leaving Leave alone on its own line). */}

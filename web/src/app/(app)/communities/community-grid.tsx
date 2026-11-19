@@ -72,7 +72,7 @@ export function CommunityGrid({ items, discover = false, initialQuery = "", empt
 export function CommunityCard({ c, role, joinable, pulse }: { c: Community; role?: Role; joinable: boolean; pulse?: Pulse }) {
   return (
     <article className="border border-line bg-surface group relative flex h-full flex-col overflow-hidden rounded-2xl transition duration-300">
-      <div className="relative h-24 overflow-hidden border-b border-line">
+      <div className="relative h-20 overflow-hidden border-b border-line">
         {c.cover_path ? <Image src={mediaUrl(c.cover_path)} alt="" fill sizes="(min-width: 640px) 440px, 100vw" className="object-cover transition duration-500 group-hover:scale-105" /> : <div className="cover-empty absolute inset-0 transition duration-500 group-hover:scale-110" style={{ backgroundImage: accentTint(c.accent) }} />}
         {pulse && pulse.week > 0 && <span className="absolute top-2.5 right-2.5 inline-flex items-center gap-1 rounded-full bg-bg/75 px-2 py-0.5 text-[11px] font-medium text-text backdrop-blur"><Flame className="size-3 text-accent" /> {pulse.week} this week</span>}
       </div>

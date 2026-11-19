@@ -43,7 +43,8 @@ const body = `Done: thrust logger v2 merged, CI green. Next: static fire #5 prep
 
   await step("the review packet: Ben's signed work in the period, who signed it and their role", async () => {
     await go(page, `/u/${ben}`);
-    await page.getByRole("link", { name: "Review packet" }).click();
+    await page.getByRole("button", { name: "More profile actions" }).click();
+    await page.getByRole("menuitem", { name: "Review packet" }).click();
     await page.waitForURL(/\/review/);
     await page.getByRole("heading", { name: "Ben Cho" }).waitFor({ timeout: 15000 });
     await page.getByText("Plus preview: free while Plus is coming").waitFor();
