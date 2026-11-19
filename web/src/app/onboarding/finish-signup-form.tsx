@@ -25,12 +25,12 @@ export function FinishSignupForm({ email, provider, firstName, lastName }: { ema
   return (
     <div className="flex max-w-md flex-col gap-5">
       <form onSubmit={submitWithoutReset(action)} className="flex flex-col gap-5">
-        <SignupSteps at="about" club={type !== "professional"} />
+        <SignupSteps at="about" />
         <div>
           <h1 className="text-3xl font-semibold tracking-tight">About you</h1>
           <p className="mt-2 text-muted">
             {provider ? <>Signed in with {provider} as </> : <>Signed in as </>}
-            <span className="text-text">{email}</span>. Three quick things, then your work.
+            <span className="text-text">{email}</span>. Three quick things, then your first build.
           </p>
         </div>
         <input type="hidden" name="accountType" value={type} />
