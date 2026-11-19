@@ -9,7 +9,6 @@ import { Suspense } from "react";
 import { LiveRefresh } from "@/components/app/live-refresh";
 import { Celebrate } from "@/components/app/celebrate";
 import { CopyLink } from "@/components/app/copy-link";
-import { CountUp } from "@/components/app/count-up";
 import { EmptyState, Panel, Skeleton, Tabs } from "@/components/app/page-ui";
 import { Kicker } from "@/components/ui";
 import { PRIVACY_LABEL, TYPE_LABEL, can, membersLabel, rank, type CommunityPost } from "@/lib/communities";
@@ -29,6 +28,7 @@ import { ChapterInvite, ChapterLine } from "./chapter";
 import { MemberFaces, type Face } from "@/components/network/member-faces";
 import { leadCounts, studyLine, type LeadRow } from "@/lib/study";
 import { StudyLeads } from "./study-leads";
+import { NextUp } from "./next-up";
 import { ClubSetup } from "./setup";
 import { clubSetupSteps } from "@/lib/guide";
 import { reusableInvite, setupProgress, type InviteRow } from "@/lib/club-setup";
@@ -126,7 +126,7 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
   return (
     <>
       <Panel className="overflow-hidden p-0">
-        <div className="relative h-44 overflow-hidden border-b border-line sm:h-56">
+        <div className="relative h-32 overflow-hidden border-b border-line sm:h-48">
           {c.cover_path ? (
             <Image src={mediaUrl(c.cover_path)} alt="" fill sizes="(min-width: 768px) 768px, 100vw" className="object-cover" priority />
           ) : (
@@ -172,40 +172,42 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
           </div>
         </div>
         <p className="mt-4 text-[15px] leading-relaxed text-text-2">{c.about}</p>
-        <ul className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
+        {/* The club's pulse in one quiet line (it was four big tiles): what it's doing, not how big it is. */}
+        <ul aria-label="This club now" className="mt-4 flex flex-wrap gap-x-5 gap-y-1.5 text-sm text-muted">
           {[
-            { n: c.member_count, label: c.member_count === 1 ? "Member" : "Members" },
-            { n: thisWeek, label: "Posts this week" },
-            ...(msOn ? [{ n: verifiedTerm ?? 0, label: "Verified this term" }] : [{ n: posts.length, label: posts.length === 1 ? "Post" : "Posts" }]),
-            { n: upcomingEvents.length, label: "Upcoming" },
+            { n: thisWeek, label: thisWeek === 1 ? "post this week" : "posts this week" },
+            ...(msOn ? [{ n: verifiedTerm ?? 0, label: "signed this term", seal: true }] : []),
+            { n: upcomingEvents.length, label: upcomingEvents.length === 1 ? "event coming up" : "events coming up" },
           ].map((st) => (
-            <li key={st.label} className="glass-card rounded-2xl px-3 py-3 text-center">
-              <span className="block text-2xl font-semibold tracking-tight"><CountUp to={st.n} /></span>
-              <span className="block text-xs text-muted">{st.label}</span>
+            <li key={st.label} className="inline-flex items-center gap-1.5">
+              {"seal" in st && st.n > 0 && <BadgeCheck className="size-4 text-ok" />}
+              <span className="font-semibold text-text tabular-nums">{st.n}</span> {st.label}
             </li>
           ))}
         </ul>
+        {me && nextEvent && !officer && <NextUp event={nextEvent} going={goingSet.has(nextEvent.id)} now={now} />}
         {showSetup && <ClubSetup cid={c.id} name={c.name} steps={setupSteps} origin={env.siteUrl} invite={setupInvite} />}
         {officer && (
-          <section aria-label="To do" className="mt-4 rounded-3xl border border-line bg-surface p-4">
-            <h2 className="text-xs font-medium tracking-wide text-faint uppercase">To do</h2>
-            <ul className="mt-2 grid grid-cols-1 gap-1.5 sm:grid-cols-2">
+          <section aria-label="To do" className="mt-5">
+            <h2 className="mb-2 text-sm font-semibold">To do</h2>
+            <ul className="divide-y divide-line overflow-hidden rounded-xl border border-line bg-surface">
               {[
                 { n: toVerify.count ?? 0, label: "milestones to verify", href: `/c/${c.id}/manage?tab=verify`, show: msOn },
                 { n: joinReqs.count ?? 0, label: "join requests", href: `/c/${c.id}/manage?tab=requests`, show: can(role, "approve") },
                 { n: (held.data ?? []).length, label: "held posts to review", href: `/c/${c.id}?tab=held`, show: isMod },
               ].filter((t) => t.show).map((t) => (
                 <li key={t.label}>
-                  <Link href={t.href} className="flex items-center gap-2.5 rounded-2xl px-3 py-2.5 text-sm transition hover:bg-hover">
-                    <span className={t.n ? "grid min-w-7 place-items-center rounded-full bg-accent-grad px-2 py-0.5 text-xs font-semibold text-on-accent tabular-nums" : "grid min-w-7 place-items-center rounded-full bg-surface-2 px-2 py-0.5 text-xs text-faint tabular-nums"}>{t.n}</span>
-                    <span className={t.n ? "text-text" : "text-muted"}>{t.label}</span>
+                  <Link href={t.href} className="flex items-center gap-3 px-4 py-3 text-sm transition hover:bg-hover">
+                    <span className={t.n ? "grid h-6 min-w-6 place-items-center rounded-full bg-text px-1.5 text-xs font-semibold text-bg tabular-nums" : "grid h-6 min-w-6 place-items-center rounded-full bg-surface-2 px-1.5 text-xs text-faint tabular-nums"}>{t.n}</span>
+                    <span className={t.n ? "min-w-0 flex-1 text-text" : "min-w-0 flex-1 text-muted"}>{t.label}</span>
+                    {t.n > 0 && <span className="text-xs font-medium text-muted">Open</span>}
                   </Link>
                 </li>
               ))}
               <li>
-                <Link href={nextEvent ? `/events/${nextEvent.id}` : `/c/${c.id}?tab=events`} className="flex items-center gap-2.5 rounded-2xl px-3 py-2.5 text-sm transition hover:bg-hover">
-                  <CalendarDays className="size-4 shrink-0 text-faint" />
-                  <span className="min-w-0 truncate text-text-2">{nextEvent ? `Next: ${nextEvent.title}` : "No event planned. Host one"}</span>
+                <Link href={nextEvent ? `/events/${nextEvent.id}` : `/c/${c.id}?tab=events`} className="flex items-center gap-3 px-4 py-3 text-sm transition hover:bg-hover">
+                  <span className="grid size-6 place-items-center"><CalendarDays className="size-4 text-faint" /></span>
+                  <span className="min-w-0 flex-1 truncate text-text-2">{nextEvent ? `Next: ${nextEvent.title}` : "No event planned. Host one"}</span>
                 </Link>
               </li>
             </ul>

@@ -58,9 +58,29 @@ export async function BuildersThisTerm({ cid }: { cid: string }) {
   const total = [...counts.values()].reduce((s, x) => s + x.n, 0);
   return (
     <>
+      {/* The club's latest signed-off work: what a visitor should see first, so it comes first. */}
+      {recent.length > 0 && (
+        <section aria-label="Signed in this club" className="mt-6">
+          <h2 className="mb-2.5 inline-flex items-center gap-2 text-sm font-semibold"><Seal size={18} /> Signed in this club</h2>
+          <ul className="divide-y divide-line overflow-hidden rounded-xl border border-line bg-surface">
+            {recent.map((m) => (
+              <li key={m.id}>
+                <Link href={`/u/${m.owner_id}#proof`} className="group flex items-center gap-3 px-4 py-3 transition hover:bg-hover">
+                  <Avatar first={m.owner?.first_name ?? ""} last={m.owner?.last_name ?? ""} size={32} />
+                  <span className="min-w-0 flex-1">
+                    <span className="line-clamp-2 text-sm font-medium group-hover:underline sm:line-clamp-1">{m.title}</span>
+                    <span className="block truncate text-xs text-muted">{`${m.owner?.first_name ?? ""} ${m.owner?.last_name ?? ""}`.trim() || "A member"}, signed by {m.reviewer_name || "an officer"} <span suppressHydrationWarning>{timeAgo(m.reviewed_at)}</span></span>
+                  </span>
+                  <Seal size={18} />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
       {/* Friendly momentum, not points: who's posted here this week, with their weekly streak. */}
       {byAuthor.size > 0 && (
-        <section aria-label="Who's building this week" className="glass-card mt-4 rounded-3xl p-4 sm:p-5">
+        <section aria-label="Who's building this week" className="mt-4 rounded-xl border border-line bg-surface p-4">
           <h2 className="inline-flex items-center gap-2 text-sm font-semibold"><Flame className="size-4 text-orange-500" /> Who&apos;s building this week</h2>
           {building.length ? (
             <ul className="mt-3 flex flex-wrap gap-2">
@@ -81,7 +101,7 @@ export async function BuildersThisTerm({ cid }: { cid: string }) {
         </section>
       )}
       {top.length > 0 && (
-        <section aria-label="Builders this term" className="glass-card mt-4 rounded-3xl p-4 sm:p-5">
+        <section aria-label="Builders this term" className="mt-4 rounded-xl border border-line bg-surface p-4">
         <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
           <h2 className="inline-flex items-center gap-2 text-sm font-semibold whitespace-nowrap"><Trophy className="size-4 text-amber-500" /> Builders this term</h2>
           <span className="inline-flex items-center gap-1 text-xs text-faint"><BadgeCheck className="size-3.5 text-ok" /> {total} verified since {since.toLocaleDateString("en-US", { month: "short", timeZone: "UTC" })}</span>
@@ -99,26 +119,6 @@ export async function BuildersThisTerm({ cid }: { cid: string }) {
             </li>
           ))}
         </ol>
-        </section>
-      )}
-      {/* The club's latest signed-off work: what a visitor should see first. */}
-      {recent.length > 0 && (
-        <section aria-label="Recently verified" className="mt-4">
-          <h2 className="mb-2.5 inline-flex items-center gap-2 text-sm font-semibold"><Seal size={18} /> Recently verified</h2>
-          <ul className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-            {recent.map((m) => (
-              <li key={m.id}>
-                <Link href={`/u/${m.owner_id}#proof`} className="group flex h-full gap-3 rounded-2xl border border-line bg-surface/70 p-3.5 transition hover:border-line-strong">
-                  <Seal size={30} />
-                  <span className="min-w-0">
-                    <span className="block truncate text-sm font-medium group-hover:underline">{m.title}</span>
-                    <span className="block truncate text-xs text-muted">{`${m.owner?.first_name ?? ""} ${m.owner?.last_name ?? ""}`.trim() || "A member"} · signed by {m.reviewer_name || "an officer"}</span>
-                    <span className="block text-[11px] text-faint">{timeAgo(m.reviewed_at)}</span>
-                  </span>
-                </Link>
-              </li>
-            ))}
-          </ul>
         </section>
       )}
     </>

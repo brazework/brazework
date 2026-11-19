@@ -25,48 +25,52 @@ export function VerifyQueue({ items }: { items: QueueItem[] }) {
   const [done, setDone] = useState<Record<string, "verified" | "declined">>({});
   const left = items.filter((m) => !done[m.id]).length;
   return (
-    <div className="flex flex-col gap-3">
-      <p className="text-sm text-muted">{left ? `${left} waiting. Verify only what the club saw happen: a test, a build night, a competition result.` : "All caught up."}</p>
+    <div className="flex flex-col gap-2.5">
+      <p className="text-sm text-muted">{left ? `${left} waiting. Sign only what the club saw happen: a test, a build night, a competition result.` : "All caught up. Nothing is waiting for a signature."}</p>
       <AnimatePresence initial={false}>
-        {items.map((m) => <QueueCard key={m.id} m={m} result={done[m.id]} onDone={(r) => setDone((d) => ({ ...d, [m.id]: r }))} />)}
+        {items.map((m) => <QueueCard key={m.id} m={m} result={done[m.id]} onDone={(r) => setDone((d) => { const next = { ...d }; if (r) next[m.id] = r; else delete next[m.id]; return next; })} />)}
       </AnimatePresence>
     </div>
   );
 }
 
-function QueueCard({ m, result, onDone }: { m: QueueItem; result?: "verified" | "declined"; onDone: (r: "verified" | "declined") => void }) {
+function QueueCard({ m, result, onDone }: { m: QueueItem; result?: "verified" | "declined"; onDone: (r: "verified" | "declined" | null) => void }) {
   const [declining, setDeclining] = useState(false);
   const [note, setNote] = useState("");
   const [msg, setMsg] = useState("");
   const [pending, start] = useTransition();
-  const review = (verify: boolean) => start(async () => {
-    const r = await reviewMilestone(m.id, verify, note);
-    if (r.ok) onDone(verify ? "verified" : "declined");
-    else setMsg(r.message);
-  });
+  // Optimistic: the row shows its result at once, and goes back (with the server's reason) if it says no.
+  const review = (verify: boolean) => {
+    setMsg("");
+    onDone(verify ? "verified" : "declined");
+    start(async () => {
+      const r = await reviewMilestone(m.id, verify, note);
+      if (!r.ok) { onDone(null); setMsg(r.message); }
+    });
+  };
   const name = m.owner ? `${m.owner.first_name} ${m.owner.last_name}` : "A member";
   return (
-    <motion.article layout initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className={cn("grad-edge relative rounded-3xl border p-5 shadow-[var(--shadow)]", result && "opacity-80")}>
+    <motion.article layout exit={{ opacity: 0, height: 0 }} className={cn("relative rounded-xl border border-line bg-surface p-4 transition-colors", result === "verified" && "border-[color-mix(in_oklab,var(--ok)_40%,var(--border))]", result === "declined" && "opacity-70")}>
       {result === "verified" && <Celebrate />}
-      <div className="flex items-start gap-3">
-        <Avatar first={m.owner?.first_name ?? "?"} last={m.owner?.last_name ?? ""} size={40} />
-        <div className="min-w-0 flex-1">
-          <div className="text-sm"><Link href={`/u/${m.owner_id}`} className="font-medium hover:underline">{name}</Link> <span className="text-muted">asks the club to verify</span></div>
-          <div className="text-xs text-faint">{m.owner?.headline}{m.via && <span title={`${m.owner?.first_name ?? "They"} logged this from ${m.via}, connected in Settings → Your tools`}> · via {m.via}</span>}</div>
+      <div className="flex items-center gap-2.5">
+        <Avatar first={m.owner?.first_name ?? "?"} last={m.owner?.last_name ?? ""} size={28} />
+        <div className="min-w-0 flex-1 truncate text-sm">
+          <Link href={`/u/${m.owner_id}`} className="font-medium hover:underline">{name}</Link>
+          <span className="text-muted"> on {m.project?.title ?? "a project"}</span>
+          {m.via && <span className="text-faint" title={`${m.owner?.first_name ?? "They"} logged this from ${m.via}, connected in Settings → Your tools`}> · via {m.via}</span>}
         </div>
         <span className="shrink-0 text-xs text-faint">{day(m.achieved_on)}</span>
       </div>
-      <div className="mt-4 rounded-2xl border border-line bg-surface-2/60 p-4">
-        <div className="text-[11px] font-medium tracking-wide text-faint uppercase">{m.project?.title ?? "Project"}</div>
-        <div className="mt-1 font-semibold">{m.title}</div>
-        {m.detail && <p className="mt-1 text-sm leading-relaxed text-text-2">{m.detail}</p>}
+      <div className="mt-3 border-l-2 border-dashed border-line-strong pl-3.5">
+        <div className="font-semibold leading-snug">{m.title}</div>
+        {m.detail && <p className="mt-1 line-clamp-3 text-sm leading-relaxed text-text-2">{m.detail}</p>}
         {/* Every link: the main one, then the rest (commits, pull requests, videos, docs). */}
         {(() => {
           const links = [...new Set([m.evidence, ...(m.evidence_items ?? []).map((e) => e.url ?? "")].filter((u) => /^https?:\/\//.test(u)))];
           return links.length > 0 && (
             <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
               {links.map((u, i) => (
-                <li key={u}><a href={u} target="_blank" rel="noopener noreferrer nofollow" className="inline-flex items-center gap-1 text-xs font-medium text-text underline underline-offset-4"><ExternalLink className="size-3.5" /> {links.length === 1 ? "Open the evidence" : evidenceLabel(u, i)}</a></li>
+                <li key={u}><a href={u} target="_blank" rel="noopener noreferrer nofollow" className="inline-flex items-center gap-1 text-xs font-medium text-text underline underline-offset-4"><ExternalLink className="size-3.5" /> {links.length > 1 ? evidenceLabel(u, i) : "Open the evidence"}</a></li>
               ))}
             </ul>
           );
@@ -86,7 +90,7 @@ function QueueCard({ m, result, onDone }: { m: QueueItem; result?: "verified" | 
               </motion.div>
             )}
           </AnimatePresence>
-          <div className="mt-4 flex flex-wrap items-center gap-2">
+          <div className="mt-3.5 flex flex-wrap items-center gap-2">
             {declining ? (
               <>
                 <button type="button" disabled={pending} onClick={() => review(false)} className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-danger px-4 text-sm font-medium text-white transition active:scale-95 disabled:opacity-50">{pending && <Loader2 className="size-4 animate-spin" />} Decline</button>
@@ -94,7 +98,7 @@ function QueueCard({ m, result, onDone }: { m: QueueItem; result?: "verified" | 
               </>
             ) : (
               <>
-                <button type="button" disabled={pending} onClick={() => review(true)} className="bg-accent-grad inline-flex h-9 items-center gap-1.5 rounded-lg px-4 text-sm font-medium text-on-accent transition active:scale-95 disabled:opacity-50">{pending ? <Loader2 className="size-4 animate-spin" /> : <BadgeCheck className="size-4" />} Verify</button>
+                <button type="button" disabled={pending} onClick={() => review(true)} className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-text px-4 text-sm font-medium text-bg transition active:scale-95 disabled:opacity-50">{pending ? <Loader2 className="size-4 animate-spin" /> : <BadgeCheck className="size-4" />} Verify</button>
                 <button type="button" onClick={() => setDeclining(true)} className="inline-flex h-9 items-center rounded-lg border border-line px-4 text-sm text-muted transition hover:text-text">Decline</button>
               </>
             )}
