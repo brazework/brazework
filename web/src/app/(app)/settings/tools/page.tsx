@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { PageHeader, Skeleton } from "@/components/app/page-ui";
 import { listApiTokens } from "@/lib/api-tokens";
 import { dbFeatures } from "@/lib/db-features";
+import { oauthEnabled } from "@/lib/mcp-oauth";
 import { env } from "@/lib/env";
 import { getViewer } from "@/lib/supabase/server";
 import { ToolsHub } from "./tools-client";
@@ -37,5 +38,5 @@ async function Tools() {
   ]) : [{ data: [] }, { data: [] }];
   const clubList = ((clubs ?? []) as unknown as { community_id: string; communities: { name: string } | null }[]).map((c) => ({ id: c.community_id, name: c.communities?.name ?? c.community_id }));
   return <ToolsHub tokens={await listApiTokens()} endpoint={`${env.siteUrl}/api/mcp`} writes={f.mcpWrites} drafts={f.mcpWorkflows}
-    projects={(projects ?? []) as { id: string; title: string }[]} clubs={clubList} field={profile?.field ?? ""} />;
+    projects={(projects ?? []) as { id: string; title: string }[]} clubs={clubList} field={profile?.field ?? ""} signIn={f.mcpOauth && (await oauthEnabled())} />;
 }

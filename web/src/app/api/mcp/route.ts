@@ -6,19 +6,26 @@ import { PLAYBOOKS, PLAYBOOK_INDEX_URI, PROMPTS, playbookMarkdown, playbookUri, 
 import { mailer } from "@/lib/email";
 import { nextStep, withFix } from "@/lib/mcp-results";
 import { env } from "@/lib/env";
+import { linkSignIn, looksLikeJwt, oauthEnabled, resourceMetadataUrl } from "@/lib/mcp-oauth";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { buildVouchEmail, type Relationship } from "@/lib/vouch-email";
 
 // POST /api/mcp: Brazework's MCP server (Streamable HTTP, JSON responses, no session state).
-// Clients send "Authorization: Bearer forge_…", a personal token from Settings → Your tools (/settings/tools).
+// Clients send "Authorization: Bearer forge_…", a personal token from Settings → Your tools (/settings/tools),
+// or sign in (lib/mcp-oauth.ts): the 401 points them to this server's OAuth metadata, and they come
+// back with a Supabase access token, which becomes that sign-in's own token row.
 // Tools (lib/mcp.ts) read and write through database functions that check the token; prompts and
 // resources (lib/mcp-playbooks.ts) are the field playbooks: slash commands that turn the member's work
 // in their own tools into posts, milestones and signature asks, always with their yes.
 type Msg = { jsonrpc?: string; id?: string | number | null; method?: string; params?: Record<string, unknown> };
 const rpc = (id: Msg["id"], body: { result?: unknown; error?: { code: number; message: string } }, status = 200) =>
   Response.json({ jsonrpc: "2.0", id: id ?? null, ...body }, { status, headers: { "Cache-Control": "no-store" } });
-const unauthorized = (message: string) =>
-  Response.json({ jsonrpc: "2.0", id: null, error: { code: -32001, message } }, { status: 401, headers: { "WWW-Authenticate": 'Bearer realm="Brazework", error="invalid_token"' } });
+// With the OAuth server on, a 401 also says where to sign in (RFC 9728), which is how clients like Claude,
+// Cursor and VS Code start one-click connect.
+async function unauthorized(message: string, origin: string) {
+  const meta = (await oauthEnabled()) ? `, resource_metadata="${resourceMetadataUrl(origin)}"` : "";
+  return Response.json({ jsonrpc: "2.0", id: null, error: { code: -32001, message } }, { status: 401, headers: { "WWW-Authenticate": `Bearer realm="Brazework", error="invalid_token"${meta}` } });
+}
 // Refusals say how to fix them (lib/mcp-results.ts), so the assistant can act on them or tell the member.
 const toolError = (id: Msg["id"], text: string) => rpc(id, { result: { content: [{ type: "text", text: withFix(text) }], isError: true } });
 
@@ -39,17 +46,26 @@ export async function GET() {
 }
 
 export async function POST(req: Request) {
+  const origin = new URL(req.url).origin;
   const token = (req.headers.get("authorization") ?? "").replace(/^Bearer\s+/i, "").trim();
-  if (!/^forge_[A-Za-z0-9_-]{20,80}$/.test(token)) return unauthorized("Add a Brazework token: Authorization: Bearer forge_…");
-  const hash = tokenHash(token);
   const db = mcpDb();
-  // Who the token is for and what it may do (supabase/mcp-writes.sql); before that step, every token reads.
-  let who = await db.rpc("mcp_token", { p_hash: hash });
+  let hash: string;
   let scopes: string[] = ["read"];
-  if (who.error?.code === "PGRST202") who = await db.rpc("mcp_user", { p_hash: hash });
-  else if (who.data) scopes = ((who.data as { scopes?: string[] }).scopes ?? ["read"]);
-  if (who.error) return rpc(null, { error: { code: -32603, message: who.error.code === "PGRST202" ? "AI tools aren't switched on on Brazework yet." : "Brazework couldn't check that token." } }, 503);
-  if (!who.data) return unauthorized("That token isn't valid any more. Make a new one in Brazework → Settings → Your tools.");
+  if (looksLikeJwt(token)) {
+    // Signed in from the assistant: this sign-in's token row (made on the first call).
+    const linked = await linkSignIn(token);
+    if (!linked.ok) return linked.status === 401 ? unauthorized(linked.message, origin) : rpc(null, { error: { code: -32603, message: linked.message } }, 503);
+    ({ hash, scopes } = linked);
+  } else {
+    if (!/^forge_[A-Za-z0-9_-]{20,80}$/.test(token)) return unauthorized("Sign in to Brazework from your assistant, or add a token from Brazework → Settings → Your tools: Authorization: Bearer forge_…", origin);
+    hash = tokenHash(token);
+    // Who the token is for and what it may do (supabase/mcp-writes.sql); before that step, every token reads.
+    let who = await db.rpc("mcp_token", { p_hash: hash });
+    if (who.error?.code === "PGRST202") who = await db.rpc("mcp_user", { p_hash: hash });
+    else if (who.data) scopes = ((who.data as { scopes?: string[] }).scopes ?? ["read"]);
+    if (who.error) return rpc(null, { error: { code: -32603, message: who.error.code === "PGRST202" ? "AI tools aren't switched on on Brazework yet." : "Brazework couldn't check that token." } }, 503);
+    if (!who.data) return unauthorized("That token isn't valid any more. Make a new one in Brazework → Settings → Your tools.", origin);
+  }
   const can = scopeFlags(scopes);
   const tools = toolsFor(scopes);
 
