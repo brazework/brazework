@@ -122,6 +122,23 @@ These need a founder: keys, providers and production data never change from a se
 - [ ] After that deploy, add Brazework to Claude, run `/start`, log a milestone, and check that the card
   shows in the chat. The text result is the fallback.
 
+**Money: Stripe (optional for launch).** With no keys, every paid button takes a request that lands in
+the admin queue (`/admin` → Review queue, "Sales request"), so launch works without Stripe. To take
+payments, create these in Stripe (test mode first), then add them in Vercel (Production) and redeploy:
+- [ ] Products and prices:
+  - **Plus:** monthly, $12, → `STRIPE_PRICE_PLUS`. Optionally, a second monthly price of $6 for students
+    → `STRIPE_PRICE_PLUS_STUDENT` (without it, students pay the one price). The name and prices live in
+    `web/src/lib/pricing.ts`.
+  - **Find builders seat:** monthly, $300, → `STRIPE_PRICE_TALENT`.
+  - **Sponsored challenge:** one-time, $1,000, → `STRIPE_PRICE_CHALLENGE`.
+- [ ] `STRIPE_SECRET_KEY`: the secret key (`sk_live_…`, or `sk_test_…` while testing).
+- [ ] A webhook endpoint at `https://brazework.com/api/billing/webhook` for the events
+  `checkout.session.completed` and `customer.subscription.deleted`. Put its signing secret in
+  `STRIPE_WEBHOOK_SECRET`.
+- [ ] `SUPABASE_SERVICE_ROLE_KEY` is set (the webhook records payments with it).
+- [ ] Check: `/plus` shows **Get Plus** instead of **Join the waitlist**. A test-mode checkout gives the
+  account Plus, and the dashboard's "Companies that looked" then covers 90 days.
+
 **Watching it.**
 - [ ] Uptime: a free monitor (Better Stack, UptimeRobot or similar) on `https://brazework.com/` and
   `https://brazework.com/api/health`, every minute, alerting both founders by email.

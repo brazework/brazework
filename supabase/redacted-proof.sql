@@ -1,4 +1,4 @@
--- Step 70: proof without revealing confidential work. Run after mcp-workflows.sql. Additive and safe
+-- Step 71: proof without revealing confidential work. Run after mcp-workflows.sql. Additive and safe
 -- to re-run.
 --
 -- A private milestone (or one on a private project) can carry one public line its owner writes, like
