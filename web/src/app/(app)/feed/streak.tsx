@@ -23,8 +23,8 @@ export async function YourWeekCard() {
 
 function StreakIcon({ weeks, small }: { weeks: number; small?: boolean }) {
   return (
-    <span className={cn("grid shrink-0 place-items-center rounded-lg", small ? "size-8" : "size-9", weeks ? "bg-orange-500/12 text-orange-500" : "bg-surface-2 text-faint")}>
-      <Flame className={cn("size-[18px]", weeks && "fill-orange-500/25")} />
+    <span className={cn("grid shrink-0 place-items-center rounded-lg", small ? "size-8" : "size-9", weeks ? "bg-surface-2 text-text" : "bg-surface-2 text-faint")}>
+      <Flame className="size-[18px]" />
     </span>
   );
 }
@@ -46,7 +46,7 @@ function Body({ l }: { l: Loop }) {
   return (
     <>
       <div className="mt-3 flex gap-[3px]" aria-hidden="true">
-        {l.recent.map((on, i) => <span key={i} className={cn("h-1.5 flex-1 rounded-full", on ? "bg-orange-500" : "bg-line")} />)}
+        {l.recent.map((on, i) => <span key={i} className={cn("h-1.5 flex-1 rounded-full", on ? "bg-ok" : "bg-line")} />)}
       </div>
       <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
         <Link href="/profile#projects" className="inline-flex items-center gap-1.5 rounded-lg bg-surface-2 px-2.5 py-2 transition hover:bg-hover"><BadgeCheck className="size-3.5 text-ok" /><b className="tabular-nums">{l.verified}</b> verified</Link>

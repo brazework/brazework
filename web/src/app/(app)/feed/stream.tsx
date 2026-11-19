@@ -1,5 +1,6 @@
-import { ChevronRight, Flag, GitMerge, MessageSquare, Sparkles, UserPlus } from "lucide-react";
+import { Flag, GitMerge, MessageSquare, Sparkles, UserPlus } from "lucide-react";
 import Link from "next/link";
+import { List, ListRow } from "@/components/app/list";
 import { Seal } from "@/components/app/verified-seal";
 import { GoalCard } from "@/components/app/goal-card";
 import { Ember } from "@/components/ember/ember";
@@ -61,15 +62,13 @@ export async function HomeStream() {
       {toolDrafts.length > 0 && (
         <Group label={`Your tools noticed ${toolCount === 1 ? "1 thing" : `${toolCount} things`}`} node={<Ember size={18} />}
           more={toolCount > toolDrafts.length ? <Link href="/drafts" className={moreCls}>See all {toolCount}</Link> : null}>
-          <ul className={listCls}>
+          <List label="Drafts from your tools">
             {toolDrafts.map((d) => (
-              <li key={d.id}>
-                <Row href="/drafts" icon={<GitMerge className="size-4" />} title={draftTitle(d)}
-                  meta={<>{d.kind === "milestone" ? "Milestone" : "Post"} drafted via {d.via || "your tools"} <span suppressHydrationWarning>{timeAgo(d.created_at)}</span></>}
-                  action="Review" />
-              </li>
+              <ListRow key={d.id} href="/drafts" leading={<Tile><GitMerge /></Tile>} title={draftTitle(d)}
+                meta={<>{d.kind === "milestone" ? "Milestone" : "Post"} drafted via {d.via || "your tools"} <span suppressHydrationWarning>{timeAgo(d.created_at)}</span></>}
+                trailing={<Link href="/drafts" tabIndex={-1} className={actionCls}>Review</Link>} />
             ))}
-          </ul>
+          </List>
         </Group>
       )}
 
@@ -77,10 +76,10 @@ export async function HomeStream() {
         <Group label="Needs you" node={<span className="block size-2.5 rounded-full bg-text ring-4 ring-bg" />}>
           <div className="flex flex-col gap-4">
             {(nRequests > 0 || nInvites > 0) && (
-              <ul className={listCls}>
-                {nRequests > 0 && <li><Row href="/messages" icon={<MessageSquare className="size-4" />} title={`${nRequests} ${nRequests === 1 ? "person wants" : "people want"} to message you`} meta="Accept to start the conversation" action="Open" /></li>}
-                {nInvites > 0 && <li><Row href="/network" icon={<UserPlus className="size-4" />} title={`${nInvites} connection ${nInvites === 1 ? "invite" : "invites"}`} meta="People who'd like to see your work" action="See" /></li>}
-              </ul>
+              <List label="Requests">
+                {nRequests > 0 && <ListRow href="/messages" leading={<Tile><MessageSquare /></Tile>} title={`${nRequests} ${nRequests === 1 ? "person wants" : "people want"} to message you`} meta="Accept to start the conversation" trailing={<Link href="/messages" tabIndex={-1} className={actionCls}>Open</Link>} />}
+                {nInvites > 0 && <ListRow href="/network" leading={<Tile><UserPlus /></Tile>} title={`${nInvites} connection ${nInvites === 1 ? "invite" : "invites"}`} meta="People who'd like to see your work" trailing={<Link href="/network" tabIndex={-1} className={actionCls}>See</Link>} />}
+              </List>
             )}
             {verify && <VerifyInbox data={verify} />}
           </div>
@@ -90,23 +89,13 @@ export async function HomeStream() {
       <Group label="Your clubs shipped this week" node={<Seal size={18} />}
         more={ships.length ? <Link href="/communities" className={moreCls}>Your clubs</Link> : null}>
         {ships.length ? (
-          <ul className={listCls} aria-label="Signed this week in your clubs">
+          <List label="Signed this week in your clubs">
             {ships.map((m) => (
-              <li key={m.id}>
-                <Link prefetch={false} href={`/projects/${m.project!.id}`} className="group flex items-center gap-3 px-3.5 py-3 transition sm:px-4 hover:bg-hover focus-visible:bg-hover focus-visible:outline-none">
-                  <Avatar first={m.owner!.first_name} last={m.owner!.last_name} size={32} src={avatarSrc(m.owner)} />
-                  <span className="min-w-0 flex-1">
-                    <span className="line-clamp-2 text-sm font-medium text-text sm:line-clamp-1">{m.title}</span>
-                    <span className="block truncate text-xs text-muted">{`${m.owner!.first_name} ${m.owner!.last_name}`.trim()} on {m.project!.title}</span>
-                  </span>
-                  <span className="hidden shrink-0 items-center gap-1.5 text-xs text-ok sm:inline-flex">
-                    <Seal size={14} />{m.vouched_by ? "Vouched for" : `Signed by ${m.community_name}`}
-                  </span>
-                  <Seal size={16} className="sm:hidden" />
-                </Link>
-              </li>
+              <ListRow key={m.id} href={`/projects/${m.project!.id}`} leading={<Avatar first={m.owner!.first_name} last={m.owner!.last_name} size={32} src={avatarSrc(m.owner)} />}
+                title={m.title} meta={`${`${m.owner!.first_name} ${m.owner!.last_name}`.trim()} on ${m.project!.title}`}
+                trailing={<span className="inline-flex items-center gap-1.5 text-xs font-medium text-ok"><Seal size={16} /><span className="hidden sm:inline">{m.vouched_by ? "Vouched for" : `Signed by ${m.community_name}`}</span></span>} />
             ))}
-          </ul>
+          </List>
         ) : (
           <Invite cids={cids.length} />
         )}
@@ -121,7 +110,8 @@ export async function HomeStream() {
   );
 }
 
-const listCls = "divide-y divide-line overflow-hidden rounded-xl border border-line bg-surface";
+// The row's one action; the whole row is the same link, so this one is skipped by Tab.
+const actionCls = "hidden rounded-md border border-line px-2.5 py-1 text-xs font-medium text-text transition hover:border-line-strong sm:inline-block";
 const moreCls = "shrink-0 text-xs text-muted underline-offset-4 transition hover:text-text hover:underline";
 
 const draftTitle = (d: ToolDraft) => {
@@ -145,19 +135,9 @@ function Group({ label, node, more, children }: { label: string; node: React.Rea
   );
 }
 
-// One line of a list: what it is, a line of context, and the one thing to do.
-function Row({ href, icon, title, meta, action }: { href: string; icon: React.ReactNode; title: string; meta: React.ReactNode; action: string }) {
-  return (
-    <Link href={href} className="group flex items-center gap-3 px-3.5 py-3 transition sm:px-4 hover:bg-hover focus-visible:bg-hover focus-visible:outline-none">
-      <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-surface-2 text-muted">{icon}</span>
-      <span className="min-w-0 flex-1">
-        <span className="line-clamp-2 text-sm font-medium text-text sm:line-clamp-1">{title}</span>
-        <span className="block truncate text-xs text-muted">{meta}</span>
-      </span>
-      <span className="hidden shrink-0 rounded-md border border-line px-2.5 py-1 text-xs font-medium text-text transition group-hover:border-line-strong sm:inline">{action}</span>
-      <ChevronRight aria-hidden="true" className="size-4 shrink-0 text-faint sm:hidden" />
-    </Link>
-  );
+// The picture at the start of a row that has no person in it.
+function Tile({ children }: { children: React.ReactNode }) {
+  return <span className="grid size-8 place-items-center rounded-lg bg-surface-2 text-muted [&_svg]:size-4">{children}</span>;
 }
 
 // Nothing signed in your clubs this week: the first step toward it, not a blank.

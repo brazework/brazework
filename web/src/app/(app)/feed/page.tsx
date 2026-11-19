@@ -326,7 +326,7 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
               your goal), then the log-work box and the posts. Your builds live on Projects, not here. */}
           {noProjects && <FirstBuild first={profile.first_name} chapter={chapter?.name} />}
           {/* When the checklist's next step is the project, the card above already asks it, so the checklist waits. */}
-          {startOpen && !(noProjects && nextStep === "project") ? <StartChecklist steps={guide?.loop ?? []} /> : noProjects ? null : <><Suspense fallback={<div className="h-[76px] shimmer rounded-2xl" aria-hidden="true" />}><NextStep /></Suspense></>}
+          {startOpen && !(noProjects && nextStep === "project") ? <StartChecklist steps={guide?.loop ?? []} /> : noProjects ? null : <><Suspense fallback={<div className="h-14 shimmer rounded-2xl" aria-hidden="true" />}><NextStep /></Suspense></>}
           <Suspense fallback={<StreamSkeleton />}><HomeStream /></Suspense>
           {/* The next event this week, as one line (wide screens have it in the rail). */}
           {discover && <div className="xl:hidden"><Suspense fallback={null}><NextUp /></Suspense></div>}
