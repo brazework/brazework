@@ -1,5 +1,6 @@
 import { createHash, randomBytes } from "node:crypto";
-import { MCP_PROTOCOLS, MCP_TOOLS, absolutize, annotationsFor, mcpDb, scopeFlags, tokenHash, toolsFor } from "@/lib/mcp";
+import { MCP_PROTOCOLS, MCP_TOOLS, absolutize, annotationsFor, mcpDb, scopeFlags, sourceArgs, tokenHash, toolsFor } from "@/lib/mcp";
+import { actionPayload } from "@/lib/tool-actions";
 import { PLAYBOOKS, PLAYBOOK_INDEX_URI, PROMPTS, playbookMarkdown, playbookUri, playbooksIndexMarkdown, promptText } from "@/lib/mcp-playbooks";
 import { mailer } from "@/lib/email";
 import { nextStep, withFix } from "@/lib/mcp-results";
@@ -31,8 +32,9 @@ const ABOUT = "Brazework is the record of what people build, signed by the peopl
 function instructions(s: { canDraft: boolean; canPost: boolean }) {
   const reads = "These tools read the member's Brazework (profile and club-verified work, clubs, events, projects, notifications, search).";
   const playbooks = `For the tools people in each field use and the moments worth recording, read ${PLAYBOOK_INDEX_URI}; the prompts shipped, result, week, ask_signature and setup run the common workflows.`;
-  if (s.canPost) return `${ABOUT} ${reads} They can also post a build update (post_update), log a milestone (log_milestone) and ask someone to sign one (request_signature) as the member, or leave drafts for them to approve in Brazework (draft_post, draft_milestone). Ask the member before posting or sending anything, and write in their voice. ${playbooks} Results include links to open in Brazework.`;
-  if (s.canDraft) return `${ABOUT} ${reads} This token can't post: it leaves drafts (draft_post, draft_milestone) that the member edits and approves in Brazework, so nothing goes out without them. Write in their voice, with specifics. ${playbooks} Results include links to open in Brazework.`;
+  const acts = "add a project (create_project), update one (update_project) and add a teammate from their clubs (add_teammate)";
+  if (s.canPost) return `${ABOUT} ${reads} They can also post a build update (post_update), log a milestone (log_milestone), ask someone to sign one (request_signature), ${acts} as the member, or leave any of these as drafts for them to approve in Brazework (draft_post, draft_milestone, or draft: true). Ask the member before posting, sending or changing anything, and write in their voice. ${playbooks} Results include links to open in Brazework, and a next step.`;
+  if (s.canDraft) return `${ABOUT} ${reads} This token can't post: it leaves drafts that the member edits and approves in Brazework (draft_post, draft_milestone; and ${acts}, which wait as cards in their drafts and on Ember's page), so nothing happens without them. Write in their voice, with specifics. ${playbooks} Results include links to open in Brazework, and a next step.`;
   return `${ABOUT} ${reads} ${playbooks} Results include links to open in Brazework.`;
 }
 
@@ -117,7 +119,10 @@ export async function POST(req: Request) {
       const input = (msg.params?.arguments ?? {}) as Record<string, unknown>;
       if (tool.name === "search" && String(input.query ?? "").trim().length < 2) return toolError(msg.id, "Give at least 2 characters to search for.");
       if (tool.name === "request_signature") return requestSignature(msg.id, hash, tool.args(input));
-      const { data, error } = await db.rpc(tool.rpc, { p_hash: hash, ...tool.args(input) });
+      // Actions shared with Ember (lib/tool-actions.ts): done with a token that posts, else drafted.
+      const { data, error } = tool.act
+        ? await db.rpc("mcp_act", { p_hash: hash, p_kind: tool.act, p_payload: actionPayload(tool.act, input), p_draft: !can.canPost || input.draft === true, ...sourceArgs(input) })
+        : await db.rpc(tool.rpc, { p_hash: hash, ...tool.args(input) });
       // A rule the member's post broke (P0001: not your project, too fast, …) is said as it is.
       if (error) return toolError(msg.id, error.code === "P0001" ? error.message : error.code === "PGRST202" ? "That isn't switched on on Brazework yet. Try again in a few minutes." : "Brazework couldn't answer that right now. Try again.");
       return ok(msg.id, data, tool.name);

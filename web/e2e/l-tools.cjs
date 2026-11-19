@@ -27,7 +27,9 @@ const { step, browser, as, go, summary, BASE } = require("./lib.cjs");
     const names = (list.result?.tools ?? []).map((t) => t.name);
     const writes = list.result.tools.filter((t) => t.annotations?.readOnlyHint !== true);
     // New tokens draft by default (supabase/mcp-workflows.sql): drafts wait for Ben's tap in Brazework.
-    if (!names.includes("me") || writes.map((t) => t.name).sort().join() !== "draft_milestone,draft_post" || writes.some((t) => t.annotations?.destructiveHint !== false)) throw new Error(`tools: ${JSON.stringify(names)}`);
+    // Writes are drafts only: posts, milestones, and the actions shared with Ember (create_project, …), never posting.
+    const w = writes.map((t) => t.name);
+    if (!names.includes("me") || !["draft_milestone", "draft_post", "create_project", "add_teammate"].every((n) => w.includes(n)) || ["post_update", "log_milestone", "request_signature"].some((n) => w.includes(n)) || writes.some((t) => t.annotations?.destructiveHint !== false)) throw new Error(`tools: ${JSON.stringify(names)}`);
     const init = await (await mcp("initialize", { protocolVersion: "2025-06-18" })).json();
     if (init.result?.serverInfo?.name !== "brazework") throw new Error(`server name ${init.result?.serverInfo?.name}`);
     const me = await (await mcp("tools/call", { name: "me", arguments: {} })).json();
@@ -223,6 +225,46 @@ const { step, browser, as, go, summary, BASE } = require("./lib.cjs");
     const off = await (await mcp("tools/call", ask, cc)).json();
     if (!off.result?.isError || !/email isn't available/.test(off.result.content[0].text)) throw new Error(`with email off: ${JSON.stringify(off).slice(0, 200)}`);
     if (psql(`select count(*) from public.milestone_vouches where milestone_id = '${id}'`) !== "0") throw new Error("an ask was left waiting");
+  }, ben);
+
+  // ---------- Intents shared with Ember (supabase/tool-actions.sql, lib/tool-actions.ts) ----------
+  const call = async (name, args, t) => (await (await mcp("tools/call", { name, arguments: args }, t)).json()).result;
+  const stamp = Date.now() % 100000;
+  await step("intents: a drafting token's new project and teammate wait on /drafts as Ember's cards; Ben confirms one and dismisses the other", async () => {
+    const proj = await call("create_project", { title: `Hopper drone ${stamp}`, summary: "A tethered hopper to test the engine gimbal.", tags: ["Aerospace", "Not a topic"], link: "https://github.com/ben/hopper" }, readOnly);
+    if (proj?.isError || proj.structuredContent?.drafted !== true || !/\/drafts$/.test(proj.structuredContent.open ?? "") || !/as a card/.test(proj.structuredContent.next ?? "")) throw new Error(`create_project as a draft: ${JSON.stringify(proj).slice(0, 240)}`);
+    const mate = await call("add_teammate", { project_id: "p1", person_id: process.env.JOSH_ID }, readOnly);
+    if (mate?.isError || mate.structuredContent?.drafted !== true) throw new Error(`add_teammate as a draft: ${JSON.stringify(mate).slice(0, 240)}`);
+    if (psql(`select count(*) from public.projects where title = 'Hopper drone ${stamp}'`) !== "0") throw new Error("a draft made the project before Ben said yes");
+    await go(ben, "/drafts");
+    const card = ben.getByRole("group", { name: "Add a project from Cursor" });
+    await card.getByLabel("Project title").waitFor({ timeout: 15000 });
+    if ((await card.getByLabel("Project title").inputValue()) !== `Hopper drone ${stamp}`) throw new Error("the card doesn't show the drafted title");
+    await card.getByRole("button", { name: "Confirm" }).click();
+    await card.getByText("Added to your profile").waitFor({ timeout: 15000 });
+    if (psql(`select owner_id || '|' || array_to_string(tags, ',') from public.projects where title = 'Hopper drone ${stamp}'`) !== `${process.env.BEN_ID}|Aerospace`) throw new Error("the confirmed project isn't Ben's, with the app's topics only");
+    const team = ben.getByRole("group", { name: "Add a teammate from Cursor" });
+    await team.getByText("Josh Menzies").waitFor();
+    await team.getByRole("button", { name: "Dismiss" }).click();
+    await ben.getByText("Dismissed. Nothing was saved.").waitFor({ timeout: 10000 });
+    const settled = psql(`select (select status from public.tool_drafts where kind = 'project' and payload->>'title' = 'Hopper drone ${stamp}') || '|' || (select string_agg(status, ',') from public.tool_drafts where kind = 'teammate' and user_id = '${process.env.BEN_ID}')`);
+    if (settled !== "posted|dismissed") throw new Error(`the drafts weren't settled: ${settled}`);
+    if (psql(`select count(*) from public.project_members where project_id = 'p1' and uid = '${process.env.JOSH_ID}'`) !== "0") throw new Error("a dismissed teammate was added");
+  }, ben);
+
+  await step("intents: with Ben's yes, Claude Code adds a project, updates its summary and specs, and adds Josh from his club; Cara (no shared club) is refused with how to fix it", async () => {
+    const made = (await call("create_project", { title: `Thrust stand v2 ${stamp}`, summary: "Load cell, 2 kN.", status: "completed", year: "2026" }, cc)).structuredContent;
+    if (made?.drafted !== false || !/\/projects\//.test(made.open ?? "") || !/log_milestone with project_id/.test(made.next ?? "")) throw new Error(`create_project: ${JSON.stringify(made).slice(0, 240)}`);
+    const edit = (await call("update_project", { project_id: made.id, summary: "Load cell, 2 kN, 1 kHz logging.", specs: [{ label: "Range", value: "2 kN" }] }, cc)).structuredContent;
+    if (!/Saved \(summary, specs\)/.test(edit?.next ?? "")) throw new Error(`update_project: ${JSON.stringify(edit).slice(0, 240)}`);
+    const josh = (await call("add_teammate", { project_id: made.id, person_id: process.env.JOSH_ID }, cc)).structuredContent;
+    if (!/Josh Menzies is on/.test(josh?.next ?? "")) throw new Error(`add_teammate: ${JSON.stringify(josh).slice(0, 240)}`);
+    if (psql(`select p.summary || '|' || d.specs::text || '|' || (select role from public.project_members where project_id = p.id and uid = '${process.env.JOSH_ID}') from public.projects p join public.project_details d on d.project_id = p.id where p.id = '${made.id}'`) !== `Load cell, 2 kN, 1 kHz logging.|[{"label": "Range", "value": "2 kN"}]|member`) throw new Error("the project wasn't saved as asked");
+    const caraId = psql(`select id from auth.users where email = 'cara@forge.test'`);
+    const no = await call("add_teammate", { project_id: made.id, person_id: caraId }, cc);
+    if (!no?.isError || !/aren't in any of your clubs/.test(no.content[0].text) || !/search/.test(no.content[0].text)) throw new Error(`a stranger was added, or the refusal doesn't say how to fix it: ${JSON.stringify(no).slice(0, 200)}`);
+    // Leave Ben's projects as the later journeys expect them (u-build reads "Your builds").
+    psql(`delete from public.projects where title in ('Hopper drone ${stamp}', 'Thrust stand v2 ${stamp}')`);
   }, ben);
 
   await step("FIX-92: a club's Integrations tab shows how work comes in (GitHub, members' AI tools), and no Discord", async () => {
