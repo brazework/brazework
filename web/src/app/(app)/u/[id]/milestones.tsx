@@ -9,6 +9,7 @@ import { cn } from "@/lib/forge";
 import { signerNote } from "@/lib/signers";
 import { addMilestone, disputeMilestone, removeMilestone, setMilestoneVisible, shareMilestone, type MilestoneState } from "@/lib/milestones";
 import { proofPostText, proofUrl, shareLinks } from "@/lib/proof-card";
+import { VerifyLinkButton } from "./verify-link";
 import { submitWithoutReset } from "@/lib/submit";
 import { RELATIONSHIPS } from "@/lib/vouch-email";
 
@@ -93,6 +94,8 @@ export function MilestoneTimeline({ items, own }: { items: Milestone[]; own: boo
                       {m.private ? <><EyeOff className="size-3" /> Only you · Show on profile</> : <><Eye className="size-3" /> On your profile · Hide</>}
                     </button>
                   )}
+                  {/* Résumé verify link (verify-links.sql): a public page and QR code for a signed, public milestone. */}
+                  {own && m.status === "verified" && m.private === false && <VerifyLinkButton id={m.id} title={m.title} />}
                   {/* Proof cards (FIX-128): share a signed or backed result as a public link. */}
                   {own && m.shared_at !== undefined && (m.status === "verified" || (m.status === "logged" && backingOf(m))) && (
                     <button type="button" onClick={() => setSharing(m.id)} className="inline-flex items-center gap-1 font-medium text-text-2 hover:text-text">
