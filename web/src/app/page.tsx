@@ -4,7 +4,7 @@ import { Hero } from "@/components/landing/hero";
 import { LegacyLinks } from "@/components/landing/legacy-links";
 import { Nav } from "@/components/landing/nav";
 import { Organizations } from "@/components/landing/organizations";
-import { Clubs, Companies, EmberSection, FaqSection, Pricing, ShowBuild, Stages, Tour, Why } from "@/components/landing/sections";
+import { Clubs, Companies, ConnectSection, EmberSection, FaqSection, Pricing, ShowBuild, Stages, Tour, Why } from "@/components/landing/sections";
 import { ThemeChrome } from "@/components/theme-chrome";
 import { ProductHuntWelcome } from "@/components/launch/product-hunt-welcome";
 
@@ -27,6 +27,7 @@ export default function Landing() {
         <ShowBuild />
         <Why />
         <EmberSection />
+        <ConnectSection />
         <Clubs />
         <Organizations />
         <Companies />

@@ -1,6 +1,7 @@
 import { BadgeCheck } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/forge";
+import { ConnectSlot } from "@/components/connect/connect-live";
 import { AppTour } from "./app-tour";
 import { BuildShowcase } from "./build-showcase";
 import { ClubSetupDemo } from "./club-setup-demo";
@@ -140,10 +141,27 @@ export function EmberSection() {
           <Points items={[
             ["It checks before it answers", "Every number in a draft comes from what members posted and what officers verified."],
             ["It asks before it acts", "A post, a request or a milestone sits on a card until you press the button."],
-            ["It works with the AI tools you already use", "Connect Claude Code, Cursor or Codex in Settings and they can log your progress while you work. They can never verify anything. Only people do."],
+            ["It works with the AI tools you already use", "Add Brazework to Claude, Cursor or VS Code in a minute (below), and they log your progress while you work. They can never verify anything. Only people do."],
           ]} />
         </div>
         <EmberDemo />
+      </div>
+    </section>
+  );
+}
+
+// Connect your AI (the assistant connection, lib/mcp-oauth.ts): the connector address to copy, the
+// three steps in Claude, and one tap for the editors, so a visitor goes from here to connected.
+export function ConnectSection() {
+  return (
+    <section id="connect" aria-labelledby="connect-h" className={SEC}>
+      <div className={cn(WRAP, "grid grid-cols-1 items-start gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:gap-16")}>
+        <div>
+          <h2 id="connect-h" className={H2}>Connect your AI in a minute.</h2>
+          <p className={LEAD}>Brazework is a connector for Claude and a server for the editors you code in. Add it once, then say what you did, like &ldquo;put the analysis I finished on my record.&rdquo; It drafts the milestone with its proof and waits for your OK.</p>
+          <Link href="/ai" className="mt-6 inline-flex items-center gap-1 text-[15px] font-medium underline-offset-4 hover:underline">Everything it can do, field by field</Link>
+        </div>
+        <ConnectSlot />
       </div>
     </section>
   );

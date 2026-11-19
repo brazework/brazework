@@ -32,6 +32,15 @@ test("VS Code: vscode:mcp/install with a URL-encoded http server (type is requir
   assert.ok(file.kind === "file" && JSON.parse(file.text).servers.brazework.type === "http", "workspace file uses \"servers\", not \"mcpServers\"");
 });
 
+test("Without a token (one-click sign-in): the links and the command carry only the address, so the assistant signs in", async () => {
+  const { claudeCodeSignIn } = await import("@/lib/tool-setup");
+  const cursor = JSON.parse(Buffer.from(decodeURIComponent(new URL(cursorLink(URL_)).searchParams.get("config")!), "base64").toString("utf8"));
+  assert.deepEqual(cursor, { url: URL_ });
+  assert.deepEqual(JSON.parse(decodeURIComponent(vscodeLink(URL_).slice("vscode:mcp/install?".length))), { name: "brazework", type: "http", url: URL_ });
+  assert.equal(claudeCodeSignIn(URL_), `claude mcp add --transport http brazework ${URL_} --scope user`);
+  for (const s of [cursorLink(URL_), vscodeLink(URL_), claudeCodeSignIn(URL_)]) assert.ok(!/Bearer|forge_/.test(s), "no token anywhere");
+});
+
 test("Codex: the token goes in an environment variable (Codex reads bearer tokens only from one)", () => {
   const [s] = setupSteps("codex", URL_, TOKEN);
   assert.ok(s.kind === "command");

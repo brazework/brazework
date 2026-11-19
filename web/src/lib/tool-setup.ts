@@ -33,15 +33,22 @@ const json = (v: unknown) => JSON.stringify(v, null, 2);
 // Base64 of UTF-8 text, in the browser and on the server.
 const b64 = (s: string) => btoa(Array.from(new TextEncoder().encode(s), (b) => String.fromCharCode(b)).join(""));
 
-export function cursorLink(endpoint: string, token: string): string {
-  const config = { url: endpoint, headers: { Authorization: bearer(token) } };
+// With a token, the link carries it as a header. Without one (one-click sign-in, lib/mcp-oauth.ts), it
+// carries only the address: the assistant finds the sign-in from the server and asks the member to log in.
+const auth = (token?: string) => (token ? { headers: { Authorization: bearer(token) } } : {});
+
+export function cursorLink(endpoint: string, token?: string): string {
+  const config = { url: endpoint, ...auth(token) };
   return `cursor://anysphere.cursor-deeplink/mcp/install?name=${SERVER_NAME}&config=${encodeURIComponent(b64(JSON.stringify(config)))}`;
 }
 
-export function vscodeLink(endpoint: string, token: string): string {
-  const config = { name: SERVER_NAME, type: "http", url: endpoint, headers: { Authorization: bearer(token) } };
+export function vscodeLink(endpoint: string, token?: string): string {
+  const config = { name: SERVER_NAME, type: "http", url: endpoint, ...auth(token) };
   return `vscode:mcp/install?${encodeURIComponent(JSON.stringify(config))}`;
 }
+
+/** Claude Code with one-click sign-in: add the server, then /mcp in Claude Code opens the sign-in. */
+export const claudeCodeSignIn = (endpoint: string) => `claude mcp add --transport http ${SERVER_NAME} ${endpoint} --scope user`;
 
 // The steps for one tool, with the member's new token filled in. The token appears only here, right
 // after it's made; the tool then keeps it in its own config, as it would if pasted by hand.
