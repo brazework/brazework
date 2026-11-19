@@ -1,7 +1,7 @@
 // What Brazework costs (lib/pricing.ts): one config for the landing page and /pricing. Run: npm test
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { AUDIENCES, PLUS, SALES, SALES_KINDS, TIERS, tiersFor } from "@/lib/pricing";
+import { AUDIENCES, LANDING_AUDIENCES, PLUS, PRICING_LINKS, SALES, SALES_KINDS, TIERS, tiersFor } from "@/lib/pricing";
 
 test("every audience has two tiers and exactly one primary call to action", () => {
   for (const a of AUDIENCES) {
@@ -66,4 +66,14 @@ test("Plus leads with the review packet, says plainly it's free during launch, a
   assert.match(plus.points[1], /free for everyone during launch/, "it's a Plus preview today, and says so");
   assert.ok(plus.note.includes(`$${PLUS.studentYear}`) && plus.note.includes(`$${PLUS.everyoneYear}`), plus.note);
   assert.ok(PLUS.everyoneYear < PLUS.everyone * 12 && PLUS.studentYear < PLUS.student * 12, "a year costs less than twelve months");
+});
+
+test("the landing page shows only what a builder pays, and links every other buyer to their prices", () => {
+  assert.deepEqual(LANDING_AUDIENCES, ["builders"]);
+  const shown = LANDING_AUDIENCES.flatMap((a) => tiersFor(a));
+  for (const t of shown) assert.ok(/^\$(0|\d{1,2}\/mo)$/.test(t.price), `${t.name} at ${t.price} isn't a builder's price`);
+  // Everyone whose prices aren't on the landing page gets a link to their part of /pricing.
+  const hidden = AUDIENCES.filter((a) => !LANDING_AUDIENCES.includes(a.id)).map((a) => a.id);
+  assert.deepEqual(PRICING_LINKS.map((l) => l.audience), hidden);
+  for (const l of PRICING_LINKS) assert.equal(l.href, `/pricing#pricing-${l.audience}`);
 });

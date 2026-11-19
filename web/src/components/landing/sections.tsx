@@ -8,6 +8,7 @@ import { ClubSetupDemo } from "./club-setup-demo";
 import { CompanySearch } from "./company-search";
 import { EmberDemo } from "./ember-demo";
 import { Faq } from "./faq";
+import { LANDING_AUDIENCES, PRICING_LINKS } from "@/lib/pricing";
 import { PricingTiers } from "./pricing";
 
 // The landing page's sections, in the order a cold visitor needs them: who it's for (a student,
@@ -201,7 +202,7 @@ export function Companies() {
           ]} />
           <div className="mt-8 flex flex-wrap gap-3">
             <Link href="#founding" className="inline-flex h-11 items-center justify-center rounded-lg bg-accent px-5 text-[15px] font-medium text-on-accent transition hover:opacity-90">Sponsor a challenge</Link>
-            <Link href="#pricing" className="inline-flex h-11 items-center justify-center rounded-lg border border-line-strong bg-surface px-5 text-[15px] font-medium transition hover:bg-hover">See pricing</Link>
+            <Link href="/pricing#pricing-companies" className="inline-flex h-11 items-center justify-center rounded-lg border border-line-strong bg-surface px-5 text-[15px] font-medium transition hover:bg-hover">See pricing</Link>
           </div>
         </div>
         <CompanySearch />
@@ -215,8 +216,12 @@ export function Pricing() {
     <section id="pricing" className={cn(SEC, BAND)}>
       <div className={WRAP}>
         <h2 className={H2}>Free for the people who build. Paid by the people who hire.</h2>
-        <PricingTiers className="mt-10" />
-        <p className="mt-8 text-[15px] text-muted">Every price, and what&apos;s coming: <Link href="/pricing" className="font-medium text-text underline-offset-4 hover:underline">Pricing</Link>.</p>
+        <PricingTiers className="mt-10" only={LANDING_AUDIENCES} />
+        {/* Clubs are free; what companies and schools pay is on /pricing, not here (lib/pricing.ts). */}
+        <p className="mt-8 text-[15px] text-muted">
+          Clubs are free too. Hiring, sponsoring a club or running a school?{" "}
+          {PRICING_LINKS.map((l, i) => <span key={l.href}>{i > 0 && " · "}<Link href={l.href} className="font-medium text-text underline-offset-4 hover:underline">{l.label}</Link></span>)}
+        </p>
       </div>
     </section>
   );

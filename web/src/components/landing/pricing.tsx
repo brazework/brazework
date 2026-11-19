@@ -1,17 +1,19 @@
 import { Check } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/forge";
-import { AUDIENCES, tiersFor, type Tier } from "@/lib/pricing";
+import { AUDIENCES, tiersFor, type Audience, type Tier } from "@/lib/pricing";
 
-// The price list (lib/pricing.ts), the same on the landing page and /pricing: who it's for, then two
-// tiers each. Server-rendered, no state.
-export function PricingTiers({ className }: { className?: string }) {
+// The price list (lib/pricing.ts): who it's for, then two tiers each. /pricing shows every audience;
+// the landing page passes `only` and shows builders alone (lib/pricing.ts LANDING_AUDIENCES), with
+// links to the rest. Each audience's heading is an anchor (/pricing#pricing-companies).
+// Server-rendered, no state.
+export function PricingTiers({ className, only }: { className?: string; only?: Audience[] }) {
   return (
     <div className={cn("flex flex-col gap-12", className)}>
-      {AUDIENCES.map((a) => (
+      {AUDIENCES.filter((a) => !only || only.includes(a.id)).map((a) => (
         <section key={a.id} aria-labelledby={`pricing-${a.id}`}>
           <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
-            <h3 id={`pricing-${a.id}`} className="text-xl font-semibold tracking-tight">{a.label}</h3>
+            <h3 id={`pricing-${a.id}`} className="scroll-mt-24 text-xl font-semibold tracking-tight">{a.label}</h3>
             <p className="text-[15px] text-muted">{a.line}</p>
           </div>
           <div className="mt-4 grid grid-cols-1 overflow-hidden rounded-[1.25rem] border border-line bg-surface md:grid-cols-2 md:divide-x md:divide-line">
