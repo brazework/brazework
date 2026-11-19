@@ -1,6 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { COPILOT_MODEL, copilotEnabled, copilotRequest, memberContext, taskPrompt } from "@/lib/copilot";
-import { frame, runAgent } from "@/lib/copilot-agent";
+import { emberSystem, frame, runAgent } from "@/lib/copilot-agent";
 import { pageLine } from "@/lib/copilot-page";
 import { presetInstruction } from "@/lib/copilot-presets";
 import { TOOLS, makeExec } from "@/lib/copilot-tools";
@@ -30,7 +30,8 @@ export async function POST(req: Request) {
   const client = new Anthropic();
   // Asked from the bar on a project, club or event page: what that page is, read as the member.
   const here = r.task === "ask" ? await pageLine(ctx.supabase, ctx.userId, r.page) : "";
-  const system = `${ctx.system}\n\n${instructions}${r.preset ? `\n\n${presetInstruction(r.preset)}` : ""}${here ? `\n\n${here}` : ""}`;
+  // The rules first, cached; then what's particular to this member and this request.
+  const system = emberSystem(ctx.rules, `${ctx.about}\n\n${instructions}${r.preset ? `\n\n${presetInstruction(r.preset)}` : ""}${here ? `\n\n${here}` : ""}`);
   const abort = new AbortController();
 
   const body = new ReadableStream<Uint8Array>({

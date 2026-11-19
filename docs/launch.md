@@ -21,14 +21,27 @@ What the launch shows:
 - **The assistant connection (MCP):** connect Claude or another assistant and log work by saying
   what you did. Drafts wait for your OK, and signatures still come from people.
   [mcp-workflows.md](mcp-workflows.md) and the public guide at https://brazework.com/ai.
+  - **Add to Claude** (the landing page's Connect section and `/ai`): the connector address with a
+    copy button, the three steps in Claude, one tap for Cursor and VS Code, and the Claude Code
+    command. It shows "Sign-in opens soon" until founder step 2 below; then the full card appears
+    within five minutes, with no deploy.
+  - MCP traffic costs Brazework no AI tokens: the member's own assistant does the thinking.
+- **Ember** (the assistant inside the app) runs on Claude Sonnet 5 (`COPILOT_MODEL`), with a
+  daily limit per member. Its rules and tools are prompt-cached (`emberSystem`), so each question
+  pays about a tenth of the price for them. To confirm, check that the Anthropic Console's usage
+  page shows cache reads on Ember traffic.
 - **Goals:** "where you want to go", with the next step toward it on Home, Record and `/week`.
-- **Money paths:**
-  - Plus (`/plus`): every company that looked at your record in the last 90 days, and the review packet.
-  - Company seats (Find builders).
-  - Sponsored challenges.
+- **Money paths** (prices in `web/src/lib/pricing.ts`):
+  - Plus (`/plus`): $6/mo or $48/yr for students, $12/mo or $96/yr for professionals.
+    - It leads with the review packet: your signed work over any period, for a performance review
+      or a promotion case. The packet is free for everyone during launch, and the card says so.
+    - Then every company that looked at your record in the last 90 days.
+    - Students pay to be found; professionals pay to be recognized at work.
+  - Company seats (Find builders), chapter and challenge sponsorships, and school portals.
   - Book a pilot (`/book`).
-  
-  Without Stripe keys, every paid button files a request in `/admin` → Review queue.
+
+  Without Stripe keys, every paid button files a request in `/admin` → Review queue, and Plus is a
+  waitlist. Launch works this way.
 
 ## Only a founder can do these
 

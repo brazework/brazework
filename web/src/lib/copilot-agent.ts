@@ -49,10 +49,23 @@ export type Spec = { label: string; value: string };
 
 export type AgentEvent = { type: "text"; text: string } | { type: "tool"; name: string };
 
+// Prompt caching. A request renders tools, then system, then messages, and a cache entry covers
+// everything up to its marker. So the fixed part goes first and carries the marker: Ember's rules,
+// and before them the tool list. Every member's question reads that from the cache at a tenth of the
+// price. The member's details, the task and the page they asked from come after it. Nothing that
+// changes per request (a date, an id) may go into `rules`, or every request misses. The marker only
+// takes effect once the prefix reaches the model's minimum (1,024 tokens on Claude Sonnet 5: the
+// rules plus the tools do; the rules alone don't), and below it the request is simply uncached.
+// Tested in tests/ember-cache.test.ts.
+export function emberSystem(rules: string, rest: string): Anthropic.TextBlockParam[] {
+  const fixed: Anthropic.TextBlockParam = { type: "text", text: rules, cache_control: { type: "ephemeral" } };
+  return rest.trim() ? [fixed, { type: "text", text: rest }] : [fixed];
+}
+
 export async function runAgent(opts: {
   client: Anthropic;
   model: string;
-  system: string;
+  system: string | Anthropic.TextBlockParam[];
   messages: Anthropic.MessageParam[];
   tools: Anthropic.Tool[];
   exec: (name: string, input: unknown) => Promise<unknown>;
@@ -64,7 +77,9 @@ export async function runAgent(opts: {
   const { client, model, system, tools, exec, emit, maxRounds = 4, maxTokens = 1000, signal } = opts;
   const messages = [...opts.messages];
   for (let round = 0; round < maxRounds; round++) {
-    const stream = client.messages.stream({ model, max_tokens: maxTokens, system, messages, tools }, { signal });
+    // Top-level cache_control: each round also caches the conversation so far, so the next tool
+    // round reads it back instead of paying for it again (on top of the rules' own marker).
+    const stream = client.messages.stream({ model, max_tokens: maxTokens, system, messages, tools, cache_control: { type: "ephemeral" } }, { signal });
     for await (const ev of stream) {
       if (ev.type === "content_block_delta" && ev.delta.type === "text_delta") emit({ type: "text", text: ev.delta.text });
     }
