@@ -31,3 +31,30 @@ export function buildVouchEmail(p: { member: string; title: string; project: str
 <p style="font-size:12px;color:#666">The link works once and expires in 14 days. If you don't know them, ignore this email and nothing happens.</p></div>`;
   return { subject, text, html };
 }
+
+/**
+ * The one reminder (supabase/signer-tools.sql), 3 days after the ask, with its own link to the same ask.
+ * It says it's the only one, and mentions that several asks can be answered from one page.
+ */
+export function buildVouchReminder(p: { member: string; title: string; project: string; relationship: Relationship; link: string; expiresAt: string }) {
+  const who = p.member || "Someone";
+  const until = new Date(p.expiresAt).toLocaleDateString("en-US", { month: "long", day: "numeric", timeZone: "UTC" });
+  const subject = `Reminder: ${who} asked you to vouch for their work`;
+  const as = RELATIONSHIPS[p.relationship];
+  const text = [
+    "Hi,", "",
+    `A few days ago ${who} asked you, as ${as} who saw it, to vouch for this on Brazework:`, "",
+    `  "${p.title}"${p.project ? ` (${p.project})` : ""}`, "",
+    "If you saw it, it takes a minute. If others have asked you too, you can answer them all from the same page.", "",
+    `Vouch or decline: ${p.link}`, "",
+    `This is the only reminder. The ask closes on ${until}. If you don't know them, ignore this email and nothing happens.`,
+  ].join("\n");
+  const html = `<div style="font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.5;color:#111;max-width:520px">
+<p>Hi,</p>
+<p>A few days ago <b>${esc(who)}</b> asked you, as ${esc(as)} who saw it, to vouch for this on Brazework:</p>
+<blockquote style="margin:0 0 16px;padding:10px 14px;border-left:3px solid #111;background:#f6f6f6"><b>${esc(p.title)}</b>${p.project ? `<br><span style="color:#555">${esc(p.project)}</span>` : ""}</blockquote>
+<p>If you saw it, it takes a minute. If others have asked you too, you can answer them all from the same page.</p>
+<p><a href="${esc(p.link)}" style="display:inline-block;background:#111;color:#fff;padding:10px 18px;border-radius:8px;text-decoration:none">Vouch or decline</a></p>
+<p style="font-size:12px;color:#666">This is the only reminder. The ask closes on ${esc(until)}. If you don't know them, ignore this email and nothing happens.</p></div>`;
+  return { subject, text, html };
+}
