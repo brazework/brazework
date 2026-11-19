@@ -1,4 +1,4 @@
--- Step 75: your goal, from your AI tools (docs/mcp-workflows.md). Run after tool-talent.sql. Additive
+-- Step 76: your goal, from your AI tools (docs/mcp-workflows.md). Run after tool-talent.sql. Additive
 -- and safe to re-run.
 --
 -- Goals (goals.sql) are what a member is working toward: an internship, a first job, grad school, a
