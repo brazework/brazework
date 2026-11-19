@@ -23,7 +23,7 @@ export function Hero() {
             you built.
           </h1>
           <p className="mt-6 max-w-[34rem] text-lg leading-relaxed text-muted sm:text-xl sm:leading-relaxed">
-            Log your work as you build it. Someone who saw it signs it: a club officer, a manager, a mentor. Companies search signed work instead of résumés.
+            Your AI drafts the proof from the tools you already use. A person who saw it signs: a club officer, a professor, a manager. Companies search signed work instead of résumés.
           </p>
 
           <div className="mt-9 max-w-[34rem]">

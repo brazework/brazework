@@ -16,6 +16,10 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
     const stage = page.locator("#hero-preview");
     await hydrated(page.locator("#hero-build"));
     await stage.getByText("A line-following robot").waitFor();
+    // The AI moment: /shipped, the draft with its evidence, sent to the club, then the officer signs.
+    await stage.getByText("Your AI drafts it").waitFor();
+    await stage.getByText("Sent to Rocketry Club").waitFor({ timeout: 10000 });
+    await stage.getByRole("list", { name: "Evidence" }).getByText(/github\.com/).waitFor();
     await stage.getByText("Verified", { exact: true }).waitFor({ timeout: 10000 });
     await stage.getByRole("button", { name: "Accept" }).click({ timeout: 10000 });
     await stage.getByText(/You're talking/).waitFor();
@@ -112,6 +116,7 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
     await still.goto(BASE + "/", { waitUntil: "networkidle" });
     const stage = still.locator("#hero-preview");
     await stage.getByText("Verified", { exact: true }).waitFor({ timeout: 3000 });
+    await stage.getByText("Sent to Rocketry Club").waitFor({ timeout: 3000 });
     await stage.getByRole("button", { name: "Accept" }).click({ timeout: 3000 });
   }, still);
 

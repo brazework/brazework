@@ -29,6 +29,7 @@ update public.milestones set private = true where id = 'm1';
 alter table public.milestones disable trigger user;
 insert into public.milestones (id, project_id, owner_id, community_id, title, evidence, status, private) values
   ('pc-pending', 'p1', :'ben', 'rkt', 'Still waiting', 'https://example.com/a', 'pending', false),
+  ('pc-draft', 'p1', :'ben', null, 'Nobody asked yet', 'https://example.com/d', 'draft', false),
   ('pc-backed', 'p1', :'ben', null, 'Parser merged', 'https://github.com/bencho/test-stand/pull/3', 'logged', true);
 alter table public.milestones enable trigger user;
 insert into public.milestone_backings (milestone_id, kind, url, repo_full_name, ref, github_user_id) values ('pc-backed', 'pull_request', 'https://github.com/bencho/test-stand/pull/3', 'bencho/test-stand', '3', 501);
@@ -43,7 +44,9 @@ select t.as_('maya'); set local role authenticated;
 select t.refused($$select public.share_milestone('m1', true)$$, 'P0001', 'nobody shares someone else''s result');
 reset role;
 select t.as_('ben'); set local role authenticated;
-select t.refused($$select public.share_milestone('pc-pending', true)$$, 'P0001', 'work still waiting for a signature can''t be shared');
+-- Work waiting for a signature can be shared as a waiting card (supabase/waiting-cards.sql, tested there);
+-- a draft that nobody was asked to sign can't.
+select t.refused($$select public.share_milestone('pc-draft', true)$$, 'P0001', 'a draft nobody was asked to sign can''t be shared');
 select t.refused($$update public.milestones set shared_at = now() where id = 'm1'$$, '42501', 'shared_at can''t be set directly');
 select public.share_milestone('m1', true) as s1 \gset
 select public.share_milestone('pc-backed', true) as s2 \gset

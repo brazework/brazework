@@ -5,10 +5,12 @@ import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/forge";
 import { stageTitle } from "@/lib/landing-demo";
 
-// The hero's demo: the whole product in one card. A milestone is logged (the visitor's own line, once
-// they type one), a club officer signs it, and a company that searched signed work asks to talk.
-// It plays once, and again whenever the build changes; every step is also a button, and the visitor
-// can press Verify and answer the request themselves. Example people; the page says so.
+// The hero's demo: the whole product in one card. "/shipped" is typed to the member's AI assistant, it
+// drafts the milestone with its evidence (the visitor's own line, once they type one) and sends it to
+// the club, a club officer signs it, and a company that searched signed work asks to talk. It plays
+// once, and again whenever the build changes or Replay is pressed; every step is also a button, and
+// the visitor can press Send, Verify and answer the request themselves. With reduced motion it simply
+// shows the signed end. Example people and links; the page says so. No video, no library: a few timers.
 export function ProofStage({ build }: { build: string }) {
   const [replays, setReplays] = useState(0);
   return (
@@ -20,22 +22,40 @@ export function ProofStage({ build }: { build: string }) {
   );
 }
 
-const STEPS = ["You log it", "Your club signs it", "A company finds it"];
+const STEPS = ["Your AI drafts it", "Your club signs it", "A company finds it"];
+const CMD = "/shipped";
+const EVIDENCE = ["github.com/you/linebot/pull/42", "youtu.be/fall-expo-run"];
+type Phase = "typing" | "reading" | "draft" | "sent";
 
 function Stage({ build, onReplay }: { build: string; onReplay: () => void }) {
   const reduce = useReducedMotion();
   const [step, setStep] = useState(1);
+  const [phase, setPhase] = useState<Phase>("typing");
+  const [typed, setTyped] = useState(0);
   const [answer, setAnswer] = useState<"accepted" | "declined" | null>(null);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const stop = () => { timers.current.forEach(clearTimeout); timers.current = []; };
+  const at = (ms: number, f: () => void) => setTimeout(f, reduce ? 0 : ms);
 
+  // The loop: type the command, read the work, show the draft, send it, the officer signs, a company asks.
   useEffect(() => {
-    timers.current = [setTimeout(() => setStep((s) => Math.max(s, 2)), reduce ? 0 : 1700), setTimeout(() => setStep(3), reduce ? 0 : 3500)];
+    timers.current = [
+      ...Array.from(CMD, (_, i) => at(250 + i * 85, () => setTyped(i + 1))),
+      at(1150, () => setPhase("reading")),
+      at(1900, () => setPhase("draft")),
+      at(3300, () => setPhase("sent")),
+      at(3800, () => setStep((s) => Math.max(s, 2))),
+      at(5600, () => setStep(3)),
+    ];
     return stop;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reduce]);
 
-  const jump = (n: number) => { stop(); setStep(n); };
-  const verify = () => { stop(); setStep(2); timers.current = [setTimeout(() => setStep(3), reduce ? 0 : 1500)]; };
+  const after = (n: number) => { if (n >= 2) { setTyped(CMD.length); setPhase("sent"); } };
+  const jump = (n: number) => { stop(); after(n); setStep(n); };
+  const send = () => { stop(); setTyped(CMD.length); setPhase("sent"); timers.current = [at(500, () => setStep(2)), at(2300, () => setStep(3))]; };
+  const verify = () => { stop(); after(2); setStep(2); timers.current = [at(1500, () => setStep(3))]; };
+  const shown = reduce ? CMD.length : typed;
 
   return (
     <div className="rounded-[1.25rem] border border-line bg-surface shadow-[var(--shadow-float)]">
@@ -46,8 +66,28 @@ function Stage({ build, onReplay }: { build: string; onReplay: () => void }) {
 
       <ol className="relative px-5 py-5">
         <Node n={1} at={step} label={STEPS[0]} onPick={jump}>
-          <p className="text-[17px] leading-snug font-semibold tracking-tight break-words">{stageTitle(build)}</p>
-          <p className="mt-1 text-sm text-muted">{build ? "Your first milestone, with evidence attached." : "Best of 3 runs on the course, timed by the club."}</p>
+          {/* What the member types to their assistant, and what it reads. */}
+          <div className="rounded-xl bg-[#1b1a18] px-3 py-2 font-mono text-[12.5px] leading-relaxed text-[#ecebe6]">
+            <p className="flex items-center gap-2">
+              <span aria-hidden="true" className="text-[#e08a62]">&gt;</span>
+              <span aria-hidden="true">{CMD.slice(0, shown)}{phase === "typing" && !reduce && <span className="ml-px inline-block h-3.5 w-1.5 translate-y-0.5 animate-pulse bg-[#ecebe6]" />}</span>
+              <span className="sr-only">You type {CMD} to your AI assistant.</span>
+            </p>
+            {phase !== "typing" && <p className="text-[#a9a69c]">⎿ Read your merged PR and the expo video</p>}
+          </div>
+          {/* The draft it writes, with the proof, ready to send. */}
+          <div className={cn("mt-2 rounded-xl border border-line p-3 transition duration-500", phase === "draft" || phase === "sent" ? "opacity-100" : "translate-y-1 opacity-0")} inert={phase === "typing" || phase === "reading"}>
+            <p className="text-[11px] font-medium tracking-wide text-faint uppercase">Draft milestone</p>
+            <p className="mt-0.5 text-[16px] leading-snug font-semibold tracking-tight break-words">{stageTitle(build)}</p>
+            <ul className="mt-1.5 flex flex-wrap gap-1.5" aria-label="Evidence">
+              {EVIDENCE.map((e) => <li key={e} className="max-w-full truncate rounded-md bg-surface-2 px-2 py-0.5 font-mono text-[11px] text-text-2">{e}</li>)}
+            </ul>
+            <div className="mt-2.5 flex min-h-8 items-center">
+              {phase === "sent"
+                ? <span className="inline-flex items-center gap-1.5 text-xs font-medium text-ok"><Check className="size-3.5" /> Sent to Rocketry Club</span>
+                : <button type="button" onClick={send} className="inline-flex h-8 items-center rounded-lg bg-accent px-3.5 text-xs font-medium text-on-accent transition hover:opacity-90">Send to club</button>}
+            </div>
+          </div>
         </Node>
 
         <Node n={2} at={step} label={STEPS[1]} onPick={jump}>
