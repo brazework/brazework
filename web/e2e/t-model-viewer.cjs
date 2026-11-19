@@ -55,7 +55,7 @@ const settled = (v) => v.evaluate((el) => new Promise((ok) => { const t = setInt
     const sec = page.locator("#projects"), v = sec.locator("[data-model-viewer]");
     const seen = new Set();
     if ((await sec.getByRole("tab").count()) !== 20) throw new Error(`expected 20 fields in the picker, found ${await sec.getByRole("tab").count()}`);
-    const tries = [["Aerospace", "Certification rocket"], ["Software", "Campus shuttle tracker app"], ["Computer science", "Four-node compute cluster"], ["Data & AI", "Crop disease classifier"], ["Chemistry", "Salt crystal lattice model"], ["Business", "Warehouse pick-and-pack station"], ["Education", "Tactile fraction kit"], ["Robotics", "Line-following robot"]];
+    const tries = [["Aerospace", "Certification rocket"], ["Software", "Campus shuttle tracker app"], ["Computer science", "Four-node compute cluster"], ["Data & AI", "Crop disease classifier"], ["Chemistry", "Cathode material study"], ["Business", "Warehouse pick-and-pack station"], ["Education", "Fractions learning kit"], ["Robotics", "Line-following robot"]];
     for (const [field, build] of tries) {
       await sec.getByRole("tab", { name: field, exact: true }).click();
       await sec.locator("#build-example").getByText(build, { exact: true }).waitFor();

@@ -43,10 +43,10 @@ export const SAMPLES = [
   { id: "cluster", field: "Computer science", name: "Four-node compute cluster", milestone: "Sorted 10 GB across four nodes in 94 s", by: "Dr. Okafor, Distributed Systems", how: "signed" },
   { id: "network", field: "Data & AI", name: "Crop disease classifier", milestone: "94% accuracy on 1,800 field-trial photos", by: "Dr. Shah, agronomy lab PI", how: "signed" },
   // Sciences
-  { id: "knot", field: "Mathematics", name: "Trefoil knot model", milestone: "Presented a proof of its tricolorability at seminar", by: "Prof. Chen, seminar host", how: "signed" },
-  { id: "pendulum", field: "Physics", name: "Double pendulum rig", milestone: "Tracked 200 runs and found where chaos sets in", by: "Physics Society", how: "verified" },
-  { id: "crystal", field: "Chemistry", name: "Salt crystal lattice model", milestone: "Grew a 14 mm single crystal over three weeks", by: "Chemistry Club", how: "verified" },
-  { id: "helix", field: "Biology", name: "DNA double helix model", milestone: "Printed for BIO 101 and used by 180 students", by: "Dr. Lee, Biology", how: "signed" },
+  { id: "knot", field: "Mathematics", name: "Drone inspection flight path", milestone: "Planned a 3D inspection path: 31% shorter, every face of the tower covered", by: "S. Kim, operations lead (client)", how: "signed" },
+  { id: "pendulum", field: "Physics", name: "Motion-sensor calibration rig", milestone: "Calibrated a client's motion sensors to within 0.5% error", by: "T. Nguyen, QA lead (client)", how: "signed" },
+  { id: "crystal", field: "Chemistry", name: "Cathode material study", milestone: "Screened 120 cathode coatings; the best kept 92% capacity after 500 cycles", by: "Dr. Haddad, R&D manager", how: "signed" },
+  { id: "helix", field: "Biology", name: "Gene-editing guide design", milestone: "Designed guides that reached 94% editing efficiency in the pilot", by: "Dr. Lee, lab director (manager)", how: "signed" },
   { id: "weather", field: "Environment", name: "Campus weather station", milestone: "90 days of readings with no gaps, shared with the city", by: "City sustainability office (client)", how: "signed" },
   { id: "cubesat", field: "Space", name: "CubeSat structure", milestone: "Passed the vibration test at launch levels", by: "Space Systems Lab", how: "verified" },
   { id: "hand", field: "Medicine", name: "3D-printed prosthetic hand", milestone: "Lifted a 500 g bottle in 20 of 20 trials", by: "R. Patel, clinical mentor", how: "signed" },
@@ -418,7 +418,7 @@ function bridge(THREE: Three, { part, add, box, cyl, beam, mat, live }: Kit) {
   });
 }
 
-// Biology: a double helix on a stand, the kind a lab prints to teach base pairing. It turns on its stand.
+// Biology: a double helix on a stand, standing for a gene-editing project (the guides target a stretch of it). It turns on its stand.
 function helix(THREE: Three, { part, add, cyl, rod, mat, live }: Kit) {
   const blue = mat(0x2f6fde, 0.4), orange = mat(0xe8833a, 0.4), stand = mat(0x2a2d34, 0.55, 0.2);
   const pairs = [[mat(0x34a36b, 0.45), mat(0xd94f4f, 0.45)], [mat(0xe2b93b, 0.45), mat(0x7a5cd6, 0.45)]];
@@ -576,7 +576,7 @@ function network(THREE: Three, { part, add, box, cyl, rod, mat, live }: Kit) {
   });
 }
 
-// Mathematics: a trefoil, the simplest knot that can't be untied, on a stand. It turns slowly, so you see it never crosses itself.
+// Mathematics: a trefoil on a stand, standing for a planned 3D flight path (one closed loop that never crosses itself). It turns slowly.
 function knot(THREE: Three, { part, add, cyl, mat, live }: Kit) {
   const k = add(part("Knot"), new THREE.TorusKnotGeometry(0.04, 0.0105, 220, 24, 2, 3), mat(0x7a5cd6, 0.25, 0.15), 0, 0.105, 0);
   const stand = part("Stand");
@@ -585,9 +585,9 @@ function knot(THREE: Three, { part, add, cyl, mat, live }: Kit) {
   live((t) => { k.rotation.y = t * 0.4; k.rotation.x = 0.18 * Math.sin(t * 0.5); });
 }
 
-// Physics: a double pendulum on a frame, with an encoder on the pivot. It runs the real equations of
+// Physics: a double pendulum on a frame, with an encoder on the pivot: a calibration rig that throws motion sensors through chaotic motion. It runs the real equations of
 // motion (point masses, RK4): released with a flick, run after run, each a little different, and the
-// tip leaves a trace. That sensitivity is the chaos the milestone measured.
+// tip leaves a trace. That chaos is what puts the sensors through every kind of motion.
 function pendulum(THREE: Three, { part, add, box, cyl, beam, mat, live, setting }: Kit) {
   const alu = mat(0xb9bec7, 0.4, 0.85), dark = mat(0x2a2d34, 0.55, 0.3), steel = mat(0xc9ced6, 0.28, 1), brass = mat(0xc0994f, 0.3, 1), red = mat(0xd3372c, 0.4);
   const frame = part("Frame");
@@ -658,7 +658,7 @@ function pendulum(THREE: Three, { part, add, box, cyl, beam, mat, live, setting 
   });
 }
 
-// Chemistry: the lattice of table salt, sodium and chloride ions alternating in a cube, turning on its posts.
+// Chemistry: an ionic lattice, two kinds of ion alternating in a cube, standing for a cathode material study. It turns on its posts.
 function crystal(THREE: Three, { part, add, box, rod, mat, live }: Kit) {
   const na = part("Sodium ions"), cl = part("Chloride ions"), bonds = part("Bonds"), S = 0.03, Y = 0.05;
   const naM = mat(0x8e6fd8, 0.3, 0.1), clM = mat(0x49b36b, 0.3, 0.1), bondM = mat(0xb9bec7, 0.4, 0.6);
