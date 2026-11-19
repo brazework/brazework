@@ -83,7 +83,7 @@ export function ProjectCard({ project, own, interests, copilot = false, clubs, v
         {verified > 0 && <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[color-mix(in_oklab,var(--ok)_14%,transparent)] px-2 py-0.5 text-[11px] font-medium text-ok"><BadgeCheck className="size-3.5" /> {verified} verified</span>}
         {project.private && <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-line px-2 py-0.5 text-[11px] text-muted"><Lock className="size-3" /> Private</span>}
       </div>
-      <p className="mt-1.5 flex items-center gap-1.5 text-xs text-muted">
+      <p suppressHydrationWarning className="mt-1.5 flex items-center gap-1.5 text-xs text-muted">
         {project.status === "completed" ? <CheckCircle2 className="size-3.5 text-ok" /> : <span className="relative flex size-2"><span className="absolute inset-0 animate-ping rounded-full bg-accent opacity-50" /><span className="relative size-2 rounded-full bg-accent" /></span>}
         {meta(project)}
       </p>

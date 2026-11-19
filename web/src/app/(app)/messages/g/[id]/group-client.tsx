@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { Avatar } from "@/components/ui";
 import { cn } from "@/lib/forge";
+import { useTimeZone } from "../../../events/local-time";
 import { getBrowserClient } from "@/lib/supabase/client";
 import { createTeamChat, markChatRead, sendChatMessage } from "@/lib/chats";
 import { MessageTools, REPLY, ReactionChips, ReplyBar, ReplyQuote, UNSEND_MS, startReply, useReactions, type Reaction, type ReplyTarget } from "@/components/chat/message-tools";
@@ -19,8 +20,10 @@ const FAILED = "forge-chat-failed";
 const TYPING = "forge-chat-typing";
 const EMBER = "forge-chat-ember"; // detail: { id, on }
 const GROUP_MS = 5 * 60_000;
-const day = (ts: string) => new Date(ts).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
-const time = (ts: string) => new Date(ts).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+// In the viewer's time zone, which the server doesn't know: the server and the hydration render both
+// use UTC (useTimeZone), so their HTML matches, then React re-renders in local time.
+const day = (ts: string, tz?: string) => new Date(ts).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: tz });
+const time = (ts: string, tz?: string) => new Date(ts).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: tz });
 
 export function MarkChatRead({ id, count }: { id: string; count: number }) {
   // Re-mark whenever new messages arrive while the chat is open.
@@ -31,6 +34,7 @@ export function MarkChatRead({ id, count }: { id: string; count: number }) {
 // The conversation: messages from the same person within a few minutes hug together under one name;
 // announcements stand out as cards (officers see who's seen them); what you send shows at once.
 export function GroupThread({ msgs, me, myName, chatId, seen = {}, reactions = [], extras = false }: { msgs: GroupMsg[]; me: string; myName: string; chatId: string; seen?: Seen; reactions?: Reaction[]; extras?: boolean }) {
+  const tz = useTimeZone();
   const end = useRef<HTMLDivElement>(null);
   const rx = useReactions("group", me, reactions);
   const [active, setActive] = useState<string | null>(null);
@@ -82,10 +86,10 @@ export function GroupThread({ msgs, me, myName, chatId, seen = {}, reactions = [
           const isMine = m.sender_id === me && !isEmber;
           const prev = all[i - 1];
           const next = all[i + 1];
-          const d = day(m.created_at);
-          const showDay = !prev || d !== day(prev.created_at);
+          const d = day(m.created_at, tz);
+          const showDay = !prev || d !== day(prev.created_at, tz);
           const joinsPrev = !showDay && !m.announcement && prev && !prev.announcement && prev.sender_id === m.sender_id && !!prev.ember === isEmber && Date.parse(m.created_at) - Date.parse(prev.created_at) < GROUP_MS;
-          const joinsNext = !m.announcement && next && !next.announcement && next.sender_id === m.sender_id && !!next.ember === isEmber && day(next.created_at) === d && Date.parse(next.created_at) - Date.parse(m.created_at) < GROUP_MS;
+          const joinsNext = !m.announcement && next && !next.announcement && next.sender_id === m.sender_id && !!next.ember === isEmber && day(next.created_at, tz) === d && Date.parse(next.created_at) - Date.parse(m.created_at) < GROUP_MS;
           const isPending = m.id.startsWith("pending-");
           const s = seen[m.id];
           return (
@@ -94,7 +98,7 @@ export function GroupThread({ msgs, me, myName, chatId, seen = {}, reactions = [
               {m.announcement ? (
                 <div className={cn("glass-card mx-auto w-full max-w-xl rounded-2xl border-l-4 border-l-text p-4", isPending && "opacity-60")}>
                   <div className="flex items-center gap-2 text-xs text-muted">
-                    <Megaphone className="size-3.5 text-text" /> <span className="font-medium text-text">Announcement</span> · {m.sender_first} {m.sender_last} · {isPending ? "Sending…" : time(m.created_at)}
+                    <Megaphone className="size-3.5 text-text" /> <span className="font-medium text-text">Announcement</span> · {m.sender_first} {m.sender_last} · {isPending ? "Sending…" : time(m.created_at, tz)}
                   </div>
                   <p className="mt-1.5 text-[15px] leading-relaxed whitespace-pre-wrap">{m.body}</p>
                   {s && <p className="mt-2 inline-flex items-center gap-1 text-xs text-faint"><Eye className="size-3.5" /> Seen by {s.seen} of {s.total}</p>}
@@ -123,7 +127,7 @@ export function GroupThread({ msgs, me, myName, chatId, seen = {}, reactions = [
                     </div>
                     <ReactionChips list={rx.reactions.filter((x) => x.message_id === m.id)} me={me} mine={isMine} onToggle={(e) => void rx.toggle(m.id, e)} />
                     </div>
-                    {!joinsNext && <span className="mt-1 px-2 text-[10px] text-faint">{isPending ? "Sending…" : time(m.created_at)}</span>}
+                    {!joinsNext && <span className="mt-1 px-2 text-[10px] text-faint">{isPending ? "Sending…" : time(m.created_at, tz)}</span>}
                   </div>
                 </div>
               )}

@@ -77,7 +77,7 @@ export function ConvList({ convs, requestsOn, groups = null }: { convs: Conv[]; 
                   <div className="min-w-0 flex-1">
                     <div className="flex items-baseline justify-between gap-2">
                       <span className={cn("truncate text-sm", g.unread ? "font-semibold" : "font-medium")}>{g.title}</span>
-                      {g.lastAt && <span className="shrink-0 text-[11px] text-faint">{timeAgo(g.lastAt)}</span>}
+                      {g.lastAt && <span suppressHydrationWarning className="shrink-0 text-[11px] text-faint">{timeAgo(g.lastAt)}</span>}
                     </div>
                     <p className={cn("truncate text-sm", g.unread ? "text-text" : "text-muted")}>
                       {g.lastBody ? <>{g.lastFromMe ? "You" : g.lastSenderName || "Someone"}: {g.lastBody}</> : <span className="text-faint">{g.subtitle} · say hello</span>}
@@ -99,7 +99,7 @@ export function ConvList({ convs, requestsOn, groups = null }: { convs: Conv[]; 
               <div className="min-w-0 flex-1">
                 <div className="flex items-baseline justify-between gap-2">
                   <span className={cn("truncate text-sm", c.unread ? "font-semibold" : "font-medium")}>{`${c.other.firstName} ${c.other.lastName}`.trim() || "Brazework member"}</span>
-                  {c.lastAt && <span className="shrink-0 text-[11px] text-faint">{timeAgo(c.lastAt)}</span>}
+                  {c.lastAt && <span suppressHydrationWarning className="shrink-0 text-[11px] text-faint">{timeAgo(c.lastAt)}</span>}
                 </div>
                 <p className={cn("truncate text-sm", c.unread ? "text-text" : "text-muted")}>
                   {c.status === "request" && c.startedByMe && <span className="text-faint">Request sent · </span>}

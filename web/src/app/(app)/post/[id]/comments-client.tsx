@@ -101,7 +101,7 @@ function CommentItem({ postId, c, me, postAuthor, liked, threads, small = false,
         <div className="rounded-2xl bg-surface-2 px-4 py-2.5">
           <div className="flex items-baseline gap-2 text-sm">
             <Link href={`/u/${c.author_id}`} className="font-medium hover:underline">{c.author_first} {c.author_last}</Link>
-            <span className="text-xs text-faint">{timeAgo(c.created_at)}{c.edited_at ? " · edited" : ""}</span>
+            <span suppressHydrationWarning className="text-xs text-faint">{timeAgo(c.created_at)}{c.edited_at ? " · edited" : ""}</span>
           </div>
           {editing ? (
             <form onSubmit={(e) => { e.preventDefault(); save(); }} className="mt-1.5">
