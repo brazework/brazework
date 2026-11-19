@@ -57,10 +57,14 @@ export function inThirtySeconds(p: {
   lines.push(`${who} ${verb} ${p.title}${p.summary ? `: ${p.summary.replace(/\s+/g, " ").trim().replace(/\.$/, "")}` : ""}.`);
   if (p.verified.length) {
     const latest = p.verified[0];
-    const clubs = [...new Set(p.verified.map((v) => v.club))];
-    lines.push(`${p.verified.length} ${p.verified.length === 1 ? "milestone" : "milestones"} verified by ${list(clubs)}, most recently "${latest.title}"${latest.reviewer ? `, signed by ${latest.reviewer}` : ""}.`);
+    // A milestone is verified by a club's officer or signed by a person who saw it (a professor, a
+    // manager), so there may be no club to name.
+    const clubs = [...new Set(p.verified.map((v) => v.club?.trim()).filter(Boolean))];
+    const n = `${p.verified.length} ${p.verified.length === 1 ? "milestone" : "milestones"}`;
+    const by = clubs.length ? `verified by ${list(clubs)}` : `signed by ${p.verified.length === 1 ? "someone" : "people"} who saw the work`;
+    lines.push(`${n} ${by}, most recently "${latest.title}"${clubs.length && latest.reviewer ? `, signed by ${latest.reviewer}` : ""}.`);
   } else {
-    lines.push("No club-verified milestones yet.");
+    lines.push("No signed milestones yet.");
   }
   if (p.updates) lines.push(`Active ${p.activeWeeks} of the last ${p.weeks} weeks, with ${p.updates} ${p.updates === 1 ? "update" : "updates"} logged.`);
   if (p.tools.length) lines.push(`Built with ${list(p.tools.slice(0, 5))}${p.tools.length > 5 ? " and more" : ""}.`);

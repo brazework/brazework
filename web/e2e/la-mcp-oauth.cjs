@@ -70,7 +70,7 @@ const b64url = (buf) => buf.toString("base64url");
 
   await step("Settings → Your tools lists the sign-in by its app's name; revoking it stops the assistant at once", async () => {
     await go(ben, "/settings/tools");
-    await ben.getByText("Sign in from your assistant, no token").waitFor({ timeout: 15000 });
+    await ben.getByRole("heading", { name: "Add Brazework to Claude" }).waitFor({ timeout: 15000 });
     const row = ben.getByText("Test Assistant (signed in)").first();
     await row.waitFor({ timeout: 15000 });
     // Revoke it as the member would (the same function the Revoke button calls).

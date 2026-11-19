@@ -1,5 +1,6 @@
 "use client";
 import { Orb } from "@/components/landing/orb";
+import { ConnectCard } from "@/components/connect/connect-card";
 import { ArrowLeft, ArrowUpRight, Check, CircleDot, Copy, FileCode2, KeyRound, Loader2, Lock, PenLine, ShieldCheck, Sparkles, Terminal, X, Plug } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
@@ -34,14 +35,22 @@ export function ToolsHub({ tokens, endpoint, writes = false, drafts = false, pro
 
   return (
     <div className="mt-6 space-y-6">
+      {/* First, the way in (lib/mcp-oauth.ts): the same card as the landing page. Add the address, sign
+          in, say how it should add things. No token to copy. */}
+      {signIn && (
+        <div>
+          <ConnectCard endpoint={endpoint} on />
+          <p className="mt-2 px-1 text-xs text-muted">When you connect, you choose how it adds things: after your yes in the chat, or as drafts you approve here. GitHub Actions and scripts use a token: pick them below.</p>
+        </div>
+      )}
       {/* What it is, in one card: your agent reads your Brazework, safely. */}
       <section className="border border-line bg-surface relative overflow-hidden rounded-2xl p-6 sm:p-7">
         <div className="relative flex items-start gap-4">
           {/* The orb from the landing page (FIX-92): your agent and Brazework, connected. */}
           <Orb tone="auto" className="size-14 shrink-0" />
           <div className="min-w-0">
-            <h2 className="text-lg font-semibold tracking-tight">Brazework, inside your agent</h2>
-            <p className="mt-1 text-sm leading-relaxed text-text-2">Connect once and your coding agent knows what you&apos;re building, which clubs you&apos;re in and what&apos;s due this week, while you work.</p>
+            <h2 className="text-lg font-semibold tracking-tight">What it does once it&apos;s connected</h2>
+            <p className="mt-1 text-sm leading-relaxed text-text-2">Connect once and the AI you already use knows what you&apos;re building, which clubs you&apos;re in and what&apos;s due this week.</p>
           </div>
         </div>
         <div className="relative mt-5 grid gap-4 sm:grid-cols-2">
@@ -65,9 +74,6 @@ export function ToolsHub({ tokens, endpoint, writes = false, drafts = false, pro
         )}
         <p className="relative mt-5 flex items-center gap-2 border-t border-line pt-4 text-xs text-muted"><ShieldCheck className="size-3.5 shrink-0" /> {drafts ? "Nothing goes out without you: tools leave drafts, unless you turn on posting for one. Nothing is ever changed or deleted." : writes ? "Read-only unless you turn on posting for a tool. Nothing is ever changed or deleted." : "Read-only: it can't post or change anything."} Each tool gets its own token you can revoke here.</p>
       </section>
-
-      {/* One-click connect (lib/mcp-oauth.ts): add the address, sign in, approve. No token to copy. */}
-      {signIn && <SignInCard endpoint={endpoint} />}
 
       {/* The tools. */}
       <section aria-label="Tools you can connect">
@@ -311,28 +317,5 @@ function PostSwitch({ on, onChange, tool, compact, disabled, className }: { on: 
         <span className="text-sm"><span className="font-medium">Let it post updates for me</span><span className="block text-xs text-muted">Updates and milestones for your club to verify. It asks first, and they say &ldquo;via {tool}&rdquo;.</span></span>
       )}
     </label>
-  );
-}
-
-// Shown once the OAuth server is switched on in Supabase: assistants that sign in need only the address.
-function SignInCard({ endpoint }: { endpoint: string }) {
-  const [copied, setCopied] = useState(false);
-  const cmd = `claude mcp add --transport http brazework ${endpoint}`;
-  const copy = async (text: string) => { try { await navigator.clipboard.writeText(text); setCopied(true); setTimeout(() => setCopied(false), 1600); } catch {} };
-  return (
-    <section aria-labelledby="sign-in-connect" className="rounded-3xl border border-line bg-surface p-6 sm:p-7">
-      <h2 id="sign-in-connect" className="text-lg font-semibold tracking-tight">Sign in from your assistant, no token</h2>
-      <p className="mt-1 text-sm text-text-2">Add Brazework by its address. Your assistant opens Brazework, you approve it, and you&apos;re connected. It starts reading and leaving drafts; you can turn on posting for it below.</p>
-      <div className="mt-4 flex flex-wrap items-center gap-2">
-        <code className="min-w-0 flex-1 truncate rounded-lg bg-surface-2 px-3 py-2 font-mono text-[13px]">{endpoint}</code>
-        <button type="button" onClick={() => copy(endpoint)} className="inline-flex h-9 items-center rounded-lg border border-line px-3 text-sm hover:bg-hover">{copied ? "Copied" : "Copy address"}</button>
-      </div>
-      <ul className="mt-4 space-y-1.5 text-sm text-text-2">
-        <li><strong className="font-medium text-text">Claude</strong> (web and desktop): Settings → Connectors → Add custom connector, and paste the address.</li>
-        <li><strong className="font-medium text-text">Claude Code:</strong> <button type="button" onClick={() => copy(cmd)} className="font-mono text-[13px] underline-offset-4 hover:underline">{cmd}</button>, then <code className="font-mono text-[13px]">/mcp</code> to sign in.</li>
-        <li><strong className="font-medium text-text">Cursor, VS Code and others:</strong> add an MCP server with this address; they ask you to sign in.</li>
-      </ul>
-      <p className="mt-3 text-xs text-muted">GitHub Actions and scripts still use a token: pick them below.</p>
-    </section>
   );
 }

@@ -55,7 +55,15 @@ test("in thirty seconds: who, what, the proof with who signed it, the momentum, 
 
 test("in thirty seconds, for a brand-new solo project: honest about having no proof yet", () => {
   const lines = inThirtySeconds({ owner: "Ada", title: "Rover", summary: "", status: "completed", teamSize: 1, verified: [], activeWeeks: 0, weeks: 12, updates: 0, tools: [] });
-  assert.deepEqual(lines, ["Ada built Rover.", "No club-verified milestones yet."]);
+  assert.deepEqual(lines, ["Ada built Rover.", "No signed milestones yet."]);
+});
+
+test("in thirty seconds, for work a person signed (no club): it never says 'verified by ,'", () => {
+  const one = inThirtySeconds({ owner: "Priya", title: "Classifier", summary: "", status: "in_progress", teamSize: 1, verified: [{ title: "94.1% on field photos", reviewer: "", club: "" }], activeWeeks: 1, weeks: 12, updates: 0, tools: [] });
+  assert.deepEqual(one.slice(0, 2), ["Priya is building Classifier.", '1 milestone signed by someone who saw the work, most recently "94.1% on field photos".']);
+  const mixed = inThirtySeconds({ owner: "Priya", title: "Classifier", summary: "", status: "in_progress", teamSize: 1, verified: [{ title: "A", reviewer: "Ben", club: "Rocketry Club" }, { title: "B", reviewer: "", club: "" }], activeWeeks: 1, weeks: 12, updates: 0, tools: [] });
+  assert.equal(mixed[1], '2 milestones verified by Rocketry Club, most recently "A", signed by Ben.');
+  for (const l of [...one, ...mixed]) assert.doesNotMatch(l, /by ,|by \./);
 });
 
 test("GitHub activity joins the same log, in time order with updates and verified milestones (FIX-92 phase 3)", () => {

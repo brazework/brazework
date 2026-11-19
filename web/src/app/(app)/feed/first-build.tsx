@@ -33,7 +33,7 @@ export function FirstBuild({ first, chapter, student = true }: { first: string; 
         <div className="mt-4 flex flex-col gap-2 sm:flex-row">
           <input id="first-build" value={text} onChange={(e) => setText(e.target.value)} maxLength={300} autoComplete="off"
             placeholder={copy.example}
-            className="h-12 min-w-0 flex-1 rounded-2xl border border-line bg-surface px-4 text-[16px] transition outline-none placeholder:text-faint focus:border-line-strong focus:shadow-[0_0_0_4px_color-mix(in_oklab,var(--accent)_9%,transparent)]" />
+            className="h-12 min-w-0 shrink-0 rounded-2xl border sm:flex-1 sm:shrink border-line bg-surface px-4 text-[16px] transition outline-none placeholder:text-faint focus:border-line-strong focus:shadow-[0_0_0_4px_color-mix(in_oklab,var(--accent)_9%,transparent)]" />
           <button type="submit" disabled={pending || text.trim().length < 3} className="inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-2xl bg-text px-5 text-sm font-semibold text-surface transition hover:opacity-90 active:scale-[0.98] disabled:opacity-40">
             {pending ? <Loader2 className="size-4 animate-spin" /> : null} Start my build <ArrowRight className="size-4" />
           </button>

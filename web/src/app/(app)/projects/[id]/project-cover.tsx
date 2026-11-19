@@ -33,9 +33,9 @@ export function ProjectCover({ title, isPrivate, live, year, last, cover, schema
         </p>
         <h1 className="mt-2 text-[1.9rem] leading-[1.1] font-semibold tracking-[-0.02em] text-balance break-words text-text sm:text-[2.75rem]">{title}</h1>
       </div>
-      {/* The title block: which club, how much is signed, what's waiting (components/app/title-block.tsx). */}
+      {/* The title block: which club (if it's in one), how much is signed, what's waiting (components/app/title-block.tsx). */}
       <TitleBlock label="Where it stands" className="sm:col-span-2 sm:row-start-2" cells={[
-        { label: "Club", value: facts.club ?? <span className="text-faint">None yet</span>, wide: true },
+        ...(facts.club ? [{ label: "Club", value: facts.club, wide: true }] : []),
         { label: "Signed", value: facts.signed ? <span className="inline-flex items-center gap-1"><BadgeCheck className="size-4" /> {facts.signed}</span> : "0", tone: facts.signed ? "ok" : undefined },
         { label: "Waiting", value: facts.waiting ? <span className="inline-flex items-center gap-1"><Clock className="size-3.5 text-faint" /> {facts.waiting}</span> : "0" },
         { label: facts.builders === 1 ? "Builder" : "Builders", value: facts.builders },
