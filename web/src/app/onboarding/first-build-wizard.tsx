@@ -222,7 +222,7 @@ export function FirstBuildWizard({ firstName, student, userId, clubs }: { firstN
                         <button key={c.id} type="button" role="radio" aria-checked={s.clubId === c.id} onClick={() => set({ clubId: c.id })}
                           className="flex items-center gap-3 rounded-xl border border-line bg-surface p-3 text-left transition hover:border-line-strong aria-checked:border-accent aria-checked:ring-[3px] aria-checked:ring-accent/15">
                           <Building2 className="size-5 shrink-0 text-muted" />
-                          <span className="min-w-0 flex-1"><span className="block truncate font-medium">{c.name}</span><span className="block text-xs text-muted">{c.mine ? "You're a member" : `${c.field} · ${c.members} member${c.members === 1 ? "" : "s"} · joins you`}</span></span>
+                          <span className="min-w-0 flex-1"><span className="block truncate font-medium">{c.name}</span><span className="block text-xs text-muted">{c.mine ? "You're a member" : [c.field, `${c.members} member${c.members === 1 ? "" : "s"}`, "joins you"].filter(Boolean).join(" · ")}</span></span>
                           {s.clubId === c.id && <Check className="size-4 text-accent" />}
                         </button>
                       ))}
