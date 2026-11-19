@@ -1,6 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { COPILOT_MODEL, copilotEnabled, copilotRequest, memberContext, taskPrompt } from "@/lib/copilot";
 import { frame, runAgent } from "@/lib/copilot-agent";
+import { pageLine } from "@/lib/copilot-page";
 import { presetInstruction } from "@/lib/copilot-presets";
 import { TOOLS, makeExec } from "@/lib/copilot-tools";
 
@@ -17,17 +18,19 @@ export async function POST(req: Request) {
   const r = parsed.data;
 
   const ctx = await memberContext();
-  if (!ctx) return json(401, "Log in again to use Copilot.");
-  if (!(await copilotEnabled())) return json(503, "Copilot isn't switched on yet.");
+  if (!ctx) return json(401, "Log in again to ask Ember.");
+  if (!(await copilotEnabled())) return json(503, "Ember isn't switched on here yet.");
 
   const { data: left, error } = await ctx.supabase.rpc("copilot_take");
-  if (error) return json(503, "Copilot isn't available right now.");
-  if (typeof left !== "number" || left < 0) return json(429, "You've used today's Copilot requests. They reset tomorrow.");
+  if (error) return json(503, "Ember isn't available right now. Try again in a minute.");
+  if (typeof left !== "number" || left < 0) return json(429, "You've used today's questions for Ember. They reset tomorrow.");
 
   const { instructions, maxTokens } = taskPrompt(r);
   const messages: Anthropic.MessageParam[] = [...(r.history ?? []), { role: "user", content: r.input }];
   const client = new Anthropic();
-  const system = `${ctx.system}\n\n${instructions}${r.preset ? `\n\n${presetInstruction(r.preset)}` : ""}`;
+  // Asked from the bar on a project, club or event page: what that page is, read as the member.
+  const here = r.task === "ask" ? await pageLine(ctx.supabase, ctx.userId, r.page) : "";
+  const system = `${ctx.system}\n\n${instructions}${r.preset ? `\n\n${presetInstruction(r.preset)}` : ""}${here ? `\n\n${here}` : ""}`;
   const abort = new AbortController();
 
   const body = new ReadableStream<Uint8Array>({
@@ -43,7 +46,7 @@ export async function POST(req: Request) {
         }
         controller.close();
       } catch {
-        if (!abort.signal.aborted) { out("\n\n[Copilot stopped early. Try again.]"); controller.close(); }
+        if (!abort.signal.aborted) { out("\n\n[Ember stopped early. Try again.]"); controller.close(); }
       }
     },
     cancel() { abort.abort(); },

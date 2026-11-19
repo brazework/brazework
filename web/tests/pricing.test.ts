@@ -32,3 +32,10 @@ test("the record is free; the paid tier isn't called Pro and its prices come fro
   const plus = TIERS.find((t) => t.id === "plus")!;
   assert.ok(plus.price.includes(String(PLUS.student)) && plus.note.includes(String(PLUS.everyone)));
 });
+
+test("Plus never sells what isn't built: everything still coming is marked coming soon", async () => {
+  const { PLUS_SOON } = await import("@/lib/pricing");
+  const plus = TIERS.find((t) => t.id === "plus")!;
+  for (const soon of PLUS_SOON) assert.ok(plus.points.includes(`${soon} (coming soon)`), soon);
+  assert.ok(plus.points.some((p) => p.includes("90 days") && !p.includes("coming soon")), "who looked over 90 days is built");
+});

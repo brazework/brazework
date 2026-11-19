@@ -69,7 +69,7 @@ async function Challenges({ searchParams }: { searchParams: PageProps<"/challeng
         {list.map((c) => {
           const left = daysLeft(c.deadline, now);
           return (
-            <Link key={c.id} href={`/challenges/${c.id}`} className="glass-card group flex min-w-0 flex-col gap-3 rounded-3xl p-5 transition">
+            <Link key={c.id} href={`/challenges/${c.id}`} className="border border-line bg-surface group flex min-w-0 flex-col gap-3 rounded-2xl p-5 transition">
               <div className="flex items-center gap-2 text-xs text-faint">
                 <Building2 className="size-3.5" /> <span className="truncate">{c.organizations?.name ?? "Sponsor"}</span>
                 <span className="ml-auto shrink-0 rounded-full bg-surface-2 px-2 py-0.5 text-[11px] text-text-2">

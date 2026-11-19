@@ -108,7 +108,7 @@ async function EventView({ params }: { params: PageProps<"/events/[id]">["params
 
         {e.description && (
           <Panel className="p-6">
-            <h2 className="text-xs font-medium tracking-wide text-faint uppercase">About this event</h2>
+            <h2 className="text-xs font-medium text-muted">About this event</h2>
             <p className="mt-3 text-[15px] leading-relaxed whitespace-pre-wrap text-text-2">{e.description}</p>
           </Panel>
         )}
@@ -129,13 +129,13 @@ async function EventView({ params }: { params: PageProps<"/events/[id]">["params
           <Panel className="flex items-center gap-4 p-5">
             <span className="nav-tile grid size-11 shrink-0 place-items-center rounded-xl text-text"><Video className="size-5" /></span>
             <span className="min-w-0 flex-1"><span className="block text-sm font-medium">Join online</span><span className="block truncate text-xs text-muted">{link.replace(/^https?:\/\//, "")}</span></span>
-            <a href={link} target="_blank" rel="noopener noreferrer nofollow" className="inline-flex h-10 items-center gap-1.5 rounded-lg bg-accent-grad px-4 text-sm font-medium text-on-accent"><ExternalLink className="size-4" /> Open link</a>
+            <a href={link} target="_blank" rel="noopener noreferrer nofollow" className="inline-flex h-10 items-center gap-1.5 rounded-lg bg-text px-4 text-sm font-medium text-surface"><ExternalLink className="size-4" /> Open link</a>
           </Panel>
         )}
         {e.format === "In person" && link && <a href={link} target="_blank" rel="noopener noreferrer nofollow" className="inline-flex items-center gap-1.5 text-sm underline underline-offset-4"><ExternalLink className="size-4" /> Event link</a>}
 
         {!over && e.status !== "cancelled" && (
-          <Link href={`/copilot?q=${encodeURIComponent(prep)}`} className="glass-card flex items-center gap-3 rounded-3xl p-5 transition">
+          <Link href={`/copilot?q=${encodeURIComponent(prep)}`} className="border border-line bg-surface flex items-center gap-3 rounded-2xl p-5 transition">
             <Ember size={40} />
             <span className="min-w-0 flex-1"><span className="block text-sm font-medium">Prep me with Ember</span><span className="block text-xs text-muted">What to bring, who to meet and what to ask.</span></span>
           </Link>
@@ -144,7 +144,7 @@ async function EventView({ params }: { params: PageProps<"/events/[id]">["params
 
       <aside className="flex flex-col gap-4 lg:sticky lg:top-6 lg:self-start">
         <Panel className="p-5">
-          <h2 className="text-xs font-medium tracking-wide text-faint uppercase">Going</h2>
+          <h2 className="text-xs font-medium text-muted">Going</h2>
           <p className="mt-1 text-2xl font-semibold tabular-nums">{e.rsvp_count}</p>
           <p className="text-xs text-muted">{going ? "Including you. " : ""}{people.length ? `${people.length} of your connections ${people.length === 1 ? "is" : "are"} going.` : "Connections who RSVP show here."}</p>
           {people.length > 0 && (
@@ -157,7 +157,7 @@ async function EventView({ params }: { params: PageProps<"/events/[id]">["params
         </Panel>
         {c && (
           <Panel className="p-5">
-            <h2 className="text-xs font-medium tracking-wide text-faint uppercase">Host</h2>
+            <h2 className="text-xs font-medium text-muted">Host</h2>
             <Link href={`/c/${c.id}`} className="mt-3 flex items-center gap-3">
               <CommunityBadge id={c.id} name={c.name} size={44} logo={c.logo_path || null} accent={c.accent || null} />
               <span className="min-w-0"><span className="block truncate font-medium hover:underline">{c.name}</span><span className="block text-xs text-muted">{pluralize(c.member_count, "member", "members")}</span></span>
@@ -167,7 +167,7 @@ async function EventView({ params }: { params: PageProps<"/events/[id]">["params
         )}
         {[["More from the host", moreList], ["Similar events", similarList]].map(([title, list]) => (list as Mini[]).length > 0 && (
           <Panel key={title as string} className="p-5">
-            <h2 className="text-xs font-medium tracking-wide text-faint uppercase">{title as string}</h2>
+            <h2 className="text-xs font-medium text-muted">{title as string}</h2>
             <ul className="mt-2 space-y-1">
               {(list as Mini[]).map((x) => (
                 <li key={x.id}>

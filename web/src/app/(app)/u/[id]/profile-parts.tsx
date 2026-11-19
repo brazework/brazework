@@ -11,8 +11,8 @@ import { confirmedBy, ledTitle, type StudyProof } from "@/lib/study";
 
 export function SideCard({ title, children, className }: { title: string; children: React.ReactNode; className?: string }) {
   return (
-    <section className={cn("glass-card rounded-3xl p-5", className)}>
-      <h2 className="text-xs font-medium tracking-wide text-faint uppercase">{title}</h2>
+    <section className={cn("border border-line bg-surface rounded-2xl p-5", className)}>
+      <h2 className="text-xs font-medium text-muted">{title}</h2>
       <div className="mt-2">{children}</div>
     </section>
   );
@@ -27,7 +27,7 @@ export function ProfileStrength({ steps }: { steps: Step[] }) {
   const pct = Math.round((done / steps.length) * 100);
   const next = steps.filter((s) => !s.done).slice(0, 3);
   return (
-    <section aria-label="Profile strength" className="glass-card rounded-3xl p-5">
+    <section aria-label="Profile strength" className="border border-line bg-surface rounded-2xl p-5">
       <div className="flex items-center justify-between gap-3">
         <div>
           <h2 className="font-semibold">Profile strength</h2>
@@ -36,7 +36,7 @@ export function ProfileStrength({ steps }: { steps: Step[] }) {
         <span className="flex items-center gap-1"><span className="text-2xl font-semibold tabular-nums">{pct}%</span><DismissButton id="profile-strength" label="Hide profile strength" className="-mr-2" /></span>
       </div>
       <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-surface-2" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label="Profile strength">
-        <div className="bg-accent-grad h-full rounded-full transition-[width] duration-700" style={{ width: `${pct}%` }} />
+        <div className="bg-text h-full rounded-full transition-[width] duration-700" style={{ width: `${pct}%` }} />
       </div>
       <ul className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-3">
         {next.map((s) => (
@@ -67,7 +67,7 @@ export function ProofTimeline({ items, own, led = [] }: { items: ProofItem[]; ow
     ) : null;
   const day = (d: string) => new Date(`${d}T12:00:00Z`).toLocaleDateString("en-US", { month: "short", year: "numeric" });
   return (
-    <section aria-label="Club-verified work" className="glass-card rounded-3xl p-5">
+    <section aria-label="Club-verified work" className="border border-line bg-surface rounded-2xl p-5">
       <h2 className="flex items-center gap-2 font-semibold"><Seal size={20} /> Proof <span className="text-sm font-normal text-muted">· signed by people who saw it</span></h2>
       <ol className="relative mt-4 space-y-5 before:absolute before:top-2 before:bottom-2 before:left-[15px] before:w-px before:bg-line">
         {items.slice(0, 6).map((m) => (
@@ -102,7 +102,7 @@ export function ProofTimeline({ items, own, led = [] }: { items: ProofItem[]; ow
 export function SharedContext({ clubs, mutual, mutualCount }: { clubs: { id: string; name: string }[]; mutual: string[]; mutualCount: number }) {
   if (!clubs.length && !mutualCount) return null;
   return (
-    <p className="glass-card flex flex-wrap items-center gap-x-2 gap-y-1 rounded-2xl px-4 py-3 text-sm text-text-2">
+    <p className="border border-line bg-surface flex flex-wrap items-center gap-x-2 gap-y-1 rounded-2xl px-4 py-3 text-sm text-text-2">
       <Users className="size-4 shrink-0 text-faint" />
       {clubs.length > 0 && <span>You&apos;re both in {clubs.slice(0, 2).map((c, i) => <span key={c.id}>{i > 0 && " and "}<Link href={`/c/${c.id}`} className="font-medium text-text hover:underline">{c.name}</Link></span>)}{clubs.length > 2 && ` and ${clubs.length - 2} more`}.</span>}
       {mutualCount > 0 && <span>{followedBy(mutual.filter(Boolean).slice(0, 2), mutualCount)}</span>}

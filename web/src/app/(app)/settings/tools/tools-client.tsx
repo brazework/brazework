@@ -1,6 +1,6 @@
 "use client";
 import { Orb } from "@/components/landing/orb";
-import { ArrowLeft, ArrowUpRight, Check, CircleDot, Copy, FileCode2, KeyRound, Loader2, Lock, PenLine, ShieldCheck, Sparkles, Terminal, X } from "lucide-react";
+import { ArrowLeft, ArrowUpRight, Check, CircleDot, Copy, FileCode2, KeyRound, Loader2, Lock, PenLine, ShieldCheck, Sparkles, Terminal, X, Plug } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import Link from "next/link";
 import { useCallback, useEffect, useState, useTransition } from "react";
@@ -35,7 +35,7 @@ export function ToolsHub({ tokens, endpoint, writes = false, drafts = false, pro
   return (
     <div className="mt-6 space-y-6">
       {/* What it is, in one card: your agent reads your Brazework, safely. */}
-      <section className="glass-card relative overflow-hidden rounded-3xl p-6 sm:p-7">
+      <section className="border border-line bg-surface relative overflow-hidden rounded-2xl p-6 sm:p-7">
         <div className="relative flex items-start gap-4">
           {/* The orb from the landing page (FIX-92): your agent and Brazework, connected. */}
           <Orb tone="auto" className="size-14 shrink-0" />
@@ -46,13 +46,13 @@ export function ToolsHub({ tokens, endpoint, writes = false, drafts = false, pro
         </div>
         <div className="relative mt-5 grid gap-4 sm:grid-cols-2">
           <div>
-            <p className="text-xs font-medium tracking-wide text-faint uppercase">It can read</p>
+            <p className="text-xs font-medium text-muted">It can read</p>
             <ul className="mt-2 space-y-1.5 text-sm">
               {CAN.map((c) => <li key={c} className="flex items-center gap-2 text-text-2"><Check className="size-3.5 shrink-0 text-ok" />{c}</li>)}
             </ul>
           </div>
           <div>
-            <p className="text-xs font-medium tracking-wide text-faint uppercase">Try asking</p>
+            <p className="text-xs font-medium text-muted">Try asking</p>
             <ul className="mt-2 space-y-1.5 text-sm">
               {ASK.map((a) => <li key={a} className="flex items-start gap-2 text-text-2"><Sparkles className="mt-0.5 size-3.5 shrink-0 text-muted" />&ldquo;{a}&rdquo;</li>)}
             </ul>
@@ -77,7 +77,7 @@ export function ToolsHub({ tokens, endpoint, writes = false, drafts = false, pro
             return (
               <li key={t.id}>
                 <button type="button" onClick={() => setOpen(t)} aria-label={`Connect ${t.name}`}
-                  className="group glass-card flex h-full w-full items-start gap-3 rounded-3xl p-4 text-left transition hover:border-line-strong active:scale-[0.99]">
+                  className="group border border-line bg-surface flex h-full w-full items-start gap-3 rounded-2xl p-4 text-left transition hover:border-line-strong active:scale-[0.99]">
                   <span className="grid size-11 shrink-0 place-items-center rounded-2xl border border-line bg-surface-2 font-mono text-sm font-semibold tracking-tight">{t.monogram}</span>
                   <span className="min-w-0 flex-1">
                     {/* The status wraps under the name rather than squeezing it onto two lines. */}
@@ -96,11 +96,12 @@ export function ToolsHub({ tokens, endpoint, writes = false, drafts = false, pro
           })}
           <li>
             <div className="flex h-full items-start gap-3 rounded-3xl border border-dashed border-line p-4 text-left">
-              <span className="grid size-11 shrink-0 place-items-center rounded-2xl border border-line text-faint"><Lock className="size-4" /></span>
+              <span className="grid size-11 shrink-0 place-items-center rounded-2xl border border-line text-faint">{signIn ? <Plug className="size-4" /> : <Lock className="size-4" />}</span>
               <span className="min-w-0">
                 <span className="font-semibold tracking-tight text-text-2">Claude app</span>
                 <span className="mt-0.5 block text-xs text-faint">claude.ai and Claude Desktop</span>
-                <span className="mt-2 block text-sm text-muted">One-click sign-in is coming. Use Claude Code meanwhile.</span>
+                {/* Same words as the public guide (/ai): a custom connector with the sign-in address above. */}
+                <span className="mt-2 block text-sm text-muted">{signIn ? "In Claude: Settings, Connectors, Add custom connector. Paste the address above, then sign in to Brazework when it asks." : "One-click sign-in isn't switched on yet. Use Claude Code meanwhile."}</span>
               </span>
             </div>
           </li>
@@ -242,7 +243,7 @@ function StepView({ step }: { step: Step }) {
   if (step.kind === "link") {
     return (
       <div>
-        <a href={step.href} className="bg-accent-grad inline-flex h-11 items-center gap-2 rounded-lg px-5 text-sm font-medium text-on-accent transition active:translate-y-0">{step.label} <ArrowUpRight className="size-4" /></a>
+        <a href={step.href} className="bg-text inline-flex h-11 items-center gap-2 rounded-lg px-5 text-sm font-medium text-surface transition active:translate-y-0">{step.label} <ArrowUpRight className="size-4" /></a>
         {step.note && <p className="mt-2 text-xs text-muted">{step.note}</p>}
       </div>
     );
@@ -273,8 +274,8 @@ function Connected({ tokens, writes, onRevoke, onPost }: { tokens: ApiToken[]; w
   if (!tokens.length) return null;
   return (
     <section aria-label="Your tokens">
-      <h2 className="text-xs font-medium tracking-wide text-faint uppercase">Your tokens</h2>
-      <ul className="glass-card mt-3 divide-y divide-line overflow-hidden rounded-3xl">
+      <h2 className="text-xs font-medium text-muted">Your tokens</h2>
+      <ul className="border border-line bg-surface mt-3 divide-y divide-line overflow-hidden rounded-2xl">
         {tokens.map((t) => {
           const tool = toolFor(t.name);
           const on = isConnected(t);

@@ -8,6 +8,9 @@
 // verified company signing a milestone (supabase/pro-verification.sql).
 
 export const PLUS = { name: "Plus", student: 6, everyone: 12 };
+// What Plus will add but doesn't yet. Every page that lists Plus marks these "coming soon", so nobody
+// pays for something that isn't built. Move an item out of this list when it ships.
+export const PLUS_SOON = ["Your own profile link", "A PDF portfolio of your signed work", "More AI drafts from your tools"];
 
 export type Audience = "builders" | "companies" | "organizations";
 export type Tier = {
@@ -30,7 +33,7 @@ export const TIERS: Tier[] = [
   },
   {
     id: "plus", audience: "builders", name: PLUS.name, price: `$${PLUS.student}/mo`, note: `For students. $${PLUS.everyone}/mo for everyone else.`,
-    points: ["Everything in Free", "Every company that looked in the last 90 days, not just this week", "Your own profile link", "A PDF portfolio of your signed work", "More AI drafts from your tools"],
+    points: ["Everything in Free", "Every company that looked in the last 90 days, not just this week", ...PLUS_SOON.map((x) => `${x} (coming soon)`)],
     cta: { label: "Get Plus", href: "/plus" },
   },
   {

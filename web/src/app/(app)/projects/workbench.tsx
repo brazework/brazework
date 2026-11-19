@@ -10,7 +10,7 @@ export type BenchProject = { id: string; title: string; summary: string; status:
 export function Workbench({ projects, interests, copilot, stack, specsOn = false, filesOn = false }: { projects: BenchProject[]; interests: string[]; copilot: boolean; stack: boolean; specsOn?: boolean; filesOn?: boolean }) {
   if (!projects.length) {
     return (
-      <section aria-label="Your builds" className="glass-card mt-6 rounded-3xl p-6">
+      <section aria-label="Your projects" className="sheet-grid mt-6 rounded-2xl border border-dashed border-line-strong p-6">
         <h2 className="text-lg font-semibold tracking-tight">Start your first project</h2>
         <p className="mt-1 max-w-xl text-sm text-muted">A project is anything you&apos;re building: a robot, a rocket, a model, an experiment, an app. Post updates as you go, and your club verifies the milestones.</p>
         <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -34,10 +34,10 @@ export function Workbench({ projects, interests, copilot, stack, specsOn = false
   }
   const { thisWeek, signed, waiting } = weekSummary(projects);
   return (
-    <section aria-label="Your builds" className="mt-6">
+    <section aria-label="Your projects" className="mt-6">
       <div className="flex items-end justify-between gap-3">
         <div>
-          <h2 className="text-lg font-semibold tracking-tight">Your builds</h2>
+          <h2 className="text-lg font-semibold tracking-tight">Your projects</h2>
           {/* The week and the record at a glance: what you logged, and how much of your work someone has signed. */}
           <p className="mt-0.5 text-sm text-muted tabular-nums">
             {thisWeek ? `${thisWeek} update${thisWeek === 1 ? "" : "s"} this week` : "Nothing logged this week yet"} · <span className={signed ? "font-medium text-ok" : undefined}>{signed} signed result{signed === 1 ? "" : "s"}</span>{waiting ? ` · ${waiting} waiting on a signature` : ""}

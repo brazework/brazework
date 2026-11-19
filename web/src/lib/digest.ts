@@ -18,10 +18,10 @@ export function buildDigest(first: string, items: WeekItem[], site: string): { s
   const settings = `${site}/settings#email`;
   const text = [
     hi, "", "Here's your week on Brazework:", "",
-    ...items.map((i) => `- ${i.text}${i.action ? ` (${i.action}: ${site}${weekLink(i)})` : ""}`),
+    ...items.map((i) => `- ${i.email ?? i.text}${i.action ? ` (${i.action}: ${site}${weekLink(i)})` : ""}`),
     "", `Open Brazework: ${site}/feed`, "", `You get this weekly. Turn it off in Settings: ${settings}`,
   ].join("\n");
-  const rows = items.map((i) => `<li style="margin:0 0 10px">${esc(i.text)}${i.action ? ` <a href="${esc(site + weekLink(i))}" style="color:#111;font-weight:600">${esc(i.action)} →</a>` : ""}</li>`).join("");
+  const rows = items.map((i) => `<li style="margin:0 0 10px">${esc(i.email ?? i.text)}${i.action ? ` <a href="${esc(site + weekLink(i))}" style="color:#111;font-weight:600">${esc(i.action)} →</a>` : ""}</li>`).join("");
   const html = `<div style="font-family:-apple-system,Segoe UI,Helvetica,Arial,sans-serif;font-size:15px;line-height:1.5;color:#111;max-width:520px">
 <p>${esc(hi)}</p><p>Here's your week on Brazework:</p><ul style="padding-left:18px">${rows}</ul>
 <p><a href="${esc(site)}/feed" style="display:inline-block;background:#111;color:#fff;padding:10px 18px;border-radius:999px;text-decoration:none">Open Brazework</a></p>
