@@ -1,6 +1,7 @@
 import type * as THREE_NS from "three";
 import type { OrbitControls as Controls } from "three/examples/jsm/controls/OrbitControls.js";
 import type { RoomEnvironment as Room } from "three/examples/jsm/environments/RoomEnvironment.js";
+import { SLATE_EDGE, applySlate } from "./model-slate";
 import { EDGE_LIMIT, cameraFor, explodeOffsets, fitDistance, type Look, type V3, type ViewId } from "@/lib/model-view";
 
 // The 3D viewer's stage (model-viewer.tsx is its shell): given any three.js object, it lights it like
@@ -40,12 +41,12 @@ export function measure(THREE: Three, object: Obj): { size: V3; triangles: numbe
 }
 
 /** Put `object` on a stage inside `el`. Throws if the browser can't start WebGL. */
-export function createStage(THREE: Three, { OrbitControls, RoomEnvironment }: Libs, el: HTMLElement, object: Obj, opts: { spin: boolean; coarse: boolean; still: boolean; snug?: boolean; dimText: [string, string, string]; onSpin: (on: boolean) => void }): Stage {
+export function createStage(THREE: Three, { OrbitControls, RoomEnvironment }: Libs, el: HTMLElement, object: Obj, opts: { spin: boolean; coarse: boolean; still: boolean; snug?: boolean; slate?: boolean; dimText: [string, string, string]; onSpin: (on: boolean) => void }): Stage {
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
   renderer.outputColorSpace = THREE.SRGBColorSpace;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.05;
+  renderer.toneMappingExposure = opts.slate ? 0.92 : 1.05;
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   const canvas = renderer.domElement;
@@ -67,16 +68,21 @@ export function createStage(THREE: Three, { OrbitControls, RoomEnvironment }: Li
   for (const m of meshes) { m.castShadow = true; m.receiveShadow = true; }
   // The world it stands in, in the model's own coordinates (so it shares the pivot), outside what's measured.
   const setting = object.userData.setting as THREE_NS.Group | undefined;
-  if (setting) { pivot.add(setting); setting.traverse((c) => { if ((c as Mesh).isMesh) (c as Mesh).receiveShadow = true; }); }
+  // In the slate finish the model stands on a seamless studio sweep instead: just its soft shadow.
+  if (setting && !opts.slate) { pivot.add(setting); setting.traverse((c) => { if ((c as Mesh).isMesh) (c as Mesh).receiveShadow = true; }); }
   const live: Live[] = (object.userData.live as Live[] | undefined) ?? [];
+  // The slate finish (model-slate.ts): stone greys and crisp edges, like a studio render. Before the
+  // looks below keep each part's "solid" material, so see-through and blueprint return to slate.
+  if (opts.slate) applySlate(THREE, object);
 
   // Light: a soft room all around (reflections and fill), one key light for shape and the shadow.
   const pmrem = new THREE.PMREMGenerator(renderer);
   const room = new RoomEnvironment();
   const env = pmrem.fromScene(room, 0.04);
   scene.environment = env.texture;
-  scene.environmentIntensity = 0.85;
-  const key = new THREE.DirectionalLight(0xffffff, 1.7);
+  // Slate is lit more by the key and rim than the room, so its greys hold their depth.
+  scene.environmentIntensity = opts.slate ? 0.55 : 0.85;
+  const key = new THREE.DirectionalLight(0xffffff, opts.slate ? 1.45 : 1.7);
   key.position.set(0.9, 2.1, 1.3).multiplyScalar(radius * 2);
   key.castShadow = true;
   key.shadow.mapSize.set(2048, 2048);
@@ -90,7 +96,7 @@ export function createStage(THREE: Three, { OrbitControls, RoomEnvironment }: Li
   const rim = new THREE.DirectionalLight(0xffffff, 1.15);
   rim.position.set(-1.3, 1.5, -1.7).multiplyScalar(radius * 2);
   scene.add(rim);
-  const ground = new THREE.Mesh(new THREE.PlaneGeometry(radius * 14, radius * 14), new THREE.ShadowMaterial({ opacity: 0.3 }));
+  const ground = new THREE.Mesh(new THREE.PlaneGeometry(radius * 14, radius * 14), new THREE.ShadowMaterial({ opacity: opts.slate ? 0.42 : 0.3 }));
   ground.rotation.x = -Math.PI / 2;
   ground.position.y = -size.y / 2 - radius * 0.002; // a hair under the base, so it never shows through
   ground.receiveShadow = true;
@@ -266,7 +272,7 @@ export function createStage(THREE: Three, { OrbitControls, RoomEnvironment }: Li
   controls.enableZoom = false;
   controls.enablePan = false;
 
-  return {
+  const stage: Stage = {
     live: live.length > 0,
     setView(id) {
       const p = cameraFor(id, dims, camera.aspect), k = pad(), to: V3 = [p[0] * k, p[1] * k, p[2] * k];
@@ -277,9 +283,10 @@ export function createStage(THREE: Three, { OrbitControls, RoomEnvironment }: Li
     setLook(next) {
       if (next !== "solid") rest();
       look = next;
-      if (setting) setting.visible = next === "solid";
+      if (setting) setting.visible = next === "solid" && !opts.slate;
       pool.visible = next !== "blueprint";
-      const lines = next !== "solid" && total <= EDGE_LIMIT;
+      // Slate draws its edges in the normal look too, softly; the others draw them only to see through.
+      const lines = (next !== "solid" || !!opts.slate) && total <= EDGE_LIMIT;
       for (const k of kept) {
         if (next === "ghost") k.mesh.material = k.ghost ??= Array.isArray(k.solid) ? k.solid.map(ghostOf) : ghostOf(k.solid);
         else if (next === "blueprint") {
@@ -298,8 +305,8 @@ export function createStage(THREE: Three, { OrbitControls, RoomEnvironment }: Li
         }
         if (k.edges) {
           k.edges.visible = lines;
-          k.edges.material.color.copy(next === "blueprint" ? new THREE.Color(LINE) : ink());
-          k.edges.material.opacity = next === "blueprint" ? 0.95 : 0.85;
+          k.edges.material.color.copy(next === "blueprint" ? new THREE.Color(LINE) : next === "solid" ? new THREE.Color().setHex(SLATE_EDGE, THREE.SRGBColorSpace) : ink());
+          k.edges.material.opacity = next === "blueprint" ? 0.95 : next === "solid" ? 0.32 : 0.85;
         }
         k.mesh.castShadow = next === "solid";
       }
@@ -339,4 +346,6 @@ export function createStage(THREE: Three, { OrbitControls, RoomEnvironment }: Li
       canvas.remove();
     },
   };
+  if (opts.slate) stage.setLook("solid"); // draws the slate edges
+  return stage;
 }

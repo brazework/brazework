@@ -1,6 +1,6 @@
 "use client";
 import { AnimatePresence, motion } from "motion/react";
-import { BadgeCheck, Bell, Bookmark, CalendarDays, FolderGit2, Hammer, Inbox, LayoutDashboard, LogOut, Network, PanelLeftClose, PanelLeftOpen, PenLine, Plus, Search, Settings, Sparkles, Sun, Trophy, UserRound, Users, X } from "lucide-react";
+import { BadgeCheck, Bell, Bookmark, CalendarDays, FolderGit2, House, Inbox, LayoutDashboard, LogOut, Network, PanelLeftClose, PanelLeftOpen, PenLine, Plus, Search, Settings, Sparkles, Sun, Trophy, UserRound, Users, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -15,12 +15,12 @@ import { Ember } from "@/components/ember/ember";
 
 export type Badges = Record<BadgeKey, number>;
 
-// The five places of the signed-in app (redesign stage 1), each answering one question: Today (what
-// needs me?), Build (what am I making?), Club (what's my team doing?), Proof (what have I proven?),
+// The five places of the signed-in app, each answering one question: Home (what needs me?), Projects
+// (what am I making?), Clubs (what's my team doing?), Record (what have I done, and who signed it?),
 // Inbox (who's reaching out?). The list itself, and which place a page belongs to, live in
 // lib/places.ts; here they only get their icons. There is no More drawer: every other page sits inside
 // one of the five, a tab away (components/app/place-tabs.tsx), and settings are on your avatar.
-const PLACE_ICON: Record<PlaceId, typeof Sun> = { today: Sun, build: Hammer, club: Users, proof: BadgeCheck, inbox: Inbox };
+const PLACE_ICON: Record<PlaceId, typeof Sun> = { home: House, projects: FolderGit2, clubs: Users, record: BadgeCheck, inbox: Inbox };
 const NAV = PLACES.map((p) => ({ ...p, icon: PLACE_ICON[p.id] }));
 
 // Phones keep one sheet with every page inside the places (lib/places.ts MENU_PAGES).
@@ -122,10 +122,10 @@ export function Sidebar({ first, last, userId, badges, avatar, initialCollapsed 
       </nav>
       {/* Your clubs scroll on short screens, so the five places are always whole. */}
       <div className="no-scrollbar -mx-1 min-h-0 flex-1 overflow-y-auto px-1 pb-2">
-      {/* Your builds, one click away: the ones you touched last. */}
+      {/* Your projects, one click away: the ones you touched last. */}
       {builds.length > 0 && (
-        <div aria-label="Your builds" role="group" className={cn("mt-5 flex flex-col gap-0.5", collapsed ? "items-center border-t border-line pt-4" : GROUP)}>
-          {!collapsed && <div className={GROUP_LABEL}>Your builds</div>}
+        <div aria-label="Your projects" role="group" className={cn("mt-5 flex flex-col gap-0.5", collapsed ? "items-center border-t border-line pt-4" : GROUP)}>
+          {!collapsed && <div className={GROUP_LABEL}>Projects</div>}
           {builds.map((b) => {
             const active = path === `/projects/${b.id}` || path.startsWith(`/projects/${b.id}/`);
             return (
@@ -142,7 +142,7 @@ export function Sidebar({ first, last, userId, badges, avatar, initialCollapsed 
       {/* Your clubs, one click away. */}
       {clubs.length > 0 && (
         <div aria-label="Your clubs" role="group" className={cn("mt-5 flex flex-col gap-0.5", collapsed ? "items-center border-t border-line pt-4" : GROUP)}>
-          {!collapsed && <div className={GROUP_LABEL}>Your clubs</div>}
+          {!collapsed && <div className={GROUP_LABEL}>Clubs</div>}
           {clubs.map((c) => {
             const active = path.startsWith(`/c/${c.id}`);
             return (

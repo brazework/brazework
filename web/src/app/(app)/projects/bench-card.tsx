@@ -81,7 +81,7 @@ export function BenchCard({ p, attach = false }: { p: BenchProject; attach?: boo
         <Link href={`/projects/${p.id}#milestones`} className={cn("inline-flex h-9 items-center gap-1.5 rounded-lg px-3.5 text-xs font-medium transition", step.kind === "verify" ? "bg-accent-grad text-on-accent" : "border border-line hover:bg-hover")}>
           <ShieldCheck className="size-3.5" /> {step.kind === "verify" ? "Get it signed" : p.verified ? "Milestones" : "Add a milestone"}
         </Link>
-        {p.verified > 0 && <Link href="/profile" className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-line px-3.5 text-xs font-medium transition hover:bg-hover"><BadgeCheck className="size-3.5" /> On your Proof</Link>}
+        {p.verified > 0 && <Link href="/profile" className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-line px-3.5 text-xs font-medium transition hover:bg-hover"><BadgeCheck className="size-3.5" /> On your record</Link>}
         {p.model && (
           <button type="button" onClick={() => setIn3d(!in3d)} aria-expanded={in3d} title={p.model.name} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-line px-3.5 text-xs font-medium transition hover:bg-hover">
             {in3d ? <X className="size-3.5" /> : <Box className="size-3.5" />} {in3d ? "Close 3D" : "View in 3D"}
