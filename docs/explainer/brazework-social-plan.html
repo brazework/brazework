@@ -1,0 +1,534 @@
+<title>Brazework Social Plan</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a calendar read top to bottom (prep, then four weeks); each post is a row with its day on the left and the script on the right. Brand tokens from the app (ink, verified green), Geist + Geist Mono. */
+:root {
+  --bg: #fbfbfa; --surface: #ffffff; --surface-2: #f3f3f1; --line: #e4e4e0; --line-2: #cfcfca;
+  --fg: #1f1f1d; --fg-2: #4a4945; --muted: #6f6e69;
+  --ok: #15803d; --ok-bg: #e5f3ea; --wait: #b45309; --wait-bg: #fbefdf;
+  --x: #1f1f1d; --li: #0a66c2; --yt: #c4302b; --ig: #b4317a;
+  --display: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #121211; --surface: #1a1a19; --surface-2: #222220; --line: #2f2f2c; --line-2: #45453f;
+  --fg: #f2f2ef; --fg-2: #c4c3be; --muted: #9a9993;
+  --ok: #4ade80; --ok-bg: #12301f; --wait: #f5a524; --wait-bg: #33240c;
+  --x: #e9e9e4; --li: #70b5f9; --yt: #ff7a72; --ig: #f08ac4; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #121211; --surface: #1a1a19; --surface-2: #222220; --line: #2f2f2c; --line-2: #45453f;
+  --fg: #f2f2ef; --fg-2: #c4c3be; --muted: #9a9993;
+  --ok: #4ade80; --ok-bg: #12301f; --wait: #f5a524; --wait-bg: #33240c;
+  --x: #e9e9e4; --li: #70b5f9; --yt: #ff7a72; --ig: #f08ac4; color-scheme: dark; }
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font-family: var(--display); font-size: 16px; line-height: 1.6;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 0 64px; }
+.wrap { max-width: 960px; margin: 0 auto; display: flex; flex-direction: column; gap: 64px; }
+h1, h2, h3 { margin: 0; text-wrap: balance; letter-spacing: -0.02em; }
+h1 { font-size: clamp(2rem, 4.6vw, 3rem); line-height: 1.08; font-weight: 700; }
+h2 { font-size: clamp(1.4rem, 3vw, 1.85rem); line-height: 1.2; font-weight: 650; }
+h3 { font-size: 1.05rem; font-weight: 600; letter-spacing: -0.01em; }
+p { margin: 0; max-width: 68ch; color: var(--fg-2); }
+code { font-family: var(--mono); font-size: 0.86em; background: var(--surface-2); border: 1px solid var(--line); border-radius: 5px; padding: 0.05em 0.35em; }
+section { display: flex; flex-direction: column; gap: 20px; scroll-margin-top: 24px; }
+.small { font-size: 0.88rem; color: var(--muted); }
+
+nav.top { display: flex; flex-wrap: wrap; gap: 6px 18px; padding-block: 22px 0; font-size: 0.9rem; color: var(--muted); }
+nav.top a { color: inherit; text-decoration: none; } nav.top a:hover, nav.top a:focus-visible { color: var(--fg); text-decoration: underline; }
+nav.top .brand { color: var(--fg); font-weight: 650; margin-right: auto; }
+
+header { display: flex; flex-direction: column; gap: 16px; }
+.lede { font-size: 1.12rem; }
+.facts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+.fact { border-top: 2px solid var(--fg); padding-top: 8px; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.fact b { font-size: 1.05rem; }
+.fact span { font-size: 0.86rem; color: var(--muted); }
+
+.rules { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 28px; padding: 0; margin: 0; list-style: none; }
+.rules li { display: grid; grid-template-columns: 18px 1fr; gap: 8px; font-size: 0.95rem; color: var(--fg-2); }
+.rules li::before { content: ""; width: 8px; height: 8px; margin-top: 8px; border-radius: 50%; background: var(--ok); }
+
+.week-head { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 6px 16px; border-bottom: 1px solid var(--line-2); padding-bottom: 10px; }
+.week-head .dates { font-family: var(--mono); font-size: 0.85rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+
+.posts { display: flex; flex-direction: column; gap: 12px; }
+.post { display: grid; grid-template-columns: 96px 1fr; gap: 18px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 16px 18px; }
+.post > * { min-width: 0; }
+.day { display: flex; flex-direction: column; gap: 2px; }
+.day b { font-size: 0.95rem; }
+.day span { font-family: var(--mono); font-size: 0.8rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.body { display: flex; flex-direction: column; gap: 10px; }
+.meta { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.chip { font-size: 0.76rem; font-weight: 600; padding: 2px 8px; border-radius: 999px; border: 1px solid currentColor; line-height: 1.5; }
+.chip.x { color: var(--x); } .chip.li { color: var(--li); } .chip.yt { color: var(--yt); } .chip.ig { color: var(--ig); }
+.fmt { font-size: 0.82rem; color: var(--muted); }
+.hook { font-weight: 600; font-size: 1.02rem; line-height: 1.4; }
+.hook::before { content: "Hook: "; color: var(--muted); font-weight: 500; }
+.shots { margin: 0; padding-left: 1.15em; display: flex; flex-direction: column; gap: 3px; color: var(--fg-2); font-size: 0.93rem; }
+.cap { display: flex; flex-direction: column; gap: 6px; }
+.cap-head { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.cap-head span { font-size: 0.82rem; color: var(--muted); }
+.cap textarea { width: 100%; min-height: 96px; resize: vertical; font: inherit; font-size: 0.9rem; line-height: 1.5; color: var(--fg); background: var(--surface-2); border: 1px solid var(--line); border-radius: 8px; padding: 9px 11px; }
+.flag { font-size: 0.85rem; background: var(--wait-bg); color: var(--wait); border-radius: 8px; padding: 6px 10px; }
+button.copy { font: inherit; font-size: 0.8rem; font-weight: 500; padding: 4px 11px; border-radius: 8px; border: 1px solid var(--line-2); background: var(--surface); color: var(--fg); cursor: pointer; }
+button.copy:hover { background: var(--surface-2); }
+button:focus-visible, a:focus-visible, textarea:focus-visible { outline: 2px solid var(--ok); outline-offset: 2px; }
+
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 18px; display: flex; flex-direction: column; gap: 10px; }
+.panel ul { margin: 0; padding-left: 1.1em; color: var(--fg-2); font-size: 0.94rem; display: flex; flex-direction: column; gap: 5px; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+.grid2 > * { min-width: 0; }
+
+.tbl { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+table { border-collapse: collapse; width: 100%; font-size: 0.92rem; min-width: 640px; }
+th, td { text-align: left; padding: 10px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { font-size: 0.82rem; font-weight: 600; color: var(--muted); background: var(--surface-2); }
+td.blank { color: var(--line-2); font-family: var(--mono); }
+tr:last-child td { border-bottom: 0; }
+
+footer { font-size: 0.85rem; color: var(--muted); border-top: 1px solid var(--line); padding-top: 18px; }
+
+@media (max-width: 760px) {
+  .facts { grid-template-columns: 1fr 1fr; }
+  .rules, .grid2 { grid-template-columns: 1fr; }
+  .post { grid-template-columns: 1fr; gap: 10px; }
+  .day { flex-direction: row; gap: 10px; align-items: baseline; }
+}
+</style>
+
+<div class="wrap">
+  <nav class="top" aria-label="Sections">
+    <span class="brand">Brazework</span>
+    <a href="#launch">Launch weekend</a><a href="#rules">Rules</a><a href="#prep">Prep</a><a href="#w1">Week 1</a><a href="#w2">Week 2</a><a href="#w3">Week 3</a><a href="#w4">Week 4</a><a href="#measure">Measure</a>
+  </nav>
+
+  <header>
+    <h1>Four weeks of posts, from zero users to launch day</h1>
+    <p class="lede">The goal is to give people a reason to log their first build. Every post ends with something a viewer can do alone in a minute: connect their AI, run <code>/start</code>, and see their first draft. Signatures come second. Two founders, about four hours a week: one batch-recording session on Sunday, then post and reply each day.</p>
+    <div class="facts">
+      <div class="fact"><b>Nov 23 to Dec 20</b><span>prep starts Nov 20</span></div>
+      <div class="fact"><b>4 to 5 posts a week</b><span>one recording, cut 4 ways</span></div>
+      <div class="fact"><b>X, LinkedIn, YouTube, Instagram</b><span>TikTok gets the Instagram cuts</span></div>
+      <div class="fact"><b>Launch Sun Nov 22</b><span>12:01 am Pacific</span></div>
+    </div>
+  </header>
+
+  <section id="launch">
+    <div class="week-head"><h2>Launch weekend</h2><span class="dates">Thu Nov 19 to Sun Nov 22</span></div>
+    <p>Launching Sunday means the four weeks below run after launch, as the push that keeps people coming. Weekend launches usually face less competition on Product Hunt and also get less traffic, so the people you bring yourselves matter even more.</p>
+    <div class="posts">
+      <article class="post">
+        <div class="day"><b>Thu–Fri</b><span>Nov 19–20</span></div>
+        <div class="body">
+          <h3>Set up and film</h3>
+          <ol class="shots">
+            <li>Create the Product Hunt page: name, tagline ("Your AI drafts the proof. A person who saw it signs."), five gallery shots, the maker's first comment from the launch kit. Schedule it for Sunday.</li>
+            <li>Claim the handles, update both founders' bios, and hide the TEST milestone.</li>
+            <li>Friday: film the Rocket Showcase and the launch party (with permission).</li>
+            <li>Confirm signature emails send in production, and add a free uptime monitor on <code>/api/health</code>.</li>
+          </ol>
+        </div>
+      </article>
+      <article class="post">
+        <div class="day"><b>Sat</b><span>Nov 21</span></div>
+        <div class="body">
+          <h3>Record, check, tell people</h3>
+          <ol class="shots">
+            <li>Record the 45-second launch video and the <code>/shipped</code> clip on the demo stack.</li>
+            <li>Evening: go through sign-up to the first draft on brazework.com yourselves, on a phone and a laptop.</li>
+            <li>Personal messages (not a blast) to everyone you know who builds, teaches or hires: "We launch on Product Hunt tomorrow. I'd love your honest take in the comments."</li>
+          </ol>
+          <div class="cap"><div class="cap-head"><span>Teaser post</span><button class="copy" type="button" data-copy="c01">Copy</button></div>
+            <textarea id="c01" aria-label="Teaser post for Saturday Nov 21">Tomorrow we launch Brazework on Product Hunt.
+
+AI made résumés free to write. Brazework is the record of what you build, signed by the people who saw it. Your AI assistant drafts the proof from GitHub, Onshape, W&B or Figma. A club officer, professor or manager signs it.
+
+Come tell us what you'd want signed. brazework.com/?ref=x-launch</textarea></div>
+        </div>
+      </article>
+      <article class="post">
+        <div class="day"><b>Sun</b><span>Nov 22</span></div>
+        <div class="body">
+          <h3>Launch day</h3>
+          <ol class="shots">
+            <li>12:01 am Pacific: the page goes live. Post the maker's first comment straight away.</li>
+            <li>Morning: the launch video on X, LinkedIn, Shorts and Reels, each linking the Product Hunt page.</li>
+            <li>All day: both founders answer every comment on Product Hunt and every platform. Ask people to look, never to upvote.</li>
+            <li>Evening: write down the real numbers for Monday's post.</li>
+          </ol>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section id="rules">
+    <h2>House rules</h2>
+    <ul class="rules">
+      <li>Real people only. No made-up users, testimonials or numbers. Anything from the demo stack is labelled "Example" on screen.</li>
+      <li>Film people only with their permission, including everyone at the Rocket Showcase and in the pilot.</li>
+      <li>Never show or mention anything from Josh's or Ian's employers.</li>
+      <li>Every video has burned-in captions. Most people watch on mute, and it's the accessible way.</li>
+      <li>Post from Josh's and Ian's own accounts first, and share from the Brazework accounts. People follow people.</li>
+      <li>Every link carries its source: <code>brazework.com/?ref=x-w1</code> (platform, then week).</li>
+      <li>One call to action per post, and it's always something a viewer can do alone: "Log your first build in 60 seconds."</li>
+      <li>Reply to every comment within a few hours. Early replies matter more than the post itself.</li>
+    </ul>
+  </section>
+
+  <section id="prep">
+    <div class="week-head"><h2>Prep</h2><span class="dates">Fri Nov 20 to Sat Nov 21</span></div>
+    <div class="grid2">
+      <div class="panel">
+        <h3>Accounts and links</h3>
+        <ul>
+          <li>Claim the Brazework handle on X, Instagram, TikTok and YouTube, and a LinkedIn company page.</li>
+          <li>Josh and Ian update their bios: "Building Brazework: your AI drafts the proof, a person who saw it signs." with a link carrying <code>?ref=bio</code>.</li>
+          <li>Confirm that sign-ups record <code>?ref</code>. If they don't, add it to the launch tie-up PR.</li>
+          <li>Hide the TEST milestone on Josh's profile before anything is filmed.</li>
+        </ul>
+      </div>
+      <div class="panel">
+        <h3>Film this week's real moments</h3>
+        <ul>
+          <li><b>Fri Nov 20, Rocket Showcase</b> (Exit and Re-entry Vehicles, on campus): vertical clips of launches and builders, with permission. This is the best footage you'll get all month.</li>
+          <li><b>Fri Nov 20, Brazework launch party</b> (New York): 20 seconds of founders explaining Brazework to a guest, unscripted.</li>
+          <li><b>Sat Nov 21, batch 1</b> on the demo stack: the <code>/shipped</code> terminal clip, the 3D rocket and gearbox models, and the signed seal appearing.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section id="w1">
+    <div class="week-head"><h2>Week 1: why AI-proof work matters</h2><span class="dates">Nov 23 to Nov 29 · Thanksgiving Thu</span></div>
+    <div class="posts">
+
+      <article class="post">
+        <div class="day"><b>Mon</b><span>Nov 23</span></div>
+        <div class="body">
+          <div class="meta"><span class="chip li">LinkedIn</span><span class="chip x">X</span><span class="chip yt">Shorts</span><span class="chip ig">Reels</span><span class="fmt">40 s, founder to camera, 9:16 and 4:5</span></div>
+          <div class="hook">"AI can write your résumé in four seconds. Watch."</div>
+          <ol class="shots">
+            <li>A screen-recorded résumé line types itself: "Built and flew a high-power rocket." Then it deletes itself.</li>
+            <li>Josh to camera: "So what still counts? Work somebody saw you do."</li>
+            <li>The signed milestone card fills the screen, labelled Example.</li>
+            <li>"We're building Brazework. Your AI drafts the proof. A person who saw it signs. We launched yesterday. Follow along."</li>
+          </ol>
+          <div class="cap"><div class="cap-head"><span>Caption</span><button class="copy" type="button" data-copy="c11">Copy</button></div>
+            <textarea id="c11" aria-label="Caption for Monday Nov 23">AI made résumés free to write. It can't make a professor sign your flight log.
+
+We're building Brazework: your AI assistant drafts the proof of what you built, and a person who saw it signs.
+
+We launched on Product Hunt yesterday. Log your first build in 60 seconds: brazework.com/?ref=li-w1</textarea></div>
+        </div>
+      </article>
+
+      <article class="post">
+        <div class="day"><b>Tue</b><span>Nov 24</span></div>
+        <div class="body">
+          <div class="meta"><span class="chip x">X</span><span class="chip li">LinkedIn</span><span class="fmt">20 s screen recording, no voice, captions</span></div>
+          <div class="hook">"I merged a PR and typed one command."</div>
+          <ol class="shots">
+            <li>Claude Code beside GitHub. Type <code>/mcp__brazework__shipped</code>.</li>
+            <li>The assistant reads the PR and the CI run, then shows the milestone with two evidence links.</li>
+            <li>Type "yes". Cut to the Brazework draft, then the club verifies it and the seal appears.</li>
+          </ol>
+          <div class="cap"><div class="cap-head"><span>Caption</span><button class="copy" type="button" data-copy="c12">Copy</button></div>
+            <textarea id="c12" aria-label="Caption for Tuesday Nov 24">Merged a PR. Typed /shipped. Claude drafted the milestone from GitHub with the PR and the CI run as proof. My club signed it.
+
+That's Brazework's MCP server. Works in Claude, Cursor and VS Code.
+
+brazework.com/?ref=x-w1</textarea></div>
+        </div>
+      </article>
+
+      <article class="post">
+        <div class="day"><b>Wed</b><span>Nov 25</span></div>
+        <div class="body">
+          <div class="meta"><span class="chip ig">Reels</span><span class="chip ig">TikTok</span><span class="chip yt">Shorts</span><span class="fmt">15 s, Rocket Showcase footage</span></div>
+          <div class="hook">"This is how you prove you built a rocket."</div>
+          <ol class="shots">
+            <li>Real launch from Nov 20, shown slowed down.</li>
+            <li>Cut to the 3D rocket in Brazework lifting off on its pad.</li>
+            <li>The milestone "Flew to 1,140 m and was recovered intact" appears (Example), then the officer's seal.</li>
+          </ol>
+          <div class="cap"><div class="cap-head"><span>Caption</span><button class="copy" type="button" data-copy="c13">Copy</button></div>
+            <textarea id="c13" aria-label="Caption for Wednesday Nov 25">Anyone can say they built a rocket. On Brazework, the person who watched it fly signs it. 🚀
+
+Field 1 of 20: Aerospace. brazework.com/?ref=ig-w1</textarea></div>
+        </div>
+      </article>
+
+      <article class="post">
+        <div class="day"><b>Sat</b><span>Nov 28</span></div>
+        <div class="body">
+          <div class="meta"><span class="chip li">LinkedIn</span><span class="fmt">text post from Josh's account</span></div>
+          <div class="hook">"91% of recruiters have caught a candidate being deceptive."</div>
+          <div class="cap"><div class="cap-head"><span>Post</span><button class="copy" type="button" data-copy="c14">Copy</button></div>
+            <textarea id="c14" aria-label="LinkedIn post for Saturday Nov 28">91% of recruiters have caught a candidate being deceptive (Greenhouse, 2025). Profiles are free to fake now.
+
+What still carries signal is work somebody else saw happen: the officer who watched the test, the professor who ran the lab, the manager who reviewed the design.
+
+That's why we're building Brazework. Your AI assistant drafts the record of what you built, with the evidence attached, and the person who saw it signs it.
+
+If you hire engineers: what would you want signed?
+
+brazework.com/?ref=li-w1</textarea></div>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section id="w2">
+    <div class="week-head"><h2>Week 2: how it works</h2><span class="dates">Nov 30 to Dec 6</span></div>
+    <div class="posts">
+
+      <article class="post">
+        <div class="day"><b>Mon</b><span>Nov 30</span></div>
+        <div class="body">
+          <div class="meta"><span class="chip yt">YouTube</span><span class="fmt">5 min tutorial, 16:9, then three Shorts cut from it</span></div>
+          <div class="hook">"Prove your engineering work with Claude in five minutes."</div>
+          <ol class="shots">
+            <li>0:00 The problem, in 20 seconds.</li>
+            <li>0:20 Settings → Your tools → Make token, then one <code>claude mcp add</code> command.</li>
+            <li>1:00 <code>/start</code> (or <code>/setup</code> until it ships): it finds your field and your connected tools.</li>
+            <li>2:00 <code>/shipped</code> on a real piece of work, then the draft in Brazework.</li>
+            <li>3:30 <code>/ask_signature</code>, then the professor signs on a phone.</li>
+            <li>4:30 Your profile, and how companies search it.</li>
+          </ol>
+          <div class="cap"><div class="cap-head"><span>Description</span><button class="copy" type="button" data-copy="c21">Copy</button></div>
+            <textarea id="c21" aria-label="YouTube description for Monday Nov 30">Brazework turns what you build into a record signed by the people who saw it. In this video: connect Brazework to Claude Code in one command, draft a milestone from GitHub with /shipped, and get it signed by a professor who doesn't need an account.
+
+Try it: brazework.com/?ref=yt-w2
+Guide for 20 fields: the Recipes in Settings → Your tools.</textarea></div>
+        </div>
+      </article>
+
+      <article class="post">
+        <div class="day"><b>Tue</b><span>Dec 1</span></div>
+        <div class="body">
+          <div class="meta"><span class="chip x">X</span><span class="fmt">thread, 6 posts, with the flow diagram</span></div>
+          <div class="hook">"We didn't build 60 integrations. We built one MCP server."</div>
+          <div class="cap"><div class="cap-head"><span>Thread</span><button class="copy" type="button" data-copy="c22">Copy</button></div>
+            <textarea id="c22" aria-label="X thread for Tuesday Dec 1">1/ We didn't build 60 integrations for Brazework. We built one MCP server, and your AI connects it to everything else.
+
+2/ GitHub, Onshape, KiCad, W&B, MATLAB, Figma and Stripe already have MCP servers. Your assistant reads your work from them.
+
+3/ Then it writes the proof to Brazework: a milestone with the evidence attached, as a draft you approve.
+
+4/ Then a person who saw the work signs it: a club officer, a professor, a manager. The AI never signs. That's the point.
+
+5/ There are playbooks for 20 fields, so the assistant knows what's worth recording in robotics, biology or design.
+
+6/ Free for builders. Connect in one command: brazework.com/?ref=x-w2</textarea></div>
+        </div>
+      </article>
+
+      <article class="post">
+        <div class="day"><b>Thu</b><span>Dec 3</span></div>
+        <div class="body">
+          <div class="meta"><span class="chip ig">Reels</span><span class="chip ig">TikTok</span><span class="chip yt">Shorts</span><span class="fmt">15 s, phone in hand</span></div>
+          <div class="hook">"My PR merged and it was already on my record."</div>
+          <ol class="shots">
+            <li>GitHub on a laptop: merge.</li>
+            <li>Phone buzzes. Brazework Drafts shows "Merged: live arrival times · GitHub Actions".</li>
+            <li>Thumb edits the title, then taps Send to club.</li>
+          </ol>
+          <div class="cap"><div class="cap-head"><span>Caption</span><button class="copy" type="button" data-copy="c23">Copy</button></div>
+            <textarea id="c23" aria-label="Caption for Thursday Dec 3">Every merged PR becomes a draft on my Brazework record, with the PR as proof. I tap once to send it to my club. brazework.com/?ref=ig-w2</textarea></div>
+        </div>
+      </article>
+
+      <article class="post">
+        <div class="day"><b>Fri</b><span>Dec 4</span></div>
+        <div class="body">
+          <div class="meta"><span class="chip ig">Reels</span><span class="chip li">LinkedIn</span><span class="fmt">15 s, 3D gearbox model</span></div>
+          <div class="hook">"Safety factor 1.9. Signed."</div>
+          <ol class="shots">
+            <li>The 3D gearbox from Brazework, turning and then exploding into parts.</li>
+            <li>The milestone appears (Example): "Gearbox v4: max von Mises 182 MPa at 450 N, safety factor 1.9".</li>
+            <li>The seal: "Verified by the team's officer".</li>
+          </ol>
+          <div class="cap"><div class="cap-head"><span>Caption</span><button class="copy" type="button" data-copy="c24">Copy</button></div>
+            <textarea id="c24" aria-label="Caption for Friday Dec 4">Field 2 of 20: Mechanical. Finish an FEA run in ANSYS, type /shipped, and the numbers land on your record with the report attached. Your team signs. brazework.com/?ref=li-w2</textarea></div>
+        </div>
+      </article>
+
+      <article class="post">
+        <div class="day"><b>Sat</b><span>Dec 5</span></div>
+        <div class="body">
+          <div class="meta"><span class="chip li">LinkedIn</span><span class="chip x">X</span><span class="fmt">screen recording of the signing page on a phone</span></div>
+          <div class="hook">"Your professor signs without making an account."</div>
+          <div class="cap"><div class="cap-head"><span>Caption</span><button class="copy" type="button" data-copy="c25">Copy</button></div>
+            <textarea id="c25" aria-label="Caption for Saturday Dec 5">The person who saw your work gets a one-time link at their school or company email. They see the evidence, sign in one tap, and their name and role go on your milestone. No account needed.
+
+That's the part AI can't fake. brazework.com/?ref=li-w2</textarea></div>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section id="w3">
+    <div class="week-head"><h2>Week 3: real people</h2><span class="dates">Dec 7 to Dec 13</span></div>
+    <p class="flag">This week depends on the NSBE UHart pilot posting real work. If finals get in the way, use the fallback in each post: the founders log their own real builds and ask real colleagues outside work to sign.</p>
+    <div class="posts">
+
+      <article class="post">
+        <div class="day"><b>Mon</b><span>Dec 7</span></div>
+        <div class="body">
+          <div class="meta"><span class="chip li">LinkedIn</span><span class="chip ig">Reels</span><span class="fmt">60 s, chapter meeting, with permission</span></div>
+          <div class="hook">"We put a whole engineering chapter on Brazework in one meeting."</div>
+          <ol class="shots">
+            <li>Officers setting up the chapter: roles, the next event, the first project.</li>
+            <li>A member logs a build on their phone.</li>
+            <li>Fallback: Josh logs a real Courtside milestone and asks a friend outside work to sign.</li>
+          </ol>
+        </div>
+      </article>
+
+      <article class="post">
+        <div class="day"><b>Tue</b><span>Dec 8</span></div>
+        <div class="body">
+          <div class="meta"><span class="chip li">LinkedIn</span><span class="chip x">X</span><span class="fmt">screenshot and story</span></div>
+          <div class="hook">"Our first real signed milestone."</div>
+          <p>Screenshot the real milestone with the signer's name, with both people's permission. Tell the 3-sentence story: what was built, who saw it, why it matters to them.</p>
+        </div>
+      </article>
+
+      <article class="post">
+        <div class="day"><b>Thu</b><span>Dec 10</span></div>
+        <div class="body">
+          <div class="meta"><span class="chip ig">Reels</span><span class="chip ig">TikTok</span><span class="chip yt">Shorts</span><span class="fmt">30 s interview</span></div>
+          <div class="hook">"Why I signed it."</div>
+          <p>The officer or professor who signed says in their own words what they saw and why they put their name on it. Unscripted is better.</p>
+        </div>
+      </article>
+
+      <article class="post">
+        <div class="day"><b>Fri</b><span>Dec 11</span></div>
+        <div class="body">
+          <div class="meta"><span class="chip ig">Reels</span><span class="chip x">X</span><span class="fmt">15 s, Weights &amp; Biases screen</span></div>
+          <div class="hook">"My model beat the baseline. Here's the receipt."</div>
+          <div class="cap"><div class="cap-head"><span>Caption</span><button class="copy" type="button" data-copy="c34">Copy</button></div>
+            <textarea id="c34" aria-label="Caption for Friday Dec 11">Field 3 of 20: Data & AI. Your W&B run beats the baseline, /result writes it up with the run linked, and your PI signs it. brazework.com/?ref=ig-w3</textarea></div>
+        </div>
+      </article>
+
+      <article class="post">
+        <div class="day"><b>Sat</b><span>Dec 12</span></div>
+        <div class="body">
+          <div class="meta"><span class="chip x">X</span><span class="chip li">LinkedIn</span><span class="fmt">build-in-public numbers</span></div>
+          <div class="hook">"Three weeks in. Our real numbers."</div>
+          <p>Post the real funnel from the table below (sign-ups, first builds, signatures), including what didn't work. Real small numbers build more trust than vague big ones.</p>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section id="w4">
+    <div class="week-head"><h2>Week 4: one month after launch</h2><span class="dates">Dec 14 to Dec 20</span></div>
+    <div class="posts">
+
+      <article class="post">
+        <div class="day"><b>Mon</b><span>Dec 14</span></div>
+        <div class="body">
+          <div class="meta"><span class="chip li">LinkedIn</span><span class="chip x">X</span><span class="fmt">update post</span></div>
+          <div class="hook">"What we shipped since launch."</div>
+          <p>The features members asked for since Nov 22, each with the member feedback that asked for it. One-click connect (OAuth) and the in-chat signed card should be out by now, so show them here.</p>
+        </div>
+      </article>
+
+      <article class="post">
+        <div class="day"><b>Tue</b><span>Dec 15</span></div>
+        <div class="body">
+          <div class="meta"><span class="chip x">X</span><span class="chip li">LinkedIn</span><span class="chip yt">Shorts</span><span class="chip ig">Reels</span><span class="fmt">45 s, one-click connect</span></div>
+          <div class="hook">"Add Brazework to Claude in one click."</div>
+          <p>The sign-in flow with no token to paste, ending on the first draft. Re-post the launch video's best-performing hook alongside it.</p>
+        </div>
+      </article>
+
+      <article class="post">
+        <div class="day"><b>Wed</b><span>Dec 16</span></div>
+        <div class="body">
+          <div class="meta"><span class="chip li">LinkedIn</span><span class="chip x">X</span><span class="fmt">semester-end post</span></div>
+          <div class="hook">"What our first clubs built this semester."</div>
+          <p>Real signed milestones from the pilot, with permission. It's the closing post for the term and the opener for January's push to schools.</p>
+        </div>
+      </article>
+
+      <article class="post">
+        <div class="day"><b>Thu</b><span>Dec 17</span></div>
+        <div class="body">
+          <div class="meta"><span class="chip ig">Reels</span><span class="chip ig">TikTok</span><span class="fmt">15 s, Figma</span></div>
+          <div class="hook">"6 of 8 testers found the lab in under a minute."</div>
+          <p>Field 4 of 20: Design. A Figma prototype, the usability result as a milestone, and the studio instructor's signature. Keep "Example" on screen unless it's a real member's work.</p>
+        </div>
+      </article>
+
+      <article class="post">
+        <div class="day"><b>Fri</b><span>Dec 18</span></div>
+        <div class="body">
+          <div class="meta"><span class="chip x">X</span><span class="chip li">LinkedIn</span><span class="fmt">recap thread</span></div>
+          <div class="hook">"Four weeks from zero users. What worked."</div>
+          <p>Which platform brought people who actually logged a build, which hooks worked, and what's next. That one recap becomes the plan for January.</p>
+        </div>
+      </article>
+    </div>
+  </section>
+
+  <section id="measure">
+    <h2>What to measure every Sunday</h2>
+    <p>Views are for morale. What matters is how many people reach each step. Fill this in from the platforms' own analytics and Brazework's admin funnel, using the <code>?ref</code> on each link.</p>
+    <div class="tbl"><table>
+      <thead><tr><th>Week</th><th>Platform</th><th>Posts</th><th>Views</th><th>Link clicks</th><th>Sign-ups</th><th>First build logged</th><th>Signature asked</th><th>Signed</th></tr></thead>
+      <tbody>
+        <tr><td>1</td><td>X</td><td class="blank">·</td><td class="blank">·</td><td class="blank">·</td><td class="blank">·</td><td class="blank">·</td><td class="blank">·</td><td class="blank">·</td></tr>
+        <tr><td>1</td><td>LinkedIn</td><td class="blank">·</td><td class="blank">·</td><td class="blank">·</td><td class="blank">·</td><td class="blank">·</td><td class="blank">·</td><td class="blank">·</td></tr>
+        <tr><td>1</td><td>YouTube</td><td class="blank">·</td><td class="blank">·</td><td class="blank">·</td><td class="blank">·</td><td class="blank">·</td><td class="blank">·</td><td class="blank">·</td></tr>
+        <tr><td>1</td><td>Instagram / TikTok</td><td class="blank">·</td><td class="blank">·</td><td class="blank">·</td><td class="blank">·</td><td class="blank">·</td><td class="blank">·</td><td class="blank">·</td></tr>
+      </tbody>
+    </table></div>
+    <div class="grid2">
+      <div class="panel">
+        <h3>Decision rules</h3>
+        <ul>
+          <li>After week 3, double down on the platform where the most people logged a first build, not the one with the most views.</li>
+          <li>A platform with views but no first builds gets one change of hook, then gets dropped to sharing only.</li>
+          <li>If sign-ups come in but few log a build, the problem is the first five minutes, not the posts. Look at <code>/start</code> and onboarding.</li>
+          <li>If builds are logged but few are signed, film more signer moments (week 3) and check that signature emails go out.</li>
+        </ul>
+      </div>
+      <div class="panel">
+        <h3>What this plan depends on</h3>
+        <ul>
+          <li>Build-first onboarding (#100) and <code>/start</code> live by week 2. Until then, posts point to <code>/setup</code>.</li>
+          <li>Signature emails actually sending in production.</li>
+          <li>Sign-ups recording their <code>?ref</code> source.</li>
+          <li>The TEST milestone hidden or revoked before Nov 22.</li>
+          <li>Permission from everyone who appears on camera.</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>After launch: the outreach agent</h2>
+    <p>Once there's signed work to point to, an agent researches each contact and drafts a personal email that cites real Brazework work. A founder reviews and sends every one. Start with the Connecticut employers in the strategy doc (a paid pilot sponsoring one chapter), then universities once a pilot club has a semester of signed work. Keep the volume low and the emails personal: signature emails share the same sending domain, so its reputation matters.</p>
+  </section>
+
+  <footer>Built from the launch plan, the 20 field playbooks in <code>docs/mcp-workflows.md</code>, and Brazework's real events on Nov 20. Launch moved up to Sunday Nov 22 on Nov 19.</footer>
+</div>
+
+<script>
+document.querySelectorAll("button.copy").forEach(function (b) {
+  b.addEventListener("click", function () {
+    var t = document.getElementById(b.getAttribute("data-copy"));
+    var done = function (msg) { b.textContent = msg; setTimeout(function () { b.textContent = "Copy"; }, 1600); };
+    try {
+      navigator.clipboard.writeText(t.value).then(function () { done("Copied"); }, function () { t.focus(); t.select(); done("Selected"); });
+    } catch (e) { t.focus(); t.select(); done("Selected"); }
+  });
+});
+</script>

@@ -1,0 +1,63 @@
+<!doctype html>
+<html><head><meta charset="utf-8">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@500&display=swap">
+<style>
+  /* Social kit renderer: ?kind=avatar|banner&w=&h=&safe=WxH (centre safe area for YouTube). Brand from web/src/app/icon.svg: ink #09090b, white mark, brass #f28c28→#ffd479; verified green from globals.css. */
+  :root { --ink:#09090b; --fg:#fafafa; --fg2:#a1a1aa; --line:#27272a; --card:#141416; --ok:#4ade80; --brass1:#f28c28; --brass2:#ffd479; }
+  * { box-sizing:border-box; margin:0; }
+  html, body { background:var(--ink); color:var(--fg); font-family:Geist, ui-sans-serif, system-ui, sans-serif; overflow:hidden; }
+  .stage { position:relative; overflow:hidden; background:
+      radial-gradient(60% 80% at 85% 50%, rgb(74 222 128 / .08), transparent 70%),
+      linear-gradient(var(--ink), var(--ink)); }
+  .grid { position:absolute; inset:0; background-image:linear-gradient(rgb(255 255 255 / .035) 1px, transparent 1px), linear-gradient(90deg, rgb(255 255 255 / .035) 1px, transparent 1px); background-size:48px 48px; mask-image:radial-gradient(70% 90% at 70% 50%, #000, transparent); }
+  .safe { position:absolute; display:flex; align-items:center; justify-content:space-between; gap:5%; }
+  .left { display:flex; flex-direction:column; gap:.5em; min-width:0; }
+  .brand { display:flex; align-items:center; gap:.45em; font-weight:650; letter-spacing:-.01em; }
+  .line { font-weight:700; letter-spacing:-.03em; line-height:1.04; }
+  .line span { color:var(--fg2); }
+  .sub { color:var(--fg2); font-weight:450; }
+  .card { flex:none; background:var(--card); border:1px solid var(--line); border-radius:.9em; padding:1em 1.1em; display:flex; flex-direction:column; gap:.55em; box-shadow:0 30px 60px -30px rgb(0 0 0 / .8); }
+  .card .top { font-size:.62em; color:var(--fg2); font-family:"Geist Mono", ui-monospace, monospace; }
+  .card .t { font-weight:650; line-height:1.2; }
+  .ev { display:flex; gap:.35em; flex-wrap:wrap; }
+  .ev span { font-size:.6em; color:var(--fg2); border:1px dashed #3f3f46; border-radius:.4em; padding:.15em .5em; }
+  .seal { display:flex; align-items:center; gap:.55em; border-top:1px solid var(--line); padding-top:.6em; }
+  .seal i { width:1.6em; height:1.6em; border-radius:50%; border:2px solid var(--ok); display:grid; place-items:center; color:var(--ok); font-style:normal; font-size:.9em; }
+  .seal b { color:var(--ok); font-weight:600; font-size:.8em; display:block; }
+  .seal small { color:var(--fg2); font-size:.62em; }
+  .ex { position:absolute; right:1.2%; bottom:3%; font-size:12px; color:#52525b; font-family:"Geist Mono", monospace; }
+  .avatar { display:grid; place-items:center; }
+</style></head>
+<body>
+<div id="root"></div>
+<script>
+const q = new URLSearchParams(location.search);
+const kind = q.get("kind") || "banner", W = +q.get("w") || 1500, H = +q.get("h") || 500;
+const mark = (s) => `<svg width="${s}" height="${s}" viewBox="0 0 32 32" fill="none"><defs><linearGradient id="b${s}" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#f28c28"/><stop offset="1" stop-color="#ffd479"/></linearGradient></defs><path d="M14.2 6 V26.5 H4.5 Z M17.8 6 L27.5 26.5 H17.8 Z" fill="#fafafa" stroke="#fafafa" stroke-width="1.6" stroke-linejoin="round"/><rect x="15.1" y="4.6" width="1.8" height="22.7" fill="url(#b${s})"/></svg>`;
+const root = document.getElementById("root");
+document.body.style.width = W + "px"; document.body.style.height = H + "px";
+if (kind === "avatar") {
+  root.innerHTML = `<div class="stage avatar" style="width:${W}px;height:${H}px">${mark(Math.round(W * 0.5))}</div>`;
+} else {
+  const [sw, sh] = (q.get("safe") || `${W}x${H}`).split("x").map(Number);
+  const pad = Math.round(Math.min(sw, sh) * 0.12);
+  const base = Math.max(14, Math.min(sh * 0.13, sw * 0.03));   // font scale from the safe area
+  const showCard = sw / sh > 2.4 && sh >= 180;
+  root.innerHTML = `<div class="stage" style="width:${W}px;height:${H}px"><div class="grid"></div>
+    <div class="safe" style="left:${(W - sw) / 2 + pad}px;top:${(H - sh) / 2}px;width:${sw - pad * 2}px;height:${sh}px;font-size:${base}px">
+      <div class="left">
+        <div class="brand" style="font-size:.85em">${mark(Math.round(base * 1.25))}Brazework</div>
+        <div class="line" style="font-size:${Math.round(Math.min(base * (sh < 220 ? 1.45 : 2.1), (sw - pad * 2) * (showCard ? 0.5 : 0.8) / 13.5))}px;white-space:nowrap">Your AI drafts the proof.<br><span>A person who saw it signs.</span></div>
+        ${sh >= 220 ? `<div class="sub" style="font-size:.78em">The record of what you build · brazework.com</div>` : ""}
+      </div>
+      ${showCard ? `<div class="card" style="font-size:${Math.min(base * 0.95, sh * 0.075)}px;width:${Math.min(sw * 0.3, 15 * base)}px">
+        <div class="top">/shipped · milestone · Rocketry Club</div>
+        <div class="t">Flew to 1,140 m and was recovered intact</div>
+        <div class="ev"><span>altimeter log</span><span>flight video</span></div>
+        <div class="seal"><i>✓</i><div><b>Verified by Ben C.</b><small>Officer · saw the launch</small></div></div>
+      </div>` : ""}
+    </div>${showCard ? '<div class="ex">Example</div>' : ""}</div>`;
+}
+document.fonts.ready.then(() => { document.body.dataset.ready = "1"; });
+</script>
+</body></html>

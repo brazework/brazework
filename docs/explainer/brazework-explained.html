@@ -1,0 +1,225 @@
+<title>How Brazework Works</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one narrow reading column; a signed-proof card as the hero, the loop as a drawn cycle, then reference tables. */
+:root {
+  --bg: #fbfbfa; --surface: #ffffff; --raised: #f3f3f1; --line: #e4e4e0;
+  --fg: #1f1f1d; --fg-2: #4a4945; --muted: #787772;
+  --ok: #1a7f43; --ok-tint: #e3f3e9; --heat: #d9480f;
+  --display: "Geist", ui-sans-serif, system-ui, sans-serif;
+  --body: "Geist", ui-sans-serif, system-ui, sans-serif;
+  --mono: "Geist Mono", ui-monospace, SFMono-Regular, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #191919; --surface: #202020; --raised: #262625; --line: #333331;
+  --fg: #ededeb; --fg-2: #c9c8c4; --muted: #9b9a95;
+  --ok: #4cc47e; --ok-tint: #17301f; --heat: #ff8a4c; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #191919; --surface: #202020; --raised: #262625; --line: #333331;
+  --fg: #ededeb; --fg-2: #c9c8c4; --muted: #9b9a95;
+  --ok: #4cc47e; --ok-tint: #17301f; --heat: #ff8a4c; color-scheme: dark }
+
+body { background: var(--bg); color: var(--fg); font-family: var(--body); font-size: 16px; line-height: 1.6; }
+.wrap { max-width: 860px; margin: 0 auto; padding-block: 56px 80px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 72px; }
+h1, h2, h3 { font-family: var(--display); text-wrap: balance; margin: 0; letter-spacing: -0.02em; }
+h1 { font-size: clamp(2.4rem, 6vw, 3.6rem); line-height: 1.04; font-weight: 800; }
+h2 { font-size: 1.6rem; line-height: 1.2; font-weight: 700; }
+h3 { font-size: 1.05rem; font-weight: 600; }
+p { margin: 0; max-width: 65ch; color: var(--fg-2); }
+.eyebrow { font-family: var(--mono); font-size: 0.75rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+section { display: grid; gap: 20px; }
+.lead { font-size: 1.2rem; color: var(--fg-2); max-width: 52ch; }
+
+/* Hero */
+.hero { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 40px; align-items: center; }
+.hero-text { display: grid; gap: 18px; min-width: 0; }
+.claim { display: grid; gap: 10px; }
+.vs { display: grid; grid-template-columns: auto 1fr; gap: 6px 12px; font-size: 0.95rem; align-items: baseline; }
+.vs b { font-family: var(--mono); font-size: 0.75rem; font-weight: 500; letter-spacing: 0.06em; text-transform: uppercase; }
+.vs .no { color: var(--muted); } .vs .yes { color: var(--ok); }
+.proof { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 22px; display: grid; gap: 14px; box-shadow: 0 1px 0 var(--line), 0 18px 40px -24px rgb(0 0 0 / 0.35); min-width: 0; }
+.who { display: flex; gap: 12px; align-items: center; }
+.avatar { width: 40px; height: 40px; border-radius: 50%; display: grid; place-items: center; background: var(--raised); font-weight: 600; font-size: 0.85rem; flex-shrink: 0; }
+.who small { display: block; color: var(--muted); font-size: 0.8rem; }
+.milestone { font-weight: 600; font-size: 1.05rem; line-height: 1.35; }
+.metric { display: flex; align-items: baseline; gap: 8px; }
+.metric strong { font-family: var(--display); font-size: 2rem; font-weight: 800; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+.metric span { color: var(--muted); font-size: 0.85rem; }
+.seal { display: flex; gap: 10px; align-items: flex-start; background: var(--ok-tint); color: var(--ok); border-radius: 12px; padding: 10px 12px; font-size: 0.85rem; line-height: 1.4; }
+.seal svg { flex-shrink: 0; margin-top: 1px; }
+.seal em { font-style: normal; display: block; color: var(--fg-2); }
+.example { font-family: var(--mono); font-size: 0.7rem; color: var(--muted); letter-spacing: 0.06em; text-transform: uppercase; }
+
+/* Loop */
+.loop-figure { background: var(--surface); border: 1px solid var(--line); border-radius: 20px; padding: 20px; overflow-x: auto; }
+.loop-figure svg { display: block; width: 100%; min-width: 560px; height: auto; }
+.loop-figure text { font-family: var(--body); }
+.steps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.step { display: grid; gap: 4px; align-content: start; min-width: 0; }
+.step .n { font-family: var(--mono); font-size: 0.75rem; color: var(--muted); }
+.step p { font-size: 0.9rem; }
+
+/* Tables */
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); }
+table { width: 100%; border-collapse: collapse; font-size: 0.92rem; min-width: 560px; }
+th, td { text-align: left; padding: 12px 14px; vertical-align: top; border-bottom: 1px solid var(--line); }
+tr:last-child td { border-bottom: 0; }
+th { font-family: var(--mono); font-weight: 500; font-size: 0.72rem; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); background: var(--raised); }
+td:first-child { font-weight: 600; white-space: nowrap; }
+td .q { color: var(--fg); }
+td { color: var(--fg-2); }
+.tag { font-family: var(--mono); font-size: 0.72rem; padding: 2px 8px; border-radius: 999px; background: var(--raised); color: var(--fg-2); white-space: nowrap; }
+
+/* Seats */
+.seats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.seat { border: 1px solid var(--line); border-radius: 16px; padding: 18px; background: var(--surface); display: grid; gap: 10px; align-content: start; min-width: 0; }
+.seat ol { margin: 0; padding-left: 1.2em; display: grid; gap: 8px; color: var(--fg-2); font-size: 0.9rem; }
+.seat ol b { color: var(--fg); font-weight: 600; }
+
+/* Money + test */
+.money { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.money div { display: grid; gap: 6px; align-content: start; padding-top: 14px; border-top: 2px solid var(--line); min-width: 0; }
+.money div.pays { border-top-color: var(--ok); }
+.money p { font-size: 0.9rem; }
+.test { border-radius: 20px; padding: 28px; background: var(--fg); color: var(--bg); display: grid; gap: 14px; }
+.test h2 { color: var(--bg); }
+.test p { color: var(--bg); opacity: 0.8; }
+.test ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 8px; }
+.test li { display: flex; gap: 10px; font-size: 0.95rem; }
+.test .k { font-family: var(--mono); font-size: 0.72rem; padding: 2px 8px; border-radius: 999px; align-self: flex-start; margin-top: 3px; flex-shrink: 0; }
+.test .in { background: var(--ok); color: var(--bg); }
+.test .out { background: var(--muted); color: var(--bg); }
+footer { color: var(--muted); font-size: 0.85rem; }
+
+@media (max-width: 720px) {
+  .hero, .seats, .money { grid-template-columns: minmax(0, 1fr); }
+  .steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .wrap { gap: 56px; padding-block: 36px 56px; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .proof { animation: lift 0.7s ease-out both; }
+  @keyframes lift { from { transform: translateY(8px); } to { transform: none; } }
+}
+</style>
+
+<main class="wrap">
+  <header class="hero">
+    <div class="hero-text">
+      <span class="eyebrow">Brazework · how it works</span>
+      <h1>Proof, not résumés.</h1>
+      <p class="lead">Students do real work in clubs and study groups. On Brazework, someone who saw it happen signs it, and companies hire from that proof.</p>
+      <div class="vs">
+        <b class="no">Résumé</b><span>"Built a robot." Anyone can type it, and AI writes it in a second.</span>
+        <b class="yes">Brazework</b><span>"Beat the course in 41 seconds." Signed by the club president who watched it.</span>
+      </div>
+    </div>
+    <article class="proof" aria-label="Example of signed proof">
+      <span class="example">Example</span>
+      <div class="who"><span class="avatar">MP</span><div><strong>Maya Patel</strong><small>ECE '27 · Robotics Club</small></div></div>
+      <div class="milestone">Line-following robot: autonomous run on the competition course</div>
+      <div class="metric"><strong>41.2 s</strong><span>course time, best of 3 runs</span></div>
+      <div class="seal">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 2l2.4 2.1 3.2-.3.9 3.1 2.8 1.6-1.1 3 1.1 3-2.8 1.6-.9 3.1-3.2-.3L12 22l-2.4-2.1-3.2.3-.9-3.1L2.7 15.5l1.1-3-1.1-3 2.8-1.6.9-3.1 3.2.3L12 2z" fill="currentColor" opacity=".18"/><path d="M8 12.2l2.6 2.6L16.2 9" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <span><strong>Verified by Robotics Club</strong><em>Signed by Ben Cho, President · Nov 2026</em></span>
+      </div>
+    </article>
+  </header>
+
+  <section aria-labelledby="loop">
+    <span class="eyebrow">The loop</span>
+    <h2 id="loop">Everything in the app serves one of four steps.</h2>
+    <div class="loop-figure">
+      <svg viewBox="0 0 760 250" role="img" aria-label="Join, build, get it signed, get found, then bring the next club">
+        <defs><marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" fill="var(--muted)"/></marker></defs>
+        <g font-size="15" font-weight="600" fill="var(--fg)">
+          <rect x="10" y="30" width="160" height="96" rx="16" fill="var(--raised)" stroke="var(--line)"/>
+          <text x="30" y="62" font-family="var(--mono)" font-size="11" font-weight="500" fill="var(--muted)">1</text>
+          <text x="30" y="86">Join</text><text x="30" y="108" font-size="12.5" font-weight="400" fill="var(--fg-2)">a club or study group</text>
+          <rect x="200" y="30" width="160" height="96" rx="16" fill="var(--raised)" stroke="var(--line)"/>
+          <text x="220" y="62" font-family="var(--mono)" font-size="11" font-weight="500" fill="var(--muted)">2</text>
+          <text x="220" y="86">Build</text><text x="220" y="108" font-size="12.5" font-weight="400" fill="var(--fg-2)">post the work, step by step</text>
+          <rect x="390" y="30" width="160" height="96" rx="16" fill="var(--ok-tint)" stroke="var(--ok)"/>
+          <text x="410" y="62" font-family="var(--mono)" font-size="11" font-weight="500" fill="var(--ok)">3</text>
+          <text x="410" y="86" fill="var(--ok)">Get it signed</text><text x="410" y="108" font-size="12.5" font-weight="400" fill="var(--fg-2)">by someone who saw it</text>
+          <rect x="580" y="30" width="160" height="96" rx="16" fill="var(--raised)" stroke="var(--line)"/>
+          <text x="600" y="62" font-family="var(--mono)" font-size="11" font-weight="500" fill="var(--muted)">4</text>
+          <text x="600" y="86">Get found</text><text x="600" y="108" font-size="12.5" font-weight="400" fill="var(--fg-2)">companies search proof</text>
+        </g>
+        <g stroke="var(--muted)" stroke-width="1.5" fill="none" marker-end="url(#ah)">
+          <path d="M172 78H196"/><path d="M362 78H386"/><path d="M552 78H576"/>
+          <path d="M660 128V196Q660 214 642 214H108Q90 214 90 196V132"/>
+        </g>
+        <text x="375" y="236" text-anchor="middle" font-size="12.5" fill="var(--muted)">Members bring the next club, and companies sponsor the clubs behind the work</text>
+      </svg>
+    </div>
+    <div class="steps">
+      <div class="step"><span class="n">1 · Join</span><p>Your club, team or study group runs on Brazework: members, events, chat.</p></div>
+      <div class="step"><span class="n">2 · Build</span><p>Post a project and its milestones as you go, with photos, video and numbers.</p></div>
+      <div class="step"><span class="n">3 · Get it signed</span><p>An officer, your group or a professor who saw it vouches. Their name stays on it.</p></div>
+      <div class="step"><span class="n">4 · Get found</span><p>Companies search by signed work, message you and sponsor your club.</p></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="places">
+    <span class="eyebrow">The app</span>
+    <h2 id="places">Five places, one question each.</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Place</th><th>The question</th><th>What you do there</th><th>Loop step</th></tr></thead>
+        <tbody>
+          <tr><td>Today</td><td class="q">What needs me right now?</td><td>Your one next step, your week, the next event, then posts from your clubs and people you follow.</td><td><span class="tag">gets you moving</span></td></tr>
+          <tr><td>Build</td><td class="q">What am I making?</td><td>Your projects. Add one, post updates, mark milestones and ask for them to be signed.</td><td><span class="tag">2</span></td></tr>
+          <tr><td>Club</td><td class="q">What's my team doing?</td><td>Clubs and study groups: chat, events, members. Officers sign members' work here.</td><td><span class="tag">1 · 3</span></td></tr>
+          <tr><td>Proof</td><td class="q">What have I proven, and who looked?</td><td>Your public profile. Signed work first, who signed it, which companies viewed you.</td><td><span class="tag">3 · 4</span></td></tr>
+          <tr><td>Inbox</td><td class="q">Who's reaching out?</td><td>Messages from members and from companies.</td><td><span class="tag">4</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Ember, the AI helper, works inside all five. It drafts posts, club updates and recaps; a person always approves before anything goes out.</p>
+  </section>
+
+  <section aria-labelledby="seats">
+    <span class="eyebrow">One week, three seats</span>
+    <h2 id="seats">The same loop, seen by each person in it.</h2>
+    <div class="seats">
+      <div class="seat"><h3>Student · Maya</h3><ol>
+        <li><b>Build:</b> adds "Line-following robot" and posts a photo update.</li>
+        <li><b>Build:</b> marks "Beat the course in 41 s" and asks Robotics Club to sign it.</li>
+        <li><b>Proof:</b> it shows as verified, signed by the president.</li>
+        <li><b>Inbox:</b> a sponsor company messages her.</li></ol></div>
+      <div class="seat"><h3>Club officer · Ben</h3><ol>
+        <li><b>Club:</b> runs events, chat and announcements; Ember drafts the busywork.</li>
+        <li><b>Club → Verify:</b> signs members' milestones he saw happen.</li>
+        <li><b>Club → This week:</b> gets a report of what the club built, to show sponsors.</li></ol></div>
+      <div class="seat"><h3>Company · a sponsor</h3><ol>
+        <li>Searches students by signed work, like "embedded systems, verified".</li>
+        <li>Opens profiles and messages the ones it likes.</li>
+        <li>Sponsors the club whose members did the work.</li></ol></div>
+    </div>
+  </section>
+
+  <section aria-labelledby="money">
+    <span class="eyebrow">The business</span>
+    <h2 id="money">Students never pay. Companies pay first, universities pay most.</h2>
+    <div class="money">
+      <div><h3>Free</h3><p>Students, clubs and study groups. They create the proof, so they never pay to be on Brazework.</p></div>
+      <div class="pays"><h3>Companies</h3><p>Search by signed work, and club sponsorships with a report of what the club built. The first revenue.</p></div>
+      <div class="pays"><h3>Universities, later</h3><p>Every club and study group on one campus, with the outcomes. Once five or more clubs are live at a school.</p></div>
+    </div>
+  </section>
+
+  <section class="test" aria-labelledby="rule">
+    <span class="eyebrow" style="color:inherit;opacity:.7">The rule for every feature</span>
+    <h2 id="rule">Does it help work get done, get signed, or get seen?</h2>
+    <p>If yes, it belongs. If no, it's noise on the first screen people see.</p>
+    <ul>
+      <li><span class="k in">belongs</span><span>Study groups: members sign who led them, and it lands on the leader's Proof.</span></li>
+      <li><span class="k in">belongs</span><span>The next event as one line on Today.</span></li>
+      <li><span class="k out">noise</span><span>Outside news headlines, and trending tags at today's size.</span></li>
+    </ul>
+  </section>
+
+  <footer>Brazework · brazework.com · November 2026. People and numbers in the example card are illustrative.</footer>
+</main>

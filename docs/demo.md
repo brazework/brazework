@@ -6,11 +6,13 @@ For YC or a club. Runs locally on demo data, so nothing touches production.
 
 ```sh
 cd web
-e2e/local-supabase.sh up                                # local Supabase with the test members
-docker exec -i forge-e2e-db psql -q -U postgres -h localhost -d postgres < ../ios/scripts/seed-ui-tests.sql
-FORGE_DEMO_SEED=1 node scripts/seed-demo.cjs            # example posts and replies (local only)
-npm run dev                                             # the app on the local database
+npm run dev -- --demo     # a private local database with the demo members, posts and events, and the app on it
 ```
+
+Emails the demo would send (signature asks, invites) land in a local outbox at
+http://localhost:3000/dev/outbox, so their links can be clicked on camera. For the launch videos, the
+demo members are Priya, Leo and Ana (`priya@forge.test`, `leo@forge.test`, `ana@forge.test`); the
+filming order is the test script in [launch.md](launch.md).
 
 Three browser windows: **Josh** (member), **Ben** (Rocketry Club owner) and **Cara** (admin of the verified company Acme Aerospace). Password for all: `forge-test-pass-1` (`josh@forge.test`, `ben@forge.test`, `cara@forge.test`). **Maya** (`maya@forge.test`) is a Brazework admin, for `/admin`.
 
