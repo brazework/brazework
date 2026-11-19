@@ -27,6 +27,19 @@ scopes, signatures). Design: [superpowers/specs/2026-11-18-mcp-workflows-design.
 
 ## Set it up in 2 minutes
 
+**The fastest way: sign in, no token.** Add Brazework to your assistant by its address,
+`https://<your Brazework>/api/mcp`:
+
+- **Claude (web and desktop):** Settings → Connectors → Add custom connector.
+- **Claude Code:** `claude mcp add --transport http brazework https://<your Brazework>/api/mcp`, then `/mcp` to
+  sign in.
+- **Cursor, VS Code and others:** add an MCP server with that address.
+
+Your assistant opens Brazework's consent page. It says which app is asking and what the app can do
+(read, and leave drafts for you to approve), and you tap **Connect**. Each sign-in shows in **Settings →
+Your tools**, where you can turn on posting for it or disconnect it. This works once a founder has switched
+on the OAuth server (below). Until then, and for GitHub Actions and scripts, use a token:
+
 1. In Brazework, open **Settings → Your tools** and pick your assistant. Tap **Make token**. New tokens can
    read your Brazework and leave drafts for you to approve. Turn on *Let it post updates for me* only if you
    want it to post after asking you in chat.
@@ -506,4 +519,29 @@ Moments worth recording:
 - **Learners improve** → result post: “Post-test scores rose 18 points across 64 students”. Proof: the aggregate results (never individual students).
 
 Who signs: the cooperating teacher, the school's principal or the course instructor. Try `/shipped` with the field Education.
+
+## How signing in works (for founders)
+
+Brazework uses Supabase Auth's OAuth 2.1 server (public beta) as its authorization server:
+
+1. A client calls `/api/mcp` with no token. The 401's `WWW-Authenticate` points to
+   `/.well-known/oauth-protected-resource/api/mcp` (RFC 9728), which names `<Supabase URL>/auth/v1`.
+2. The client registers itself (dynamic client registration) and sends the member to Supabase's
+   authorize endpoint with PKCE. Supabase sends them to `/oauth/consent` in the app.
+3. Connecting (or Not now) goes back to the client. The client trades the code for an access token and
+   calls `/api/mcp` with it.
+4. The first call makes that sign-in's own token row (`supabase/mcp-oauth.sql`). Its hash is keyed with
+   a server-only secret, so every tool, scope and limit works as it does for a pasted token.
+
+**Founder step (once, per Supabase project: staging, then production).** Nothing changes until it's done.
+In Supabase → **Authentication → OAuth Server**:
+
+- Turn the OAuth server on.
+- Set **Authorization Path** to `/oauth/consent`. Check that Authentication → URL Configuration → Site URL
+  is the app's address.
+- Turn on **dynamic OAuth apps** (dynamic client registration), so assistants can register themselves.
+
+Then open Settings → Your tools: "Sign in from your assistant, no token" appears within five minutes. To
+check it: `curl -i -X POST https://<your Brazework>/api/mcp` should answer 401 with a `resource_metadata`
+link.
 
