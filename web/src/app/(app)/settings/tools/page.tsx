@@ -24,9 +24,18 @@ export default function ToolsPage() {
 }
 
 async function Tools() {
-  const { user } = await getViewer();
+  const { supabase, user, profile } = await getViewer();
   if (!user) redirect("/login?next=/settings/tools");
   const f = await dbFeatures();
   if (!f.mcp) return <p className="mt-6 text-sm text-muted">Connecting tools isn&apos;t switched on yet.</p>;
-  return <ToolsHub tokens={await listApiTokens()} endpoint={`${env.siteUrl}/api/mcp`} writes={f.mcpWrites} />;
+  // Your projects, for the GitHub Actions workflow (which project its drafts go to).
+  // Your projects and clubs, for the GitHub Actions workflow (which project its drafts go to, and
+  // which club, if any, is asked to verify them).
+  const [{ data: projects }, { data: clubs }] = f.mcpWorkflows ? await Promise.all([
+    supabase.from("projects").select("id, title").eq("owner_id", user.id).order("updated_at", { ascending: false }).limit(50),
+    supabase.from("community_members").select("community_id, communities(name)").eq("uid", user.id).limit(50),
+  ]) : [{ data: [] }, { data: [] }];
+  const clubList = ((clubs ?? []) as unknown as { community_id: string; communities: { name: string } | null }[]).map((c) => ({ id: c.community_id, name: c.communities?.name ?? c.community_id }));
+  return <ToolsHub tokens={await listApiTokens()} endpoint={`${env.siteUrl}/api/mcp`} writes={f.mcpWrites} drafts={f.mcpWorkflows}
+    projects={(projects ?? []) as { id: string; title: string }[]} clubs={clubList} field={profile?.field ?? ""} />;
 }

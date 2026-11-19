@@ -5,6 +5,7 @@
 - [overview.md](overview.md): **Brazework in plain language.** What it is, how it works, how we know it's working, where everything lives. For anyone.
 - [architecture.md](architecture.md): **the technical version.** System diagram, tech stack, code map, security model, environments, delivery. For engineers.
 - [plan.md](plan.md): what's built, phase by phase (✅ / 🟡 / ⬜), and the decisions behind it.
+- [mcp-workflows.md](mcp-workflows.md): **your tools fill in your record.** Set up an AI assistant with Brazework in 2 minutes, the slash commands, drafts and GitHub Actions, signatures, and a section for each of the 20 fields.
 
 ## The company
 
