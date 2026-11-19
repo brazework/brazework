@@ -57,7 +57,10 @@ export async function memberContext() {
     goal && `Their goal: ${goalTitle(goal as { kind: GoalKind; target: string })}. Point advice toward it.`,
     projects.data?.length && `Their projects: ${projects.data.map((p) => `${p.title} (${p.status === "completed" ? "completed" : "in progress"})`).join("; ")}.`,
   ].filter(Boolean);
-  return { supabase, userId: user.id, name: profile.first_name || "the member", system: `${RULES}\n\n${lines.join("\n")}` };
+  // `rules` and `about` apart, so the rules can be cached (copilot-agent.ts emberSystem); `system` is
+  // both together, for callers that send one string.
+  const about = lines.join("\n");
+  return { supabase, userId: user.id, name: profile.first_name || "the member", rules: RULES, about, system: `${RULES}\n\n${about}` };
 }
 
 export function taskPrompt(r: CopilotRequest) {
