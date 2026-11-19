@@ -120,3 +120,21 @@ test("GitHub Actions: the token goes in a repo secret; the workflow drafts a mil
   assert.match(actionsWorkflow(URL_, "p1", "rkt"), /--arg club "rkt"/);
   assert.match(actionsWorkflow(URL_, "p1", "rkt"), /club_id: \$club/);
 });
+
+test("the setup prompt carries only the public address, and reads as steps any assistant can follow", async () => {
+  const { ASSISTANTS, setupPrompt } = await import("@/lib/tool-setup");
+  const p = setupPrompt("https://brazework.com/api/mcp");
+  assert.match(p, /^Help me set up Brazework \(https:\/\/brazework\.com\)/);
+  assert.match(p, /The address is https:\/\/brazework\.com\/api\/mcp\./);
+  assert.match(p, /add it only after I say yes/, "nothing goes on the record without a yes");
+  assert.match(p, /show me what is on my record/);
+  assert.doesNotMatch(p, /forge_|Bearer|token/i, "no key in a prompt that goes into an address");
+  assert.equal(p.split("\n").filter((l) => /^\d\. /.test(l)).length, 5);
+  assert.ok(p.length < 1400, "short enough to ride in an address");
+  for (const a of ASSISTANTS) {
+    const u = new URL(a.open(p));
+    assert.equal(u.protocol, "https:");
+    assert.equal(u.searchParams.get("q"), p, `${a.name} gets the whole prompt, encoded`);
+  }
+  assert.deepEqual(ASSISTANTS.map((a) => new URL(a.open("x")).host), ["claude.ai", "chatgpt.com"]);
+});

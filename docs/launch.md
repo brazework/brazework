@@ -17,19 +17,39 @@ To see what production runs, check `version` at https://brazework.com/api/health
 
 What the launch shows:
 - **The record:** milestones signed by the people who saw them (a club officer, a professor, a
-  manager). The profile leads with a timeline of signed work over time.
+  manager). The profile leads with a timeline of signed work over time. Three kinds of proof, one
+  colour each, everywhere: green signed, blue backed by GitHub, dashed amber waiting.
+  - **A work email can sign** (never Gmail and the like). A signature from a company that isn't
+    verified on Brazework says "(company not verified)" in the signature itself.
+  - **Backed by GitHub, with who approved it:** link a repo to a project and a merged pull request
+    shows "approved by @sam" from its GitHub reviews; nobody is asked to sign. On a private repo only
+    the count shows.
+  - **Your last 90 days:** on a project with a linked repo, the owner's own merged pull requests are
+    one tap from their record. Work from a private repo is added hidden.
+  - **Studying or Working** is a switch in Settings → Profile; Home asks someone who works "What are
+    you working on?", with no semester or club.
 - **The assistant connection (MCP):** connect Claude or another assistant and log work by saying
   what you did. By default it adds things after your yes in the chat (or, if you pick "Drafts only"
   when you connect, drafts wait for your OK in Brazework); signatures still come from people.
   [mcp-workflows.md](mcp-workflows.md) and the public guide at https://brazework.com/ai.
+  - **Ask your AI to set it up** (the same card, first thing in it): "Ask Claude" and "Ask ChatGPT"
+    open the assistant with a prompt that walks the person through connecting, shows them their
+    record and helps them add their first piece of work; "Copy the prompt" is for Codex and the
+    rest. Every button also copies the prompt, since Claude's prefilled link isn't documented.
+    ChatGPT's custom connectors and Codex have not been tested against our sign-in: test before
+    promising them in the listing.
   - **Add to Claude** (the landing page's Connect section and `/ai`): the connector address with a
     copy button, the three steps in Claude, one tap for Cursor and VS Code, and the Claude Code
     command. It shows "Sign-in opens soon" until founder step 2 below; then the full card appears
     within five minutes, with no deploy.
   - MCP traffic costs Brazework no AI tokens: the member's own assistant does the thinking.
+- **The landing page:** six ways of working in the hero (a Product Hunt visitor starts on the
+  engineer's), held at one height so nothing jumps on a phone; pricing shows only what a builder
+  pays, with company and school prices on `/pricing`.
 - **Ember** (the assistant inside the app) runs on Claude Sonnet 5 (`COPILOT_MODEL`), with a
   daily limit per member. Its rules and tools are prompt-cached (`emberSystem`), so each question
-  pays about a tenth of the price for them. To confirm, check that the Anthropic Console's usage
+  pays about a tenth of the price for them. Its page is one composer with the things it does as
+  one-tap actions (log what I did, write a post, add from GitHub, get it signed). To confirm the caching, check that the Anthropic Console's usage
   page shows cache reads on Ember traffic.
 - **Goals:** "where you want to go", with the next step toward it on Home, Record and `/week`.
 - **Money paths** (prices in `web/src/lib/pricing.ts`):

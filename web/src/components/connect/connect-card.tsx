@@ -4,7 +4,7 @@ import { Check, Copy } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { cn } from "@/lib/forge";
-import { claudeCodeSignIn, cursorLink, vscodeLink } from "@/lib/tool-setup";
+import { ASSISTANTS, claudeCodeSignIn, cursorLink, setupPrompt, vscodeLink } from "@/lib/tool-setup";
 
 // Add Brazework to Claude (the landing page's Connect section and /ai): the connector address with a
 // copy button and the three steps in Claude, then one tap for the editors. Everything here is the
@@ -20,6 +20,8 @@ export function ConnectCard({ endpoint, on, className }: { endpoint: string; on:
         <h3 className="text-lg font-semibold tracking-tight">Add Brazework to Claude</h3>
         {on === false && <span className="text-sm text-faint">Sign-in opens soon</span>}
       </div>
+      {ready && <AskYourAi endpoint={endpoint} />}
+      {ready && <p className="mt-5 text-sm text-muted">Or add it yourself:</p>}
       <ol className="mt-4 flex flex-col gap-2.5 text-[15px] text-text-2">
         <Step n={1}>In Claude (the desktop app or claude.ai), open <b className="font-medium text-text">Settings → Connectors</b>.</Step>
         <Step n={2}>Choose <b className="font-medium text-text">Add custom connector</b>, name it Brazework, and paste this address:</Step>
@@ -51,6 +53,38 @@ export function ConnectCard({ endpoint, on, className }: { endpoint: string; on:
         </p>
       )}
     </div>
+  );
+}
+
+// The quickest way in: one tap opens the assistant with a prompt that walks the person through adding
+// Brazework there and then shows them their record (lib/tool-setup.ts setupPrompt). Every button also
+// copies the prompt, because not every assistant fills its box from a link; the line under them says
+// to paste it if the box is empty. The prompt itself is one tap away, so nobody sends what they
+// haven't read.
+function AskYourAi({ endpoint }: { endpoint: string }) {
+  const prompt = setupPrompt(endpoint);
+  const [said, setSaid] = useState("");
+  const copy = async (then: string) => {
+    try { await navigator.clipboard.writeText(prompt); setSaid(then); } catch { setSaid("Couldn't copy it here. Open \u201cRead the prompt\u201d below and copy it from there."); }
+  };
+  return (
+    <section aria-label="Ask your AI to set it up" className="mt-4 rounded-xl border border-line bg-surface-2 p-4">
+      <p className="text-[15px] font-medium text-text">Quickest: ask your AI to set it up</p>
+      <p className="mt-0.5 text-sm text-muted">It walks you through connecting, shows you your record, and helps you add your first piece of work.</p>
+      <div className="mt-3 flex flex-wrap gap-2">
+        {ASSISTANTS.map((a, i) => (
+          <a key={a.id} href={a.open(prompt)} target="_blank" rel="noopener noreferrer" onClick={() => void copy(`Prompt copied, and ${a.name} is opening. If its box is empty, paste it.`)}
+            className={cn("inline-flex h-10 items-center rounded-lg px-4 text-sm font-medium transition active:scale-[0.98]", i === 0 ? "bg-text text-surface hover:opacity-90" : "border border-line bg-surface hover:bg-hover")}>Ask {a.name}</a>
+        ))}
+        <button type="button" onClick={() => void copy("Prompt copied. Paste it into Codex, Cursor or any assistant.")}
+          className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-line bg-surface px-4 text-sm font-medium transition hover:bg-hover active:scale-[0.98]"><Copy className="size-3.5" /> Copy the prompt</button>
+      </div>
+      {said && <p role="status" className="mt-2 text-xs text-text-2">{said}</p>}
+      <details className="mt-3 text-sm">
+        <summary className="cursor-pointer text-muted underline-offset-4 hover:text-text hover:underline">Read the prompt</summary>
+        <pre className="mt-2 max-h-64 overflow-auto rounded-lg border border-line bg-surface p-3 font-mono text-xs leading-relaxed whitespace-pre-wrap text-text-2">{prompt}</pre>
+      </details>
+    </section>
   );
 }
 
