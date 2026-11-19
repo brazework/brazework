@@ -4,17 +4,32 @@
 // (tests/proof-card.test.ts). A backed result never says "verified": only a person signs.
 
 export type PublicProof = {
-  id: string; title: string; detail: string; achieved_on: string; level: "signed" | "backed"; project: string;
+  id: string; title: string; detail: string; achieved_on: string; level: "signed" | "backed" | "waiting"; project: string;
   member: { id: string; first: string; last: string; headline: string; avatar: string };
   witness: { name: string; role: string; club: string; vouched_by: string; at: string | null; signed_count?: number } | null;
   backing: { kind: "commit" | "pull_request" | "release"; repo: string; ref: string; url: string } | null;
   image: string | null; shared_at: string;
+  // A waiting card (supabase/waiting-cards.sql): who was asked. Never their address.
+  waiting_for?: { club: string | null; asked: { relationship: string; domain: string } | null } | null;
 };
+
+const ASKED: Record<string, string> = { professor: "a professor", ta: "a TA", pi: "a lab PI", manager: "a manager", mentor: "a mentor", other: "someone who saw it" };
+/** Who a waiting card waits for: "Rocketry Club", or "a professor at utexas.edu". */
+export function waitingFor(p: PublicProof): string {
+  const w = p.waiting_for;
+  if (w?.club) return w.club;
+  if (w?.asked) return `${ASKED[w.asked.relationship] ?? "someone who saw it"}${w.asked.domain ? ` at ${w.asked.domain}` : ""}`;
+  return "";
+}
 
 const day = (ts: string) => new Date(ts.length === 10 ? `${ts}T12:00:00Z` : ts).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" });
 
 /** The line under the result: who signed it and when, or what GitHub checked. */
 export function proofBadge(p: PublicProof): string {
+  if (p.level === "waiting") {
+    const who = waitingFor(p);
+    return p.waiting_for?.club ? `Not signed yet · waiting for ${who} to verify` : `Not signed yet · waiting for ${who || "the person who saw it"} to sign`;
+  }
   if (p.level === "backed" && p.backing) {
     const what = p.backing.kind === "commit" ? `commit ${p.backing.ref.slice(0, 7)}` : p.backing.kind === "pull_request" ? `PR #${p.backing.ref}` : `release ${p.backing.ref}`;
     return `Backed by GitHub · ${what} in ${p.backing.repo}`;
@@ -31,6 +46,7 @@ export const proofUrl = (site: string, id: string) => `${site.replace(/\/$/, "")
 /** What a post says: the result, and who stands behind it. */
 export function proofPostText(p: PublicProof): string {
   if (p.level === "backed") return `${p.title}. Backed by GitHub on Brazework.`;
+  if (p.level === "waiting") return `${p.title}. On my Brazework record, waiting for ${waitingFor(p) || "the person who saw it"} to sign.`;
   const w = p.witness;
   const who = w?.vouched_by ? w.vouched_by.split(",")[0] : w?.name;
   return `${p.title}. ${w?.vouched_by ? "Vouched for" : "Verified"} by ${who || "an officer"}${w?.club && !w.vouched_by ? `, ${w.club}` : ""}, on Brazework.`;

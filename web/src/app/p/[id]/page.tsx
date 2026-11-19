@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { BadgeCheck, GitMerge } from "lucide-react";
+import { BadgeCheck, Clock, GitMerge } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { Suspense } from "react";
@@ -44,6 +44,7 @@ async function Proof({ params }: { params: PageProps<"/p/[id]">["params"] }) {
   }
   const who = `${p.member.first} ${p.member.last}`.trim() || "A Brazework member";
   const signed = p.level === "signed";
+  const waiting = p.level === "waiting";
   return (
     <>
       <article data-proof className="mt-8 overflow-hidden rounded-3xl border border-line bg-surface shadow-[var(--shadow-float)]">
@@ -52,8 +53,8 @@ async function Proof({ params }: { params: PageProps<"/p/[id]">["params"] }) {
           <p className="text-sm text-muted">{p.project}</p>
           <h1 className="mt-2 text-[clamp(1.75rem,5vw,2.5rem)] leading-[1.05] font-semibold tracking-[-0.03em] text-balance">{p.title}</h1>
           {p.detail && <p className="mt-3 text-[15px] leading-relaxed text-text-2">{p.detail}</p>}
-          <p className={`mt-6 inline-flex max-w-full items-start gap-2 rounded-xl px-3 py-2 text-sm font-medium ${signed ? "bg-[color-mix(in_oklab,var(--ok)_13%,transparent)] text-ok" : "bg-[color-mix(in_oklab,var(--info)_13%,transparent)] text-info"}`}>
-            {signed ? <BadgeCheck className="mt-0.5 size-4 shrink-0" /> : <GitMerge className="mt-0.5 size-4 shrink-0" />}
+          <p className={`mt-6 inline-flex max-w-full items-start gap-2 rounded-xl px-3 py-2 text-sm font-medium ${signed ? "bg-[color-mix(in_oklab,var(--ok)_13%,transparent)] text-ok" : waiting ? "bg-surface-2 text-text-2" : "bg-[color-mix(in_oklab,var(--info)_13%,transparent)] text-info"}`}>
+            {signed ? <BadgeCheck className="mt-0.5 size-4 shrink-0" /> : waiting ? <Clock className="mt-0.5 size-4 shrink-0" /> : <GitMerge className="mt-0.5 size-4 shrink-0" />}
             <span>{proofBadge(p)}</span>
           </p>
           {/* Witness invitations (FIX-129): how many results the witness has signed here. */}
@@ -70,7 +71,7 @@ async function Proof({ params }: { params: PageProps<"/p/[id]">["params"] }) {
         </div>
       </article>
       <p className="mt-4 text-sm leading-relaxed text-muted">
-        {signed ? "Signed on Brazework by someone who saw it happen. Their name stays on it, and it can be withdrawn if it wasn't true." : "Backed by data: GitHub confirmed this is the member's own merged work. It hasn't been signed by a person yet."}
+        {signed ? "Signed on Brazework by someone who saw it happen. Their name stays on it, and it can be withdrawn if it wasn't true." : waiting ? "Logged on Brazework and waiting for its signature: nobody has signed it yet. When the person who saw it signs, this page says who." : "Backed by data: GitHub confirmed this is the member's own merged work. It hasn't been signed by a person yet."}
       </p>
       <section className="mt-auto pt-12">
         <h2 className="text-xl font-semibold tracking-tight">Built something? Put it on the record.</h2>

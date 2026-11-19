@@ -73,4 +73,5 @@ witness-invites
 oauth-signup
 members-only
 mcp-workflows
+waiting-cards
 verify-links

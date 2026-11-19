@@ -12,7 +12,7 @@ export const contentType = "image/png";
 export default async function ProofImage({ params }: { params: Promise<{ id: string }> }) {
   const p = await loadProof((await params).id);
   const signed = p?.level === "signed";
-  const tone = signed ? { bg: "#e7f4ea", fg: "#15803d" } : { bg: "#e7f0fd", fg: "#2563eb" };
+  const tone = signed ? { bg: "#e7f4ea", fg: "#15803d" } : p?.level === "waiting" ? { bg: "#f1eee7", fg: "#5f5e5a" } : { bg: "#e7f0fd", fg: "#2563eb" };
   const title = p ? (p.title.length > 80 ? `${p.title.slice(0, 79)}…` : p.title) : "Proof of work beats a résumé.";
   const fs = title.length > 50 ? 64 : 78;
   return new ImageResponse(
