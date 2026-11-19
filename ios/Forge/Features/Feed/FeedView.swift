@@ -13,6 +13,7 @@ struct FeedView: View {
   @State private var people: [Profile] = []
   @State private var clubs: [Club] = []
   @State private var showAlerts = false
+  @State private var goal: WeekGoal?
 
   struct SearchRoute: Hashable {}
   struct ComposeStart: Identifiable { let id = UUID(); let kind: String; let photo: Bool }
@@ -23,8 +24,8 @@ struct FeedView: View {
         ScrollView {
           LazyVStack(spacing: 12) {
             Color.clear.frame(height: 0).id("top")
-            // What needs you first: the one next step on your newest build.
-            NextStepCard { compose = ComposeStart(kind: "update", photo: false) }
+            // What needs you first: this week's goal, the same next step as Home on the web.
+            NextStepView(goal: goal) { compose = ComposeStart(kind: "update", photo: false) }
             ComposerPrompt { kind, photo in compose = ComposeStart(kind: kind, photo: photo) }
             MessagesCard(entries: inbox)
             FeedFilterBar(store: store).padding(.top, 4)
@@ -121,7 +122,7 @@ struct FeedView: View {
       #endif
       .onChange(of: compose == nil) { VideoCoordinator.shared.suspended = compose != nil }
       .sheet(item: $compose) { start in
-        ComposerView(initialKind: start.kind, openPicker: start.photo) { Task { store.tab = .forYou; await reload() } }
+        ComposerView(initialKind: start.kind, openPicker: start.photo) { Task { store.tab = .forYou; await reload(); await loadGoal() } }
           .presentationDetents([.medium, .large])
       }
     }
@@ -179,10 +180,18 @@ struct FeedView: View {
     async let pp = API.suggestedPeople(me: me, interests: session.profile?.interests ?? [], field: session.profile?.field ?? "")
     async let mine = (try? await API.myClubs(me: me)) ?? []
     async let all = (try? await API.discoverClubs()) ?? []
+    async let next: Void = loadGoal()
     let (inboxNow, eventsNow, goingNow, peopleNow) = await (i, e, g, pp)
     let mineIds = Set(await mine.map(\.id))
     let clubsNow = await all.filter { !mineIds.contains($0.id) }
     withAnimation(.snappy) { inbox = inboxNow; events = eventsNow; going = goingNow; people = peopleNow; clubs = clubsNow }
+    await next
+  }
+
+  // Keeps the last goal if a read fails, rather than suggesting something wrong.
+  private func loadGoal() async {
+    guard let me = session.userId, let g = try? await API.weekGoal(me: me) else { return }
+    withAnimation(.snappy) { goal = g }
   }
 }
 
