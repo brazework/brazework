@@ -79,4 +79,5 @@ money
 tool-actions
 tool-rsvp
 tool-clubs-messages
+plus-teaser
 tool-officers

@@ -1,5 +1,5 @@
 "use client";
-import { BadgeCheck, Check, Clock, Flag, Hammer, Inbox as InboxIcon, PenLine, RotateCcw, Sun, Users } from "lucide-react";
+import { BadgeCheck, Check, Clock, Flag, FolderGit2, House, Inbox as InboxIcon, PenLine, RotateCcw, Users } from "lucide-react";
 import Link from "next/link";
 import { useState } from "react";
 import { BrandMark } from "@/components/brand-mark";
@@ -7,10 +7,10 @@ import { cn } from "@/lib/forge";
 import { PLACES, tourHint, type Place, type Tour } from "@/lib/landing-demo";
 
 // The app, small enough to try: a working copy of Brazework's five places with example data. The
-// places share one story, so what you do in one shows up in the next: sign Maya's milestone in Club
-// and it's on her Proof, and a company's request is waiting in Inbox. One line under the frame says
+// places share one story, so what you do in one shows up in the next: sign Maya's milestone in Clubs
+// and it's on her Record, and a company's request is waiting in Inbox. One line under the frame says
 // what to try next (lib/landing-demo.ts, tourHint).
-const ICONS = { today: Sun, build: Hammer, club: Users, proof: BadgeCheck, inbox: InboxIcon } as const;
+const ICONS = { today: House, build: FolderGit2, club: Users, proof: BadgeCheck, inbox: InboxIcon } as const;
 
 type S = Tour & { posted: boolean; asked: boolean };
 const START: S = { verified: false, accepted: false, posted: false, asked: false };
@@ -141,7 +141,7 @@ function Post({ who, initials, meta, text, foot }: { who: string; initials: stri
 function Build({ s, set }: { s: S; set: (p: Partial<S>) => void }) {
   return (
     <div>
-      <Title note="1 project">Build</Title>
+      <Title note="1 project">Projects</Title>
       <div className={cn(card, "p-4")}>
         <div className="flex flex-wrap items-center justify-between gap-2"><p className="text-[17px] font-semibold tracking-tight">Line-following robot</p><span className="flex items-center gap-1.5 text-xs text-muted"><span className="size-1.5 rounded-full bg-text" /> In progress</span></div>
         <p className="mt-1.5 text-sm leading-snug text-muted">Autonomous robot that follows a taped course with 5 IR sensors and a PID loop.</p>
@@ -196,7 +196,7 @@ function Proof({ s }: { s: S }) {
     <div>
       <div className="mb-4 flex items-center gap-3"><Av size="size-11">MP</Av><div><h3 className="text-xl leading-tight font-semibold tracking-tight">Maya Patel</h3><p className="text-sm text-muted">Avionics and flight software, class of 2027</p></div></div>
       <div className={cn(card, "p-4")}>
-        <p className="flex items-center gap-2 text-sm font-semibold"><BadgeCheck className="size-4 text-ok" /> Proof <span className="font-normal text-muted">signed by people who saw it</span></p>
+        <p className="flex items-center gap-2 text-sm font-semibold"><BadgeCheck className="size-4 text-ok" /> Record <span className="font-normal text-muted">signed by people who saw it</span></p>
         <ul className="mt-3 flex flex-col divide-y divide-line">
           {rows.map((r) => (
             <li key={r.t} className="flex gap-3 py-3 first:pt-1 last:pb-0">

@@ -7,7 +7,7 @@ import { ThemeChrome } from "@/components/theme-chrome";
 import { Logo } from "@/components/ui";
 import { plusOnSale } from "@/lib/billing";
 import { dbFeatures } from "@/lib/db-features";
-import { PLUS, TIERS } from "@/lib/pricing";
+import { PLUS, PLUS_SOON, TIERS } from "@/lib/pricing";
 import { getViewer } from "@/lib/supabase/server";
 import { PlusButton } from "./plus-button";
 
@@ -32,6 +32,12 @@ export default function PlusPage({ searchParams }: PageProps<"/plus">) {
     </div>
   );
 }
+
+// The before/after for what Plus does today (lib/pricing.ts), labelled as an example; the member's own
+// numbers are on their dashboard. What's coming is listed as coming, never sold as built (PLUS_SOON).
+const DIFF = [
+  { what: "Companies that looked", free: "This week: Acme Robotics. 3 more companies looked in the last 90 days.", plus: "All 90 days, by name: Acme Robotics, Northwind Aero, Hartwell Labs, Quarry Systems." },
+];
 
 async function Plus({ searchParams }: { searchParams: PageProps<"/plus">["searchParams"] }) {
   const welcome = (await searchParams).welcome === "1";
@@ -58,7 +64,30 @@ async function Plus({ searchParams }: { searchParams: PageProps<"/plus">["search
             <Link href="/login?next=/plus" className="inline-flex h-11 items-center rounded-lg bg-accent px-5 text-[15px] font-medium text-on-accent hover:opacity-90">Log in to get {PLUS.name}</Link>
           )}
           {!has && !onSale && <p className="mt-3 text-sm text-muted">{PLUS.name} opens soon. Join the waitlist and we&apos;ll email you, at the launch price.</p>}
+          {!has && onSale && <p className="mt-3 text-sm text-muted">Cancel anytime, from Settings. Your record stays yours either way.</p>}
         </div>
+      </section>
+
+      <section aria-labelledby="plus-diff" className="mt-10">
+        <h2 id="plus-diff" className="text-lg font-semibold tracking-tight">What {PLUS.name} shows you</h2>
+        <p className="mt-1 text-xs text-faint">Examples</p>
+        <dl className="mt-4 flex flex-col gap-3">
+          {DIFF.map((d) => (
+            <div key={d.what} className="rounded-2xl border border-line bg-surface p-4">
+              <dt className="text-sm font-medium">{d.what}</dt>
+              <dd className="mt-2 grid gap-2 text-sm sm:grid-cols-2">
+                <p className="rounded-lg bg-surface-2 px-3 py-2 text-muted"><span className="block text-[11px] font-medium tracking-wide text-faint">Free</span>{d.free}</p>
+                <p className="rounded-lg bg-surface-2 px-3 py-2 text-text"><span className="block text-[11px] font-medium tracking-wide text-ok">{PLUS.name}</span>{d.plus}</p>
+              </dd>
+            </div>
+          ))}
+        </dl>
+        <p className="mt-4 text-sm text-muted">Coming to {PLUS.name}: {PLUS_SOON.map((x) => x.charAt(0).toLowerCase() + x.slice(1)).join(", ")}. They join your plan when they ship, at the same price.</p>
+      </section>
+
+      <section aria-labelledby="plus-free" className="mt-10 rounded-2xl border border-line p-5">
+        <h2 id="plus-free" className="text-base font-semibold tracking-tight">Free stays free, forever</h2>
+        <p className="mt-2 text-sm leading-relaxed text-muted">Logging your work, asking anyone who saw it to sign, your profile, your clubs, your AI agent and being found by companies never go behind a paywall. Signatures are the point of Brazework, so they&apos;re never for sale.</p>
       </section>
     </>
   );

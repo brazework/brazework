@@ -263,7 +263,7 @@ const { step, browser, as, go, summary, BASE } = require("./lib.cjs");
     const caraId = psql(`select id from auth.users where email = 'cara@forge.test'`);
     const no = await call("add_teammate", { project_id: made.id, person_id: caraId }, cc);
     if (!no?.isError || !/aren't in any of your clubs/.test(no.content[0].text) || !/search/.test(no.content[0].text)) throw new Error(`a stranger was added, or the refusal doesn't say how to fix it: ${JSON.stringify(no).slice(0, 200)}`);
-    // Leave Ben's projects as the later journeys expect them (u-build reads "Your builds").
+    // Leave Ben's projects as the later journeys expect them (u-build reads "Your projects").
     psql(`delete from public.projects where title in ('Hopper drone ${stamp}', 'Thrust stand v2 ${stamp}')`);
   }, ben);
 
