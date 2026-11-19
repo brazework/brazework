@@ -24,3 +24,18 @@ test("a field starts with its first three interests; an unknown field with none"
   for (const t of TOPICS) assert.deepEqual(starterInterests(t.name), t.topics.slice(0, 3));
   assert.deepEqual(starterInterests("Underwater basket weaving"), []);
 });
+
+test("build-first: the field is guessed from the typed build, or null", async () => {
+  const { guessField, firstHeadline } = await import("@/lib/front-door");
+  assert.equal(guessField("A line-following robot for the fall expo"), "Engineering");
+  assert.equal(guessField("Fine-tuned an LLM to grade lab reports"), "Data & AI");
+  assert.equal(guessField("A CubeSat radio that talks to the ground station"), "Space Science");
+  assert.equal(guessField("Launched a campus thrift startup with 40 customers"), "Business & Entrepreneurship");
+  assert.equal(guessField("A podcast on local history"), "Media & Communication");
+  assert.equal(guessField("A rehab robot arm for stroke patients"), "Health & Medicine", "the more specific field wins a tie-break by count");
+  assert.equal(guessField("Something I made"), null);
+  assert.equal(guessField(""), null);
+  for (const f of ["Engineering", "Data & AI", "Space Science"]) assert.ok(TOPICS.some((t) => t.name === f));
+  assert.equal(firstHeadline("Engineering", true), "Engineering student");
+  assert.equal(firstHeadline("Engineering", false), "Engineering");
+});

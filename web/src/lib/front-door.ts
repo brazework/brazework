@@ -30,3 +30,43 @@ export function signupHref(goal: string, build: string): string {
 export function starterInterests(field: string): string[] {
   return [...(TOPICS.find((t) => t.name === field)?.topics ?? [])].slice(0, 3);
 }
+
+// Build-first onboarding: the field is guessed from the line they typed, so the first screen is one
+// box and one tap. Whole-word keywords, most specific fields first (a "robot arm for rehab" is
+// Health before Engineering); null when nothing matches, and the picker starts on the first field.
+const FIELD_WORDS: [string, string[]][] = [
+  ["Space Science", ["satellite", "cubesat", "rocket", "rocketry", "telescope", "orbit", "orbital", "astro", "astronomy", "spacecraft", "launch vehicle"]],
+  ["Health & Medicine", ["patient", "clinic", "clinical", "medical", "hospital", "rehab", "prosthetic", "prosthesis", "health", "nursing", "vaccine", "diagnostic"]],
+  ["Data & AI", ["machine learning", "ml", "ai", "llm", "neural", "model", "dataset", "classifier", "computer vision", "chatbot", "agent", "kaggle"]],
+  ["Computer Science", ["app", "website", "web app", "api", "compiler", "backend", "frontend", "database", "software", "game", "ios", "android", "extension", "cli"]],
+  ["Engineering", ["robot", "robotic", "drone", "cad", "pcb", "circuit", "bridge", "engine", "motor", "3d print", "3d printed", "prototype", "arduino", "fpga", "battery pack", "go-kart", "baja", "formula sae"]],
+  ["Biology & Life Sciences", ["cell", "cells", "gene", "genome", "crispr", "protein", "bacteria", "enzyme", "neuron", "lab assay", "microscopy"]],
+  ["Chemistry", ["synthesis", "polymer", "catalyst", "reaction", "electrolyte", "titration", "compound", "chemistry"]],
+  ["Physics", ["laser", "quantum", "optics", "particle", "plasma", "spectrometer", "physics"]],
+  ["Mathematics", ["proof", "theorem", "conjecture", "putnam", "lemma", "combinatorics"]],
+  ["Earth & Environment", ["solar", "climate", "water quality", "compost", "recycling", "watershed", "wind turbine", "sustainability", "emissions"]],
+  ["Business & Entrepreneurship", ["startup", "business", "revenue", "customers", "pitch", "marketing", "pricing", "store", "shop", "ecommerce", "investor", "case competition"]],
+  ["Design & Arts", ["design", "logo", "brand", "poster", "film", "album", "song", "mural", "exhibit", "portfolio", "ux", "figma", "sculpture"]],
+  ["Media & Communication", ["podcast", "newsletter", "article", "journalism", "video series", "youtube", "magazine", "documentary"]],
+  ["Social Sciences & Policy", ["survey", "policy", "election", "economics", "psychology", "study of", "interviews", "moot court", "mock trial"]],
+  ["Education", ["tutoring", "tutor", "curriculum", "lesson", "workshop", "bootcamp", "teaching", "students learn"]],
+];
+
+const escapeRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+/** The field a typed build most likely belongs to, or null. */
+export function guessField(text: string): string | null {
+  const t = ` ${text.toLowerCase().replace(/[^a-z0-9+#\- ]+/g, " ").replace(/\s+/g, " ")} `;
+  let best: string | null = null, score = 0;
+  for (const [field, words] of FIELD_WORDS) {
+    if (!TOPICS.some((x) => x.name === field)) continue;
+    const s = words.reduce((n, w) => n + (new RegExp(`(^|[^a-z0-9])${escapeRe(w)}s?([^a-z0-9]|$)`).test(t) ? 1 : 0), 0);
+    if (s > score) { best = field; score = s; }
+  }
+  return best;
+}
+
+/** The line under a new member's name, until they write their own: "Engineering student". */
+export function firstHeadline(field: string, student: boolean): string {
+  return student ? `${field} student` : field;
+}
