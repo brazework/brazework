@@ -1,0 +1,62 @@
+<title>Brazework Terminal Scene</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@500;600;700&family=Geist+Mono:wght@400;500;600&display=swap">
+<style>
+/* Layout: one terminal window centred on a 1920x1080 white stage; frames are renderAt(t). An example session of an AI coding tool logging work to Brazework over MCP. Single light look on purpose. */
+:root { --bg: #ffffff; --term: #141413; --term-2: #1f1f1d; --line: #2e2e2b; --fg: #ecece8; --dim: #8f8e88; --ok: #4cd987; --accent: #e8a03c; --ink: #1a1a18; --muted: #85847f;
+  --mono: "Geist Mono", ui-monospace, monospace; --sans: "Geist", ui-sans-serif, system-ui, sans-serif; }
+html, body { height: 100%; margin: 0; }
+body { background: var(--bg); overflow: hidden; font-family: var(--sans); }
+#stage { position: relative; width: 1920px; height: 1080px; background: var(--bg); transform-origin: 0 0; overflow: hidden; }
+#win { position: absolute; left: 260px; top: 170px; width: 1400px; height: 700px; border-radius: 26px; background: var(--term); box-shadow: 0 60px 120px -50px rgb(0 0 0 / 0.55), 0 2px 10px rgb(0 0 0 / 0.15); overflow: hidden; }
+#bar { height: 58px; background: var(--term-2); display: flex; align-items: center; gap: 12px; padding: 0 24px; border-bottom: 1px solid var(--line); }
+.dot { width: 15px; height: 15px; border-radius: 50%; background: #3a3a37; }
+#bar span { margin-left: 18px; color: var(--dim); font: 500 20px var(--mono); }
+#body { padding: 40px 48px; font: 400 29px/1.62 var(--mono); color: var(--fg); white-space: pre-wrap; }
+.dim { color: var(--dim); } .ok { color: var(--ok); } .acc { color: var(--accent); } .b { font-weight: 600; }
+.row { display: block; }
+.caret { display: inline-block; width: 15px; height: 32px; background: var(--fg); vertical-align: -5px; margin-left: 2px; }
+#cap { position: absolute; left: 0; right: 0; top: 916px; text-align: center; color: var(--muted); font: 500 24px var(--mono); letter-spacing: 0.1em; text-transform: uppercase; }
+#head { position: absolute; left: 0; right: 0; top: 62px; text-align: center; color: var(--ink); font: 700 52px var(--sans); letter-spacing: -0.03em; }
+</style>
+<div id="stage">
+  <div id="head">Log work from wherever you build.</div>
+  <div id="win">
+    <div id="bar"><i class="dot"></i><i class="dot"></i><i class="dot"></i><span>claude · ~/line-follower</span></div>
+    <div id="body"></div>
+  </div>
+  <div id="cap">Example session · Claude Code connected to Brazework over MCP</div>
+</div>
+<script>
+const DURATION = 9;
+const $ = (id) => document.getElementById(id);
+const clamp = (v) => Math.min(1, Math.max(0, v));
+const p = (t, a, b) => clamp((t - a) / (b - a));
+const out3 = (x) => 1 - Math.pow(1 - x, 3);
+const ASK = "Log my milestone on Brazework: the robot held 39.8 s on the new course. Use my last commit as evidence.";
+const ROWS = [
+  [3.9, '<span class="acc">●</span> <span class="b">brazework</span> <span class="dim">·</span> log_milestone'],
+  [4.3, '<span class="dim">  project   </span>Line-following robot'],
+  [4.6, '<span class="dim">  club      </span>Rocketry Club'],
+  [4.9, '<span class="dim">  evidence  </span>github.com/maya-patel/line-follower/commit/9c2e1f4'],
+  [5.9, '<span class="ok">✓ Logged on Brazework.</span> Waiting for Rocketry Club to verify.'],
+];
+function renderAt(t) {
+  const n = Math.floor(ASK.length * p(t, 0.6, 3.3));
+  const typing = t < 3.5;
+  let html = `<span class="row"><span class="dim">&gt;</span> ${ASK.slice(0, n)}${typing && Math.floor(t * 3) % 2 === 0 ? '<span class="caret"></span>' : ""}</span>\n`;
+  for (const [at, row] of ROWS) {
+    const k = out3(p(t, at, at + 0.35));
+    if (k > 0) html += `<span class="row" style="opacity:${k.toFixed(3)};transform:translateY(${((1 - k) * 10).toFixed(1)}px)">${row}</span>`;
+  }
+  $("body").innerHTML = html;
+  const o = Math.min(out3(p(t, 0, 0.6)), 1);
+  $("win").style.opacity = o.toFixed(3);
+  $("win").style.transform = `translateY(${((1 - o) * 40).toFixed(1)}px) scale(${(0.985 + 0.015 * p(t, 0, DURATION)).toFixed(4)})`;
+  $("head").style.opacity = o.toFixed(3); $("cap").style.opacity = o.toFixed(3);
+}
+window.renderAt = renderAt; window.DURATION = DURATION;
+function fit() { const s = Math.min(innerWidth / 1920, innerHeight / 1080); $("stage").style.transform = `scale(${s})`; }
+addEventListener("resize", fit); fit();
+renderAt(7.5);
+</script>

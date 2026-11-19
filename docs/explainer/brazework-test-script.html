@@ -1,0 +1,153 @@
+<title>Brazework Launch Test</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a checklist read top to bottom: what has to be true first, then nine tests in filming order, each with steps and what you should see. Ticks stay in this browser only. Brand tokens from the app. */
+:root {
+  --bg: #fbfbfa; --surface: #ffffff; --surface-2: #f3f3f1; --line: #e4e4e0; --line-2: #cfcfca;
+  --fg: #1f1f1d; --fg-2: #4a4945; --muted: #6f6e69;
+  --ok: #15803d; --ok-bg: #e5f3ea; --wait: #b45309; --wait-bg: #fbefdf;
+  --display: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "Geist Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #121211; --surface: #1a1a19; --surface-2: #222220; --line: #2f2f2c; --line-2: #45453f;
+  --fg: #f2f2ef; --fg-2: #c4c3be; --muted: #9a9993; --ok: #4ade80; --ok-bg: #12301f; --wait: #f5a524; --wait-bg: #33240c; color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #121211; --surface: #1a1a19; --surface-2: #222220; --line: #2f2f2c; --line-2: #45453f;
+  --fg: #f2f2ef; --fg-2: #c4c3be; --muted: #9a9993; --ok: #4ade80; --ok-bg: #12301f; --wait: #f5a524; --wait-bg: #33240c; color-scheme: dark; }
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--fg); font-family: var(--display); font-size: 16px; line-height: 1.6;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 0 64px; }
+.wrap { max-width: 860px; margin: 0 auto; display: flex; flex-direction: column; gap: 44px; }
+h1, h2, h3 { margin: 0; text-wrap: balance; letter-spacing: -0.02em; }
+h1 { font-size: clamp(1.9rem, 4.4vw, 2.7rem); line-height: 1.1; font-weight: 700; }
+h2 { font-size: 1.4rem; font-weight: 650; }
+h3 { font-size: 1.05rem; font-weight: 600; }
+p { margin: 0; max-width: 68ch; color: var(--fg-2); }
+code { font-family: var(--mono); font-size: 0.86em; background: var(--surface-2); border: 1px solid var(--line); border-radius: 5px; padding: 0.05em 0.35em; overflow-wrap: anywhere; }
+header { display: flex; flex-direction: column; gap: 12px; padding-top: 26px; }
+.progress { display: flex; align-items: center; gap: 12px; font-size: 0.9rem; color: var(--muted); }
+.bar { flex: 1; height: 6px; border-radius: 999px; background: var(--surface-2); overflow: hidden; max-width: 320px; }
+.bar i { display: block; height: 100%; width: 0; background: var(--ok); transition: width .2s; }
+section { display: flex; flex-direction: column; gap: 14px; }
+.pre { border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+.pre li { list-style: none; display: grid; grid-template-columns: 96px 1fr; gap: 12px; padding: 11px 16px; border-bottom: 1px solid var(--line); }
+.pre li:last-child { border-bottom: 0; }
+.pre { padding: 0; margin: 0; }
+.pill { justify-self: start; align-self: start; font-size: 0.76rem; font-weight: 600; padding: 2px 9px; border-radius: 999px; }
+.pill.need { background: var(--wait-bg); color: var(--wait); } .pill.done { background: var(--ok-bg); color: var(--ok); } .pill.opt { background: var(--surface-2); color: var(--muted); }
+.test { border: 1px solid var(--line); border-radius: 12px; background: var(--surface); padding: 16px 18px; display: flex; flex-direction: column; gap: 10px; }
+.test.checked { border-color: var(--ok); }
+.test-head { display: flex; align-items: flex-start; gap: 12px; }
+.test-head input { width: 20px; height: 20px; margin-top: 2px; accent-color: var(--ok); flex: none; }
+.test-head label { display: flex; flex-direction: column; gap: 2px; cursor: pointer; }
+.test-head .where { font-size: 0.82rem; color: var(--muted); font-family: var(--mono); }
+.cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+.cols > div { min-width: 0; }
+.cols h4 { margin: 0 0 4px; font-size: 0.8rem; font-weight: 600; color: var(--muted); }
+.cols ol, .cols ul { margin: 0; padding-left: 1.15em; font-size: 0.93rem; color: var(--fg-2); display: flex; flex-direction: column; gap: 3px; }
+.panel { border: 1px solid var(--line); border-radius: 12px; background: var(--surface); padding: 16px 18px; display: flex; flex-direction: column; gap: 8px; }
+.panel ul { margin: 0; padding-left: 1.1em; color: var(--fg-2); font-size: 0.94rem; display: flex; flex-direction: column; gap: 4px; }
+button.reset { font: inherit; font-size: 0.82rem; padding: 4px 10px; border-radius: 8px; border: 1px solid var(--line-2); background: var(--surface); color: var(--fg); cursor: pointer; }
+input:focus-visible, button:focus-visible { outline: 2px solid var(--ok); outline-offset: 2px; }
+footer { font-size: 0.85rem; color: var(--muted); border-top: 1px solid var(--line); padding-top: 16px; }
+@media (max-width: 640px) { .cols { grid-template-columns: 1fr; } .pre li { grid-template-columns: 1fr; gap: 4px; } }
+</style>
+
+<div class="wrap">
+  <header>
+    <h1>Test Brazework before we film</h1>
+    <p>Nine tests in the order the demo video tells the story. Run them on <b>brazework.com</b> with your own account; I'll run the same flows on the demo and fix what either of us finds. For each one that misbehaves, send me the page, what you did, what you expected, and a screenshot.</p>
+    <div class="progress"><span id="count">0 of 9 done</span><span class="bar"><i id="bar"></i></span><button class="reset" type="button" id="reset">Clear ticks</button></div>
+  </header>
+
+  <section>
+    <h2>First, what has to be true</h2>
+    <ul class="pre">
+      <li><span class="pill done">done</span><p>Everything is live on production (<code>5192e3a</code>), the database is up to date, and every public page loads cleanly on desktop and phone.</p></li>
+      <li><span class="pill need">needed for test 2</span><p><b>Signature emails:</b> set <code>RESEND_API_KEY</code> and <code>FORGE_EMAIL_FROM</code> in Vercel → Production, then redeploy. Without them, asking someone to sign is refused (honestly, but it can't be tested).</p></li>
+      <li><span class="pill need">needed for one-click</span><p><b>Sign in from your AI with one click:</b> Supabase → Authentication → OAuth Server on, Authorization Path <code>/oauth/consent</code>, dynamic apps allowed. Until then, test 6 uses a token (that path works today).</p></li>
+      <li><span class="pill need">before filming</span><p><b>The old TEST milestone</b> on your profile ("TEST: MCP log_milestone check"): hide it, or remove it with <code>supabase/maintenance/remove-test-data.sql</code> (preview first).</p></li>
+      <li><span class="pill opt">optional</span><p>Google, GitHub and LinkedIn sign-in (Supabase → Authentication → Providers). Stripe keys (without them every paid button becomes a request in your admin queue, which works fine for testing).</p></li>
+      <li><span class="pill opt">you'll need</span><p>A second email to sign up as a new member, and a friend with a university or company email who agrees to sign one milestone.</p></li>
+    </ul>
+  </section>
+
+  <section id="tests">
+    <h2>The nine tests</h2>
+
+    <div class="test" data-id="t1"><div class="test-head"><input type="checkbox" id="t1"><label for="t1"><h3>1. A new member's first 90 seconds</h3><span class="where">brazework.com on your phone · second email</span></label></div>
+      <div class="cols"><div><h4>Do</h4><ol><li>On the landing page, type what you're building and continue.</li><li>Create the account and confirm the email.</li><li>Go through the three screens: what you built, proof, who saw it.</li></ol></div>
+      <div><h4>You should see</h4><ul><li>The landing hero plays the AI moment; "Prove what you built." stays put.</li><li>Your profile with your first milestone marked waiting, about 90 seconds after "Create account".</li><li>A Share button that makes a "waiting for a signature" card.</li></ul></div></div></div>
+
+    <div class="test" data-id="t2"><div class="test-head"><input type="checkbox" id="t2"><label for="t2"><h3>2. Someone who saw it signs</h3><span class="where">needs signature emails switched on</span></label></div>
+      <div class="cols"><div><h4>Do</h4><ol><li>On that milestone, ask your friend to sign (their university or company email, and how they know the work).</li><li>Your friend opens the email and signs, without making an account.</li><li>Open the milestone's verify link signed out.</li></ol></div>
+      <div><h4>You should see</h4><ul><li>A Gmail address is refused with a clear reason.</li><li>Your friend sees the work and its evidence, then "Your vouch is on their record, with your name on it" and an invite to start their own record.</li><li>The green seal with their name and role; <code>/v/…</code> opens for anyone, with a QR code.</li></ul></div></div></div>
+
+    <div class="test" data-id="t3"><div class="test-head"><input type="checkbox" id="t3"><label for="t3"><h3>3. Home is one stream</h3><span class="where">/feed</span></label></div>
+      <div class="cols"><div><h4>Do</h4><ol><li>Open Home after tests 1 and 2.</li><li>Use the sidebar: Home, Projects, Clubs, Record, Inbox.</li></ol></div>
+      <div><h4>You should see</h4><ul><li>What your tools noticed, what needs you, what your clubs shipped, and your goal, in that order.</li><li>No page labelled "Build" anywhere.</li><li>Nothing slow: no blank spinners, pages that look done as they load.</li></ul></div></div></div>
+
+    <div class="test" data-id="t4"><div class="test-head"><input type="checkbox" id="t4"><label for="t4"><h3>4. A project, and Ember on the page</h3><span class="where">a project of yours</span></label></div>
+      <div class="cols"><div><h4>Do</h4><ol><li>Open a project.</li><li>Press <code>/</code> and type what you did, e.g. "finished the motor driver, 12% less heat".</li><li>Approve the card that appears.</li></ol></div>
+      <div><h4>You should see</h4><ul><li>The drawing-sheet cover, one Next step, and the timeline of milestones with seals.</li><li>Ember's card right in the page, with Log, Edit and Not now.</li><li>After approving: the milestone on the timeline, no page reload.</li></ul></div></div></div>
+
+    <div class="test" data-id="t5"><div class="test-head"><input type="checkbox" id="t5"><label for="t5"><h3>5. Clubs, with Ian as officer</h3><span class="where">Clubs · with Ian</span></label></div>
+      <div class="cols"><div><h4>Do</h4><ol><li>Create or open a club with Ian as an officer; add an event and RSVP to it.</li><li>Send a milestone to the club.</li><li>Ian verifies it from the club's verify queue.</li></ol></div>
+      <div><h4>You should see</h4><ul><li>The club page leads with what members built, with one obvious next action.</li><li>Ian's queue is a calm to-do list with the evidence one click away.</li><li>The seal on your milestone with Ian's name and role.</li></ul></div></div></div>
+
+    <div class="test" data-id="t6"><div class="test-head"><input type="checkbox" id="t6"><label for="t6"><h3>6. The full power of the MCP</h3><span class="where">Claude Code or Claude desktop · Settings → Your tools</span></label></div>
+      <div class="cols"><div><h4>Do</h4><ol><li>Connect your AI (one click if the OAuth switch is on, otherwise Make token and paste the command).</li><li>Type <code>/start</code>, then "set my goal: an internship in robotics, keep it private".</li><li>Try <code>/shipped</code> on a real merged PR, <code>/week</code>, <code>/standup</code> and <code>/career_fair</code> for an event.</li><li>Ask it to create a project, RSVP to an event and draft a reply to a message.</li></ol></div>
+      <div><h4>You should see</h4><ul><li>It asks before every write and never posts on its own.</li><li>Drafts show up on Home's triage and in Drafts, marked with the tool they came from.</li><li>Drafts end with "Toward your goal: …" once a goal is set.</li><li>Résumé lines name who signed (a person's name and role, not blank).</li></ul></div></div></div>
+
+    <div class="test" data-id="t7"><div class="test-head"><input type="checkbox" id="t7"><label for="t7"><h3>7. Your record and Plus</h3><span class="where">Record · /plus</span></label></div>
+      <div class="cols"><div><h4>Do</h4><ol><li>Open Record and the review packet.</li><li>Open /plus and join the waitlist.</li></ol></div>
+      <div><h4>You should see</h4><ul><li>Signed work first; who looked (named this week, counted not named for older weeks, only if there are any).</li><li>Plus lists only what's built; the rest says "coming soon"; "Free stays free, forever".</li><li>The packet is yours only: another member gets a 404.</li></ul></div></div></div>
+
+    <div class="test" data-id="t8"><div class="test-head"><input type="checkbox" id="t8"><label for="t8"><h3>8. Money paths and the admin queue</h3><span class="where">/pricing · /book · /admin</span></label></div>
+      <div class="cols"><div><h4>Do</h4><ol><li>On /pricing, try "Book a pilot" and "Sponsor a chapter".</li><li>Open /admin as a founder.</li></ol></div>
+      <div><h4>You should see</h4><ul><li>One clear button per audience; nothing asks for a card unless Stripe is on.</li><li>Each request in the Review queue with the account's email, nothing typed by hand.</li></ul></div></div></div>
+
+    <div class="test" data-id="t9"><div class="test-head"><input type="checkbox" id="t9"><label for="t9"><h3>9. Phone and dark mode pass</h3><span class="where">your phone · system dark mode</span></label></div>
+      <div class="cols"><div><h4>Do</h4><ol><li>Repeat tests 3, 4 and 7 on your phone.</li><li>Switch your phone to dark mode and look again.</li></ol></div>
+      <div><h4>You should see</h4><ul><li>Nothing cut off or scrolling sideways; every tab reachable.</li><li>Text readable in both themes, the green seal clear in both.</li></ul></div></div></div>
+  </section>
+
+  <section>
+    <h2>Filming on the demo, not on real accounts</h2>
+    <div class="panel">
+      <p>The video is filmed on the private local demo, so nothing real is touched and the story is always the same.</p>
+      <ul>
+        <li>Start it from the repo: <code>cd web && npm run dev -- --demo</code> (on its own stack beside test runs: <code>E2E_STACK=brazework-demo E2E_GATEWAY_PORT=54331 E2E_AUTH_PORT=19989 E2E_REST_PORT=13010 PORT=3104 npm run dev -- --demo</code>).</li>
+        <li>Members: <code>priya@forge.test</code> (builder, crop disease classifier), <code>leo@forge.test</code> (Rocketry Club), <code>ana@forge.test</code> (professional); <code>maya@</code> is an officer, <code>cara@</code> runs Acme Aerospace. Password <code>forge-test-pass-1</code>, local only.</li>
+        <li>Ready-made moments: Cara's message request in Priya's inbox, three upcoming events (including Acme's intern session for <code>/career_fair</code>), a milestone signed by a professor, and one waiting.</li>
+        <li>Signature emails land in <code>/dev/outbox</code> on the demo, so the signing moment can be filmed end to end.</li>
+      </ul>
+    </div>
+  </section>
+
+  <footer>Checked Nov 19: all launch PRs merged, production on <code>5192e3a</code>, public pages clean at desktop and phone width, and a full MCP dry run on the demo as builder, officer and company. Ticks are saved in this browser only.</footer>
+</div>
+
+<script>
+(function () {
+  const KEY = "bw-test-ticks";
+  let ticks = {};
+  try { ticks = JSON.parse(localStorage.getItem(KEY) || "{}"); } catch (e) { ticks = {}; }
+  const boxes = [...document.querySelectorAll('.test input[type="checkbox"]')];
+  const update = () => {
+    const done = boxes.filter((b) => b.checked).length;
+    document.getElementById("count").textContent = done + " of " + boxes.length + " done";
+    document.getElementById("bar").style.width = (100 * done / boxes.length) + "%";
+    boxes.forEach((b) => b.closest(".test").classList.toggle("checked", b.checked));
+  };
+  boxes.forEach((b) => {
+    b.checked = !!ticks[b.id];
+    b.addEventListener("change", () => { ticks[b.id] = b.checked; try { localStorage.setItem(KEY, JSON.stringify(ticks)); } catch (e) {} update(); });
+  });
+  document.getElementById("reset").addEventListener("click", () => { ticks = {}; boxes.forEach((b) => (b.checked = false)); try { localStorage.removeItem(KEY); } catch (e) {} update(); });
+  update();
+})();
+</script>

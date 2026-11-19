@@ -1,0 +1,334 @@
+<title>Brazework Hype Film</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700;800;900&family=Geist+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: a fixed 1920x1080 stage scaled to fit; every frame is a pure function of time t (renderAt), so it plays live and renders to video frame by frame. Single dark look on purpose. */
+:root {
+  --ink: #0c0c0b; --panel: #171716; --panel-2: #1f1f1d; --line: #2c2c2a;
+  --fg: #f2f2ef; --fg-2: #b9b8b3; --muted: #7d7c77;
+  --ok: #4cd987; --ok-deep: #123a24; --heat: #ff7a3d;
+  --display: "Geist", ui-sans-serif, system-ui, sans-serif;
+  --mono: "Geist Mono", ui-monospace, SFMono-Regular, monospace;
+  color-scheme: dark;
+}
+/* White cut for the demo film (?light): same scenes on the app's light palette. */
+html.light {
+  --ink: #fbfbfa; --panel: #ffffff; --panel-2: #f3f3f1; --line: #e4e4e0;
+  --fg: #1f1f1d; --fg-2: #4a4945; --muted: #787772;
+  --ok: #1a7f43; --ok-deep: #e3f3e9; --heat: #d9480f; color-scheme: light;
+}
+html.light #glow { background: radial-gradient(40% 40% at 50% 50%, rgb(26 127 67 / 0.07), transparent 70%); }
+html.light #grid { opacity: 0.55; }
+html.light .doc, html.light .ghost { border: 1px solid var(--line); box-shadow: 0 30px 60px -30px rgb(0 0 0 / 0.25); }
+html.light .card, html.light .node, html.light .search, html.light .row, html.light .chip { box-shadow: 0 30px 60px -36px rgb(0 0 0 / 0.22); }
+html.light .chip .dot { box-shadow: none; }
+html, body { height: 100%; }
+body { background: var(--ink); color: var(--fg); font-family: var(--display); overflow: hidden; display: grid; place-items: center; padding-left: max(0px, env(safe-area-inset-left, 0px)); padding-right: max(0px, env(safe-area-inset-right, 0px)); }
+#stage { position: relative; width: 1920px; height: 1080px; overflow: hidden; background: var(--ink); transform-origin: center center; flex-shrink: 0; }
+.abs { position: absolute; }
+.center { left: 0; right: 0; text-align: center; }
+.big { font-size: 112px; font-weight: 800; letter-spacing: -0.045em; line-height: 1.02; }
+.mid { font-size: 72px; font-weight: 750; letter-spacing: -0.035em; line-height: 1.08; }
+.cap { font-size: 40px; font-weight: 500; color: var(--fg-2); letter-spacing: -0.01em; }
+.mono { font-family: var(--mono); letter-spacing: 0.08em; text-transform: uppercase; }
+#glow { inset: -20%; background: radial-gradient(40% 40% at 50% 50%, rgb(76 217 135 / 0.10), transparent 70%); }
+#grid { inset: 0; background-image: linear-gradient(var(--line) 1px, transparent 1px), linear-gradient(90deg, var(--line) 1px, transparent 1px); background-size: 96px 96px; opacity: 0.18; mask-image: radial-gradient(70% 70% at 50% 50%, #000 30%, transparent 80%); }
+
+/* Résumé */
+.doc { width: 620px; padding: 44px 48px; background: #f4f3ef; color: #2a2a28; border-radius: 10px; box-shadow: 0 40px 80px -30px rgb(0 0 0 / 0.8); font-size: 30px; line-height: 1.5; }
+.doc h4 { margin: 0 0 6px; font-size: 38px; font-weight: 800; letter-spacing: -0.02em; color: #1a1a19; }
+.doc .sub { font-size: 20px; color: #77766f; margin-bottom: 22px; font-family: var(--mono); letter-spacing: 0.04em; }
+.doc .ln { position: relative; display: block; }
+.doc .ln::after { content: ""; position: absolute; left: -6px; top: 52%; height: 4px; background: #e0412b; width: calc(var(--s, 0) * (100% + 12px)); border-radius: 2px; }
+.ghost { width: 300px; padding: 20px 24px; background: #e9e8e3; color: #55544e; border-radius: 8px; font-size: 18px; line-height: 1.5; box-shadow: 0 20px 40px -20px rgb(0 0 0 / 0.8); }
+.ghost b { display: block; color: #2a2a28; font-size: 20px; }
+.gen { font-family: var(--mono); font-size: 13px; color: #e0412b; letter-spacing: 0.06em; }
+
+/* Proof card */
+.card { width: 760px; padding: 40px; background: var(--panel); border: 1px solid var(--line); border-radius: 32px; box-shadow: 0 60px 120px -40px rgb(0 0 0 / 0.9); display: grid; gap: 24px; }
+.who { display: flex; gap: 18px; align-items: center; }
+.av { width: 64px; height: 64px; border-radius: 50%; background: linear-gradient(135deg, #ff9a3d, #e0412b); display: grid; place-items: center; font-weight: 700; font-size: 24px; color: #fff; }
+.who strong { font-size: 30px; display: block; }
+.who small { font-size: 22px; color: var(--muted); }
+.ms { font-size: 34px; font-weight: 650; line-height: 1.3; letter-spacing: -0.015em; }
+.metric { display: flex; align-items: baseline; gap: 16px; }
+.metric strong { font-size: 104px; font-weight: 850; letter-spacing: -0.05em; font-variant-numeric: tabular-nums; line-height: 1; }
+.metric span { font-size: 24px; color: var(--muted); }
+.seal { display: flex; gap: 18px; align-items: center; padding: 20px 24px; border-radius: 20px; background: var(--ok-deep); color: var(--ok); transform-origin: 50% 50%; }
+.seal strong { font-size: 28px; display: block; }
+.seal em { font-style: normal; font-size: 22px; color: var(--fg-2); }
+.ring { width: 140px; height: 140px; border-radius: 50%; border: 4px solid var(--ok); }
+
+/* Loop */
+.node { width: 330px; height: 190px; border-radius: 28px; background: var(--panel); border: 2px solid var(--line); padding: 30px 32px; display: grid; align-content: center; gap: 8px; }
+.node .n { font-family: var(--mono); font-size: 20px; color: var(--muted); }
+.node b { font-size: 44px; letter-spacing: -0.03em; }
+.node i { font-style: normal; font-size: 22px; color: var(--fg-2); }
+.wire { height: 4px; background: var(--ok); border-radius: 2px; transform-origin: left center; }
+
+/* Chips */
+.chip { padding: 18px 26px; border-radius: 999px; background: var(--panel); border: 1px solid var(--line); display: flex; gap: 14px; align-items: center; font-size: 26px; font-weight: 600; white-space: nowrap; }
+.chip .dot { width: 14px; height: 14px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 18px var(--ok); }
+
+/* Search */
+.search { width: 1040px; height: 104px; border-radius: 26px; background: var(--panel); border: 2px solid var(--line); display: flex; align-items: center; gap: 22px; padding: 0 34px; font-size: 38px; }
+.search .caret { width: 3px; height: 46px; background: var(--fg); }
+.row { width: 1040px; padding: 22px 30px; border-radius: 22px; background: var(--panel); border: 1px solid var(--line); display: flex; align-items: center; gap: 22px; }
+.row .av { width: 56px; height: 56px; font-size: 20px; }
+.row .t { flex: 1; min-width: 0; }
+.row .t strong { font-size: 28px; display: block; }
+.row .t span { font-size: 21px; color: var(--muted); }
+.row .ok { color: var(--ok); font-size: 21px; font-weight: 600; display: flex; gap: 8px; align-items: center; white-space: nowrap; }
+.toast { width: 560px; padding: 24px 28px; border-radius: 24px; background: var(--fg); color: var(--ink); display: flex; gap: 18px; align-items: center; box-shadow: 0 30px 60px -20px rgb(0 0 0 / 0.9); }
+.toast strong { font-size: 26px; display: block; }
+.toast span { font-size: 21px; opacity: 0.7; }
+
+/* End */
+.mark { font-size: 168px; font-weight: 900; letter-spacing: -0.06em; }
+.url { font-family: var(--mono); font-size: 32px; color: var(--ok); letter-spacing: 0.04em; }
+#controls { position: fixed; bottom: max(16px, env(safe-area-inset-bottom, 0px)); left: 50%; transform: translateX(-50%); display: flex; gap: 10px; align-items: center; background: rgb(23 23 22 / 0.85); border: 1px solid var(--line); border-radius: 999px; padding: 8px 10px; z-index: 5; font-family: var(--mono); font-size: 12px; color: var(--fg-2); }
+#controls button { background: var(--fg); color: var(--ink); border: 0; border-radius: 999px; padding: 8px 16px; font: 600 13px var(--display); cursor: pointer; }
+#controls button:focus-visible { outline: 2px solid var(--ok); outline-offset: 2px; }
+body.rec #controls { display: none; }
+</style>
+
+<div id="stage" aria-label="Brazework hype film">
+  <div id="glow" class="abs"></div>
+  <div id="grid" class="abs"></div>
+
+  <!-- 1 -->
+  <div id="s1" class="abs center big" style="top:470px">Everyone has a résumé.</div>
+
+  <!-- 2–3 -->
+  <div id="ghosts"></div>
+  <div id="doc" class="abs doc" style="left:650px;top:250px">
+    <h4>Jordan Reyes</h4><div class="sub">B.S. · CLASS OF 2027</div>
+    <span class="ln">Built a robot</span>
+    <span class="ln">Team player and fast learner</span>
+    <span class="ln">Proficient in Python</span>
+    <span class="ln">Passionate about innovation</span>
+  </div>
+  <div id="s2cap" class="abs center cap" style="top:900px">AI writes these in a second.</div>
+  <div id="s3cap" class="abs center mid" style="top:880px">So nobody believes them.</div>
+
+  <!-- 4 -->
+  <div id="s4" class="abs center big" style="top:400px"></div>
+
+  <!-- 5 -->
+  <div id="card" class="abs card" style="left:860px;top:150px">
+    <div class="who"><div class="av">MP</div><div><strong>Maya Patel</strong><small>ECE '27 · Robotics Club</small></div></div>
+    <div class="ms">Line-following robot: autonomous run on the competition course</div>
+    <div class="metric"><strong id="num">0.0 s</strong><span>course time</span></div>
+    <div id="seal" class="seal">
+      <svg width="44" height="44" viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 2l2.4 2.1 3.2-.3.9 3.1 2.8 1.6-1.1 3 1.1 3-2.8 1.6-.9 3.1-3.2-.3L12 22l-2.4-2.1-3.2.3-.9-3.1L2.7 15.5l1.1-3-1.1-3 2.8-1.6.9-3.1 3.2.3L12 2z" fill="currentColor" opacity=".22"/><path d="M8 12.2l2.6 2.6L16.2 9" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <div><strong>Verified by Robotics Club</strong><em>Signed by Ben Cho, President</em></div>
+    </div>
+  </div>
+  <div id="ring" class="abs ring"></div>
+  <div id="s5a" class="abs mid" style="left:150px;top:330px;width:620px">Your work.</div>
+  <div id="s5b" class="abs mid" style="left:150px;top:430px;width:620px;color:var(--ok)">Signed by someone who saw it happen.</div>
+
+  <!-- 6 -->
+  <div id="s6t" class="abs center mid" style="top:200px">One loop.</div>
+  <div id="loop"></div>
+  <div id="s6b" class="abs center cap" style="top:760px">Every signature makes your profile, and the whole network, worth more.</div>
+
+  <!-- 7 -->
+  <div id="chips"></div>
+  <div id="s7" class="abs center big" style="top:440px">Every club. Every study group.<br>Every major.</div>
+
+  <!-- 8 -->
+  <div id="s8t" class="abs center cap" style="top:140px">Companies hire from the proof.</div>
+  <div id="search" class="abs search" style="left:440px;top:230px">
+    <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+    <span id="q"></span><span class="caret" id="caret"></span>
+  </div>
+  <div id="rows"></div>
+  <div id="toast" class="abs toast" style="left:1290px;top:880px">
+    <div class="av" style="background:linear-gradient(135deg,#3d8bff,#6b4cff)">VS</div>
+    <div><strong>Volt Systems messaged Maya</strong><span>"Saw your verified run. Free to talk?"</span></div>
+  </div>
+
+  <!-- 9 -->
+  <div id="s9" class="abs center" style="top:330px">
+    <div class="mark">Brazework</div>
+    <div class="mid" style="color:var(--fg-2);margin-top:8px">Proof, not résumés.</div>
+    <div class="url" style="margin-top:40px">brazework.com</div>
+  </div>
+</div>
+
+<div id="controls"><button id="play" type="button">Play film</button><span id="clock">0.0 s</span></div>
+
+<script>
+const DURATION = 49;
+const $ = (id) => document.getElementById(id);
+const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+const p = (t, a, b) => clamp((t - a) / (b - a));
+const out3 = (x) => 1 - Math.pow(1 - x, 3);
+const inOut = (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2);
+const back = (x) => { const c = 1.70158, c3 = c + 1; return 1 + c3 * Math.pow(x - 1, 3) + c * Math.pow(x - 1, 2); };
+// Visible from a to b, fading in over fi and out over fo seconds.
+const vis = (t, a, b, fi = 0.6, fo = 0.6) => Math.min(out3(p(t, a, a + fi)), 1 - p(t, b - fo, b));
+function set(el, o, y = 0, s = 1, x = 0) {
+  el.style.opacity = o.toFixed(3);
+  el.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) scale(${s.toFixed(4)})`;
+  el.style.visibility = o <= 0.001 ? "hidden" : "visible";
+}
+
+// Résumé ghosts: AI copies fanning out.
+const ghostSpots = [[150, 120, -8], [1420, 110, 7], [120, 600, 6], [1460, 590, -6], [330, 360, -3], [1270, 350, 4]];
+const ghosts = ghostSpots.map(([x, y, r], i) => {
+  const d = document.createElement("div");
+  d.className = "abs ghost"; d.style.left = x + "px"; d.style.top = y + "px"; d.dataset.r = r;
+  d.innerHTML = `<b>Candidate ${String.fromCharCode(65 + i)}</b>Built a robot<br>Team player<br>Proficient in Python<div class="gen">GENERATED IN 0.${4 + i}s</div>`;
+  $("ghosts").appendChild(d); return d;
+});
+const lines = [...document.querySelectorAll(".doc .ln")];
+
+// Loop nodes.
+const steps = [["1", "Join", "a club or study group"], ["2", "Build", "post the work"], ["3", "Get it signed", "by someone who saw it"], ["4", "Get found", "companies search proof"]];
+const nodes = steps.map(([n, b, i], k) => {
+  const d = document.createElement("div");
+  d.className = "abs node"; d.style.left = 150 + k * 420 + "px"; d.style.top = "420px";
+  d.innerHTML = `<span class="n">${n}</span><b>${b}</b><i>${i}</i>`;
+  $("loop").appendChild(d); return d;
+});
+const wires = [0, 1, 2].map((k) => {
+  const w = document.createElement("div");
+  w.className = "abs wire"; w.style.left = 150 + k * 420 + 334 + "px"; w.style.top = "513px"; w.style.width = "82px";
+  $("loop").appendChild(w); return w;
+});
+
+// Clubs across every major.
+const clubs = ["Robotics Club", "CHEM 201 Study Group", "Marketing Society", "Pre-Med Society", "Film Collective", "Formula SAE", "Finance Club", "Design Lab", "NSBE Chapter", "Debate Union", "Data Science Club", "Nursing Sim Team", "Startup Club", "Calc II Study Group"];
+const chipSpots = [[120, 140], [700, 90], [1300, 150], [240, 300], [1450, 320], [90, 770], [600, 860], [1180, 820], [1560, 700], [360, 700], [1000, 260], [820, 760], [1330, 960], [980, 950]];
+const chips = clubs.map((c, i) => {
+  const d = document.createElement("div");
+  d.className = "abs chip"; d.style.left = chipSpots[i][0] + "px"; d.style.top = chipSpots[i][1] + "px";
+  d.innerHTML = `<span class="dot"></span>${c}`;
+  $("chips").appendChild(d); return d;
+});
+
+// Search results.
+const results = [["MP", "Maya Patel", "Line-following robot · 41.2 s course run", "Robotics Club"], ["DA", "Diego Alvarez", "Suspension upright · passed load test at 3.2 g", "Formula SAE"], ["SK", "Sana Khan", "Battery management board · 18 months on one cell", "IEEE Branch"]];
+const rows = results.map(([a, n, w, c], i) => {
+  const d = document.createElement("div");
+  d.className = "abs row"; d.style.left = "440px"; d.style.top = 380 + i * 128 + "px";
+  d.innerHTML = `<div class="av">${a}</div><div class="t"><strong>${n}</strong><span>${w}</span></div><div class="ok">✓ Verified by ${c}</div>`;
+  $("rows").appendChild(d); return d;
+});
+
+const QUERY = "embedded systems · verified";
+const S4 = ["What", "if", "your", "work", "came", "with", "proof?"];
+
+function renderAt(t) {
+  // Ambient.
+  $("glow").style.transform = `translate(${Math.sin(t / 5) * 80}px, ${Math.cos(t / 7) * 50}px)`;
+  $("glow").style.opacity = (0.6 + 0.4 * p(t, 17, 22)).toFixed(3);
+
+  // 1 · Everyone has a résumé.
+  set($("s1"), vis(t, 0.3, 4.4, 0.8), (1 - out3(p(t, 0.3, 1.3))) * 30);
+
+  // 2 · The résumé, then the copies.
+  const docO = vis(t, 4.4, 13, 0.6, 0.7);
+  set($("doc"), docO, (1 - out3(p(t, 4.4, 5.2))) * 60, 1 - 0.06 * p(t, 9.4, 13));
+  ghosts.forEach((g, i) => {
+    const a = 6.2 + i * 0.22, k = out3(p(t, a, a + 0.6));
+    set(g, Math.min(k, 1 - p(t, 9.2, 9.9)) * 0.9, (1 - k) * 40, 0.85 + 0.15 * k);
+    g.style.transform += ` rotate(${g.dataset.r}deg)`;
+  });
+  set($("s2cap"), vis(t, 6.0, 9.4, 0.6, 0.4));
+
+  // 3 · Struck out.
+  lines.forEach((l, i) => l.style.setProperty("--s", out3(p(t, 9.9 + i * 0.35, 10.4 + i * 0.35)).toFixed(3)));
+  set($("s3cap"), vis(t, 10.3, 13, 0.6, 0.6), (1 - out3(p(t, 10.3, 11))) * 20);
+
+  // 4 · What if your work came with proof?
+  const s4o = vis(t, 13.3, 17.2, 0.3, 0.6);
+  $("s4").innerHTML = S4.map((w, i) => {
+    const k = out3(p(t, 13.4 + i * 0.28, 13.9 + i * 0.28));
+    const c = w === "proof?" ? "color:var(--ok)" : "";
+    return `<span style="display:inline-block;opacity:${k.toFixed(3)};transform:translateY(${((1 - k) * 30).toFixed(1)}px);${c}">${w}</span>`;
+  }).join(" ");
+  set($("s4"), s4o);
+
+  // 5 · The proof card.
+  const cardIn = out3(p(t, 17.2, 18.2));
+  set($("card"), vis(t, 17.2, 26.2, 0.8, 0.6), (1 - cardIn) * 120);
+  const n = 41.2 * inOut(p(t, 18.6, 20.6));
+  $("num").textContent = n.toFixed(1) + " s";
+  const stamp = p(t, 21.3, 21.9);
+  set($("seal"), stamp > 0 ? 1 : 0, 0, stamp > 0 ? 1.5 - 0.5 * back(stamp) : 1.5);
+  const r = p(t, 21.6, 22.6);
+  set($("ring"), r > 0 && r < 1 ? (1 - r) * 0.8 : 0, 0, 0.6 + 2.4 * out3(r));
+  $("ring").style.left = "1170px"; $("ring").style.top = "640px";
+  set($("s5a"), vis(t, 18.2, 26, 0.6, 0.5), (1 - out3(p(t, 18.2, 18.9))) * 24);
+  set($("s5b"), vis(t, 22.3, 26, 0.6, 0.5), (1 - out3(p(t, 22.3, 23))) * 24);
+
+  // 6 · One loop.
+  set($("s6t"), vis(t, 26.3, 32, 0.5, 0.5));
+  nodes.forEach((d, i) => {
+    const a = 26.7 + i * 0.9, k = out3(p(t, a, a + 0.5));
+    set(d, Math.min(k, 1 - p(t, 31.5, 32)), (1 - k) * 40);
+    const lit = i === 2 ? p(t, a + 0.3, a + 0.8) : 0;
+    d.style.borderColor = lit > 0 ? "var(--ok)" : "var(--line)";
+    d.style.background = lit > 0 ? "var(--ok-deep)" : "var(--panel)";
+  });
+  wires.forEach((w, i) => {
+    const k = out3(p(t, 27.2 + i * 0.9, 27.6 + i * 0.9));
+    w.style.transform = `scaleX(${k.toFixed(3)})`; w.style.opacity = (1 - p(t, 31.5, 32)).toFixed(3);
+  });
+  set($("s6b"), vis(t, 30.2, 32, 0.5, 0.5));
+
+  // 7 · Every club, every major.
+  chips.forEach((c, i) => {
+    const a = 32.2 + i * 0.12, k = out3(p(t, a, a + 0.6));
+    const drift = (t - 32) * (i % 2 ? 6 : -6);
+    set(c, Math.min(k, 1 - p(t, 36.2, 36.8)) * 0.95, (1 - k) * 50, 0.9 + 0.1 * k, drift);
+  });
+  set($("s7"), vis(t, 32.8, 36.8, 0.6, 0.5), 0, 0.96 + 0.04 * out3(p(t, 32.8, 34)));
+
+  // 8 · Companies search.
+  set($("s8t"), vis(t, 36.9, 43.2, 0.5, 0.5));
+  set($("search"), vis(t, 36.9, 43.2, 0.5, 0.5), (1 - out3(p(t, 36.9, 37.5))) * 30);
+  const typed = Math.floor(QUERY.length * p(t, 37.4, 39.0));
+  $("q").textContent = QUERY.slice(0, typed);
+  $("caret").style.opacity = t < 39.2 ? (Math.floor(t * 2.4) % 2 ? "1" : "0.15") : "0";
+  rows.forEach((r, i) => {
+    const a = 39.3 + i * 0.25, k = out3(p(t, a, a + 0.5));
+    set(r, Math.min(k, 1 - p(t, 42.7, 43.2)), (1 - k) * 30);
+  });
+  const toast = back(p(t, 40.9, 41.5));
+  set($("toast"), Math.min(p(t, 40.9, 41.2), 1 - p(t, 42.7, 43.2)), (1 - toast) * 80);
+
+  // 9 · Brazework.
+  set($("s9"), vis(t, 43.4, 60, 0.9), (1 - out3(p(t, 43.4, 44.4))) * 30, 0.97 + 0.03 * out3(p(t, 43.4, 45)));
+
+  $("clock").textContent = t.toFixed(1) + " s";
+}
+window.renderAt = renderAt;
+window.DURATION = DURATION;
+
+// Fit the 1920x1080 stage to the window.
+function fit() {
+  const s = Math.min(window.innerWidth / 1920, window.innerHeight / 1080);
+  $("stage").style.transform = `scale(${s})`;
+  $("stage").style.margin = `${(window.innerHeight - 1080) / 2}px ${(window.innerWidth - 1920) / 2}px`;
+}
+window.addEventListener("resize", fit); fit();
+
+const reduce = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const recording = new URLSearchParams(location.search).has("record");
+if (new URLSearchParams(location.search).has("light")) document.documentElement.classList.add("light");
+let start = performance.now();
+function tick(now) {
+  const t = Math.min(DURATION, (now - start) / 1000);
+  renderAt(t);
+  if (t < DURATION) requestAnimationFrame(tick);
+}
+if (recording) { document.body.classList.add("rec"); renderAt(0); }
+// At rest (and for reduced motion) the page shows the closing frame; Play runs the film.
+else { renderAt(46); }
+$("play").addEventListener("click", () => { if (reduce) { renderAt(46); return; } start = performance.now(); requestAnimationFrame(tick); });
+</script>
