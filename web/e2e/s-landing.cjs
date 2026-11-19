@@ -13,7 +13,8 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
 
   await step("hero: the example milestone is signed, then a company asks to talk, and you can answer", async () => {
     await go(page, "/");
-    const stage = page.locator("#hero-preview");
+    // #hero-live is the story that's playing; the others sit unseen beside it only to hold its height.
+    const stage = page.locator("#hero-live");
     await hydrated(page.locator("#hero-build"));
     await stage.getByText("A line-following robot").waitFor();
     // The AI moment: asked in plain words, the draft with its evidence, sent to the club, then the officer verifies.
@@ -31,9 +32,9 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
   }, page);
 
   await step("hero: the chips tell it for someone else (an analyst whose manager signs), and pressing Sign yourself signs it", async () => {
-    const stage = page.locator("#hero-preview");
+    const stage = page.locator("#hero-live");
     // Six ways of working, one chip each (lib/landing-demo.ts HERO_STORIES); picking one stops the autoplay.
-    const ways = stage.getByRole("group", { name: "Ways people use Brazework" });
+    const ways = page.locator("#hero-preview").getByRole("group", { name: "Ways people use Brazework" });
     if ((await ways.getByRole("button").count()) !== 6) throw new Error("expected six story chips");
     await ways.getByRole("button", { name: /^Analyst/ }).click();
     await stage.getByRole("list", { name: "Evidence" }).getByText(/claude\.ai/).waitFor({ timeout: 10000 });
@@ -118,6 +119,23 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
     await go(page, "/");
   }, page);
 
+  await step("hero: on a phone it keeps one height while a story plays and when the next starts (nothing below it jumps)", async () => {
+    const ph = await (await b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true })).newPage();
+    await ph.goto(BASE + "/", { waitUntil: "domcontentloaded" });
+    const stage = ph.locator("#hero-preview");
+    await stage.waitFor();
+    const heights = new Set(), stories = new Set();
+    // About 17 seconds: the student's story from its first frame, then the engineer's.
+    for (let i = 0; i < 34; i++) {
+      heights.add(Math.round((await stage.boundingBox()).height));
+      stories.add(await stage.locator('button[aria-pressed="true"]').innerText());
+      await ph.waitForTimeout(500);
+    }
+    if (stories.size < 2) throw new Error("the next story never started");
+    if (heights.size !== 1) throw new Error(`the hero changed height while playing: ${[...heights].join(", ")}px`);
+    await ph.context().close();
+  }, page);
+
   await step("the page raised no errors", async () => { if (page.errs.length) throw new Error(page.errs[0]); }, page);
 
   // A phone: the tour's places are the app's tab bar, and the hero's box is full height.
@@ -152,7 +170,7 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
   const still = await (await b.newContext({ viewport: { width: 1440, height: 950 }, reducedMotion: "reduce" })).newPage();
   await step("reduced motion: the hero shows every step at once", async () => {
     await still.goto(BASE + "/", { waitUntil: "networkidle" });
-    const stage = still.locator("#hero-preview");
+    const stage = still.locator("#hero-live");
     await stage.getByText("Verified", { exact: true }).waitFor({ timeout: 3000 });
     await stage.getByText("Sent to Rocketry Club").waitFor({ timeout: 3000 });
     await stage.getByRole("button", { name: "Accept" }).click({ timeout: 3000 });

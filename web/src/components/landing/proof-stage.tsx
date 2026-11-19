@@ -51,8 +51,20 @@ export function ProofStage({ build }: { build: string }) {
           </button>
         ))}
       </div>
-      {/* Keyed on the build and the story, so each starts again from the typed ask; Replay replays this one. */}
-      <Stage key={`${build}:${at}:${replays}`} build={build} story={story} onDone={playing ? () => setAt((at + 1) % HERO_STORIES.length) : undefined} onTouch={() => setAuto(false)} />
+      {/* One height for every story, from the first paint: each story's finished card sits unseen in
+          the same grid cell and sizes it, and the one playing fills that cell. So nothing below the
+          hero moves while a story plays or when the next one starts (no layout shift on a phone). */}
+      <div className="grid">
+        {HERO_STORIES.map((s) => (
+          <div key={s.who} aria-hidden="true" inert className="pointer-events-none invisible col-start-1 row-start-1 min-w-0 select-none">
+            <Stage ghost build="" story={s} onTouch={noop} />
+          </div>
+        ))}
+        {/* Keyed on the build and the story, so each starts again from the typed ask; Replay replays this one. */}
+        <div id="hero-live" className="col-start-1 row-start-1 min-w-0">
+          <Stage key={`${build}:${at}:${replays}`} build={build} story={story} onDone={playing ? () => setAt((at + 1) % HERO_STORIES.length) : undefined} onTouch={() => setAuto(false)} />
+        </div>
+      </div>
       <div className="mt-2 flex items-center justify-between gap-3 pl-1">
         <p className="min-w-0 text-xs text-faint">{build ? "Your build. The people and the company are examples." : "Example people and links"}</p>
         <button type="button" onClick={() => { setAuto(false); setReplays((n) => n + 1); }} className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-xs font-medium text-muted transition hover:bg-hover hover:text-text"><RotateCcw className="size-3.5" /> Replay</button>
@@ -69,13 +81,16 @@ type Phase = HeroPhase;
 const typedMs = (s: Story) => 250 + s.cmd.length * 42;
 const storyMs = (s: Story) => typedMs(s) + 8600;
 
-function Stage({ build, story, onDone, onTouch }: { build: string; story: Story; onDone?: () => void; onTouch: () => void }) {
+const noop = () => {};
+
+// `ghost`: the finished story, still and unseen, used only to size the stage (ProofStage above).
+function Stage({ build, story, onDone, onTouch, ghost = false }: { build: string; story: Story; onDone?: () => void; onTouch: () => void; ghost?: boolean }) {
   const CMD = story.cmd;
   const typedBy = typedMs(story);
   const reduce = useReducedMotion();
-  const [step, setStep] = useState(1);
-  const [phase, setPhase] = useState<Phase>("typing");
-  const [typed, setTyped] = useState(0);
+  const [step, setStep] = useState(ghost ? 3 : 1);
+  const [phase, setPhase] = useState<Phase>(ghost ? "sent" : "typing");
+  const [typed, setTyped] = useState(ghost ? CMD.length : 0);
   const [answer, setAnswer] = useState<"accepted" | "declined" | null>(null);
   const timers = useRef<ReturnType<typeof setTimeout>[]>([]);
   const stop = () => { timers.current.forEach(clearTimeout); timers.current = []; };
@@ -83,6 +98,7 @@ function Stage({ build, story, onDone, onTouch }: { build: string; story: Story;
 
   // The loop: type the command, read the work, show the draft, send it, the officer signs, a company asks.
   useEffect(() => {
+    if (ghost) return;
     timers.current = [
       // Typed at a person's pace; everything after waits for the last letter.
       ...Array.from(CMD, (_, i) => at(250 + i * 42, () => setTyped(i + 1))),
@@ -106,21 +122,26 @@ function Stage({ build, story, onDone, onTouch }: { build: string; story: Story;
 
   const signed = step >= 2;
   // Only ever shown after the story has played in the browser, so the server never prints a date.
-  const today = signed ? new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "";
+  // A ghost is printed by the server too, so it carries a date-shaped stand-in, not today's date.
+  const today = ghost ? "Sep 30" : signed ? new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "";
   const record = heroRecord({ phase, step, signer: story.signer.name, finder: story.finder.role, today });
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-line-strong bg-surface">
-      <ol className="relative px-5 pt-5 pb-4">
+    <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-line-strong bg-surface">
+      <ol className="relative flex-1 px-5 pt-5 pb-4">
         <Node n={1} at={step} label={STEPS[0]} onPick={jump}>
           {/* What the member types to their assistant, and what it reads. */}
           <div className="rounded-lg border border-line bg-surface-2 px-3 py-2 font-mono text-[12.5px] leading-relaxed text-text">
             <p className="flex items-start gap-2">
               <span aria-hidden="true" className="text-faint">&gt;</span>
-              <span aria-hidden="true">{CMD.slice(0, shown)}{phase === "typing" && !reduce && <span className="ml-px inline-block h-3.5 w-1.5 translate-y-0.5 animate-pulse bg-text" />}</span>
+              {/* The whole ask, unseen, holds the lines it will take; the typed part is drawn over it. */}
+              <span aria-hidden="true" className="grid min-w-0">
+                <span className="invisible col-start-1 row-start-1">{CMD}</span>
+                <span className="col-start-1 row-start-1">{CMD.slice(0, shown)}{phase === "typing" && !reduce && <span className="ml-px inline-block h-3.5 w-1.5 translate-y-0.5 animate-pulse bg-text" />}</span>
+              </span>
               <span className="sr-only">You ask your AI assistant: “{CMD}”.</span>
             </p>
-            {phase !== "typing" && <p className="text-muted">⎿ {story.read}</p>}
+            <p className={cn("text-muted", phase === "typing" && "invisible")}>⎿ {story.read}</p>
           </div>
           {/* The draft it writes, with the proof, ready to send: dashed until someone signs it. */}
           <div className={cn("mt-2 rounded-lg border p-3 transition duration-500", signed ? "border-line" : "border-dashed border-line-strong", phase === "draft" || phase === "sent" ? "opacity-100" : "translate-y-1 opacity-0")} inert={phase === "typing" || phase === "reading"}>

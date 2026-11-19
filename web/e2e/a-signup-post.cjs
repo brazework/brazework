@@ -48,7 +48,7 @@ const { BASE, step, browser, as, go, closeTour, hydrated, summary } = require(".
     const box = page.locator("#hero-build");
     await hydrated(box);
     await box.fill(BUILD);
-    await page.locator("#hero-preview").getByText(BUILD).waitFor({ timeout: 10000 });
+    await page.locator("#hero-live").getByText(BUILD).waitFor({ timeout: 10000 });
     await page.getByRole("link", { name: /Start with this build/ }).click();
     await page.waitForURL((u) => u.pathname === "/signup" && u.searchParams.get("build") === BUILD, { timeout: 20000 });
     await page.getByRole("heading", { name: "Create your account" }).waitFor({ timeout: 15000 });
