@@ -24,7 +24,8 @@ const ask = z.object({
   relationship: z.enum(Object.keys(RELATIONSHIPS) as [Relationship, ...Relationship[]], { message: "Pick how they know your work." }),
 });
 
-export async function requestVouch(milestoneId: string, email: string, relationship: string): Promise<VouchState> {
+// quiet: don't refresh the page (Today's triage card says what happened itself).
+export async function requestVouch(milestoneId: string, email: string, relationship: string, quiet = false): Promise<VouchState> {
   const v = ask.safeParse({ milestoneId, email, relationship });
   if (!v.success) return { ok: false, message: v.error.issues[0]?.message ?? "Check the form." };
   const { supabase, user } = await getViewer();
@@ -53,7 +54,7 @@ export async function requestVouch(milestoneId: string, email: string, relations
     await createAdminClient()?.from("milestone_vouches").update({ state: "withdrawn" }).eq("id", id);
     return { ok: false, message: "We couldn't send the email. Check the address and try again." };
   }
-  revalidatePath(`/u/${user.id}`);
+  if (!quiet) revalidatePath(`/u/${user.id}`);
   return { ok: true, message: `Asked. We emailed ${v.data.email}; you'll be notified when they answer.` };
 }
 

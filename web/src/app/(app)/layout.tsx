@@ -8,7 +8,7 @@ import { PlaceTabs } from "@/components/app/place-tabs";
 import { PlaceTabsCounted } from "@/components/app/place-tabs-counted";
 import { loadBadges } from "@/lib/badges";
 import { QueryProvider } from "@/components/app/query-provider";
-import { GlobalSearch } from "@/components/search/global-search";
+import { AskBar } from "@/components/ember/ask-bar";
 import { TourMount } from "@/components/tour/tour-mount";
 import { PresenceMount } from "@/components/presence/presence";
 import { avatarSrc } from "@/lib/media";
@@ -27,8 +27,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <SignedInShell />
       </Suspense>
       <main className="min-w-0 flex-1 px-4 pt-[var(--m-top)] pb-[calc(var(--m-bottom)+1rem)] sm:px-6 md:py-6 lg:px-8 2xl:px-12">
-        {/* One search for people and communities, above every page. On the feed it lines up with the posts column (globals.css). */}
-        <div className="search-row mx-auto mb-6 hidden max-w-3xl md:block xl:max-w-4xl"><Suspense fallback={<div className="h-12 rounded-2xl border border-line bg-surface/60" aria-hidden="true" />}><GlobalSearch /></Suspense></div>
+        {/* The Ask Ember bar, above every page, phones too (components/ember/ask-bar.tsx): search people and
+            clubs, ask Ember, or tell it what you did; its cards open right under it. On the feed it lines up
+            with the posts column (globals.css). The placeholder is the bar's own size, so nothing jumps. */}
+        <div className="search-row mx-auto mb-4 max-w-3xl md:mb-6 xl:max-w-4xl"><Suspense fallback={<div className="h-10 rounded-lg border border-line bg-surface" aria-hidden="true" />}><AskBar /></Suspense></div>
         {/* The pages inside the place you're in (lib/places.ts), on phones too. Lines up with the search row. */}
         <div className="place-row mx-auto max-w-3xl xl:max-w-4xl">{/* Two boundaries: the tabs read the path, which on a page with an id in its address isn't known when
             the shell is prerendered, so they wait in the outer one; inside it, the plain tabs show at once

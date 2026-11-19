@@ -11,7 +11,6 @@ import { MyStatus, WithPresence } from "@/components/presence/presence";
 import { cn } from "@/lib/forge";
 import { MENU_PAGES, PLACES, placeFor, type BadgeKey, type PlaceId } from "@/lib/places";
 import { NavTile, TILE } from "@/components/app/nav-tile";
-import { Ember } from "@/components/ember/ember";
 
 export type Badges = Record<BadgeKey, number>;
 
@@ -88,18 +87,10 @@ export function Sidebar({ first, last, userId, badges, avatar, initialCollapsed 
           </button>
         </div>
       </div>
-      {/* The one action that starts the loop: log what you built. Under it, Ember: ask for the busywork to be done. */}
-      <div className={cn("mt-6 flex gap-1.5", collapsed ? "flex-col items-center" : "flex-col px-1")}>
-        <Link href="/feed#composer" onClick={(e) => { if (path === "/feed") { e.preventDefault(); window.dispatchEvent(new Event("forge:compose")); } }} title={collapsed ? "Log work" : undefined} aria-label="Log work"
-          className={cn("bg-accent-grad inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-lg text-sm font-medium text-on-accent transition hover:opacity-90", collapsed ? "w-9" : "w-full")}>
-          <PenLine className="size-4" />{!collapsed && "Log work"}
-        </Link>
-        <Link href="/copilot" title={collapsed ? "Ask Ember" : undefined} aria-label="Ask Ember" aria-current={path.startsWith("/copilot") ? "page" : undefined}
-          className={cn("inline-flex h-9 shrink-0 items-center justify-center gap-2 rounded-lg border border-line bg-surface text-sm font-medium text-text-2 transition hover:border-line-strong hover:text-text aria-[current=page]:border-line-strong aria-[current=page]:text-text", collapsed ? "w-9" : "w-full")}>
-          <Ember size={18} />{!collapsed && "Ask Ember"}
-        </Link>
-      </div>
-      <nav data-tour="menu" aria-label="Main" className={cn("flex shrink-0 flex-col gap-0.5", collapsed ? "mt-4" : "mt-5")}>
+      {/* No buttons above the places: logging work and asking Ember happen in the Ask Ember bar on every
+          page (components/ember/ask-bar.tsx). Ember's own page (history, your tools' drafts) is the row
+          under the places. */}
+      <nav data-tour="menu" aria-label="Main" className={cn("flex shrink-0 flex-col gap-0.5", collapsed ? "mt-6" : "mt-7")}>
         {NAV.map((n) => {
           const active = here === n.id;
           const count = n.badge ? badges[n.badge] : 0;
@@ -119,6 +110,12 @@ export function Sidebar({ first, last, userId, badges, avatar, initialCollapsed 
             </Link>
           );
         })}
+        <Link href="/copilot" aria-current={path.startsWith("/copilot") ? "page" : undefined} aria-label="Ask Ember" title={collapsed ? "Ember" : undefined}
+          className={cn(ROW, "mt-1", collapsed ? "justify-center px-0" : "px-2", path.startsWith("/copilot") ? "font-medium text-text" : "text-text-2 hover:bg-hover/60 hover:text-text")}>
+          {path.startsWith("/copilot") && <motion.span layoutId="nav-active" className="nav-pill absolute inset-0 rounded-md" transition={{ type: "spring", stiffness: 400, damping: 34 }} />}
+          <NavTile ember active={path.startsWith("/copilot")} />
+          {!collapsed && <span className="relative">Ember</span>}
+        </Link>
       </nav>
       {/* Your clubs scroll on short screens, so the five places are always whole. */}
       <div className="no-scrollbar -mx-1 min-h-0 flex-1 overflow-y-auto px-1 pb-2">
