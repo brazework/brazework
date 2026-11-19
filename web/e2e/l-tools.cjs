@@ -297,9 +297,10 @@ const { step, browser, as, go, summary, BASE } = require("./lib.cjs");
     if (!row || !["request to you", "conversation"].includes(row.kind) || !row.unread || row.last_from !== "them" || !row.url?.startsWith("http")) throw new Error(`my_inbox: ${JSON.stringify(inbox).slice(0, 240)}`);
     const thread = (await call("my_inbox", { conversation_id: conv }, readOnly)).structuredContent;
     if (thread?.messages?.[0]?.from !== "them") throw new Error(`the conversation: ${JSON.stringify(thread).slice(0, 200)}`);
+    const before = psql(`select count(*) from public.messages where conversation_id = '${conv}'`); // an earlier journey may have talked here already
     const reply = (await call("draft_reply", { conversation_id: conv, body: `Sure, send it over. ${stamp}` }, cc)).structuredContent;
     if (reply?.drafted !== true || !/press Confirm to send it/.test(reply.next ?? "")) throw new Error(`draft_reply (even with a token that posts) must be a draft: ${JSON.stringify(reply).slice(0, 200)}`);
-    if (psql(`select count(*) from public.messages where conversation_id = '${conv}'`) !== "1") throw new Error("a reply was sent before Ben confirmed");
+    if (psql(`select count(*) from public.messages where conversation_id = '${conv}'`) !== before) throw new Error("a reply was sent before Ben confirmed");
     await go(ben, "/drafts");
     const card = ben.getByRole("group", { name: "Send a message from Claude Code" });
     await card.getByText("Josh Menzies").waitFor({ timeout: 15000 });
