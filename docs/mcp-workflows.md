@@ -131,6 +131,10 @@ actions, by the same names (`supabase/tool-actions.sql`, `web/src/lib/tool-actio
 | A message or a reply | `draft_reply` | card in Drafts | **always a card**: you send it |
 | A club announcement (officers) | `draft_announcement` | card in Drafts | **always a card**: you post it |
 | A club event (club admins) | `draft_event` | card in Drafts | **always a card**: you publish it |
+| Follow someone | `follow_person` | card in Drafts | done after your yes |
+
+Every card Ember can prepare now has a tool: posts and milestones (`draft_post`, `draft_milestone`), and
+everything above. The one card neither offers is a milestone review: verifying stays with people, in the app.
 
 ## For club officers
 
@@ -148,6 +152,29 @@ Thursday's meeting", "recap last week for the club". The `club_week` prompt does
 | Prompt | What it does |
 |---|---|
 | `club_week` | Ember's brief for your club, turned into this week's update (default), a meeting plan (`what: meeting plan`, and offers to draft the meeting itself) or a recap (`what: recap`), saved as a draft announcement. |
+
+## Career fairs and résumés
+
+Ask "get me ready for the career fair" and the `career_fair` prompt chains the tools, asking you before
+every write:
+
+1. Finds the event (`upcoming_events`) and its employer session.
+2. Checks your projects (`my_projects`) for milestones still waiting for a club or a signature.
+3. For each, asks who saw it and prepares the signature ask (`request_signature`, sent only after your yes,
+   with a token that can post; otherwise it tells you where to ask in Brazework).
+4. Builds the résumé section (`my_resume`): each project with its signed work, who signed it, and a link
+   anyone can open. A result you've shared links to its public proof card (`/p/<id>`); the rest link to
+   the project. It says which results you could share for a public link.
+5. RSVPs you to the employer session (`rsvp_event`), after your yes, or leaves it as a card.
+
+| Tool | Needs | What it does |
+|---|---|---|
+| `my_resume` | read | Your signed (and GitHub-backed) work, project by project, with who signed it and a link for each. Nothing you keep private. |
+| `find_builders` | read, verified company or school admins only | Search builders by signed work: skills or work, field, club, class year, open to, at least N signed results, and level (`signed`, or `signed_or_backed`). Same data, ranking and privacy rules as `/talent` (it uses /talent's own code): only public signed work on projects you could open in the app, and profile fields every member sees. Messages to them land in their Requests. |
+
+| Prompt | What it does |
+|---|---|
+| `career_fair` | "Get me ready for <event>": finds it, checks your projects for unsigned milestones, prepares the signature asks, builds your résumé section and RSVPs you to the employer session, asking before each write. |
 
 ## Drafts and automations
 

@@ -194,12 +194,14 @@ export function makeExec(db: DB, userId: string, onProposal: (p: Proposal) => vo
       }
       case "my_profile": {
         const f = await dbFeatures();
-        const [me, clubs, projects, ms, guide] = await Promise.all([
+        const [me, clubs, projects, ms, guide, fromTools] = await Promise.all([
           db.from("profiles").select("first_name, last_name, headline, field, interests, bio").eq("id", userId).maybeSingle(),
           db.from("community_members").select("role, communities(id, name)").eq("uid", userId).limit(30),
           db.from("projects").select("id, title, status").eq("owner_id", userId).limit(20),
           f.milestones ? db.from("milestones").select("project_id, status").eq("owner_id", userId).limit(300) : Promise.resolve({ data: [] as { project_id: string; status: string }[] }),
           loadGuide(),
+          // Cards the member's AI tools left over MCP (supabase/tool-actions.sql), waiting for them.
+          f.toolActions ? db.from("tool_drafts").select("id", { count: "exact", head: true }).eq("status", "waiting") : Promise.resolve({ count: 0 }),
         ]);
         type C = { id: string; name: string };
         const msRows = (ms.data ?? []) as { project_id: string; status: string }[];
@@ -208,6 +210,7 @@ export function makeExec(db: DB, userId: string, onProposal: (p: Proposal) => vo
           clubs: ((clubs.data ?? []) as unknown as { role: string; communities: C | C[] | null }[]).flatMap((r) => (Array.isArray(r.communities) ? r.communities : r.communities ? [r.communities] : []).map((c) => ({ id: c.id, name: c.name, role: r.role, link: `/c/${c.id}` }))),
           projects: (projects.data ?? []).map((p) => ({ id: p.id, title: p.title, status: p.status, verified_milestones: msRows.filter((m) => m.project_id === p.id && m.status === "verified").length, pending_milestones: msRows.filter((m) => m.project_id === p.id && m.status === "pending").length })),
           steps_left: (guide?.member ?? []).filter((s) => !s.done).map((s) => ({ step: s.label, where: s.href })),
+          waiting_from_your_tools: { count: fromTools.count ?? 0, where: "/drafts" },
         };
       }
       case "club_overview": {

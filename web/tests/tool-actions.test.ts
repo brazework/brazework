@@ -8,6 +8,8 @@ import { MCP_TOOLS, annotationsFor, toolsFor } from "@/lib/mcp";
 import { nextStep, withFix } from "@/lib/mcp-results";
 import { CARD_KINDS, actionPayload, appTopics, draftToProposal, isCardKind } from "@/lib/tool-actions";
 import { promptText } from "@/lib/mcp-playbooks";
+import { findBuilders, talentAsk } from "@/lib/mcp-talent";
+import { buildBuilders, rankBuilders, type Person, type VerifiedRow } from "@/lib/talent";
 
 const O = "https://brazework.com";
 const acts = MCP_TOOLS.filter((t) => t.act);
@@ -132,4 +134,34 @@ test("club_week: a meeting plan offers to draft the meeting; a read token writes
   assert.doesNotMatch(read, /draft_/);
   assert.match(read, /this week's update/);
   assert.match(promptText("club_week", { what: "recap" }, { canDraft: true, canPost: true })!, /recap of the club's last week/);
+});
+
+test("find_builders ranks exactly as /talent does, by club name or id, and labels backed work", () => {
+  const row = (id: string, owner: string, club: string | null, title: string, extra: Partial<VerifiedRow> = {}): VerifiedRow => ({ id, owner_id: owner, community_id: club, community_name: club === "rkt" ? "Rocketry Club" : "Robotics", title, reviewer_name: "Maya Patel", reviewer_role: "Officer", reviewed_at: "2026-11-01T00:00:00Z", projects: { title: "Stand", tags: ["Aerospace"], tools: ["STM32"] }, ...extra });
+  const people: Person[] = [{ id: "u1", first_name: "Ben", last_name: "Cho", headline: "Avionics", field: "Aerospace", open_to: ["internships"], grad_year: 2027 }, { id: "u2", first_name: "Ann", last_name: "Lee", headline: "", field: "Mechanical", grad_year: 2026 }];
+  const rows = [row("m1", "u1", "rkt", "Static fire"), row("m2", "u1", "rkt", "Recovery test"), row("m3", "u2", "rob", "Arm v2"), row("m4", "u2", null, "Gimbal", { backed: true, backing: { kind: "commit", repo_full_name: "a/b", ref: "abc1234" } })];
+  const data = { org: { name: "Acme", type: "company" }, rows, people };
+  const ask = talentAsk({ query: "STM32" });
+  const r = findBuilders(data, ask);
+  assert.deepEqual(r.builders.map((b) => b.name), rankBuilders(buildBuilders(rows, people), { q: "STM32", min: 1, year: 0, club: "", openTo: "", backed: false }).map((b) => `${b.person.first_name} ${b.person.last_name}`), "the same order as /talent");
+  assert.equal(r.builders[0].name, "Ben Cho");
+  assert.equal(r.builders[0].url, "/u/u1");
+  assert.deepEqual(findBuilders(data, talentAsk({ club: "Rocketry Club" })).builders.map((b) => b.name), ["Ben Cho"], "a club by name");
+  assert.equal(findBuilders(data, talentAsk({ club: "No such club" })).total, 0);
+  assert.deepEqual(findBuilders(data, talentAsk({ class_year: 2026 })).builders.map((b) => b.name), ["Ann Lee"]);
+  const withBacked = findBuilders(data, talentAsk({ query: "gimbal", level: "signed_or_backed" }));
+  assert.equal(withBacked.builders[0].work.find((w) => w.title === "Gimbal")?.level, "backed by GitHub, not signed");
+  assert.equal(findBuilders(data, talentAsk({ query: "gimbal" })).total, 0, "signed only by default");
+  assert.equal(talentAsk({ class_year: "2027", min_signed: 99 }).min_signed, 20);
+});
+
+test("follow: the last Ember card a tool couldn't reach; career_fair asks before each write and names only the token's tools", () => {
+  assert.deepEqual(draftToProposal({ id: "f", kind: "follow", payload: { person_id: "u1", name: "Cara Diaz", headline: "" } }), { id: "draft-f", kind: "follow", person_id: "u1", name: "Cara Diaz", headline: "" });
+  const post = promptText("career_fair", { event: "Spring Engineering Career Fair" }, { canDraft: true, canPost: true })!;
+  for (const t of ["upcoming_events", "my_projects", "request_signature", "my_resume", "rsvp_event"]) assert.match(post, new RegExp(t), t);
+  assert.match(post, /only after my yes/);
+  const draft = promptText("career_fair", {}, { canDraft: true, canPost: false })!;
+  assert.doesNotMatch(draft, /request_signature/);
+  assert.match(draft, /waits as a card/);
+  assert.doesNotMatch(promptText("career_fair", {}, { canDraft: false, canPost: false })!, /rsvp_event|request_signature/);
 });
