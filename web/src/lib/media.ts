@@ -31,6 +31,8 @@ export const IMAGE_TYPES = ["image/jpeg", "image/png", "image/webp", "image/gif"
 export const VIDEO_TYPES = ["video/mp4", "video/webm", "video/quicktime"];
 
 export const mediaUrl = (path: string) => `${env.supabaseUrl}/storage/v1/object/public/media/${path.split("/").map(encodeURIComponent).join("/")}`;
+/** A photo or video hosted in Brazework's media bucket (mediaUrl's output), e.g. proof uploaded in onboarding. */
+export const isMediaUrl = (url: string) => url.startsWith(`${env.supabaseUrl}/storage/v1/object/public/media/`) && /\.(webp|png|jpe?g|gif)$/i.test(url);
 
 const PATH_RE = /^[0-9a-f-]{36}\/[A-Za-z0-9._-]+$/i;
 
