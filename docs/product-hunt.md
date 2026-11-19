@@ -71,8 +71,8 @@ as an example.
 
 **Before posting, make the link real, or cut the paragraph.** A founder logs "Launched Brazework on
 Product Hunt" as a milestone with the listing as its proof and asks someone to sign it. The signing
-rules apply to us too (`supabase/vouches.sql`): the signer can't be on the project's team, and must use
-a university address or the address of a company verified on Brazework. If that isn't signed in time,
+rules apply to us too (`supabase/vouches.sql`, `supabase/work-email-signers.sql`): the signer can't be
+on the project's team, and signs from a work or university address, never Gmail. If that isn't signed in time,
 delete the "We used it on ourselves" paragraph: never link a card that says "waiting".
 
 ## Gallery (1270×760, five images)
@@ -115,9 +115,15 @@ screens (your build, the proof, who saw it), and the waiting card.
 ## Answers to have ready
 - **"How is this not LinkedIn?"** Nothing goes on your record as fact until someone who saw it signs it.
   There's no feed of claims to scroll past. A company searches signed work.
-- **"Can't my friend just sign it?"** A signer has to use a school or a verified-company address, and
-  can't be a teammate. There are 3 asks per milestone and 10 a week. A club's verification comes from
-  its officers, and every signature names the person who gave it.
+- **"Can't my friend just sign it?"** A signer signs from a work or university address, never Gmail or
+  the like, through a one-time link that proves they control that inbox, and can't be on the project's
+  team. Every signature names the person, their role and their email's domain. There are 3 asks per
+  milestone and 10 a week, and one address can sign 8 times a month. A club's verification comes from
+  its officers.
+- **"Anyone can register a domain."** True, so we don't pretend otherwise. A signature from a company
+  that isn't verified on Brazework says "(company not verified)" right in it, on the record, the share
+  card and in company search. A university's or a verified company's doesn't carry those words. A
+  reader decides how much weight to give it, with the name and the domain in front of them.
 - **"What do you charge?"** Builders and clubs: nothing, forever. Plus is an optional upgrade ($6 a
   month for students, $12 for everyone else). Companies pay for search seats and sponsored challenges.
   Schools pay a flat yearly price for a portal and their advisors, never per club. A chapter

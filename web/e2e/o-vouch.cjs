@@ -60,6 +60,32 @@ const title = `Vouch e2e: thrust stand within 2% (${Date.now()})`;
     await page.getByText("Vouched for by Dr. Priya Lee, Assistant Professor · utexas.edu").first().waitFor({ timeout: 15000 });
   }, page);
 
+  // A work email can sign (supabase/work-email-signers.sql): someone who works asks their tech lead,
+  // whose company isn't verified on Brazework, and the signature says so wherever it shows.
+  await step("a tech lead at a company that isn't verified here signs, and the signature says so", async () => {
+    const t3 = `Vouch e2e: checkout p95 down to 310 ms (${Date.now()})`;
+    const tok3 = crypto.randomBytes(32).toString("base64url");
+    const ms = psql(`select set_config('request.jwt.claim.sub', '${ben}', false);
+      insert into public.milestones (project_id, community_id, title, detail, evidence, private)
+      values ('p1', null, '${t3}', 'Before and after on the dashboard', 'https://github.com/acme/checkout/pull/1187', false) returning id;`).split("\n").pop();
+    const ok = psql("select public.vouch_email_kind('sam.rivera@northwind-payments.io') || '|' || public.vouch_email_kind('sam.rivera@gmail.com')");
+    if (ok !== "work|") throw new Error("address kinds: " + ok);
+    psql(`insert into public.milestone_vouches (milestone_id, requested_by, email, relationship, token_hash) values ('${ms}', '${ben}', 'sam.rivera@northwind-payments.io', 'manager', '${crypto.createHash("sha256").update(tok3).digest("hex")}');`);
+    const ctx = await b.newContext({ viewport: { width: 390, height: 844 } });
+    const signer = await ctx.newPage();
+    await signer.goto(`${BASE}/vouch/${tok3}`, { waitUntil: "networkidle" });
+    await signer.getByRole("heading", { name: t3 }).waitFor({ timeout: 15000 });
+    await signer.getByLabel("Your name").fill("Sam Rivera");
+    await signer.getByLabel("Your role").fill("Staff Engineer");
+    await signer.getByLabel("What did you see them do?").fill("I reviewed the PRs and watched p95 drop on the dashboard after the deploy.");
+    await signer.getByLabel("How do you know their work?").fill("I'm his tech lead");
+    await signer.getByRole("button", { name: "Vouch", exact: true }).click();
+    await signer.getByText("Your vouch is on their record").waitFor({ timeout: 15000 });
+    await ctx.close();
+    await go(page, `/u/${ben}`);
+    await page.getByText("Vouched for by Sam Rivera, Staff Engineer · northwind-payments.io (company not verified)").first().waitFor({ timeout: 15000 });
+  }, page);
+
   await step("asking from the app: free mail is refused; with email off, nothing is left waiting", async () => {
     await go(page, `/u/${ben}`);
     await page.getByRole("button", { name: "Add milestone" }).first().click();

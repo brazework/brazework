@@ -94,7 +94,7 @@ export function TriageCard({ draft, project, clubs }: { draft: TriageDraft; proj
       )}
       {open === "sign" && (
         <form className="mt-3 space-y-2" onSubmit={(e) => { e.preventDefault(); sendAsk(); }}>
-          <p className="text-xs text-muted">It&apos;s kept on your project, and they get an email to sign it. Use their university or company address.</p>
+          <p className="text-xs text-muted">It&apos;s kept on your project, and they get an email to sign it. Use their work or university address, not Gmail.</p>
           <label className="block"><span className="sr-only">Their email</span>
             <input type="email" inputMode="email" autoComplete="off" required placeholder="prof.lee@university.edu" value={email} onChange={(e) => setEmail(e.target.value)} className={cn(inputCls, "h-11")} />
           </label>

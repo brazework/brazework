@@ -118,7 +118,7 @@ async function Verify({ params }: { params: PageProps<"/v/[id]">["params"] }) {
         </footer>
       </article>
       <p className="mt-4 text-sm leading-relaxed text-muted print:hidden">
-        Brazework is the record of what people build, signed by the people who saw it. A club officer verifies work from their club; a professor, manager or mentor signs from their university or verified-company email. The member can&apos;t sign their own work or edit it after it&apos;s signed.
+        Brazework is the record of what people build, signed by the people who saw it. A club officer verifies work from their club; a professor, manager or mentor signs from their university or work email, and the signature says when the company isn&apos;t verified here. The member can&apos;t sign their own work or edit it after it&apos;s signed.
       </p>
       <section className="mt-auto pt-12 print:hidden">
         <Link href="/signup" prefetch={false} className="inline-flex h-11 items-center rounded-lg border border-line px-5 text-[15px] font-medium hover:bg-hover">Start your own record</Link>

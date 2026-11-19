@@ -5,7 +5,9 @@
 
 export type Redacted = {
   id: string; line: string; month: string; pro: boolean;
-  signer: { kind: "club" } | { kind: "vouch"; role: string; org: "university" | "company" };
+  // org: "work" is a work address at a company that wasn't verified on Brazework when it signed
+  // (supabase/work-email-signers.sql): never called verified.
+  signer: { kind: "club" } | { kind: "vouch"; role: string; org: "university" | "company" | "work" };
 };
 
 const ROLE: Record<string, string> = { professor: "a professor", ta: "a TA", pi: "a lab PI", manager: "a manager", mentor: "a mentor", other: "someone who saw it" };
@@ -13,7 +15,7 @@ const ROLE: Record<string, string> = { professor: "a professor", ta: "a TA", pi:
 /** "signed by a manager at a verified company", "verified by a club's officers". */
 export function redactedSigner(r: Pick<Redacted, "signer" | "pro">): string {
   const base = r.signer.kind === "club" ? "verified by a club's officers"
-    : `signed by ${ROLE[r.signer.role] ?? "someone who saw it"} at ${r.signer.org === "university" ? "a university" : "a verified company"}`;
+    : `signed by ${ROLE[r.signer.role] ?? "someone who saw it"} at ${r.signer.org === "university" ? "a university" : r.signer.org === "work" ? "a company (not verified)" : "a verified company"}`;
   return r.pro ? `${base}, and signed off by a professional at a verified company` : base;
 }
 

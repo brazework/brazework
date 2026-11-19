@@ -236,7 +236,7 @@ Each one sends one JSON-RPC `tools/call` to `/api/mcp`.
 ## Signatures
 
 Brazework's proof is a club verifying your milestone, or a person who saw the work signing it. From chat:
-`log_milestone` without a club, then `request_signature` with the person's **university or company email**
+`log_milestone` without a club, then `request_signature` with the person's **work or university email** (a signature from a company that isn't verified on Brazework says so)
 (Gmail, Outlook and the like don't count) and how they know you (`professor`, `ta`, `pi`, `manager`, `mentor`,
 `other`). All of the app's vouch rules apply, from `supabase/vouches.sql`:
 
