@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import { ReportLink } from "@/components/report/report-dialog";
-import { ArrowLeft, ArrowRight, BadgeCheck, CalendarDays, CheckCircle2, ExternalLink, Images, Megaphone, Pencil, Play, Users } from "lucide-react";
-import Image from "next/image";
-import { Schematic } from "@/components/landing/schematics";
+import { ArrowLeft, BadgeCheck, ExternalLink, Images, Megaphone, Pencil, Play } from "lucide-react";
 import { schematicFor } from "@/lib/schematic-field";
 import { MediaGrid } from "@/components/media/media-grid";
 import { signedUrls } from "@/lib/signed-urls";
@@ -16,7 +14,7 @@ import { Ember } from "@/components/ember/ember";
 import { SendPost } from "@/components/share/send-post";
 import { Avatar, Kicker } from "@/components/ui";
 import { dbFeatures, postSelect, milestoneCols } from "@/lib/db-features";
-import { requestTime, timeAgo, type Post } from "@/lib/forge";
+import { requestTime, type Post } from "@/lib/forge";
 import { getViewer } from "@/lib/supabase/server";
 import { cardReplies } from "@/lib/card-replies";
 import { AddMilestone, MilestoneTimeline, type Milestone } from "../../u/[id]/milestones";
@@ -29,6 +27,14 @@ import { OrganizeWithEmber } from "./organize";
 import { copilotEnabled } from "@/lib/copilot";
 import { ProjectFiles, type ProjectFileItem } from "@/components/projects/project-files";
 import { kindOfFile } from "@/lib/project-file-types";
+import { githubConfig } from "@/lib/github-app";
+import { loadGoal, loadRecord } from "@/lib/goal-load";
+import { nextStep } from "@/lib/next-step";
+import { signersFor, type MemberRow } from "@/lib/signers";
+import type { ToolDraft } from "@/lib/tool-drafts";
+import { ProjectNext } from "./project-next";
+import { ProjectCover } from "./project-cover";
+import { ProjectDrafts, draftTitle } from "./project-drafts";
 
 export const metadata: Metadata = { title: "Project" };
 
@@ -103,6 +109,26 @@ async function ProjectView({ params, searchParams }: { params: PageProps<"/proje
   const link = /^https?:\/\/\S+$/i.test(details.link) ? details.link : "";
   const milestones = (ms.data ?? []) as unknown as unknown as Milestone[];
   const verified = milestones.filter((m) => m.status === "verified");
+  // The flow redesign (lib/next-step.ts): the one step this project needs next (toward the member's
+  // goal when they have one), the drafts Ember or their tools left for it, and who could sign a waiting
+  // milestone, by name (lib/signers.ts).
+  const f = await dbFeatures();
+  const [draftRes, officerRes, goal, record] = builder ? await Promise.all([
+    f.mcpWorkflows ? supabase.from("tool_drafts").select("id, kind, via, source, created_at, payload").eq("status", "waiting").eq("payload->>project_id", id).order("created_at", { ascending: false }).limit(10) : Promise.resolve({ data: [] }),
+    myClubIds.length ? supabase.from("community_members").select("community_id, uid, role, first_name, last_name").in("community_id", myClubIds).in("role", ["moderator", "admin", "owner"]).limit(100) : Promise.resolve({ data: [] }),
+    f.goals ? loadGoal(supabase, user.id) : Promise.resolve(null),
+    f.goals ? loadRecord(supabase, user.id) : Promise.resolve(null),
+  ]) : [{ data: [] }, { data: [] }, null, null];
+  const drafts = (draftRes.data ?? []) as unknown as ToolDraft[];
+  const officers = (officerRes.data ?? []) as unknown as MemberRow[];
+  const signers = signersFor(officers, user.id);
+  const next = nextStep({ builder, milestones, drafts: drafts.map((d) => ({ id: d.id, title: draftTitle(d) })), signers, goal, record });
+  const waitingOn = next?.kind === "ask_sign" ? milestones.find((m) => m.id === next.milestoneId)?.community_id : null;
+  const asker = waitingOn ? officers.find((o) => o.community_id === waitingOn && o.uid !== user.id) : undefined;
+  // Adding a milestone happens here, for the owner too (it used to send them to their profile).
+  const addMilestone = builder && (myClubs.length > 0 || f.vouches)
+    ? <AddMilestone projectId={id} projectTitle={p.title} clubs={myClubs.map((c) => ({ ...c, signers: signers.get(c.id) ?? [] }))} vouches={f.vouches} backing={f.backed && !!githubConfig()} />
+    : null;
   const posts = (ups.data ?? []) as unknown as Post[];
   const ids = posts.map((x) => x.id);
   const [[likes, saves], replies] = await Promise.all([
@@ -147,52 +173,13 @@ async function ProjectView({ params, searchParams }: { params: PageProps<"/proje
     <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_320px]">
       <div className="flex min-w-0 flex-col gap-6">
         <section aria-label="Project" className="glass-card overflow-hidden rounded-2xl">
-          {/* The hero keeps its aspect ratio and grows for a long title. w-full: a min-height on an aspect-ratio box
-              widened it past a phone screen (2:1 at 192px tall = 384px). The 192px floor sits on the title block instead,
-              and the box has no overflow-hidden (the card clips its corners): an aspect ratio only yields to its content
-              when overflow is visible and min-height is auto. */}
-          <div className="relative flex aspect-[16/8] w-full flex-col justify-end bg-[linear-gradient(135deg,#09090b,#1f1f22_55%,#09090b)] sm:aspect-[16/6]">
-            {cover ? (
-              <Image src={mediaUrl(cover.path)} alt={cover.alt || ""} fill priority sizes="(min-width: 1280px) 900px, 100vw" className="object-cover" />
-            ) : (
-              <>
-                <div aria-hidden className="absolute inset-0 bg-[linear-gradient(rgb(255_255_255/0.05)_1px,transparent_1px),linear-gradient(90deg,rgb(255_255_255/0.05)_1px,transparent_1px)] bg-[size:22px_22px]" />
-                <Schematic id={schematicFor(p.tags, tools)} className="absolute top-[34%] left-1/2 w-[44%] max-w-sm -translate-x-1/2 -translate-y-1/2 text-white/55" />
-              </>
-            )}
-            <div aria-hidden className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/15 to-transparent" />
-            <div className="relative flex min-h-48 flex-col justify-end p-5 text-white sm:p-7">
-              <div className="flex flex-wrap items-center gap-2 text-xs">
-                {/* Live status: shipped, building (active in the last 3 weeks) or quiet, from real activity. */}
-                <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-2.5 py-1 font-medium backdrop-blur">
-                  {live === "shipped" ? <><CheckCircle2 className="size-3.5" /> Shipped{p.year ? ` ${p.year}` : ""}</>
-                    : live === "building" ? <><span className="size-1.5 animate-pulse rounded-full bg-emerald-400" /> Building · last activity {timeAgo(new Date(last!).toISOString())}</>
-                    : <><span className="size-1.5 rounded-full bg-white/50" /> Quiet{last ? ` · last activity ${timeAgo(new Date(last).toISOString())}` : ""}</>}
-                </span>
-                {verified.length > 0 && <span className="inline-flex items-center gap-1 rounded-full bg-emerald-500/90 px-2.5 py-1 font-medium text-white"><BadgeCheck className="size-3.5" /> {verified.length} club-verified</span>}
-                {p.private && <span className="rounded-full bg-white/15 px-2.5 py-1 backdrop-blur">Private</span>}
-              </div>
-              <h1 className="mt-2 text-[1.75rem] leading-tight font-semibold tracking-tight text-balance break-words [text-shadow:0_2px_16px_rgb(0_0_0/0.4)] sm:text-[2.6rem] sm:leading-tight">{p.title}</h1>
-            </div>
-          </div>
+          {/* The drawing sheet: the work, the title, and the title block with where it stands. */}
+          <ProjectCover title={p.title} isPrivate={p.private} live={live} year={p.year} last={last} schematic={schematicFor(p.tags, tools)}
+            cover={cover ? { src: mediaUrl(cover.path), alt: cover.alt || "" } : null}
+            facts={{ club: milestones.find((m) => m.status === "verified" || m.status === "pending")?.community_name ?? myClubs[0]?.name ?? null, signed: verified.length, waiting: milestones.filter((m) => m.status === "pending").length, builders: team.length + 1, started: new Date(p.created_at).toLocaleDateString("en-US", { month: "short", year: "numeric", timeZone: "UTC" }) }} />
           <div className="p-5 sm:p-7">
             {p.summary && <p className="text-lg leading-relaxed text-text-2">{p.summary}</p>}
             {p.tags.length > 0 && <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-sm">{p.tags.map((t) => <Link key={t} href={`/projects?topic=${encodeURIComponent(t)}`} className="text-muted transition hover:text-text">#{t}</Link>)}</div>}
-            {/* The numbers that make it credible at a glance. */}
-            <ul className="mt-5 grid grid-cols-2 gap-2 sm:grid-cols-4">
-              {[
-                { icon: BadgeCheck, n: String(verified.length), label: verified.length === 1 ? "club-verified milestone" : "club-verified milestones", tone: verified.length ? "text-ok" : "text-faint" },
-                { icon: Megaphone, n: String(posts.length), label: posts.length === 1 ? "update" : "updates", tone: "text-faint" },
-                { icon: Users, n: String(team.length + 1), label: team.length ? "builders" : "builder", tone: "text-faint" },
-                { icon: CalendarDays, n: new Date(p.created_at).toLocaleDateString("en-US", { month: "short", year: "numeric" }), label: "started", tone: "text-faint" },
-              ].map((x) => (
-                <li key={x.label} className="rounded-2xl border border-line bg-surface/60 px-3.5 py-3">
-                  <x.icon className={`size-4 ${x.tone}`} />
-                  <div className="mt-1.5 text-xl font-semibold tracking-tight tabular-nums">{x.n}</div>
-                  <div className="text-xs text-muted">{x.label}</div>
-                </li>
-              ))}
-            </ul>
             <ActivityStrip weeks={weeks} />
             <div className="mt-5 flex flex-wrap items-center gap-2">
               {builder && <a href="#log" className="inline-flex h-10 items-center gap-1.5 rounded-lg bg-text px-4 text-sm font-semibold text-surface transition hover:opacity-90 active:scale-95"><Megaphone className="size-4" /> Post update</a>}
@@ -209,27 +196,23 @@ async function ProjectView({ params, searchParams }: { params: PageProps<"/proje
           </div>
         </section>
 
-        {/* Proof first: what the club verified, signed by the officer who saw it. */}
+        {/* Next: the one most useful step for whoever builds it (lib/next-step.ts). */}
+        {next && <ProjectNext step={next} add={addMilestone} message={asker ? { id: asker.uid, name: `${asker.first_name} ${asker.last_name ? `${asker.last_name[0]}.` : ""}`.trim() } : null} shared={next.kind === "share_signed" && !!milestones.find((m) => m.id === next.milestoneId)?.shared_at} />}
+
+        {/* Milestones: what was signed, by whom, and what's waiting; drafts for it right here. */}
         {(milestones.length > 0 || builder) && (
-          <div id="proof" className="scroll-mt-24">
+          // #milestones: where the Projects page's cards and the Next strip point; #proof: older links.
+          <div id="milestones" className="scroll-mt-24">
+          <span id="proof" className="block scroll-mt-24" aria-hidden="true" />
           <Panel className="p-6">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
-              <h2 className="inline-flex items-center gap-2 text-lg font-semibold tracking-tight"><BadgeCheck className="size-5 text-ok" /> Proof</h2>
+              <h2 className="inline-flex items-center gap-2 text-lg font-semibold tracking-tight"><BadgeCheck className="size-5 text-ok" /> Milestones</h2>
               <span className="text-xs text-muted">{own ? "Verified ones show to everyone; pending and declined ones only to you." : "Each one verified by an officer of the club who saw it happen."}</span>
             </div>
+            <ProjectDrafts drafts={drafts} projectTitle={p.title} clubName={new Map(myClubs.map((c) => [c.id, c.name]))} />
             {milestones.length > 0 && <MilestoneTimeline items={milestones} own={own} />}
-            {/* Teammates log their own milestones on it here (the owner does it from their profile). */}
-            {builder && !own && myClubs.length > 0 && <div className="mt-4"><AddMilestone projectId={p.id} projectTitle={p.title} clubs={myClubs} /></div>}
-            {own && verified.length === 0 && (
-              <Link href={`/u/${user.id}#projects`} className="group mt-4 flex items-center gap-3 rounded-2xl border border-dashed border-line-strong p-4 transition hover:border-text hover:bg-hover/50">
-                <span className="bg-accent-grad grid size-10 shrink-0 place-items-center rounded-xl text-on-accent"><BadgeCheck className="size-5" /></span>
-                <span className="min-w-0 flex-1">
-                  <span className="block font-medium">Ask your club to verify a milestone</span>
-                  <span className="block text-sm text-muted">A test that passed, a build that works, a result. With the evidence, an officer signs it, and it shows here with their name.</span>
-                </span>
-                <ArrowRight className="size-4 shrink-0 text-faint transition group-hover:translate-x-0.5 group-hover:text-text" />
-              </Link>
-            )}
+            {/* Everyone building it adds milestones here (the Next strip has the button when it's the first). */}
+            {addMilestone && next?.kind !== "first_milestone" && <div className="mt-4">{addMilestone}</div>}
           </Panel>
           </div>
         )}
