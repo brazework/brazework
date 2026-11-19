@@ -134,7 +134,9 @@ const pw = require("playwright-core");
     // exact: getByText otherwise matches substrings, case-insensitively, and the preview's own
     // banner says "private milestones".
     await ben.getByText("Private milestone", { exact: true }).first().waitFor({ timeout: 15000 }); // his own view shows it
-    await ben.getByRole("link", { name: "Preview" }).click();
+    // Preview, Dashboard and the review packet sit in the header's More menu (profile redesign, Nov 19).
+    await ben.getByRole("button", { name: "More profile actions" }).click();
+    await ben.getByRole("menuitem", { name: "Preview as a visitor" }).click();
     await ben.waitForURL(/view=visitor/);
     await ben.getByText("This is how other members see your profile").waitFor({ timeout: 15000 });
     // Only what's on screen, once the page has settled: Next keeps the page you came from in the DOM
@@ -143,10 +145,10 @@ const pw = require("playwright-core");
     let seen = await onScreen();
     for (let i = 0; i < 20 && seen; i++) { await ben.waitForTimeout(500); seen = await onScreen(); }
     if (seen) throw new Error("the preview shows a private milestone");
-    if (await ben.getByRole("link", { name: "Dashboard" }).count()) throw new Error("the preview shows owner tools");
+    if (await ben.getByRole("button", { name: "More profile actions" }).count()) throw new Error("the preview shows owner tools");
     await ben.getByRole("link", { name: "Done previewing" }).click();
     await ben.waitForURL((u) => !/view=visitor/.test(u.toString()));
-    await ben.getByRole("link", { name: "Dashboard" }).waitFor({ timeout: 15000 });
+    await ben.getByRole("button", { name: "More profile actions" }).waitFor({ timeout: 15000 });
   }, ben);
   await step("the weekly loop: a company looks at Ben; once he hides the checklist, Home shows his streak card (who looked) and his builds", async () => {
     await go(cara, `/u/${process.env.BEN_ID}`); // Cara is an admin of Acme Aerospace, a verified company

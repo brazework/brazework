@@ -1,4 +1,4 @@
-import { ArrowRight, BadgeCheck, Check, Users } from "lucide-react";
+import { ArrowRight, BadgeCheck, Users } from "lucide-react";
 import Link from "next/link";
 import { ProStamp, Seal, VerifiedStamp, VouchStamp } from "@/components/app/verified-seal";
 import { CommunityBadge } from "../../communities/_components/badge";
@@ -20,34 +20,26 @@ export function SideCard({ title, children, className }: { title: string; childr
 
 export type Step = { done: boolean; label: string; href: string };
 
-// How complete your profile is, and the next things to do (only you see this).
+// How complete your profile is, and the one next thing to do (only you see this). One slim line
+// (profile redesign, Nov 19): the record and the timeline lead the page; this only nudges.
 export function ProfileStrength({ steps }: { steps: Step[] }) {
   const done = steps.filter((s) => s.done).length;
   if (done === steps.length) return null;
   const pct = Math.round((done / steps.length) * 100);
-  const next = steps.filter((s) => !s.done).slice(0, 3);
+  const todo = steps.filter((s) => !s.done);
   return (
-    <section aria-label="Profile strength" className="border border-line bg-surface rounded-2xl p-5">
-      <div className="flex items-center justify-between gap-3">
-        <div>
-          <h2 className="font-semibold">Profile strength</h2>
-          <p className="text-sm text-muted">{pct < 50 ? "A few steps and clubs and recruiters will see what you can do." : "Almost there. Proof is what gets you noticed."}</p>
-        </div>
-        <span className="flex items-center gap-1"><span className="text-2xl font-semibold tabular-nums">{pct}%</span><DismissButton id="profile-strength" label="Hide profile strength" className="-mr-2" /></span>
-      </div>
-      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-surface-2" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label="Profile strength">
-        <div className="bg-text h-full rounded-full transition-[width] duration-700" style={{ width: `${pct}%` }} />
-      </div>
-      <ul className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-3">
-        {next.map((s) => (
-          <li key={s.label}>
-            <a href={s.href} className="group flex h-full items-center justify-between gap-2 rounded-2xl border border-line bg-surface/70 px-3 py-2.5 text-sm transition hover:border-line-strong">
-              {s.label} <ArrowRight className="size-3.5 shrink-0 text-faint transition group-hover:translate-x-0.5 group-hover:text-text" />
-            </a>
-          </li>
-        ))}
-      </ul>
-      <p className="mt-3 flex items-center gap-1.5 text-xs text-faint"><Check className="size-3.5" /> {done} of {steps.length} done</p>
+    <section aria-label="Profile strength" className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-2xl border border-line bg-surface px-4 py-3">
+      <span className="flex items-center gap-2.5">
+        <span className="text-sm font-semibold tabular-nums">{pct}%</span>
+        <span className="h-1.5 w-20 overflow-hidden rounded-full bg-surface-2" role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100} aria-label="Profile strength">
+          <span className="block h-full rounded-full bg-text" style={{ width: `${pct}%` }} />
+        </span>
+      </span>
+      <p className="min-w-0 flex-1 text-sm text-muted">
+        Next: <a href={todo[0].href} className="group inline-flex items-center gap-1 font-medium text-text hover:underline">{todo[0].label} <ArrowRight className="size-3.5 transition group-hover:translate-x-0.5" /></a>
+        {todo.length > 1 && <span className="text-faint"> · {todo.length - 1} more</span>}
+      </p>
+      <DismissButton id="profile-strength" label="Hide profile strength" className="-mr-2" />
     </section>
   );
 }
@@ -59,7 +51,7 @@ export type ProofItem = { id: string; title: string; detail: string; achieved_on
 export function ProofTimeline({ items, own, led = [] }: { items: ProofItem[]; own: boolean; led?: StudyProof[] }) {
   if (!items.length && !led.length)
     return own ? (
-      <section className="rounded-3xl border border-dashed border-line-strong p-5">
+      <section className="rounded-2xl border border-dashed border-line-strong p-5">
         <h2 className="flex items-center gap-2 font-semibold"><BadgeCheck className="size-4" /> Proof</h2>
         <p className="mt-1 text-sm text-muted">Hit a milestone on a project? Ask your club to verify it, and it shows here with their name on it.</p>
         <a href="#projects" className="mt-3 inline-flex items-center gap-1 text-sm font-medium hover:underline">Open your projects <ArrowRight className="size-3.5" /></a>
