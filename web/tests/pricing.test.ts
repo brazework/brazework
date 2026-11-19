@@ -33,6 +33,19 @@ test("the record is free; the paid tier isn't called Pro and its prices come fro
   assert.ok(plus.price.includes(String(PLUS.student)) && plus.note.includes(String(PLUS.everyone)));
 });
 
+test("schools pay for a portal and their advisors, never per club or chapter", async () => {
+  const { SCHOOL, schoolPrice } = await import("@/lib/pricing");
+  assert.equal(schoolPrice(0), SCHOOL.portal, "the portal alone");
+  assert.equal(schoolPrice(SCHOOL.seatsIncluded), SCHOOL.portal, "the included seats cost nothing extra");
+  assert.equal(schoolPrice(8), SCHOOL.portal + (8 - SCHOOL.seatsIncluded) * SCHOOL.perAdvisor);
+  assert.equal(schoolPrice(8), 13_200);
+  // A price per club would give a school a reason to keep clubs off Brazework.
+  for (const t of tiersFor("organizations")) assert.ok(!/per (active )?(club|chapter)/i.test(`${t.price} ${t.note}`), t.id);
+  const school = TIERS.find((t) => t.cta.href === "/book?kind=school")!;
+  assert.ok(school.price.includes("6,000") && school.note.includes("1,200"), "the card shows the portal and the advisor price");
+  assert.ok(school.points.some((p) => /every club included/i.test(p)));
+});
+
 test("Plus never sells what isn't built: everything still coming is marked coming soon", async () => {
   const { PLUS_SOON } = await import("@/lib/pricing");
   const plus = TIERS.find((t) => t.id === "plus")!;

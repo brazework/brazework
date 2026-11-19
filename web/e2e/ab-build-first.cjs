@@ -142,7 +142,7 @@ const psql = (sql) => execSync(`docker exec -i forge-e2e-db psql -U postgres -h 
   await step("/pricing is public: free for builders, Plus coming, and who pays", async () => {
     await go(p3, "/pricing");
     await p3.getByRole("heading", { name: /Free for the people who build/ }).waitFor({ timeout: 15000 });
-    for (const t of ["Builders", "Clubs, networks and schools", "Companies", "Book a pilot", "From $300"]) await p3.getByText(t, { exact: false }).first().waitFor();
+    for (const t of ["Builders", "Clubs, networks and schools", "Companies", "Book a pilot", "$15,000", "Every club included"]) await p3.getByText(t, { exact: false }).first().waitFor();
     if (await p3.getByText(/\bPro\b/).count()) throw new Error("the price list says Pro, which means pro verification");
   }, p3);
   await ctx3.close();
