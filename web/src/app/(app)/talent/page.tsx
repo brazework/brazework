@@ -40,7 +40,7 @@ async function Talent({ searchParams }: { searchParams: PageProps<"/talent">["se
       <>
         <PageHeader title="Find builders" subtitle="Search people by work their clubs verified, not by keywords they wrote about themselves." />
         <Panel className="mt-6 flex flex-col items-start gap-4 p-6">
-          <span className="bg-accent-grad grid size-12 place-items-center rounded-2xl text-on-accent"><Building2 className="size-5" /></span>
+          <span className="bg-text grid size-12 place-items-center rounded-2xl text-surface"><Building2 className="size-5" /></span>
           <div>
             <h2 className="text-lg font-semibold">For verified companies and schools</h2>
             <p className="mt-1 max-w-xl text-sm text-muted">Register your organization with a work email on its domain. Then search members by verified projects, the clubs that vouched for them and what they&apos;re open to. Messages you send land in their Requests, so they choose whether to reply.</p>
@@ -163,7 +163,7 @@ async function Talent({ searchParams }: { searchParams: PageProps<"/talent">["se
         {list.slice(0, 60).map((b) => {
           const name = `${b.person.first_name} ${b.person.last_name}`.trim() || "Brazework member";
           return (
-            <article key={b.person.id} className="glass-card flex min-w-0 flex-col gap-3 rounded-3xl p-4 sm:p-5">
+            <article key={b.person.id} className="border border-line bg-surface flex min-w-0 flex-col gap-3 rounded-2xl p-4 sm:p-5">
               <div className="flex items-start gap-3">
                 <Avatar first={b.person.first_name} last={b.person.last_name} size={44} />
                 <div className="min-w-0 flex-1">
