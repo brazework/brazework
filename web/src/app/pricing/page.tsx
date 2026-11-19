@@ -14,8 +14,9 @@ export const metadata: Metadata = {
   description: "Free for the people who build, and for their clubs. Companies pay to find builders by work someone signed.",
 };
 
-// /pricing: the whole price list (lib/pricing.ts, the same as the landing page's section), with
-// the questions people ask about it. Static.
+// /pricing: the whole price list (lib/pricing.ts): builders, as on the landing page, plus what
+// companies, clubs and schools pay, which the landing page links here for. With the questions
+// people ask about it. Static.
 const QUESTIONS: [string, string][] = [
   ["Is the free plan really free?", "Yes. Your record, every signature, your clubs, and being found by companies are free for good, with no ads. Companies pay so builders don't have to."],
   [`What is ${PLUS.name}?`, `An optional upgrade for people who want more from their record. Today it shows every company that looked in the last 90 days; coming soon are your own profile link, a PDF portfolio of your signed work, and more AI drafts from your tools. It's $${PLUS.student} a month for students and $${PLUS.everyone} for everyone else; if it isn't open when you look, join the waitlist at that price. Nothing in Free moves to ${PLUS.name}.`],

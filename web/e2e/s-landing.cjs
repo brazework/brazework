@@ -105,6 +105,19 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
     await co.getByText(/No signed work matches that/).waitFor();
   }, page);
 
+  await step("pricing: the landing page shows what a builder pays; company and school prices are one click away on /pricing", async () => {
+    const pricing = page.locator("#pricing");
+    await pricing.getByRole("heading", { name: "Builders" }).waitFor();
+    const text = await pricing.innerText();
+    if (/\$15,000|\$2,500|\$6,000/.test(text)) throw new Error("a company or school price is on the landing page");
+    if (!/\$0/.test(text)) throw new Error("the free plan isn't shown");
+    await pricing.getByRole("link", { name: "Company pricing" }).click();
+    await page.waitForURL(/\/pricing#pricing-companies$/, { timeout: 15000 });
+    await page.getByText("$15,000").first().waitFor();
+    await page.getByRole("heading", { name: "Clubs, networks and schools" }).waitFor();
+    await go(page, "/");
+  }, page);
+
   await step("the page raised no errors", async () => { if (page.errs.length) throw new Error(page.errs[0]); }, page);
 
   // A phone: the tour's places are the app's tab bar, and the hero's box is full height.

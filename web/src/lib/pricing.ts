@@ -37,6 +37,15 @@ export const AUDIENCES: { id: Audience; label: string; line: string }[] = [
   { id: "organizations", label: "Clubs, networks and schools", line: "Free for every club. Schools pay for a portal and their advisors, never per club." },
 ];
 
+// The landing page shows only what a visitor there would pay: nothing, or Plus. Company and school
+// prices are on /pricing, one click away, so the first page doesn't read as enterprise software to
+// the students and professionals it's for (founders, 2026-11-19).
+export const LANDING_AUDIENCES: Audience[] = ["builders"];
+/** Where the landing page sends the buyers whose prices it doesn't show. */
+export const PRICING_LINKS: { audience: Audience; label: string; href: string }[] = AUDIENCES
+  .filter((a) => !LANDING_AUDIENCES.includes(a.id))
+  .map((a) => ({ audience: a.id, label: a.id === "companies" ? "Company pricing" : "Club and school pricing", href: `/pricing#pricing-${a.id}` }));
+
 // Each audience has one primary call to action (featured); the other card's is quieter.
 export const TIERS: Tier[] = [
   {
