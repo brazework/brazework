@@ -110,6 +110,21 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
     if (cut) throw new Error("the verified line is cut off by the frame");
   }, phone);
 
+  await step("the AI guide: a signed-out visitor follows the footer to /ai and finds the setup, what to ask, the rules and all 20 fields", async () => {
+    await go(page, "/");
+    await page.locator("footer").getByRole("link", { name: "Connect your AI" }).click();
+    await page.waitForURL(/\/ai$/, { timeout: 15000 });
+    await page.getByRole("heading", { level: 1, name: /Your AI fills in your record/ }).waitFor();
+    for (const h of ["Set it up in two minutes", "What to ask", "What it never does", "Your field"]) await page.getByRole("heading", { name: h, exact: true }).waitFor();
+    await page.getByText(/\/api\/mcp$/).first().waitFor();
+    await page.getByText("/start", { exact: true }).waitFor();
+    const fields = await page.getByRole("navigation", { name: "Fields" }).getByRole("link").count();
+    if (fields !== 20) throw new Error(`${fields} field links, expected 20`);
+    await page.getByRole("navigation", { name: "Fields" }).getByRole("link", { name: "Medicine" }).click();
+    await page.getByRole("heading", { name: "Medicine", exact: true }).waitFor();
+    if (!(await page.locator("#medicine").isVisible())) throw new Error("the Medicine section isn't shown");
+  }, page);
+
   // Reduced motion: the whole sequence is simply there.
   const still = await (await b.newContext({ viewport: { width: 1440, height: 950 }, reducedMotion: "reduce" })).newPage();
   await step("reduced motion: the hero shows every step at once", async () => {

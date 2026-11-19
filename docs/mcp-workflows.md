@@ -6,6 +6,8 @@ Brazework's MCP server, an AI assistant (Claude Code, Claude Desktop, Cursor, VS
 reads the work where it already lives and drafts the post, milestone or signature request for you, with the
 proof attached. **Nothing goes out until you say yes.**
 
+The public version of this guide is **[brazework.com/ai](https://brazework.com/ai)**: readable signed out, built from the same lists as the server (`web/src/lib/ai-guide.ts`), so a new tool or prompt shows up there by itself.
+
 What it looks like:
 
 - You merge a pull request. CI is green. A GitHub Action leaves a draft milestone in Brazework with the pull request
