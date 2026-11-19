@@ -5,8 +5,8 @@ import { getViewer } from "@/lib/supabase/server";
 // Drafts your tools left for you (supabase/mcp-workflows.sql, docs/mcp-workflows.md). The database
 // decides what's allowed: approving checks the draft again and makes it as you, under the app's rules.
 export type ToolDraft = {
-  id: string; kind: "post" | "milestone"; via: string; source: string; created_at: string;
-  payload: { body?: string; kind?: string; tags?: string[]; title?: string; detail?: string; evidence?: { type: string; url: string }[]; achieved_on?: string; project_id?: string | null; club_id?: string | null };
+  id: string; kind: string; via: string; source: string; created_at: string;
+  payload: Record<string, unknown> & { body?: string; kind?: string; tags?: string[]; title?: string; detail?: string; evidence?: { type: string; url: string }[]; achieved_on?: string; project_id?: string | null; club_id?: string | null };
 };
 export type DraftResult = { ok: boolean; message: string; url?: string };
 
@@ -34,4 +34,13 @@ export async function dismissDraft(id: string): Promise<DraftResult> {
   const { data, error } = await supabase.rpc("dismiss_tool_draft", { p_id: id });
   if (error || data !== true) return { ok: false, message: error ? reason(error) : "That draft was already handled." };
   return { ok: true, message: "Dismissed." };
+}
+
+// A tool's draft whose card ran the app's own action (supabase/tool-actions.sql): mark it done.
+export async function settleDraft(id: string): Promise<DraftResult> {
+  if (!idOk(id)) return { ok: false, message: "That draft isn't yours." };
+  const { supabase } = await getViewer();
+  const { data, error } = await supabase.rpc("settle_tool_draft", { p_id: id });
+  if (error || data !== true) return { ok: false, message: error ? reason(error) : "That draft was already handled." };
+  return { ok: true, message: "Done." };
 }

@@ -17,7 +17,7 @@ type Msg = { role: "user" | "assistant"; content: string; tools?: string[]; prop
 
 // What a card Ember prepared is called once the chat is saved (saved chats keep a label, never a
 // live card that could be confirmed twice).
-const CARD_LABEL: Record<Proposal["kind"], string> = { post: "a post", milestone: "a milestone to verify", join: "joining a club", follow: "a follow", event: "a club event", club_post: "a club post", project: "a project", review: "a milestone review", rsvp: "an RSVP", message: "a message" };
+const CARD_LABEL: Record<Proposal["kind"], string> = { post: "a post", milestone: "a milestone to verify", join: "joining a club", follow: "a follow", event: "a club event", club_post: "a club post", project: "a project", review: "a milestone review", rsvp: "an RSVP", message: "a message", project_edit: "a project update", teammate: "a teammate" };
 const toSaved = (m: Msg): SavedMsg => ({ role: m.role, content: m.content, tools: m.tools, cards: [...(m.cards ?? []), ...(m.proposals ?? []).map((p) => CARD_LABEL[p.kind])] });
 const ago = (iso: string) => {
   const d = (Date.now() - new Date(iso).getTime()) / 86400000;
@@ -100,7 +100,7 @@ export function Lookups({ tools, live }: { tools?: string[]; live: boolean }) {
 
 // The chat: a rail of your saved chats (when supabase/copilot-chats.sql has run), the conversation
 // with real Brazework cards under each answer, tap-to-ask follow-ups, and the confirm cards.
-export function CopilotChat({ first, field, initial = "", initialPreset = null, chats = [], chat = null, saving = false }: { first: string; field: string; initial?: string; initialPreset?: Preset | null; chats?: ChatSummary[]; chat?: { id: string; title: string; messages: SavedMsg[] } | null; saving?: boolean }) {
+export function CopilotChat({ first, field, initial = "", initialPreset = null, chats = [], chat = null, saving = false, fromTools = null }: { first: string; field: string; initial?: string; initialPreset?: Preset | null; chats?: ChatSummary[]; chat?: { id: string; title: string; messages: SavedMsg[] } | null; saving?: boolean; fromTools?: FromTools | null }) {
   const { run, stop, busy, error, remaining } = useCopilot();
   const [msgs, setMsgs] = useState<Msg[]>(chat?.messages ?? []);
   const [chatId, setChatId] = useState<string | null>(chat?.id ?? null);
@@ -232,6 +232,7 @@ export function CopilotChat({ first, field, initial = "", initialPreset = null, 
           <>
             <Hero title={`Hi ${first}, what are we building?`} sub="Ask for anything on Brazework. Ember looks it up, shows you the real clubs, events and people, then prepares the next step as a card you approve." mood={busy ? "thinking" : "idle"} />
             {composer}
+            {fromTools && <FromYourTools {...fromTools} />}
             <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
               {GROUPS.map((g, gi) => (
                 <div key={g.label}>
@@ -381,5 +382,21 @@ function CopyButton({ text }: { text: string }) {
     <button type="button" onClick={() => { void navigator.clipboard?.writeText(text).then(() => { setDone(true); setTimeout(() => setDone(false), 1500); }); }} className="inline-flex items-center gap-1 rounded-full px-2 py-1 text-xs text-faint transition hover:bg-hover hover:text-text">
       {done ? <><Check className="size-3.5" /> Copied</> : <><Copy className="size-3.5" /> Copy</>}
     </button>
+  );
+}
+
+// Drafts your AI tools left over MCP (supabase/tool-actions.sql), as the same cards Ember prepares:
+// Claude drafts it, you confirm it here or on /drafts. Posts and milestones keep their own page.
+export type FromTools = { cards: { draftId: string; via: string; source: string; p: Proposal }[]; others: number };
+function FromYourTools({ cards, others }: FromTools) {
+  if (!cards.length && !others) return null;
+  return (
+    <section aria-label="Waiting from your tools" className="mt-6">
+      <h2 className="mb-1 flex items-center px-1 text-xs font-medium tracking-wide text-faint uppercase">
+        Waiting from your tools
+        <Link href="/drafts" className="ml-auto text-[11px] font-medium tracking-normal normal-case text-muted hover:text-text">{others ? `${others} more in Drafts` : "All drafts"}</Link>
+      </h2>
+      {cards.map((c) => <ProposalCard key={c.draftId} p={c.p} fromTool={{ draftId: c.draftId, via: c.via, source: c.source }} />)}
+    </section>
   );
 }
