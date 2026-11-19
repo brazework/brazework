@@ -68,7 +68,9 @@ const body = `Done: thrust logger v2 merged, CI green. Next: static fire #5 prep
     const maya = await as(b, "maya@forge.test");
     // notFound() inside the streamed part can't change a 200 already sent (as on the résumé page), so check what shows.
     await maya.goto(`${BASE}/u/${ben}/review`, { waitUntil: "networkidle" });
-    await maya.getByText("Nothing forged").waitFor({ timeout: 15000 });
+    // The not-found page (app/not-found.tsx), found by its heading rather than its words, which change
+    // with the copy ("Nothing forged" became "Nothing built here." in #141).
+    await maya.getByRole("heading", { level: 1, name: /^Nothing\b/ }).waitFor({ timeout: 15000 });
     if (await maya.getByRole("heading", { name: "Ben Cho" }).count()) throw new Error("Maya sees Ben's packet");
     if (await maya.getByRole("listitem", { name: "Static fire at 1.2 kN" }).count()) throw new Error("Maya sees Ben's signed work in a packet");
     if (await maya.getByText("Review packet · signed work").count()) throw new Error("the packet rendered for Maya");
