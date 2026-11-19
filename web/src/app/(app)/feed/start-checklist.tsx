@@ -21,8 +21,9 @@ export function StartChecklist({ steps }: { steps: GuideStep[] }) {
         {/* Progress ring */}
         <div className="relative grid size-11 shrink-0 place-items-center" role="progressbar" aria-valuemin={0} aria-valuemax={steps.length} aria-valuenow={done} aria-label={`${done} of ${steps.length} done`}>
           <svg viewBox="0 0 36 36" className="absolute inset-0 -rotate-90">
-            <circle cx="18" cy="18" r="15.5" fill="none" stroke="var(--line)" strokeWidth="3" />
-            <circle cx="18" cy="18" r="15.5" fill="none" stroke="var(--accent)" strokeWidth="3" strokeLinecap="round" strokeDasharray={`${pct * 97.4} 97.4`} />
+            <circle cx="18" cy="18" r="15.5" fill="none" stroke="var(--border-strong)" strokeWidth="3" />
+            {/* At 0 a round cap still draws a dot, which read as a broken ring. */}
+            {pct > 0 && <circle cx="18" cy="18" r="15.5" fill="none" stroke="var(--accent)" strokeWidth="3" strokeLinecap="round" strokeDasharray={`${pct * 97.4} 97.4`} />}
           </svg>
           <span className="text-[11px] font-semibold tabular-nums">{done}/{steps.length}</span>
         </div>

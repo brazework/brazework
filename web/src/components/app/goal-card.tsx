@@ -146,8 +146,9 @@ function Ring({ value, label }: { value: number; label: string }) {
   return (
     <span className="relative grid size-10 shrink-0 place-items-center" aria-label={`${label} steps done`}>
       <svg viewBox="0 0 36 36" className="absolute inset-0 size-full -rotate-90" aria-hidden="true">
-        <circle cx="18" cy="18" r={r} fill="none" stroke="var(--line)" strokeWidth="3" />
-        <circle cx="18" cy="18" r={r} fill="none" stroke="var(--text)" strokeWidth="3" strokeLinecap="round" strokeDasharray={c} strokeDashoffset={c * (1 - value)} className="transition-[stroke-dashoffset] duration-700" />
+        <circle cx="18" cy="18" r={r} fill="none" stroke="var(--border-strong)" strokeWidth="3" />
+        {/* The track used var(--line), which isn't a CSS variable (only the Tailwind token is), so it never drew; and at 0 a round cap draws a dot. */}
+        {value > 0 && <circle cx="18" cy="18" r={r} fill="none" stroke="var(--text)" strokeWidth="3" strokeLinecap="round" strokeDasharray={c} strokeDashoffset={c * (1 - value)} className="transition-[stroke-dashoffset] duration-700" />}
       </svg>
       <span className="text-[10px] font-semibold tabular-nums">{label}</span>
     </span>
