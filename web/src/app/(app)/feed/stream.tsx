@@ -1,0 +1,187 @@
+import { ChevronRight, Flag, GitMerge, MessageSquare, Sparkles, UserPlus } from "lucide-react";
+import Link from "next/link";
+import { Seal } from "@/components/app/verified-seal";
+import { GoalCard } from "@/components/app/goal-card";
+import { Ember } from "@/components/ember/ember";
+import { Avatar } from "@/components/ui";
+import { dbFeatures } from "@/lib/db-features";
+import { requestTime, timeAgo } from "@/lib/forge";
+import { loadGoal, loadRecord } from "@/lib/goal-load";
+import { avatarSrc } from "@/lib/media";
+import { getViewer } from "@/lib/supabase/server";
+import type { ToolDraft } from "@/lib/tool-drafts";
+import { DraftTriage } from "./triage";
+import { loadVerifyInbox, VerifyInbox } from "./verify-inbox";
+
+// Home's stream (section redesign, Nov 2026): one column, in the order you'd act on it.
+//   1. what your tools noticed (drafts they left you: the daily triage, triage.tsx)
+//   2. what needs you (signatures to give, message requests, connection invites)
+//   3. what your clubs shipped (work their officers signed this week)
+//   then your goal: the check-in.
+// Each group is a quiet list on one spine; a group with nothing in it doesn't show, except the
+// clubs group, whose empty state invites the first step. Every query here is your own rows
+// (row-level security), loaded together in one round.
+const WEEK_MS = 7 * 864e5;
+const TOOLS_SHOWN = 3;
+const SHIPPED_SHOWN = 4;
+
+type Shipped = { id: string; title: string; reviewed_at: string; community_id: string | null; community_name: string; vouched_by?: string | null; project: { id: string; title: string; private: boolean } | null; owner: { id: string; first_name: string; last_name: string; avatar_path?: string | null } | null };
+
+export async function HomeStream() {
+  const { supabase, user } = await getViewer();
+  if (!user) return null;
+  const f = await dbFeatures();
+  const now = requestTime();
+  const { data: joined } = await supabase.from("community_members").select("community_id").eq("uid", user.id).limit(200);
+  const cids = (joined ?? []).map((j) => j.community_id as string);
+  const [drafts, requests, invites, verify, shipped, goal, record] = await Promise.all([
+    // Drafts your tools left (supabase/mcp-workflows.sql); none before that step.
+    f.mcpWorkflows && !f.dailyTriage ? supabase.from("tool_drafts").select("id, kind, via, source, created_at, payload", { count: "exact" }).eq("status", "waiting").order("created_at", { ascending: false }).limit(TOOLS_SHOWN) : Promise.resolve({ data: [], count: 0 }),
+    supabase.from("conversations").select("*", { count: "exact", head: true }).eq("status", "request").neq("started_by", user.id),
+    supabase.from("connections").select("*", { count: "exact", head: true }).eq("to_id", user.id).eq("status", "pending"),
+    loadVerifyInbox(supabase, user.id),
+    f.milestones && cids.length
+      ? supabase.from("milestones").select(`id, title, reviewed_at, community_id, community_name${f.vouches ? ", vouched_by" : ""}, project:projects(id, title, private), owner:profiles!milestones_owner_id_fkey(id, first_name, last_name${f.media ? ", avatar_path" : ""})`)
+        .eq("status", "verified").in("community_id", cids).gt("reviewed_at", new Date(now - WEEK_MS).toISOString()).order("reviewed_at", { ascending: false }).limit(SHIPPED_SHOWN + 4)
+      : Promise.resolve({ data: [] }),
+    f.goals ? loadGoal(supabase, user.id) : Promise.resolve(null),
+    f.goals ? loadRecord(supabase, user.id) : Promise.resolve(null),
+  ]);
+
+  const toolDrafts = (drafts.data ?? []) as ToolDraft[];
+  const toolCount = drafts.count ?? toolDrafts.length;
+  const nRequests = requests.count ?? 0, nInvites = invites.count ?? 0;
+  const ships = ((shipped.data ?? []) as unknown as Shipped[]).filter((m) => m.project && !m.project.private && m.owner).slice(0, SHIPPED_SHOWN);
+  const needsYou = nRequests > 0 || nInvites > 0 || !!verify;
+
+  return (
+    <div aria-label="Your day" role="group" className="relative flex flex-col gap-7 pl-7 sm:pl-8 before:absolute before:top-3 before:bottom-3 before:left-[8.5px] before:w-px before:bg-line">
+      {/* Once daily-triage.sql has run, the drafts are decided right here, a tap each (triage.tsx). */}
+      {f.dailyTriage && <DraftTriage node={<Ember size={18} />} />}
+      {toolDrafts.length > 0 && (
+        <Group label={`Your tools noticed ${toolCount === 1 ? "1 thing" : `${toolCount} things`}`} node={<Ember size={18} />}
+          more={toolCount > toolDrafts.length ? <Link href="/drafts" className={moreCls}>See all {toolCount}</Link> : null}>
+          <ul className={listCls}>
+            {toolDrafts.map((d) => (
+              <li key={d.id}>
+                <Row href="/drafts" icon={<GitMerge className="size-4" />} title={draftTitle(d)}
+                  meta={<>{d.kind === "milestone" ? "Milestone" : "Post"} drafted via {d.via || "your tools"} <span suppressHydrationWarning>{timeAgo(d.created_at)}</span></>}
+                  action="Review" />
+              </li>
+            ))}
+          </ul>
+        </Group>
+      )}
+
+      {needsYou && (
+        <Group label="Needs you" node={<span className="block size-2.5 rounded-full bg-text ring-4 ring-bg" />}>
+          <div className="flex flex-col gap-4">
+            {(nRequests > 0 || nInvites > 0) && (
+              <ul className={listCls}>
+                {nRequests > 0 && <li><Row href="/messages" icon={<MessageSquare className="size-4" />} title={`${nRequests} ${nRequests === 1 ? "person wants" : "people want"} to message you`} meta="Accept to start the conversation" action="Open" /></li>}
+                {nInvites > 0 && <li><Row href="/network" icon={<UserPlus className="size-4" />} title={`${nInvites} connection ${nInvites === 1 ? "invite" : "invites"}`} meta="People who'd like to see your work" action="See" /></li>}
+              </ul>
+            )}
+            {verify && <VerifyInbox data={verify} />}
+          </div>
+        </Group>
+      )}
+
+      <Group label="Your clubs shipped this week" node={<Seal size={18} />}
+        more={ships.length ? <Link href="/communities" className={moreCls}>Your clubs</Link> : null}>
+        {ships.length ? (
+          <ul className={listCls} aria-label="Signed this week in your clubs">
+            {ships.map((m) => (
+              <li key={m.id}>
+                <Link prefetch={false} href={`/projects/${m.project!.id}`} className="group flex items-center gap-3 px-3.5 py-3 transition sm:px-4 hover:bg-hover focus-visible:bg-hover focus-visible:outline-none">
+                  <Avatar first={m.owner!.first_name} last={m.owner!.last_name} size={32} src={avatarSrc(m.owner)} />
+                  <span className="min-w-0 flex-1">
+                    <span className="line-clamp-2 text-sm font-medium text-text sm:line-clamp-1">{m.title}</span>
+                    <span className="block truncate text-xs text-muted">{`${m.owner!.first_name} ${m.owner!.last_name}`.trim()} on {m.project!.title}</span>
+                  </span>
+                  <span className="hidden shrink-0 items-center gap-1.5 text-xs text-ok sm:inline-flex">
+                    <Seal size={14} />{m.vouched_by ? "Vouched for" : `Signed by ${m.community_name}`}
+                  </span>
+                  <Seal size={16} className="sm:hidden" />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <Invite cids={cids.length} />
+        )}
+      </Group>
+
+      {record && (
+        <Group label="Where you're headed" node={<span className="grid size-[18px] place-items-center rounded-full bg-surface-2 text-muted ring-4 ring-bg"><Flag className="size-3" /></span>}>
+          <GoalCard compact goal={goal} record={record} profileId={user.id} />
+        </Group>
+      )}
+    </div>
+  );
+}
+
+const listCls = "divide-y divide-line overflow-hidden rounded-xl border border-line bg-surface";
+const moreCls = "shrink-0 text-xs text-muted underline-offset-4 transition hover:text-text hover:underline";
+
+const draftTitle = (d: ToolDraft) => {
+  const p = d.payload;
+  const t = (p.title || p.body || d.source || "A draft").toString();
+  return t.length > 90 ? `${t.slice(0, 89)}…` : t;
+};
+
+// A group on the spine: its node sits on the line, its heading says what's in it.
+function Group({ label, node, more, children }: { label: string; node: React.ReactNode; more?: React.ReactNode; children: React.ReactNode }) {
+  const id = `home-${label.toLowerCase().replace(/[^a-z]+/g, "-")}`;
+  return (
+    <section aria-labelledby={id} className="relative">
+      <span aria-hidden="true" className="absolute top-0.5 -left-7 grid sm:-left-8 w-[18px] place-items-center">{node}</span>
+      <div className="mb-2.5 flex items-baseline justify-between gap-3">
+        <h2 id={id} className="text-[15px] font-semibold tracking-tight text-text">{label}</h2>
+        {more}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+// One line of a list: what it is, a line of context, and the one thing to do.
+function Row({ href, icon, title, meta, action }: { href: string; icon: React.ReactNode; title: string; meta: React.ReactNode; action: string }) {
+  return (
+    <Link href={href} className="group flex items-center gap-3 px-3.5 py-3 transition sm:px-4 hover:bg-hover focus-visible:bg-hover focus-visible:outline-none">
+      <span className="grid size-8 shrink-0 place-items-center rounded-lg bg-surface-2 text-muted">{icon}</span>
+      <span className="min-w-0 flex-1">
+        <span className="line-clamp-2 text-sm font-medium text-text sm:line-clamp-1">{title}</span>
+        <span className="block truncate text-xs text-muted">{meta}</span>
+      </span>
+      <span className="hidden shrink-0 rounded-md border border-line px-2.5 py-1 text-xs font-medium text-text transition group-hover:border-line-strong sm:inline">{action}</span>
+      <ChevronRight aria-hidden="true" className="size-4 shrink-0 text-faint sm:hidden" />
+    </Link>
+  );
+}
+
+// Nothing signed in your clubs this week: the first step toward it, not a blank.
+function Invite({ cids }: { cids: number }) {
+  return (
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-3 rounded-xl border border-dashed border-line-strong px-4 py-3.5">
+      <p className="min-w-0 flex-1 basis-56 text-sm text-muted">
+        {cids ? "Nothing signed in your clubs yet this week. Log a result and ask an officer who saw it." : "Join your club, and the work its officers sign shows up here, yours included."}
+      </p>
+      <Link href={cids ? "/projects" : "/communities?tab=discover"} className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg bg-text px-3 text-xs font-semibold text-bg transition hover:opacity-90">
+        <Sparkles className="size-3.5" />{cids ? "Log a milestone" : "Find your club"}
+      </Link>
+    </div>
+  );
+}
+
+// The stream's place while it loads: the spine and the clubs group, which always shows.
+export function StreamSkeleton() {
+  return (
+    <div aria-hidden="true" className="relative flex flex-col gap-7 pl-7 sm:pl-8">
+      <div>
+        <div className="mb-2.5 h-5 w-52 shimmer rounded-md" />
+        <div className="h-[58px] shimmer rounded-xl" />
+      </div>
+    </div>
+  );
+}

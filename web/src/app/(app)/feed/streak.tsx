@@ -1,4 +1,4 @@
-import { ArrowRight, BadgeCheck, ChevronDown, Eye, Flame } from "lucide-react";
+import { ArrowRight, BadgeCheck, Eye, Flame } from "lucide-react";
 import Link from "next/link";
 import { cn, requestTime } from "@/lib/forge";
 import { getViewer } from "@/lib/supabase/server";
@@ -6,8 +6,8 @@ import { loadLoop, type Loop } from "@/lib/week-load";
 
 // Your week (Linear FIX-67, FIX-92): one card for where you stand. Your build streak (weeks, not days)
 // with its 8-week strip, club-verified milestones, profile views, then what's worth doing this week.
-// It tops the rail on wide screens; on phones (no rail) the same card sits above the composer, folded
-// to one line until you open it. One card, not a streak card plus a week card saying the same things.
+// It tops the rail on wide screens; phones get the same news in Home's stream (stream.tsx) and on
+// Record. One card, not a streak card plus a week card saying the same things.
 
 export async function YourWeekCard() {
   const { supabase, user } = await getViewer();
@@ -18,24 +18,6 @@ export async function YourWeekCard() {
       <Header l={l} />
       <Body l={l} />
     </section>
-  );
-}
-
-// Phones: the same card, folded to its header line.
-export function YourWeekFold({ l }: { l: Loop }) {
-  const todo = l.week.filter((w) => w.tone === "todo").length;
-  return (
-    <details className="group glass-card mb-3 rounded-2xl [&::-webkit-details-marker]:hidden">
-      <summary aria-label="Your week" className="flex cursor-pointer list-none items-center gap-3 p-3.5 [&::-webkit-details-marker]:hidden">
-        <StreakIcon weeks={l.streak.weeks} small />
-        <span className="min-w-0 flex-1">
-          <span className="block text-sm font-semibold">{l.streak.weeks ? `${l.streak.weeks}-week streak` : "Your week"}</span>
-          <span className="block truncate text-xs text-muted">{l.verified} verified · {l.viewers?.total ?? 0} views this week{todo ? ` · ${todo} to do` : ""}</span>
-        </span>
-        <ChevronDown className="size-4 shrink-0 text-faint transition group-open:rotate-180" />
-      </summary>
-      <div className="px-3.5 pb-3.5"><Body l={l} /></div>
-    </details>
   );
 }
 
