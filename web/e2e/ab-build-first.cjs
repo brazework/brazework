@@ -90,6 +90,9 @@ const psql = (sql) => execSync(`docker exec -i forge-e2e-db psql -U postgres -h 
     if (ms !== `pending|${club}`) throw new Error(`milestone: ${ms}, club picked: ${club}`);
     const p = q("select field || '|' || headline || '|' || onboarded || '|' || cardinality(interests) from public.profiles where id = ME");
     if (p !== "Engineering|Engineering student|true|3") throw new Error("profile: " + p);
+    // Leave the seed clubs as later journeys expect them: nothing waiting in their officers' inboxes.
+    q("delete from public.milestones where owner_id = ME");
+    q("delete from public.community_members where uid = ME");
   }, page);
   await ctx.close();
 
