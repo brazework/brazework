@@ -2,6 +2,7 @@ import { BadgeCheck, Flame, Trophy } from "lucide-react";
 import Link from "next/link";
 import { Seal } from "@/components/app/verified-seal";
 import { Avatar } from "@/components/ui";
+import { List, ListRow } from "@/components/app/list";
 import { buildStreak } from "@/lib/streak";
 import { dbFeatures } from "@/lib/db-features";
 import { requestTime, timeAgo } from "@/lib/forge";
@@ -62,26 +63,20 @@ export async function BuildersThisTerm({ cid }: { cid: string }) {
       {recent.length > 0 && (
         <section aria-label="Signed in this club" className="mt-6">
           <h2 className="mb-2.5 inline-flex items-center gap-2 text-sm font-semibold"><Seal size={18} /> Signed in this club</h2>
-          <ul className="divide-y divide-line overflow-hidden rounded-xl border border-line bg-surface">
+          <List label="Signed work">
             {recent.map((m) => (
-              <li key={m.id}>
-                <Link href={`/u/${m.owner_id}#proof`} className="group flex items-center gap-3 px-4 py-3 transition hover:bg-hover">
-                  <Avatar first={m.owner?.first_name ?? ""} last={m.owner?.last_name ?? ""} size={32} />
-                  <span className="min-w-0 flex-1">
-                    <span className="line-clamp-2 text-sm font-medium group-hover:underline sm:line-clamp-1">{m.title}</span>
-                    <span className="block truncate text-xs text-muted">{`${m.owner?.first_name ?? ""} ${m.owner?.last_name ?? ""}`.trim() || "A member"}, signed by {m.reviewer_name || "an officer"} <span suppressHydrationWarning>{timeAgo(m.reviewed_at)}</span></span>
-                  </span>
-                  <Seal size={18} />
-                </Link>
-              </li>
+              <ListRow key={m.id} href={`/u/${m.owner_id}#proof`} leading={<Avatar first={m.owner?.first_name ?? ""} last={m.owner?.last_name ?? ""} size={32} />}
+                title={m.title}
+                meta={<>{`${m.owner?.first_name ?? ""} ${m.owner?.last_name ?? ""}`.trim() || "A member"}, signed by {m.reviewer_name || "an officer"} <span suppressHydrationWarning>{timeAgo(m.reviewed_at)}</span></>}
+                trailing={<Seal size={18} />} />
             ))}
-          </ul>
+          </List>
         </section>
       )}
       {/* Friendly momentum, not points: who's posted here this week, with their weekly streak. */}
       {byAuthor.size > 0 && (
         <section aria-label="Who's building this week" className="mt-4 rounded-xl border border-line bg-surface p-4">
-          <h2 className="inline-flex items-center gap-2 text-sm font-semibold"><Flame className="size-4 text-orange-500" /> Who&apos;s building this week</h2>
+          <h2 className="inline-flex items-center gap-2 text-sm font-semibold"><Flame className="size-4 text-muted" /> Who&apos;s building this week</h2>
           {building.length ? (
             <ul className="mt-3 flex flex-wrap gap-2">
               {building.slice(0, 12).map((b) => (
@@ -89,7 +84,7 @@ export async function BuildersThisTerm({ cid }: { cid: string }) {
                   <Link href={`/u/${b.uid}`} className="inline-flex items-center gap-2 rounded-full border border-line bg-surface py-1 pr-3 pl-1 text-sm transition hover:border-line-strong">
                     <Avatar first={b.first} last={b.last} size={24} />
                     <span className="font-medium">{b.first || "A member"}</span>
-                    {b.streak.weeks >= 2 && <span className="inline-flex items-center gap-0.5 text-xs text-orange-600 tabular-nums"><Flame className="size-3" />{b.streak.weeks}</span>}
+                    {b.streak.weeks >= 2 && <span className="inline-flex items-center gap-0.5 text-xs text-muted tabular-nums"><Flame className="size-3" />{b.streak.weeks}</span>}
                   </Link>
                 </li>
               ))}
@@ -103,7 +98,7 @@ export async function BuildersThisTerm({ cid }: { cid: string }) {
       {top.length > 0 && (
         <section aria-label="Builders this term" className="mt-4 rounded-xl border border-line bg-surface p-4">
         <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-          <h2 className="inline-flex items-center gap-2 text-sm font-semibold whitespace-nowrap"><Trophy className="size-4 text-amber-500" /> Builders this term</h2>
+          <h2 className="inline-flex items-center gap-2 text-sm font-semibold whitespace-nowrap"><Trophy className="size-4 text-muted" /> Builders this term</h2>
           <span className="inline-flex items-center gap-1 text-xs text-faint"><BadgeCheck className="size-3.5 text-ok" /> {total} verified since {since.toLocaleDateString("en-US", { month: "short", timeZone: "UTC" })}</span>
         </div>
         <ol className="mt-3 flex flex-col gap-2">
@@ -113,7 +108,7 @@ export async function BuildersThisTerm({ cid }: { cid: string }) {
                 <span className="w-4 text-center font-mono text-xs text-faint tabular-nums">{i + 1}</span>
                 <Avatar first={p.first} last={p.last} size={28} />
                 <span className="w-28 min-w-0 shrink-0 truncate text-sm font-medium group-hover:underline sm:w-36">{`${p.first} ${p.last}`.trim() || "A member"}</span>
-                <span className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-surface-2"><span className="bg-accent-grad block h-full rounded-full" style={{ width: `${Math.max(8, (p.n / max) * 100)}%` }} /></span>
+                <span className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-surface-2"><span className="block h-full rounded-full bg-text" style={{ width: `${Math.max(8, (p.n / max) * 100)}%` }} /></span>
                 <span className="w-6 text-right font-mono text-xs tabular-nums">{p.n}</span>
               </Link>
             </li>

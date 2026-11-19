@@ -29,6 +29,8 @@ import { MemberFaces, type Face } from "@/components/network/member-faces";
 import { leadCounts, studyLine, type LeadRow } from "@/lib/study";
 import { StudyLeads } from "./study-leads";
 import { NextUp } from "./next-up";
+import { List, ListRow } from "@/components/app/list";
+import { TitleBlock } from "@/components/app/title-block";
 import { ClubSetup } from "./setup";
 import { clubSetupSteps } from "@/lib/guide";
 import { reusableInvite, setupProgress, type InviteRow } from "@/lib/club-setup";
@@ -147,7 +149,7 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
               </form>
             )}
             {rank(role) >= 2 && invitesOn && (
-              <Link href={`/c/${c.id}/manage?tab=invite`} className="bg-accent-grad inline-flex h-10 items-center gap-1.5 rounded-lg px-4 text-sm font-medium text-on-accent transition active:scale-95"><UserPlus className="size-4" /> Invite</Link>
+              <Link href={`/c/${c.id}/manage?tab=invite`} className="inline-flex h-10 items-center gap-1.5 rounded-lg bg-text px-4 text-sm font-medium text-surface transition active:scale-95"><UserPlus className="size-4" /> Invite</Link>
             )}
             {rank(role) >= 2 && (
               <Link href={`/c/${c.id}/manage`} className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-line px-4 text-sm transition hover:bg-hover"><Settings className="size-4" /> Manage</Link>
@@ -172,45 +174,30 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
           </div>
         </div>
         <p className="mt-4 text-[15px] leading-relaxed text-text-2">{c.about}</p>
-        {/* The club's pulse in one quiet line (it was four big tiles): what it's doing, not how big it is. */}
-        <ul aria-label="This club now" className="mt-4 flex flex-wrap gap-x-5 gap-y-1.5 text-sm text-muted">
-          {[
-            { n: thisWeek, label: thisWeek === 1 ? "post this week" : "posts this week" },
-            ...(msOn ? [{ n: verifiedTerm ?? 0, label: "signed this term", seal: true }] : []),
-            { n: upcomingEvents.length, label: upcomingEvents.length === 1 ? "event coming up" : "events coming up" },
-          ].map((st) => (
-            <li key={st.label} className="inline-flex items-center gap-1.5">
-              {"seal" in st && st.n > 0 && <BadgeCheck className="size-4 text-ok" />}
-              <span className="font-semibold text-text tabular-nums">{st.n}</span> {st.label}
-            </li>
-          ))}
-        </ul>
+        {/* Where the club stands, as a drawing's title block (it was four big tiles). */}
+        <TitleBlock label="This club now" className="mt-5" cells={[
+          { label: "Members", value: c.member_count },
+          { label: "Posts this week", value: thisWeek },
+          ...(msOn ? [{ label: "Signed this term", value: verifiedTerm ?? 0, tone: (verifiedTerm ?? 0) > 0 ? ("ok" as const) : undefined }] : []),
+          { label: "Coming up", value: upcomingEvents.length ? `${upcomingEvents.length} ${upcomingEvents.length === 1 ? "event" : "events"}` : "Nothing yet" },
+        ]} />
         {me && nextEvent && !officer && <NextUp event={nextEvent} going={goingSet.has(nextEvent.id)} now={now} />}
         {showSetup && <ClubSetup cid={c.id} name={c.name} steps={setupSteps} origin={env.siteUrl} invite={setupInvite} />}
         {officer && (
           <section aria-label="To do" className="mt-5">
             <h2 className="mb-2 text-sm font-semibold">To do</h2>
-            <ul className="divide-y divide-line overflow-hidden rounded-xl border border-line bg-surface">
+            <List label="Officer to-dos">
               {[
                 { n: toVerify.count ?? 0, label: "milestones to verify", href: `/c/${c.id}/manage?tab=verify`, show: msOn },
                 { n: joinReqs.count ?? 0, label: "join requests", href: `/c/${c.id}/manage?tab=requests`, show: can(role, "approve") },
                 { n: (held.data ?? []).length, label: "held posts to review", href: `/c/${c.id}?tab=held`, show: isMod },
               ].filter((t) => t.show).map((t) => (
-                <li key={t.label}>
-                  <Link href={t.href} className="flex items-center gap-3 px-4 py-3 text-sm transition hover:bg-hover">
-                    <span className={t.n ? "grid h-6 min-w-6 place-items-center rounded-full bg-text px-1.5 text-xs font-semibold text-bg tabular-nums" : "grid h-6 min-w-6 place-items-center rounded-full bg-surface-2 px-1.5 text-xs text-faint tabular-nums"}>{t.n}</span>
-                    <span className={t.n ? "min-w-0 flex-1 text-text" : "min-w-0 flex-1 text-muted"}>{t.label}</span>
-                    {t.n > 0 && <span className="text-xs font-medium text-muted">Open</span>}
-                  </Link>
-                </li>
+                <ListRow key={t.label} href={t.href} title={<span className={t.n ? "text-text" : "font-normal text-muted"}>{t.label}</span>}
+                  leading={<span className={t.n ? "grid h-6 min-w-6 place-items-center rounded-full bg-text px-1.5 text-xs font-semibold text-bg tabular-nums" : "grid h-6 min-w-6 place-items-center rounded-full bg-surface-2 px-1.5 text-xs text-faint tabular-nums"}>{t.n}</span>} />
               ))}
-              <li>
-                <Link href={nextEvent ? `/events/${nextEvent.id}` : `/c/${c.id}?tab=events`} className="flex items-center gap-3 px-4 py-3 text-sm transition hover:bg-hover">
-                  <span className="grid size-6 place-items-center"><CalendarDays className="size-4 text-faint" /></span>
-                  <span className="min-w-0 flex-1 truncate text-text-2">{nextEvent ? `Next: ${nextEvent.title}` : "No event planned. Host one"}</span>
-                </Link>
-              </li>
-            </ul>
+              <ListRow href={nextEvent ? `/events/${nextEvent.id}` : `/c/${c.id}?tab=events`} leading={<span className="grid size-6 place-items-center"><CalendarDays className="size-4 text-faint" /></span>}
+                title={<span className="font-normal text-text-2">{nextEvent ? `Next: ${nextEvent.title}` : "No event planned. Host one"}</span>} />
+            </List>
           </section>
         )}
         {study && <StudyLeads cid={c.id} me={user.id} member={!!me} people={leadPeople} />}
