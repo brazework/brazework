@@ -69,7 +69,7 @@ export function CommunityComposer({ cid, first, last, interests, topics, userId,
       <div role="radiogroup" aria-label="Post type" className="mt-3 inline-flex flex-wrap gap-1 rounded-full bg-surface-2 p-1">
         {POST_KINDS.map((k) => (
           <button key={k.id} type="button" role="radio" aria-checked={kind === k.id} onClick={() => setKind(k.id)} className={cn("relative rounded-full px-3 py-1.5 text-xs font-medium transition", kind === k.id ? "text-on-accent" : "text-muted hover:text-text")}>
-            {kind === k.id && <motion.span layoutId={`ckind-${cid}`} className="bg-accent-grad absolute inset-0 rounded-full" transition={{ type: "spring", stiffness: 420, damping: 34 }} />}
+            {kind === k.id && <motion.span layoutId={`ckind-${cid}`} className="bg-text absolute inset-0 rounded-full" transition={{ type: "spring", stiffness: 420, damping: 34 }} />}
             <span className="relative">{k.label}</span>
           </button>
         ))}

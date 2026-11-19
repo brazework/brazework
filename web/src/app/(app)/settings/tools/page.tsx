@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { PageHeader, Skeleton } from "@/components/app/page-ui";
 import { listApiTokens } from "@/lib/api-tokens";
 import { dbFeatures } from "@/lib/db-features";
+import { oauthEnabled } from "@/lib/mcp-oauth";
 import { env } from "@/lib/env";
 import { getViewer } from "@/lib/supabase/server";
 import { ToolsHub } from "./tools-client";
@@ -15,7 +17,7 @@ export const metadata: Metadata = { title: "Your tools" };
 export default function ToolsPage() {
   return (
     <div className="mx-auto max-w-2xl lg:max-w-4xl">
-      <PageHeader title="Your tools" subtitle="Bring Brazework into the editor and agent you already build with." />
+      <PageHeader title="Your tools" subtitle={<>Bring Brazework into the editor and agent you already build with. <Link href="/ai" className="font-medium text-text-2 underline-offset-4 hover:underline">The guide</Link> has what to ask, by field.</>} />
       <Suspense fallback={<Skeleton className="mt-6 h-[520px]" />}>
         <Tools />
       </Suspense>
@@ -37,5 +39,5 @@ async function Tools() {
   ]) : [{ data: [] }, { data: [] }];
   const clubList = ((clubs ?? []) as unknown as { community_id: string; communities: { name: string } | null }[]).map((c) => ({ id: c.community_id, name: c.communities?.name ?? c.community_id }));
   return <ToolsHub tokens={await listApiTokens()} endpoint={`${env.siteUrl}/api/mcp`} writes={f.mcpWrites} drafts={f.mcpWorkflows}
-    projects={(projects ?? []) as { id: string; title: string }[]} clubs={clubList} field={profile?.field ?? ""} />;
+    projects={(projects ?? []) as { id: string; title: string }[]} clubs={clubList} field={profile?.field ?? ""} signIn={f.mcpOauth && (await oauthEnabled())} />;
 }

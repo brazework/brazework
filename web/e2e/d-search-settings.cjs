@@ -158,11 +158,11 @@ const pw = require("playwright-core");
     await week.waitFor({ timeout: 15000 });
     await week.getByText(/-week streak|No streak yet/).waitFor();
     await week.getByText(/Acme Aerospace viewed your profile/).waitFor({ timeout: 10000 });
-    // His builds are on the Build page now, not on Today: each card shows where it stands (built,
+    // His projects are on the Projects page, not on Home: each card shows where it stands (built,
     // signed) and one next step.
-    if (await ben.getByRole("region", { name: "Your builds" }).count()) throw new Error("Your builds is still on Today");
+    if (await ben.getByRole("region", { name: "Your projects" }).count()) throw new Error("Your projects is still on Home");
     await go(ben, "/projects");
-    const builds = ben.getByRole("region", { name: "Your builds" });
+    const builds = ben.getByRole("region", { name: "Your projects" });
     await builds.getByText(/signed result/).first().waitFor({ timeout: 15000 });
     await builds.getByRole("list", { name: "Where this build stands" }).first().waitFor();
     if (!(await builds.getByText(/^Next: /).count())) throw new Error("no next step on the build cards");

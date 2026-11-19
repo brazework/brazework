@@ -59,6 +59,8 @@ export function stripeProvider(env: Env, fetcher: Fetch = fetch): BillingProvide
       });
       // A subscription carries the same metadata, so its cancellation can find who it was for.
       if (sub) for (const k of ["org_id", "user_id", "plan", "reference"] as const) body.set(`subscription_data[metadata][${k}]`, body.get(`metadata[${k}]`) ?? "");
+      // An optional free trial on Plus, off unless a founder sets PLUS_TRIAL_DAYS (1 to 90).
+      if (input.plan === "plus") { const d = plusTrialDays(env); if (d > 0) body.set("subscription_data[trial_period_days]", String(d)); }
       if (input.email) body.set("customer_email", input.email);
       try {
         const res = await fetcher("https://api.stripe.com/v1/checkout/sessions", {
@@ -82,6 +84,12 @@ export function billing(env: Env = process.env): BillingProvider {
 }
 
 /** Can Plus be bought right now? Stripe is on and Plus has a price. Until then it's a waitlist. */
+/** Days of free trial on Plus checkout: PLUS_TRIAL_DAYS when it's a whole number from 1 to 90, otherwise none. */
+export function plusTrialDays(env: Env = process.env): number {
+  const n = Number(env.PLUS_TRIAL_DAYS ?? "");
+  return Number.isInteger(n) && n >= 1 && n <= 90 ? n : 0;
+}
+
 export function plusOnSale(env: Env = process.env): boolean {
   return stripeProvider(env).enabled && Boolean(env[PLANS.plus.priceEnv]);
 }

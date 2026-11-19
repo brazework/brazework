@@ -44,7 +44,7 @@ export function DateTile({ value, className }: { value: string; className?: stri
   const dow = d.toLocaleString("en-US", { weekday: "short", timeZone: tz });
   return (
     <div className={className} aria-hidden="true">
-      <span className="block bg-accent-grad py-1 text-[10px] font-semibold tracking-[0.14em] text-on-accent">{month}</span>
+      <span className="block bg-text py-1 text-[10px] font-semibold tracking-[0.14em] text-surface">{month}</span>
       <span className="block pt-1 text-3xl leading-none font-semibold tracking-tight">{day}</span>
       <span className="block pb-1.5 text-[11px] text-muted">{dow}</span>
     </div>

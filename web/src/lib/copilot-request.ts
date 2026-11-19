@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { presetSchema } from "@/lib/copilot-presets";
+import { PAGE_ID } from "@/lib/ember-bar";
 
 // What the browser may send to /api/copilot. Kept apart from lib/copilot.ts (server-only) so the
 // client and tests can use it.
@@ -12,5 +13,8 @@ export const copilotRequest = z.object({
   history: z.array(z.object({ role: z.enum(["user", "assistant"]), content: z.string().max(6000) })).max(12).optional(),
   // A one-tap action's instructions (lib/copilot-presets.ts): added server side, never shown in the chat.
   preset: presetSchema.optional(),
+  // The page the Ask Ember bar was used on (lib/ember-bar.ts pageContext): only the id; the server
+  // reads the rest as the member (lib/copilot-page.ts).
+  page: z.object({ kind: z.enum(["project", "club", "event"]), id: z.string().regex(PAGE_ID) }).optional(),
 });
 export type CopilotRequest = z.infer<typeof copilotRequest>;

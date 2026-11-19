@@ -65,6 +65,40 @@ export async function saveProject(_: ProjectState, form: FormData): Promise<Proj
   return { ok: true, message: v.id ? "Project saved." : "Project added." };
 }
 
+// Part of a project, from a card (an AI tool's draft, docs/mcp-workflows.md): only the fields given
+// change, under the same rules as the form above and the same row-level security (owner only).
+const patchSchema = z.object({
+  summary: z.string().trim().min(1, "Add a one-paragraph summary.").max(600),
+  details: z.string().trim().max(5000),
+  link: z.string().trim().max(300),
+  specs: z.array(z.object({ label: z.string().trim().min(1).max(40, "Spec names are up to 40 characters."), value: z.string().trim().min(1).max(80, "Spec values are up to 80 characters.") })).max(16, "Up to 16 specs."),
+}).partial()
+  .refine((v) => v.link === undefined || v.link === "" || /^https?:\/\/\S+$/i.test(v.link), { message: "Links must start with http:// or https://", path: ["link"] });
+export async function updateProjectFields(id: string, patch: { summary?: string; details?: string; link?: string; specs?: { label: string; value: string }[] }): Promise<ProjectState> {
+  const parsed = patchSchema.safeParse(patch);
+  if (!parsed.success || !/^[A-Za-z0-9-]{1,64}$/.test(id)) return { ok: false, message: parsed.success ? "That project wasn't found." : parsed.error.issues[0]?.message ?? "Check the changes." };
+  const v = parsed.data;
+  const { supabase, user } = await getViewer();
+  if (!user) return { ok: false, message: "Log in again to save." };
+  const { data: own } = await supabase.from("projects").select("id").eq("id", id).eq("owner_id", user.id).maybeSingle();
+  if (!own) return { ok: false, message: "Only the project's owner can change it." };
+  if (v.summary !== undefined) {
+    const { error } = await supabase.from("projects").update({ summary: v.summary }).eq("id", id);
+    if (error) return { ok: false, message: friendlyError(error) };
+  }
+  const d = { ...(v.details !== undefined && { details: v.details }), ...(v.link !== undefined && { link: v.link }), ...(v.specs !== undefined && (await dbFeatures()).projectSpecs && { specs: v.specs }) };
+  if (Object.keys(d).length) {
+    const upd = await supabase.from("project_details").update(d).eq("project_id", id).select("project_id");
+    if (upd.error) return { ok: false, message: friendlyError(upd.error) };
+    if (!upd.data?.length) {
+      const { error } = await supabase.from("project_details").insert({ project_id: id, ...d });
+      if (error) return { ok: false, message: friendlyError(error) };
+    }
+  }
+  revalidatePath(`/projects/${id}`);
+  return { ok: true, message: "Project saved." };
+}
+
 // "What are you building this semester?" (Linear FIX-71): one answer starts your first project, so
 // nobody faces a blank form. The answer is its title (and summary); everything else can come later.
 export async function startProject(text: string): Promise<ProjectState & { id?: string }> {

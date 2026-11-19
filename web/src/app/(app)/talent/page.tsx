@@ -40,7 +40,7 @@ async function Talent({ searchParams }: { searchParams: PageProps<"/talent">["se
       <>
         <PageHeader title="Find builders" subtitle="Search people by work their clubs verified, not by keywords they wrote about themselves." />
         <Panel className="mt-6 flex flex-col items-start gap-4 p-6">
-          <span className="bg-accent-grad grid size-12 place-items-center rounded-2xl text-on-accent"><Building2 className="size-5" /></span>
+          <span className="bg-text grid size-12 place-items-center rounded-2xl text-surface"><Building2 className="size-5" /></span>
           <div>
             <h2 className="text-lg font-semibold">For verified companies and schools</h2>
             <p className="mt-1 max-w-xl text-sm text-muted">Register your organization with a work email on its domain. Then search members by verified projects, the clubs that vouched for them and what they&apos;re open to. Messages you send land in their Requests, so they choose whether to reply.</p>
@@ -127,30 +127,32 @@ async function Talent({ searchParams }: { searchParams: PageProps<"/talent">["se
         <button className="h-8 rounded-lg bg-accent px-3 text-xs font-medium text-on-accent">Search</button>
       </form>
       {f.money && <SeatsLine paid={sp.seats === "1"} />}
+      {/* Filter rows: on a phone each scrolls sideways and fades at the edge (it clipped mid-word with no cue);
+          wider screens wrap. */}
       {f.backed && (
-        <div className="no-scrollbar mt-3 flex gap-1.5 overflow-x-auto" aria-label="Proof">
+        <div className="mt-3 no-scrollbar flex gap-1.5 overflow-x-auto pr-6 [mask-image:linear-gradient(90deg,#000_85%,transparent)] sm:flex-wrap sm:overflow-visible sm:pr-0 sm:[mask-image:none]" aria-label="Proof">
           <Link href={href({ level: "" })} className={chip(!backedOn)}>Signed only</Link>
           <Link href={href({ level: "backed" })} className={chip(backedOn)}>Signed or backed by GitHub</Link>
         </div>
       )}
-      <div className="no-scrollbar mt-2 flex gap-1.5 overflow-x-auto" aria-label="Open to">
+      <div className="mt-2 no-scrollbar flex gap-1.5 overflow-x-auto pr-6 [mask-image:linear-gradient(90deg,#000_85%,transparent)] sm:flex-wrap sm:overflow-visible sm:pr-0 sm:[mask-image:none]" aria-label="Open to">
         <Link href={href({ open: "" })} className={chip(!openTo)}>Anyone</Link>
         {OPEN_TO.map((o) => <Link key={o.id} href={href({ open: o.id })} className={chip(openTo === o.id)}>Open to {o.label.toLowerCase()}</Link>)}
       </div>
       {f.goals && (
-        <div className="no-scrollbar mt-2 flex gap-1.5 overflow-x-auto" aria-label="Working toward">
+        <div className="mt-2 no-scrollbar flex gap-1.5 overflow-x-auto pr-6 [mask-image:linear-gradient(90deg,#000_85%,transparent)] sm:flex-wrap sm:overflow-visible sm:pr-0 sm:[mask-image:none]" aria-label="Working toward">
           <Link href={href({ goal: "" })} className={chip(!goalKind)}>Any goal</Link>
           {(Object.keys(GOAL_KINDS) as GoalKind[]).map((k) => <Link key={k} href={href({ goal: k })} className={chip(goalKind === k)}>Working toward {GOAL_KINDS[k].label.toLowerCase()}</Link>)}
         </div>
       )}
-      <div className="no-scrollbar mt-2 flex gap-1.5 overflow-x-auto" aria-label="Clubs and verified count">
+      <div className="mt-2 no-scrollbar flex gap-1.5 overflow-x-auto pr-6 [mask-image:linear-gradient(90deg,#000_85%,transparent)] sm:flex-wrap sm:overflow-visible sm:pr-0 sm:[mask-image:none]" aria-label="Clubs and verified count">
         {MINS.map((m) => <Link key={m} href={href({ min: m > 1 ? String(m) : "" })} className={chip(min === m)}>{m}+ verified</Link>)}
         {clubs.length > 1 && <span className="mx-1 w-px shrink-0 bg-line" />}
         {clubs.length > 1 && clubs.map((c) => <Link key={c.id} href={href({ club: club === c.id ? "" : c.id })} className={chip(club === c.id)}>{c.name}</Link>)}
       </div>
 
       {(years.length > 0 || !!year) && (
-        <div className="no-scrollbar mt-2 flex gap-1.5 overflow-x-auto" aria-label="Class year">
+        <div className="mt-2 no-scrollbar flex gap-1.5 overflow-x-auto pr-6 [mask-image:linear-gradient(90deg,#000_85%,transparent)] sm:flex-wrap sm:overflow-visible sm:pr-0 sm:[mask-image:none]" aria-label="Class year">
           <Link href={href({ year: "" })} className={chip(!year)}>Any year</Link>
           {years.map((y) => <Link key={y} href={href({ year: year === y ? "" : String(y) })} className={chip(year === y)}>{classOf(y)}</Link>)}
         </div>
@@ -161,7 +163,7 @@ async function Talent({ searchParams }: { searchParams: PageProps<"/talent">["se
         {list.slice(0, 60).map((b) => {
           const name = `${b.person.first_name} ${b.person.last_name}`.trim() || "Brazework member";
           return (
-            <article key={b.person.id} className="glass-card flex min-w-0 flex-col gap-3 rounded-3xl p-4 sm:p-5">
+            <article key={b.person.id} className="border border-line bg-surface flex min-w-0 flex-col gap-3 rounded-2xl p-4 sm:p-5">
               <div className="flex items-start gap-3">
                 <Avatar first={b.person.first_name} last={b.person.last_name} size={44} />
                 <div className="min-w-0 flex-1">

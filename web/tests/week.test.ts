@@ -66,3 +66,25 @@ test("the build loop: done, now and next from real state, with one action each",
   assert.deepEqual(noClub.map((x) => x.state), ["done", "now", "next"]);
   assert.equal(noClub[1].cta?.href, "/communities?tab=discover");
 });
+
+// The goal check-in (lib/week.ts goalWeekItem): progress on the path, the one next step, and how many
+// verified companies looked this week, at the top of your week and in the weekly email.
+test("the goal check-in comes first: progress, the next step from goalPath, and companies who looked", async () => {
+  const { goalPath } = await import("@/lib/goals");
+  const { buildDigest } = await import("@/lib/digest");
+  const goal = { kind: "internship" as const, target: "power electronics", record: { projects: 2, signed: 2, waiting: 0, looked: 1 } };
+  const items = buildWeek({ ...quiet, goal, viewers: { total: 3, companies: ["Volt Systems", "Acme"] } });
+  assert.equal(items[0].id, "goal");
+  assert.equal(items[0].tone, "todo");
+  assert.equal(items[0].text, "2 of 3 signed toward your goal. 2 verified companies looked this week.", "short on Home, under the goal card");
+  assert.match(items[0].email!, /^2 of 3 signed toward a summer internship in power electronics\. 2 verified companies looked this week\. Next: /);
+  assert.ok(items[0].email!.endsWith(goalPath(goal, goal.record).next.text), "the next step is the app's own");
+  assert.equal(items[0].action, goalPath(goal, goal.record).next.action);
+  assert.equal(items[0].href, "/projects");
+  const quietWeek = buildWeek({ ...quiet, goal, viewers: { total: 0, companies: [] } });
+  assert.doesNotMatch(quietWeek[0].text, /looked this week/, "no company count when none looked");
+  assert.equal(buildWeek(quiet).some((i) => i.id === "goal"), false, "no goal, no check-in");
+  const mail = buildDigest("Ben", items, "https://brazework.com")!;
+  assert.match(mail.text, /2 of 3 signed toward a summer internship in power electronics\. .*Next: /, "the weekly email carries the full line");
+  assert.match(mail.html, /2 of 3 signed toward a summer internship in power electronics/);
+});
