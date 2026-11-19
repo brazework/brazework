@@ -64,8 +64,10 @@ const psql = (sql) => execSync(`docker exec -i forge-e2e-db psql -U postgres -h 
     await page.getByRole("radio", { name: /A professor or mentor/ }).click();
     await page.locator('input[name="signerEmail"]').fill("prof.lee@utexas.edu");
     await page.getByRole("button", { name: "Ask for a signature" }).click();
-    await page.getByRole("alert").waitFor({ timeout: 20000 });
-    const msg = await page.getByRole("alert").innerText();
+    // The wizard's own alert (Next's route announcer is an alert too).
+    const alert = page.locator('p[role="alert"]');
+    await alert.waitFor({ timeout: 20000 });
+    const msg = await alert.innerText();
     if (!/isn't available|couldn't send/.test(msg)) throw new Error("unexpected message: " + msg);
     const left = psql(`select count(*) from public.milestones m join public.profiles p on p.id = m.owner_id join auth.users u on u.id = p.id where u.email = '${email}'`);
     if (left !== "0") throw new Error(`a milestone was left waiting on an ask that never went out (${left})`);
@@ -87,7 +89,7 @@ const psql = (sql) => execSync(`docker exec -i forge-e2e-db psql -U postgres -h 
     const ms = q("select m.status || '|' || c.name from public.milestones m join public.communities c on c.id = m.community_id where m.owner_id = ME");
     if (ms !== `pending|${club}`) throw new Error(`milestone: ${ms}, club picked: ${club}`);
     const p = q("select field || '|' || headline || '|' || onboarded || '|' || cardinality(interests) from public.profiles where id = ME");
-    if (p !== "Engineering|Engineering student|t|3") throw new Error("profile: " + p);
+    if (p !== "Engineering|Engineering student|true|3") throw new Error("profile: " + p);
   }, page);
   await ctx.close();
 
