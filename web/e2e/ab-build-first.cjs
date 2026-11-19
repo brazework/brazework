@@ -83,6 +83,19 @@ const psql = (sql) => execSync(`docker exec -i forge-e2e-db psql -U postgres -h 
     await page.waitForURL(/\/u\/[0-9a-f-]{36}\?welcome=1/, { timeout: 30000 });
     await page.getByRole("region", { name: "Welcome to Brazework" }).getByText(/waiting for .* officers to verify it/).waitFor({ timeout: 15000 });
   }, page);
+  await step("share it the same day: a waiting card that says it isn't signed yet, and by whom it will be", async () => {
+    // The milestone's own Share (the profile header has one too).
+    await page.locator("ol li", { hasText: BUILD }).getByRole("button", { name: /^Share$/ }).click();
+    const dialog = page.getByRole("dialog", { name: "Share this result" });
+    await dialog.getByText(/waiting for a signature/).waitFor({ timeout: 10000 });
+    await dialog.getByRole("button", { name: "Create link" }).click();
+    const link = await dialog.getByLabel("Link to this result").inputValue({ timeout: 15000 });
+    const out = await (await b.newContext()).newPage();
+    await out.goto(link, { waitUntil: "networkidle" });
+    await out.getByText(`Not signed yet · waiting for ${club} to verify`).waitFor({ timeout: 15000 });
+    await out.getByText(/nobody has signed it yet/).waitFor();
+    await out.context().close();
+  }, page);
   await step("one project (the retry reused it), one pending milestone for that club, profile filled in", async () => {
     const q = (sql) => psql(sql.replace("ME", `(select id from auth.users where email = '${email}')`));
     if (q("select count(*) from public.projects where owner_id = ME") !== "1") throw new Error("expected exactly one project");

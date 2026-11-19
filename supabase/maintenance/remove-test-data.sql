@@ -1,4 +1,4 @@
--- Remove test content from production (clubs, events and posts made while testing).
+-- Remove test content from production (clubs, events, posts and milestones made while testing).
 -- NOT part of the migration order. Run by hand in the Supabase SQL Editor, in two steps:
 --
 --   1. Run the PREVIEW block alone and read every row it lists.
@@ -21,6 +21,12 @@ union all
 select 'post', p.id, left(p.body, 80), p.author_first || ' ' || p.author_last, p.created_at
   from public.posts p
  where p.body in (select n from names) or p.body ~* '^\s*(test|testing|hello free world|dummy)\W*$'
+union all
+-- Milestones titled "TEST: …" (for example "TEST: MCP log_milestone check", left verified on a
+-- founder's profile while testing the MCP tools). Their owner can't delete a verified milestone.
+select 'milestone', m.id, m.title, m.status || ' · ' || coalesce((select first_name || ' ' || last_name from public.profiles where id = m.owner_id), ''), m.created_at
+  from public.milestones m
+ where m.title ~* '^\s*test\s*:'
 order by kind, created_at;
 
 -- ---------- 2. DELETE (only after reading the preview) ----------
@@ -28,6 +34,7 @@ order by kind, created_at;
 -- with names(n) as (values ('Dummy Group'), ('TEST EVENT'), ('test'), ('TEST TESTllll'), ('HELLO FREE WORLD')),
 --   p as (delete from public.posts where body in (select n from names) or body ~* '^\s*(test|testing|hello free world|dummy)\W*$' returning 1),
 --   e as (delete from public.events where title in (select n from names) or title ~* '^(test|dummy)\b' returning 1),
---   c as (delete from public.communities where name in (select n from names) or name ~* '^(test|dummy)\b' or name ~* '\btest(ing)?\s*(club|group)\b' returning 1)
--- select (select count(*) from p) as posts_removed, (select count(*) from e) as events_removed, (select count(*) from c) as clubs_removed;
+--   c as (delete from public.communities where name in (select n from names) or name ~* '^(test|dummy)\b' or name ~* '\btest(ing)?\s*(club|group)\b' returning 1),
+--   m as (delete from public.milestones where title ~* '^\s*test\s*:' returning 1)
+-- select (select count(*) from p) as posts_removed, (select count(*) from e) as events_removed, (select count(*) from c) as clubs_removed, (select count(*) from m) as milestones_removed;
 -- commit;   -- or: rollback;
