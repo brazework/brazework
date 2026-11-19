@@ -30,7 +30,7 @@ struct PostCard: View {
         Avatar(first: post.authorFirst, last: post.authorLast, path: post.avatarPath, size: 40)
         VStack(alignment: .leading, spacing: 1) {
           HStack(spacing: 6) {
-            Text(post.authorName.isEmpty ? "Forge member" : post.authorName).font(.subheadline.weight(.semibold)).foregroundStyle(p.text).lineLimit(1)
+            Text(post.authorName.isEmpty ? "Brazework member" : post.authorName).font(.subheadline.weight(.semibold)).foregroundStyle(p.text).lineLimit(1)
             Text("· \(timeAgo(post.createdAt))\(post.editedAt != nil ? " · edited" : "")").font(.caption).foregroundStyle(p.faint)
           }
           let club = post.communityName ?? ""

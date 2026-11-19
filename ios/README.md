@@ -1,6 +1,8 @@
-# Forge for iPhone
+# Brazework for iPhone
 
 Native SwiftUI app on the same Supabase backend as `web/`: same tables, same row-level security, same feed ranking (`FeedRank.swift` is a port of `web/src/lib/feed-rank.ts`, with tests that pin the numbers).
+
+Members see Brazework everywhere (the home-screen name, sign-up, copy). The code keeps its older Forge names (`ForgeKit`, the `Forge` scheme, `FORGE_*` settings, bundle id `com.shualabs.forge`), as the web keeps `/feed` and `forge.test`; changing the bundle id would make it a different app in the App Store.
 
 `ForgeKit/` is the data layer (models, ranking, every read and write in `API.swift`, the feed and inbox stores). The app compiles those sources directly; `swift test` runs them on the Mac against the local stack. `Forge/` is the SwiftUI app.
 

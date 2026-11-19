@@ -29,6 +29,25 @@ enum BuildLogic {
 
   /// How far a build has got: 0 started, 1 logged, 2 signed.
   static func stage(_ b: BuildCounts) -> Int { b.verified > 0 ? 2 : (b.updates > 0 || b.waiting > 0) ? 1 : 0 }
+
+  /// The three steps every project takes, and how far this one has got: logged, asked, signed
+  /// (the web's buildPath, shown on each project card).
+  static func path(_ b: BuildCounts) -> [PathStep] {
+    let asked = b.waiting + b.verified
+    return [
+      .init(id: .logged, label: "Logged", done: b.updates > 0 || asked > 0, note: b.updates > 0 ? plural(b.updates, "update") : asked > 0 ? plural(asked, "result") : "nothing yet"),
+      .init(id: .asked, label: "Asked", done: asked > 0, note: b.waiting > 0 ? "\(b.waiting) waiting" : asked > 0 ? "answered" : "nobody yet"),
+      .init(id: .signed, label: "Signed", done: b.verified > 0, note: b.verified > 0 ? "\(b.verified) signed" : "not yet"),
+    ]
+  }
+}
+
+struct PathStep: Hashable, Sendable, Identifiable {
+  enum ID: Sendable { case logged, asked, signed }
+  let id: ID
+  let label: String
+  let done: Bool
+  let note: String
 }
 
 struct Build: Identifiable, Hashable, Sendable {

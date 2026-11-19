@@ -85,7 +85,7 @@ struct MessagesView: View {
         Avatar(first: i.name.components(separatedBy: " ").first ?? "", last: i.name.components(separatedBy: " ").dropFirst().first ?? "", size: 48)
         VStack(alignment: .leading, spacing: 3) {
           HStack {
-            Text(i.name.isEmpty ? "Forge member" : i.name).font(.body.weight(i.unread ? .bold : .semibold)).foregroundStyle(p.text).lineLimit(1)
+            Text(i.name.isEmpty ? "Brazework member" : i.name).font(.body.weight(i.unread ? .bold : .semibold)).foregroundStyle(p.text).lineLimit(1)
             Spacer()
             if let at = i.at { Text(timeAgo(at)).font(.caption).foregroundStyle(p.faint) }
           }
