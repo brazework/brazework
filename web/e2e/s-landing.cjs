@@ -1,6 +1,6 @@
 // The landing page's demos (components/landing, Linear FIX-117). Signed out, on a laptop and a phone:
-// the hero's milestone gets signed and a company asks to talk; the app tour's loop runs from Club
-// (verify) to Proof to Inbox (accept); Ember answers and waits for the OK; the club checklist ticks;
+// the hero's milestone gets signed and a company asks to talk; the app tour's loop runs from Clubs
+// (verify) to Record to Inbox (accept); Ember answers and waits for the OK; the club checklist ticks;
 // the company search only finds signed work. With reduced motion, nothing waits on an animation.
 const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
 
@@ -33,25 +33,25 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
     await stage.getByRole("button", { name: "Accept" }).waitFor({ timeout: 10000 });
   }, page);
 
-  await step("tour: before anything is signed, Proof and Inbox say so", async () => {
+  await step("tour: before anything is signed, Record and Inbox say so", async () => {
     const app = page.locator("#app");
-    await tab(page, "Proof").click();
+    await tab(page, "Record").click();
     await app.getByText(/isn't here yet/).waitFor();
     await tab(page, "Inbox").click();
     await app.getByText("No requests yet").waitFor();
   }, page);
 
-  await step("tour: the hint opens Club; verifying puts the milestone on Proof", async () => {
+  await step("tour: the hint opens Clubs; verifying puts the milestone on Record", async () => {
     const app = page.locator("#app");
-    await app.getByRole("button", { name: "Open Club" }).click();
+    await app.getByRole("button", { name: "Open Clubs" }).click();
     await app.getByRole("heading", { name: "Rocketry Club" }).waitFor();
     await app.getByRole("button", { name: "Verify" }).click();
     await app.getByText(/It's on Maya's record/).waitFor();
-    await tab(page, "Proof").click();
+    await tab(page, "Record").click();
     const panel = app.locator("#tour-panel");
     await panel.getByText("Beat the course in 41.2 seconds").waitFor();
     await panel.getByText("Verified by Rocketry Club").waitFor();
-    if (await panel.getByText(/isn't here yet/).count()) throw new Error("Proof still says the run is waiting");
+    if (await panel.getByText(/isn't here yet/).count()) throw new Error("Record still says the run is waiting");
   }, page);
 
   await step("tour: the request is in Inbox; accepting it finishes the loop", async () => {
@@ -62,7 +62,7 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
     await app.getByText(/Thursday afternoon works/).waitFor();
     await app.getByText("That's the loop: built, signed, found.").waitFor();
     await app.getByRole("button", { name: "Start the tour over" }).click();
-    await app.getByRole("button", { name: "Open Club" }).waitFor();
+    await app.getByRole("button", { name: "Open Clubs" }).waitFor();
   }, page);
 
   await step("Ember: it answers, shows a card, and does nothing until you press the button", async () => {
@@ -103,7 +103,7 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
     await go(phone, "/");
     const box = await phone.locator("#hero-build").boundingBox();
     if (!box || box.height < 44) throw new Error(`the build box is ${box && Math.round(box.height)}px tall`);
-    await tab(phone, "Club").click();
+    await tab(phone, "Clubs").click();
     await phone.locator("#app").getByRole("button", { name: "Verify" }).click();
     await phone.locator("#app").getByText(/It's on Maya's record/).waitFor();
     const cut = await phone.locator("#app").getByText(/It's on Maya's record/).evaluate((el) => { const r = el.getBoundingClientRect(), p = document.querySelector("#tour-panel").getBoundingClientRect(); return r.bottom > p.bottom; });
