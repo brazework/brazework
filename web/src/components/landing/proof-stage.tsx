@@ -5,51 +5,63 @@ import { useEffect, useRef, useState } from "react";
 import { TitleBlock } from "@/components/app/title-block";
 import { Seal } from "@/components/app/verified-seal";
 import { cn } from "@/lib/forge";
-import { type HeroCell, type HeroPhase, heroRecord, stageTitle } from "@/lib/landing-demo";
+import { HERO_STORIES, type HeroCell, type HeroPhase, type HeroStory, heroRecord, stageTitle } from "@/lib/landing-demo";
 
 // The hero's demo: the whole product in one card. The member asks their AI assistant in plain words,
 // it drafts the result with its proof (the visitor's own line, once they type one) and sends it to
-// whoever saw the work, they sign it, and someone who searched signed work asks to talk. Each Replay
-// tells it for someone else (STORIES): a student's club, an analyst's manager, a teacher's department
-// head, because the same record works for anyone who builds, with any tool. Every step is also a
-// button, and the visitor can press Send, the signer's button and answer the request themselves. With
-// reduced motion it simply shows the signed end. Example people and links; the page says so.
+// whoever saw the work, they sign it, and someone who searched signed work asks to talk. The chips
+// above the card name six ways of working (HERO_STORIES: a student, an engineer, a researcher, an
+// analyst, a designer, a teacher, each with the tool their AI reads and the person who signs), because
+// the same record works for anyone who builds, with any tool. It plays them in turn until the visitor
+// does anything (picks a chip, presses a step, types their own line), then stays where they are.
+// Every step is also a button, and the visitor can press Send, the signer's button and answer the
+// request themselves. With reduced motion it shows the signed end and doesn't advance. Example people
+// and links; the page says so.
 // Drawn like the app (docs/design/app.md): a plain sheet in ink, the draft dashed until it's signed,
 // and a title block underneath that fills in as the story goes. Green only once a person has signed.
 export function ProofStage({ build }: { build: string }) {
+  const reduce = useReducedMotion();
+  const [at, setAt] = useState(0);
   const [replays, setReplays] = useState(0);
+  const [auto, setAuto] = useState(true);
+  const story = HERO_STORIES[at];
+  // Plays on by itself only while nobody has touched it, and never over a line the visitor typed.
+  const playing = auto && !build && !reduce;
+  const pick = (n: number) => { setAuto(false); setAt(n); setReplays((r) => r + 1); };
   return (
     <div id="hero-preview" className="relative mx-auto w-full max-w-[30rem] min-w-0">
-      {/* Keyed on the build, so each new line starts the sequence again from "logged"; each Replay is the next story. */}
-      <Stage key={`${build}:${replays}`} build={build} story={STORIES[replays % STORIES.length]} />
+      <div role="group" aria-label="Ways people use Brazework" className="no-scrollbar -mx-1 mb-3 flex gap-1.5 overflow-x-auto px-1 pb-1">
+        {HERO_STORIES.map((s, n) => (
+          <button key={s.who} type="button" onClick={() => pick(n)} aria-pressed={n === at}
+            className={cn("relative inline-flex h-9 shrink-0 items-center gap-1.5 overflow-hidden rounded-lg border px-3 text-xs font-medium transition",
+              n === at ? "border-text bg-text text-surface" : "border-line bg-surface text-text-2 hover:border-line-strong hover:text-text")}>
+            {s.who}<span className={cn("font-normal", n === at ? "text-surface/70" : "text-faint")}>{s.tool}</span>
+            {/* While it plays by itself: how long until the next story, as a hairline filling under the chip. */}
+            {n === at && playing && <span key={`${at}:${replays}`} aria-hidden="true" className="absolute inset-x-0 bottom-0 h-[2px] origin-left bg-surface/60" style={{ animation: `progress-fill ${storyMs(s)}ms linear forwards` }} />}
+          </button>
+        ))}
+      </div>
+      {/* Keyed on the build and the story, so each starts again from the typed ask; Replay replays this one. */}
+      <Stage key={`${build}:${at}:${replays}`} build={build} story={story} onDone={playing ? () => setAt((n) => (n + 1) % HERO_STORIES.length) : undefined} onTouch={() => setAuto(false)} />
       <div className="mt-2 flex items-center justify-between gap-3 pl-1">
-        <p className="min-w-0 text-xs text-faint">{build ? "Your build. The people and the company are examples." : "Example data"}</p>
-        <button type="button" onClick={() => setReplays((n) => n + 1)} className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-xs font-medium text-muted transition hover:bg-hover hover:text-text"><RotateCcw className="size-3.5" /> Replay</button>
+        <p className="min-w-0 text-xs text-faint">{build ? "Your build. The people and the company are examples." : "Example people and links"}</p>
+        <button type="button" onClick={() => { setAuto(false); setReplays((n) => n + 1); }} className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-xs font-medium text-muted transition hover:bg-hover hover:text-text"><RotateCcw className="size-3.5" /> Replay</button>
       </div>
     </div>
   );
 }
 
 const STEPS = ["Your AI drafts it", "Someone who saw it signs", "Someone finds it"];
-type Person = { initials: string; name: string; role: string };
-type Story = { title?: string; cmd: string; read: string; proof: string[]; send: string; sent: string; signer: Person & { act: string; done: string }; finder: Person & { ask: string } };
-// The first is the one the page opens on (and the visitor's own line uses); Replay moves through the rest.
-const STORIES: Story[] = [
-  { cmd: "add the line robot to my record", read: "Read your merged PR and the expo video", proof: ["github.com/you/linebot/pull/42", "youtu.be/fall-expo-run"],
-    send: "Send to club", sent: "Sent to Rocketry Club", signer: { initials: "BC", name: "Ben Cho", role: "Officer, Rocketry Club", act: "Verify", done: "Verified" },
-    finder: { initials: "CD", name: "Cara Diaz", role: "Acme Aerospace", ask: "Saw your signed work on Brazework. Free to talk about our robotics internship?" } },
-  { title: "New pricing tiers cut churn 9%", cmd: "put my pricing analysis on my record", read: "Read the analysis you built in Claude and the pilot results", proof: ["claude.ai/share/q3-pricing", "pilot-results.xlsx"],
-    send: "Ask Dana to sign", sent: "Sent to Dana Ruiz", signer: { initials: "DR", name: "Dana Ruiz", role: "Director of Product, your manager", act: "Sign", done: "Signed" },
-    finder: { initials: "LP", name: "Leo Park", role: "Brightline Consulting", ask: "Saw your signed pricing work. Free to talk about our associate role?" } },
-  { title: "Fractions unit lifted quiz scores 18%", cmd: "add my fractions unit to my record", read: "Read the unit plan you made with Claude and the class quiz scores", proof: ["docs.google.com/fractions-unit", "quiz-scores.csv"],
-    send: "Ask Tom to sign", sent: "Sent to Tom Owens", signer: { initials: "TO", name: "Tom Owens", role: "Head of Math, your department", act: "Sign", done: "Signed" },
-    finder: { initials: "MG", name: "Maria Gómez", role: "Riverside School District", ask: "Saw your signed unit. Would you walk our curriculum team through it?" } },
-];
+type Story = HeroStory;
 type Phase = HeroPhase;
+// How long a story plays before the next one: typed at a person's pace, then the three steps, then a
+// few seconds to read who reached out.
+const typedMs = (s: Story) => 250 + s.cmd.length * 42;
+const storyMs = (s: Story) => typedMs(s) + 8600;
 
-function Stage({ build, story }: { build: string; story: Story }) {
+function Stage({ build, story, onDone, onTouch }: { build: string; story: Story; onDone?: () => void; onTouch: () => void }) {
   const CMD = story.cmd;
-  const typedBy = 250 + CMD.length * 42;
+  const typedBy = typedMs(story);
   const reduce = useReducedMotion();
   const [step, setStep] = useState(1);
   const [phase, setPhase] = useState<Phase>("typing");
@@ -69,15 +81,17 @@ function Stage({ build, story }: { build: string; story: Story }) {
       at(typedBy + 2300, () => setPhase("sent")),
       at(typedBy + 2800, () => setStep((s) => Math.max(s, 2))),
       at(typedBy + 4600, () => setStep(3)),
+      // Then the next story, while nobody has touched it (ProofStage passes onDone only then).
+      ...(onDone && !reduce ? [setTimeout(onDone, storyMs(story))] : []),
     ];
     return stop;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [reduce]);
 
   const after = (n: number) => { if (n >= 2) { setTyped(CMD.length); setPhase("sent"); } };
-  const jump = (n: number) => { stop(); after(n); setStep(n); };
-  const send = () => { stop(); setTyped(CMD.length); setPhase("sent"); timers.current = [at(500, () => setStep(2)), at(2300, () => setStep(3))]; };
-  const verify = () => { stop(); after(2); setStep(2); timers.current = [at(1500, () => setStep(3))]; };
+  const jump = (n: number) => { stop(); onTouch(); after(n); setStep(n); };
+  const send = () => { stop(); onTouch(); setTyped(CMD.length); setPhase("sent"); timers.current = [at(500, () => setStep(2)), at(2300, () => setStep(3))]; };
+  const verify = () => { stop(); onTouch(); after(2); setStep(2); timers.current = [at(1500, () => setStep(3))]; };
   const shown = reduce ? CMD.length : typed;
 
   const signed = step >= 2;
@@ -139,8 +153,8 @@ function Stage({ build, story }: { build: string; story: Story }) {
             <div className="mt-3 flex min-h-9 items-center gap-2 pl-11" aria-live="polite">
               {answer === null ? (
                 <>
-                  <button type="button" onClick={() => setAnswer("accepted")} className="inline-flex h-9 items-center rounded-lg bg-accent px-4 text-sm font-medium text-on-accent transition hover:opacity-90">Accept</button>
-                  <button type="button" onClick={() => setAnswer("declined")} className="inline-flex h-9 items-center rounded-lg border border-line px-4 text-sm font-medium transition hover:border-line-strong hover:bg-hover">Decline</button>
+                  <button type="button" onClick={() => { stop(); onTouch(); setAnswer("accepted"); }} className="inline-flex h-9 items-center rounded-lg bg-accent px-4 text-sm font-medium text-on-accent transition hover:opacity-90">Accept</button>
+                  <button type="button" onClick={() => { stop(); onTouch(); setAnswer("declined"); }} className="inline-flex h-9 items-center rounded-lg border border-line px-4 text-sm font-medium transition hover:border-line-strong hover:bg-hover">Decline</button>
                 </>
               ) : (
                 <p className="text-sm text-text-2">{answer === "accepted" ? "You're talking. They only reached you because you said yes." : "Declined. They aren't told, and can't message you again."}</p>

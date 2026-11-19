@@ -94,3 +94,24 @@ test("the hero's title block follows the story: drafting, waiting, then on the r
     assert.ok(!["Signed", "Verified", "Dana Ruiz"].includes(c.value), c.value);
   }
 });
+
+test("the hero tells six different ways of working, each named once, the student's first", async () => {
+  const { HERO_STORIES } = await import("@/lib/landing-demo");
+  assert.equal(HERO_STORIES.length, 6);
+  assert.equal(HERO_STORIES[0].who, "Student", "the visitor's own line uses the first story");
+  assert.equal(HERO_STORIES[0].title, undefined, "the first one's title is the visitor's build");
+  assert.equal(new Set(HERO_STORIES.map((s) => s.who)).size, 6, "one story per way of working");
+  assert.equal(new Set(HERO_STORIES.map((s) => s.signer.name)).size, 6, "a different person signs each");
+  for (const s of HERO_STORIES.slice(1)) assert.ok(s.title && s.title.length <= 60, s.who);
+});
+
+test("every story fits the card: a short ask, one or two proofs, and someone who signs and someone who asks", async () => {
+  const { HERO_STORIES } = await import("@/lib/landing-demo");
+  for (const s of HERO_STORIES) {
+    assert.ok(s.cmd.length <= 56, `${s.who}: the typed ask fits one line`);
+    assert.ok(s.proof.length >= 1 && s.proof.length <= 2, s.who);
+    assert.ok(s.tool.length <= 24, `${s.who}: the chip's tool label stays short`);
+    assert.ok(s.signer.name && s.signer.role && s.signer.act && s.signer.done, s.who);
+    assert.ok(s.finder.name && s.finder.role && s.finder.ask.endsWith("?"), `${s.who}: the finder asks`);
+  }
+});

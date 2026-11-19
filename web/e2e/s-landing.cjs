@@ -30,9 +30,12 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
     await stage.getByText(/You're talking/).waitFor();
   }, page);
 
-  await step("hero: Replay tells it for someone else (an analyst whose manager signs), and pressing Sign yourself signs it", async () => {
+  await step("hero: the chips tell it for someone else (an analyst whose manager signs), and pressing Sign yourself signs it", async () => {
     const stage = page.locator("#hero-preview");
-    await stage.getByRole("button", { name: "Replay" }).click();
+    // Six ways of working, one chip each (lib/landing-demo.ts HERO_STORIES); picking one stops the autoplay.
+    const ways = stage.getByRole("group", { name: "Ways people use Brazework" });
+    if ((await ways.getByRole("button").count()) !== 6) throw new Error("expected six story chips");
+    await ways.getByRole("button", { name: /^Analyst/ }).click();
     await stage.getByRole("list", { name: "Evidence" }).getByText(/claude\.ai/).waitFor({ timeout: 10000 });
     await stage.getByText("Dana Ruiz", { exact: true }).waitFor();
     await stage.getByRole("button", { name: "Sign", exact: true }).click();
