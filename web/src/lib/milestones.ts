@@ -1,8 +1,9 @@
 "use server";
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { z } from "zod";
 import { friendlyError } from "@/lib/forge";
 import { getViewer } from "@/lib/supabase/server";
+import { verifyTag } from "@/lib/verify-load";
 import { requestVouch } from "@/lib/vouches";
 import { backingMessage } from "@/lib/backing";
 import { checkBacking, recordBacking } from "@/lib/backing-check";
@@ -102,6 +103,7 @@ export async function reviewMilestone(id: string, verify: boolean, note = ""): P
   const { data, error } = await supabase.rpc("review_milestone", { p_id: id, p_verify: verify, p_note: n.data });
   if (error) return { ok: false, message: reason(error) };
   revalidatePath("/c/[id]/manage", "page");
+  updateTag(verifyTag(id));
   return { ok: true, message: data === "verified" ? "Verified. They've been notified." : data === "pending" ? "Approved. It needs one more officer." : "Refused. They've been told why." };
 }
 
@@ -112,6 +114,7 @@ export async function revokeMilestone(id: string, why: string): Promise<Mileston
   const { error } = await supabase.rpc("revoke_milestone", { p_id: id, p_reason: why.trim().slice(0, 300) });
   if (error) return { ok: false, message: reason(error) };
   revalidatePath("/c/[id]/manage", "page");
+  updateTag(verifyTag(id)); // its verify page says revoked at once
   return { ok: true, message: "Revoked. They've been told why." };
 }
 
@@ -122,6 +125,7 @@ export async function disputeMilestone(id: string, note: string): Promise<Milest
   const { error } = await supabase.rpc("dispute_milestone", { p_id: id, p_note: note.trim().slice(0, 500) });
   if (error) return { ok: false, message: reason(error) };
   revalidatePath(`/u/${user.id}`);
+  updateTag(verifyTag(id));
   return { ok: true, message: "Sent to the club's owner." };
 }
 
@@ -168,6 +172,7 @@ export async function setMilestoneVisible(id: string, visible: boolean): Promise
   const { error } = await supabase.from("milestones").update({ private: !visible }).eq("id", id).eq("owner_id", user.id);
   if (error) return { ok: false, message: friendlyError(error) };
   revalidatePath(`/u/${user.id}`);
+  updateTag(verifyTag(id)); // hiding it takes its verify page down at once
   return { ok: true, message: visible ? "Shown on your profile." : "Hidden from your profile." };
 }
 

@@ -13,7 +13,7 @@
 set -euo pipefail
 cd "$(dirname "$0")/.."
 PORT="${PORT:-3000}"
-LOCAL=http://localhost:54321
+LOCAL="http://localhost:${E2E_GATEWAY_PORT:-54321}"
 
 if ! docker info >/dev/null 2>&1; then
   echo "Docker isn't running. Start OrbStack or Docker Desktop, then run npm run dev again." >&2
@@ -27,7 +27,12 @@ if [ "${1:-}" = "--fresh" ] || [ "${1:-}" = "--demo" ] || ! curl -sf -o /dev/nul
 else
   echo "Using the local database that's already running (npm run dev -- --fresh to start it over)."
 fi
-if [ "${1:-}" = "--demo" ]; then e2e/demo.sh; fi
+if [ "${1:-}" = "--demo" ]; then
+  e2e/demo.sh
+  # Emails (signature links, invites) go to a local outbox you can open on camera: /dev/outbox.
+  export BRAZEWORK_LOCAL_OUTBOX=1
+  echo "  Emails:     http://localhost:$PORT/dev/outbox   (the demo's local outbox; nothing is really sent)"
+fi
 
 cat <<EOF
 

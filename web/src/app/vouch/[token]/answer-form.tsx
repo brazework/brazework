@@ -7,7 +7,7 @@ import { answerVouch } from "@/lib/vouches";
 
 // The two questions that make a vouch mean something (what you saw, how you know their work), then
 // vouch or decline. What they write is shown on the member's record with their name and domain.
-export function AnswerForm({ token, domain }: { token: string; domain: string }) {
+export function AnswerForm({ token, domain, email }: { token: string; domain: string; email: string }) {
   const [done, setDone] = useState<{ ok: boolean; message: string } | null>(null);
   const [pending, start] = useTransition();
   const [f, setF] = useState({ name: "", title: "", saw: "", knowsFrom: "" });
@@ -17,6 +17,8 @@ export function AnswerForm({ token, domain }: { token: string; domain: string })
   if (done?.ok) return (
     <>
       <p role="status" className="mt-6 flex items-start gap-2 rounded-xl border border-line bg-surface-2/60 p-4 text-sm"><BadgeCheck className="mt-0.5 size-4 shrink-0" /> {done.message}</p>
+      {/* Signer tools (signer-tools.sql): everything signed from this address, for letters and reviews. */}
+      <p className="mt-4 text-sm text-muted">Keep a list of everything you sign, for recommendation letters and reviews: sign in to Brazework with <b className="font-medium text-text-2">{email}</b> and open <Link href="/signed" className="font-medium text-text underline underline-offset-4">What you&apos;ve signed</Link>.</p>
       {/* Witness invitations (FIX-129): the people who sign are builders too. */}
       <div className="mt-6 rounded-xl border border-line p-4">
         <p className="text-sm font-medium">Want a record like this for your own work?</p>

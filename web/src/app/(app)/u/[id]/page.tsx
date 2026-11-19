@@ -177,8 +177,8 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
 
   return (
     <div id="top" className="scroll-mt-24">
-      {/* Your own profile is the first page of Proof: its other pages are a click away (lib/places.ts). */}
-      {mine && <Suspense fallback={<PlaceTabsRow place="proof" active="profile" />}><OwnProofTabs /></Suspense>}
+      {/* Your own profile is the first page of Record: its other pages are a click away (lib/places.ts). */}
+      {mine && <Suspense fallback={<PlaceTabsRow place="record" active="profile" />}><OwnProofTabs /></Suspense>}
       {mine && sp.welcome === "1" && <FirstMilestoneWelcome supabase={supabase} userId={user.id} milestone={ms[0]} />}
       {preview && (
         <p role="status" className="mb-4 flex items-start gap-2 rounded-2xl border border-line bg-surface-2/70 px-4 py-3 text-sm text-text-2">

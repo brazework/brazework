@@ -96,6 +96,15 @@ export async function saveEmailPrefs(weekly: boolean): Promise<SettingsState> {
 }
 
 // Email alerts, one switch per kind (supabase/email-alerts.sql, Linear FIX-18).
+// Daily triage (supabase/daily-triage.sql): the once-a-day email when your tools leave drafts. Off by default.
+export async function saveDraftReminder(on: boolean): Promise<SettingsState> {
+  const { supabase, user } = await getViewer();
+  if (!user) return { ok: false, message: "Log in again." };
+  const { error } = await supabase.rpc("save_draft_reminder", { p_on: !!on });
+  if (error) return { ok: false, message: friendlyError(error) };
+  return { ok: true, message: on ? "We'll email you once a day when your tools notice something." : "Daily draft emails are off." };
+}
+
 export async function saveEmailAlerts(kinds: { messages: boolean; requests: boolean; comments: boolean }): Promise<SettingsState> {
   const { supabase, user } = await getViewer();
   if (!user) return { ok: false, message: "Log in again." };

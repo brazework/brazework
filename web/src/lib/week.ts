@@ -1,3 +1,4 @@
+import { GOAL_KINDS, goalPath, goalTitle, type GoalKind, type Record_ } from "@/lib/goals";
 // "Your week": the nudge on Home. What happened in your clubs, what's waiting on you, and the one
 // next step most worth taking. Only real counts, and nothing at all when there's nothing to say.
 // Pure, so the choices are tested (tests/week.test.ts).
@@ -15,15 +16,32 @@ export type WeekInput = {
   viewers?: { total: number; companies: string[] };
   // Whether you've ever asked your club to verify a milestone (any status).
   hasMilestone?: boolean;
+  // Your goal and the record its path is built from (goals.sql, lib/goals.ts), when you've set one.
+  goal?: { kind: GoalKind; target: string; record: Record_ } | null;
 };
 
-export type WeekItem = { id: string; text: string; href: string; action?: string; tone: "news" | "todo" | "nudge" };
+// `email` is the longer line the weekly email uses when Home's card has room for less (the goal check-in:
+// Home shows your goal card right above it, so its line there is only the count).
+export type WeekItem = { id: string; text: string; href: string; action?: string; tone: "news" | "todo" | "nudge"; email?: string };
+
+// The goal check-in, at the top of your week and in the weekly email: progress on the path, the one
+// next step, and how many verified companies looked this week. Real counts only, from goalPath().
+export function goalWeekItem(g: { kind: GoalKind; target: string; record: Record_ }, companiesThisWeek: number): WeekItem {
+  const k = GOAL_KINDS[g.kind];
+  const next = goalPath(g, g.record).next;
+  const looked = companiesThisWeek > 0 ? ` ${plural(companiesThisWeek, "verified company", "verified companies")} looked this week.` : "";
+  const href = next.href.startsWith("/") ? next.href : next.href === "#projects" ? "/projects" : "/profile";
+  const signed = `${Math.min(g.record.signed, k.target)} of ${k.target} signed toward`;
+  return { id: "goal", tone: "todo", text: `${signed} your goal.${looked}`, email: `${signed} ${goalTitle(g)}.${looked} Next: ${next.text}`, href, action: next.action };
+}
 
 const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
 const when = (days: number) => (days <= 0 ? "today" : days === 1 ? "tomorrow" : `in ${days} days`);
 
 export function buildWeek(w: WeekInput): WeekItem[] {
   const items: WeekItem[] = [];
+  // Your goal first: it's what the week is for.
+  if (w.goal) items.push(goalWeekItem(w.goal, w.viewers?.companies.length ?? 0));
   // Waiting on you first: other people are blocked on these.
   if (w.toVerify && w.toVerify.n > 0)
     items.push({ id: "verify", tone: "todo", text: `${plural(w.toVerify.n, "milestone")} waiting for you to verify`, href: `/c/${w.toVerify.clubId}/manage?tab=verify`, action: "Review" });
@@ -74,7 +92,7 @@ export function buildLoopSteps(w: WeekInput, s: { shownThisWeek: boolean; verifi
   const quiet = w.quietProject;
   const steps: Omit<LoopStep, "state">[] = [
     {
-      id: "build", title: "Build",
+      id: "build", title: "Log your work",
       line: s.shownThisWeek ? "You shared your work this week" : !w.hasProject ? "Add what you're building: a robot, a rig, a model, an app" : quiet ? `Post an update on ${quiet.title}` : "Share what you built this week",
       cta: s.shownThisWeek ? null : !w.hasProject ? { label: "Add a project", href: "/projects" } : quiet ? { label: "Post an update", href: `/feed?project=${quiet.id}#composer` } : { label: "Post", href: "/feed#composer" },
     },
@@ -83,7 +101,7 @@ export function buildLoopSteps(w: WeekInput, s: { shownThisWeek: boolean; verifi
       line: s.verified > 0
         ? `${plural(s.verified, "milestone")} verified by your club${w.myPending ? ` · ${w.myPending} waiting` : ""}`
         : w.myPending > 0 ? `${plural(w.myPending, "milestone")} waiting for your club` : !w.hasClub ? "Join your club, so its officers can verify your work" : "Ask your club to verify a milestone",
-      cta: s.verified > 0 || w.myPending > 0 ? { label: "See your proof", href: `/u/${s.me}#proof` } : !w.hasClub ? { label: "Find your club", href: "/communities?tab=discover" } : { label: "Ask your club", href: "/projects" },
+      cta: s.verified > 0 || w.myPending > 0 ? { label: "See your record", href: `/u/${s.me}#proof` } : !w.hasClub ? { label: "Find your club", href: "/communities?tab=discover" } : { label: "Ask your club", href: "/projects" },
     },
     {
       id: "found", title: "Get found",

@@ -73,3 +73,19 @@ test("Plus is on sale only with a Stripe key and a Plus price; a challenge stays
   assert.equal(sent?.get("mode"), "payment");
   assert.equal(sent?.has("subscription_data[metadata][plan]"), false);
 });
+
+test("Plus trial: off unless a founder sets PLUS_TRIAL_DAYS, and only on Plus", async () => {
+  const { plusTrialDays } = await import("@/lib/billing");
+  assert.equal(plusTrialDays({}), 0);
+  for (const bad of ["0", "-3", "91", "7.5", "seven", ""]) assert.equal(plusTrialDays({ PLUS_TRIAL_DAYS: bad }), 0, bad);
+  assert.equal(plusTrialDays({ PLUS_TRIAL_DAYS: "30" }), 30);
+  let sent: URLSearchParams | undefined;
+  const fetcher = async (_u: string, init: { body?: unknown }) => { sent = init.body as URLSearchParams; return { ok: true, json: async () => ({ id: "x", url: "https://checkout.stripe.com/x" }) }; };
+  const env = { STRIPE_SECRET_KEY: "sk_test_x", STRIPE_PRICE_PLUS: "price_plus", STRIPE_PRICE_TALENT: "price_t", PLUS_TRIAL_DAYS: "30" };
+  await stripeProvider(env, fetcher as never).checkout({ plan: "plus", userId: "u1", reference: "u1", successUrl: "https://forge.test/a", cancelUrl: "https://forge.test/b" });
+  assert.equal(sent?.get("subscription_data[trial_period_days]"), "30");
+  await stripeProvider(env, fetcher as never).checkout({ plan: "talent", orgId: "o1", reference: "o1", successUrl: "https://forge.test/a", cancelUrl: "https://forge.test/b" });
+  assert.equal(sent?.get("subscription_data[trial_period_days]"), null, "company seats never get it");
+  await stripeProvider({ ...env, PLUS_TRIAL_DAYS: "" }, fetcher as never).checkout({ plan: "plus", userId: "u2", reference: "u2", successUrl: "https://forge.test/a", cancelUrl: "https://forge.test/b" });
+  assert.equal(sent?.get("subscription_data[trial_period_days]"), null, "no setting, no trial");
+});

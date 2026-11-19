@@ -57,6 +57,15 @@ const nextConfig: NextConfig = {
   async headers() {
     return [{ source: "/:path*", headers: securityHeaders }];
   },
+  // One-click connect for AI assistants (lib/mcp-oauth.ts): the OAuth discovery documents live at
+  // well-known paths, served by route handlers.
+  async rewrites() {
+    return [
+      { source: "/.well-known/oauth-protected-resource", destination: "/api/oauth-protected-resource" },
+      { source: "/.well-known/oauth-protected-resource/:path*", destination: "/api/oauth-protected-resource" },
+      { source: "/.well-known/oauth-authorization-server", destination: "/api/oauth-authorization-server" },
+    ];
+  },
   images: {
     // Public media, and project files' signed links (private bucket; the token is in the query), so
     // Files thumbnails are small resized copies rather than full originals (Linear FIX-75).

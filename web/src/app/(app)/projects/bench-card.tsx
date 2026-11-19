@@ -22,7 +22,7 @@ export function BenchCard({ p, attach = false }: { p: BenchProject; attach?: boo
   const logId = `log-${p.id}`;
   const step = nextBuildStep(p), path = buildPath(p), active = activeWeeks(p.weeks), peak = Math.max(1, ...p.weeks);
   return (
-    <li className="glass-card flex flex-col rounded-2xl p-4 sm:p-5">
+    <li className="flex flex-col rounded-2xl border border-line bg-surface p-4 sm:p-5">
       {/* What it is. */}
       <div className="flex items-start gap-3">
         {p.cover && (
@@ -33,7 +33,7 @@ export function BenchCard({ p, attach = false }: { p: BenchProject; attach?: boo
         <div className="min-w-0 flex-1">
           <Link href={`/projects/${p.id}`} className="block truncate text-[17px] font-semibold tracking-tight hover:underline">{p.title}</Link>
           <p className="mt-0.5 flex flex-wrap items-center gap-x-3 text-xs text-muted">
-            <span className="inline-flex items-center gap-1.5"><span className={cn("size-1.5 rounded-full", p.status === "completed" ? "bg-ok" : "bg-orange-500")} aria-hidden="true" />{p.status === "completed" ? "Completed" : "In progress"}</span>
+            <span className="inline-flex items-center gap-1.5"><span className={cn("size-1.5 rounded-full", p.status === "completed" ? "bg-ok" : "bg-text")} aria-hidden="true" />{p.status === "completed" ? "Completed" : "In progress"}</span>
             {p.private && <span className="inline-flex items-center gap-1"><Lock className="size-3" /> Private</span>}
           </p>
           <p className="mt-1.5 line-clamp-2 text-sm text-muted">{p.summary || "No summary yet."}</p>
@@ -50,10 +50,10 @@ export function BenchCard({ p, attach = false }: { p: BenchProject; attach?: boo
       </div>
 
       {/* Where it stands: logged, asked, signed. */}
-      <ol aria-label="Where this build stands" className="mt-4 grid grid-cols-3 gap-2">
+      <ol aria-label="Where this build stands" className="mt-4 grid grid-cols-3 divide-x divide-line-strong overflow-hidden rounded-lg border border-line-strong">
         {path.map((s) => (
-          <li key={s.id} className={cn("rounded-lg border px-2.5 py-2", s.done ? "border-transparent bg-[color-mix(in_oklab,var(--ok)_9%,var(--surface))]" : "border-line")}>
-            <span className={cn("flex items-center gap-1.5 text-xs font-medium", s.done ? "text-ok" : "text-muted")}>
+          <li key={s.id} className="min-w-0 px-2.5 py-2">
+            <span className={cn("flex items-center gap-1.5 text-xs font-medium", !s.done ? "text-muted" : s.id === "signed" ? "text-ok" : "text-text")}>
               {s.done ? <Check className="size-3.5" /> : <span className="size-3.5 rounded-full border border-line-strong" aria-hidden="true" />} {s.label}
             </span>
             <span className="mt-0.5 block text-[11px] text-faint tabular-nums">{s.note}</span>
@@ -78,10 +78,10 @@ export function BenchCard({ p, attach = false }: { p: BenchProject; attach?: boo
       )}
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
-        <Link href={`/projects/${p.id}#milestones`} className={cn("inline-flex h-9 items-center gap-1.5 rounded-lg px-3.5 text-xs font-medium transition", step.kind === "verify" ? "bg-accent-grad text-on-accent" : "border border-line hover:bg-hover")}>
+        <Link href={`/projects/${p.id}#milestones`} className={cn("inline-flex h-9 items-center gap-1.5 rounded-lg px-3.5 text-xs font-medium transition", step.kind === "verify" ? "bg-text text-surface hover:opacity-90" : "border border-line hover:bg-hover")}>
           <ShieldCheck className="size-3.5" /> {step.kind === "verify" ? "Get it signed" : p.verified ? "Milestones" : "Add a milestone"}
         </Link>
-        {p.verified > 0 && <Link href="/profile" className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-line px-3.5 text-xs font-medium transition hover:bg-hover"><BadgeCheck className="size-3.5" /> On your Proof</Link>}
+        {p.verified > 0 && <Link href="/profile" className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-line px-3.5 text-xs font-medium transition hover:bg-hover"><BadgeCheck className="size-3.5" /> On your record</Link>}
         {p.model && (
           <button type="button" onClick={() => setIn3d(!in3d)} aria-expanded={in3d} title={p.model.name} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-line px-3.5 text-xs font-medium transition hover:bg-hover">
             {in3d ? <X className="size-3.5" /> : <Box className="size-3.5" />} {in3d ? "Close 3D" : "View in 3D"}
@@ -105,7 +105,7 @@ export function BenchCard({ p, attach = false }: { p: BenchProject; attach?: boo
                 <ol className="relative ml-1.5 border-l border-line">
                   {p.log.map((u) => (
                     <li key={u.id} className="relative pb-4 pl-4 last:pb-0">
-                      <span aria-hidden="true" className="absolute top-1.5 -left-[5px] size-2.5 rounded-full border-2 border-surface bg-accent-grad" />
+                      <span aria-hidden="true" className="absolute top-1.5 -left-[5px] size-2.5 rounded-full border-2 border-surface bg-text" />
                       <div className="flex items-center gap-2 text-[11px] text-faint">
                         <time dateTime={u.created_at}>{timeAgo(u.created_at)}</time>
                         {u.status !== "visible" && <span className="rounded-full bg-surface-2 px-1.5 py-px text-[10px] text-muted">Held for review</span>}

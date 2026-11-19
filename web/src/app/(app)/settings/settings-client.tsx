@@ -7,7 +7,7 @@ import { Button, Field, inputCls } from "@/components/ui";
 import { ALL_TOPICS, FIELDS, TOPICS, cn, type Profile } from "@/lib/forge";
 import { gradYearOptions } from "@/lib/profile-meta";
 import { deleteAllChats } from "@/lib/copilot-chats";
-import { changePassword, deleteAccount, saveEmailAlerts, saveEmailPrefs, saveMessageSettings, saveProfileSettings, type SettingsState, unblockPerson } from "@/lib/settings";
+import { changePassword, deleteAccount, saveDraftReminder, saveEmailAlerts, saveEmailPrefs, saveMessageSettings, saveProfileSettings, type SettingsState, unblockPerson } from "@/lib/settings";
 import { submitWithoutReset } from "@/lib/submit";
 
 const init: SettingsState = { ok: false, message: "" };
@@ -292,8 +292,9 @@ const ALERT_KINDS: { key: keyof EmailAlerts; title: string; desc: string }[] = [
   { key: "comments", title: "Comments on your posts", desc: "When someone comments on something you posted." },
 ];
 
-export function EmailSettings({ weekly, alerts }: { weekly: boolean; alerts?: EmailAlerts }) {
+export function EmailSettings({ weekly, alerts, dailyDrafts }: { weekly: boolean; alerts?: EmailAlerts; dailyDrafts?: boolean }) {
   const [on, setOn] = useState(weekly);
+  const [daily, setDaily] = useState(dailyDrafts);
   const [kinds, setKinds] = useState<EmailAlerts | undefined>(alerts);
   const [msg, setMsg] = useState<SettingsState>(init);
   const [pending, start] = useTransition();
@@ -319,6 +320,12 @@ export function EmailSettings({ weekly, alerts }: { weekly: boolean; alerts?: Em
             </label>
           ))}
         </>
+      )}
+      {daily !== undefined && (
+        <label className="mt-2 flex items-start justify-between gap-4">
+          <span><span className="text-sm font-medium">Drafts from your tools, daily</span><span className="block text-sm text-faint">Once a day, when your connected tools left something new for your record. Only counts and tool names, never what a draft says. Off unless you turn it on.</span></span>
+          <input id="email-daily-drafts" type="checkbox" role="switch" checked={daily} disabled={pending} onChange={(e) => { const v = e.target.checked; setDaily(v); start(async () => setMsg(await saveDraftReminder(v))); }} className="mt-1 size-5 shrink-0 accent-[var(--text)]" />
+        </label>
       )}
       <Status state={msg} />
     </div>
