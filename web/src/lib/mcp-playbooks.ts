@@ -259,6 +259,7 @@ export const PROMPTS: PromptDef[] = [
   { name: "start", title: "Get me started", description: "Your first minute: find something you really finished in the tools you've connected, and turn it into your first milestone, with its proof, ready for the person who saw it to sign.", arguments: [FIELD_ARG] },
   { name: "shipped", title: "I shipped something", description: "Turn work you just finished (a merged PR, a new version, a passed test) into a milestone with evidence, for your club to verify or someone to sign.", arguments: [FIELD_ARG, WHAT_ARG] },
   { name: "result", title: "I got a result", description: "Turn a number (a run, a test, a measurement, a sales total) into a result post with specifics.", arguments: [FIELD_ARG, WHAT_ARG] },
+  { name: "standup", title: "Write my standup", description: "Write today's standup (done, next, blocked) from what your connected tools show since yesterday, and save it to your Brazework drafts. Nothing is posted until you approve it.", arguments: [FIELD_ARG, { name: "date", description: "The day it's for, as YYYY-MM-DD (optional: today).", required: false }] },
   { name: "week", title: "Recap my week", description: "Look over the last 7 days in your connected tools and draft the 1–3 things worth recording.", arguments: [FIELD_ARG] },
   { name: "ask_signature", title: "Ask someone to sign", description: "Ask the professor, PI, manager or mentor who saw your work to sign one of your milestones.", arguments: [{ name: "who", description: "Who saw it, e.g. “Dr. Lee, my lab PI”.", required: false }] },
   { name: "setup", title: "Connect my tools", description: "Which of your field's tools your assistant can reach, and how to connect them in a few minutes.", arguments: [FIELD_ARG] },
@@ -329,6 +330,19 @@ export function promptText(name: string, args: Record<string, string | undefined
         `3. ${writeLine(s, "post")}`,
         "Keep private things out: no customer, patient or student details, no secrets, nothing from an employer's confidential work.",
       ].join("\n");
+    case "standup": {
+      const day = /^\d{4}-\d{2}-\d{2}$/.test(args.date?.trim() ?? "") ? args.date!.trim() : "today";
+      return [
+        `Write my standup for ${day === "today" ? "today" : day} from my tools, for my Brazework record.`,
+        fieldLine(p, args.field),
+        "1. Look at what you can reach since my last working day: commits and merged pull requests, CI and test runs, issues and tickets I moved, documents and runs I finished, my calendar for today. Call my_projects so you can attach it to the right project.",
+        "2. Write it in my voice, short, as three parts: Done (what I finished, with numbers and links), Next (what I'm doing today), Blocked (what's in my way, or “Nothing”). Never invent work or numbers: if you can't see it, leave it out or ask me.",
+        "3. Keep private things out: no customer, patient or student details, no secrets, nothing from an employer's confidential work. If something only makes sense with those, describe it in general terms.",
+        s.canDraft || s.canPost
+          ? `4. Save it with draft_post, kind "update", attached to the project it's mostly about, with source_key “standup:${day === "today" ? "<today's date as YYYY-MM-DD>" : day}” so running this again the same day doesn't make a second one. Always a draft, even if this token can post: I approve it in Brazework. Then show me what you saved and the review link.`
+          : `4. ${READ_ONLY}`,
+      ].join("\n");
+    }
     case "week":
       return [
         "Recap my last 7 days for my Brazework record.",
