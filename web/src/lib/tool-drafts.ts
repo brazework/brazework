@@ -12,10 +12,24 @@ export type DraftResult = { ok: boolean; message: string; url?: string };
 
 const reason = (e: { message?: string; code?: string }) => (e.code === "P0001" ? e.message ?? friendlyError(e) : e.code === "42501" ? "That draft isn't yours." : friendlyError(e));
 const idOk = (id: string) => /^[0-9a-f-]{36}$/i.test(id);
+const RETRY = "We couldn't check your sign-in just now. Try again in a moment.";
+
+// Each action answers its own card. getViewer() throws when the sign-in server is briefly busy (so a
+// page shows "try again" rather than signing people out); here that becomes a message on the card,
+// so one draft's hiccup never takes the whole Drafts page down.
+async function viewerOrRetry() {
+  try { return await getViewer(); } catch { return null; }
+}
+async function settle(run: () => Promise<DraftResult>): Promise<DraftResult> {
+  try { return await run(); } catch { return { ok: false, message: "That didn't go through. Try again." }; }
+}
 
 export async function approveDraft(id: string, edit: { body?: string; title?: string; detail?: string }): Promise<DraftResult> {
   if (!idOk(id)) return { ok: false, message: "That draft isn't yours." };
-  const { supabase, user } = await getViewer();
+  return settle(async () => {
+  const v = await viewerOrRetry();
+  if (!v) return { ok: false, message: RETRY };
+  const { supabase, user } = v;
   if (!user) return { ok: false, message: "Log in again." };
   const { data, error } = await supabase.rpc("approve_tool_draft", { p_id: id, p_body: edit.body ?? null, p_title: edit.title ?? null, p_detail: edit.detail ?? null });
   if (error) return { ok: false, message: reason(error) };
@@ -26,21 +40,28 @@ export async function approveDraft(id: string, edit: { body?: string; title?: st
     ok: true, url: r.url,
     message: r.kind === "post" ? "Posted." : r.status === "pending" ? "Logged. Your club's officers have been asked to verify it." : "Logged. Ask the person who saw it to vouch for it from the project.",
   };
+  });
 }
 
 export async function dismissDraft(id: string): Promise<DraftResult> {
   if (!idOk(id)) return { ok: false, message: "That draft isn't yours." };
-  const { supabase } = await getViewer();
-  const { data, error } = await supabase.rpc("dismiss_tool_draft", { p_id: id });
+  return settle(async () => {
+  const v = await viewerOrRetry();
+  if (!v) return { ok: false, message: RETRY };
+  const { data, error } = await v.supabase.rpc("dismiss_tool_draft", { p_id: id });
   if (error || data !== true) return { ok: false, message: error ? reason(error) : "That draft was already handled." };
   return { ok: true, message: "Dismissed." };
+  });
 }
 
 // A tool's draft whose card ran the app's own action (supabase/tool-actions.sql): mark it done.
 export async function settleDraft(id: string): Promise<DraftResult> {
   if (!idOk(id)) return { ok: false, message: "That draft isn't yours." };
-  const { supabase } = await getViewer();
-  const { data, error } = await supabase.rpc("settle_tool_draft", { p_id: id });
+  return settle(async () => {
+  const v = await viewerOrRetry();
+  if (!v) return { ok: false, message: RETRY };
+  const { data, error } = await v.supabase.rpc("settle_tool_draft", { p_id: id });
   if (error || data !== true) return { ok: false, message: error ? reason(error) : "That draft was already handled." };
   return { ok: true, message: "Done." };
+  });
 }
