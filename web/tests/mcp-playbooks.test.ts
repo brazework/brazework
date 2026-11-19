@@ -133,3 +133,19 @@ test("start: the first minute finds real finished work and ends with the link", 
   assert.doesNotMatch(promptText("start", { field: "Data & AI" }, draft)!, /request_signature/);
   assert.equal(PROMPTS[0].name, "start", "start is listed first");
 });
+
+test("standup: today's done, next and blocked, always saved as a draft, once a day", () => {
+  const post = scopeFlags(["read", "draft", "post"]), draft = scopeFlags(["read", "draft"]), read = scopeFlags(["read"]);
+  for (const s of [post, draft]) {
+    const t = promptText("standup", { field: "Software" }, s)!;
+    assert.match(t, /Done [\s\S]* Next [\s\S]* Blocked/);
+    assert.match(t, /draft_post/);
+    assert.match(t, /source_key “standup:<today's date as YYYY-MM-DD>”/);
+    assert.doesNotMatch(t, /post_update/, "never posted directly, even by a token that can");
+    assert.match(t, /Never invent/);
+    assert.match(t, /confidential/);
+  }
+  assert.match(promptText("standup", { date: "2026-11-23" }, draft)!, /standup:2026-11-23/);
+  assert.match(promptText("standup", { date: "next tuesday" }, draft)!, /for today/);
+  assert.match(promptText("standup", {}, read)!, /can only read/);
+});
