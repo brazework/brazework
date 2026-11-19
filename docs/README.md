@@ -10,6 +10,7 @@
 ## The company
 
 - [strategy.md](strategy.md): who pays, go-to-market (starting with NSBE at UHart), what YC wants to see.
+- [pilot-adopt-a-project.md](pilot-adopt-a-project.md): the four-week, no-code pilot that decides whether "adopt a project" gets built.
 - [positioning.md](positioning.md): market research, with sources.
 - [naming.md](naming.md): the new name, Brazework (pending a trademark check), with what was checked and the fallbacks.
 - [accounts.md](accounts.md): every account and service we run on, who owns it, what it costs, and what's missing (including the company itself).
