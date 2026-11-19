@@ -26,7 +26,7 @@ export function OnboardingForm({ firstName, student, askGradYear = false }: { fi
   return (
     <form onSubmit={submitWithoutReset(action)} className="flex flex-col gap-8">
       <div>
-        <SignupSteps at="work" club={student} />
+        <SignupSteps at="work" path="profile" student={student} />
         <h1 className="mt-4 text-4xl font-semibold tracking-tight">
           Welcome{firstName ? `, ${firstName}` : ""}. <span className="text-shine">What do you build?</span>
         </h1>

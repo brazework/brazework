@@ -16,9 +16,9 @@ const { BASE, step, browser, as, go, closeTour, hydrated, summary } = require(".
     await page.fill('input[name="birthday"]', birthday);
     await page.getByRole("button", { name: "Continue" }).click();
   }
-  await step("sign-up asks only for an email and a password, step 1 of 4", async () => {
+  await step("sign-up asks only for an email and a password, step 1 of 5", async () => {
     await go(page, "/signup");
-    await page.getByText("Step 1 of 4").waitFor();
+    await page.getByText("Step 1 of 5").waitFor();
     for (const gone of ["firstName", "lastName", "birthday"]) if (await page.locator(`input[name="${gone}"]`).count()) throw new Error(`/signup still asks for ${gone}`);
     if (await page.getByRole("button", { name: /^Student/ }).count()) throw new Error("/signup still asks student or professional");
     await page.getByText("Student? Use your university email").waitFor();
@@ -66,11 +66,15 @@ const { BASE, step, browser, as, go, closeTour, hydrated, summary } = require(".
     await page.getByText("Check your inbox").first().waitFor({ timeout: 20000 });
     await page.getByLabel("Or enter the 6-digit code from the email").waitFor();
   }, page);
-  await step("once confirmed (auto-confirmed locally), the app opens on About you, then onboarding", async () => {
+  await step("once confirmed (auto-confirmed locally), the app opens on About you; setting up a profile instead", async () => {
     await go(page, "/feed");
     await page.waitForURL(/onboarding/, { timeout: 15000 });
-    await page.getByText("Step 2 of 4").waitFor({ timeout: 15000 });
+    await page.getByText("Step 2 of 5").waitFor({ timeout: 15000 });
     await aboutYou("student", "Dana", "Reyes", "2003-05-01");
+    // Build-first is the way in (e2e/ab-build-first.cjs); Dana sets up her profile instead.
+    await page.getByText("Step 3 of 5").waitFor({ timeout: 20000 });
+    await hydrated(page.getByRole("link", { name: /Set up your profile instead/ }));
+    await page.getByRole("link", { name: /Set up your profile instead/ }).click();
     await page.getByText("Step 3 of 4").waitFor({ timeout: 20000 });
     await page.waitForFunction(() => { const el = document.querySelector('input[name="headline"]'); return el && Object.keys(el).some((k) => k.startsWith("__reactProps")); }, null, { timeout: 15000 });
   }, page);
