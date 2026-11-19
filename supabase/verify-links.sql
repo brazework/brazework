@@ -1,4 +1,4 @@
--- Step 68: résumé verify links (/v/<id>). Run after mcp-workflows.sql. Additive and safe to re-run.
+-- Step 69: résumé verify links (/v/<id>). Run after mcp-workflows.sql. Additive and safe to re-run.
 --
 -- Every signed milestone gets a public verify page, for a recruiter who clicks (or scans) it from a
 -- résumé: what was built, the evidence, who signed or verified it, their role, when, and whether it
