@@ -145,7 +145,7 @@ async function Manage({ params, searchParams }: { params: PageProps<"/c/[id]/man
         {tab === "roles" && (
           <Panel className="overflow-x-auto p-0">
             <table className="w-full text-sm">
-              <thead><tr className="border-b border-line text-left"><th className="px-5 py-3 font-medium">Permission</th>{ROLES.map((r) => <th key={r} className="px-3 py-3 text-center font-mono text-[10px] tracking-wide text-muted uppercase">{ROLE_LABEL[r]}</th>)}</tr></thead>
+              <thead><tr className="border-b border-line text-left"><th className="px-5 py-3 font-medium">Permission</th>{ROLES.map((r) => <th key={r} className="px-3 py-3 text-center text-xs text-muted">{ROLE_LABEL[r]}</th>)}</tr></thead>
               <tbody>{PERMS.map(([key, label]) => <tr key={key} className="border-b border-line last:border-0"><td className="px-5 py-3 text-text-2">{label}</td>{ROLES.map((r) => <td key={r} className="px-3 py-3 text-center">{can(r, key) ? "✓" : <span className="text-faint">—</span>}</td>)}</tr>)}</tbody>
             </table>
           </Panel>

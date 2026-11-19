@@ -1,4 +1,4 @@
--- Step 76: company search and a résumé from your AI tools (docs/mcp-workflows.md). Run after
+-- Step 77: company search and a résumé from your AI tools (docs/mcp-workflows.md). Run after
 -- tool-officers.sql. Additive and safe to re-run.
 --
 -- - mcp_talent_rows(): for admins of a verified company or school only, exactly what /talent reads

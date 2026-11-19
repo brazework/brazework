@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { dbFeatures } from "@/lib/db-features";
 import { getViewer } from "@/lib/supabase/server";
 import { linkName, openToLabel, type ProfileLink } from "@/lib/profile-meta";
+import { redactedText, type Redacted } from "@/lib/redacted";
 import { PrintButton } from "./print-button";
 
 export const metadata: Metadata = { title: "Résumé" };
@@ -41,6 +42,7 @@ async function Resume({ params }: { params: PageProps<"/u/[id]/resume">["params"
     supabase.from("community_members").select("role, communities(name)").eq("uid", id).limit(12),
   ]);
   if (!pr.data) notFound();
+  const redacted = f.redactedProof ? (((await supabase.rpc("redacted_proof", { p_member: id })).data ?? []) as Redacted[]) : [];
   const p = pr.data as unknown as { first_name: string; last_name: string; account_type: string; headline: string; bio: string; field: string; open_to?: string[]; links?: ProfileLink[]; location?: string };
   const projects = ((projRes.data ?? []) as unknown as Proj[]).filter((x) => own || !x.private);
   const titles = new Map(projects.map((x) => [x.id, x.title]));
@@ -80,6 +82,16 @@ async function Resume({ params }: { params: PageProps<"/u/[id]/resume">["params"
                   <span className="col-span-2 text-[12px] text-zinc-500">Verified by {m.community_name}{m.reviewer_name && ` (${m.reviewer_name})`}</span>
                 </li>
               ))}
+            </ul>
+          </>
+        )}
+
+        {/* Proof without revealing (redacted-proof.sql): private signed work, one line each, no details. */}
+        {redacted.length > 0 && (
+          <>
+            <H>Confidential work</H>
+            <ul className="mt-3 space-y-1.5">
+              {redacted.map((r) => <li key={r.id}><strong className="font-semibold text-zinc-950">{r.line}</strong> <span className="text-zinc-500">· {redactedText({ ...r, line: "" })}</span></li>)}
             </ul>
           </>
         )}

@@ -1,4 +1,3 @@
-import { Inbox } from "lucide-react";
 import Link from "next/link";
 import { dbFeatures } from "@/lib/db-features";
 import { triageHeading, type TriageClub } from "@/lib/draft-triage";
@@ -13,7 +12,8 @@ const MEMBER_ROLES = ["owner", "admin", "moderator", "helper", "member"];
 // "Your tools noticed N things" on Today (supabase/daily-triage.sql): the newest drafts your tools left,
 // each decided in a tap without leaving the page. Nothing at all when none are waiting, or before the
 // step has run. Row-level security keeps every query to your own rows.
-export async function DraftTriage() {
+// `node`: its marker on Home's spine (feed/stream.tsx), so it reads as the stream's first group.
+export async function DraftTriage({ node }: { node?: React.ReactNode } = {}) {
   const { supabase, user } = await getViewer();
   if (!user || !(await dbFeatures()).dailyTriage) return null;
   const [drafts, mine, prefs] = await Promise.all([
@@ -34,9 +34,10 @@ export async function DraftTriage() {
   const reminderOn = Boolean((prefs.data as { daily_drafts?: boolean } | null)?.daily_drafts);
 
   return (
-    <section id="triage" aria-labelledby="triage-h" className="scroll-mt-24">
-      <div className="mb-2 flex items-baseline justify-between gap-3">
-        <h2 id="triage-h" className="inline-flex items-center gap-1.5 text-[11px] font-medium tracking-wide text-faint uppercase"><Inbox className="size-3.5" />{triageHeading(total)}</h2>
+    <section id="triage" aria-labelledby="triage-h" className="relative scroll-mt-24">
+      {node && <span aria-hidden="true" className="absolute top-0.5 -left-7 grid w-[18px] place-items-center sm:-left-8">{node}</span>}
+      <div className="mb-2.5 flex items-baseline justify-between gap-3">
+        <h2 id="triage-h" className="text-[15px] font-semibold tracking-tight text-text">{triageHeading(total)}</h2>
         {total > list.length && <Link href="/drafts" className="text-xs text-muted underline-offset-4 hover:text-text hover:underline">See all {total}</Link>}
       </div>
       <ul className="space-y-2" aria-label="Drafts from your tools">

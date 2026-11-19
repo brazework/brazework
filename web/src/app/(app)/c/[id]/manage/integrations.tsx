@@ -20,7 +20,7 @@ export function Integrations() {
           <p className="mt-3 text-sm text-muted">Members import a public repo as a project (Projects → New → Import from GitHub): title, write-up, link and topics are filled in, and its releases are suggested as milestones to send you for verification.</p>
         </section>
         <section className={card}>
-          <div className="flex items-center gap-3"><span className="bg-accent-grad grid size-10 place-items-center rounded-lg text-on-accent"><Bot className="size-5" /></span><h3 className="font-semibold">Members&apos; AI tools</h3>{live}</div>
+          <div className="flex items-center gap-3"><span className="bg-text grid size-10 place-items-center rounded-lg text-surface"><Bot className="size-5" /></span><h3 className="font-semibold">Members&apos; AI tools</h3>{live}</div>
           <p className="mt-3 text-sm text-muted">Members connect Claude Code, Cursor, VS Code or Codex, and their tool logs build updates and milestones for them as they work, labelled with the tool. A milestone still waits for one of your officers.</p>
           <Link href="/settings/tools" className="mt-3 inline-block text-sm font-medium hover:underline">How members connect →</Link>
         </section>
