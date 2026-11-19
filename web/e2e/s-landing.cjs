@@ -21,7 +21,12 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
     await stage.getByText("Sent to Rocketry Club").waitFor({ timeout: 10000 });
     await stage.getByRole("list", { name: "Evidence" }).getByText(/github\.com/).waitFor();
     await stage.getByText("Verified", { exact: true }).waitFor({ timeout: 10000 });
+    // The title block under the sheet fills in: on the record once it's signed, then who found it.
+    const record = stage.locator('dl[aria-label="Where this record stands"]');
+    await record.getByText("On the record").waitFor();
+    await record.getByText("Ben C.").waitFor();
     await stage.getByRole("button", { name: "Accept" }).click({ timeout: 10000 });
+    await record.getByText("Acme Aerospace").waitFor();
     await stage.getByText(/You're talking/).waitFor();
   }, page);
 
@@ -135,6 +140,7 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
     await stage.getByText("Verified", { exact: true }).waitFor({ timeout: 3000 });
     await stage.getByText("Sent to Rocketry Club").waitFor({ timeout: 3000 });
     await stage.getByRole("button", { name: "Accept" }).click({ timeout: 3000 });
+    await stage.locator('dl[aria-label="Where this record stands"]').getByText("Acme Aerospace").waitFor({ timeout: 3000 });
   }, still);
 
   await b.close();

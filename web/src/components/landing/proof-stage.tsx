@@ -1,9 +1,11 @@
 "use client";
-import { BadgeCheck, Check, RotateCcw } from "lucide-react";
+import { Check, RotateCcw } from "lucide-react";
 import { useReducedMotion } from "motion/react";
 import { useEffect, useRef, useState } from "react";
+import { TitleBlock } from "@/components/app/title-block";
+import { Seal } from "@/components/app/verified-seal";
 import { cn } from "@/lib/forge";
-import { stageTitle } from "@/lib/landing-demo";
+import { type HeroCell, type HeroPhase, heroRecord, stageTitle } from "@/lib/landing-demo";
 
 // The hero's demo: the whole product in one card. The member asks their AI assistant in plain words,
 // it drafts the result with its proof (the visitor's own line, once they type one) and sends it to
@@ -12,13 +14,18 @@ import { stageTitle } from "@/lib/landing-demo";
 // head, because the same record works for anyone who builds, with any tool. Every step is also a
 // button, and the visitor can press Send, the signer's button and answer the request themselves. With
 // reduced motion it simply shows the signed end. Example people and links; the page says so.
+// Drawn like the app (docs/design/app.md): a plain sheet in ink, the draft dashed until it's signed,
+// and a title block underneath that fills in as the story goes. Green only once a person has signed.
 export function ProofStage({ build }: { build: string }) {
   const [replays, setReplays] = useState(0);
   return (
     <div id="hero-preview" className="relative mx-auto w-full max-w-[30rem] min-w-0">
       {/* Keyed on the build, so each new line starts the sequence again from "logged"; each Replay is the next story. */}
-      <Stage key={`${build}:${replays}`} build={build} story={STORIES[replays % STORIES.length]} onReplay={() => setReplays((n) => n + 1)} />
-      <p className="mt-3 text-center text-xs text-faint">{build ? "Your build. The people and the company are examples." : "Example data"}</p>
+      <Stage key={`${build}:${replays}`} build={build} story={STORIES[replays % STORIES.length]} />
+      <div className="mt-2 flex items-center justify-between gap-3 pl-1">
+        <p className="min-w-0 text-xs text-faint">{build ? "Your build. The people and the company are examples." : "Example data"}</p>
+        <button type="button" onClick={() => setReplays((n) => n + 1)} className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-xs font-medium text-muted transition hover:bg-hover hover:text-text"><RotateCcw className="size-3.5" /> Replay</button>
+      </div>
     </div>
   );
 }
@@ -38,9 +45,9 @@ const STORIES: Story[] = [
     send: "Ask Tom to sign", sent: "Sent to Tom Owens", signer: { initials: "TO", name: "Tom Owens", role: "Head of Math, your department", act: "Sign", done: "Signed" },
     finder: { initials: "MG", name: "Maria Gómez", role: "Riverside School District", ask: "Saw your signed unit. Would you walk our curriculum team through it?" } },
 ];
-type Phase = "typing" | "reading" | "draft" | "sent";
+type Phase = HeroPhase;
 
-function Stage({ build, story, onReplay }: { build: string; story: Story; onReplay: () => void }) {
+function Stage({ build, story }: { build: string; story: Story }) {
   const CMD = story.cmd;
   const typedBy = 250 + CMD.length * 42;
   const reduce = useReducedMotion();
@@ -73,34 +80,34 @@ function Stage({ build, story, onReplay }: { build: string; story: Story; onRepl
   const verify = () => { stop(); after(2); setStep(2); timers.current = [at(1500, () => setStep(3))]; };
   const shown = reduce ? CMD.length : typed;
 
-  return (
-    <div className="rounded-[1.25rem] border border-line bg-surface shadow-[var(--shadow-float)]">
-      <div className="flex items-center justify-between gap-3 border-b border-line py-2.5 pr-2.5 pl-5">
-        <p className="flex min-w-0 items-center gap-2 text-sm font-semibold"><BadgeCheck className="size-4 shrink-0 text-ok" /> Proof <span className="truncate font-normal text-muted">signed by people who saw it</span></p>
-        <button type="button" onClick={onReplay} className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-xs font-medium text-muted transition hover:bg-hover hover:text-text"><RotateCcw className="size-3.5" /> Replay</button>
-      </div>
+  const signed = step >= 2;
+  // Only ever shown after the story has played in the browser, so the server never prints a date.
+  const today = signed ? new Date().toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "";
+  const record = heroRecord({ phase, step, signer: story.signer.name, finder: story.finder.role, today });
 
-      <ol className="relative px-5 py-5">
+  return (
+    <div className="overflow-hidden rounded-2xl border border-line-strong bg-surface">
+      <ol className="relative px-5 pt-5 pb-4">
         <Node n={1} at={step} label={STEPS[0]} onPick={jump}>
           {/* What the member types to their assistant, and what it reads. */}
-          <div className="rounded-xl bg-[#1b1a18] px-3 py-2 font-mono text-[12.5px] leading-relaxed text-[#ecebe6]">
-            <p className="flex items-center gap-2">
-              <span aria-hidden="true" className="text-[#e08a62]">&gt;</span>
-              <span aria-hidden="true">{CMD.slice(0, shown)}{phase === "typing" && !reduce && <span className="ml-px inline-block h-3.5 w-1.5 translate-y-0.5 animate-pulse bg-[#ecebe6]" />}</span>
+          <div className="rounded-lg border border-line bg-surface-2 px-3 py-2 font-mono text-[12.5px] leading-relaxed text-text">
+            <p className="flex items-start gap-2">
+              <span aria-hidden="true" className="text-faint">&gt;</span>
+              <span aria-hidden="true">{CMD.slice(0, shown)}{phase === "typing" && !reduce && <span className="ml-px inline-block h-3.5 w-1.5 translate-y-0.5 animate-pulse bg-text" />}</span>
               <span className="sr-only">You ask your AI assistant: “{CMD}”.</span>
             </p>
-            {phase !== "typing" && <p className="text-[#a9a69c]">⎿ {story.read}</p>}
+            {phase !== "typing" && <p className="text-muted">⎿ {story.read}</p>}
           </div>
-          {/* The draft it writes, with the proof, ready to send. */}
-          <div className={cn("mt-2 rounded-xl border border-line p-3 transition duration-500", phase === "draft" || phase === "sent" ? "opacity-100" : "translate-y-1 opacity-0")} inert={phase === "typing" || phase === "reading"}>
-            <p className="text-[11px] font-medium tracking-wide text-faint uppercase">Draft result</p>
+          {/* The draft it writes, with the proof, ready to send: dashed until someone signs it. */}
+          <div className={cn("mt-2 rounded-lg border p-3 transition duration-500", signed ? "border-line" : "border-dashed border-line-strong", phase === "draft" || phase === "sent" ? "opacity-100" : "translate-y-1 opacity-0")} inert={phase === "typing" || phase === "reading"}>
+            <p className="text-xs text-muted">{signed ? "Milestone" : "Draft"}</p>
             <p className="mt-0.5 text-[16px] leading-snug font-semibold tracking-tight break-words">{build ? stageTitle(build) : story.title ?? stageTitle(build)}</p>
             <ul className="mt-1.5 flex flex-wrap gap-1.5" aria-label="Evidence">
-              {story.proof.map((e) => <li key={e} className="max-w-full truncate rounded-md bg-surface-2 px-2 py-0.5 font-mono text-[11px] text-text-2">{e}</li>)}
+              {story.proof.map((e) => <li key={e} className="max-w-full truncate rounded-md border border-line px-2 py-0.5 font-mono text-[11px] text-text-2">{e}</li>)}
             </ul>
             <div className="mt-2.5 flex min-h-8 items-center">
               {phase === "sent"
-                ? <span className="inline-flex items-center gap-1.5 text-xs font-medium text-ok"><Check className="size-3.5" /> {story.sent}</span>
+                ? <span className="inline-flex items-center gap-1.5 text-xs font-medium text-text-2"><Check className="size-3.5" /> {story.sent}</span>
                 : <button type="button" onClick={send} className="inline-flex h-8 items-center rounded-lg bg-accent px-3.5 text-xs font-medium text-on-accent transition hover:opacity-90">{story.send}</button>}
             </div>
           </div>
@@ -110,13 +117,13 @@ function Stage({ build, story, onReplay }: { build: string; story: Story; onRepl
           <div className="flex items-center gap-3">
             <Av>{story.signer.initials}</Av>
             <p className="min-w-0 flex-1 text-sm leading-snug"><span className="font-medium">{story.signer.name}</span><span className="block text-muted">{story.signer.role}</span></p>
-            {step >= 2
-              ? <span className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg bg-[color-mix(in_oklab,var(--ok)_8%,var(--surface))] px-3 text-xs font-medium text-ok"><Check className="size-3.5" /> {story.signer.done}</span>
+            {signed
+              ? <span className="inline-flex h-8 shrink-0 items-center gap-1.5 text-xs font-semibold text-ok"><Seal size={18} /> {story.signer.done}</span>
               : <button type="button" onClick={verify} className="inline-flex h-8 shrink-0 items-center rounded-lg bg-accent px-3.5 text-xs font-medium text-on-accent transition hover:opacity-90">{story.signer.act}</button>}
           </div>
           <div className="mt-2 flex items-end justify-between gap-3">
-            <p className={cn("text-xs text-muted transition-opacity duration-500", step >= 2 ? "opacity-100" : "opacity-0")}>On the record with their name and today&apos;s date.</p>
-            <Signature drawn={step >= 2} still={!!reduce} />
+            <p className={cn("text-xs text-muted transition-opacity duration-500", signed ? "opacity-100" : "opacity-0")}>On the record with their name and today&apos;s date.</p>
+            <Signature drawn={signed} still={!!reduce} />
           </div>
         </Node>
 
@@ -142,8 +149,20 @@ function Stage({ build, story, onReplay }: { build: string; story: Story; onRepl
           </div>
         </Node>
       </ol>
+
+      {/* Where the record stands, filling in as the story goes: the drawing's title block. */}
+      <TitleBlock label="Where this record stands" cells={record.map(titleCell)} className="rounded-none border-x-0 border-b-0 bg-surface sm:grid" />
     </div>
   );
+}
+
+// A title block cell: the seal once it's on the record, a dashed ring while it waits, a quiet dash for "not yet".
+function titleCell(c: HeroCell) {
+  const value = c.tone === "ok" ? <span className="inline-flex items-center gap-1.5"><Seal size={14} />{c.value}</span>
+    : c.tone === "waiting" ? <span className="inline-flex items-center gap-1.5"><span aria-hidden="true" className="size-3.5 shrink-0 rounded-full border-[1.5px] border-dashed border-line-strong" />{c.value}</span>
+    : c.tone === "empty" ? <><span aria-hidden="true" className="text-faint">—</span><span className="sr-only">{c.value}</span></>
+    : c.value;
+  return { label: c.label, value, tone: c.tone === "ok" ? ("ok" as const) : undefined };
 }
 
 // One step of the sequence: its number (a tick once it has happened) is a button that jumps there.
@@ -151,10 +170,10 @@ function Node({ n, at, label, onPick, last, children }: { n: number; at: number;
   const done = at >= n;
   return (
     <li className={cn("relative flex gap-4", !last && "pb-5")}>
-      {/* The line down to the next step fills once that step has happened. */}
-      {!last && <span aria-hidden="true" className="absolute top-[1.625rem] bottom-0 left-[0.8125rem] w-px -translate-x-1/2 bg-line"><span className={cn("block size-full origin-top bg-ok transition-transform duration-700 ease-out", at > n ? "scale-y-100" : "scale-y-0")} /></span>}
+      {/* The line down to the next step fills in ink once that step has happened. */}
+      {!last && <span aria-hidden="true" className="absolute top-[1.625rem] bottom-0 left-[0.8125rem] w-px -translate-x-1/2 bg-line"><span className={cn("block size-full origin-top bg-text transition-transform duration-700 ease-out", at > n ? "scale-y-100" : "scale-y-0")} /></span>}
       <button type="button" onClick={() => onPick(n)} aria-label={`Step ${n}: ${label}`} aria-current={at === n ? "step" : undefined}
-        className={cn("relative z-10 grid size-[1.625rem] shrink-0 place-items-center rounded-full border text-[11px] font-semibold tabular-nums transition-colors duration-300", done ? "border-ok bg-ok text-white dark:text-[#06240f]" : "border-line-strong bg-surface text-muted")}>
+        className={cn("relative z-10 grid size-[1.625rem] shrink-0 place-items-center rounded-full border text-[11px] font-semibold tabular-nums transition-colors duration-300", done ? "border-text bg-text text-surface" : "border-dashed border-line-strong bg-surface text-muted")}>
         {done ? <Check className="size-3.5" strokeWidth={3} /> : n}
       </button>
       <div className="min-w-0 flex-1">

@@ -8,6 +8,33 @@
 export const EXAMPLE_BUILD = "A line-following robot";
 export const stageTitle = (build: string) => build || EXAMPLE_BUILD;
 
+/** A person the way the app names them in public: "Ben Cho" is "Ben C.". */
+export function shortName(name: string): string {
+  const [first, ...rest] = name.trim().split(/\s+/);
+  const last = rest.at(-1);
+  return last ? `${first} ${last[0]}.` : first;
+}
+
+// The hero demo's title block (components/landing/proof-stage.tsx, the kit's TitleBlock): where the
+// example record stands at each moment of the story. Drafting, a draft, waiting on the person it was
+// sent to, then on the record (the only green), and who found it. `empty` cells say "not yet".
+export type HeroPhase = "typing" | "reading" | "draft" | "sent";
+export type HeroCell = { label: string; value: string; tone?: "ok" | "waiting" | "empty" };
+export function heroRecord({ phase, step, signer, finder, today }: { phase: HeroPhase; step: number; signer: string; finder: string; today: string }): HeroCell[] {
+  const signed = step >= 2;
+  const none = { value: "Not yet", tone: "empty" as const };
+  const status: Omit<HeroCell, "label"> = signed ? { value: "On the record", tone: "ok" }
+    : phase === "sent" ? { value: "Waiting", tone: "waiting" }
+    : phase === "draft" ? { value: "Draft" }
+    : { value: "Drafting" };
+  return [
+    { label: "Status", ...status },
+    { label: "Signed by", ...(signed ? { value: shortName(signer) } : none) },
+    { label: "Signed on", ...(signed ? { value: today } : none) },
+    { label: "Found by", ...(step >= 3 ? { value: finder } : none) },
+  ];
+}
+
 // ── The app tour ────────────────────────────────────────────────────────────────────────────────
 export const PLACES = [
   { id: "today", label: "Home", about: "Your next step, and what your clubs posted." },

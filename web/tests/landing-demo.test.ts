@@ -2,7 +2,7 @@
 // done, Ember's reply is written out in whole words, and the company search only finds signed work.
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { BUILDERS, EMBER_ASKS, EXAMPLE_BUILD, PLACES, SEARCH_TRIES, searchBuilders, stageTitle, tourHint, typedSoFar } from "@/lib/landing-demo";
+import { BUILDERS, EMBER_ASKS, EXAMPLE_BUILD, PLACES, SEARCH_TRIES, heroRecord, searchBuilders, shortName, stageTitle, tourHint, typedSoFar } from "@/lib/landing-demo";
 
 test("the hero's milestone is the visitor's build, or the example until they type one", () => {
   assert.equal(stageTitle("Solar oven"), "Solar oven");
@@ -58,4 +58,39 @@ test("company search matches the work, skills, club or name, and needs every wor
 test("every suggested search finds someone, and everyone listed has signed work", () => {
   for (const t of SEARCH_TRIES) assert.ok(searchBuilders(t).length > 0, t);
   for (const b of BUILDERS) assert.ok(b.signed.length > 0 && b.signed.every((s) => s.by && s.club && s.when), b.id);
+});
+
+test("a signer is named the way the app names people: first name, last initial", () => {
+  assert.equal(shortName("Ben Cho"), "Ben C.");
+  assert.equal(shortName("Maria Gómez"), "Maria G.");
+  assert.equal(shortName("Cher"), "Cher");
+});
+
+test("the hero's title block follows the story: drafting, waiting, then on the record and found", () => {
+  const at = (phase: "typing" | "reading" | "draft" | "sent", step: number) =>
+    Object.fromEntries(heroRecord({ phase, step, signer: "Ben Cho", finder: "Acme Aerospace", today: "Nov 19" }).map((c) => [c.label, c]));
+  const typing = at("typing", 1);
+  assert.deepEqual(Object.keys(typing), ["Status", "Signed by", "Signed on", "Found by"]);
+  assert.equal(typing.Status.value, "Drafting");
+  assert.equal(at("draft", 1).Status.value, "Draft");
+  for (const label of ["Signed by", "Signed on", "Found by"]) assert.equal(typing[label].tone, "empty", label);
+
+  const waiting = at("sent", 1);
+  assert.equal(waiting.Status.value, "Waiting");
+  assert.equal(waiting.Status.tone, "waiting", "asked but not signed: never green");
+  assert.equal(waiting["Signed by"].tone, "empty");
+
+  const signed = at("sent", 2);
+  assert.equal(signed.Status.value, "On the record");
+  assert.equal(signed.Status.tone, "ok", "green only once a person signed");
+  assert.equal(signed["Signed by"].value, "Ben C.");
+  assert.equal(signed["Signed on"].value, "Nov 19");
+  assert.equal(signed["Found by"].tone, "empty");
+
+  assert.equal(at("sent", 3)["Found by"].value, "Acme Aerospace");
+  // Only the status is ever green, and none of the values repeat the demo's own words (the journey finds those exactly).
+  for (const c of heroRecord({ phase: "sent", step: 3, signer: "Dana Ruiz", finder: "Brightline", today: "Nov 19" })) {
+    if (c.label !== "Status") assert.notEqual(c.tone, "ok", c.label);
+    assert.ok(!["Signed", "Verified", "Dana Ruiz"].includes(c.value), c.value);
+  }
 });
