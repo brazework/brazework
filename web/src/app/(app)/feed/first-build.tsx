@@ -2,15 +2,17 @@
 import { ArrowRight, Loader2, Rocket } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useSyncExternalStore, useTransition } from "react";
-import { BUILD_KEY, cleanBuild } from "@/lib/front-door";
+import { BUILD_KEY, cleanBuild, firstBuildCopy } from "@/lib/front-door";
 import { startProject } from "@/lib/projects";
 
 // "What are you building this semester?" (Linear FIX-71): for members with no project yet, one box
-// that starts their first one. After that, every post links to it on its own.
+// that starts their first one. After that, every post links to it on its own. Someone who works is
+// asked what they're working on, with no semester or club in it (lib/front-door.ts firstBuildCopy).
 const noStore = () => () => {};
 const readBuild = () => { try { return cleanBuild(localStorage.getItem(BUILD_KEY) ?? ""); } catch { return ""; } };
 
-export function FirstBuild({ first, chapter }: { first: string; chapter?: string | null }) {
+export function FirstBuild({ first, chapter, student = true }: { first: string; chapter?: string | null; student?: boolean }) {
+  const copy = firstBuildCopy({ first, chapter, student });
   // The line they typed on the landing page (lib/front-door.ts) is waiting here, ready to start,
   // until they type something else. Read from this browser only (nothing on the server's render).
   const waiting = useSyncExternalStore(noStore, readBuild, () => "");
@@ -26,11 +28,11 @@ export function FirstBuild({ first, chapter }: { first: string; chapter?: string
       <div aria-hidden className="cover-empty pointer-events-none absolute inset-0 opacity-70 [mask-image:linear-gradient(to_bottom,black,transparent_80%)]" />
       <form className="relative" onSubmit={(e) => { e.preventDefault(); setError(""); start(async () => { const r = await startProject(text); if (r.ok) { forget(); router.refresh(); } else setError(r.message); }); }}>
         <span className="grid size-11 place-items-center rounded-2xl bg-text text-surface"><Rocket className="size-5" /></span>
-        <label htmlFor="first-build" className="mt-4 block text-[1.45rem] leading-tight font-semibold tracking-tight sm:text-[1.75rem]">What are you building this semester, {first}?</label>
-        <p className="mt-1.5 text-[15px] text-muted">{carried ? "This is what you typed on the way in. Change it, or start as it is. " : "One line is enough. "}{chapter ? `It's how ${chapter} sees your work, ` : "It's how your club sees your work, "}and every update you post adds to it.</p>
+        <label htmlFor="first-build" className="mt-4 block text-[1.45rem] leading-tight font-semibold tracking-tight sm:text-[1.75rem]">{copy.ask}</label>
+        <p className="mt-1.5 text-[15px] text-muted">{carried ? "This is what you typed on the way in. Change it, or start as it is. " : "One line is enough. "}{copy.why}</p>
         <div className="mt-4 flex flex-col gap-2 sm:flex-row">
           <input id="first-build" value={text} onChange={(e) => setText(e.target.value)} maxLength={300} autoComplete="off"
-            placeholder="A line-following robot"
+            placeholder={copy.example}
             className="h-12 min-w-0 flex-1 rounded-2xl border border-line bg-surface px-4 text-[16px] transition outline-none placeholder:text-faint focus:border-line-strong focus:shadow-[0_0_0_4px_color-mix(in_oklab,var(--accent)_9%,transparent)]" />
           <button type="submit" disabled={pending || text.trim().length < 3} className="inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-2xl bg-text px-5 text-sm font-semibold text-surface transition hover:opacity-90 active:scale-[0.98] disabled:opacity-40">
             {pending ? <Loader2 className="size-4 animate-spin" /> : null} Start my build <ArrowRight className="size-4" />

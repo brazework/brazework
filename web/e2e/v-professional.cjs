@@ -1,7 +1,8 @@
 // Someone who already works (Linear FIX-120). Brazework is for anyone who builds, so a professional
 // with no club isn't sent to "Find your club" or told to "Join your club": after onboarding they
 // land on Today, start with what they're building, and the next steps send them to a person who saw
-// it. The landing page says who signs for a student, an employee and someone on their own.
+// it. The landing page says who signs for a student, an employee and someone on their own. Home asks
+// what they're working on (no semester), and Settings lets anyone switch Studying ↔ Working.
 const { step, browser, go, closeTour, hydrated, summary } = require("./lib.cjs");
 
 (async () => {
@@ -75,6 +76,10 @@ const { step, browser, go, closeTour, hydrated, summary } = require("./lib.cjs")
     await hydrated(page.locator("#first-build"));
     const text = await page.locator("main").innerText();
     if (/Next: Join your club/.test(text)) throw new Error("Today told a professional to join a club first");
+    // Asked about their work, not a semester or a club (lib/front-door.ts firstBuildCopy).
+    await page.getByText(/^What are you working on, /).waitFor();
+    const box = await page.getByRole("region", { name: "Your first build" }).innerText();
+    if (/semester|club/i.test(box)) throw new Error("the first-build box talks about a semester or a club: " + box.replace(/\s+/g, " ").slice(0, 200));
   }, page);
 
   await step("after the first build, the steps are about the work and a person who saw it", async () => {
@@ -90,6 +95,18 @@ const { step, browser, go, closeTour, hydrated, summary } = require("./lib.cjs")
     await list.getByText("Ask someone who saw it to verify a milestone").waitFor({ timeout: 10000 });
     const all = await list.innerText();
     if (/club/i.test(all)) throw new Error("the list mentions a club: " + all.replace(/\s+/g, " ").slice(0, 240));
+  }, page);
+
+  await step("Settings: Working is picked, and Studying needs a university email (a work address is refused)", async () => {
+    await go(page, "/settings");
+    const working = page.getByRole("radio", { name: "Working" });
+    await working.waitFor({ timeout: 15000 });
+    if (!(await working.isChecked())) throw new Error("Working isn't picked for a professional");
+    await page.getByRole("radio", { name: "Studying" }).check();
+    await page.getByRole("button", { name: "Save profile" }).click();
+    await page.getByText(/A student account needs your university email/).waitFor({ timeout: 15000 });
+    await go(page, "/settings");
+    if (!(await page.getByRole("radio", { name: "Working" }).isChecked())) throw new Error("the refused switch changed the account anyway");
   }, page);
 
   summary();

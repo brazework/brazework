@@ -18,7 +18,8 @@ function Status({ state }: { state: SettingsState }) {
 }
 
 // gradYear: undefined until supabase/grad-year.sql has run (the field stays hidden); null = not set.
-export function ProfileSettings({ profile, gradYear }: { profile: Profile; gradYear?: number | null }) {
+// canSwitch: Studying or working can be changed (supabase/account-type.sql has run).
+export function ProfileSettings({ profile, gradYear, canSwitch = false }: { profile: Profile; gradYear?: number | null; canSwitch?: boolean }) {
   const [state, action, pending] = useActionState(saveProfileSettings, init);
   // Only current topics count (renamed or retired ones would be invisible yet still submitted).
   const [picked, setPicked] = useState<string[]>((profile.interests ?? []).filter((t) => ALL_TOPICS.includes(t)));
@@ -32,6 +33,20 @@ export function ProfileSettings({ profile, gradYear }: { profile: Profile; gradY
         <Field label="First name"><input name="first_name" defaultValue={profile.first_name} maxLength={80} className={inputCls} /></Field>
         <Field label="Last name"><input name="last_name" defaultValue={profile.last_name} maxLength={80} className={inputCls} /></Field>
       </div>
+      {canSwitch && (
+        <fieldset>
+          <legend className="mb-2 text-sm font-medium text-text-2">Right now you&apos;re</legend>
+          <input type="hidden" name="account_type_was" value={profile.account_type} />
+          <div className="grid grid-cols-2 gap-2 sm:max-w-sm">
+            {([["student", "Studying"], ["professional", "Working"]] as const).map(([v, label]) => (
+              <label key={v} className="flex h-11 cursor-pointer items-center gap-2.5 rounded-lg border border-line px-3.5 text-sm transition hover:bg-hover has-[:checked]:border-text has-[:checked]:text-text">
+                <input type="radio" name="account_type" value={v} defaultChecked={profile.account_type === v} className="size-4 accent-accent" />{label}
+              </label>
+            ))}
+          </div>
+          <p className="mt-1.5 text-xs text-muted">Finished school? Pick Working. Your record and signatures stay as they are.</p>
+        </fieldset>
+      )}
       <Field label="Headline"><input name="headline" defaultValue={profile.headline} maxLength={200} className={inputCls} /></Field>
       <Field label="Field"><select name="field" defaultValue={fieldKnown ? profile.field : ""} className={inputCls}>{!fieldKnown && <option value="" disabled>Pick your field</option>}{FIELDS.map((f) => <option key={f}>{f}</option>)}</select></Field>
       {gradYear !== undefined && (
