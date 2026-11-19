@@ -126,3 +126,34 @@ export function searchBuilders(q: string, list: Builder[] = BUILDERS): Builder[]
     return terms.every((t) => hay.includes(t));
   });
 }
+
+// The hero's stories (components/landing/proof-stage.tsx): the same three steps told by six people
+// who work differently, with the tool their AI reads and the person who signs. The chips above the
+// card name them (`who`, `tool`), so a visitor sees the range at a glance and picks theirs. The first
+// is the student's: the page opens on it, and a visitor's own typed line becomes its milestone (so it
+// has no title of its own). Example people, companies and links; the page says so.
+export type HeroPerson = { initials: string; name: string; role: string };
+export type HeroStory = {
+  who: string; tool: string; title?: string; cmd: string; read: string; proof: string[]; send: string; sent: string;
+  signer: HeroPerson & { act: string; done: string }; finder: HeroPerson & { ask: string };
+};
+export const HERO_STORIES: HeroStory[] = [
+  { who: "Student", tool: "GitHub", cmd: "add the line robot to my record", read: "Read your merged PR and the expo video", proof: ["github.com/you/linebot/pull/42", "youtu.be/fall-expo-run"],
+    send: "Send to club", sent: "Sent to Rocketry Club", signer: { initials: "BC", name: "Ben Cho", role: "Officer, Rocketry Club", act: "Verify", done: "Verified" },
+    finder: { initials: "CD", name: "Cara Diaz", role: "Acme Aerospace", ask: "Saw your signed work on Brazework. Free to talk about our robotics internship?" } },
+  { who: "Engineer", tool: "GitHub · Linear", title: "Checkout p95 latency down from 820 to 310 ms", cmd: "log the checkout latency fix for my review", read: "Read your merged PRs, the Linear ticket and the before/after dashboard", proof: ["github.com/acme/checkout/pull/1187", "linear.app/acme/ENG-412"],
+    send: "Ask Sam to sign", sent: "Sent to Sam Rivera", signer: { initials: "SR", name: "Sam Rivera", role: "Staff Engineer, your tech lead", act: "Sign", done: "Signed" },
+    finder: { initials: "JW", name: "Jordan Wu", role: "Northwind Payments", ask: "Saw your signed latency work. Open to a staff engineer conversation?" } },
+  { who: "Researcher", tool: "W&B · notebook", title: "4 MB crop model, 94.1% on held-out field photos", cmd: "put today's model results on my record", read: "Read your W&B run and the held-out test notebook", proof: ["wandb.ai/you/crop/runs/3fk2", "heldout-eval.ipynb"],
+    send: "Ask Dr. Ruiz to sign", sent: "Sent to Dr. Elena Ruiz", signer: { initials: "ER", name: "Dr. Elena Ruiz", role: "Assistant Professor, your lab", act: "Sign", done: "Signed" },
+    finder: { initials: "AK", name: "Amara Kim", role: "AgriSense Labs", ask: "Saw your signed model results. Interested in our ML research internship?" } },
+  { who: "Analyst", tool: "Claude", title: "New pricing tiers cut churn 9%", cmd: "put my pricing analysis on my record", read: "Read the analysis you built in Claude and the pilot results", proof: ["claude.ai/share/q3-pricing", "pilot-results.xlsx"],
+    send: "Ask Dana to sign", sent: "Sent to Dana Ruiz", signer: { initials: "DR", name: "Dana Ruiz", role: "Director of Product, your manager", act: "Sign", done: "Signed" },
+    finder: { initials: "LP", name: "Leo Park", role: "Brightline Consulting", ask: "Saw your signed pricing work. Free to talk about our associate role?" } },
+  { who: "Designer", tool: "Figma", title: "Checkout redesign lifted conversion 12%", cmd: "add the Lumen checkout redesign to my record", read: "Read the Figma file and the client's A/B test report", proof: ["figma.com/file/lumen-checkout", "ab-test-report.pdf"],
+    send: "Ask the client to sign", sent: "Sent to Noor Haddad", signer: { initials: "NH", name: "Noor Haddad", role: "Head of Growth, Lumen (your client)", act: "Sign", done: "Signed" },
+    finder: { initials: "RT", name: "Rosa Torres", role: "Studio Field", ask: "Saw your signed redesign. Taking on new client work this spring?" } },
+  { who: "Teacher", tool: "Google Docs", title: "Fractions unit lifted quiz scores 18%", cmd: "add my fractions unit to my record", read: "Read the unit plan you made with Claude and the class quiz scores", proof: ["docs.google.com/fractions-unit", "quiz-scores.csv"],
+    send: "Ask Tom to sign", sent: "Sent to Tom Owens", signer: { initials: "TO", name: "Tom Owens", role: "Head of Math, your department", act: "Sign", done: "Signed" },
+    finder: { initials: "MG", name: "Maria Gómez", role: "Riverside School District", ask: "Saw your signed unit. Would you walk our curriculum team through it?" } },
+];
