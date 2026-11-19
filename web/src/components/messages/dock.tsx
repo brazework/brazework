@@ -133,7 +133,7 @@ function Dock({ variant }: { variant: "float" | "rail" }) {
                       <button type="button" onClick={() => void openThread(t)} className="flex w-full items-center gap-3 rounded-2xl px-2.5 py-2 text-left transition hover:bg-hover">
                         {t.kind === "dm" ? <Avatar first={t.first} last={t.last} size={36} /> : <span className="nav-tile grid size-9 shrink-0 place-items-center rounded-xl text-text-2"><Users className="size-4" /></span>}
                         <span className="min-w-0 flex-1">
-                          <span className="flex items-center gap-2"><span className={cn("truncate text-sm", t.unread ? "font-semibold" : "font-medium")}>{t.title}</span>{t.request && <span className="rounded-full bg-surface-2 px-1.5 text-[10px] text-muted">Request</span>}<span className="ml-auto shrink-0 text-[10px] text-faint">{t.at ? timeAgo(t.at) : ""}</span></span>
+                          <span className="flex items-center gap-2"><span className={cn("truncate text-sm", t.unread ? "font-semibold" : "font-medium")}>{t.title}</span>{t.request && <span className="rounded-full bg-surface-2 px-1.5 text-[10px] text-muted">Request</span>}<span suppressHydrationWarning className="ml-auto shrink-0 text-[10px] text-faint">{t.at ? timeAgo(t.at) : ""}</span></span>
                           <span className={cn("block truncate text-xs", t.unread ? "text-text-2" : "text-muted")}>{t.preview || "No messages yet"}</span>
                         </span>
                         {t.unread && <span className="size-2 shrink-0 rounded-full bg-accent" aria-label="Unread" />}

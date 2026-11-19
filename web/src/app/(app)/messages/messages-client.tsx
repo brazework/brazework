@@ -77,7 +77,7 @@ export function ConvList({ convs, requestsOn, groups = null }: { convs: Conv[]; 
                   <div className="min-w-0 flex-1">
                     <div className="flex items-baseline justify-between gap-2">
                       <span className={cn("truncate text-sm", g.unread ? "font-semibold" : "font-medium")}>{g.title}</span>
-                      {g.lastAt && <span className="shrink-0 text-[11px] text-faint">{timeAgo(g.lastAt)}</span>}
+                      {g.lastAt && <span suppressHydrationWarning className="shrink-0 text-[11px] text-faint">{timeAgo(g.lastAt)}</span>}
                     </div>
                     <p className={cn("truncate text-sm", g.unread ? "text-text" : "text-muted")}>
                       {g.lastBody ? <>{g.lastFromMe ? "You" : g.lastSenderName || "Someone"}: {g.lastBody}</> : <span className="text-faint">{g.subtitle} · say hello</span>}
@@ -99,7 +99,7 @@ export function ConvList({ convs, requestsOn, groups = null }: { convs: Conv[]; 
               <div className="min-w-0 flex-1">
                 <div className="flex items-baseline justify-between gap-2">
                   <span className={cn("truncate text-sm", c.unread ? "font-semibold" : "font-medium")}>{`${c.other.firstName} ${c.other.lastName}`.trim() || "Brazework member"}</span>
-                  {c.lastAt && <span className="shrink-0 text-[11px] text-faint">{timeAgo(c.lastAt)}</span>}
+                  {c.lastAt && <span suppressHydrationWarning className="shrink-0 text-[11px] text-faint">{timeAgo(c.lastAt)}</span>}
                 </div>
                 <p className={cn("truncate text-sm", c.unread ? "text-text" : "text-muted")}>
                   {c.status === "request" && c.startedByMe && <span className="text-faint">Request sent · </span>}
@@ -114,7 +114,16 @@ export function ConvList({ convs, requestsOn, groups = null }: { convs: Conv[]; 
         ))}
         {!shown.length && (
           <li className="p-6 text-sm text-muted">
-            {needle ? <>Nothing matches &ldquo;{q}&rdquo;.</> : tab === "requests" ? "No message requests. You're all caught up." : tab === "unread" ? "No unread messages." : "No conversations yet. Message someone from their profile or your network."}
+            {needle ? <>Nothing matches &ldquo;{q}&rdquo;.</> : tab === "requests" ? "No message requests. You're all caught up." : tab === "unread" ? "No unread messages." : (
+              // The first conversation needs a person: point at where people are.
+              <>
+                No conversations yet. Message someone from their profile, or find people in your field and your clubs.
+                <span className="mt-3 flex flex-wrap gap-2">
+                  <Link href="/network?tab=suggested" className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-accent px-3.5 text-sm font-medium text-on-accent"><Users className="size-4" /> Find people</Link>
+                  <Link href="/communities" className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-line px-3.5 text-sm font-medium text-text transition hover:bg-hover">Your clubs</Link>
+                </span>
+              </>
+            )}
           </li>
         )}
       </ul>

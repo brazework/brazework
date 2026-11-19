@@ -2,6 +2,7 @@
 import { ArrowUp, Loader2 } from "lucide-react";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { cn } from "@/lib/forge";
+import { useTimeZone } from "../../events/local-time";
 import { getBrowserClient } from "@/lib/supabase/client";
 import { MessageBody } from "@/components/share/message-body";
 import { acceptConversation, blockAndReport, declineConversation, markConversationRead, sendMessage } from "@/lib/messages";
@@ -14,8 +15,10 @@ export function MarkRead({ cid }: { cid: string }) {
   return null;
 }
 
-const day = (ts: string) => new Date(ts).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
-const time = (ts: string) => new Date(ts).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+// In the viewer's time zone, which the server doesn't know: the server and the hydration render both
+// use UTC (useTimeZone), so their HTML matches, then React re-renders in local time.
+const day = (ts: string, tz?: string) => new Date(ts).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: tz });
+const time = (ts: string, tz?: string) => new Date(ts).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", timeZone: tz });
 
 // Messages you just sent show at once (pending) until the real row arrives; the composer and the
 // thread talk through window events so the thread owns the one realtime channel per conversation.
@@ -25,6 +28,7 @@ const FAILED = "forge-msg-failed";
 const GROUP_MS = 5 * 60_000;
 
 export function ThreadScroll({ msgs, me, cid, otherName = "", reactions = [], extras = false, myName = "You" }: { msgs: Msg[]; me: string; cid: string; otherName?: string; reactions?: Reaction[]; extras?: boolean; myName?: string }) {
+  const tz = useTimeZone();
   const end = useRef<HTMLDivElement>(null);
   const rx = useReactions("dm", me, reactions);
   const [active, setActive] = useState<string | null>(null);
@@ -84,11 +88,11 @@ export function ThreadScroll({ msgs, me, cid, otherName = "", reactions = [], ex
           const mine = m.sender_id === me;
           const prev = all[i - 1];
           const next = all[i + 1];
-          const d = day(m.created_at);
-          const showDay = !prev || d !== day(prev.created_at);
+          const d = day(m.created_at, tz);
+          const showDay = !prev || d !== day(prev.created_at, tz);
           // Consecutive messages from the same person within a few minutes hug together.
           const joinsPrev = !showDay && prev && prev.sender_id === m.sender_id && Date.parse(m.created_at) - Date.parse(prev.created_at) < GROUP_MS;
-          const joinsNext = next && next.sender_id === m.sender_id && day(next.created_at) === d && Date.parse(next.created_at) - Date.parse(m.created_at) < GROUP_MS;
+          const joinsNext = next && next.sender_id === m.sender_id && day(next.created_at, tz) === d && Date.parse(next.created_at) - Date.parse(m.created_at) < GROUP_MS;
           const isPending = m.id.startsWith("pending-");
           const mineRx = rx.reactions.filter((x) => x.message_id === m.id);
           const quoted = m.reply_to ? byId.get(m.reply_to) : undefined;
@@ -117,7 +121,7 @@ export function ThreadScroll({ msgs, me, cid, otherName = "", reactions = [], ex
               </div>
               <ReactionChips list={mineRx} me={me} mine={mine} onToggle={(e) => void rx.toggle(m.id, e)} />
               </div>
-              {!joinsNext && <span className={cn("mt-1 px-2 text-[10px] text-faint", mine ? "self-end" : "self-start")}>{isPending ? "Sending…" : time(m.created_at)}</span>}
+              {!joinsNext && <span className={cn("mt-1 px-2 text-[10px] text-faint", mine ? "self-end" : "self-start")}>{isPending ? "Sending…" : time(m.created_at, tz)}</span>}
             </li>
           );
         })}

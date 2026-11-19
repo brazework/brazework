@@ -16,28 +16,29 @@ export function StartChecklist({ steps }: { steps: GuideStep[] }) {
   const next = steps.find((s) => !s.done)!;
   const pct = done / steps.length;
   return (
-    <section aria-label="Get started" className="glass-card mb-4 rounded-3xl p-4 sm:p-5">
+    <section aria-label="Get started" className="border border-line bg-surface mb-4 rounded-2xl p-4 sm:p-5">
       <div className="flex items-center gap-3.5">
         {/* Progress ring */}
         <div className="relative grid size-11 shrink-0 place-items-center" role="progressbar" aria-valuemin={0} aria-valuemax={steps.length} aria-valuenow={done} aria-label={`${done} of ${steps.length} done`}>
           <svg viewBox="0 0 36 36" className="absolute inset-0 -rotate-90">
-            <circle cx="18" cy="18" r="15.5" fill="none" stroke="var(--line)" strokeWidth="3" />
-            <circle cx="18" cy="18" r="15.5" fill="none" stroke="var(--accent)" strokeWidth="3" strokeLinecap="round" strokeDasharray={`${pct * 97.4} 97.4`} />
+            <circle cx="18" cy="18" r="15.5" fill="none" stroke="var(--border-strong)" strokeWidth="3" />
+            {/* At 0 a round cap still draws a dot, which read as a broken ring. */}
+            {pct > 0 && <circle cx="18" cy="18" r="15.5" fill="none" stroke="var(--accent)" strokeWidth="3" strokeLinecap="round" strokeDasharray={`${pct * 97.4} 97.4`} />}
           </svg>
           <span className="text-[11px] font-semibold tabular-nums">{done}/{steps.length}</span>
         </div>
         <div className="min-w-0 flex-1">
-          <div className="text-[11px] font-medium tracking-wide text-faint uppercase">Your first five minutes</div>
+          <div className="text-xs font-medium text-muted">Your first five minutes</div>
           <div className="truncate text-sm font-semibold">Next: {next.label}</div>
         </div>
-        <Link href={next.href} className="bg-accent-grad hidden h-9 shrink-0 items-center gap-1.5 rounded-lg px-4 text-sm font-semibold text-on-accent transition hover:opacity-90 sm:inline-flex">
+        <Link href={next.href} className="bg-text hidden h-9 shrink-0 items-center gap-1.5 rounded-lg px-4 text-sm font-semibold text-surface transition hover:opacity-90 sm:inline-flex">
           Start <ArrowRight className="size-4" />
         </Link>
         <DismissButton id="feed-start" label="Hide your first five minutes" className="-mr-1.5 self-start sm:self-center" />
       </div>
       <p className="mt-2.5 text-xs leading-relaxed text-muted">{next.why}</p>
       <div className="mt-3 flex items-center gap-2">
-        <Link href={next.href} className="bg-accent-grad inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-full text-sm font-semibold text-on-accent sm:hidden">
+        <Link href={next.href} className="bg-text inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-full text-sm font-semibold text-surface sm:hidden">
           Start <ArrowRight className="size-4" />
         </Link>
         <button type="button" onClick={() => setAll((v) => !v)} aria-expanded={all} className="inline-flex h-9 items-center gap-1 rounded-lg px-3 text-xs font-medium text-muted transition hover:bg-hover hover:text-text">

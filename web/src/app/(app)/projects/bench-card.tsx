@@ -46,7 +46,7 @@ export function BenchCard({ p, attach = false }: { p: BenchProject; attach?: boo
         <div role="img" aria-label={active ? `Updates in ${active} of the last 12 weeks` : "No updates in the last 12 weeks"} className="flex h-7 shrink-0 items-end gap-[3px]">
           {p.weeks.map((n, i) => <span key={i} className={cn("w-2 rounded-[2px]", n ? "bg-text" : "bg-line-strong")} style={{ height: n ? `${Math.max(30, (n / peak) * 100)}%` : "3px" }} />)}
         </div>
-        <p className="text-xs leading-tight text-muted">{active ? `Active ${active} of 12 weeks` : "Nothing logged in 12 weeks"}<span className="block text-faint">Updated {timeAgo(p.updated_at)}</span></p>
+        <p className="text-xs leading-tight text-muted">{active ? `Active ${active} of 12 weeks` : "Nothing logged in 12 weeks"}<span suppressHydrationWarning className="block text-faint">Updated {timeAgo(p.updated_at)}</span></p>
       </div>
 
       {/* Where it stands: logged, asked, signed. */}
@@ -107,7 +107,7 @@ export function BenchCard({ p, attach = false }: { p: BenchProject; attach?: boo
                     <li key={u.id} className="relative pb-4 pl-4 last:pb-0">
                       <span aria-hidden="true" className="absolute top-1.5 -left-[5px] size-2.5 rounded-full border-2 border-surface bg-text" />
                       <div className="flex items-center gap-2 text-[11px] text-faint">
-                        <time dateTime={u.created_at}>{timeAgo(u.created_at)}</time>
+                        <time suppressHydrationWarning dateTime={u.created_at}>{timeAgo(u.created_at)}</time>
                         {u.status !== "visible" && <span className="rounded-full bg-surface-2 px-1.5 py-px text-[10px] text-muted">Held for review</span>}
                       </div>
                       <Link href={`/post/${u.id}`} className="mt-0.5 line-clamp-3 block text-sm whitespace-pre-line text-text-2 hover:text-text">{u.body}</Link>

@@ -92,7 +92,7 @@ export function TrendingNews({ trending, news, hasInterests }: { trending: [stri
                     <span className="flex flex-wrap items-center gap-x-1.5 text-[11px] text-faint">
                       <span>{n.source}</span>
                       <span aria-hidden="true">·</span>
-                      <span>{timeAgo(n.published)}</span>
+                      <span suppressHydrationWarning>{timeAgo(n.published)}</span>
                       {n.reason !== "Top news" && <span className="rounded-full bg-surface-2 px-1.5 py-px text-[10px] text-accent">{n.reason}</span>}
                     </span>
                   </a>

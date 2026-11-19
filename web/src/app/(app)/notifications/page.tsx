@@ -83,7 +83,7 @@ async function Notifications() {
       {unread > 0 && <MarkRead />}
       <div className="mt-6">
         {!groups.length ? (
-          <EmptyState icon={<Bell className="size-5" />} title="Nothing yet" body="Likes, comments, follows and requests show up here." />
+          <EmptyState icon={<Bell className="size-5" />} title="No notifications yet" body="Likes, comments, follows and requests show up here. Posting what you're building is the fastest way to get some." action={<Link href="/feed" className="text-sm underline underline-offset-4">Post an update</Link>} />
         ) : (
           <Panel className="divide-y divide-line p-0">
             {groups.map((g) => {
