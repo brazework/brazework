@@ -103,7 +103,7 @@ async function Events({ searchParams }: { searchParams: PageProps<"/events">["se
       {(topics.length > 1 || myClubs.size > 0) && (
         <div className="no-scrollbar mt-4 flex gap-1.5 overflow-x-auto">
           <Link href={q("")} className={`shrink-0 rounded-full border px-3 py-1 text-xs transition ${!topic && !fromClubs ? "border-text text-text" : "border-line text-muted hover:text-text"}`}>All</Link>
-          {myClubs.size > 0 && <Link href={q(topic, !fromClubs)} aria-pressed={fromClubs} className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-3 py-1 text-xs whitespace-nowrap transition ${fromClubs ? "border-text text-text" : "border-line text-muted hover:text-text"}`}><UsersRound className="size-3" /> From your clubs</Link>}
+          {myClubs.size > 0 && <Link href={q(topic, !fromClubs)} aria-current={fromClubs ? "true" : undefined} className={`inline-flex shrink-0 items-center gap-1 rounded-full border px-3 py-1 text-xs whitespace-nowrap transition ${fromClubs ? "border-text text-text" : "border-line text-muted hover:text-text"}`}><UsersRound className="size-3" /> From your clubs</Link>}
           {topics.map((t) => (
             <Link key={t} href={q(t, fromClubs)} className={`shrink-0 rounded-full border px-3 py-1 text-xs whitespace-nowrap transition ${topic === t ? "border-text text-text" : "border-line text-muted hover:text-text"}`}>
               {interests.has(t) ? "★ " : ""}{t}

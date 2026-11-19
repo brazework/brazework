@@ -20,10 +20,10 @@
   --text: #1f1f1d;
   --text-2: #37352f;
   --muted: #5f5e5a;
-  --faint: #73726e;
+  --faint: #6b6a66; /* 4.7:1 or better on every light surface, small text included (was #73726e: 4.2 on raised) */
   --accent: #1f1f1d;
   --on-accent: #ffffff;
-  --ok: #15803d;
+  --ok: #15703a; /* 4.7:1 or better as text on its own 12-14% tint, as in the verified pills (was #15803d: 4.1) */
   --danger: #dc2626;
   --info: #2563eb;
   --tag: #7c3aed;
@@ -47,7 +47,7 @@
     --text: #ededeb;
     --text-2: #d3d3d0;
     --muted: #a3a29e;
-    --faint: #8d8c88;
+    --faint: #959490; /* 4.6:1 or better on dark surfaces (was #8d8c88: 4.0 on raised) */
     --accent: #fafafa;
     --on-accent: #09090b;
     --ok: #4ade80;
@@ -73,7 +73,7 @@
   --text: #ededeb;
   --text-2: #d3d3d0;
   --muted: #a3a29e;
-  --faint: #8d8c88;
+  --faint: #959490;
   --accent: #fafafa;
   --on-accent: #09090b;
   --ok: #4ade80;
