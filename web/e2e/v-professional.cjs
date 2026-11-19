@@ -34,18 +34,27 @@ const { step, browser, go, closeTour, hydrated, summary } = require("./lib.cjs")
 
   await step("sign up as a professional with a work email", async () => {
     await go(page, "/signup");
-    await page.getByRole("button", { name: /professional/i }).first().click();
-    await page.getByText("Employed, freelancing or building on your own.").waitFor();
-    await page.fill('input[name="firstName"]', "Pat"); await page.fill('input[name="lastName"]', "Okoro");
-    await page.fill('input[name="birthday"]', "1996-03-12");
     await page.fill('input[name="email"]', email); await page.fill('input[name="password"]', "forge-test-pass-1");
     await page.locator('button[type="submit"]').click();
     await page.getByText("Check your inbox").first().waitFor({ timeout: 20000 });
   }, page);
 
-  await step("onboarding asks for a profession, then goes straight to Today (no 'Find your club')", async () => {
+  await step("About you: choosing Professional makes it a three-step path (no club step)", async () => {
     await go(page, "/feed");
     await page.waitForURL(/onboarding/, { timeout: 15000 });
+    await page.getByRole("heading", { name: "About you" }).waitFor({ timeout: 15000 });
+    await page.getByText("Step 2 of 4").waitFor();
+    await hydrated(page.getByRole("button", { name: /professional/i }));
+    await page.getByRole("button", { name: /professional/i }).click();
+    await page.getByText("Employed, freelancing or building on your own.").waitFor();
+    await page.getByText("Step 2 of 3").waitFor();
+    await page.fill('input[name="firstName"]', "Pat"); await page.fill('input[name="lastName"]', "Okoro");
+    await page.fill('input[name="birthday"]', "1996-03-12");
+    await page.getByRole("button", { name: "Continue" }).click();
+    await page.getByText("Step 3 of 3").waitFor({ timeout: 20000 });
+  }, page);
+
+  await step("onboarding asks for a profession, then goes straight to Today (no 'Find your club')", async () => {
     await page.waitForFunction(() => { const el = document.querySelector('input[name="headline"]'); return el && Object.keys(el).some((k) => k.startsWith("__reactProps")); }, null, { timeout: 15000 });
     await page.getByText("Your profession").waitFor();
     await page.fill('input[name="headline"]', "Controls engineer at Voltline");

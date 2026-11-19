@@ -2,29 +2,35 @@
 import { Briefcase, GraduationCap, Loader2 } from "lucide-react";
 import Link from "next/link";
 import { useActionState, useState } from "react";
+import { SignupSteps } from "@/components/signup-steps";
 import { Button, Field, inputCls } from "@/components/ui";
-import { cn } from "@/lib/forge";
+import { ACADEMIC_RE, cn } from "@/lib/forge";
 import { submitWithoutReset } from "@/lib/submit";
 import { finishSignup, type FinishState } from "./actions";
 
-// After "Continue with Google / GitHub / LinkedIn" for the first time: what the email sign-up form
-// asks for and the provider didn't give us. The names start from the provider's; the email is theirs.
-export function FinishSignupForm({ email, provider, firstName, lastName }: { email: string; provider: string; firstName: string; lastName: string }) {
+// "About you": the second step for everyone, however they signed up (email and password, or Google,
+// GitHub or LinkedIn). Student or professional, name, birthday. The database holds these to the
+// sign-up rules (finish_signup()); names start from the provider's when there is one.
+export function FinishSignupForm({ email, provider, firstName, lastName }: { email: string; provider?: string; firstName: string; lastName: string }) {
   const [state, action, pending] = useActionState<FinishState, FormData>(finishSignup, { message: "" });
   const [type, setType] = useState<"student" | "professional" | "">("");
+  // An academic address is certain; a listed school without one (school_domains) is only known to
+  // the database, so a non-academic email is a heads-up, not a block.
+  const notAcademic = type === "student" && !ACADEMIC_RE.test(email);
   const choices = [
-    { id: "student", label: "Student", hint: "Your account there must be your university email.", icon: GraduationCap },
+    { id: "student", label: "Student", hint: "At a college or university. Your club verifies your work.", icon: GraduationCap },
     { id: "professional", label: "Professional", hint: "Employed, freelancing or building on your own.", icon: Briefcase },
   ] as const;
 
   return (
     <div className="flex max-w-md flex-col gap-5">
       <form onSubmit={submitWithoutReset(action)} className="flex flex-col gap-5">
+        <SignupSteps at="about" club={type !== "professional"} />
         <div>
-          <div className="text-[11px] font-medium tracking-[0.06em] text-accent uppercase">Step 2 of 4</div>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight">Finish creating your account</h1>
+          <h1 className="text-3xl font-semibold tracking-tight">About you</h1>
           <p className="mt-2 text-muted">
-            Signed in with {provider} as <span className="text-text">{email}</span>. A few details, the same ones the sign-up form asks for.
+            {provider ? <>Signed in with {provider} as </> : <>Signed in as </>}
+            <span className="text-text">{email}</span>. Three quick things, then your work.
           </p>
         </div>
         <input type="hidden" name="accountType" value={type} />
@@ -44,6 +50,11 @@ export function FinishSignupForm({ email, provider, firstName, lastName }: { ema
             </button>
           ))}
         </fieldset>
+        {notAcademic && !state.school && (
+          <p className="-mt-2 text-xs text-muted">
+            Student accounts use a university email. <span className="text-text">{email}</span> doesn&apos;t look like one; if your school uses its own domain, continue and we&apos;ll check.
+          </p>
+        )}
         <div className="grid grid-cols-2 gap-3">
           <Field label="First name"><input name="firstName" autoComplete="given-name" maxLength={80} defaultValue={firstName} className={inputCls} /></Field>
           <Field label="Last name"><input name="lastName" autoComplete="family-name" maxLength={80} defaultValue={lastName} className={inputCls} /></Field>
@@ -52,12 +63,12 @@ export function FinishSignupForm({ email, provider, firstName, lastName }: { ema
         {state.message && <p role="alert" className="rounded-xl border border-danger/30 bg-danger/10 px-3.5 py-2.5 text-sm text-danger">{state.message}</p>}
         {state.school && (
           <p className="-mt-2 text-sm text-muted">
-            {email} isn&apos;t a university email. Log out and continue with your school account, or choose Professional. School not recognized?{" "}
+            {email} isn&apos;t a university email we know. Choose Professional, or log out and sign up with your school email. School not recognized?{" "}
             <Link id="request-school" href={`/request-school?email=${encodeURIComponent(email)}`} className="text-accent hover:underline">Request your school</Link>
           </p>
         )}
         {!type && <p className="-mb-2 text-xs text-muted">Choose <b className="font-medium text-text-2">Student</b> or <b className="font-medium text-text-2">Professional</b> above to continue.</p>}
-        <Button type="submit" size="lg" disabled={pending || !type}>{pending && <Loader2 className="size-4 animate-spin" />} {pending ? "Creating your account…" : "Continue"}</Button>
+        <Button type="submit" size="lg" disabled={pending || !type}>{pending && <Loader2 className="size-4 animate-spin" />} {pending ? "Saving…" : "Continue"}</Button>
       </form>
       <form action="/auth/signout" method="post">
         <p className="text-sm text-faint">Not the right account? <button type="submit" className="text-accent hover:underline">Log out and start over</button></p>

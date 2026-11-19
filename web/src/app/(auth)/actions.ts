@@ -2,14 +2,15 @@
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { env } from "@/lib/env";
-import { ACADEMIC_RE, EMAIL_RE, ageFrom, friendlyError } from "@/lib/forge";
+import { EMAIL_RE, friendlyError } from "@/lib/forge";
 import { rememberInvite } from "@/lib/invites";
+import { safeNext as safePath } from "@/lib/oauth";
 import { createClient } from "@/lib/supabase/server";
 
 export type AuthState = { message: string; sent?: boolean };
 
 // Only same-site paths, so ?next= can't send people to another website.
-const safeNext = (v: FormDataEntryValue | null) => (typeof v === "string" && /^\/(?!\/)/.test(v) ? v : "/feed");
+const safeNext = (v: FormDataEntryValue | null) => safePath(v);
 
 export async function logIn(_: AuthState, form: FormData): Promise<AuthState> {
   const email = String(form.get("email") ?? "").trim();
@@ -21,39 +22,21 @@ export async function logIn(_: AuthState, form: FormData): Promise<AuthState> {
   redirect(safeNext(form.get("next")));
 }
 
-const signUpSchema = z
-  .object({
-    accountType: z.enum(["student", "professional"], { error: "Choose student or professional." }),
-    firstName: z.string().trim().min(1, "Enter your first and last name.").max(80),
-    lastName: z.string().trim().min(1, "Enter your first and last name.").max(80),
-    birthday: z.string(),
-    email: z.string().trim().regex(EMAIL_RE, "Enter a valid email address."),
-    password: z.string().min(8, "Choose a password with at least 8 characters."),
-  })
-  .superRefine((v, ctx) => {
-    const age = ageFrom(v.birthday);
-    if (age < 0) ctx.addIssue({ code: "custom", message: "Enter your birthday." });
-    else if (age < 18) ctx.addIssue({ code: "custom", message: "You must be at least 18 to create an account." });
-  });
+// Sign-up asks only for what makes the account: an email and a password (or Google, GitHub or
+// LinkedIn). Student or professional, name and birthday come next, in onboarding's "About you", the
+// same step for every way in; the database applies the rules there (finish_signup() in
+// supabase/oauth-signup.sql: 18 or older, a school email for students). Until then there's no profile.
+const signUpSchema = z.object({
+  email: z.string().trim().regex(EMAIL_RE, "Enter a valid email address."),
+  password: z.string().min(8, "Choose a password with at least 8 characters."),
+});
 
 export async function signUp(_: AuthState, form: FormData): Promise<AuthState> {
-  const parsed = signUpSchema.safeParse(Object.fromEntries(form));
+  const parsed = signUpSchema.safeParse({ email: form.get("email") ?? "", password: form.get("password") ?? "" });
   if (!parsed.success) return { message: parsed.error.issues[0]?.message ?? "Check the form." };
-  const { email, password, firstName, lastName, birthday, accountType } = parsed.data;
-
+  const { email, password } = parsed.data;
   const supabase = await createClient();
-  // Students sign up with a school email: an academic domain, or a school Brazework has listed
-  // (is_school_email in signup-rules.sql; the database enforces the same rule).
-  if (accountType === "student" && !ACADEMIC_RE.test(email)) {
-    const { data: listed } = await supabase.rpc("is_school_email", { p_email: email });
-    if (listed !== true) return { message: "Use your university email (for example, ending in .edu or .ac.uk)." };
-  }
-  // The database's handle_new_user trigger makes the profile from this metadata.
-  const { data, error } = await supabase.auth.signUp({
-    email,
-    password,
-    options: { data: { firstName, lastName, birthday, accountType }, emailRedirectTo: `${env.siteUrl}/auth/callback` },
-  });
+  const { data, error } = await supabase.auth.signUp({ email, password, options: { emailRedirectTo: `${env.siteUrl}/auth/callback?next=/onboarding` } });
   if (error) return { message: friendlyError(error) };
   // Supabase doesn't say outright that an address is taken; a user with no identities means it is.
   if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0)
@@ -63,11 +46,49 @@ export async function signUp(_: AuthState, form: FormData): Promise<AuthState> {
   redirect(`/verify?email=${encodeURIComponent(email)}`);
 }
 
+// The 6-digit code from the confirmation email, typed on /verify: confirms on any device, unlike the
+// link's PKCE code, which only works in the browser that signed up.
+export async function confirmWithCode(email: string, code: string): Promise<AuthState> {
+  const token = code.replace(/\D/g, "");
+  if (!EMAIL_RE.test(email)) return { message: "Start over with your email address." };
+  if (token.length !== 6) return { message: "Enter the 6 digits from the email." };
+  const supabase = await createClient();
+  const { error } = await supabase.auth.verifyOtp({ email, token, type: "email" });
+  if (error) return { message: /expired|invalid/i.test(error.message) ? "That code is wrong or has expired. Check the newest email, or send a new one." : friendlyError(error) };
+  redirect("/onboarding");
+}
+
 export async function resendConfirmation(email: string): Promise<AuthState> {
   if (!EMAIL_RE.test(email)) return { message: "Enter a valid email address." };
   const supabase = await createClient();
-  const { error } = await supabase.auth.resend({ type: "signup", email, options: { emailRedirectTo: `${env.siteUrl}/auth/callback` } });
+  const { error } = await supabase.auth.resend({ type: "signup", email, options: { emailRedirectTo: `${env.siteUrl}/auth/callback?next=/onboarding` } });
   return { message: error ? friendlyError(error) : "Sent. Check your inbox (and spam)." };
+}
+
+// Log in without a password: Supabase emails a 6-digit code (and a link) to an existing account.
+// Never makes an account, and answers the same whether or not one exists, so the form can't be used
+// to find out who's a member. The code works on this page on any device; the link, once the
+// founders paste supabase/templates/magic-link.html, works on any device too.
+export async function sendLoginCode(email: string, next?: string): Promise<AuthState> {
+  const address = email.trim();
+  if (!EMAIL_RE.test(address)) return { message: "Enter a valid email address." };
+  const supabase = await createClient();
+  const { error } = await supabase.auth.signInWithOtp({
+    email: address,
+    options: { shouldCreateUser: false, emailRedirectTo: `${env.siteUrl}/auth/callback?next=${encodeURIComponent(safeNext(next ?? null))}` },
+  });
+  if (error && /rate limit|security purposes/i.test(error.message)) return { message: "A code was sent a moment ago. Wait a minute, then try again." };
+  return { message: "", sent: true };
+}
+
+export async function logInWithCode(email: string, code: string, next?: string): Promise<AuthState> {
+  const token = code.replace(/\D/g, "");
+  if (!EMAIL_RE.test(email.trim())) return { message: "Enter a valid email address." };
+  if (token.length !== 6) return { message: "Enter the 6 digits from the email." };
+  const supabase = await createClient();
+  const { error } = await supabase.auth.verifyOtp({ email: email.trim(), token, type: "email" });
+  if (error) return { message: /expired|invalid/i.test(error.message) ? "That code is wrong or has expired. Check the newest email, or send a new code." : friendlyError(error) };
+  redirect(safeNext(next ?? null));
 }
 
 // Always the same answer, so the form can't be used to find out who has an account.

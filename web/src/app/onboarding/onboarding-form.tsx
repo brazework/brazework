@@ -2,6 +2,7 @@
 import { AnimatePresence, motion } from "motion/react";
 import { Check, Loader2 } from "lucide-react";
 import { useActionState, useState } from "react";
+import { SignupSteps } from "@/components/signup-steps";
 import { Button, Field, inputCls } from "@/components/ui";
 import { TOPICS, cn } from "@/lib/forge";
 import { completeOnboarding, type OnboardState } from "./actions";
@@ -25,8 +26,8 @@ export function OnboardingForm({ firstName, student, askGradYear = false }: { fi
   return (
     <form onSubmit={submitWithoutReset(action)} className="flex flex-col gap-8">
       <div>
-        <div className="text-[11px] font-medium tracking-[0.06em] text-accent uppercase">Step 3 of 4</div>
-        <h1 className="mt-2 text-4xl font-semibold tracking-tight">
+        <SignupSteps at="work" club={student} />
+        <h1 className="mt-4 text-4xl font-semibold tracking-tight">
           Welcome{firstName ? `, ${firstName}` : ""}. <span className="text-shine">What do you build?</span>
         </h1>
       </div>

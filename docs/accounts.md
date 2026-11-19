@@ -51,7 +51,7 @@ Needed before taking real money or raising, and asked for by YC:
 
 ## Sign in with Google, GitHub and LinkedIn (founders only)
 
-The code is in place: **Continue with Google / GitHub / LinkedIn** appears on `/login` and `/signup` for each provider that is switched on in Supabase (within 5 minutes, no deploy), and the button for a provider that's off never shows. Someone new through a provider lands on **Finish creating your account** in onboarding: account type, name (filled in from the provider) and birthday, held to the same rules as the email form by the database (`supabase/oauth-signup.sql`: 18 or older, a school email for a student account). Then onboarding as usual. A returning member goes straight in.
+The code is in place: **Continue with Google / GitHub / LinkedIn** appears on `/login` and `/signup` for each provider that is switched on in Supabase (within 5 minutes, no deploy), and the button for a provider that's off never shows. Someone new through a provider lands on **About you** in onboarding: account type, name (filled in from the provider) and birthday, held to the same rules as the email form by the database (`supabase/oauth-signup.sql`: 18 or older, a school email for a student account). Then onboarding as usual. A returning member goes straight in.
 
 **An email that already has a Brazework account.** Supabase links the provider to the existing account when the emails match (the provider's email is verified), so a member who signed up with `dana@hartford.edu` and a password, then clicks Continue with Google on that same school account, lands in their own account with their profile. Both ways of signing in work from then on. If that email/password account was never confirmed, Supabase removes the unconfirmed email sign-in when it links (its docs: it "will remove any other unconfirmed identities"): whoever controls the verified provider account owns the address, so nobody can pre-register someone else's email and wait for them. Going the other way, signing up with the email form for an address that's already used through Google says "An account with that email already exists"; the member logs in with Google, or uses **Forgot password?** to add a password.
 
@@ -88,11 +88,27 @@ Why not reuse the Brazework GitHub App (`infra/github-app.json`): Supabase's Git
 1. Dashboard → **Authentication → Sign In / Providers**.
 2. **Google**: enable, paste the Client ID (into "Client IDs") and the Client Secret, Save. **GitHub**: enable, Client ID, Client Secret, Save. **LinkedIn (OIDC)**: enable, Client ID, Client Secret, Save.
 3. Leave **Confirm email** on and the URL configuration as it is (`https://brazework.com/**` is already allowed).
-4. Within 5 minutes, open `https://brazework.com/signup` in a private window: the buttons are there. Try one with a personal account: you should land on **Finish creating your account**. Then delete that test account in Supabase (Authentication → Users) if you don't want it.
+4. Within 5 minutes, open `https://brazework.com/signup` in a private window: the buttons are there. Try one with a personal account: you should land on **About you**. Then delete that test account in Supabase (Authentication → Users) if you don't want it.
 
 **5. Write it down in the repo**, so a provider switched off or changed by mistake shows up as drift (`infra/check.mjs` reads each provider's on/off and client ID, never its secret):
 1. `SUPABASE_ACCESS_TOKEN=… node infra/check.mjs` lists the new values as drift.
 2. `SUPABASE_ACCESS_TOKEN=… node infra/check.mjs --capture`, then `git diff infra/desired.json`: only the six `external_*` lines should change. Commit it through a pull request.
+
+**6. The confirmation email** (once, in Supabase, so confirming works on any device and by code)
+1. Dashboard → **Authentication → Emails → Confirm signup**.
+2. Subject: `Confirm your Brazework account`.
+3. Message body: paste the whole of [`supabase/templates/confirm-signup.html`](../supabase/templates/confirm-signup.html). Save.
+4. Check: sign up at `https://brazework.com/signup` with a spare address, open the email on your phone, and tap **Confirm my email**: the phone opens **About you**. Or type the email's 6-digit code on the laptop's "Check your inbox" page.
+
+Until this is done, the email's old link still works, but only in the browser that signed up, and the email has no code to type.
+
+**7. The sign-in code email** (once, in Supabase, for "Email me a sign-in code" on `/login`)
+1. Dashboard → **Authentication → Emails → Magic Link**.
+2. Subject: `Your Brazework sign-in code`.
+3. Message body: paste the whole of [`supabase/templates/magic-link.html`](../supabase/templates/magic-link.html). Save.
+4. Check: on `https://brazework.com/login`, choose **Email me a sign-in code instead**, enter your address, and type the code from the email.
+
+Until this is done, the email holds only Supabase's default link (which works in the browser that asked for it) and no code to type.
 
 Pull-request previews: a provider sends people back to the preview's own address only if it's in Supabase's redirect list; otherwise they land on brazework.com and the sign-in says it expired. Test providers on brazework.com.
 

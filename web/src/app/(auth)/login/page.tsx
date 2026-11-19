@@ -15,5 +15,5 @@ export default function LoginPage({ searchParams }: PageProps<"/login">) {
 
 async function WithParams({ searchParams }: { searchParams: PageProps<"/login">["searchParams"] }) {
   const [sp, providers] = await Promise.all([searchParams, enabledProviders()]);
-  return <LoginForm next={typeof sp.next === "string" ? sp.next : undefined} confirmed={sp.confirmed === "1"} resetExpired={sp.reset === "expired"} providers={providers} oauth={typeof sp.oauth === "string" ? sp.oauth : undefined} />;
+  return <LoginForm next={typeof sp.next === "string" ? sp.next : undefined} confirmed={sp.confirmed === "1"} resetExpired={sp.reset === "expired"} linkExpired={sp.link === "expired"} providers={providers} oauth={typeof sp.oauth === "string" ? sp.oauth : undefined} />;
 }

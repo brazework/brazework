@@ -1,10 +1,13 @@
+"use client";
+import { useEffect, useState } from "react";
+import { readLastSignIn, saveLastSignIn } from "@/lib/last-signin";
 import { PROVIDERS, type ProviderId } from "@/lib/oauth";
 
 // "Continue with Google / GitHub / LinkedIn" on log-in and sign-up. Outline buttons in the site's
 // monochrome tokens; GitHub and LinkedIn marks take the text colour (light and dark). Google's "G"
 // keeps its four colours, which Google's sign-in branding rules require.
 // Plain links to /auth/oauth (not <Link>), so nothing prefetches the start of a sign-in.
-const btn = "inline-flex h-11 w-full items-center justify-center gap-2.5 rounded-lg border border-line bg-surface px-5 text-[15px] font-medium text-text transition-colors duration-150 hover:border-line-strong hover:bg-hover";
+const btn = "relative inline-flex h-11 w-full items-center justify-center gap-2.5 rounded-lg border border-line bg-surface px-5 text-[15px] font-medium text-text transition-colors duration-150 hover:border-line-strong hover:bg-hover";
 
 function Mark({ id }: { id: ProviderId }) {
   if (id === "google")
@@ -37,13 +40,18 @@ export function oauthHref(id: ProviderId, from: "login" | "signup", next?: strin
 }
 
 export function ProviderButtons({ providers, from, next, invite }: { providers: ProviderId[]; from: "login" | "signup"; next?: string; invite?: string }) {
+  // The provider this device last signed in with gets a "Last used" tag (lib/last-signin.ts).
+  const [last, setLast] = useState<string | null>(null);
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- localStorage exists only after hydration
+  useEffect(() => setLast(readLastSignIn()?.method ?? null), []);
   if (!providers.length) return null;
   return (
     <div className="flex flex-col gap-3">
       <div className="flex flex-col gap-2.5">
         {PROVIDERS.filter((p) => providers.includes(p.id)).map((p) => (
-          <a key={p.id} href={oauthHref(p.id, from, next, invite)} className={btn} data-provider={p.id}>
+          <a key={p.id} href={oauthHref(p.id, from, next, invite)} className={btn} data-provider={p.id} onClick={() => saveLastSignIn({ method: p.id })}>
             <Mark id={p.id} /> Continue with {p.label}
+            {last === p.id && <span className="absolute right-3 rounded-md bg-accent/10 px-1.5 py-0.5 text-[11px] font-medium text-accent">Last used</span>}
           </a>
         ))}
       </div>
