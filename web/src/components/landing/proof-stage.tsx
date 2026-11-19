@@ -1,11 +1,12 @@
 "use client";
 import { Check, RotateCcw } from "lucide-react";
 import { useReducedMotion } from "motion/react";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { TitleBlock } from "@/components/app/title-block";
 import { Seal } from "@/components/app/verified-seal";
 import { cn } from "@/lib/forge";
 import { HERO_STORIES, type HeroCell, type HeroPhase, type HeroStory, heroRecord, stageTitle } from "@/lib/landing-demo";
+import { REF_KEY, firstStoryFor, refFrom } from "@/lib/launch";
 
 // The hero's demo: the whole product in one card. The member asks their AI assistant in plain words,
 // it drafts the result with its proof (the visitor's own line, once they type one) and sends it to
@@ -19,9 +20,18 @@ import { HERO_STORIES, type HeroCell, type HeroPhase, type HeroStory, heroRecord
 // and links; the page says so.
 // Drawn like the app (docs/design/app.md): a plain sheet in ink, the draft dashed until it's signed,
 // and a title block underneath that fills in as the story goes. Green only once a person has signed.
+// Where this visitor came from (?ref=…, or remembered for the tab): read in the browser only, so the
+// landing page stays static.
+const noStore = () => () => {};
+const readRef = () => { try { return refFrom(window.location.search) || sessionStorage.getItem(REF_KEY) || ""; } catch { return ""; } };
+
 export function ProofStage({ build }: { build: string }) {
   const reduce = useReducedMotion();
-  const [at, setAt] = useState(0);
+  // The story showing: the one picked or played to, else the first for this visitor (a Product Hunt
+  // visitor starts on the engineer's, lib/launch.ts).
+  const ref = useSyncExternalStore(noStore, readRef, () => "");
+  const [chosen, setAt] = useState<number | null>(null);
+  const at = chosen ?? firstStoryFor(ref, HERO_STORIES);
   const [replays, setReplays] = useState(0);
   const [auto, setAuto] = useState(true);
   const story = HERO_STORIES[at];
@@ -42,7 +52,7 @@ export function ProofStage({ build }: { build: string }) {
         ))}
       </div>
       {/* Keyed on the build and the story, so each starts again from the typed ask; Replay replays this one. */}
-      <Stage key={`${build}:${at}:${replays}`} build={build} story={story} onDone={playing ? () => setAt((n) => (n + 1) % HERO_STORIES.length) : undefined} onTouch={() => setAuto(false)} />
+      <Stage key={`${build}:${at}:${replays}`} build={build} story={story} onDone={playing ? () => setAt((at + 1) % HERO_STORIES.length) : undefined} onTouch={() => setAuto(false)} />
       <div className="mt-2 flex items-center justify-between gap-3 pl-1">
         <p className="min-w-0 text-xs text-faint">{build ? "Your build. The people and the company are examples." : "Example people and links"}</p>
         <button type="button" onClick={() => { setAuto(false); setReplays((n) => n + 1); }} className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-xs font-medium text-muted transition hover:bg-hover hover:text-text"><RotateCcw className="size-3.5" /> Replay</button>
