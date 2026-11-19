@@ -27,7 +27,7 @@ export function CoverBanner({ path, editable, userId }: { path?: string; editabl
     }
   };
   return (
-    <div className="group relative h-40 overflow-hidden border-b border-line sm:h-56">
+    <div className="group relative h-24 overflow-hidden border-b border-line sm:h-36">
       {path ? <Image src={mediaUrl(path)} alt="" fill sizes="(min-width: 768px) 768px, 100vw" className="object-cover" priority /> : <div className="cover-empty absolute inset-0" />}
       {editable && (
         <>

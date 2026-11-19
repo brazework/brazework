@@ -16,7 +16,7 @@ export function SpotlightCard({ post }: { post: Post }) {
   return (
     <Link prefetch={false} href={`/post/${post.id}`} className="grad-edge group flex w-[280px] flex-col overflow-hidden rounded-3xl border shadow-[var(--shadow)] transition duration-300">
       {photo ? (
-        <div className="relative h-40 overflow-hidden">
+        <div className="relative h-32 overflow-hidden">
           <Image src={mediaUrl(photo.path)} alt={photo.alt || ""} fill sizes="280px" className="object-cover transition duration-700 group-hover:scale-110" />
           <span className="absolute top-3 left-3 inline-flex items-center gap-1 rounded-full bg-black/55 px-2.5 py-1 text-[11px] font-medium text-white backdrop-blur"><k.icon className="size-3.5" /> {k.label}</span>
         </div>

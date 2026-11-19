@@ -3,8 +3,11 @@ import { canUse } from "@/lib/plans";
 import type { Metadata } from "next";
 import { ReportLink } from "@/components/report/report-dialog";
 import { BadgeCheck, BarChart3, ClipboardList, Eye, FileText, FolderGit2, Lock, MapPin, MessageSquare, Trophy } from "lucide-react";
+import { MoreMenu } from "@/components/app/more-menu";
+import { RecordTimelineChart } from "@/components/profile/record-timeline";
+import { buildTimeline } from "@/lib/record-timeline";
+import { goalTitle } from "@/lib/goals";
 import { CommunityBadge } from "../../communities/_components/badge";
-import { ActivityGrid } from "@/components/profile/activity";
 import { requestTime } from "@/lib/forge";
 import { ProjectIcon } from "../../projects/project-card";
 import Link from "next/link";
@@ -18,7 +21,6 @@ import { OwnProofTabs } from "@/components/app/place-tabs-counted";
 import { GoalCard, GoalLine } from "@/components/app/goal-card";
 import { loadGoal, loadRecord } from "@/lib/goal-load";
 import { Seal } from "@/components/app/verified-seal";
-import { TitleBlock } from "@/components/app/title-block";
 import { EmptyState, Panel, Skeleton } from "@/components/app/page-ui";
 import { MemberFaces } from "@/components/network/member-faces";
 import { classOf, openToLabel, type ProfileLink } from "@/lib/profile-meta";
@@ -153,8 +155,13 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
   const openTo = p.open_to ?? [];
   const links = p.links ?? [];
   const waiting = ms.filter((m) => m.status === "pending").length;
+  // The record over time (lib/record-timeline.ts): projects as lanes, signed work on its dates. Built
+  // from what this viewer may see: visitors get public projects and verified work only.
+  const timeline = msOn ? buildTimeline({ now: requestTime(), own: mine, projects: projectRows.filter((r) => mine || !r.private), milestones: ms, posts }) : null;
+  // Your goal, on your own chart (visitors see it in the header line instead).
+  const goalText = goal && goal.status === "active" ? goalTitle(goal) : null;
   const stats: { n: number; label: string; href: string }[] = [
-    ...(msOn ? [{ n: proof.length + led.length, label: "Signed results", href: "#proof" }] : []),
+    ...(msOn ? [{ n: proof.length + led.length, label: proof.length + led.length === 1 ? "Signed result" : "Signed results", href: "#proof" }] : []),
     { n: projects.length, label: projects.length === 1 ? "Project" : "Projects", href: "#projects" },
     { n: posts.length, label: posts.length === 1 ? "Post" : "Posts", href: "#posts" },
   ];
@@ -188,34 +195,32 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
           <Eye className="mt-0.5 size-4 shrink-0" /> This is how other members see your profile. Private projects, private milestones and anything not yet verified are left out.
         </p>
       )}
-      <Panel className="relative overflow-hidden p-0">
+      <Panel className="relative overflow-hidden rounded-2xl p-0">
         <CoverBanner path={p.cover_path} editable={mine && mediaOn} userId={user.id} />
-        <div className="px-6 pb-6">
-          <div className="pointer-events-none relative z-10 -mt-14 flex flex-wrap items-end justify-between gap-4 *:pointer-events-auto">
+        <div className="px-5 pb-5 sm:px-6">
+          <div className="pointer-events-none relative z-10 -mt-11 flex flex-wrap items-end justify-between gap-3 *:pointer-events-auto">
             <div className="inline-flex rounded-full">
-              <WithPresence id={p.id} dot="size-5 ring-4 top-[4%] bottom-auto"><ProfilePhoto path={p.avatar_path} first={p.first_name} last={p.last_name} editable={mine && mediaOn} userId={user.id} size={104} /></WithPresence>
+              <WithPresence id={p.id} dot="size-5 ring-4 top-[4%] bottom-auto"><ProfilePhoto path={p.avatar_path} first={p.first_name} last={p.last_name} editable={mine && mediaOn} userId={user.id} size={88} /></WithPresence>
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <CopyLink path={`/u/${p.id}`} label="Share" />
-              <Link href={`/u/${p.id}/resume`} className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-line bg-surface px-4 text-sm transition hover:bg-hover active:scale-95"><FileText className="size-4" /> Résumé</Link>
-              {/* The review packet (lib/review-packet.ts): your signed work over a period, for a performance review. */}
-              {mine && canUse("reviewPacket", user) && <Link href={`/u/${p.id}/review`} className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-line bg-surface px-4 text-sm transition hover:bg-hover active:scale-95"><ClipboardList className="size-4" /> Review packet</Link>}
-              {mine && (
-                <Link href={`/u/${p.id}?view=visitor`} title="Preview as a visitor" className="inline-flex h-10 w-10 items-center justify-center gap-1.5 rounded-lg border border-line bg-surface text-sm transition hover:bg-hover active:scale-95 sm:w-auto sm:px-4"><Eye className="size-4" /> <span className="sr-only sm:not-sr-only">Preview</span></Link>
-              )}
+              <Link href={`/u/${p.id}/resume`} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-line bg-surface px-3.5 text-sm transition hover:bg-hover active:scale-95"><FileText className="size-4" /> Résumé</Link>
               {mine ? (
-                <Link href="/dashboard" data-tour="analytics" title="Dashboard" className="inline-flex h-10 w-10 items-center justify-center gap-1.5 rounded-lg border border-line bg-surface text-sm transition hover:bg-hover active:scale-95 sm:w-auto sm:px-4">
-                  <BarChart3 className="size-4" /> <span className="sr-only sm:not-sr-only">Dashboard</span>
-                </Link>
+                <MoreMenu tour="analytics" label="More profile actions" items={[
+                  { href: "/dashboard", label: "Dashboard", icon: <BarChart3 /> },
+                  { href: `/u/${p.id}?view=visitor`, label: "Preview as a visitor", icon: <Eye /> },
+                  // The review packet (lib/review-packet.ts): your signed work over a period, for a performance review.
+                  ...(canUse("reviewPacket", user) ? [{ href: `/u/${p.id}/review`, label: "Review packet", icon: <ClipboardList /> }] : []),
+                ]} />
               ) : preview ? (
-                <Link href={`/u/${p.id}`} className="bg-text inline-flex h-10 items-center gap-1.5 rounded-lg px-4 text-sm font-medium text-surface transition active:scale-95">Done previewing</Link>
+                <Link href={`/u/${p.id}`} className="bg-text inline-flex h-9 items-center gap-1.5 rounded-lg px-4 text-sm font-medium text-surface transition active:scale-95">Done previewing</Link>
               ) : (
                 rel && <ConnectButtons personId={p.id} firstName={p.first_name} relationship={rel} />
               )}
             </div>
           </div>
-          <div className="mt-4 flex flex-wrap items-center gap-3"><h1 className="text-3xl font-semibold tracking-tight">{name || "Brazework member"}</h1><OnlineLabel id={p.id} /></div>
-          {p.headline && <p className="mt-1 text-lg text-text-2">{p.headline}</p>}
+          <div className="mt-3 flex flex-wrap items-center gap-3"><h1 className="text-[1.75rem] leading-tight font-semibold tracking-[-0.02em] sm:text-3xl">{name || "Brazework member"}</h1><OnlineLabel id={p.id} /></div>
+          {p.headline && <p className="mt-1 text-base text-text-2 sm:text-lg">{p.headline}</p>}
           {goal && !mine && <div className="mt-2.5"><GoalLine goal={goal} /></div>}
           <p className="mt-2 flex flex-wrap items-center gap-x-1.5 text-sm text-muted">
             {p.account_type === "student" ? "Student" : "Professional"}
@@ -231,18 +236,21 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
             </p>
           )}
 
-          <div className="mt-5 flex flex-wrap items-end gap-x-8 gap-y-4">
-            {/* The record leads (section redesign): how much of the work someone signed, in the seal's
-                green, then what's still waiting (yours only) and the rest. No count-up: nothing changed. */}
-            <TitleBlock label="Record" className="w-full sm:w-auto sm:min-w-96" cells={[
-              ...stats.map((st) => ({
-                label: st.label,
-                tone: st.href === "#proof" && st.n > 0 ? ("ok" as const) : undefined,
-                // In-page tabs (#projects) need a plain anchor so the hashchange reaches the tabs.
-                value: <a href={st.href} className="inline-flex items-center gap-1.5 hover:underline">{st.href === "#proof" && st.n > 0 && <Seal size={16} />}{st.n}</a>,
-              })),
-              ...(mine && waiting > 0 ? [{ label: "Waiting", value: <a href="#proof" className="hover:underline">{waiting} to be signed</a> }] : []),
-            ]} />
+          {/* The record in one row (profile redesign, Nov 19): signed results lead in the seal's green, then
+              projects and posts; yours also says what's waiting and who looked this month. */}
+          <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-3">
+            <p className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-muted" aria-label="Record">
+              {stats.map((st) => (
+                <a key={st.href} href={st.href} className="inline-flex items-center gap-1.5 transition hover:text-text">
+                  {st.href === "#proof" && st.n > 0 && <Seal size={15} />}
+                  <span className={st.href === "#proof" && st.n > 0 ? "font-semibold text-ok tabular-nums" : "font-semibold text-text tabular-nums"}>{st.n}</span> {st.label.toLowerCase()}
+                </a>
+              ))}
+              {mine && waiting > 0 && <a href="#proof" className="transition hover:text-text"><span className="font-semibold text-text tabular-nums">{waiting}</span> waiting to be signed</a>}
+              {mine && record && (record.looked
+                ? <Link href="/dashboard" className="inline-flex items-center gap-1.5 transition hover:text-text"><Eye className="size-3.5" /><span className="font-semibold text-text tabular-nums">{record.looked}</span> looked this month</Link>
+                : <span className="inline-flex items-center gap-1.5 text-faint"><Eye className="size-3.5" /> No views yet this month</span>)}
+            </p>
             {wins.length > 0 && (
               <div className="flex flex-wrap gap-1.5" aria-label="Challenge wins">
                 {wins.slice(0, 3).map((w) => (
@@ -269,18 +277,11 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
         </div>
       </Panel>
 
-      <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_20rem]">
-        <div className="flex min-w-0 flex-col gap-6">
+      <div className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_20rem]">
+        <div className="flex min-w-0 flex-col gap-5">
           {/* Proof leads: the work someone signed comes before everything else on the page. */}
+          {timeline && <RecordTimelineChart data={timeline} own={mine} goal={mine ? goalText : null} />}
           {msOn && <div id="proof" className="scroll-mt-24"><ProofTimeline items={proof} own={mine} led={led} /></div>}
-          {/* Who looked (yours only): the honest count, and where to see who (the dashboard). */}
-          {mine && record && (
-            <section aria-label="Who looked" className="flex flex-wrap items-center gap-x-4 gap-y-2 rounded-xl border border-line bg-surface px-4 py-3">
-              <Eye className="size-4 shrink-0 text-muted" />
-              <p className="min-w-0 flex-1 text-sm text-text-2">{record.looked ? `${record.looked} ${record.looked === 1 ? "person" : "people"} looked at your record this month` : "Nobody has looked at your record yet this month. Your link is how they find it."}</p>
-              {record.looked ? <Link href="/dashboard" className="shrink-0 text-xs font-medium text-text underline-offset-4 hover:underline">See who looked</Link> : <CopyLink path={`/u/${p.id}`} label="Copy your link" />}
-            </section>
-          )}
           {mine ? (hideStrength ? null : <ProfileStrength steps={steps} />) : <SharedContext clubs={sharedClubs} mutual={mutual} mutualCount={mutualCount} />}
           {nowBuilding && (
             <Link href={`/projects/${nowBuilding.id}`} className="border border-line bg-surface group flex flex-col rounded-2xl p-5 transition">
@@ -303,7 +304,7 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
                   id: "projects", label: "Projects", count: projects.length,
                   content: (
                     <>
-                      {mine && <div className="mb-4 flex items-center justify-between gap-3 rounded-3xl border border-dashed border-line-strong bg-surface/60 p-4"><p className="text-sm text-muted">Show what you&apos;ve built: a summary everyone sees, and a write-up you can keep private.</p><ProjectEditor interests={p.interests ?? []} copilot={copilotOn} stack={stackOn} specsOn={f.projectSpecs} /></div>}
+                      {mine && <div className="mb-4 flex items-center justify-between gap-3 rounded-2xl border border-dashed border-line-strong bg-surface/60 p-4"><p className="text-sm text-muted">Show what you&apos;ve built: a summary everyone sees, and a write-up you can keep private.</p><ProjectEditor interests={p.interests ?? []} copilot={copilotOn} stack={stackOn} specsOn={f.projectSpecs} /></div>}
                       <ProjectGrid projects={projects} own={mine} interests={p.interests ?? []} copilot={copilotOn} clubs={msOn && mine ? myClubs : undefined} vouches={f.vouches} backing={f.backed && !!githubConfig()} stack={stackOn} specsOn={f.projectSpecs} />
                       {!projects.length && <EmptyState icon={<FolderGit2 className="size-6" />} title={mine ? "Show what you've built" : "No projects yet"} body={mine ? "Add a project with a summary, what you did and a link. Keep the write-up private and share only the card if you like." : undefined} />}
                       {projects.some((x) => x.private) && !mine && <p className="mt-3 flex items-center gap-1.5 text-xs text-faint"><Lock className="size-3" /> Private projects show their card only.</p>}
@@ -356,9 +357,6 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
               })}
             </div>
           </SideCard>
-          <SideCard title="Activity">
-            <ActivityGrid dates={posts.map((x) => x.created_at)} now={requestTime()} />
-          </SideCard>
           {p.interests?.length > 0 && (
             <SideCard title="Interests">
               <div className="flex flex-wrap gap-1.5">{p.interests.map((t) => <Link key={t} href={`/feed?tab=latest&tag=${encodeURIComponent(t)}`} className="rounded-full border border-line bg-surface px-2.5 py-0.5 text-xs text-text-2 transition hover:border-transparent hover:bg-text hover:text-surface">#{t}</Link>)}</div>
@@ -379,7 +377,7 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
 function ProfileSkeleton() {
   return (
     <div aria-busy="true">
-      <Skeleton className="h-[440px]" />
+      <Skeleton className="h-[340px]" />
       <Skeleton className="mt-8 h-12" />
       <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2"><Skeleton className="h-48" /><Skeleton className="h-48" /></div>
     </div>

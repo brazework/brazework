@@ -255,6 +255,9 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity
 /* Progress bars that drive auto-advancing pickers (the hero's fields, the how-it-works steps):
    when the bar finishes, onAnimationEnd moves to the next item. */
 @keyframes progress-fill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+/* The record timeline's lanes draw in once, left to right (components/profile/record-timeline.tsx). */
+/* Only `transform` here: Tailwind's -translate-y-1/2 centres the lane through the separate `translate`. */
+@keyframes tl-draw { from { transform: scaleX(0); opacity: 0; } to { transform: scaleX(1); opacity: 1; } }
 .hero-progress { animation: progress-fill 4.2s linear forwards; }
 .step-progress { animation: progress-fill 6s linear forwards; }
 
