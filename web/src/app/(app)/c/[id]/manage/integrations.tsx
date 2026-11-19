@@ -28,10 +28,10 @@ export function Integrations() {
 
       <section className="rounded-xl border border-dashed border-line-strong p-5">
         <h3 className="flex items-center gap-2 text-sm font-semibold"><CalendarSync className="size-4" /> Coming next</h3>
-        <ul className="mt-2 grid grid-cols-1 gap-1 text-sm text-muted sm:grid-cols-2">
-          <li>· GitHub live sync: merged pull requests, releases and CI results in a project&apos;s build log</li>
-          <li>· Calendar subscription for club events</li>
-          <li>· Onshape and Fusion 360 project imports</li>
+        <ul className="mt-2 list-disc space-y-1 pl-5 text-sm text-muted marker:text-faint">
+          <li>GitHub live sync: merged pull requests, releases and CI results in a project&apos;s build log</li>
+          <li>Calendar subscription for club events</li>
+          <li>Onshape and Fusion 360 project imports</li>
         </ul>
       </section>
     </div>

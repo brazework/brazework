@@ -59,24 +59,25 @@ export function ClubSetup({ cid, name, steps, origin, invite }: { cid: string; n
           const isNext = next?.id === s.id;
           return (
             <li key={s.id} className={cn("rounded-2xl px-3 py-2.5", isNext && "bg-surface-2/70")}>
-              <div className="flex items-center gap-3">
+              {/* On a phone the button drops under the text (indented past the check) instead of squeezing it to a word a line. */}
+              <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
                 <span className={cn("grid size-6 shrink-0 place-items-center rounded-full border text-[11px]", s.done ? "border-transparent bg-[var(--ok)] text-white" : "border-line text-faint")} aria-hidden="true">{s.done ? <Check className="size-3.5" /> : null}</span>
-                <span className="min-w-0 flex-1">
+                <span className="min-w-[min(100%,11rem)] flex-1">
                   <span className={cn("block text-sm", s.done ? "text-muted line-through decoration-line" : "font-medium text-text")}>{s.label}</span>
                   {isNext && <span className="block text-xs text-muted">{s.why}</span>}
                 </span>
                 {!s.done && s.id === "invite" && !code && (
-                  <button type="button" onClick={getLink} disabled={busy !== null} className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg bg-accent px-3 text-xs font-medium text-on-accent disabled:opacity-60">
+                  <button type="button" onClick={getLink} disabled={busy !== null} className="ml-9 inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg bg-accent px-3 text-xs font-medium text-on-accent disabled:opacity-60 sm:ml-0">
                     {busy === "invite" ? <Loader2 className="size-3.5 animate-spin" /> : <Link2 className="size-3.5" />} Get invite link
                   </button>
                 )}
                 {!s.done && s.id === "rules" && (
-                  <button type="button" onClick={rules} disabled={busy !== null} className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border border-line px-3 text-xs font-medium hover:bg-hover disabled:opacity-60">
+                  <button type="button" onClick={rules} disabled={busy !== null} className="ml-9 inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border border-line px-3 text-xs font-medium hover:bg-hover disabled:opacity-60 sm:ml-0">
                     {busy === "rules" ? <Loader2 className="size-3.5 animate-spin" /> : <ScrollText className="size-3.5" />} Use starter rules
                   </button>
                 )}
                 {!s.done && s.id !== "invite" && s.id !== "rules" && (
-                  <Link href={s.href} className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-text-2 hover:text-text">{isNext ? "Do it" : "Open"} <ArrowRight className="size-3.5" /></Link>
+                  <Link href={s.href} className="ml-9 inline-flex shrink-0 items-center gap-1 text-xs font-medium text-text-2 hover:text-text sm:ml-0">{isNext ? "Do it" : "Open"} <ArrowRight className="size-3.5" /></Link>
                 )}
               </div>
             </li>

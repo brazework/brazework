@@ -27,8 +27,9 @@ export function ClubCoverUpload({ cid, path, userId }: { cid: string; path?: str
   return (
     <div className="flex flex-col gap-3">
       <div className="text-sm font-medium text-text-2">Cover photo</div>
-      <div className="relative h-32 overflow-hidden rounded-2xl border border-line">
-        {path ? <Image src={mediaUrl(path)} alt="" fill sizes="640px" className="object-cover" /> : <div className="bg-accent-grad absolute inset-0 opacity-80" />}
+      <div className={`relative h-32 overflow-hidden rounded-2xl border ${path ? "border-line" : "border-dashed border-line-strong"}`}>
+        {/* No cover: a quiet drop-zone look (the accent is near-white in dark mode, so a solid slab read as a broken image). */}
+        {path ? <Image src={mediaUrl(path)} alt="" fill sizes="640px" className="object-cover" /> : <div className="absolute inset-0 grid place-items-center bg-surface-2 text-sm text-muted"><span className="inline-flex items-center gap-1.5"><ImagePlus className="size-4" /> No cover yet</span></div>}
       </div>
       <input ref={input} type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) void pick(f); }} />
       <div className="flex flex-wrap items-center gap-2">

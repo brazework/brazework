@@ -31,7 +31,7 @@ export async function Roster({ cid }: { cid: string }) {
   return (
     <div className="mb-6">
       <div className="mb-3 flex items-baseline justify-between px-1">
-        <h2 className="text-lg font-semibold tracking-tight">Your chapter this week</h2>
+        <h2 className="text-lg font-semibold tracking-tight">Your club this week</h2>
         <span className="text-xs text-faint">{posted.length} of {people.length} posted</span>
       </div>
       <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
