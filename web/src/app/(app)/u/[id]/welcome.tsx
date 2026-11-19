@@ -8,7 +8,7 @@ import type { Milestone } from "./milestones";
 // The end of build-first onboarding (/u/<id>?welcome=1, owner only): your first milestone is on your
 // record, and this says where it stands. It never says "verified": only a person's signature does.
 export async function FirstMilestoneWelcome({ supabase, userId, milestone }: { supabase: Awaited<ReturnType<typeof createClient>>; userId: string; milestone: Milestone | undefined }) {
-  let line = "Your profile is ready. Log your first build from Today whenever you're ready.";
+  let line = "Your profile is ready. Log your first build from Home whenever you're ready.";
   let Icon = PartyPopper;
   if (milestone) {
     if (milestone.status === "pending" && milestone.community_id) {

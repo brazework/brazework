@@ -4,8 +4,8 @@ import { usePathname } from "next/navigation";
 import { cn } from "@/lib/forge";
 import { PLACES, placeTabsFor, type BadgeKey, type PlaceId } from "@/lib/places";
 
-// The pages inside a place, one click away (redesign stage 1): Club shows Clubs · Events · Challenges,
-// Proof shows Profile · Connections · Analytics · Pro reviews, and so on (lib/places.ts). It replaces
+// The pages inside a place, one click away (redesign stage 1): Clubs shows Clubs · Events · Challenges,
+// Record shows Profile · Connections · Analytics · Pro reviews, and so on (lib/places.ts). It replaces
 // the sidebar's More drawer. Deliberately quieter than a page's own tabs: small text, no underline bar,
 // so a page that has both reads as "where am I" above "what am I looking at".
 export function PlaceTabsRow({ place, active, badges }: { place: PlaceId; active: string; badges?: Partial<Record<BadgeKey, number>> }) {

@@ -54,7 +54,7 @@ async function SignedInShell() {
     // Your clubs, as shortcuts in the sidebar.
     // With their logo (or cover) where they have one.
     supabase.from("community_members").select(`communities(id, name${clubProfile ? ", logo_path" : ""}${media ? ", cover_path" : ""})`).eq("uid", user.id).order("joined_at", { ascending: false }).limit(5),
-    // Your builds, the same way: the ones you touched last.
+    // Your projects, the same way: the ones you touched last.
     supabase.from("projects").select("id, title").eq("owner_id", user.id).order("updated_at", { ascending: false }).limit(4),
   ]);
   const myBuilds = ((pr.data ?? []) as { id: string; title: string }[]).map((p) => ({ id: p.id, name: p.title }));

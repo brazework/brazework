@@ -5,29 +5,44 @@ import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/forge";
 import { stageTitle } from "@/lib/landing-demo";
 
-// The hero's demo: the whole product in one card. "/shipped" is typed to the member's AI assistant, it
-// drafts the milestone with its evidence (the visitor's own line, once they type one) and sends it to
-// the club, a club officer signs it, and a company that searched signed work asks to talk. It plays
-// once, and again whenever the build changes or Replay is pressed; every step is also a button, and
-// the visitor can press Send, Verify and answer the request themselves. With reduced motion it simply
-// shows the signed end. Example people and links; the page says so. No video, no library: a few timers.
+// The hero's demo: the whole product in one card. The member asks their AI assistant in plain words,
+// it drafts the result with its proof (the visitor's own line, once they type one) and sends it to
+// whoever saw the work, they sign it, and someone who searched signed work asks to talk. Each Replay
+// tells it for someone else (STORIES): a student's club, an analyst's manager, a teacher's department
+// head, because the same record works for anyone who builds, with any tool. Every step is also a
+// button, and the visitor can press Send, the signer's button and answer the request themselves. With
+// reduced motion it simply shows the signed end. Example people and links; the page says so.
 export function ProofStage({ build }: { build: string }) {
   const [replays, setReplays] = useState(0);
   return (
     <div id="hero-preview" className="relative mx-auto w-full max-w-[30rem] min-w-0">
-      {/* Keyed on the build, so each new line starts the sequence again from "logged". */}
-      <Stage key={`${build}:${replays}`} build={build} onReplay={() => setReplays((n) => n + 1)} />
+      {/* Keyed on the build, so each new line starts the sequence again from "logged"; each Replay is the next story. */}
+      <Stage key={`${build}:${replays}`} build={build} story={STORIES[replays % STORIES.length]} onReplay={() => setReplays((n) => n + 1)} />
       <p className="mt-3 text-center text-xs text-faint">{build ? "Your build. The people and the company are examples." : "Example data"}</p>
     </div>
   );
 }
 
-const STEPS = ["Your AI drafts it", "Your club signs it", "A company finds it"];
-const CMD = "/shipped";
-const EVIDENCE = ["github.com/you/linebot/pull/42", "youtu.be/fall-expo-run"];
+const STEPS = ["Your AI drafts it", "Someone who saw it signs", "Someone finds it"];
+type Person = { initials: string; name: string; role: string };
+type Story = { title?: string; cmd: string; read: string; proof: string[]; send: string; sent: string; signer: Person & { act: string; done: string }; finder: Person & { ask: string } };
+// The first is the one the page opens on (and the visitor's own line uses); Replay moves through the rest.
+const STORIES: Story[] = [
+  { cmd: "add the line robot to my record", read: "Read your merged PR and the expo video", proof: ["github.com/you/linebot/pull/42", "youtu.be/fall-expo-run"],
+    send: "Send to club", sent: "Sent to Rocketry Club", signer: { initials: "BC", name: "Ben Cho", role: "Officer, Rocketry Club", act: "Verify", done: "Verified" },
+    finder: { initials: "CD", name: "Cara Diaz", role: "Acme Aerospace", ask: "Saw your signed work on Brazework. Free to talk about our robotics internship?" } },
+  { title: "New pricing tiers cut churn 9%", cmd: "put my pricing analysis on my record", read: "Read the analysis you built in Claude and the pilot results", proof: ["claude.ai/share/q3-pricing", "pilot-results.xlsx"],
+    send: "Ask Dana to sign", sent: "Sent to Dana Ruiz", signer: { initials: "DR", name: "Dana Ruiz", role: "Director of Product, your manager", act: "Sign", done: "Signed" },
+    finder: { initials: "LP", name: "Leo Park", role: "Brightline Consulting", ask: "Saw your signed pricing work. Free to talk about our associate role?" } },
+  { title: "Fractions unit lifted quiz scores 18%", cmd: "add my fractions unit to my record", read: "Read the unit plan you made with Claude and the class quiz scores", proof: ["docs.google.com/fractions-unit", "quiz-scores.csv"],
+    send: "Ask Tom to sign", sent: "Sent to Tom Owens", signer: { initials: "TO", name: "Tom Owens", role: "Head of Math, your department", act: "Sign", done: "Signed" },
+    finder: { initials: "MG", name: "Maria Gómez", role: "Riverside School District", ask: "Saw your signed unit. Would you walk our curriculum team through it?" } },
+];
 type Phase = "typing" | "reading" | "draft" | "sent";
 
-function Stage({ build, onReplay }: { build: string; onReplay: () => void }) {
+function Stage({ build, story, onReplay }: { build: string; story: Story; onReplay: () => void }) {
+  const CMD = story.cmd;
+  const typedBy = 250 + CMD.length * 42;
   const reduce = useReducedMotion();
   const [step, setStep] = useState(1);
   const [phase, setPhase] = useState<Phase>("typing");
@@ -40,12 +55,13 @@ function Stage({ build, onReplay }: { build: string; onReplay: () => void }) {
   // The loop: type the command, read the work, show the draft, send it, the officer signs, a company asks.
   useEffect(() => {
     timers.current = [
-      ...Array.from(CMD, (_, i) => at(250 + i * 85, () => setTyped(i + 1))),
-      at(1150, () => setPhase("reading")),
-      at(1900, () => setPhase("draft")),
-      at(3300, () => setPhase("sent")),
-      at(3800, () => setStep((s) => Math.max(s, 2))),
-      at(5600, () => setStep(3)),
+      // Typed at a person's pace; everything after waits for the last letter.
+      ...Array.from(CMD, (_, i) => at(250 + i * 42, () => setTyped(i + 1))),
+      at(typedBy + 150, () => setPhase("reading")),
+      at(typedBy + 900, () => setPhase("draft")),
+      at(typedBy + 2300, () => setPhase("sent")),
+      at(typedBy + 2800, () => setStep((s) => Math.max(s, 2))),
+      at(typedBy + 4600, () => setStep(3)),
     ];
     return stop;
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -71,35 +87,35 @@ function Stage({ build, onReplay }: { build: string; onReplay: () => void }) {
             <p className="flex items-center gap-2">
               <span aria-hidden="true" className="text-[#e08a62]">&gt;</span>
               <span aria-hidden="true">{CMD.slice(0, shown)}{phase === "typing" && !reduce && <span className="ml-px inline-block h-3.5 w-1.5 translate-y-0.5 animate-pulse bg-[#ecebe6]" />}</span>
-              <span className="sr-only">You type {CMD} to your AI assistant.</span>
+              <span className="sr-only">You ask your AI assistant: “{CMD}”.</span>
             </p>
-            {phase !== "typing" && <p className="text-[#a9a69c]">⎿ Read your merged PR and the expo video</p>}
+            {phase !== "typing" && <p className="text-[#a9a69c]">⎿ {story.read}</p>}
           </div>
           {/* The draft it writes, with the proof, ready to send. */}
           <div className={cn("mt-2 rounded-xl border border-line p-3 transition duration-500", phase === "draft" || phase === "sent" ? "opacity-100" : "translate-y-1 opacity-0")} inert={phase === "typing" || phase === "reading"}>
-            <p className="text-[11px] font-medium tracking-wide text-faint uppercase">Draft milestone</p>
-            <p className="mt-0.5 text-[16px] leading-snug font-semibold tracking-tight break-words">{stageTitle(build)}</p>
+            <p className="text-[11px] font-medium tracking-wide text-faint uppercase">Draft result</p>
+            <p className="mt-0.5 text-[16px] leading-snug font-semibold tracking-tight break-words">{build ? stageTitle(build) : story.title ?? stageTitle(build)}</p>
             <ul className="mt-1.5 flex flex-wrap gap-1.5" aria-label="Evidence">
-              {EVIDENCE.map((e) => <li key={e} className="max-w-full truncate rounded-md bg-surface-2 px-2 py-0.5 font-mono text-[11px] text-text-2">{e}</li>)}
+              {story.proof.map((e) => <li key={e} className="max-w-full truncate rounded-md bg-surface-2 px-2 py-0.5 font-mono text-[11px] text-text-2">{e}</li>)}
             </ul>
             <div className="mt-2.5 flex min-h-8 items-center">
               {phase === "sent"
-                ? <span className="inline-flex items-center gap-1.5 text-xs font-medium text-ok"><Check className="size-3.5" /> Sent to Rocketry Club</span>
-                : <button type="button" onClick={send} className="inline-flex h-8 items-center rounded-lg bg-accent px-3.5 text-xs font-medium text-on-accent transition hover:opacity-90">Send to club</button>}
+                ? <span className="inline-flex items-center gap-1.5 text-xs font-medium text-ok"><Check className="size-3.5" /> {story.sent}</span>
+                : <button type="button" onClick={send} className="inline-flex h-8 items-center rounded-lg bg-accent px-3.5 text-xs font-medium text-on-accent transition hover:opacity-90">{story.send}</button>}
             </div>
           </div>
         </Node>
 
         <Node n={2} at={step} label={STEPS[1]} onPick={jump}>
           <div className="flex items-center gap-3">
-            <Av>BC</Av>
-            <p className="min-w-0 flex-1 text-sm leading-snug"><span className="font-medium">Ben Cho</span><span className="block text-muted">Officer, Rocketry Club</span></p>
+            <Av>{story.signer.initials}</Av>
+            <p className="min-w-0 flex-1 text-sm leading-snug"><span className="font-medium">{story.signer.name}</span><span className="block text-muted">{story.signer.role}</span></p>
             {step >= 2
-              ? <span className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg bg-[color-mix(in_oklab,var(--ok)_8%,var(--surface))] px-3 text-xs font-medium text-ok"><Check className="size-3.5" /> Verified</span>
-              : <button type="button" onClick={verify} className="inline-flex h-8 shrink-0 items-center rounded-lg bg-accent px-3.5 text-xs font-medium text-on-accent transition hover:opacity-90">Verify</button>}
+              ? <span className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg bg-[color-mix(in_oklab,var(--ok)_8%,var(--surface))] px-3 text-xs font-medium text-ok"><Check className="size-3.5" /> {story.signer.done}</span>
+              : <button type="button" onClick={verify} className="inline-flex h-8 shrink-0 items-center rounded-lg bg-accent px-3.5 text-xs font-medium text-on-accent transition hover:opacity-90">{story.signer.act}</button>}
           </div>
           <div className="mt-2 flex items-end justify-between gap-3">
-            <p className={cn("text-xs text-muted transition-opacity duration-500", step >= 2 ? "opacity-100" : "opacity-0")}>On the record with his name and today&apos;s date.</p>
+            <p className={cn("text-xs text-muted transition-opacity duration-500", step >= 2 ? "opacity-100" : "opacity-0")}>On the record with their name and today&apos;s date.</p>
             <Signature drawn={step >= 2} still={!!reduce} />
           </div>
         </Node>
@@ -107,10 +123,10 @@ function Stage({ build, onReplay }: { build: string; onReplay: () => void }) {
         <Node n={3} at={step} label={STEPS[2]} onPick={jump} last>
           <div className={cn("transition duration-500", step >= 3 ? "opacity-100" : "translate-y-1 opacity-0")} inert={step < 3}>
             <div className="flex gap-3">
-              <Av>CD</Av>
+              <Av>{story.finder.initials}</Av>
               <div className="min-w-0 flex-1">
-                <p className="text-sm leading-snug"><span className="font-medium">Cara Diaz</span> <span className="text-muted">Acme Aerospace</span></p>
-                <p className="mt-1 text-sm leading-snug text-text-2">Saw your signed work on Brazework. Free to talk about our robotics internship?</p>
+                <p className="text-sm leading-snug"><span className="font-medium">{story.finder.name}</span> <span className="text-muted">{story.finder.role}</span></p>
+                <p className="mt-1 text-sm leading-snug text-text-2">{story.finder.ask}</p>
               </div>
             </div>
             <div className="mt-3 flex min-h-9 items-center gap-2 pl-11" aria-live="polite">
@@ -120,7 +136,7 @@ function Stage({ build, onReplay }: { build: string; onReplay: () => void }) {
                   <button type="button" onClick={() => setAnswer("declined")} className="inline-flex h-9 items-center rounded-lg border border-line px-4 text-sm font-medium transition hover:border-line-strong hover:bg-hover">Decline</button>
                 </>
               ) : (
-                <p className="text-sm text-text-2">{answer === "accepted" ? "You're talking. She only reached you because you said yes." : "Declined. She isn't told, and can't message you again."}</p>
+                <p className="text-sm text-text-2">{answer === "accepted" ? "You're talking. They only reached you because you said yes." : "Declined. They aren't told, and can't message you again."}</p>
               )}
             </div>
           </div>
@@ -158,7 +174,8 @@ function Signature({ drawn, still }: { drawn: boolean; still: boolean }) {
   return (
     <svg viewBox="0 0 132 44" aria-hidden="true" className="h-11 w-[8.25rem] shrink-0 text-text">
       <path pathLength={1} fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"
-        d="M8 30C10 14 15 6 20 7c5 1 2 12-6 15 9-3 15 1 13 7-2 5-12 5-15 1m24-8c-4-1-7 2-6 5s6 2 8-3c0 4 2 6 5 4 3-2 5-8 5-8s-1 8 3 8 4-8 9-8c-4 0-6 3-5 6s6 3 9-1m10-18c-6 0-10 6-9 13s8 9 14 4c3-3 6-12 6-17 0 8-2 16 2 19 3 2 6-2 8-7 0 4 1 7 4 7 4 0 6-4 9-9"
+        // A signer's flourish, not anyone's letters: every story's signer can have written it, then the underline.
+        d="M6 30c6-1 9-15 15-17s3 13-2 17c5-6 10-11 14-10s-2 11 2 11 7-12 11-12-2 12 3 12 7-11 11-11-1 11 4 11 8-9 12-10-1 10 4 10 9-7 13-11M14 38c28-3 66-5 110-7"
         style={{ strokeDasharray: 1, strokeDashoffset: drawn ? 0 : 1, transition: still ? "none" : "stroke-dashoffset 1.1s cubic-bezier(0.6, 0, 0.3, 1) 0.15s" }} />
     </svg>
   );
