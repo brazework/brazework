@@ -27,7 +27,9 @@ const { step, browser, as, go, summary, BASE } = require("./lib.cjs");
     const names = (list.result?.tools ?? []).map((t) => t.name);
     const writes = list.result.tools.filter((t) => t.annotations?.readOnlyHint !== true);
     // New tokens draft by default (supabase/mcp-workflows.sql): drafts wait for Ben's tap in Brazework.
-    if (!names.includes("me") || writes.map((t) => t.name).sort().join() !== "draft_milestone,draft_post" || writes.some((t) => t.annotations?.destructiveHint !== false)) throw new Error(`tools: ${JSON.stringify(names)}`);
+    // Writes are drafts only: posts, milestones, and the actions shared with Ember (create_project, …), never posting.
+    const w = writes.map((t) => t.name);
+    if (!names.includes("me") || !["draft_milestone", "draft_post", "create_project", "add_teammate"].every((n) => w.includes(n)) || ["post_update", "log_milestone", "request_signature"].some((n) => w.includes(n)) || writes.some((t) => t.annotations?.destructiveHint !== false)) throw new Error(`tools: ${JSON.stringify(names)}`);
     const init = await (await mcp("initialize", { protocolVersion: "2025-06-18" })).json();
     if (init.result?.serverInfo?.name !== "brazework") throw new Error(`server name ${init.result?.serverInfo?.name}`);
     const me = await (await mcp("tools/call", { name: "me", arguments: {} })).json();
@@ -150,7 +152,7 @@ const { step, browser, as, go, summary, BASE } = require("./lib.cjs");
     if (!/wait for my yes\. Then call log_milestone/.test(posting) || !/brazework:\/\/playbooks\/aerospace/.test(posting)) throw new Error(`a posting token's /shipped: ${posting.slice(0, 200)}`);
     if (!/Save it with draft_milestone/.test(drafting)) throw new Error(`a drafting token's /shipped: ${drafting.slice(0, 200)}`);
     const res = (await (await mcp("resources/list", {}, cc)).json()).result?.resources ?? [];
-    if (res.length !== 21) throw new Error(`${res.length} resources`);
+    if (res.filter((r) => r.mimeType === "text/markdown").length !== 21 || !res.some((r) => r.uri === "ui://brazework/milestone-card")) throw new Error(`${res.length} resources: ${res.map((r) => r.uri).slice(-3).join()}`);
     const md = (await (await mcp("resources/read", { uri: "brazework://playbooks/data-ai" }, cc)).json()).result?.contents?.[0]?.text ?? "";
     if (!md.startsWith("# Data & AI") || !md.includes("Weights & Biases")) throw new Error(`playbook: ${md.slice(0, 80)}`);
   }, ben);
@@ -188,9 +190,12 @@ const { step, browser, as, go, summary, BASE } = require("./lib.cjs");
     if (rows !== `1|GitHub Actions|Merged: ${prTitle}`) throw new Error(`drafts: ${rows}`);
   }, ben);
 
-  await step("Today says a draft is waiting; Ben edits it on /drafts and sends it to Rocketry Club; Maya sees it via GitHub Actions", async () => {
+  await step("Home says a draft is waiting; Ben edits it on /drafts and sends it to Rocketry Club; Maya sees it via GitHub Actions", async () => {
     await go(ben, "/feed");
-    await ben.getByRole("region", { name: "Waiting on you" }).getByRole("link", { name: /1 draft from your tools/ }).click();
+    // Today's triage (daily-triage.sql) lists it; editing happens on /drafts, through the card's Edit link.
+    const today = ben.getByRole("region", { name: "Your tools noticed 1 thing" });
+    await today.getByText("acme/rig #12 merged").waitFor({ timeout: 15000 });
+    await today.getByRole("link", { name: "Edit" }).click();
     await ben.waitForURL(/\/drafts/);
     const card = ben.locator("article").filter({ hasText: "via GitHub Actions" }).first();
     await card.getByText("acme/rig #12 merged").waitFor({ timeout: 15000 });
@@ -223,6 +228,101 @@ const { step, browser, as, go, summary, BASE } = require("./lib.cjs");
     const off = await (await mcp("tools/call", ask, cc)).json();
     if (!off.result?.isError || !/email isn't available/.test(off.result.content[0].text)) throw new Error(`with email off: ${JSON.stringify(off).slice(0, 200)}`);
     if (psql(`select count(*) from public.milestone_vouches where milestone_id = '${id}'`) !== "0") throw new Error("an ask was left waiting");
+  }, ben);
+
+  // ---------- Intents shared with Ember (supabase/tool-actions.sql, lib/tool-actions.ts) ----------
+  const call = async (name, args, t) => (await (await mcp("tools/call", { name, arguments: args }, t)).json()).result;
+  const stamp = Date.now() % 100000;
+  await step("intents: a drafting token's new project and teammate wait on /drafts as Ember's cards; Ben confirms one and dismisses the other", async () => {
+    const proj = await call("create_project", { title: `Hopper drone ${stamp}`, summary: "A tethered hopper to test the engine gimbal.", tags: ["Aerospace", "Not a topic"], link: "https://github.com/ben/hopper" }, readOnly);
+    if (proj?.isError || proj.structuredContent?.drafted !== true || !/\/drafts$/.test(proj.structuredContent.open ?? "") || !/as a card/.test(proj.structuredContent.next ?? "")) throw new Error(`create_project as a draft: ${JSON.stringify(proj).slice(0, 240)}`);
+    const mate = await call("add_teammate", { project_id: "p1", person_id: process.env.JOSH_ID }, readOnly);
+    if (mate?.isError || mate.structuredContent?.drafted !== true) throw new Error(`add_teammate as a draft: ${JSON.stringify(mate).slice(0, 240)}`);
+    if (psql(`select count(*) from public.projects where title = 'Hopper drone ${stamp}'`) !== "0") throw new Error("a draft made the project before Ben said yes");
+    await go(ben, "/drafts");
+    const card = ben.getByRole("group", { name: "Add a project from Cursor" });
+    await card.getByLabel("Project title").waitFor({ timeout: 15000 });
+    if ((await card.getByLabel("Project title").inputValue()) !== `Hopper drone ${stamp}`) throw new Error("the card doesn't show the drafted title");
+    await card.getByRole("button", { name: "Confirm" }).click();
+    await card.getByText("Added to your profile").waitFor({ timeout: 15000 });
+    if (psql(`select owner_id || '|' || array_to_string(tags, ',') from public.projects where title = 'Hopper drone ${stamp}'`) !== `${process.env.BEN_ID}|Aerospace`) throw new Error("the confirmed project isn't Ben's, with the app's topics only");
+    const team = ben.getByRole("group", { name: "Add a teammate from Cursor" });
+    await team.getByText("Josh Menzies").waitFor();
+    await team.getByRole("button", { name: "Dismiss" }).click();
+    await ben.getByText("Dismissed. Nothing was saved.").waitFor({ timeout: 10000 });
+    const settled = psql(`select (select status from public.tool_drafts where kind = 'project' and payload->>'title' = 'Hopper drone ${stamp}') || '|' || (select string_agg(status, ',') from public.tool_drafts where kind = 'teammate' and user_id = '${process.env.BEN_ID}')`);
+    if (settled !== "posted|dismissed") throw new Error(`the drafts weren't settled: ${settled}`);
+    if (psql(`select count(*) from public.project_members where project_id = 'p1' and uid = '${process.env.JOSH_ID}'`) !== "0") throw new Error("a dismissed teammate was added");
+  }, ben);
+
+  await step("intents: with Ben's yes, Claude Code adds a project, updates its summary and specs, and adds Josh from his club; Cara (no shared club) is refused with how to fix it", async () => {
+    const made = (await call("create_project", { title: `Thrust stand v2 ${stamp}`, summary: "Load cell, 2 kN.", status: "completed", year: "2026" }, cc)).structuredContent;
+    if (made?.drafted !== false || !/\/projects\//.test(made.open ?? "") || !/log_milestone with project_id/.test(made.next ?? "")) throw new Error(`create_project: ${JSON.stringify(made).slice(0, 240)}`);
+    const edit = (await call("update_project", { project_id: made.id, summary: "Load cell, 2 kN, 1 kHz logging.", specs: [{ label: "Range", value: "2 kN" }] }, cc)).structuredContent;
+    if (!/Saved \(summary, specs\)/.test(edit?.next ?? "")) throw new Error(`update_project: ${JSON.stringify(edit).slice(0, 240)}`);
+    const josh = (await call("add_teammate", { project_id: made.id, person_id: process.env.JOSH_ID }, cc)).structuredContent;
+    if (!/Josh Menzies is on/.test(josh?.next ?? "")) throw new Error(`add_teammate: ${JSON.stringify(josh).slice(0, 240)}`);
+    if (psql(`select p.summary || '|' || d.specs::text || '|' || (select role from public.project_members where project_id = p.id and uid = '${process.env.JOSH_ID}') from public.projects p join public.project_details d on d.project_id = p.id where p.id = '${made.id}'`) !== `Load cell, 2 kN, 1 kHz logging.|[{"label": "Range", "value": "2 kN"}]|member`) throw new Error("the project wasn't saved as asked");
+    const caraId = psql(`select id from auth.users where email = 'cara@forge.test'`);
+    const no = await call("add_teammate", { project_id: made.id, person_id: caraId }, cc);
+    if (!no?.isError || !/aren't in any of your clubs/.test(no.content[0].text) || !/search/.test(no.content[0].text)) throw new Error(`a stranger was added, or the refusal doesn't say how to fix it: ${JSON.stringify(no).slice(0, 200)}`);
+    // Leave Ben's projects as the later journeys expect them (u-build reads "Your projects").
+    psql(`delete from public.projects where title in ('Hopper drone ${stamp}', 'Thrust stand v2 ${stamp}')`);
+  }, ben);
+
+  await step("intents: Ben asks for a spot at Rocketry Club's build night; the draft waits as Ember's RSVP card, he confirms, then Claude Code gives the spot back", async () => {
+    const ev = `mcp-ev-${stamp}`;
+    psql(`insert into public.events (id, community_id, title, type, format, topic, location, starts_at, ends_at) values ('${ev}', 'rkt', 'Build night ${stamp}', 'Workshop', 'In person', 'Aerospace', 'Hangar 2', now() + interval '2 days', now() + interval '2 days 2 hours')`);
+    const listed = (await call("upcoming_events", { days: 7 }, readOnly)).structuredContent?.items ?? [];
+    if (!listed.some((e) => e.id === ev)) throw new Error("upcoming_events doesn't list the build night");
+    const d = (await call("rsvp_event", { event_id: ev }, readOnly)).structuredContent;
+    if (d?.drafted !== true) throw new Error(`rsvp_event as a draft: ${JSON.stringify(d).slice(0, 200)}`);
+    await go(ben, "/drafts");
+    const card = ben.getByRole("group", { name: "RSVP to an event from Cursor" });
+    await card.getByText(`Build night ${stamp}`).waitFor({ timeout: 15000 });
+    await card.getByRole("button", { name: "Confirm" }).click();
+    await card.getByText("You're going").waitFor({ timeout: 15000 });
+    if (psql(`select count(*) from public.event_rsvps where event_id = '${ev}' and user_id = '${process.env.BEN_ID}'`) !== "1") throw new Error("Ben isn't going after confirming");
+    const back = (await call("rsvp_event", { event_id: ev, going: false }, cc)).structuredContent;
+    if (back?.status !== "not going" || !/given back/.test(back.next ?? "") || !back.open?.endsWith(`/events/${ev}`)) throw new Error(`taking the RSVP back: ${JSON.stringify(back).slice(0, 200)}`);
+    const twice = await call("rsvp_event", { event_id: ev, going: false }, cc);
+    if (!twice?.isError || !/nothing to cancel/.test(twice.content[0].text)) throw new Error("a second take-back wasn't refused clearly");
+    if (psql(`select rsvp_count from public.events where id = '${ev}'`) !== "0") throw new Error("the count didn't go back down");
+    psql(`delete from public.events where id = '${ev}'`); // leave Rocketry's calendar as later journeys expect it
+  }, ben);
+
+  await step("intents: Ben's assistant reads Josh's message and drafts a reply; it waits as Ember's message card and goes only when Ben confirms. Claude Code joins a club and accepts an invite", async () => {
+    const conv = psql(`begin; select set_config('request.jwt.claim.sub', '${process.env.JOSH_ID}', true) is not null; select public.start_conversation('${process.env.BEN_ID}'); commit;`).split("\n").filter((l) => /^[0-9a-f-]{36}$/.test(l))[0];
+    psql(`insert into public.messages (conversation_id, sender_id, body) values ('${conv}', '${process.env.JOSH_ID}', 'Can you look at my thrust curve before Friday? ${stamp}')`);
+    const inbox = (await call("my_inbox", {}, readOnly)).structuredContent?.items ?? [];
+    const row = inbox.find((c) => c.conversation_id === conv);
+    // A request if they've never talked; an ordinary conversation if an earlier journey connected them.
+    if (!row || !["request to you", "conversation"].includes(row.kind) || !row.unread || row.last_from !== "them" || !row.url?.startsWith("http")) throw new Error(`my_inbox: ${JSON.stringify(inbox).slice(0, 240)}`);
+    const thread = (await call("my_inbox", { conversation_id: conv }, readOnly)).structuredContent;
+    if (thread?.messages?.[0]?.from !== "them") throw new Error(`the conversation: ${JSON.stringify(thread).slice(0, 200)}`);
+    const before = psql(`select count(*) from public.messages where conversation_id = '${conv}'`); // an earlier journey may have talked here already
+    const reply = (await call("draft_reply", { conversation_id: conv, body: `Sure, send it over. ${stamp}` }, cc)).structuredContent;
+    if (reply?.drafted !== true || !/press Confirm to send it/.test(reply.next ?? "")) throw new Error(`draft_reply (even with a token that posts) must be a draft: ${JSON.stringify(reply).slice(0, 200)}`);
+    if (psql(`select count(*) from public.messages where conversation_id = '${conv}'`) !== before) throw new Error("a reply was sent before Ben confirmed");
+    await go(ben, "/drafts");
+    const card = ben.getByRole("group", { name: "Send a message from Claude Code" });
+    await card.getByText("Josh Menzies").waitFor({ timeout: 15000 });
+    await card.getByRole("button", { name: "Confirm" }).click();
+    await card.getByText("Sent", { exact: true }).waitFor({ timeout: 15000 });
+    if (psql(`select sender_id from public.messages where conversation_id = '${conv}' and body = 'Sure, send it over. ${stamp}'`) !== process.env.BEN_ID) throw new Error("Ben's confirmed reply wasn't sent as Ben");
+    const club = `mcp-club-${stamp}`, closed = `mcp-closed-${stamp}`, code = `${stamp}`.padStart(16, "a").slice(-16).replace(/[^0-9a-f]/g, "a");
+    psql(`insert into public.communities (id, name, type, privacy) values ('${club}', 'Hopper Lab ${stamp}', 'project', 'public'), ('${closed}', 'Closed Lab ${stamp}', 'project', 'approval');
+          insert into public.community_members (community_id, uid, role) values ('${club}', '${process.env.JOSH_ID}', 'owner'), ('${closed}', '${process.env.JOSH_ID}', 'owner');
+          insert into public.community_invites (code, community_id, created_by) values ('${code}', '${closed}', '${process.env.JOSH_ID}');`);
+    const joined = (await call("join_club", { club_id: club }, cc)).structuredContent;
+    if (joined?.status !== "joined" || !/The member is in Hopper Lab/.test(joined.next ?? "")) throw new Error(`join_club: ${JSON.stringify(joined).slice(0, 200)}`);
+    const asked = (await call("join_club", { club_id: closed }, cc)).structuredContent;
+    if (asked?.status !== "requested") throw new Error(`asking to join a club that approves members: ${JSON.stringify(asked).slice(0, 200)}`);
+    psql(`delete from public.community_requests where community_id = '${closed}'`);
+    const inv = (await call("accept_invite", { invite: `${BASE}/join/${code}` }, cc)).structuredContent;
+    if (inv?.status !== "joined") throw new Error(`accept_invite: ${JSON.stringify(inv).slice(0, 200)}`);
+    if (psql(`select count(*) from public.community_members where uid = '${process.env.BEN_ID}' and community_id in ('${club}', '${closed}')`) !== "2") throw new Error("Ben isn't in both clubs");
+    psql(`delete from public.communities where id in ('${club}', '${closed}')`); // Ben's clubs as later journeys expect them
   }, ben);
 
   await step("FIX-92: a club's Integrations tab shows how work comes in (GitHub, members' AI tools), and no Discord", async () => {

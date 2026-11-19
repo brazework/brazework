@@ -3,6 +3,7 @@ import { MessageSquare, Send, Users } from "lucide-react";
 import Link from "next/link";
 import { Suspense } from "react";
 import { Avatar } from "@/components/ui";
+import { List, ListRow } from "@/components/app/list";
 import { dbFeatures } from "@/lib/db-features";
 import { getViewer } from "@/lib/supabase/server";
 
@@ -50,32 +51,26 @@ async function Starts() {
       <Intro />
       {rooms.length > 0 && (
         <section className="mt-8">
-          <h2 className="text-xs font-medium tracking-wide text-faint uppercase">Your club chats</h2>
+          <h2 className="mb-2 text-sm font-semibold">Your club chats</h2>
           {/* One column: this panel is narrow even on wide screens, and two columns cut club names off. */}
-          <ul className="mt-2 grid grid-cols-1 gap-2">
+          <List label="Your club chats">
             {rooms.map((c) => (
-              <li key={c.id}>
-                <Link href={`/messages/g/${c.id}`} className="flex items-center gap-3 rounded-2xl border border-line bg-surface p-3 transition hover:bg-hover">
-                  <span className="bg-accent-grad grid size-9 shrink-0 place-items-center rounded-xl text-on-accent"><Users className="size-4" /></span>
-                  <span className="min-w-0"><span className="block truncate text-sm font-medium">{c.title}</span><span className="block truncate text-xs text-muted">{c.subtitle}</span></span>
-                </Link>
-              </li>
+              <ListRow key={c.id} href={`/messages/g/${c.id}`} title={c.title} meta={c.subtitle}
+                leading={<span className="grid size-9 place-items-center rounded-lg bg-surface-2 text-text-2"><Users className="size-4" /></span>} />
             ))}
-          </ul>
+          </List>
         </section>
       )}
       {people.length > 0 && (
         <section className="mt-6">
-          <h2 className="text-xs font-medium tracking-wide text-faint uppercase">People in your clubs</h2>
-          <ul className="mt-2 flex flex-col gap-1">
+          <h2 className="mb-2 text-sm font-semibold">People in your clubs</h2>
+          <List label="People in your clubs">
             {people.map((p) => (
-              <li key={p.uid} className="flex items-center gap-3 rounded-2xl px-2 py-2 transition hover:bg-hover">
-                <Avatar first={p.first_name} last={p.last_name} size={36} />
-                <span className="min-w-0 flex-1"><span className="block truncate text-sm font-medium">{`${p.first_name} ${p.last_name}`.trim()}</span>{p.headline && <span className="block truncate text-xs text-muted">{p.headline}</span>}</span>
-                <Link href={`/messages/new?to=${p.uid}`} className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg border border-line px-3 text-xs font-medium transition hover:bg-surface"><Send className="size-3.5" /> Message</Link>
-              </li>
+              <ListRow key={p.uid} title={`${p.first_name} ${p.last_name}`.trim()} meta={p.headline || undefined}
+                leading={<Avatar first={p.first_name} last={p.last_name} size={36} />}
+                trailing={<Link href={`/messages/new?to=${p.uid}`} className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-line px-3 text-xs font-medium transition hover:border-line-strong"><Send className="size-3.5" /> Message</Link>} />
             ))}
-          </ul>
+          </List>
         </section>
       )}
     </div>

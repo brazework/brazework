@@ -1,6 +1,7 @@
 import { cache } from "react";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import { rank } from "@/lib/communities";
+import { isGoalKind } from "@/lib/goals";
 import { dbFeatures } from "@/lib/db-features";
 import type { HostedEvent } from "@/lib/events";
 import { buildStreak, weekStart, type Streak } from "@/lib/streak";
@@ -55,6 +56,7 @@ async function loadWeekInput(
   }
   const next = events.filter((e) => going.has(e.id) && Date.parse(e.starts_at) > now && Date.parse(e.starts_at) - now < 7 * 864e5)[0];
   const v = viewers.data as { total?: number; companies?: string[] } | null;
+  const goal = f.goals ? await loadGoalFor(supabase, me, asService) : null;
   return {
     clubPosts: posts.count ?? 0,
     verifiedInClubs: [...byClub.entries()].map(([club, n]) => ({ club, n })).sort((a, b) => b.n - a.n),
@@ -66,7 +68,24 @@ async function loadWeekInput(
     hasProject: ((projects.data ?? []) as unknown[]).length > 0,
     viewers: v ? { total: v.total ?? 0, companies: v.companies ?? [] } : undefined,
     hasMilestone: (anyMilestone.count ?? 0) > 0,
+    goal,
   };
+}
+
+// Your goal and its record, for the check-in (lib/goals.ts). Who looked this month for the path comes
+// from viewers_for(member) in the digest (service key: auth.uid() is null), my_viewers() otherwise.
+async function loadGoalFor(supabase: SupabaseClient, me: string, asService: boolean): Promise<WeekInput["goal"]> {
+  const { data } = await supabase.from("member_goals").select("kind, target").eq("uid", me).eq("status", "active").order("created_at", { ascending: false }).limit(1).maybeSingle();
+  const g = data as { kind: string; target: string } | null;
+  if (!g || !isGoalKind(g.kind)) return null;
+  const [projects, signed, waiting, month] = await Promise.all([
+    supabase.from("projects").select("id", { count: "exact", head: true }).eq("owner_id", me),
+    supabase.from("milestones").select("id", { count: "exact", head: true }).eq("owner_id", me).eq("status", "verified"),
+    supabase.from("milestones").select("id", { count: "exact", head: true }).eq("owner_id", me).eq("status", "pending"),
+    asService ? supabase.rpc("viewers_for", { p_user: me, p_days: 30 }) : supabase.rpc("my_viewers", { p_days: 30 }),
+  ]);
+  const looked = Number((month.data as { total?: number } | null)?.total ?? 0);
+  return { kind: g.kind, target: g.target, record: { projects: projects.count ?? 0, signed: signed.count ?? 0, waiting: waiting.count ?? 0, looked: Number.isFinite(looked) ? looked : 0 } };
 }
 
 // The same, for code that doesn't already have the member's clubs and RSVPs at hand: Home's weekly

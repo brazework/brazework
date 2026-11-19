@@ -22,9 +22,9 @@ export function ExtrasCard({ openTo, location, links, own }: { openTo: string[];
 
   if (!editing)
     return (
-      <section className="glass-card rounded-3xl p-5">
+      <section className="border border-line bg-surface rounded-2xl p-5">
         <div className="flex items-center justify-between">
-          <h2 className="text-xs font-medium tracking-wide text-faint uppercase">Open to</h2>
+          <h2 className="text-xs font-medium text-muted">Open to</h2>
           {own && <button type="button" onClick={() => setEditing(true)} aria-label="Edit open to, location and links" className="grid size-7 place-items-center rounded-full text-faint transition hover:bg-hover hover:text-text"><Pencil className="size-3.5" /></button>}
         </div>
         {openTo.length > 0 ? (
@@ -40,14 +40,14 @@ export function ExtrasCard({ openTo, location, links, own }: { openTo: string[];
     );
 
   return (
-    <form onSubmit={submitWithoutReset(action)} className="glass-card flex flex-col gap-4 rounded-3xl p-5">
+    <form onSubmit={submitWithoutReset(action)} className="border border-line bg-surface flex flex-col gap-4 rounded-2xl p-5">
       <fieldset>
         <legend className="text-sm font-medium">Open to <span className="font-normal text-faint">(up to 4)</span></legend>
         <div className="mt-2 flex flex-wrap gap-1.5">
           {OPEN_TO.map((o) => {
             const on = picked.includes(o.id);
             return (
-              <label key={o.id} className={cn("cursor-pointer rounded-full border px-2.5 py-1 text-xs transition has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-accent", on ? "border-transparent bg-accent-grad text-on-accent" : "border-line text-muted hover:border-line-strong hover:text-text", !on && picked.length >= 4 && "pointer-events-none opacity-40")}>
+              <label key={o.id} className={cn("cursor-pointer rounded-full border px-2.5 py-1 text-xs transition has-[:focus-visible]:ring-2 has-[:focus-visible]:ring-accent", on ? "border-transparent bg-text text-surface" : "border-line text-muted hover:border-line-strong hover:text-text", !on && picked.length >= 4 && "pointer-events-none opacity-40")}>
                 <input type="checkbox" name="openTo" value={o.id} checked={on} onChange={() => setPicked((p) => (on ? p.filter((x) => x !== o.id) : [...p, o.id]))} className="sr-only" />
                 {o.label}
               </label>

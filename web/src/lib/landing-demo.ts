@@ -10,10 +10,10 @@ export const stageTitle = (build: string) => build || EXAMPLE_BUILD;
 
 // ── The app tour ────────────────────────────────────────────────────────────────────────────────
 export const PLACES = [
-  { id: "today", label: "Today", about: "Your next step, and what your clubs posted." },
-  { id: "build", label: "Build", about: "Your projects and the milestones you hit on them." },
-  { id: "club", label: "Club", about: "Where your club or study group runs, and where officers sign work." },
-  { id: "proof", label: "Proof", about: "Your public record: only signed work, with who signed it." },
+  { id: "today", label: "Home", about: "Your next step, and what your clubs posted." },
+  { id: "build", label: "Projects", about: "Your projects and the milestones you hit on them." },
+  { id: "club", label: "Clubs", about: "Where your club or study group runs, and where officers sign work." },
+  { id: "proof", label: "Record", about: "Your public record: only signed work, with who signed it." },
   { id: "inbox", label: "Inbox", about: "Messages. Recruiters and strangers wait in Requests until you accept." },
 ] as const;
 export type Place = (typeof PLACES)[number]["id"];
@@ -26,12 +26,12 @@ export function tourHint(place: Place, t: Tour): { text: string; go: Place | nul
   if (!t.verified) {
     return place === "club"
       ? { text: "You're the officer here. Press Verify on Maya's milestone.", go: null, done: false }
-      : { text: "Try it: open Club and sign Maya's milestone.", go: "club", done: false };
+      : { text: "Try it: open Clubs and sign Maya's milestone.", go: "club", done: false };
   }
   if (!t.accepted) {
     return place === "inbox"
       ? { text: "A company found the signed work. Accept the request.", go: null, done: false }
-      : { text: "Signed. It's on Maya's Proof now, and a company noticed: open Inbox.", go: "inbox", done: false };
+      : { text: "Signed, so Maya's Record shows it now, and a company noticed: open Inbox.", go: "inbox", done: false };
   }
   return { text: "That's the loop: built, signed, found.", go: null, done: true };
 }

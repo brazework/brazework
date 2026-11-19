@@ -77,7 +77,7 @@ export function ProjectCard({ project, own, interests, copilot = false, clubs, v
   const act = (fn: () => Promise<ProjectState>) => start(async () => { const r = await fn(); setMsg(r.ok ? r.message : r.message); });
 
   return (
-    <article className="glass-card group relative flex h-full flex-col overflow-hidden rounded-3xl p-5 transition duration-300">
+    <article className="border border-line bg-surface group relative flex h-full flex-col overflow-hidden rounded-2xl p-5 transition duration-300">
       <div className="flex items-start justify-between gap-3">
         <h3 className="text-lg font-semibold tracking-tight"><Link href={`/projects/${project.id}`} className="hover:underline">{project.title}</Link></h3>
         {verified > 0 && <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[color-mix(in_oklab,var(--ok)_14%,transparent)] px-2 py-0.5 text-[11px] font-medium text-ok"><BadgeCheck className="size-3.5" /> {verified} verified</span>}
@@ -140,7 +140,7 @@ export function ProjectGrid({ projects, own, interests, copilot = false, clubs, 
         <div role="radiogroup" aria-label="Filter projects" className="mb-4 inline-flex gap-1 rounded-full bg-surface-2 p-1">
           {FILTERS.map((f) => (
             <button key={f.id} type="button" role="radio" aria-checked={filter === f.id} onClick={() => setFilter(f.id)} className={cn("relative rounded-full px-3.5 py-1.5 text-xs font-medium transition", filter === f.id ? "text-on-accent" : "text-muted hover:text-text")}>
-              {filter === f.id && <motion.span layoutId="project-filter" className="bg-accent-grad absolute inset-0 rounded-full" transition={{ type: "spring", stiffness: 420, damping: 34 }} />}
+              {filter === f.id && <motion.span layoutId="project-filter" className="bg-text absolute inset-0 rounded-full" transition={{ type: "spring", stiffness: 420, damping: 34 }} />}
               <span className="relative">{f.label} · {count(f.id)}</span>
             </button>
           ))}
@@ -268,7 +268,7 @@ function ProjectDialog({ project, interests, onClose, copilot = false, stack = f
         <div className="flex flex-wrap items-end gap-3">
           <div role="group" aria-label="Status" className="flex gap-1.5">
             {(["in_progress", "completed"] as const).map((s) => (
-              <button key={s} type="button" aria-pressed={status === s} onClick={() => setStatus(s)} className="rounded-full border border-line px-3.5 py-1.5 text-sm text-muted transition aria-pressed:border-transparent aria-pressed:bg-accent-grad aria-pressed:text-on-accent">
+              <button key={s} type="button" aria-pressed={status === s} onClick={() => setStatus(s)} className="rounded-full border border-line px-3.5 py-1.5 text-sm text-muted transition aria-pressed:border-transparent aria-pressed:bg-text aria-pressed:text-surface">
                 {s === "completed" ? "Completed" : "In progress"}
               </button>
             ))}
@@ -301,7 +301,7 @@ function ProjectDialog({ project, interests, onClose, copilot = false, stack = f
             {ai.busy ? (
               <button type="button" onClick={ai.stop} className="h-8 rounded-lg border border-line px-3 text-xs">Stop</button>
             ) : (
-              <button type="button" onClick={writeUp} className="bg-accent-grad inline-flex h-8 items-center gap-1.5 rounded-lg px-3 text-xs font-medium text-on-accent"><Sparkles className="size-3.5" /> {details.trim() ? "Polish it with Copilot" : "Write it with Copilot"}</button>
+              <button type="button" onClick={writeUp} className="bg-text inline-flex h-8 items-center gap-1.5 rounded-lg px-3 text-xs font-medium text-surface"><Sparkles className="size-3.5" /> {details.trim() ? "Polish it with Copilot" : "Write it with Copilot"}</button>
             )}
             <span className="text-xs text-faint">Uses your title, summary and notes. Check every fact before saving.</span>
             {ai.error && <p role="alert" className="w-full text-xs text-danger">{ai.error}</p>}

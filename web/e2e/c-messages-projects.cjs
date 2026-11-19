@@ -134,7 +134,7 @@ async function saved(page, path, text) {
     await josh.fill('input[name="title"]', "Measured lift on 3 fin shapes");
     await josh.fill('input[name="evidence"]', "https://github.com/josh/wind-tunnel/commit/3f2a9c1");
     // Who can sign is said before he asks (lib/signers.ts): the club's officers, not him.
-    await josh.getByText(/can sign this\. They'll see it on Today\./).waitFor({ timeout: 10000 });
+    await josh.getByText(/can sign this\. They'll see it on Home\./).waitFor({ timeout: 10000 });
     await josh.getByRole("button", { name: /Ask for verification/ }).click();
     await josh.getByText(/Measured lift on 3 fin shapes/).first().waitFor({ timeout: 15000 });
   }, josh);

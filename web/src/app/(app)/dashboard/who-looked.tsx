@@ -5,11 +5,13 @@ import { PLUS } from "@/lib/pricing";
 
 // Companies that looked at your profile (supabase/money.sql my_company_viewers()): the last 7 days on
 // Free, 90 with Plus. The database decides the window, so the limit isn't only in the page. Named by
-// company, never by person. On Free, one quiet line says what Plus adds; nothing else nags.
+// company, never by person. On Free, `hidden` is the real number of other verified companies from the
+// last 90 days (plus-teaser.sql): one quiet line says so and links to Plus. With nothing hidden, no line.
 export async function WhoLooked({ supabase }: { supabase: Awaited<ReturnType<typeof createClient>> }) {
   const { data, error } = await supabase.rpc("my_company_viewers", { p_days: 90 });
   if (error || !data) return null;
-  const r = data as { days: number; plus: boolean; companies: { name: string; at: string }[] };
+  const r = data as { days: number; plus: boolean; companies: { name: string; at: string }[]; hidden?: number };
+  const hidden = r.plus ? 0 : (r.hidden ?? 0);
   const day = (ts: string) => new Date(ts).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
   return (
     <section aria-labelledby="who-looked" className="mt-8 rounded-2xl border border-line bg-surface p-5">
@@ -27,7 +29,12 @@ export async function WhoLooked({ supabase }: { supabase: Awaited<ReturnType<typ
       ) : (
         <p className="mt-2 text-sm text-muted">No verified company has looked {r.days === 7 ? "this week" : `in the last ${r.days} days`}. Signed work is what they search for.</p>
       )}
-      {!r.plus && <p className="mt-3 text-xs text-muted">See every company from the last 90 days with <Link href="/plus" className="font-medium text-text underline-offset-4 hover:underline">{PLUS.name}</Link>.</p>}
+      {hidden > 0 && (
+        <p className="mt-3 text-sm text-muted">
+          <b className="font-medium text-text tabular-nums">{hidden}</b> more {hidden === 1 ? "company" : "companies"} looked in the last 90 days.{" "}
+          <Link href="/plus" className="font-medium text-text underline-offset-4 hover:underline">See who with {PLUS.name}</Link>
+        </p>
+      )}
     </section>
   );
 }

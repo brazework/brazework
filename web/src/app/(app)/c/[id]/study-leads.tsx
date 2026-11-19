@@ -29,7 +29,7 @@ export function StudyLeads({ cid, me, member, people }: { cid: string; me: strin
   };
   return (
     <section aria-label="Who led it" className="mt-4 rounded-3xl border border-line bg-surface p-4">
-      <h2 className="text-xs font-medium tracking-wide text-faint uppercase">Who led it?</h2>
+      <h2 className="text-xs font-medium text-muted">Who led it?</h2>
       {member && <p className="mt-1 text-sm text-text-2">Confirm the people who ran sessions. It goes on their profile as proof.</p>}
       <ul className="mt-3 flex flex-col gap-1">
         {[...shown].sort((a, b) => b.n - a.n).map((p) => (

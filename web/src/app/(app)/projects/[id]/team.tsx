@@ -64,12 +64,12 @@ export function TeamList({ projectId, people, candidates, manage, isOwner, roles
       {manage && (
         left.length ? (
           <div className="mt-1 flex flex-wrap items-center gap-2">
-            <select id="team-add" value={pick} onChange={(e) => setPick(e.target.value)} aria-label="Add someone" className={cn(selectPillCls, "min-w-0 flex-1")}>
+            <select id="team-add" value={pick} onChange={(e) => setPick(e.target.value)} aria-label="Add someone" className={cn(selectPillCls, "min-w-0 basis-full")}>
               <option value="">Add someone…</option>
               {left.map((c) => <option key={c.id} value={c.id}>{`${c.first} ${c.last}`.trim()}</option>)}
             </select>
             {roles && (
-              <select value={as} onChange={(e) => setAs(e.target.value as TeamRole)} aria-label="Add as" className={cn(selectPillCls, "w-auto shrink-0")}>
+              <select value={as} onChange={(e) => setAs(e.target.value as TeamRole)} aria-label="Add as" className={cn(selectPillCls, "min-w-0 flex-1")}>
                 <option value="member">as a teammate</option>
                 <option value="viewer">as a viewer</option>
                 {isOwner && <option value="admin">as an admin</option>}

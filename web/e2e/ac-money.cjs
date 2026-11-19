@@ -4,7 +4,8 @@
 // 2. /book signed out asks to log in and comes back; signed in, a pilot request lands in the admin
 //    queue with the account's email (none typed), and the founders see it on /admin.
 // 3. /plus: the waitlist, while Plus isn't on sale.
-// 4. Dashboard: companies that looked, 7 days on Free, with one quiet line about Plus.
+// 4. Dashboard: companies that looked, 7 days on Free; an older look from a verified company is
+//    counted, not named, in one quiet line that links to Plus (plus-teaser.sql).
 // 5. A public club's page offers "Sponsor this chapter" to visitors, not to its members.
 // 6. Find builders: a verified company's admin can ask for seats in one tap.
 const { execSync } = require("child_process");
@@ -61,11 +62,25 @@ const psql = (sql) => execSync(`docker exec -i forge-e2e-db psql -U postgres -h 
     if (await ben.getByRole("link", { name: "Sponsor this chapter" }).count()) throw new Error("a member was offered the sponsor line");
   }, ben);
 
-  await step("dashboard: companies that looked this week, and one quiet line about Plus", async () => {
-    await go(ben, "/dashboard");
-    await ben.getByRole("heading", { name: /Companies that looked/ }).waitFor({ timeout: 15000 });
-    await ben.getByText("last 7 days").waitFor();
-    await ben.getByRole("link", { name: "Plus" }).waitFor();
+  await step("dashboard: companies that looked this week, and an honest count of the older ones with Plus", async () => {
+    // A throwaway verified company, run by Maya, looked at Ben 20 days ago: outside Free's 7 days, so
+    // it's counted but not named. Removed afterwards so later journeys see the data they expect.
+    const seed = `insert into public.organizations (id, type, name, domain, verification_status) values ('e2e-teaser', 'company', 'Teaser Test Co', 'teaser-e2e.test', 'verified') on conflict do nothing;
+      insert into public.organization_admins (org_id, uid) select 'e2e-teaser', id from auth.users where email = 'maya@forge.test' on conflict do nothing;
+      insert into public.profile_views (profile_id, viewer, day, viewed_at)
+        select b.id, m.id, current_date - 20, now() - interval '20 days' from auth.users b, auth.users m
+         where b.email = 'ben@forge.test' and m.email = 'maya@forge.test' on conflict do nothing;`;
+    const unseed = `delete from public.profile_views where viewer = (select id from auth.users where email = 'maya@forge.test') and day = current_date - 20;
+      delete from public.organization_admins where org_id = 'e2e-teaser'; delete from public.organizations where id = 'e2e-teaser';`;
+    psql(seed);
+    try {
+      await go(ben, "/dashboard");
+      await ben.getByRole("heading", { name: /Companies that looked/ }).waitFor({ timeout: 15000 });
+      await ben.getByText("last 7 days").waitFor();
+      await ben.getByText(/more compan(y|ies) looked in the last 90 days/).waitFor();
+      await ben.getByRole("link", { name: "See who with Plus" }).waitFor();
+      if (await ben.getByText("Teaser Test Co").count()) throw new Error("Free named a company it should only count");
+    } finally { psql(unseed); }
   }, ben);
 
   await step("/plus while it isn't on sale: Ben joins the waitlist", async () => {

@@ -31,3 +31,36 @@ alter table public.milestones enable trigger user;
 insert into public.milestone_vouches (milestone_id, requested_by, email, relationship, token_hash)
 select 'demo-m2', priya, 'e.ruiz@stateu.edu', 'professor', repeat('9', 64) from d
 where not exists (select 1 from public.milestone_vouches where milestone_id = 'demo-m2');
+
+-- What the demo films needs to have something to act on (the MCP dry run, Nov 19): Priya in a club,
+-- upcoming events to RSVP to (including a company's intern session for /career_fair), and a recruiter's
+-- message request in her inbox to reply to.
+insert into public.community_members (community_id, uid, role) select 'rob', priya, 'member' from d on conflict do nothing;
+
+insert into public.events (id, community_id, org_id, title, description, type, format, location, topic, starts_at, ends_at, status, created_by) values
+  ('demo-e1', 'rob', null, 'Field robot build night', 'Bring your sensors: we''re mounting the crop camera on the field robot.', 'Workshop', 'In person', 'Engineering Lab 204', 'Robotics',
+     date_trunc('day', now()) + interval '2 days 18 hours', date_trunc('day', now()) + interval '2 days 21 hours', 'published', (select maya from d)),
+  ('demo-e2', 'rkt', null, 'Spring launch: fin can test flight', 'Launch day at the county field. Range safety briefing at 9.', 'Workshop', 'In person', 'County launch field', 'Rocketry',
+     date_trunc('day', now()) + interval '9 days 9 hours', date_trunc('day', now()) + interval '9 days 15 hours', 'published', (select maya from d))
+on conflict (id) do nothing;
+insert into public.events (id, community_id, org_id, title, description, type, format, location, topic, starts_at, ends_at, status, created_by)
+select 'demo-e3', null, o.id, 'Acme Aerospace intern info session', 'Meet the team hiring summer interns in avionics and ML. Bring a link to your signed work.', 'Career fair', 'Hybrid', 'Student Center, Room B', 'Careers',
+       date_trunc('day', now()) + interval '5 days 17 hours', date_trunc('day', now()) + interval '5 days 19 hours', 'published', (select maya from d)
+  from public.organizations o where o.name = 'Acme Aerospace' and o.type = 'company'
+on conflict (id) do nothing;
+
+-- Cara (Acme Aerospace) asks Priya to talk: a message request, started the way the app starts one.
+do $$
+declare cara uuid := (select id from auth.users where email = 'cara@forge.test');
+        priya uuid := (select id from auth.users where email = 'priya@forge.test');
+        c text;
+begin
+  if cara is null or priya is null then return; end if;
+  perform set_config('request.jwt.claim.sub', cara::text, true);
+  c := public.start_conversation(priya);
+  if not exists (select 1 from public.messages where conversation_id = c) then
+    insert into public.messages (conversation_id, sender_id, body)
+    values (c, cara, 'Hi Priya, I lead ML interns at Acme Aerospace. Your crop classifier on a $90 phone caught my eye. Open to a 15-minute call about our summer roles?');
+  end if;
+  perform set_config('request.jwt.claim.sub', '', true);
+end $$;

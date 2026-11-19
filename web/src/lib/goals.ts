@@ -33,7 +33,7 @@ export function goalPath(g: Pick<Goal, "kind" | "target">, r: Record_): { steps:
   const signed = Math.min(r.signed, k.target);
   const proven = r.signed >= k.target;
   const steps: Step[] = [
-    { key: "build", title: "Build", detail: built ? `${r.projects} ${r.projects === 1 ? "project" : "projects"} on your record` : "Add what you're working on", state: built ? "done" : "now" },
+    { key: "build", title: "Log your work", detail: built ? `${r.projects} ${r.projects === 1 ? "project" : "projects"} on your record` : "Add what you're working on", state: built ? "done" : "now" },
     { key: "sign", title: "Get it signed", detail: `${signed} of ${k.target} milestones signed by ${k.signers}${r.waiting ? ` · ${r.waiting} waiting` : ""}`, state: proven ? "done" : built ? "now" : "next" },
     { key: "found", title: "Get found", detail: r.looked ? `${r.looked} ${r.looked === 1 ? "person" : "people"} looked this month` : `Visible to ${k.looking} searching your field`, state: proven && r.looked > 0 ? "done" : proven ? "now" : "next" },
   ];
@@ -50,6 +50,6 @@ export function nextStep(g: Pick<Goal, "kind" | "target">, r: Record_): Next {
     const left = k.target - r.signed;
     return { text: `Log your next result as a milestone (${left} more to go) and ask ${k.signers} who saw it to sign it.`, href: "#projects", action: "Add a milestone" };
   }
-  if (r.looked === 0) return { text: `Your proof is ready. Send your page to ${k.looking} you'd like to work with; it's the link that replaces a résumé.`, href: "share", action: "Copy your link" };
+  if (r.looked === 0) return { text: `Your record is ready. Send your page to ${k.looking} you'd like to work with; it's the link that replaces a résumé.`, href: "share", action: "Copy your link" };
   return { text: `${r.looked} ${r.looked === 1 ? "person" : "people"} looked this month. Keep the log going weekly and answer your Requests.`, href: "/messages", action: "Open Requests" };
 }
