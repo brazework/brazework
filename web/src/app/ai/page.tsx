@@ -6,6 +6,7 @@ import { ThemeChrome } from "@/components/theme-chrome";
 import { Logo } from "@/components/ui";
 import { ASSISTANTS, COMMANDS, FIELDS, FLOW, FOR_EVERYONE, RULES, toolGroups } from "@/lib/ai-guide";
 import { ConnectSlot } from "@/components/connect/connect-live";
+import { LaneMoments } from "@/components/playbooks/lane-moments";
 
 export const metadata: Metadata = {
   title: "Connect your AI",
@@ -94,7 +95,7 @@ export default function AiGuidePage() {
 
         <section aria-labelledby="fields" className="mt-20">
           <h2 id="fields" className="text-2xl font-semibold tracking-tight">Your field</h2>
-          <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-muted">For each field: the tools people in it use and how your assistant reaches them, the moments worth recording, and who signs them. Pick yours.</p>
+          <p className="mt-3 max-w-2xl text-[15px] leading-relaxed text-muted">For each field: the tools people in it use and how your assistant reaches them, the moments worth recording, and who signs them, when you&apos;re studying and when you&apos;re working. Pick yours.</p>
           <nav aria-label="Fields" className="mt-6 flex flex-wrap gap-2">
             {FIELDS.map((f) => <a key={f.id} href={`#${f.id}`} className="inline-flex h-9 items-center rounded-lg border border-line bg-surface px-3 text-sm text-text-2 hover:border-line-strong">{f.field}</a>)}
           </nav>
@@ -109,13 +110,7 @@ export default function AiGuidePage() {
                       {f.tools.map((t) => <li key={t.name}><span className="font-medium">{t.name}</span> <span className="text-sm text-faint">{t.how}</span><span className="block text-muted">{t.reads}</span></li>)}
                     </ul>
                   </div>
-                  <div>
-                    <h4 className="text-sm font-medium text-faint">Worth recording</h4>
-                    <ul className="mt-2 flex flex-col gap-3 text-[15px]">
-                      {f.lanes.study.moments.map((m) => <li key={m.when}><span className="text-muted">{m.when}:</span> <span className="font-medium">&ldquo;{m.example}&rdquo;</span><span className="block text-sm text-faint">Proof: {m.evidence}</span></li>)}
-                    </ul>
-                    <p className="mt-4 text-[15px] text-muted">Signed by {f.lanes.study.signers}.</p>
-                  </div>
+                  <LaneMoments lanes={f.lanes} />
                 </div>
               </section>
             ))}

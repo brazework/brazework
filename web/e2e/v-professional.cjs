@@ -109,6 +109,19 @@ const { step, browser, go, closeTour, hydrated, summary } = require("./lib.cjs")
     if (!(await page.getByRole("radio", { name: "Working" }).isChecked())) throw new Error("the refused switch changed the account anyway");
   }, page);
 
+  // Playbook lanes (FIX-209): someone who works, in no club, sees what their assistant does for work.
+  await step("Your tools: the recipes open on Working, where a number becomes a hidden milestone", async () => {
+    await go(page, "/settings/tools");
+    const recipes = page.getByRole("region", { name: "Recipes for your field" });
+    const lanes = recipes.getByRole("group", { name: "Studying or working" });
+    await lanes.waitFor({ timeout: 15000 });
+    if ((await lanes.getByRole("button", { name: "Working" }).getAttribute("aria-pressed")) !== "true") throw new Error("a professional in no club should start on Working");
+    await recipes.getByText(/a number → a hidden milestone/).waitFor();
+    await lanes.getByRole("button", { name: "Studying" }).click();
+    await recipes.getByText(/a number → a result post/).waitFor();
+    if (await recipes.getByText(/a hidden milestone/).count()) throw new Error("Studying still says a hidden milestone");
+  }, page);
+
   summary();
   await b.close();
 })();

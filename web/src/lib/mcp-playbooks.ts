@@ -1,3 +1,4 @@
+import { laneFrom } from "@/lib/lanes";
 import { INTENT_PROMPTS, intentPromptText } from "@/lib/mcp-intent-prompts";
 
 // Field playbooks for Brazework's MCP server (docs/mcp-workflows.md): for each of the 20 fields the
@@ -14,7 +15,6 @@ import { INTENT_PROMPTS, intentPromptText } from "@/lib/mcp-intent-prompts";
 export type Connect = "official" | "community" | "files";
 export type PlaybookTool = { name: string; connect: Connect; reads: string };
 export type Moment = { when: string; becomes: "milestone" | "result" | "update"; example: string; evidence: string };
-export type Lane = "study" | "work";
 export type LaneContent = { moments: Moment[]; signers: string };
 export type Playbook = { id: string; field: string; tools: PlaybookTool[]; study: LaneContent; work: LaneContent };
 
@@ -342,30 +342,8 @@ export function playbookFor(field?: string | null): Playbook | undefined {
   return PLAYBOOKS.find((p) => norm(p.id) === k || norm(p.field) === k) ?? PLAYBOOKS.find((p) => k.length >= 4 && (norm(p.field).startsWith(k) || k.startsWith(norm(p.field))));
 }
 
-// Lanes (docs/superpowers/specs/2026-11-20-playbook-lanes-design.md): every playbook has a part for
-// studying and a part for working, and the lane belongs to the piece of work, not the person: an
-// intern's summer project is working, their rocketry is studying.
-export const LANES: Lane[] = ["study", "work"];
-/** What a person reads the lanes as; Settings names the two kinds of account the same way. */
-export const LANE_LABEL: Record<Lane, string> = { study: "Studying", work: "Working" };
-/** A lane from loosely typed words ("Working", " WORK ", "professional", "student"); undefined for anything else. */
-export function laneFrom(v?: string | null): Lane | undefined {
-  const k = (v ?? "").trim().toLowerCase();
-  if (k.startsWith("work") || k.startsWith("professional")) return "work";
-  if (k.startsWith("stud")) return "study";
-  return undefined;
-}
-/**
- * The lane to start from, by the rule Home already uses (clubPath, lib/guide-steps.ts): a student is
- * studying, a professional in no club is working. Undefined means ask: a professional who is in a club,
- * or an account type we weren't told. ("professional" is anyone without a school email, so it can't
- * mean "has an employer" by itself.)
- */
-export function defaultLane(accountType: string | null | undefined, clubs: number): Lane | undefined {
-  if (accountType === "student") return "study";
-  if (accountType === "professional" && clubs === 0) return "work";
-  return undefined;
-}
+// Lanes: the two parts of every playbook, studying and working (lib/lanes.ts).
+export { LANES, LANE_LABEL, defaultLane, laneFrom, type Lane } from "@/lib/lanes";
 
 export const PLAYBOOK_INDEX_URI = "brazework://playbooks";
 export const playbookUri = (p: Playbook) => `${PLAYBOOK_INDEX_URI}/${p.id}`;

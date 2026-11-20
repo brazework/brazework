@@ -173,6 +173,16 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
     await page.getByRole("navigation", { name: "Fields" }).getByRole("link", { name: "Medicine" }).click();
     await page.getByRole("heading", { name: "Medicine", exact: true }).waitFor();
     if (!(await page.locator("#medicine").isVisible())) throw new Error("the Medicine section isn't shown");
+    // Each field has a part for studying and a part for working (FIX-209). The page opens on Studying.
+    const mech = page.locator("#mechanical");
+    await mech.getByText("Ran two hours under load without slipping").waitFor();
+    if (await mech.getByText("Housing rev D released").count()) throw new Error("/ai opened on Working");
+    await mech.getByRole("group", { name: "Studying or working" }).getByRole("button", { name: "Working" }).click();
+    await mech.getByText("Housing rev D released").waitFor();
+    await mech.getByText(/manufacturing engineer/).waitFor();
+    if (await mech.getByText("Ran two hours under load without slipping").count()) throw new Error("the studying moment still shows under Working");
+    // Another field's switch is its own: Medicine is still on Studying.
+    if ((await page.locator("#medicine").getByRole("button", { name: "Studying" }).getAttribute("aria-pressed")) !== "true") throw new Error("pressing Working in one field changed another");
   }, page);
 
   // Reduced motion: the whole sequence is simply there.
