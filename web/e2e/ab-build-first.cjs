@@ -40,7 +40,7 @@ const psql = (sql) => execSync(`docker exec -i forge-e2e-db psql -U postgres -h 
     await go(page, "/?ref=producthunt");
     await page.getByRole("status", { name: "Welcome from Product Hunt" }).waitFor({ timeout: 15000 });
     // Product Hunt's crowd ships software: the hero starts on the engineer's story (lib/launch.ts).
-    await page.getByRole("group", { name: "Ways people use Brazework" }).getByRole("button", { name: /^Engineer/, pressed: true }).waitFor({ timeout: 15000 });
+    await page.getByRole("group", { name: "Ways people use Brazework" }).getByRole("button", { name: /^Software/, pressed: true }).waitFor({ timeout: 15000 });
     const box = page.locator("#hero-build");
     await hydrated(box);
     await box.fill(BUILD);

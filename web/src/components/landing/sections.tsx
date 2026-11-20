@@ -45,8 +45,8 @@ export function Stages() {
   return (
     <section id="who" className="scroll-mt-20 border-t border-line py-16 sm:py-24">
       <div className={WRAP}>
-        <h2 className={H2}>One record, wherever you build.</h2>
-        <p className={LEAD}>A signature needs one thing: someone who saw it happen. Who that is changes as you go. The record stays yours.</p>
+        <h2 className={H2}>Who signs it? Whoever saw it.</h2>
+        <p className={LEAD}>At school that&apos;s your club or a professor. At work, your manager or tech lead. On your own, your client. They sign from their work or university email, and the record stays yours when you move on.</p>
         <ul className="mt-10 grid grid-cols-1 overflow-hidden rounded-[1.25rem] border border-line bg-surface md:grid-cols-3 md:divide-x md:divide-line">
           {STAGES.map((s, i) => (
             <li key={s.when} className={cn("flex flex-col p-6 sm:p-7", i > 0 && "border-t border-line md:border-t-0")}>
@@ -116,8 +116,8 @@ export function Why() {
     <section id="why" className={cn(SEC, BAND)}>
       <div className={cn(WRAP, "grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:gap-16")}>
         <div>
-          <h2 className={H2}><span className="block">AI made claims free.</span> Proof is what&apos;s scarce now.</h2>
-          <p className={LEAD}>Anyone can generate a polished résumé in seconds. What still counts is work someone else saw happen, and today that&apos;s buried in group chats and lab notebooks nobody outside ever sees.</p>
+          <h2 className={H2}><span className="block">Anyone can write a great résumé with AI.</span> Proof of the work is rare.</h2>
+          <p className={LEAD}>What still counts is work someone else saw you do. Today that lives in pull requests, test logs, lab notebooks and group chats that nobody outside ever sees. Brazework puts it in one place, signed by the people who were there.</p>
         </div>
         <dl className="flex flex-col divide-y divide-line border-y border-line self-start">
           {FACTS.map((f) => (

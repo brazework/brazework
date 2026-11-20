@@ -13,7 +13,7 @@ test("the ref is read from the query string, tidied, and anything odd is dropped
 
 test("a Product Hunt visitor starts on the engineer's story; everyone else on the first", () => {
   const first = firstStoryFor(PH_REF, HERO_STORIES);
-  assert.equal(HERO_STORIES[first].who, "Engineer");
+  assert.equal(HERO_STORIES[first].who, "Software");
   assert.match(HERO_STORIES[first].tool, /GitHub/);
   assert.equal(firstStoryFor("", HERO_STORIES), 0);
   assert.equal(firstStoryFor("newsletter", HERO_STORIES), 0);

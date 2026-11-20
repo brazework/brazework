@@ -19,6 +19,6 @@ export const REF_KEY = "brazework-ref";
  */
 export function firstStoryFor(ref: string, stories: readonly { who: string }[]): number {
   if (ref !== PH_REF) return 0;
-  const i = stories.findIndex((s) => s.who === "Engineer");
+  const i = stories.findIndex((s) => s.who === "Software");
   return i < 0 ? 0 : i;
 }

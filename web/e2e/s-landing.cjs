@@ -22,23 +22,22 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
     await stage.getByText("Sent to Rocketry Club").waitFor({ timeout: 10000 });
     await stage.getByRole("list", { name: "Evidence" }).getByText(/github\.com/).waitFor();
     await stage.getByText("Verified", { exact: true }).waitFor({ timeout: 10000 });
-    // The title block under the sheet fills in: on the record once it's signed, then who found it.
-    const record = stage.locator('dl[aria-label="Where this record stands"]');
-    await record.getByText("On the record").waitFor();
-    await record.getByText("Ben C.").waitFor();
+    // In the chat: what the AI read, then its reply asking before it sends.
+    await stage.getByRole("list", { name: "What your AI read" }).getByText("Read your merged pull request").waitFor();
+    await stage.getByText(/Send it to your club to verify\?/).waitFor();
+    await stage.getByText("Acme Aerospace").waitFor({ timeout: 10000 });
     await stage.getByRole("button", { name: "Accept" }).click({ timeout: 10000 });
-    await record.getByText("Acme Aerospace").waitFor();
     await stage.getByText(/You're talking/).waitFor();
   }, page);
 
-  await step("hero: the chips tell it for someone else (an analyst whose manager signs), and pressing Sign yourself signs it", async () => {
+  await step("hero: the chips tell it for someone else (a mechanical engineer whose test lead signs), and pressing Sign yourself signs it", async () => {
     const stage = page.locator("#hero-live");
-    // Six ways of working, one chip each (lib/landing-demo.ts HERO_STORIES); picking one stops the autoplay.
+    // Seven ways of working, one chip each (lib/landing-demo.ts HERO_STORIES); picking one stops the autoplay.
     const ways = page.locator("#hero-preview").getByRole("group", { name: "Ways people use Brazework" });
-    if ((await ways.getByRole("button").count()) !== 6) throw new Error("expected six story chips");
-    await ways.getByRole("button", { name: /^Analyst/ }).click();
-    await stage.getByRole("list", { name: "Evidence" }).getByText(/claude\.ai/).waitFor({ timeout: 10000 });
-    await stage.getByText("Dana Ruiz", { exact: true }).waitFor();
+    if ((await ways.getByRole("button").count()) !== 7) throw new Error("expected seven story chips");
+    await ways.getByRole("button", { name: /^Mechanical/ }).click();
+    await stage.getByRole("list", { name: "Evidence" }).getByText(/vibe-test-log/).waitFor({ timeout: 10000 });
+    await stage.getByText("Priya Nair", { exact: true }).waitFor();
     await stage.getByRole("button", { name: "Sign", exact: true }).click();
     await stage.getByText("Signed", { exact: true }).waitFor();
     await stage.getByRole("button", { name: "Accept" }).waitFor({ timeout: 10000 });
@@ -184,7 +183,7 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
     await stage.getByText("Verified", { exact: true }).waitFor({ timeout: 3000 });
     await stage.getByText("Sent to Rocketry Club").waitFor({ timeout: 3000 });
     await stage.getByRole("button", { name: "Accept" }).click({ timeout: 3000 });
-    await stage.locator('dl[aria-label="Where this record stands"]').getByText("Acme Aerospace").waitFor({ timeout: 3000 });
+    await stage.getByText(/You're talking/).waitFor({ timeout: 3000 });
   }, still);
 
   await b.close();
