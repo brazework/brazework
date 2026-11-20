@@ -40,7 +40,7 @@ export function proofBadge(p: PublicProof): string {
   const w = p.witness;
   if (!w) return "Signed";
   const when = w.at ? ` · ${day(w.at)}` : "";
-  if (w.vouched_by) return `Vouched for by ${w.vouched_by}${when}`;
+  if (w.vouched_by) return `Signed by ${w.vouched_by}${when}`;
   return `Verified by ${w.name || "an officer"}${w.role ? ` (${w.role})` : ""}${w.club ? `, ${w.club}` : ""}${when}`;
 }
 
@@ -52,7 +52,7 @@ export function proofPostText(p: PublicProof): string {
   if (p.level === "waiting") return `${p.title}. On my Brazework record, waiting for ${waitingFor(p) || "the person who saw it"} to sign.`;
   const w = p.witness;
   const who = w?.vouched_by ? w.vouched_by.split(",")[0] : w?.name;
-  return `${p.title}. ${w?.vouched_by ? "Vouched for" : "Verified"} by ${who || "an officer"}${w?.club && !w.vouched_by ? `, ${w.club}` : ""}, on Brazework.`;
+  return `${p.title}. ${w?.vouched_by ? "Signed" : "Verified"} by ${who || "an officer"}${w?.club && !w.vouched_by ? `, ${w.club}` : ""}, on Brazework.`;
 }
 
 export function shareLinks(url: string, text: string) {

@@ -13,7 +13,7 @@ const base: PublicProof = {
 
 test("a signed result names its witness, their role, the club and the date", () => {
   assert.equal(proofBadge(base), "Verified by Ben Cho (owner), Rocketry Club · Nov 16, 2026");
-  assert.equal(proofBadge({ ...base, witness: { ...base.witness!, vouched_by: "Dana Ruiz, Engineering manager · voltline.com" } }), "Vouched for by Dana Ruiz, Engineering manager · voltline.com · Nov 16, 2026");
+  assert.equal(proofBadge({ ...base, witness: { ...base.witness!, vouched_by: "Dana Ruiz, Engineering manager · voltline.com" } }), "Signed by Dana Ruiz, Engineering manager · voltline.com · Nov 16, 2026");
 });
 
 test("a backed result says what GitHub checked, and never 'verified'", () => {

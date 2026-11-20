@@ -70,7 +70,7 @@ export function MilestoneTimeline({ items, own, projectPrivate = false }: { item
                   {/* The badge: who verified it, their role, the club and when. */}
                   {m.status === "verified" && m.vouched_by && (
                     <span className="inline-block max-w-full rounded-lg bg-[color-mix(in_oklab,var(--ok)_14%,transparent)] px-2 py-0.5 font-medium text-ok">
-                      <FreshSeal id={m.id} at={m.reviewed_at}><BadgeCheck className="block size-3" /></FreshSeal>Vouched for by {m.vouched_by}{m.reviewed_at ? ` · ${new Date(m.reviewed_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" })}` : ""}
+                      <FreshSeal id={m.id} at={m.reviewed_at}><BadgeCheck className="block size-3" /></FreshSeal>Signed by {m.vouched_by}{m.reviewed_at ? ` · ${new Date(m.reviewed_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" })}` : ""}
                     </span>
                   )}
                   {m.status === "verified" && !m.vouched_by && (
