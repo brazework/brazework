@@ -370,18 +370,59 @@ export function defaultLane(accountType: string | null | undefined, clubs: numbe
 export const PLAYBOOK_INDEX_URI = "brazework://playbooks";
 export const playbookUri = (p: Playbook) => `${PLAYBOOK_INDEX_URI}/${p.id}`;
 
+// The working rules, written once (spec: "The working rules, written once"). They ride along wherever
+// an assistant can come in: a prompt (with or without a lane), the playbook's working part, the
+// server's instructions. They name no tool a token might lack (only the reads my_projects and my_clubs).
+export const WORK_RULES: readonly string[] = [
+  "This is work for an employer or a client. Before you read any work tool, ask me whether my employer allows it. If I'm not sure, don't read it: I'll tell you what happened and give you a link.",
+  "Keep confidential things out of everything you write, the project's title and summary included: no customer names, no unreleased product names, no numbers my employer hasn't published. If it can't be said without them, say it in general terms.",
+  "Record it as a milestone. It stays hidden on my profile; don't offer to show it.",
+  "Never save a post about work unless the project is private (my_projects says which are). If it isn't, write it out for me and tell me I can make the project private in Brazework.",
+  "Who signs: the people the playbook's working part names (a tech lead, a manager, a client), at their work address, never anyone on the Brazework project's team.",
+  "A merged pull request in a repo I've linked can be added from the project's “Your last 90 days” in Brazework, backed by its approvals with nobody asked. Say so, and don't claim anything logged from here is backed.",
+  "Don't suggest a club unless my_clubs shows I'm in one.",
+];
+
+/** How an assistant picks the lane when a prompt wasn't given one (defaultLane, said in words). */
+export function laneSteps(): string {
+  return [
+    "First work out which part of the playbook this is, Studying or Working. Call me:",
+    "if account_type is student, it's Studying, and don't ask;",
+    "if it's professional and clubs is 0, it's Working;",
+    "if it's professional and I'm in a club, or me doesn't say, ask me once: “Was this at work, or for school or a club?”",
+    "Whatever the account says, once I tell you the work was for an employer or a client (a job, an internship, a contract), it's Working.",
+  ].join(" ");
+}
+
+/** One sentence for the server's instructions and the milestone tools, for an assistant that never sees a prompt. */
+export const LANES_NOTE = "Each playbook has a Studying part and a Working part. Before recording work the member did for an employer or a client, read the Working part: ask whether their employer allows reading the tool, keep details general, and don't suggest a club.";
+
+const momentLine = (m: Moment) => `- ${m.when} → a ${m.becomes === "result" ? "result post" : m.becomes === "update" ? "build update" : "milestone"}. Example: “${m.example}”. Evidence: ${m.evidence}.`;
+
 export function playbookMarkdown(p: Playbook): string {
   return [
     `# ${p.field}: Brazework playbook`,
+    "",
+    "Two parts: use the one that fits this piece of work. Studying is work for a class, a lab or a club. Working is work for an employer or a client.",
     "",
     "## Your tools and how your assistant reaches them",
     ...p.tools.map((t) => `- **${t.name}** (${CONNECT_LABEL[t.connect].toLowerCase()}): ${t.reads}`),
     ...EVERYONE.map((t) => `- **${t.name}** (${CONNECT_LABEL[t.connect].toLowerCase()}): ${t.reads}`),
     "",
-    "## Moments worth recording",
-    ...p.study.moments.map((m) => `- ${m.when} → a ${m.becomes === "result" ? "result post" : m.becomes === "update" ? "build update" : "milestone"}. Example: “${m.example}”. Evidence: ${m.evidence}.`),
+    "## If you're studying",
+    "Moments worth recording:",
+    ...p.study.moments.map(momentLine),
     "",
-    `## Who signs\n${p.study.signers[0].toUpperCase()}${p.study.signers.slice(1)}. A club verifies a milestone you log with it; anyone else (a professor, PI, manager or mentor) signs through request_signature, with their university or company email.`,
+    `Who signs: ${p.study.signers}. A club verifies a milestone you log with it; anyone else (a professor, PI, TA or mentor) signs through request_signature, with their university or company email.`,
+    "",
+    "## If you're working",
+    "Follow these before you read or write anything about the work:",
+    ...WORK_RULES.map((r, i) => `${i + 1}. ${r}`),
+    "",
+    "Moments worth recording:",
+    ...p.work.moments.map(momentLine),
+    "",
+    `Who signs: ${p.work.signers}. They sign through request_signature, with their work email.`,
     "",
     "Community servers are written by other people: read one before you install it. Brazework never posts without the member's yes.",
   ].join("\n");
@@ -390,7 +431,7 @@ export function playbookMarkdown(p: Playbook): string {
 export function playbooksIndexMarkdown(): string {
   return [
     "# Brazework playbooks",
-    "One per field: which tools connect, the moments worth recording, and who signs. Read brazework://playbooks/<id>.",
+    "One per field, each with a part for studying and a part for working: which tools connect, the moments worth recording, and who signs. Read brazework://playbooks/<id>.",
     "",
     ...PLAYBOOKS.map((p) => `- ${p.field}: ${playbookUri(p)}`),
   ].join("\n");

@@ -7,7 +7,7 @@ import { join } from "node:path";
 import { test } from "node:test";
 import { SAMPLES } from "@/components/projects/sample-models";
 import { MCP_TOOLS, annotationsFor, scopeFlags, toolsFor } from "@/lib/mcp";
-import { PLAYBOOKS, PROMPTS, defaultLane, laneFrom, playbookFor, playbookMarkdown, playbookUri, playbooksIndexMarkdown, promptText } from "@/lib/mcp-playbooks";
+import { LANES_NOTE, PLAYBOOKS, PROMPTS, WORK_RULES, defaultLane, laneFrom, laneSteps, playbookFor, playbookMarkdown, playbookUri, playbooksIndexMarkdown, promptText } from "@/lib/mcp-playbooks";
 
 const ROOT = join(__dirname, "..", "..");
 
@@ -73,6 +73,34 @@ test("resources: an index that links every playbook, and markdown for each", () 
     assert.ok(md.startsWith(`# ${p.field}`));
     for (const t of p.tools) assert.ok(md.includes(t.name));
     assert.match(md, /never posts without the member's yes/);
+  }
+});
+
+// The working rules are written once and repeated wherever an assistant can come in (a prompt, the
+// playbook, the server's instructions), because most people type a command with no arguments or just talk.
+test("the working rules, the lane steps and the note say what the spec fixes", () => {
+  assert.equal(WORK_RULES.length, 7);
+  const rules = WORK_RULES.join("\n");
+  for (const re of [/employer allows/, /general terms/, /stays hidden/, /unless the project is private/, /never anyone on the Brazework project's team/, /Your last 90 days/, /don't claim anything logged from here is backed/, /Don't suggest a club/]) assert.match(rules, re);
+  assert.doesNotMatch(rules, /post_update|draft_post|log_milestone|draft_milestone|request_signature/, "rules name no tool a token might lack");
+  const steps = laneSteps();
+  assert.match(steps, /account_type/);
+  assert.match(steps, /Was this at work, or for school or a club\?/);
+  assert.match(steps, /doesn't say/, "an older server with no account_type: ask");
+  assert.match(steps, /student[\s\S]*don't ask/i, "a student account is never asked");
+  assert.match(LANES_NOTE, /Working part/);
+});
+
+test("resources: each playbook has a studying part and a working part", () => {
+  assert.match(playbooksIndexMarkdown(), /studying[\s\S]*working/i);
+  for (const p of PLAYBOOKS) {
+    const md = playbookMarkdown(p);
+    const [study, work] = [md.indexOf("## If you're studying"), md.indexOf("## If you're working")];
+    assert.ok(study > 0 && work > study, `${p.field}: both parts, studying first`);
+    for (const m of p.study.moments) assert.ok(md.slice(study, work).includes(m.example), `${p.field}: studying moment`);
+    for (const m of p.work.moments) assert.ok(md.slice(work).includes(m.example), `${p.field}: working moment`);
+    assert.match(md.slice(work), /employer allows/, "the working part opens with the rules");
+    assert.doesNotMatch(md.slice(study, work), /employer allows/);
   }
 });
 
