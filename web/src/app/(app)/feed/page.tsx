@@ -152,7 +152,7 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
   const mineClubs = new Set(cids);
   const proofs: ProofItem[] = (await proofP).filter((m) => m.project && !m.project.private && m.owner && m.reviewed_at).map((m) => ({
     proof: { id: m.id, title: m.title, detail: m.detail, reviewed_at: m.reviewed_at!, community_id: m.community_id, community_name: m.community_name, reviewer_name: m.reviewer_name, vouched_by: m.vouched_by, project: { id: m.project!.id, title: m.project!.title }, owner: { id: m.owner!.id, first: m.owner!.first_name, last: m.owner!.last_name, avatar: avatarSrc(m.owner) } },
-    reason: tab === "for-you" ? (m.community_id && mineClubs.has(m.community_id) ? `From your club ${m.community_name}` : m.vouched_by ? "Vouched for by someone who saw it" : "Club-verified work") : "",
+    reason: tab === "for-you" ? (m.community_id && mineClubs.has(m.community_id) ? `From your club ${m.community_name}` : m.vouched_by ? "Signed by someone who saw it" : "Club-verified work") : "",
     at: Date.parse(m.reviewed_at!),
     score: scoreProof(m.reviewed_at!, !!m.community_id && mineClubs.has(m.community_id), now),
   })).sort((a, b) => b.score - a.score).map((p) => ({ proof: p.proof, reason: p.reason, at: p.at }));
@@ -227,7 +227,7 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
       const proofs: Item[] = (await proofP).filter((m) => m.project && !m.project.private && m.owner && m.reviewed_at).map((m) => ({
         type: "proof",
         proof: { id: m.id, title: m.title, detail: m.detail, reviewed_at: m.reviewed_at!, community_id: m.community_id, community_name: m.community_name, reviewer_name: m.reviewer_name, vouched_by: m.vouched_by, project: { id: m.project!.id, title: m.project!.title }, owner: { id: m.owner!.id, first: m.owner!.first_name, last: m.owner!.last_name, avatar: avatarSrc(m.owner) } },
-        reason: tab === "for-you" ? (m.community_id && mineClubs.has(m.community_id) ? `From your club ${m.community_name}` : m.vouched_by ? "Vouched for by someone who saw it" : "Club-verified work") : "",
+        reason: tab === "for-you" ? (m.community_id && mineClubs.has(m.community_id) ? `From your club ${m.community_name}` : m.vouched_by ? "Signed by someone who saw it" : "Club-verified work") : "",
         at: Date.parse(m.reviewed_at!),
         score: scoreProof(m.reviewed_at!, !!m.community_id && mineClubs.has(m.community_id), now),
       }));

@@ -31,7 +31,7 @@ export function VouchStamp({ by, when, className }: { by: string; when?: string 
     <span className={cn("flex max-w-full min-w-0 items-center gap-2", className)}>
       <Seal size={18} />
       <span className="min-w-0 leading-tight">
-        <span className="block truncate text-xs font-semibold text-text" title={`Vouched for by ${by}`}>Vouched for by {by}</span>
+        <span className="block truncate text-xs font-semibold text-text" title={`Signed by ${by}`}>Signed by {by}</span>
         {when && <span suppressHydrationWarning className="block truncate text-[11px] text-faint">Saw the work · {when}</span>}
       </span>
     </span>

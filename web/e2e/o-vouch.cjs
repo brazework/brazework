@@ -2,7 +2,7 @@
 // 1. The person asked opens their link signed out, sees the milestone and its evidence, answers the
 //    two questions and vouches; the milestone is verified with their name, role and domain; the link
 //    can't be used again.
-// 2. The member sees "Vouched for by …" on their profile.
+// 2. The member sees "Signed by …" on their profile.
 // 3. Asking from the app: free mail is refused, and when the email can't go out (it's off in this
 //    stack), nothing is left waiting.
 // The ask is seeded straight into the database with a known link, because the real link only ever
@@ -57,7 +57,7 @@ const title = `Vouch e2e: thrust stand within 2% (${Date.now()})`;
   const page = await as(b, "ben@forge.test");
   await step("the member sees who vouched on their profile", async () => {
     await go(page, `/u/${ben}`);
-    await page.getByText("Vouched for by Dr. Priya Lee, Assistant Professor · utexas.edu").first().waitFor({ timeout: 15000 });
+    await page.getByText("Signed by Dr. Priya Lee, Assistant Professor · utexas.edu").first().waitFor({ timeout: 15000 });
   }, page);
 
   // A work email can sign (supabase/work-email-signers.sql): someone who works asks their tech lead,
@@ -83,7 +83,7 @@ const title = `Vouch e2e: thrust stand within 2% (${Date.now()})`;
     await signer.getByText("Your vouch is on their record").waitFor({ timeout: 15000 });
     await ctx.close();
     await go(page, `/u/${ben}`);
-    await page.getByText("Vouched for by Sam Rivera, Staff Engineer · northwind-payments.io (company not verified)").first().waitFor({ timeout: 15000 });
+    await page.getByText("Signed by Sam Rivera, Staff Engineer · northwind-payments.io (company not verified)").first().waitFor({ timeout: 15000 });
   }, page);
 
   await step("asking from the app: free mail is refused; with email off, nothing is left waiting", async () => {

@@ -93,7 +93,7 @@ export async function HomeStream() {
             {ships.map((m) => (
               <ListRow key={m.id} href={`/projects/${m.project!.id}`} leading={<Avatar first={m.owner!.first_name} last={m.owner!.last_name} size={32} src={avatarSrc(m.owner)} />}
                 title={m.title} meta={`${`${m.owner!.first_name} ${m.owner!.last_name}`.trim()} on ${m.project!.title}`}
-                trailing={<span className="inline-flex items-center gap-1.5 text-xs font-medium text-ok"><Seal size={16} /><span className="hidden sm:inline">{m.vouched_by ? "Vouched for" : `Signed by ${m.community_name}`}</span></span>} />
+                trailing={<span className="inline-flex items-center gap-1.5 text-xs font-medium text-ok"><Seal size={16} /><span className="hidden sm:inline">{m.vouched_by ? "Signed" : `Signed by ${m.community_name}`}</span></span>} />
             ))}
           </List>
         ) : (
