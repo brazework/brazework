@@ -152,16 +152,19 @@ Wording for the builder to polish; the meaning is fixed.
 6. A merged pull request in a repo I've linked can be added from the project's "Your last 90 days" in
    Brazework, backed by its approvals with nobody asked. Say so, and don't claim anything logged from
    here is backed (finding 5).
-7. Don't suggest a club unless `my_clubs` shows I'm in one.
+7. Don't suggest a club for work, and don't send work to one, unless I name it myself. (Tightened in
+   review: a milestone sent to a club is readable by its officers, so being in a club isn't a reason
+   to send it employer work.)
 
 ### Where the rules live
 
 Most people type a command with no arguments, or just talk, so the rules can't live only in a prompt
 that was given `lane: work`:
 
-- **A prompt with no lane** (the normal case) carries the lane steps above and the working rules,
-  shortened, and points to the playbook's working part for the field's example and signers. This is how
-  prompts already handle a missing field.
+- **A prompt with no lane** (the normal case) carries the lane steps above, the working rules in full,
+  and for that command the step the rules replace (no club, a milestone instead of a post, a post only
+  on a private project). It points to the playbook's working part for the field's example and signers.
+  A lane typed in words it can't read is said back to the assistant, which then asks.
 - **A prompt given `lane: work`** carries the rules in full, the working example and the working
   signers.
 - **The playbook resource's working part** opens with the rules, for an assistant that reads it without

@@ -358,7 +358,7 @@ export const WORK_RULES: readonly string[] = [
   "Never save a post about work unless the project is private (my_projects says which are). If it isn't, write it out for me and tell me I can make the project private in Brazework.",
   "Who signs: the people the playbook's working part names (a tech lead, a manager, a client), at their work address, never anyone on the Brazework project's team.",
   "A merged pull request in a repo I've linked can be added from the project's “Your last 90 days” in Brazework, backed by its approvals with nobody asked. Say so, and don't claim anything logged from here is backed.",
-  "Don't suggest a club unless my_clubs shows I'm in one.",
+  "Don't suggest a club for work, and don't send work to one, unless I name it myself.",
 ];
 
 /** How an assistant picks the lane when a prompt wasn't given one (defaultLane, said in words). */
@@ -575,6 +575,28 @@ function workPromptText(name: string, args: Record<string, string | undefined>, 
   }
 }
 
+// With no lane the prompt carries the studying steps, so for each command this names the step the
+// working rules replace. Without it a working member's assistant is told both "pick the club that
+// saw it" and "no club", or "draft a post" and "never save a post" (found in review).
+function workInstead(name: string, s: Scopes): string {
+  switch (name) {
+    case "start":
+      return "In step 1, ask me which work tools my employer allows before you look at any. In step 2, pick the project only and leave the club out.";
+    case "shipped":
+      return "In step 2, pick the project only and leave the club out, so it waits for a signature from someone at work.";
+    case "result":
+      return `Don't draft a post: write it as a milestone, not a post (the title is the number and what changed; the evidence is 1 to 8 https links). ${writeLine(s, "milestone")}`;
+    case "standup":
+      return "Save the draft only if the project is private (my_projects says which are). If it isn't, don't save it: write it out for me and tell me I can make the project private in Brazework.";
+    case "week":
+      return "Record milestones only; a post only on a private project.";
+    case "setup":
+      return "Ask me whether my employer allows each tool before you suggest connecting it, and the GitHub Actions step is only for a repo that's mine or that my employer allows.";
+    default:
+      return "";
+  }
+}
+
 /** The message a prompt sends, for this member's field and what their token may do. */
 // The intent prompts (club_week, career_fair) live in lib/mcp-intent-prompts.ts.
 export function promptText(name: string, args: Record<string, string | undefined>, s: Scopes): string | null {
@@ -590,7 +612,15 @@ export function promptText(name: string, args: Record<string, string | undefined
   }
   const ex = p?.study.moments.find((m) => m.becomes === "milestone") ?? p?.study.moments[0];
   const exR = p?.study.moments.find((m) => m.becomes === "result") ?? p?.study.moments[0];
-  const pick = lane ? [] : [laneSteps(), "If it's Working, follow these rules throughout, and take the example and who signs from the “If you're working” part of the playbook:", ...WORK_RULES.map((r) => `- ${r}`)];
+  // A lane typed in words we couldn't read ("banana") is said back, so the assistant can still use it.
+  const said = !lane && args.lane?.trim() ? `I said this was “${args.lane.trim().slice(0, 60)}”. ` : "";
+  const pick = lane ? [] : [
+    `${said}${laneSteps()}`,
+    "If it's Studying, follow the numbered steps below as they are.",
+    `If it's Working, the rules below win over any step they conflict with, and the example and who signs come from the “If you're working” part of the playbook, not from the steps. ${workInstead(name, s)}`.trim(),
+    "The rules for work:",
+    ...WORK_RULES.map((r) => `- ${r}`),
+  ];
   const whoSigns = `Who usually signs in my field is in its playbook: ${p ? playbookUri(p) : PLAYBOOK_INDEX_URI}.`;
   switch (name) {
     case "start":

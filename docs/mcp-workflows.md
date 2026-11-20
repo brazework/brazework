@@ -110,7 +110,7 @@ project is Working, and their rocketry is Studying.
 
 Your assistant picks the part like this:
 
-1. You said which (`lane`, below).
+1. You said which (`lane`, below). Plain words work: "at work", "my internship", "a class project".
 2. A student account is Studying. It isn't asked.
 3. A professional account in no club is Working.
 4. A professional account in a club is asked once: "Was this at work, or for school or a club?"
@@ -121,9 +121,11 @@ Your assistant picks the part like this:
 | `field` | Your field. Leave it out to use the one on your profile. |
 | `lane` | Studying or Working. Leave it out and your assistant works it out as above. |
 
-For work, your assistant follows seven rules. They're written once (`WORK_RULES`,
-`web/src/lib/mcp-playbooks.ts`) and repeated wherever an assistant can come in: a command with or without
-a lane, the playbook's working part, and the server's own instructions.
+For work, your assistant is given seven rules. They are instructions, not locks: Brazework can't see what
+an assistant reads in your other tools, so know your employer's rules yourself. They're written once
+(`WORK_RULES`, `web/src/lib/mcp-playbooks.ts`) and repeated wherever an assistant can come in: a command
+with or without a lane, the playbook's working part, and the server's own instructions. A command with no
+lane also says which of its steps the rules replace.
 
 1. It asks whether your employer allows it before it reads a work tool. If you're not sure, it doesn't.
 2. It keeps confidential things out of everything it writes, the project's title included: no customer
@@ -135,7 +137,7 @@ a lane, the playbook's working part, and the server's own instructions.
 6. It tells you a merged pull request in a repo you've linked can be added from the project's "Your last
    90 days", backed by its approvals with nobody asked. It doesn't claim anything logged from chat is
    backed.
-7. It doesn't suggest a club unless you're in one.
+7. It doesn't suggest a club for work, or send work to one, unless you name it.
 
 What the commands do for work:
 

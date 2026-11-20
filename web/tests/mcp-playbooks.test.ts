@@ -7,6 +7,7 @@ import { join } from "node:path";
 import { test } from "node:test";
 import { SAMPLES } from "@/components/projects/sample-models";
 import { MCP_TOOLS, annotationsFor, scopeFlags, toolsFor } from "@/lib/mcp";
+import { WORK_NOTE } from "@/lib/lanes";
 import { LANES_NOTE, PLAYBOOKS, PROMPTS, WORK_RULES, defaultLane, laneFrom, laneSteps, playbookFor, playbookMarkdown, playbookUri, playbooksIndexMarkdown, promptText } from "@/lib/mcp-playbooks";
 
 const ROOT = join(__dirname, "..", "..");
@@ -32,9 +33,10 @@ test("there's a playbook for each of the 20 fields the landing page shows, and n
 // work. A loosely typed lane still means the obvious one, and with none the default follows the rule
 // Home already uses (lib/guide-steps.ts): a professional in no club is working.
 test("lanes: loose words mean the obvious lane, and the default follows Home's rule", () => {
-  for (const v of ["work", "Working", " WORK ", "professional"]) assert.equal(laneFrom(v), "work", v);
-  for (const v of ["study", "Studying", "student"]) assert.equal(laneFrom(v), "study", v);
-  for (const v of ["job", "", undefined, null]) assert.equal(laneFrom(v), undefined, String(v));
+  // The words people actually use: "at work" is the product's own phrase, and an internship is work.
+  for (const v of ["work", "Working", " WORK ", "professional", "at work", "for work", "job", "my job", "internship", "my employer", "a client project", "student job"]) assert.equal(laneFrom(v), "work", v);
+  for (const v of ["study", "Studying", "student", "school", "a class project", "my club", "coursework"]) assert.equal(laneFrom(v), "study", v);
+  for (const v of ["studio", "banana", "", undefined, null]) assert.equal(laneFrom(v), undefined, String(v));
   assert.equal(defaultLane("student", 0), "study");
   assert.equal(defaultLane("student", 3), "study");
   assert.equal(defaultLane("professional", 0), "work");
@@ -89,6 +91,11 @@ test("the working rules, the lane steps and the note say what the spec fixes", (
   assert.match(steps, /doesn't say/, "an older server with no account_type: ask");
   assert.match(steps, /student[\s\S]*don't ask/i, "a student account is never asked");
   assert.match(LANES_NOTE, /Working part/);
+  assert.match(rules, /unless I name it/, "a club only when the member names it");
+  assert.doesNotMatch(rules, /my_clubs shows/, "being in a club doesn't send work to it");
+  // What the public guide says about work is an instruction to an assistant, not a lock: say so.
+  assert.match(WORK_NOTE, /is told to ask whether your employer allows it/);
+  assert.match(WORK_NOTE, /stays hidden until you show it/);
 });
 
 test("resources: each playbook has a studying part and a working part", () => {
@@ -148,6 +155,8 @@ test("working lane: the rules, the working example and signers, never a club fir
   assert.match(at("work", "shipped", READ), /can only read/, "a read-only token still writes it out");
   assert.match(at("work", "shipped", POST, "basket weaving"), /employer allows/, "no playbook: the rules still apply");
   assert.match(at("Working", "shipped"), /Housing rev D released/, "a loosely typed lane still means work");
+  // Work never goes to a club unless the member names one: not in the steps, and not through a rule.
+  for (const n of ["start", "shipped", "result"]) assert.doesNotMatch(at("work", n), /my_clubs/, `${n}: no club lookup for work`);
 });
 
 test("studying lane: no employer question and no lane question", () => {
@@ -162,7 +171,19 @@ test("no lane (the normal case): the lane steps and the rules, in every prompt t
     assert.match(at(undefined, n, s), /Was this at work, or for school or a club\?/, n);
     assert.match(at(undefined, n, s), /employer allows/, n);
   }
-  assert.match(at("job", "shipped"), /Was this at work, or for school or a club\?/, "a lane it can't read is treated as none");
+  assert.match(at("banana", "shipped"), /I said this was “banana”\. [\s\S]*Was this at work, or for school or a club\?/, "a lane it can't read is said back, and asked about");
+  assert.doesNotMatch(at("internship", "shipped"), /Was this at work/, "an internship is work, so it isn't asked");
+  assert.match(at("internship", "shipped"), /employer allows/);
+  // With no lane the studying steps are there too, so the text says what changes when the answer is
+  // Working: the rules win, and each command names the step they replace (found in review).
+  for (const n of RECORDS) for (const s of [POST, DRAFT, READ]) assert.match(at(undefined, n, s), /If it's Working, the rules below win over any step/, n);
+  for (const n of ["start", "shipped"]) assert.match(at(undefined, n), /If it's Working[^\n]*leave the club out/, `${n}: no club for work`);
+  assert.match(at(undefined, "result"), /If it's Working[^\n]*milestone, not a post/);
+  assert.match(at(undefined, "result", DRAFT), /If it's Working[^\n]*draft_milestone/);
+  assert.match(at(undefined, "result", READ), /If it's Working[^\n]*can only read/);
+  assert.match(at(undefined, "standup"), /If it's Working[^\n]*only if the project is private/);
+  assert.match(at(undefined, "week"), /If it's Working[^\n]*milestones only/i);
+  assert.match(at(undefined, "setup"), /If it's Working[^\n]*employer allows each tool/);
   for (const n of [...RECORDS, "ask_signature"]) assert.ok(PROMPTS.find((p) => p.name === n)!.arguments.some((a) => a.name === "lane" && !a.required), `${n} takes lane`);
   assert.ok(PROMPTS.find((p) => p.name === "ask_signature")!.arguments.some((a) => a.name === "field"), "ask_signature takes field");
 });

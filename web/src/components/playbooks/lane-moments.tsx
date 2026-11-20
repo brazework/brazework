@@ -1,6 +1,6 @@
 "use client";
 import { useState } from "react";
-import type { Lane } from "@/lib/lanes";
+import { WORK_NOTE, type Lane } from "@/lib/lanes";
 import { LaneSwitch } from "./lane-switch";
 
 // One field's moments and who signs, on the public guide (/ai), for the lane picked: what an
@@ -21,7 +21,7 @@ export function LaneMoments({ lanes, initial = "study" }: { lanes: Record<Lane, 
         {part.moments.map((m) => <li key={m.when}><span className="text-muted">{m.when}:</span> <span className="font-medium">&ldquo;{m.example}&rdquo;</span><span className="block text-sm text-faint">Proof: {m.evidence}</span></li>)}
       </ul>
       <p className="mt-4 text-[15px] text-muted">Signed by {part.signers}.</p>
-      {lane === "work" && <p className="mt-2 text-sm text-faint">At work your assistant asks whether your employer allows it before it reads a tool, and the milestone stays hidden until you show it.</p>}
+      {lane === "work" && <p className="mt-2 text-sm text-faint">{WORK_NOTE}</p>}
     </div>
   );
 }
