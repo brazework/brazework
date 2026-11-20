@@ -92,7 +92,7 @@ export function RecordTimelineChart({ data, own, goal }: { data: RecordTimeline;
           <span className="grid size-5 shrink-0 place-items-center"><Mark kind={found.m.kind} /></span>
           <span className="min-w-0 flex-1">
             <span className="font-medium text-text">{found.m.title}</span>
-            <span className="block text-xs text-muted">{found.m.kind === "signed" ? `Signed by ${found.m.by ?? "a reviewer"}` : found.m.kind === "backed" ? "Backed by GitHub" : found.m.kind === "waiting" ? "Waiting to be signed" : "Update"} · {found.m.when}</span>
+            <span className="block text-xs text-muted">{found.m.kind === "signed" ? `Signed by ${found.m.by ?? "a reviewer"} · ${found.m.signed ?? found.m.when}` : `${found.m.kind === "backed" ? "Backed by GitHub" : found.m.kind === "waiting" ? "Waiting to be signed" : "Update"} · ${found.m.when}`}</span>
           </span>
           <Link href={found.lane.href} className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-text underline-offset-4 hover:underline">Open project <ArrowRight className="size-3.5" /></Link>
         </div>

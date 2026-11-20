@@ -96,3 +96,12 @@ test("work backed by GitHub is on the chart for everyone, counted apart from sig
   assert.equal(only.backed, 1);
   assert.equal(only.since, null, "\"signed since\" is only about signatures");
 });
+
+test("a signed mark sits on the day the work happened, and \"Signed by\" carries the day it was signed", () => {
+  const t = buildTimeline({ now, projects, own: false, posts: [], milestones: [ms("a", "p1", 5, "verified", { vouched_by: "Dr. Elena Ruiz", reviewed_at: new Date(now - 4 * DAY).toISOString() })] })!;
+  const mark = t.lanes[0].marks[0];
+  assert.equal(mark.when, "Nov 14, 2026", "the work's own day");
+  assert.equal(mark.signed, "Nov 15, 2026", "the day it was signed, as on the share card");
+  const unsigned = buildTimeline({ now, projects, own: true, posts: [], milestones: [ms("b", "p1", 5, "pending")] })!;
+  assert.equal(unsigned.lanes[0].marks[0].signed, undefined);
+});
