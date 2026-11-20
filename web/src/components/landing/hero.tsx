@@ -13,7 +13,7 @@ export function Hero() {
   // What they typed, tidied; "" until it's long enough to be a build.
   const build = cleanBuild(typed);
   return (
-    <section id="top" className="relative isolate overflow-hidden pt-28 pb-16 sm:pt-40 sm:pb-24">
+    <section id="top" className="relative isolate overflow-hidden pt-28 pb-16 sm:pt-32 sm:pb-24">
       <div aria-hidden="true" className="landing-grid absolute inset-0 -z-10" />
       <div className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-12 px-5 sm:px-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,30rem)] lg:gap-16">
         <div className="min-w-0">
@@ -23,7 +23,7 @@ export function Hero() {
             you built.
           </h1>
           <p className="mt-6 max-w-[34rem] text-lg leading-relaxed text-muted sm:text-xl sm:leading-relaxed">
-            Your AI drafts the proof from the tools you already use. A person who saw it signs: a club officer, a professor, a manager. Companies search signed work instead of résumés.
+            Tell your AI what you finished. It writes it up with the proof from your tools, and someone who saw the work signs it: your manager, a professor, your club. Your work, on your record, with their name on it.
           </p>
 
           <div className="mt-9 max-w-[34rem]">
@@ -36,7 +36,7 @@ export function Hero() {
                 className="h-12 w-full min-w-0 shrink-0 rounded-xl border border-line-strong bg-surface px-4 text-[16px] transition outline-none placeholder:text-faint focus:border-text focus:shadow-[0_0_0_4px_color-mix(in_oklab,var(--text)_9%,transparent)]" />
               <Button href={signupHref("", typed)} size="lg" className="h-12 shrink-0 rounded-xl px-5">{build ? "Start with this build" : "Create your free account"}</Button>
             </div>
-            <p id="hero-build-hint" className="mt-2.5 text-sm text-faint">{build ? "That's your first milestone. Take it with you." : "Type a line and watch it get signed."} Free for everyone who builds.</p>
+            <p id="hero-build-hint" className="mt-2.5 text-sm text-faint">{build ? "That's your first milestone. Take it with you." : "Type what you built and watch it get signed."} Free for everyone who builds.</p>
           </div>
 
           <p className="mt-9 text-sm text-muted">
