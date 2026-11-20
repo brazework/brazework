@@ -200,8 +200,12 @@ them).
 | Social science | Findings change a decision | Tenant survey (1,150 responses) led the council to extend rent relief | The report and the council minutes | The research director, the client or the body that commissioned it |
 | Education | A unit lifts results | Fractions unit lifted quiz scores 18% | The unit plan and aggregate scores, never individual students | The head of department or the principal |
 
-The Software, Business, Design and Education examples are the landing page's own, so the assistant and
-the front door tell the same story.
+The Software and Design examples are the landing page's own, so the assistant and the front door tell
+the same story. When this table was approved the Business and Education ones were too; the landing page
+changed the same day (#170) and now tells its own Mechanical, Electrical and Civil stories ("Bracket 38%
+lighter, passed the 3.2 g vibration test", "Power board rev C: ripple down from 120 to 18 mV",
+"Retaining wall pour passed inspection, zero rework"). Whether those three fields should use the landing
+page's examples is a question for the read in Decided 2.
 
 ### Which fields get checked first
 
