@@ -34,6 +34,29 @@ const body = `Done: thrust logger v2 merged, CI green. Next: static fire #5 prep
     if (psql(`select count(*) from public.posts where body = '${body}'`) !== "0") throw new Error("the standup was posted");
   });
 
+  // Playbook lanes (FIX-209), through the server as an assistant meets them: what it's told on
+  // connecting, what me says, a working prompt, a plain one, and the playbook itself.
+  await step("playbook lanes over MCP: me says studying or working, a working /shipped asks about the employer, a plain one says how to choose, and the playbook has both parts", async () => {
+    const init = await mcp("initialize", { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "e2e", version: "1" } });
+    if (!/Working part/.test(init.result?.instructions ?? "")) throw new Error("instructions: " + JSON.stringify(init).slice(0, 200));
+    const me = await mcp("tools/call", { name: "me", arguments: {} });
+    if (!["student", "professional"].includes(me.result?.structuredContent?.account_type)) throw new Error("me.account_type: " + JSON.stringify(me).slice(0, 240));
+    const tools = (await mcp("tools/list", {})).result?.tools ?? [];
+    const log = tools.find((t) => t.name === "log_milestone")?.description ?? "";
+    if (!/stays hidden/.test(log) || /only once verified/.test(log)) throw new Error("log_milestone still says it shows once verified: " + log.slice(0, 160));
+    const text = (n, args) => mcp("prompts/get", { name: n, arguments: args }).then((r) => r.result?.messages?.[0]?.content?.text ?? "");
+    const work = await text("shipped", { field: "Software", lane: "work" });
+    if (!/employer allows/.test(work) || !/Checkout p95 latency/.test(work) || /pick the club that saw it/.test(work)) throw new Error("working /shipped: " + work.slice(0, 200));
+    const result = await text("result", { field: "Software", lane: "work" });
+    if (/post_update|draft_post/.test(result) || !/log_milestone/.test(result)) throw new Error("a number at work should be a hidden milestone: " + result.slice(0, 200));
+    const plain = await text("shipped", {});
+    if (!/Was this at work, or for school or a club\?/.test(plain) || !/employer allows/.test(plain)) throw new Error("a plain /shipped doesn't say how to choose the lane");
+    const study = await text("shipped", { field: "Software", lane: "study" });
+    if (/employer allows|Was this at work/.test(study)) throw new Error("a studying /shipped asks about work");
+    const md = (await mcp("resources/read", { uri: "brazework://playbooks/software" })).result?.contents?.[0]?.text ?? "";
+    if (!md.includes("## If you're studying") || !md.includes("## If you're working") || !md.includes("Checkout p95 latency")) throw new Error("playbook: " + md.slice(0, 160));
+  });
+
   const page = await as(b, "ben@forge.test");
   await step("the standup waits for Ben on /drafts", async () => {
     await go(page, "/drafts");

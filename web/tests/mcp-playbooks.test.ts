@@ -197,6 +197,11 @@ test("docs/mcp-workflows.md covers every field, every prompt and the drafts and 
   const doc = readFileSync(join(ROOT, "docs", "mcp-workflows.md"), "utf8");
   for (const p of PLAYBOOKS) assert.ok(doc.includes(`### ${p.field}`), `docs: a section for ${p.field}`);
   for (const p of PROMPTS) assert.ok(doc.includes(p.name), `docs: the ${p.name} prompt`);
+  for (const p of PLAYBOOKS) assert.ok(doc.includes(p.work.moments[0].example), `docs: ${p.field}'s working moment`);
+  for (const p of PLAYBOOKS) assert.ok(doc.includes(`Who signs at work: ${p.work.signers}`), `docs: who signs at work in ${p.field}`);
+  assert.match(doc, /\| `lane` \|/, "docs: the lane argument");
+  assert.match(doc, /Was this at work, or for school or a club\?/, "docs: how the lane is chosen");
+  assert.doesNotMatch(doc, /shows on (your|their) profile once/, "docs: a logged milestone stays hidden until the member shows it");
   for (const t of ["draft_post", "draft_milestone", "request_signature", "/drafts"]) assert.ok(doc.includes(t), `docs: ${t}`);
   assert.ok(readFileSync(join(ROOT, "docs", "README.md"), "utf8").includes("mcp-workflows.md"), "linked from the docs index");
 });

@@ -69,7 +69,8 @@ on the OAuth server (below). Until then, and for GitHub Actions and scripts, use
 
 These are the server's MCP prompts, so they appear as slash commands. In Claude Code they're
 `/mcp__brazework__shipped` and so on; Claude Desktop, VS Code and Cursor list them under Brazework. Each one
-takes an optional `field` (it defaults to the field on your profile) and reads your field's playbook.
+takes an optional `field` (it defaults to the field on your profile) and an optional `lane` (Studying or
+Working: see below), and reads your field's playbook.
 
 | Command | What it does |
 |---|---|
@@ -100,6 +101,55 @@ outside and only shows what the tool sent it. Other assistants show the same res
 
 Your assistant can also read the playbooks directly as MCP resources: `brazework://playbooks` (the index)
 and `brazework://playbooks/<field>`, for example `brazework://playbooks/data-ai`.
+
+## Studying or working
+
+Every field's playbook has two parts. **Studying** is work for a class, a lab or a club. **Working** is
+work for an employer or a client. The part belongs to the piece of work, not to you: an intern's summer
+project is Working, and their rocketry is Studying.
+
+Your assistant picks the part like this:
+
+1. You said which (`lane`, below).
+2. A student account is Studying. It isn't asked.
+3. A professional account in no club is Working.
+4. A professional account in a club is asked once: "Was this at work, or for school or a club?"
+5. Whatever the account says, once you say the work was for an employer or a client, it's Working.
+
+| Argument | What it does |
+|---|---|
+| `field` | Your field. Leave it out to use the one on your profile. |
+| `lane` | Studying or Working. Leave it out and your assistant works it out as above. |
+
+For work, your assistant follows seven rules. They're written once (`WORK_RULES`,
+`web/src/lib/mcp-playbooks.ts`) and repeated wherever an assistant can come in: a command with or without
+a lane, the playbook's working part, and the server's own instructions.
+
+1. It asks whether your employer allows it before it reads a work tool. If you're not sure, it doesn't.
+2. It keeps confidential things out of everything it writes, the project's title included: no customer
+   names, no unreleased product names, no numbers your employer hasn't published.
+3. It records a milestone, which stays hidden on your profile.
+4. It never saves a post about work unless the project is private.
+5. It asks someone at work to sign (a tech lead, a manager, a client), at their work address, never
+   anyone on the Brazework project's team.
+6. It tells you a merged pull request in a repo you've linked can be added from the project's "Your last
+   90 days", backed by its approvals with nobody asked. It doesn't claim anything logged from chat is
+   backed.
+7. It doesn't suggest a club unless you're in one.
+
+What the commands do for work:
+
+| Command | For work |
+|---|---|
+| `start`, `shipped` | A hidden milestone, with no club; the person at work who saw it is asked to sign. |
+| `result` | The number becomes a hidden milestone, not a post in the feed. |
+| `standup` | Saved as a draft only on a private project; otherwise written out for you. |
+| `week` | Milestones only (a post only on a private project), then your review packet with hidden work included. |
+| `ask_signature` | Asks for a manager, a mentor or someone else at work, by their work email. |
+| `setup` | Asks which tools your employer allows before suggesting you connect any. |
+
+Studying or working, a milestone logged from chat is hidden to begin with: it's on your record, and it
+appears on your profile when you show or share it in Brazework.
 
 ## The tools
 
@@ -290,6 +340,12 @@ Moments worth recording:
 
 Who signs: the team's club officers, a lab TA or the faculty advisor. Try `/shipped` with the field Robotics.
 
+At work:
+
+- **A cell or robot passes acceptance on site** → milestone: “Palletizing cell passed site acceptance: 11 cycles a minute over an 8-hour run”. Proof: the acceptance report and the release it ran.
+
+Who signs at work: the test lead, your manager or the customer's engineer. Try `/shipped` with the field Robotics and the lane Working.
+
 ### Aerospace
 
 | Tool | How your assistant reaches it | What it reads |
@@ -306,6 +362,12 @@ Moments worth recording:
 - **Simulation and test agree** → result post: “Fin flutter margin 1.6× at max-q, CFD within 4% of the wind tunnel”. Proof: the CFD report and the tunnel data.
 
 Who signs: the rocketry club's officers, the launch's range safety officer, or a professor. Try `/shipped` with the field Aerospace.
+
+At work:
+
+- **A part passes qualification** → milestone: “Bracket passed qualification vibration at 14 g RMS with no cracks”. Proof: the test report and the drawing revision.
+
+Who signs at work: the test engineer, your lead or the quality engineer. Try `/shipped` with the field Aerospace and the lane Working.
 
 ### Mechanical
 
@@ -325,6 +387,12 @@ Moments worth recording:
 
 Who signs: the team's officers, the machine-shop supervisor or the course instructor. Try `/shipped` with the field Mechanical.
 
+At work:
+
+- **A design is released to production** → milestone: “Housing rev D released: 9 parts, down from 14, at the same load rating”. Proof: the engineering change and the test report.
+
+Who signs at work: your lead, the manufacturing engineer or your manager. Try `/shipped` with the field Mechanical and the lane Working.
+
 ### Electronics
 
 | Tool | How your assistant reaches it | What it reads |
@@ -341,6 +409,12 @@ Moments worth recording:
 - **The design passes DRC and goes to fab** → build update: “Rev C sent to fab: 0 DRC errors, 4-layer, 38 × 52 mm”. Proof: the commit with the Gerbers.
 
 Who signs: the team's officers, a lab TA or the professor whose lab it ran in. Try `/shipped` with the field Electronics.
+
+At work:
+
+- **A board passes validation** → milestone: “Controller board rev C passed validation: every rail within 2%, no rework”. Proof: the validation report and the release.
+
+Who signs at work: the hardware lead, the test engineer or your manager. Try `/shipped` with the field Electronics and the lane Working.
 
 ### Civil
 
@@ -359,6 +433,12 @@ Moments worth recording:
 
 Who signs: the society's officers, the competition judge or the course instructor. Try `/shipped` with the field Civil.
 
+At work:
+
+- **A structure passes inspection, or a design is approved** → milestone: “Footbridge deck passed its load test at 1.5 times the design load”. Proof: the inspection report or the permit.
+
+Who signs at work: the engineer of record, the project manager or the client. Try `/shipped` with the field Civil and the lane Working.
+
 ### Software
 
 | Tool | How your assistant reaches it | What it reads |
@@ -376,6 +456,12 @@ Moments worth recording:
 
 Who signs: the club's officers, a code reviewer who isn't on the team, or a manager. Try `/shipped` with the field Software.
 
+At work:
+
+- **A change ships and a number moves** → milestone: “Checkout p95 latency down from 820 to 310 ms”. Proof: the merged pull requests, the ticket and the dashboard.
+
+Who signs at work: your tech lead, a reviewer outside the project or your manager. Try `/shipped` with the field Software and the lane Working.
+
 ### Computer science
 
 | Tool | How your assistant reaches it | What it reads |
@@ -392,6 +478,12 @@ Moments worth recording:
 - **A proof or paper is done** → milestone: “Formalized the pumping lemma in Lean, no sorry”. Proof: the repository and the CI build.
 
 Who signs: a professor, a TA, or the computing society's officers. Try `/shipped` with the field Computer science.
+
+At work:
+
+- **A system change is adopted** → milestone: “Scheduler change rolled out to every cluster: 14% fewer preemptions”. Proof: the design doc, the merged change and the rollout report.
+
+Who signs at work: the reviewing engineer, your lead or your manager. Try `/shipped` with the field Computer science and the lane Working.
 
 ### Data & AI
 
@@ -412,6 +504,12 @@ Moments worth recording:
 
 Who signs: the AI society's officers, a lab PI or a professor. Try `/shipped` with the field Data & AI.
 
+At work:
+
+- **A model goes live and holds its number** → milestone: “Fraud model live for 30 days: recall 91% at 0.5% false positives”. Proof: the evaluation report and the model card.
+
+Who signs at work: the ML lead, the product owner or your manager. Try `/shipped` with the field Data & AI and the lane Working.
+
 ### Mathematics
 
 | Tool | How your assistant reaches it | What it reads |
@@ -428,6 +526,12 @@ Moments worth recording:
 - **A computation confirms a conjecture to a new bound** → result post: “Checked the conjecture for all n ≤ 10⁸”. Proof: the code and its output.
 
 Who signs: the professor or advisor, or the math society's officers. Try `/shipped` with the field Mathematics.
+
+At work:
+
+- **A model or method is adopted** → milestone: “Reserving model adopted for the quarter close: back-test error under 2%”. Proof: the write-up and the back-test.
+
+Who signs at work: the head of the team that adopted it, or your manager. Try `/shipped` with the field Mathematics and the lane Working.
 
 ### Physics
 
@@ -446,6 +550,12 @@ Moments worth recording:
 
 Who signs: the lab instructor, the PI or a TA. Try `/shipped` with the field Physics.
 
+At work:
+
+- **An instrument meets its spec** → milestone: “Detector reached 1.8% energy resolution at 662 keV, inside spec”. Proof: the calibration report and the run log.
+
+Who signs at work: the group lead or the facility manager. Try `/shipped` with the field Physics and the lane Working.
+
 ### Chemistry
 
 | Tool | How your assistant reaches it | What it reads |
@@ -462,6 +572,12 @@ Moments worth recording:
 - **Characterization confirms it** → result post: “Product confirmed by ¹H NMR, 87% yield”. Proof: the spectrum and the notebook entry.
 
 Who signs: the PI, the lab manager or the course instructor. Try `/shipped` with the field Chemistry.
+
+At work:
+
+- **A process scales** → milestone: “Scaled the coupling step from 5 g to 2 kg at 84% yield”. Proof: the batch record and the certificate of analysis.
+
+Who signs at work: the lab head, the quality lead or your manager. Try `/shipped` with the field Chemistry and the lane Working.
 
 ### Biology
 
@@ -480,6 +596,12 @@ Moments worth recording:
 
 Who signs: the PI, a postdoc who supervised it, or the course instructor. Try `/shipped` with the field Biology.
 
+At work:
+
+- **An assay is validated** → milestone: “Assay validated: under 8% variation across three operators”. Proof: the validation report.
+
+Who signs at work: the lab director or the study director. Try `/shipped` with the field Biology and the lane Working.
+
 ### Environment
 
 | Tool | How your assistant reaches it | What it reads |
@@ -496,6 +618,12 @@ Moments worth recording:
 - **The analysis finds something** → result post: “Campus canopy cuts surface temperature 4.2 °C in July”. Proof: the map and the notebook.
 
 Who signs: the environmental club's officers, a field-course instructor or the PI. Try `/shipped` with the field Environment.
+
+At work:
+
+- **A plan or report is accepted** → milestone: “Stormwater plan approved by the county on first submission”. Proof: the approval letter and the report.
+
+Who signs at work: the project manager, the client or the agency's reviewing engineer. Try `/shipped` with the field Environment and the lane Working.
 
 ### Space
 
@@ -514,6 +642,12 @@ Moments worth recording:
 
 Who signs: the space systems lab's lead, the test-facility engineer or the faculty advisor. Try `/shipped` with the field Space.
 
+At work:
+
+- **A unit passes acceptance** → milestone: “Flight radio passed thermal vacuum: 8 cycles, no anomalies”. Proof: the test report and the as-run procedure.
+
+Who signs at work: the test conductor, the systems lead or your manager. Try `/shipped` with the field Space and the lane Working.
+
 ### Medicine
 
 | Tool | How your assistant reaches it | What it reads |
@@ -530,6 +664,12 @@ Moments worth recording:
 - **A study or review is complete** → milestone: “Systematic review screened 1,240 abstracts, 38 included”. Proof: the protocol registration and the preprint.
 
 Who signs: the supervising physician or PI, the course director, or the biomedical society's officers. Try `/shipped` with the field Medicine.
+
+At work:
+
+- **A quality-improvement project moves its measure** → milestone: “Discharge checklist cut 30-day readmissions on one ward from 14% to 9%”. Proof: the aggregate report, never patient data, with the institution's approval.
+
+Who signs at work: the department head or the medical director. Try `/shipped` with the field Medicine and the lane Working.
 
 ### Business
 
@@ -549,6 +689,12 @@ Moments worth recording:
 
 Who signs: the entrepreneurship club's officers, an accelerator mentor or a professor. Try `/shipped` with the field Business.
 
+At work:
+
+- **A target is hit** → milestone: “New pricing tiers cut churn 9%”. Proof: the pilot results, totals only.
+
+Who signs at work: your manager, the director who owned the target, or the client. Try `/shipped` with the field Business and the lane Working.
+
 ### Design
 
 | Tool | How your assistant reaches it | What it reads |
@@ -566,6 +712,12 @@ Moments worth recording:
 
 Who signs: the studio instructor, the critique panel or a client. Try `/shipped` with the field Design.
 
+At work:
+
+- **A redesign ships and moves a number** → milestone: “Checkout redesign lifted conversion 12%”. Proof: the design file and the test report.
+
+Who signs at work: the client, the product lead or your manager. Try `/shipped` with the field Design and the lane Working.
+
 ### Media
 
 | Tool | How your assistant reaches it | What it reads |
@@ -582,6 +734,12 @@ Moments worth recording:
 - **The audience responds** → result post: “12,400 views and 61% average watch time in the first week”. Proof: the YouTube analytics summary.
 
 Who signs: the film club's officers, the festival programmer or the course instructor. Try `/shipped` with the field Media.
+
+At work:
+
+- **A piece is published and performs** → milestone: “Launch film reached 480,000 views, 58% watched to the end”. Proof: the published piece and the analytics summary.
+
+Who signs at work: the client, the commissioning editor or a producer who isn't on the project. Try `/shipped` with the field Media and the lane Working.
 
 ### Social science
 
@@ -601,6 +759,12 @@ Moments worth recording:
 
 Who signs: the faculty advisor, the IRB-approved PI or the society's officers. Try `/shipped` with the field Social science.
 
+At work:
+
+- **Findings change a decision** → milestone: “Tenant survey (1,150 responses) led the council to extend rent relief”. Proof: the report and the council minutes.
+
+Who signs at work: the research director, the client or the body that commissioned it. Try `/shipped` with the field Social science and the lane Working.
+
 ### Education
 
 | Tool | How your assistant reaches it | What it reads |
@@ -617,6 +781,12 @@ Moments worth recording:
 - **Learners improve** → result post: “Post-test scores rose 18 points across 64 students”. Proof: the aggregate results (never individual students).
 
 Who signs: the cooperating teacher, the school's principal or the course instructor. Try `/shipped` with the field Education.
+
+At work:
+
+- **A unit lifts results** → milestone: “Fractions unit lifted quiz scores 18%”. Proof: the unit plan and aggregate scores, never individual students.
+
+Who signs at work: the head of department or the principal. Try `/shipped` with the field Education and the lane Working.
 
 ## How signing in works (for founders)
 
