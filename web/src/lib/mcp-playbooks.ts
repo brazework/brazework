@@ -442,15 +442,16 @@ export type PromptArg = { name: string; description: string; required: boolean }
 export type PromptDef = { name: string; title: string; description: string; arguments: PromptArg[] };
 const FIELD_ARG: PromptArg = { name: "field", description: "Your field, e.g. Mechanical, Data & AI, Medicine. Leave it out to use the field on your Brazework profile.", required: false };
 const WHAT_ARG: PromptArg = { name: "what", description: "What happened, in a few words (optional: your assistant can look).", required: false };
+const LANE_ARG: PromptArg = { name: "lane", description: "Studying or Working. Leave it out and your assistant works it out from your profile.", required: false };
 
 export const PROMPTS: PromptDef[] = [
-  { name: "start", title: "Get me started", description: "Your first minute: find something you really finished in the tools you've connected, and turn it into your first milestone, with its proof, ready for the person who saw it to sign.", arguments: [FIELD_ARG] },
-  { name: "shipped", title: "I shipped something", description: "Turn work you just finished (a merged PR, a new version, a passed test) into a milestone with evidence, for your club to verify or someone to sign.", arguments: [FIELD_ARG, WHAT_ARG] },
-  { name: "result", title: "I got a result", description: "Turn a number (a run, a test, a measurement, a sales total) into a result post with specifics.", arguments: [FIELD_ARG, WHAT_ARG] },
-  { name: "standup", title: "Write my standup", description: "Write today's standup (done, next, blocked) from what your connected tools show since yesterday, and save it to your Brazework drafts. Nothing is posted until you approve it.", arguments: [FIELD_ARG, { name: "date", description: "The day it's for, as YYYY-MM-DD (optional: today).", required: false }] },
-  { name: "week", title: "Recap my week", description: "Look over the last 7 days in your connected tools and draft the 1–3 things worth recording.", arguments: [FIELD_ARG] },
-  { name: "ask_signature", title: "Ask someone to sign", description: "Ask the professor, PI, manager or mentor who saw your work to sign one of your milestones.", arguments: [{ name: "who", description: "Who saw it, e.g. “Dr. Lee, my lab PI”.", required: false }] },
-  { name: "setup", title: "Connect my tools", description: "Which of your field's tools your assistant can reach, and how to connect them in a few minutes.", arguments: [FIELD_ARG] },
+  { name: "start", title: "Get me started", description: "Your first minute: find something you really finished in the tools you've connected, and turn it into your first milestone, with its proof, ready for the person who saw it to sign.", arguments: [FIELD_ARG, LANE_ARG] },
+  { name: "shipped", title: "I shipped something", description: "Turn work you just finished (a merged PR, a new version, a passed test) into a milestone with evidence, for your club to verify or someone to sign.", arguments: [FIELD_ARG, WHAT_ARG, LANE_ARG] },
+  { name: "result", title: "I got a result", description: "Turn a number (a run, a test, a measurement, a sales total) into a result post with specifics.", arguments: [FIELD_ARG, WHAT_ARG, LANE_ARG] },
+  { name: "standup", title: "Write my standup", description: "Write today's standup (done, next, blocked) from what your connected tools show since yesterday, and save it to your Brazework drafts. Nothing is posted until you approve it.", arguments: [FIELD_ARG, { name: "date", description: "The day it's for, as YYYY-MM-DD (optional: today).", required: false }, LANE_ARG] },
+  { name: "week", title: "Recap my week", description: "Look over the last 7 days in your connected tools and draft the 1–3 things worth recording.", arguments: [FIELD_ARG, LANE_ARG] },
+  { name: "ask_signature", title: "Ask someone to sign", description: "Ask the professor, PI, manager or mentor who saw your work to sign one of your milestones.", arguments: [{ name: "who", description: "Who saw it, e.g. “Dr. Lee, my lab PI”.", required: false }, FIELD_ARG, LANE_ARG] },
+  { name: "setup", title: "Connect my tools", description: "Which of your field's tools your assistant can reach, and how to connect them in a few minutes.", arguments: [FIELD_ARG, LANE_ARG] },
 ];
 PROMPTS.push(...INTENT_PROMPTS);
 
@@ -493,18 +494,132 @@ function signLine(s: Scopes): string {
   return "If there's no club, tell me to ask the person who saw it from the milestone in Brazework (“Ask someone to vouch”): this token can't email anyone for me.";
 }
 
+const standupDay = (date?: string) => (/^\d{4}-\d{2}-\d{2}$/.test(date?.trim() ?? "") ? date!.trim() : "today");
+
+// The working lane (spec: "What the working lane changes"): the same commands, for work done for an
+// employer or a client. A hidden milestone instead of a feed post, no club, the field's working
+// signers, the employer asked before any tool is read, and the rules in full. Null for a prompt with
+// no working version (the intent prompts), which then reads as it always has.
+function workPromptText(name: string, args: Record<string, string | undefined>, s: Scopes, p: Playbook | undefined, what: string): string | null {
+  const ex = p?.work.moments[0];
+  const like = ex ? `, like “${ex.example}”` : "";
+  const who = p ? p.work.signers : "a tech lead, a manager or a client";
+  const rules = ["This is the Working part of my playbook: work I did for an employer or a client. Follow these rules throughout:", ...WORK_RULES.map((r) => `- ${r}`)];
+  const sign = s.canPost
+    ? `Offer to ask someone at work who saw it to sign (request_signature): ${who}. Only send it after I say who and yes.`
+    : `Tell me to ask someone at work who saw it from the milestone in Brazework (“Ask someone to vouch”): ${who}. This token can't email anyone for me.`;
+  const packet = "my review packet, with hidden work included, is at /u/<my id from me>/review?private=1";
+  const signedBy = `Who signs in my field at work: ${who} (${p ? playbookUri(p) : PLAYBOOK_INDEX_URI}).`;
+  switch (name) {
+    case "start":
+      return [
+        "Get me started on Brazework: turn one thing I've really finished at work into my first milestone, in about a minute.",
+        p ? fieldLine(p, args.field) : `Call me first to see my field and what's on my record, then read the matching playbook from ${PLAYBOOK_INDEX_URI}.`,
+        ...rules,
+        goalLine(s),
+        "1. Ask me which work tools my employer allows you to read. From those, over my last 30 days, pick the single strongest piece of finished work that has proof. If there are none, ask me what I finished and for one link that shows it.",
+        "2. Call my_projects and pick the project it belongs to. If I have none yet, tell me to type what I'm working on in the box on Brazework's Home page (one line, in general terms), then come back.",
+        `3. Write it as a milestone: the title is what was achieved, with numbers${like}; the evidence is 1 to 8 https links, which can be links only I and the signer can open. Show it to me in a few lines.`,
+        `4. ${writeLine(s, "milestone")}`,
+        `5. ${sign}`,
+        `6. End with the link from the result, and tell me ${packet}.`,
+      ].join("\n");
+    case "shipped":
+      return [
+        `I just finished something at work${what} and want it on my Brazework record as a milestone.`,
+        fieldLine(p, args.field),
+        ...rules,
+        goalLine(s),
+        "1. Find the concrete outcome and its proof, in the tools my employer allows you to read or from what I tell you: the merged pull request, the release, the test report, the approval. Numbers beat adjectives.",
+        "2. Call my_projects to pick the project. Leave the club out unless I name one: it then waits for a signature from someone at work who saw it.",
+        `3. Write the title as what was achieved, with numbers${like}; the detail as how it was done and measured; the evidence as 1 to 8 https links, which can be links only I and the signer can open.`,
+        `4. ${writeLine(s, "milestone")}`,
+        `5. ${sign}`,
+      ].join("\n");
+    case "result":
+      return [
+        `I have a result from work${what} for my Brazework record.`,
+        fieldLine(p, args.field),
+        ...rules,
+        "1. Get the real numbers (the run, the test, the measurement, the totals) from the tools my employer allows you to read, or from me, and compare them with the last best or the baseline. Never invent a number: if you can't find it, ask me.",
+        `2. Write it as a milestone, not a post: the title is the number and what changed${like}; the detail is how it was measured; the evidence is 1 to 8 https links. Attach it to the right project from my_projects.`,
+        `3. ${writeLine(s, "milestone")}`,
+        `4. ${sign}`,
+      ].join("\n");
+    case "standup": {
+      const day = standupDay(args.date);
+      return [
+        `Write my standup for ${day === "today" ? "today" : day} from work, for my Brazework record.`,
+        fieldLine(p, args.field),
+        ...rules,
+        "1. Look at what the tools my employer allows you to read show since my last working day, and ask me for the rest: what I merged, shipped, tested or moved, and my calendar for today. Call my_projects so you can attach it to the right project.",
+        "2. Write it in my voice, short and in general terms, as three parts: Done (what I finished), Next (what I'm doing today), Blocked (what's in my way, or “Nothing”). Never invent work or numbers: if you can't see it, leave it out or ask me.",
+        s.canDraft || s.canPost
+          ? `3. Save it with draft_post only on a private project (my_projects says which are): kind "update", with source_key “standup:${day === "today" ? "<today's date as YYYY-MM-DD>" : day}” so running this again the same day doesn't make a second one. Always a draft, even if this token can post: I approve it in Brazework. If the project isn't private, don't save it: write it out for me and tell me I can make the project private in Brazework.`
+          : `3. ${READ_ONLY}`,
+      ].join("\n");
+    }
+    case "week":
+      return [
+        "Recap my last 7 days at work for my Brazework record.",
+        fieldLine(p, args.field),
+        ...rules,
+        goalLine(s),
+        "1. Look through what the tools my employer allows you to read show for the week, and ask me for what they don't: releases, approvals, tests passed, numbers that moved. Call my_projects to see what's already recorded, so you don't repeat it.",
+        "2. Pick the 1 to 3 things most worth recording, each as a milestone (something achieved, with proof). A post only on a private project.",
+        s.canDraft || s.canPost
+          ? `3. ${s.canPost ? "Go through them one at a time: show each and wait for my yes before logging it, or save it as a draft if I say “later”." : "Save each with draft_milestone, with a source_key like “week:<year>-W<week>:<short-name>” so running this twice doesn't make duplicates. Save a post (draft_post) only on a private project."} Then tell me what's waiting in Brazework.`
+          : `3. ${READ_ONLY}`,
+        `4. End by telling me ${packet}.`,
+      ].join("\n");
+    case "ask_signature":
+      if (!s.canPost) return `${signedBy} I want someone at work who saw it to sign one of my Brazework milestones. This token can't send asks (it would email someone for me), so tell me to open the milestone in Brazework and use “Ask someone to vouch”, or to turn on “Can post” for this token in Settings → Your tools.`;
+      return [
+        `I want someone at work who saw it to sign one of my Brazework milestones${args.who?.trim() ? `: ${args.who.trim().slice(0, 120)}` : ""}.`,
+        signedBy,
+        "1. Call my_projects and list my open_milestones (waiting for a signature). Ask me which one.",
+        "2. Ask me who saw it: their work email (Gmail, Outlook and the like don't count) and how they know my work: manager, mentor or other. A tech lead counts as manager and a client as other. Never someone on the Brazework project's team.",
+        "3. Show me exactly who will get the email and for which milestone, and wait for my yes. Then call request_signature. They get a one-time link; they don't need an account.",
+      ].join("\n");
+    case "setup":
+      return [
+        "Help me connect the tools I use at work to Brazework, so my work shows up on my record.",
+        fieldLine(p, args.field),
+        ...rules,
+        "1. Go through the tools one at a time and ask me whether my employer allows connecting each. Skip any I'm not sure about.",
+        "2. For each one I can connect, tell me how you'd reach it: an official MCP server (link me to the vendor's own setup page), a community server (say it's written by someone else and that I should read it before installing), or my exports and command-line output (say which file or command).",
+        "3. Don't install or sign in to anything without asking me.",
+        `4. Suggest the moment from my field's working part to try first${ex ? ` (“${ex.when}”)` : ""}, and the commands for it: shipped at the moment, week on Friday.`,
+        "5. For a repo that's mine or that my employer allows, point me to Brazework → Settings → Your tools → GitHub Actions: it leaves drafts for me to approve.",
+      ].join("\n");
+    default:
+      return null;
+  }
+}
+
 /** The message a prompt sends, for this member's field and what their token may do. */
 // The intent prompts (club_week, career_fair) live in lib/mcp-intent-prompts.ts.
 export function promptText(name: string, args: Record<string, string | undefined>, s: Scopes): string | null {
   const p = playbookFor(args.field);
   const what = args.what?.trim() ? ` (${args.what.trim().slice(0, 300)})` : "";
+  // The working lane has its own text (workPromptText). Studying, or no lane, reads as it always has;
+  // with no lane it also says how to choose one and carries the working rules, so a plain /shipped
+  // from someone who works is covered (spec: "Where the rules live").
+  const lane = laneFrom(args.lane);
+  if (lane === "work") {
+    const text = workPromptText(name, args, s, p, what);
+    if (text) return text;
+  }
   const ex = p?.study.moments.find((m) => m.becomes === "milestone") ?? p?.study.moments[0];
   const exR = p?.study.moments.find((m) => m.becomes === "result") ?? p?.study.moments[0];
+  const pick = lane ? [] : [laneSteps(), "If it's Working, follow these rules throughout, and take the example and who signs from the “If you're working” part of the playbook:", ...WORK_RULES.map((r) => `- ${r}`)];
+  const whoSigns = `Who usually signs in my field is in its playbook: ${p ? playbookUri(p) : PLAYBOOK_INDEX_URI}.`;
   switch (name) {
     case "start":
       return [
         "Get me started on Brazework: turn one thing I've really finished into my first milestone, in about a minute.",
         p ? fieldLine(p, args.field) : `Call me first to see my field and what's on my record, then read the matching playbook from ${PLAYBOOK_INDEX_URI}.`,
+        ...pick,
         goalLine(s),
         "1. Look at the tools you can reach right now from that list, over my last 30 days: merged pull requests and releases, finished runs, exported reports, files I shipped. Pick the single strongest piece of finished work that has proof. If you can't reach any of them, ask me for one link that shows something I finished (a repo, a doc, a video).",
         "2. Call my_projects and pick the project it belongs to. If I have none yet, tell me to type what I'm building in the box on Brazework's Home page (one line is enough), then come back.",
@@ -517,6 +632,7 @@ export function promptText(name: string, args: Record<string, string | undefined
       return [
         `I just finished something${what} and want it on my Brazework record as a milestone.`,
         fieldLine(p, args.field),
+        ...pick,
         goalLine(s),
         "1. Find the concrete outcome and its proof in my tools: the merged pull request and its CI run, the new version, the test video or log, the report. Numbers beat adjectives.",
         "2. Call my_projects to pick the project, and my_clubs to pick the club that saw it. If no club did, leave the club out: it then waits for a signature from whoever saw it.",
@@ -528,16 +644,18 @@ export function promptText(name: string, args: Record<string, string | undefined
       return [
         `I have a result${what} to share on Brazework.`,
         fieldLine(p, args.field),
+        ...pick,
         "1. Get the real numbers from my tools (the run, the test, the measurement, the totals) and compare them with the last best or the baseline. Never invent a number: if you can't find it, ask me.",
         `2. Draft a short post in my voice, kind "result": what changed, the numbers, how it was measured, what's next${exR ? `. Like: “${exR.example}”` : ""}. Attach it to the right project from my_projects, and up to 3 #tags.`,
         `3. ${writeLine(s, "post")}`,
         "Keep private things out: no customer, patient or student details, no secrets, nothing from an employer's confidential work.",
       ].join("\n");
     case "standup": {
-      const day = /^\d{4}-\d{2}-\d{2}$/.test(args.date?.trim() ?? "") ? args.date!.trim() : "today";
+      const day = standupDay(args.date);
       return [
         `Write my standup for ${day === "today" ? "today" : day} from my tools, for my Brazework record.`,
         fieldLine(p, args.field),
+        ...pick,
         "1. Look at what you can reach since my last working day: commits and merged pull requests, CI and test runs, issues and tickets I moved, documents and runs I finished, my calendar for today. Call my_projects so you can attach it to the right project.",
         "2. Write it in my voice, short, as three parts: Done (what I finished, with numbers and links), Next (what I'm doing today), Blocked (what's in my way, or “Nothing”). Never invent work or numbers: if you can't see it, leave it out or ask me.",
         "3. Keep private things out: no customer, patient or student details, no secrets, nothing from an employer's confidential work. If something only makes sense with those, describe it in general terms.",
@@ -550,6 +668,7 @@ export function promptText(name: string, args: Record<string, string | undefined
       return [
         "Recap my last 7 days for my Brazework record.",
         fieldLine(p, args.field),
+        ...pick,
         goalLine(s),
         "1. Look through what you can reach for the week: merged work, versions, runs, tests, results, launches. Call my_projects to see what's already recorded, so you don't repeat it.",
         "2. Pick the 1 to 3 things most worth recording, and for each say whether it's a milestone (something achieved, with proof) or a post (an update or result).",
@@ -558,9 +677,10 @@ export function promptText(name: string, args: Record<string, string | undefined
           : `3. ${READ_ONLY}`,
       ].join("\n");
     case "ask_signature":
-      if (!s.canPost) return `I want someone who saw my work to sign one of my Brazework milestones. This token can't send asks (it would email someone for me), so tell me to open the milestone in Brazework and use “Ask someone to vouch”, or to turn on “Can post” for this token in Settings → Your tools.`;
+      if (!s.canPost) return `${whoSigns} I want someone who saw my work to sign one of my Brazework milestones. This token can't send asks (it would email someone for me), so tell me to open the milestone in Brazework and use “Ask someone to vouch”, or to turn on “Can post” for this token in Settings → Your tools.`;
       return [
         `I want someone who saw my work to sign one of my Brazework milestones${args.who?.trim() ? `: ${args.who.trim().slice(0, 120)}` : ""}.`,
+        whoSigns,
         "1. Call my_projects and list my open_milestones (waiting for a club or a signature). Ask me which one.",
         "2. Ask me who saw it: their university or company email (Gmail, Outlook and the like don't count) and how they know my work: professor, ta, pi, manager, mentor or other. Never someone on the project's team.",
         "3. Show me exactly who will get the email and for which milestone, and wait for my yes. Then call request_signature. They get a one-time link; they don't need an account.",
@@ -569,6 +689,7 @@ export function promptText(name: string, args: Record<string, string | undefined
       return [
         "Help me connect the tools I use to Brazework, so my work shows up on my record.",
         fieldLine(p, args.field),
+        ...pick,
         "1. For each tool, tell me how you'd reach it: an official MCP server (link me to the vendor's own setup page), a community server (say it's written by someone else and that I should read it before installing), or my exports and command-line output (say which file or command).",
         "2. Don't install or sign in to anything without asking me.",
         "3. Suggest one moment from my field to try first, and the slash command for it (shipped, result or week).",

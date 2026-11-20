@@ -123,6 +123,50 @@ test("prompts adapt to the token: post shows it and waits for yes; draft leaves 
   assert.equal(promptText("nope", {}, post), null);
 });
 
+// Lanes in the prompts. Three cases for every prompt that records work: the lane given as work, given
+// as study, or not given (the normal case: most people type a command with no arguments).
+const POST = scopeFlags(["read", "draft", "post"]), DRAFT = scopeFlags(["read", "draft"]), READ = scopeFlags(["read"]);
+const RECORDS = ["start", "shipped", "result", "standup", "week", "setup"];
+const at = (lane: string | undefined, name: string, s = POST, field = "Mechanical") => promptText(name, { field, ...(lane ? { lane } : {}) }, s)!;
+
+test("working lane: the rules, the working example and signers, never a club first", () => {
+  for (const n of RECORDS) for (const s of [POST, DRAFT, READ]) {
+    assert.match(at("work", n, s), /employer allows/, `${n}: the employer question`);
+    assert.doesNotMatch(at("work", n, s), /pick the club that saw it/, `${n}: no club first`);
+    assert.doesNotMatch(at("work", n, s), /Was this at work/, `${n}: the lane was given, so it isn't asked`);
+  }
+  assert.match(at("work", "shipped"), /Housing rev D released/);
+  assert.match(at("work", "shipped"), /manufacturing engineer/);
+  assert.match(at("work", "result"), /log_milestone/, "a number at work is a hidden milestone");
+  assert.doesNotMatch(at("work", "result"), /post_update|draft_post/);
+  assert.match(at("work", "result", DRAFT), /draft_milestone/);
+  assert.match(at("work", "week", DRAFT), /only on a private project/);
+  assert.match(at("work", "standup"), /only on a private project/);
+  assert.match(at("work", "setup"), /week/);
+  assert.match(at("work", "week"), /\/review\?private=1/, "it leads to the review packet, hidden work ticked");
+  assert.match(promptText("ask_signature", { field: "Mechanical", lane: "work" }, POST)!, /manufacturing engineer/);
+  assert.match(at("work", "shipped", READ), /can only read/, "a read-only token still writes it out");
+  assert.match(at("work", "shipped", POST, "basket weaving"), /employer allows/, "no playbook: the rules still apply");
+  assert.match(at("Working", "shipped"), /Housing rev D released/, "a loosely typed lane still means work");
+});
+
+test("studying lane: no employer question and no lane question", () => {
+  for (const def of PROMPTS) for (const s of [POST, DRAFT, READ])
+    assert.doesNotMatch(promptText(def.name, { field: "Mechanical", lane: "study" }, s)!, /employer allows|Was this at work/, def.name);
+  assert.match(at("study", "shipped"), /pick the club that saw it/, "as today");
+  assert.match(at("study", "shipped"), /Ran two hours under load without slipping/, "the studying example");
+});
+
+test("no lane (the normal case): the lane steps and the rules, in every prompt that records work", () => {
+  for (const n of RECORDS) for (const s of [POST, DRAFT, READ]) {
+    assert.match(at(undefined, n, s), /Was this at work, or for school or a club\?/, n);
+    assert.match(at(undefined, n, s), /employer allows/, n);
+  }
+  assert.match(at("job", "shipped"), /Was this at work, or for school or a club\?/, "a lane it can't read is treated as none");
+  for (const n of [...RECORDS, "ask_signature"]) assert.ok(PROMPTS.find((p) => p.name === n)!.arguments.some((a) => a.name === "lane" && !a.required), `${n} takes lane`);
+  assert.ok(PROMPTS.find((p) => p.name === "ask_signature")!.arguments.some((a) => a.name === "field"), "ask_signature takes field");
+});
+
 test("tools follow scopes: read gets reads only, draft adds drafts, post adds everything", () => {
   const names = (scopes: string[]) => toolsFor(scopes).map((t) => t.name);
   const reads = MCP_TOOLS.filter((t) => !t.needs).map((t) => t.name);
@@ -162,9 +206,9 @@ test("docs/mcp-workflows.md covers every field, every prompt and the drafts and 
 test("every field × every prompt × every token names only tools that token has", () => {
   const scopes: [string, string[]][] = [["post", ["read", "draft", "post"]], ["draft", ["read", "draft"]], ["read", ["read"]]];
   const named = MCP_TOOLS.map((t) => t.name).filter((n) => n.includes("_"));
-  for (const p of PLAYBOOKS) for (const def of PROMPTS) for (const [label, sc] of scopes) {
-    const text = promptText(def.name, { field: p.field, what: "the thing I finished", who: "Dr. Lee" }, scopeFlags(sc));
-    assert.ok(text && text.length > 80, `${def.name}/${p.id}/${label} renders`);
+  for (const lane of [undefined, "study", "work"]) for (const p of PLAYBOOKS) for (const def of PROMPTS) for (const [label, sc] of scopes) {
+    const text = promptText(def.name, { field: p.field, what: "the thing I finished", who: "Dr. Lee", ...(lane ? { lane } : {}) }, scopeFlags(sc));
+    assert.ok(text && text.length > 80, `${def.name}/${p.id}/${label}/${lane ?? "no lane"} renders`);
     const offered = new Set(toolsFor(sc).map((t) => t.name));
     for (const n of named) if (new RegExp(`\\b${n}\\b`).test(text!)) assert.ok(offered.has(n), `${def.name}/${p.id}/${label} names ${n}, which a ${label} token doesn't have`);
     if (def.arguments?.some((a) => a.name === "field")) assert.ok(text!.includes(playbookUri(p)), `${def.name}/${p.id} points to its playbook`);
