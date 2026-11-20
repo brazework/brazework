@@ -52,8 +52,10 @@ a detail. Here the detail belongs to the piece of work.
    work doesn't show by accident. The gap is the other way round: from chat nothing can show a
    milestone, and nothing can write a hidden milestone's public line.
 2. **The server tells assistants the opposite.** `log_milestone`'s description says "It shows on the
-   member's profile only once verified or signed" (`web/src/lib/mcp.ts`), and its result says "It shows
-   on your profile once they do" (`supabase/mcp-workflows.sql`).
+   member's profile only once verified or signed" (`web/src/lib/mcp.ts`). The database's result says the
+   same ("It shows on your profile once they do", `supabase/mcp-workflows.sql`), but that line never
+   reaches an assistant: `ok()` in `web/src/app/api/mcp/route.ts` replaces it with the server's own next
+   step (`web/src/lib/mcp-results.ts`). Corrected while planning the build.
 3. **An assistant can't tell a student from a professional.** `mcp_me` returns the headline, field,
    interests and counts (clubs among them), but not `account_type` (`supabase/mcp.sql`).
 4. **`student` means a school email.** Everyone else is `professional`, including someone studying who
@@ -218,8 +220,8 @@ and the builder walks one field from each family end to end on the local demo me
   and `signers`. Today's moments and signers move into `study` unchanged.
 - **`me` returns `account_type`.** One database step replaces `mcp_me`. The tool's description says the
   field picks the playbook, and the account type and the clubs count pick the lane.
-- **The same step corrects what the server says about showing** (finding 2): a milestone stays hidden
-  until the member shows or shares it in Brazework. The tool description changes to match.
+- **The tool descriptions stop saying a milestone shows once it's verified** (finding 2): it stays
+  hidden until the member shows or shares it in Brazework. This needs no database change.
 - **Prompts take `lane`** (`study` or `work`, optional): `start`, `shipped`, `result`, `standup`,
   `week`, `setup`, `ask_signature`. `ask_signature` also gains `field`, which it lacks today, so it can
   name the field's signers.

@@ -242,3 +242,17 @@ test("standup: today's done, next and blocked, always saved as a draft, once a d
   assert.match(promptText("standup", { date: "next tuesday" }, draft)!, /for today/);
   assert.match(promptText("standup", {}, read)!, /can only read/);
 });
+
+// An assistant that never sees a prompt still reads the tools' descriptions, so they say where a
+// milestone stays (hidden until the member shows it) and point to the playbook's working part.
+test("the tools say where work stays, and which part of the playbook to read", () => {
+  const d = (n: string) => MCP_TOOLS.find((t) => t.name === n)!.description;
+  assert.match(d("me"), /account_type/);
+  assert.match(d("me"), /Studying or Working/);
+  for (const n of ["log_milestone", "draft_milestone"]) {
+    assert.doesNotMatch(d(n), /shows on the member's profile only once/, `${n}: no longer claims it shows`);
+    assert.match(d(n), /stays hidden/, `${n}: hidden until the member shows it`);
+    assert.match(d(n), /Working part/, `${n}: points to the working part`);
+  }
+  assert.match(LANES_NOTE, /ask whether their employer allows/);
+});
