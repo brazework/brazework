@@ -18,10 +18,17 @@ it, who signed it and what's still waiting.
 - **One obvious next action per page.** A page shows at most one `NextStrip` and one primary
   button. Everything else is a plain link or a quiet button.
 - **Calm surfaces.** White or near-black sheets, hairline borders, no gradient washes, no glow. Ink
-  (`--text`) for emphasis; the verified green (`--ok`) only for signed work. No other accent colors
-  (no orange flames, no purple).
+  (`--text`) for emphasis. Colour is only ever proof, one colour per kind, the same everywhere (the
+  counts on a record, its timeline, each entry): green (`--ok`) for signed by a person, blue
+  (`--info`) for backed by GitHub, dashed amber (`--wait`) for waiting to be signed. Waiting is
+  always dashed, so it never reads as the solid gold Pro seal. No other accent colors (no orange
+  flames, no purple).
+- **A record is never blank.** A profile with no cover photo shows the drawing for its field
+  (`components/landing/schematics.tsx`), in ink on the sheet grid.
 - **Motion only for state changes.** Something opens, is confirmed, moves. No entrance animations on
-  page load, no hover bounces. Everything respects `prefers-reduced-motion`.
+  page load, no hover bounces. Everything respects `prefers-reduced-motion`. The one flourish: the
+  first time a browser shows a milestone signed in the last week, its seal comes down like a stamp
+  (`components/app/fresh-seal.tsx`), once.
 - **Phone first.** Every piece works at 375px wide: rows wrap, buttons stay at least 32px tall, no
   sideways scroll.
 

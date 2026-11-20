@@ -26,6 +26,7 @@
   --ok: #15703a; /* 4.7:1 or better as text on its own 12-14% tint, as in the verified pills (was #15803d: 4.1) */
   --danger: #dc2626;
   --info: #2563eb;
+  --wait: #92570a; /* waiting for a signature: amber ink, 5.9:1 on white, dashed wherever it shows */
   --tag: #7c3aed;
   --pro: #d97706;
   --glow: rgba(31, 31, 29, 0.05);
@@ -53,6 +54,7 @@
     --ok: #4ade80;
     --danger: #f87171;
     --info: #60a5fa;
+    --wait: #fbbf24;
     --tag: #a78bfa;
     --pro: #fbbf24;
     --glow: rgba(255, 255, 255, 0.09);
@@ -79,6 +81,7 @@
   --ok: #4ade80;
   --danger: #f87171;
   --info: #60a5fa;
+  --wait: #fbbf24;
   --tag: #a78bfa;
   --pro: #fbbf24;
   --glow: rgba(255, 255, 255, 0.09);
@@ -104,6 +107,7 @@
   --color-ok: var(--ok);
   --color-danger: var(--danger);
   --color-info: var(--info);
+  --color-wait: var(--wait);
 
   /* Corners (redesign 2026-11): crisper than Tailwind's defaults; one change for every rounded-*.
      rounded-full stays a pill for avatars and chips. */
@@ -506,3 +510,12 @@ select option { background-color: var(--surface); color: var(--text); }
   background-size: 24px 24px;
   background-position: -1px -1px;
 }
+
+/* A signature landing (components/app/fresh-seal.tsx): the seal comes down like a stamp, once. */
+@keyframes seal-stamp {
+  0% { transform: scale(2.1) rotate(-14deg); opacity: 0; }
+  60% { transform: scale(0.92) rotate(2deg); opacity: 1; }
+  100% { transform: scale(1) rotate(0); opacity: 1; }
+}
+.seal-stamp { animation: seal-stamp 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both; transform-origin: center; }
+@media (prefers-reduced-motion: reduce) { .seal-stamp { animation: none; } }

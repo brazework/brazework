@@ -42,6 +42,7 @@ import { PostCard } from "../../feed/post-card";
 import { PeopleStrip } from "../../feed/discover";
 import { StripSkeleton } from "@/components/app/discover-cards";
 import { CoverBanner, ProfilePhoto } from "@/components/media/profile-media";
+import { schematicFor } from "@/lib/schematic-field";
 import { OnlineLabel, WithPresence } from "@/components/presence/presence";
 import { EditBasics, ProjectEditor, ProjectGrid, type ProjectView } from "./profile-client";
 import type { Club, Milestone } from "./milestones";
@@ -155,9 +156,12 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
   const openTo = p.open_to ?? [];
   const links = p.links ?? [];
   const waiting = ms.filter((m) => m.status === "pending").length;
+  // Backed by GitHub with nobody asked to sign (supabase/backed.sql): its own count, in its own colour.
+  const isBacked = (m: Milestone) => (Array.isArray(m.milestone_backings) ? m.milestone_backings.length > 0 : !!m.milestone_backings);
+  const backedCount = ms.filter((m) => m.status === "logged" && isBacked(m)).length;
   // The record over time (lib/record-timeline.ts): projects as lanes, signed work on its dates. Built
   // from what this viewer may see: visitors get public projects and verified work only.
-  const timeline = msOn ? buildTimeline({ now: requestTime(), own: mine, projects: projectRows.filter((r) => mine || !r.private), milestones: ms, posts }) : null;
+  const timeline = msOn ? buildTimeline({ now: requestTime(), own: mine, projects: projectRows.filter((r) => mine || !r.private), milestones: ms.map((m) => ({ ...m, backed: isBacked(m) })), posts }) : null;
   // Your goal, on your own chart (visitors see it in the header line instead).
   const goalText = goal && goal.status === "active" ? goalTitle(goal) : null;
   const stats: { n: number; label: string; href: string }[] = [
@@ -196,7 +200,7 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
         </p>
       )}
       <Panel className="relative overflow-hidden rounded-2xl p-0">
-        <CoverBanner path={p.cover_path} editable={mine && mediaOn} userId={user.id} />
+        <CoverBanner path={p.cover_path} editable={mine && mediaOn} userId={user.id} schematic={schematicFor([p.field ?? "", ...(p.interests ?? [])], [])} />
         <div className="px-5 pb-5 sm:px-6">
           <div className="pointer-events-none relative z-10 -mt-11 flex flex-wrap items-end justify-between gap-3 *:pointer-events-auto">
             <div className="inline-flex rounded-full">
@@ -246,7 +250,9 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
                   <span className={st.href === "#proof" && st.n > 0 ? "font-semibold text-ok tabular-nums" : "font-semibold text-text tabular-nums"}>{st.n}</span> {st.label.toLowerCase()}
                 </a>
               ))}
-              {mine && waiting > 0 && <a href="#proof" className="transition hover:text-text"><span className="font-semibold text-text tabular-nums">{waiting}</span> waiting to be signed</a>}
+              {/* One colour per kind of proof (docs/design/app.md): blue for backed, dashed amber for waiting. */}
+              {backedCount > 0 && <a href="#projects" className="inline-flex items-center gap-1.5 transition hover:text-text"><span aria-hidden="true" className="block size-2 rotate-45 rounded-[2px] bg-info" /><span className="font-semibold text-info tabular-nums">{backedCount}</span> backed by GitHub</a>}
+              {mine && waiting > 0 && <a href="#proof" className="inline-flex items-center gap-1.5 transition hover:text-text"><span aria-hidden="true" className="block size-2.5 rounded-full border-[1.5px] border-dashed border-wait" /><span className="font-semibold text-wait tabular-nums">{waiting}</span> waiting to be signed</a>}
               {mine && record && (record.looked
                 ? <Link href="/dashboard" className="inline-flex items-center gap-1.5 transition hover:text-text"><Eye className="size-3.5" /><span className="font-semibold text-text tabular-nums">{record.looked}</span> looked this month</Link>
                 : <span className="inline-flex items-center gap-1.5 text-faint"><Eye className="size-3.5" /> No views yet this month</span>)}

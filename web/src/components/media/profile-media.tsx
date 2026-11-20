@@ -1,5 +1,6 @@
 "use client";
 import { Camera, ImagePlus, Loader2, Trash2 } from "lucide-react";
+import { Schematic } from "@/components/landing/schematics";
 import Image from "next/image";
 import { useRef, useState, useTransition } from "react";
 import { Avatar } from "@/components/ui";
@@ -9,7 +10,9 @@ import { setProfileMedia } from "@/lib/projects";
 import { UploadError, removeUploaded, uploadMedia } from "@/lib/upload";
 
 // A cover banner, editable on your own profile.
-export function CoverBanner({ path, editable, userId }: { path?: string; editable: boolean; userId: string }) {
+// `schematic`: the drawing shown until they add a photo (components/landing/schematics.tsx), picked
+// from their field, so a new record looks drawn, not empty.
+export function CoverBanner({ path, editable, userId, schematic }: { path?: string; editable: boolean; userId: string; schematic?: string }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [, start] = useTransition();
@@ -28,7 +31,11 @@ export function CoverBanner({ path, editable, userId }: { path?: string; editabl
   };
   return (
     <div className="group relative h-24 overflow-hidden border-b border-line sm:h-36">
-      {path ? <Image src={mediaUrl(path)} alt="" fill sizes="(min-width: 768px) 768px, 100vw" className="object-cover" priority /> : <div className="cover-empty absolute inset-0" />}
+      {path ? <Image src={mediaUrl(path)} alt="" fill sizes="(min-width: 768px) 768px, 100vw" className="object-cover" priority /> : (
+        <div className="cover-empty absolute inset-0">
+          {schematic && <Schematic id={schematic} className="absolute top-1/2 right-[6%] h-[78%] w-auto -translate-y-1/2 text-text/45 sm:right-[18%]" />}
+        </div>
+      )}
       {editable && (
         <>
           <input ref={input} type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) void pick(f); }} />

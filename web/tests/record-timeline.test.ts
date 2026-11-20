@@ -75,3 +75,24 @@ test("the summary names when the signed record starts", () => {
   assert.equal(t.lanes.find((l) => l.id === "p2")!.marks[0].by, "Dr. Ruiz");
   assert.equal(t.lanes.find((l) => l.id === "p1")!.marks[0].by, "Maya Patel, Robotics Society");
 });
+
+test("work backed by GitHub is on the chart for everyone, counted apart from signed work", () => {
+  const input = { now, projects, posts: [], milestones: [
+    ms("a", "p1", 40, "verified"),
+    ms("b", "p1", 20, "logged", { backed: true }),
+    ms("c", "p1", 10, "logged"),
+    ms("d", "p1", 2, "pending"),
+  ] };
+  const theirs = buildTimeline({ ...input, own: false })!;
+  assert.deepEqual(theirs.lanes[0].marks.map((m) => m.kind), ["signed", "backed"], "a visitor sees signed and backed; logged with no backing and waiting stay out");
+  assert.equal(theirs.signed, 1);
+  assert.equal(theirs.backed, 1);
+  const mine = buildTimeline({ ...input, own: true })!;
+  assert.deepEqual(mine.lanes[0].marks.map((m) => m.kind), ["signed", "backed", "waiting"]);
+  assert.equal(mine.waiting, 1);
+  // Backed work alone is a record worth drawing; it's never counted as signed.
+  const only = buildTimeline({ now, projects, posts: [], milestones: [ms("b", "p1", 20, "logged", { backed: true })], own: false })!;
+  assert.equal(only.signed, 0);
+  assert.equal(only.backed, 1);
+  assert.equal(only.since, null, "\"signed since\" is only about signatures");
+});

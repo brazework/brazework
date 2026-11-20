@@ -24,6 +24,7 @@ export function RecordTimelineChart({ data, own, goal }: { data: RecordTimeline;
   const found = lanes.flatMap((l) => l.marks.map((m) => ({ m, lane: l }))).find((x) => `${x.lane.id}:${x.m.id}` === active) ?? latest;
   const summary = [
     data.signed ? `${data.signed} signed` : null,
+    data.backed ? `${data.backed} backed` : null,
     own && data.waiting ? `${data.waiting} waiting` : null,
     `across ${lanes.length} project${lanes.length === 1 ? "" : "s"}`,
   ].filter(Boolean).join(" · ");
@@ -91,7 +92,7 @@ export function RecordTimelineChart({ data, own, goal }: { data: RecordTimeline;
           <span className="grid size-5 shrink-0 place-items-center"><Mark kind={found.m.kind} /></span>
           <span className="min-w-0 flex-1">
             <span className="font-medium text-text">{found.m.title}</span>
-            <span className="block text-xs text-muted">{found.m.kind === "signed" ? `Signed by ${found.m.by ?? "a reviewer"}` : found.m.kind === "waiting" ? "Waiting to be signed" : "Update"} · {found.m.when}</span>
+            <span className="block text-xs text-muted">{found.m.kind === "signed" ? `Signed by ${found.m.by ?? "a reviewer"}` : found.m.kind === "backed" ? "Backed by GitHub" : found.m.kind === "waiting" ? "Waiting to be signed" : "Update"} · {found.m.when}</span>
           </span>
           <Link href={found.lane.href} className="inline-flex shrink-0 items-center gap-1 text-xs font-medium text-text underline-offset-4 hover:underline">Open project <ArrowRight className="size-3.5" /></Link>
         </div>
@@ -99,6 +100,7 @@ export function RecordTimelineChart({ data, own, goal }: { data: RecordTimeline;
 
       <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-faint">
         <span className="inline-flex items-center gap-1.5"><Mark kind="signed" small /> Signed</span>
+        {data.backed > 0 && <span className="inline-flex items-center gap-1.5"><Mark kind="backed" small /> Backed by GitHub</span>}
         {own && <span className="inline-flex items-center gap-1.5"><Mark kind="waiting" small /> Waiting</span>}
         <span className="inline-flex items-center gap-1.5"><Mark kind="post" /> Update</span>
         {data.more > 0 && <a href="#projects" className="ml-auto hover:text-text hover:underline">{data.more} more project{data.more === 1 ? "" : "s"} below</a>}
@@ -107,10 +109,12 @@ export function RecordTimelineChart({ data, own, goal }: { data: RecordTimeline;
   );
 }
 
-const label = (m: TimelineMark) => (m.kind === "signed" ? "Signed" : m.kind === "waiting" ? "Waiting" : "Update");
+const label = (m: TimelineMark) => (m.kind === "signed" ? "Signed" : m.kind === "backed" ? "Backed by GitHub" : m.kind === "waiting" ? "Waiting" : "Update");
 
 function Mark({ kind, small }: { kind: TimelineMark["kind"]; small?: boolean }) {
   if (kind === "signed") return <Seal size={small ? 12 : 20} />;
-  if (kind === "waiting") return <span className={cn("block rounded-full border-2 border-dashed border-muted bg-surface", small ? "size-2.5" : "size-3.5")} />;
+  // One colour per kind of proof, everywhere (docs/design/app.md): green signed, blue backed, amber waiting.
+  if (kind === "backed") return <span className={cn("block rotate-45 rounded-[3px] bg-info", small ? "size-2" : "size-3")} />;
+  if (kind === "waiting") return <span className={cn("block rounded-full border-2 border-dashed border-wait bg-surface", small ? "size-2.5" : "size-3.5")} />;
   return <span className="block size-1.5 rounded-full bg-text-2" />;
 }

@@ -13,15 +13,15 @@ const LANES = 4;
 // Marks never sit on the frame's edges: x runs from PAD to 1 - PAD.
 const PAD = 0.04;
 
-export type TimelineMark = { id: string; kind: "signed" | "waiting" | "post"; at: number; x: number; title: string; by?: string; when: string };
+export type TimelineMark = { id: string; kind: "signed" | "backed" | "waiting" | "post"; at: number; x: number; title: string; by?: string; when: string };
 export type TimelineLane = { id: string; title: string; href: string; from: number; to: number; ongoing: boolean; marks: TimelineMark[] };
-export type RecordTimeline = { start: number; end: number; today: number; ticks: { x: number; label: string }[]; lanes: TimelineLane[]; more: number; signed: number; waiting: number; since: string | null };
+export type RecordTimeline = { start: number; end: number; today: number; ticks: { x: number; label: string }[]; lanes: TimelineLane[]; more: number; signed: number; backed: number; waiting: number; since: string | null };
 
 type In = {
   now: number;
   own: boolean;
   projects: { id: string; title: string; status: string }[];
-  milestones: { id: string; project_id: string; title: string; achieved_on: string; status: string; community_name: string; reviewer_name: string; vouched_by?: string }[];
+  milestones: { id: string; project_id: string; title: string; achieved_on: string; status: string; community_name: string; reviewer_name: string; vouched_by?: string; backed?: boolean }[];
   posts: { created_at: string; project_id?: string | null }[];
 };
 
@@ -35,7 +35,9 @@ export function buildTimeline({ now, own, projects, milestones, posts }: In): Re
   type Raw = Omit<TimelineMark, "x"> & { project: string };
   const raw: Raw[] = [];
   for (const m of milestones) {
-    const kind = m.status === "verified" ? "signed" : m.status === "pending" && own ? "waiting" : null;
+    // Signed by a person; backed by GitHub with nobody asked (supabase/backed.sql); or, on your own
+    // record, still waiting for someone to sign.
+    const kind = m.status === "verified" ? "signed" : m.status === "logged" && m.backed ? "backed" : m.status === "pending" && own ? "waiting" : null;
     const at = dayMs(m.achieved_on);
     if (!kind || !titles.has(m.project_id) || at < oldest || at > now + DAY) continue;
     const by = kind === "signed" ? (m.vouched_by || [m.reviewer_name, m.community_name].filter(Boolean).join(", ")) : undefined;
@@ -71,6 +73,7 @@ export function buildTimeline({ now, own, projects, milestones, posts }: In): Re
     start, end, today: x(end), lanes, more: all.length - lanes.length,
     ticks: ticks(start, end).map((t) => ({ x: x(t.at), label: t.label })),
     signed: shown.filter((m) => m.kind === "signed").length,
+    backed: shown.filter((m) => m.kind === "backed").length,
     waiting: shown.filter((m) => m.kind === "waiting").length,
     since: firstSigned ? fmt(firstSigned.at, { month: "long", year: "numeric" }).replace(/^(\w{3})\w*/, "$1") : null,
   };
