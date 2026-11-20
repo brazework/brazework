@@ -73,7 +73,7 @@ export function MoreAsks({ token, asks, domain }: { token: string; asks: InboxAs
           );
         })}
       </ul>
-      <p className="mt-4 text-xs text-faint">Each vouch shows on their record as your name, role and <b className="font-medium">{domain}</b>, with what you wrote.</p>
+      <p className="mt-4 text-xs text-faint">Each vouch shows on their record as your name, role and <b className="font-medium">{domain}</b>, with what you wrote. You sign as yourself, not on behalf of your employer.</p>
       {error && <p role="alert" className="mt-2 text-sm text-danger">{error}</p>}
       {res && <p role="status" className="mt-2 text-sm text-muted">{res.message}</p>}
       <Button className="mt-4" disabled={pending || chosen.length === 0} onClick={send}><BadgeCheck className="size-4" />{chosen.length > 1 ? `Answer these ${chosen.length}` : "Answer"}</Button>
