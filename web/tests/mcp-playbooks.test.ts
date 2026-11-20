@@ -42,7 +42,7 @@ test("lanes: loose words mean the obvious lane, and the default follows Home's r
   assert.equal(defaultLane("professional", 0), "work");
   assert.equal(defaultLane("professional", 2), undefined, "a professional in a club is asked");
   assert.equal(defaultLane(undefined, 0), undefined, "no account type yet: ask");
-  assert.equal(playbookFor("Mechanical")!.work.moments[0].example, "Housing rev D released: 9 parts, down from 14, at the same load rating");
+  assert.equal(playbookFor("Mechanical")!.work.moments[0].example, "Bracket 38% lighter, passed the 3.2 g vibration test");
   assert.equal(playbookFor("Software")!.work.moments[0].example, "Checkout p95 latency down from 820 to 310 ms");
 });
 
@@ -142,7 +142,7 @@ test("working lane: the rules, the working example and signers, never a club fir
     assert.doesNotMatch(at("work", n, s), /pick the club that saw it/, `${n}: no club first`);
     assert.doesNotMatch(at("work", n, s), /Was this at work/, `${n}: the lane was given, so it isn't asked`);
   }
-  assert.match(at("work", "shipped"), /Housing rev D released/);
+  assert.match(at("work", "shipped"), /Bracket 38% lighter/);
   assert.match(at("work", "shipped"), /manufacturing engineer/);
   assert.match(at("work", "result"), /log_milestone/, "a number at work is a hidden milestone");
   assert.doesNotMatch(at("work", "result"), /post_update|draft_post/);
@@ -154,7 +154,7 @@ test("working lane: the rules, the working example and signers, never a club fir
   assert.match(promptText("ask_signature", { field: "Mechanical", lane: "work" }, POST)!, /manufacturing engineer/);
   assert.match(at("work", "shipped", READ), /can only read/, "a read-only token still writes it out");
   assert.match(at("work", "shipped", POST, "basket weaving"), /employer allows/, "no playbook: the rules still apply");
-  assert.match(at("Working", "shipped"), /Housing rev D released/, "a loosely typed lane still means work");
+  assert.match(at("Working", "shipped"), /Bracket 38% lighter/, "a loosely typed lane still means work");
   // Work never goes to a club unless the member names one: not in the steps, and not through a rule.
   for (const n of ["start", "shipped", "result"]) assert.doesNotMatch(at("work", n), /my_clubs/, `${n}: no club lookup for work`);
 });

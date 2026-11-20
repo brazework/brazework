@@ -187,9 +187,9 @@ them).
 |---|---|---|---|---|
 | Robotics | A cell or robot passes acceptance on site | Palletizing cell passed site acceptance: 11 cycles a minute over an 8-hour run | The acceptance report and the release it ran | The test lead, your manager or the customer's engineer |
 | Aerospace | A part passes qualification | Bracket passed qualification vibration at 14 g RMS with no cracks | The test report and the drawing revision | The test engineer, your lead or the quality engineer |
-| Mechanical | A design is released to production | Housing rev D released: 9 parts, down from 14, at the same load rating | The engineering change and the test report | Your lead, the manufacturing engineer or your manager |
-| Electronics | A board passes validation | Controller board rev C passed validation: every rail within 2%, no rework | The validation report and the release | The hardware lead, the test engineer or your manager |
-| Civil | A structure passes inspection, or a design is approved | Footbridge deck passed its load test at 1.5 times the design load | The inspection report or the permit | The engineer of record, the project manager or the client |
+| Mechanical | A redesign passes its test | Bracket 38% lighter, passed the 3.2 g vibration test | The two CAD versions and the test log | Your lead, the manufacturing engineer or your manager |
+| Electronics | A board revision measures better than the last | Power board rev C: ripple down from 120 to 18 mV | The schematic revisions and the scope captures | The hardware lead, the test engineer or your manager |
+| Civil | A structure passes inspection, or a design is approved | Retaining wall pour passed inspection, zero rework | The inspection report and the site photos | The engineer of record, the project manager or the client |
 | Software | A change ships and a number moves | Checkout p95 latency down from 820 to 310 ms | The merged pull requests, the ticket and the dashboard | Your tech lead, a reviewer outside the project or your manager |
 | Computer science | A system change is adopted | Scheduler change rolled out to every cluster: 14% fewer preemptions | The design doc, the merged change and the rollout report | The reviewing engineer, your lead or your manager |
 | Data & AI | A model goes live and holds its number | Fraud model live for 30 days: recall 91% at 0.5% false positives | The evaluation report and the model card | The ML lead, the product owner or your manager |
@@ -206,12 +206,12 @@ them).
 | Social science | Findings change a decision | Tenant survey (1,150 responses) led the council to extend rent relief | The report and the council minutes | The research director, the client or the body that commissioned it |
 | Education | A unit lifts results | Fractions unit lifted quiz scores 18% | The unit plan and aggregate scores, never individual students | The head of department or the principal |
 
-The Software and Design examples are the landing page's own, so the assistant and the front door tell
-the same story. When this table was approved the Business and Education ones were too; the landing page
-changed the same day (#170) and now tells its own Mechanical, Electrical and Civil stories ("Bracket 38%
-lighter, passed the 3.2 g vibration test", "Power board rev C: ripple down from 120 to 18 mV",
-"Retaining wall pour passed inspection, zero rework"). Whether those three fields should use the landing
-page's examples is a question for the read in Decided 2.
+The Software, Design, Mechanical, Electronics and Civil examples are the landing page's own, so the
+assistant and the front door tell the same story. When this table was approved the Business and
+Education ones were too; the landing page changed the same day (#170) and now tells its own Mechanical,
+Electrical and Civil stories. Josh chose to match them (Decided 5), and each moment and its proof were
+reworded to fit: the bracket's proof is the two CAD versions and the test log, the board's is the
+schematic revisions and the scope captures, as the landing page shows them.
 
 ### Which fields get checked first
 
@@ -360,3 +360,7 @@ Josh approved Claude's default on each. Ian hasn't been asked yet.
    assistant, a student's command still carried the lane question beside an instruction not to ask it,
    so "a student is never asked" was a hope. The server knows whose token it is, so a command fetched
    with no lane is written for the lane `defaultLane` gives. Josh: "Yes, do it".
+5. **Mechanical, Electronics and Civil use the landing page's working examples.** The landing page
+   changed the same day (#170) and told different stories for those three fields. Matching them means
+   a member hears the same example on the front door and from their assistant. Josh: "Yes, match
+   landing". Ian's read in Decided 2 is of the bracket example.

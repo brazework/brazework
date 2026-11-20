@@ -176,9 +176,9 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
     // Each field has a part for studying and a part for working (FIX-209). The page opens on Studying.
     const mech = page.locator("#mechanical");
     await mech.getByText("Ran two hours under load without slipping").waitFor();
-    if (await mech.getByText("Housing rev D released").count()) throw new Error("/ai opened on Working");
+    if (await mech.getByText("Bracket 38% lighter").count()) throw new Error("/ai opened on Working");
     await mech.getByRole("group", { name: "Studying or working" }).getByRole("button", { name: "Working" }).click();
-    await mech.getByText("Housing rev D released").waitFor();
+    await mech.getByText("Bracket 38% lighter").waitFor();
     await mech.getByText(/manufacturing engineer/).waitFor();
     if (await mech.getByText("Ran two hours under load without slipping").count()) throw new Error("the studying moment still shows under Working");
     // Another field's switch is its own: Medicine is still on Studying.

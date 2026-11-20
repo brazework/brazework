@@ -392,7 +392,7 @@ Who signs: the team's officers, the machine-shop supervisor or the course instru
 
 At work:
 
-- **A design is released to production** → milestone: “Housing rev D released: 9 parts, down from 14, at the same load rating”. Proof: the engineering change and the test report.
+- **A redesign passes its test** → milestone: “Bracket 38% lighter, passed the 3.2 g vibration test”. Proof: the two CAD versions and the test log.
 
 Who signs at work: your lead, the manufacturing engineer or your manager. Try `/shipped` with the field Mechanical and the lane Working.
 
@@ -415,7 +415,7 @@ Who signs: the team's officers, a lab TA or the professor whose lab it ran in. T
 
 At work:
 
-- **A board passes validation** → milestone: “Controller board rev C passed validation: every rail within 2%, no rework”. Proof: the validation report and the release.
+- **A board revision measures better than the last** → milestone: “Power board rev C: ripple down from 120 to 18 mV”. Proof: the schematic revisions and the scope captures.
 
 Who signs at work: the hardware lead, the test engineer or your manager. Try `/shipped` with the field Electronics and the lane Working.
 
@@ -438,7 +438,7 @@ Who signs: the society's officers, the competition judge or the course instructo
 
 At work:
 
-- **A structure passes inspection, or a design is approved** → milestone: “Footbridge deck passed its load test at 1.5 times the design load”. Proof: the inspection report or the permit.
+- **A structure passes inspection, or a design is approved** → milestone: “Retaining wall pour passed inspection, zero rework”. Proof: the inspection report and the site photos.
 
 Who signs at work: the engineer of record, the project manager or the client. Try `/shipped` with the field Civil and the lane Working.
 

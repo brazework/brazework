@@ -63,7 +63,7 @@ export const PLAYBOOKS: Playbook[] = [
       signers: "the team's officers, the machine-shop supervisor or the course instructor",
     },
     work: {
-      moments: [{ when: "A design is released to production", becomes: "milestone", example: "Housing rev D released: 9 parts, down from 14, at the same load rating", evidence: "the engineering change and the test report" }],
+      moments: [{ when: "A redesign passes its test", becomes: "milestone", example: "Bracket 38% lighter, passed the 3.2 g vibration test", evidence: "the two CAD versions and the test log" }],
       signers: "your lead, the manufacturing engineer or your manager",
     },
   },
@@ -78,7 +78,7 @@ export const PLAYBOOKS: Playbook[] = [
       signers: "the team's officers, a lab TA or the professor whose lab it ran in",
     },
     work: {
-      moments: [{ when: "A board passes validation", becomes: "milestone", example: "Controller board rev C passed validation: every rail within 2%, no rework", evidence: "the validation report and the release" }],
+      moments: [{ when: "A board revision measures better than the last", becomes: "milestone", example: "Power board rev C: ripple down from 120 to 18 mV", evidence: "the schematic revisions and the scope captures" }],
       signers: "the hardware lead, the test engineer or your manager",
     },
   },
@@ -93,7 +93,7 @@ export const PLAYBOOKS: Playbook[] = [
       signers: "the society's officers, the competition judge or the course instructor",
     },
     work: {
-      moments: [{ when: "A structure passes inspection, or a design is approved", becomes: "milestone", example: "Footbridge deck passed its load test at 1.5 times the design load", evidence: "the inspection report or the permit" }],
+      moments: [{ when: "A structure passes inspection, or a design is approved", becomes: "milestone", example: "Retaining wall pour passed inspection, zero rework", evidence: "the inspection report and the site photos" }],
       signers: "the engineer of record, the project manager or the client",
     },
   },
