@@ -13,7 +13,9 @@ const LANES = 4;
 // Marks never sit on the frame's edges: x runs from PAD to 1 - PAD.
 const PAD = 0.04;
 
-export type TimelineMark = { id: string; kind: "signed" | "backed" | "waiting" | "post"; at: number; x: number; title: string; by?: string; when: string };
+// `when` is the day the work happened (where the mark sits); `signed`, the day someone signed it, which
+// is what follows "Signed by" (the same date the share card shows, lib/proof-card.ts).
+export type TimelineMark = { id: string; kind: "signed" | "backed" | "waiting" | "post"; at: number; x: number; title: string; by?: string; when: string; signed?: string };
 export type TimelineLane = { id: string; title: string; href: string; from: number; to: number; ongoing: boolean; marks: TimelineMark[] };
 export type RecordTimeline = { start: number; end: number; today: number; ticks: { x: number; label: string }[]; lanes: TimelineLane[]; more: number; signed: number; backed: number; waiting: number; since: string | null };
 
@@ -21,7 +23,7 @@ type In = {
   now: number;
   own: boolean;
   projects: { id: string; title: string; status: string }[];
-  milestones: { id: string; project_id: string; title: string; achieved_on: string; status: string; community_name: string; reviewer_name: string; vouched_by?: string; backed?: boolean }[];
+  milestones: { id: string; project_id: string; title: string; achieved_on: string; status: string; community_name: string; reviewer_name: string; vouched_by?: string; backed?: boolean; reviewed_at?: string | null }[];
   posts: { created_at: string; project_id?: string | null }[];
 };
 
@@ -41,7 +43,8 @@ export function buildTimeline({ now, own, projects, milestones, posts }: In): Re
     const at = dayMs(m.achieved_on);
     if (!kind || !titles.has(m.project_id) || at < oldest || at > now + DAY) continue;
     const by = kind === "signed" ? (m.vouched_by || [m.reviewer_name, m.community_name].filter(Boolean).join(", ")) : undefined;
-    raw.push({ id: m.id, kind, at: Math.min(at, now), title: m.title, by: by || undefined, when: fmt(at, { month: "short", day: "numeric", year: "numeric" }), project: m.project_id });
+    const signed = kind === "signed" && m.reviewed_at ? fmt(Date.parse(m.reviewed_at), { month: "short", day: "numeric", year: "numeric" }) : undefined;
+    raw.push({ id: m.id, kind, at: Math.min(at, now), title: m.title, by: by || undefined, when: fmt(at, { month: "short", day: "numeric", year: "numeric" }), signed, project: m.project_id });
   }
   if (!raw.length) return null;
   const results = new Set(raw.map((r) => r.project));
