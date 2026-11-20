@@ -50,6 +50,35 @@ export function vscodeLink(endpoint: string, token?: string): string {
 /** Claude Code with one-click sign-in: add the server, then /mcp in Claude Code opens the sign-in. */
 export const claudeCodeSignIn = (endpoint: string) => `claude mcp add --transport http ${SERVER_NAME} ${endpoint} --scope user`;
 
+// ---------- Ask your AI to set it up ----------
+// One prompt that any assistant can follow (Claude, ChatGPT, Codex…): it checks whether Brazework is
+// already connected, tells the person how to add it in the app they're in (each assistant knows its
+// own settings better than a page here could), then reads their record back to them and puts their
+// first piece of work on it. It carries only the public address: no account, no token.
+export function setupPrompt(endpoint: string): string {
+  const site = endpoint.replace(/\/api\/mcp\/?$/, "");
+  return [
+    `Help me set up Brazework (${site}): a record of what I built, signed by people who saw it.`,
+    "",
+    "1. Check whether you already have Brazework tools. If you do, go to step 3.",
+    `2. If not, tell me exactly how to add a custom connector (a remote MCP server) in the app I'm using right now, as numbered steps, including any setting I have to switch on first. The address is ${endpoint}. It signs me in with OAuth, so there is no key to paste. Wait until I say it's connected.`,
+    "3. Read my Brazework profile and projects, and show me what is on my record so far.",
+    "4. Ask me what I finished most recently, or look in my other connected tools. Draft one milestone: what was achieved, with a number if there is one, and a link that proves it. Show it to me and add it only after I say yes.",
+    "5. Give me the link to it, and ask who saw the work, so they can sign it.",
+  ].join("\n");
+}
+
+/**
+ * Where "Ask Claude" and "Ask ChatGPT" open, with the prompt in the address. ChatGPT fills its box
+ * from ?q=; Claude's ?q= isn't documented and may show the person a confirmation first, so the
+ * buttons also copy the prompt (components/connect/connect-card.tsx) and say to paste it if the box
+ * is empty. Codex and other assistants get the copy alone.
+ */
+export const ASSISTANTS = [
+  { id: "claude", name: "Claude", open: (prompt: string) => `https://claude.ai/new?q=${encodeURIComponent(prompt)}` },
+  { id: "chatgpt", name: "ChatGPT", open: (prompt: string) => `https://chatgpt.com/?q=${encodeURIComponent(prompt)}` },
+] as const;
+
 // The steps for one tool, with the member's new token filled in. The token appears only here, right
 // after it's made; the tool then keeps it in its own config, as it would if pasted by hand.
 export function setupSteps(tool: ToolId, endpoint: string, token: string, opts: { project?: string; club?: string } = {}): Step[] {

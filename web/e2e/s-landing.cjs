@@ -158,6 +158,16 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
     await page.getByRole("heading", { level: 1, name: /Your AI fills in your record/ }).waitFor();
     for (const h of ["Set it up in two minutes", "What to ask", "What it never does", "Your field"]) await page.getByRole("heading", { name: h, exact: true }).waitFor();
     await page.getByText(/\/api\/mcp$/).first().waitFor();
+    // Ask your AI to set it up: one tap opens Claude or ChatGPT with the prompt, and the prompt can be read first.
+    const ask = page.getByRole("region", { name: "Ask your AI to set it up" }).first();
+    for (const [name, host] of [["Ask Claude", "https://claude.ai/new?q="], ["Ask ChatGPT", "https://chatgpt.com/?q="]]) {
+      const href = (await ask.getByRole("link", { name }).getAttribute("href")) ?? "";
+      if (!href.startsWith(host) || !decodeURIComponent(href).includes("/api/mcp") || /forge_|Bearer/.test(href)) throw new Error(`${name} link: ${href.slice(0, 120)}`);
+    }
+    await ask.getByText("Read the prompt").click();
+    await ask.getByText(/add it only after I say yes/).waitFor();
+    await ask.getByRole("button", { name: "Copy the prompt" }).click();
+    await ask.getByRole("status").waitFor({ timeout: 5000 });
     await page.getByText("/start", { exact: true }).waitFor();
     const fields = await page.getByRole("navigation", { name: "Fields" }).getByRole("link").count();
     if (fields !== 20) throw new Error(`${fields} field links, expected 20`);
