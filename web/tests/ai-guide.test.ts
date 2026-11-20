@@ -13,7 +13,7 @@ test("every field has a section, with its tools, moments and signers, and its ow
   assert.equal(new Set(FIELDS.map((f) => f.id)).size, 20, "anchors are unique");
   for (const f of FIELDS) {
     assert.match(f.id, /^[a-z]+(-[a-z]+)*$/, `${f.field}: anchor is a slug`);
-    assert.ok(f.tools.length && f.moments.length && f.signers, `${f.field}: tools, moments and signers`);
+    assert.ok(f.tools.length && f.lanes.study.moments.length && f.lanes.work.moments.length && f.lanes.study.signers && f.lanes.work.signers, `${f.field}: tools, and moments and signers for studying and for working`);
     for (const t of f.tools) assert.ok(["Official MCP server", "Community MCP server", "Reads your exports"].includes(t.how), `${f.field}/${t.name}: how it connects`);
   }
 });

@@ -112,9 +112,9 @@ export default function AiGuidePage() {
                   <div>
                     <h4 className="text-sm font-medium text-faint">Worth recording</h4>
                     <ul className="mt-2 flex flex-col gap-3 text-[15px]">
-                      {f.moments.map((m) => <li key={m.when}><span className="text-muted">{m.when}:</span> <span className="font-medium">&ldquo;{m.example}&rdquo;</span><span className="block text-sm text-faint">Proof: {m.evidence}</span></li>)}
+                      {f.lanes.study.moments.map((m) => <li key={m.when}><span className="text-muted">{m.when}:</span> <span className="font-medium">&ldquo;{m.example}&rdquo;</span><span className="block text-sm text-faint">Proof: {m.evidence}</span></li>)}
                     </ul>
-                    <p className="mt-4 text-[15px] text-muted">Signed by {f.signers}.</p>
+                    <p className="mt-4 text-[15px] text-muted">Signed by {f.lanes.study.signers}.</p>
                   </div>
                 </div>
               </section>

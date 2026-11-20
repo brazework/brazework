@@ -14,7 +14,9 @@ import { INTENT_PROMPTS, intentPromptText } from "@/lib/mcp-intent-prompts";
 export type Connect = "official" | "community" | "files";
 export type PlaybookTool = { name: string; connect: Connect; reads: string };
 export type Moment = { when: string; becomes: "milestone" | "result" | "update"; example: string; evidence: string };
-export type Playbook = { id: string; field: string; tools: PlaybookTool[]; moments: Moment[]; signers: string };
+export type Lane = "study" | "work";
+export type LaneContent = { moments: Moment[]; signers: string };
+export type Playbook = { id: string; field: string; tools: PlaybookTool[]; study: LaneContent; work: LaneContent };
 
 const T = (name: string, connect: Connect, reads: string): PlaybookTool => ({ name, connect, reads });
 const GITHUB = T("GitHub", "official", "commits, pull requests, CI runs, releases");
@@ -23,182 +25,302 @@ export const PLAYBOOKS: Playbook[] = [
   {
     id: "robotics", field: "Robotics",
     tools: [T("ROS 2", "community", "topics, services and parameters over rosbridge; or ros2 CLI and rosbag output"), T("PlatformIO", "community", "builds, flashes, test runs, serial logs"), T("Arduino CLI", "community", "compile and upload results, serial output"), T("Onshape", "community", "documents and versions (the official Onshape server only writes FeatureScript)"), GITHUB],
-    moments: [
-      { when: "A timed run on the course beats the last best", becomes: "result", example: "Line follower: course in 41.2 s, down from 47.8 s", evidence: "the run video and the commit the robot ran" },
-      { when: "A subsystem works end to end on the real robot", becomes: "milestone", example: "Closed-loop drive holds heading within 2° over 10 m", evidence: "rosbag plot or video, and the pull request" },
-    ],
-    signers: "the team's club officers, a lab TA or the faculty advisor",
+    study: {
+      moments: [
+        { when: "A timed run on the course beats the last best", becomes: "result", example: "Line follower: course in 41.2 s, down from 47.8 s", evidence: "the run video and the commit the robot ran" },
+        { when: "A subsystem works end to end on the real robot", becomes: "milestone", example: "Closed-loop drive holds heading within 2° over 10 m", evidence: "rosbag plot or video, and the pull request" },
+      ],
+      signers: "the team's club officers, a lab TA or the faculty advisor",
+    },
+    work: {
+      moments: [{ when: "A cell or robot passes acceptance on site", becomes: "milestone", example: "Palletizing cell passed site acceptance: 11 cycles a minute over an 8-hour run", evidence: "the acceptance report and the release it ran" }],
+      signers: "the test lead, your manager or the customer's engineer",
+    },
   },
   {
     id: "aerospace", field: "Aerospace",
     tools: [T("Autodesk Fusion", "official", "the live model and active document (local server); hubs, projects and items (Fusion Data server)"), T("OpenRocket / RockSim", "files", "the .ork/.rkt file and its simulation CSV"), T("MATLAB", "official", "runs scripts and checks code (needs a local licence)"), T("ANSYS", "official", "Fluent, MAPDL and CFX sessions through PyAnsys (local install and licence)"), GITHUB],
-    moments: [
-      { when: "A flight or static fire hits its target", becomes: "milestone", example: "Flew to 1,140 m and was recovered intact", evidence: "the altimeter log, the flight video and the launch report" },
-      { when: "Simulation and test agree", becomes: "result", example: "Fin flutter margin 1.6× at max-q, CFD within 4% of the wind tunnel", evidence: "the CFD report and the tunnel data" },
-    ],
-    signers: "the rocketry club's officers, the launch's range safety officer, or a professor",
+    study: {
+      moments: [
+        { when: "A flight or static fire hits its target", becomes: "milestone", example: "Flew to 1,140 m and was recovered intact", evidence: "the altimeter log, the flight video and the launch report" },
+        { when: "Simulation and test agree", becomes: "result", example: "Fin flutter margin 1.6× at max-q, CFD within 4% of the wind tunnel", evidence: "the CFD report and the tunnel data" },
+      ],
+      signers: "the rocketry club's officers, the launch's range safety officer, or a professor",
+    },
+    work: {
+      moments: [{ when: "A part passes qualification", becomes: "milestone", example: "Bracket passed qualification vibration at 14 g RMS with no cracks", evidence: "the test report and the drawing revision" }],
+      signers: "the test engineer, your lead or the quality engineer",
+    },
   },
   {
     id: "mechanical", field: "Mechanical",
     tools: [T("Autodesk Fusion", "official", "the live model (local server); hubs, projects and items (Fusion Data server)"), T("Onshape", "community", "documents, part studios and versions through the REST API (the official server only writes FeatureScript)"), T("SolidWorks", "community", "parts and features through COM on a running SolidWorks (alpha); or STEP exports"), T("ANSYS", "official", "MAPDL and Fluent results through PyAnsys"), T("COMSOL", "official", "models, studies and plots (new in COMSOL 2027)"), T("MATLAB", "official", "scripts and test analysis")],
-    moments: [
-      { when: "A new design version passes simulation", becomes: "update", example: "Gearbox v4: max von Mises 182 MPa at 450 N, safety factor 1.9", evidence: "the version link and the FEA report" },
-      { when: "The physical part survives its test", becomes: "milestone", example: "Ran two hours under load without slipping", evidence: "the test video and the logged data" },
-    ],
-    signers: "the team's officers, the machine-shop supervisor or the course instructor",
+    study: {
+      moments: [
+        { when: "A new design version passes simulation", becomes: "update", example: "Gearbox v4: max von Mises 182 MPa at 450 N, safety factor 1.9", evidence: "the version link and the FEA report" },
+        { when: "The physical part survives its test", becomes: "milestone", example: "Ran two hours under load without slipping", evidence: "the test video and the logged data" },
+      ],
+      signers: "the team's officers, the machine-shop supervisor or the course instructor",
+    },
+    work: {
+      moments: [{ when: "A design is released to production", becomes: "milestone", example: "Housing rev D released: 9 parts, down from 14, at the same load rating", evidence: "the engineering change and the test report" }],
+      signers: "your lead, the manufacturing engineer or your manager",
+    },
   },
   {
     id: "electronics", field: "Electronics",
     tools: [T("KiCad", "community", "schematics, boards, DRC/ERC, BOM and Gerber export; or kicad-cli on the text files"), T("Altium", "community", "schematic and PCB queries (Windows, experimental); or BOM and Gerber exports"), T("PlatformIO", "community", "firmware builds, tests, serial logs"), T("Arduino CLI", "community", "compile and upload, serial output"), GITHUB],
-    moments: [
-      { when: "A board passes bring-up", becomes: "milestone", example: "BMS board passed bring-up with every cell balanced within 5 mV", evidence: "the bring-up log, a photo and the board's release" },
-      { when: "The design passes DRC and goes to fab", becomes: "update", example: "Rev C sent to fab: 0 DRC errors, 4-layer, 38 × 52 mm", evidence: "the commit with the Gerbers" },
-    ],
-    signers: "the team's officers, a lab TA or the professor whose lab it ran in",
+    study: {
+      moments: [
+        { when: "A board passes bring-up", becomes: "milestone", example: "BMS board passed bring-up with every cell balanced within 5 mV", evidence: "the bring-up log, a photo and the board's release" },
+        { when: "The design passes DRC and goes to fab", becomes: "update", example: "Rev C sent to fab: 0 DRC errors, 4-layer, 38 × 52 mm", evidence: "the commit with the Gerbers" },
+      ],
+      signers: "the team's officers, a lab TA or the professor whose lab it ran in",
+    },
+    work: {
+      moments: [{ when: "A board passes validation", becomes: "milestone", example: "Controller board rev C passed validation: every rail within 2%, no rework", evidence: "the validation report and the release" }],
+      signers: "the hardware lead, the test engineer or your manager",
+    },
   },
   {
     id: "civil", field: "Civil",
     tools: [T("Autodesk Fusion", "official", "models and data (local and Fusion Data servers)"), T("SAP2000 / RISA", "files", "analysis reports and exported tables"), T("QGIS", "community", "layers, processing and rendering via a plugin; or GeoPackage/GeoJSON"), T("MATLAB", "official", "load-test analysis"), T("Google Sheets", "official", "test data (Google's Workspace servers are in Developer Preview)")],
-    moments: [
-      { when: "A load test meets the brief", becomes: "milestone", example: "Balsa truss held 48 kg while weighing 62 g", evidence: "the test video and the data sheet" },
-      { when: "Analysis predicts the failure correctly", becomes: "result", example: "Predicted failure at 46 kg, broke at 48 kg (4% error)", evidence: "the analysis report and the test video" },
-    ],
-    signers: "the society's officers, the competition judge or the course instructor",
+    study: {
+      moments: [
+        { when: "A load test meets the brief", becomes: "milestone", example: "Balsa truss held 48 kg while weighing 62 g", evidence: "the test video and the data sheet" },
+        { when: "Analysis predicts the failure correctly", becomes: "result", example: "Predicted failure at 46 kg, broke at 48 kg (4% error)", evidence: "the analysis report and the test video" },
+      ],
+      signers: "the society's officers, the competition judge or the course instructor",
+    },
+    work: {
+      moments: [{ when: "A structure passes inspection, or a design is approved", becomes: "milestone", example: "Footbridge deck passed its load test at 1.5 times the design load", evidence: "the inspection report or the permit" }],
+      signers: "the engineer of record, the project manager or the client",
+    },
   },
   {
     id: "software", field: "Software",
     tools: [GITHUB, T("GitLab", "official", "merge requests and pipelines"), T("Vercel", "official", "deployments and build logs"), T("Linear", "official", "issues and projects"), T("Sentry / analytics", "files", "error and usage exports")],
-    moments: [
-      { when: "A pull request merges with CI green", becomes: "milestone", example: "Shipped live arrival times: p95 under 300 ms", evidence: "the pull request and the CI run" },
-      { when: "Real people use what you shipped", becomes: "result", example: "Shuttle tracker reached 2,100 weekly riders", evidence: "the analytics export and the release" },
-    ],
-    signers: "the club's officers, a code reviewer who isn't on the team, or a manager",
+    study: {
+      moments: [
+        { when: "A pull request merges with CI green", becomes: "milestone", example: "Shipped live arrival times: p95 under 300 ms", evidence: "the pull request and the CI run" },
+        { when: "Real people use what you shipped", becomes: "result", example: "Shuttle tracker reached 2,100 weekly riders", evidence: "the analytics export and the release" },
+      ],
+      signers: "the club's officers, a code reviewer who isn't on the team, or a manager",
+    },
+    work: {
+      moments: [{ when: "A change ships and a number moves", becomes: "milestone", example: "Checkout p95 latency down from 820 to 310 ms", evidence: "the merged pull requests, the ticket and the dashboard" }],
+      signers: "your tech lead, a reviewer outside the project or your manager",
+    },
   },
   {
     id: "computer-science", field: "Computer science",
     tools: [GITHUB, T("Jupyter", "community", "notebook cells and outputs (Datalayer's server); or the .ipynb JSON itself"), T("Lean 4", "community", "goals and diagnostics through lean-lsp-mcp; or lake build output"), T("Overleaf", "community", "project files; or its Git sync and the .tex files"), T("arXiv", "community", "search and read papers")],
-    moments: [
-      { when: "A benchmark beats the baseline", becomes: "result", example: "Sorted 10 GB across four nodes in 94 s (1.8× the single node)", evidence: "the benchmark log and the commit" },
-      { when: "A proof or paper is done", becomes: "milestone", example: "Formalized the pumping lemma in Lean, no sorry", evidence: "the repository and the CI build" },
-    ],
-    signers: "a professor, a TA, or the computing society's officers",
+    study: {
+      moments: [
+        { when: "A benchmark beats the baseline", becomes: "result", example: "Sorted 10 GB across four nodes in 94 s (1.8× the single node)", evidence: "the benchmark log and the commit" },
+        { when: "A proof or paper is done", becomes: "milestone", example: "Formalized the pumping lemma in Lean, no sorry", evidence: "the repository and the CI build" },
+      ],
+      signers: "a professor, a TA, or the computing society's officers",
+    },
+    work: {
+      moments: [{ when: "A system change is adopted", becomes: "milestone", example: "Scheduler change rolled out to every cluster: 14% fewer preemptions", evidence: "the design doc, the merged change and the rollout report" }],
+      signers: "the reviewing engineer, your lead or your manager",
+    },
   },
   {
     id: "data-ai", field: "Data & AI",
     tools: [T("Weights & Biases", "official", "runs, metrics, sweeps and reports"), T("Hugging Face", "official", "models, datasets, papers and Spaces"), T("Google Colab", "official", "notebooks: add and run cells in a Colab runtime"), T("Kaggle", "official", "competitions, datasets and notebooks (check its docs; or the kaggle CLI)"), T("Jupyter", "community", "notebook cells and outputs; or the .ipynb itself"), T("MLflow", "official", "mostly GenAI traces; for runs and metrics use its REST API or CLI"), GITHUB],
-    moments: [
-      { when: "A run beats the baseline", becomes: "result", example: "Crop disease classifier: 94.1% on the field-trial photos, +3.1 over the baseline", evidence: "the W&B run or report, and the commit" },
-      { when: "A model or dataset is published", becomes: "milestone", example: "Released the 12k-image field-trial dataset on Hugging Face", evidence: "the dataset page and its card" },
-    ],
-    signers: "the AI society's officers, a lab PI or a professor",
+    study: {
+      moments: [
+        { when: "A run beats the baseline", becomes: "result", example: "Crop disease classifier: 94.1% on the field-trial photos, +3.1 over the baseline", evidence: "the W&B run or report, and the commit" },
+        { when: "A model or dataset is published", becomes: "milestone", example: "Released the 12k-image field-trial dataset on Hugging Face", evidence: "the dataset page and its card" },
+      ],
+      signers: "the AI society's officers, a lab PI or a professor",
+    },
+    work: {
+      moments: [{ when: "A model goes live and holds its number", becomes: "milestone", example: "Fraud model live for 30 days: recall 91% at 0.5% false positives", evidence: "the evaluation report and the model card" }],
+      signers: "the ML lead, the product owner or your manager",
+    },
   },
   {
     id: "mathematics", field: "Mathematics",
     tools: [T("Overleaf", "community", "project files; or its Git sync and the .tex files"), T("Lean 4", "community", "goals and diagnostics through lean-lsp-mcp"), T("Wolfram / Mathematica", "official", "evaluate Wolfram Language; notebooks (built into version 15)"), T("MATLAB", "official", "computation and plots"), T("arXiv", "community", "search and read papers")],
-    moments: [
-      { when: "A result is presented or posted", becomes: "milestone", example: "Presented the trefoil invariant at the undergraduate seminar", evidence: "the slides or preprint and the seminar page" },
-      { when: "A computation confirms a conjecture to a new bound", becomes: "result", example: "Checked the conjecture for all n ≤ 10⁸", evidence: "the code and its output" },
-    ],
-    signers: "the professor or advisor, or the math society's officers",
+    study: {
+      moments: [
+        { when: "A result is presented or posted", becomes: "milestone", example: "Presented the trefoil invariant at the undergraduate seminar", evidence: "the slides or preprint and the seminar page" },
+        { when: "A computation confirms a conjecture to a new bound", becomes: "result", example: "Checked the conjecture for all n ≤ 10⁸", evidence: "the code and its output" },
+      ],
+      signers: "the professor or advisor, or the math society's officers",
+    },
+    work: {
+      moments: [{ when: "A model or method is adopted", becomes: "milestone", example: "Reserving model adopted for the quarter close: back-test error under 2%", evidence: "the write-up and the back-test" }],
+      signers: "the head of the team that adopted it, or your manager",
+    },
   },
   {
     id: "physics", field: "Physics",
     tools: [T("MATLAB", "official", "analysis scripts and fits"), T("Jupyter", "community", "notebook analysis; or the .ipynb itself"), T("COMSOL", "official", "models, studies and plots (COMSOL 2027)"), T("LabVIEW", "files", "exported measurement data"), T("Overleaf", "community", "the write-up; or its Git sync")],
-    moments: [
-      { when: "A measurement lands with its uncertainty", becomes: "result", example: "Measured g = 9.79 ± 0.02 m/s² over 200 pendulum runs", evidence: "the analysis notebook and the raw data" },
-      { when: "The rig works", becomes: "milestone", example: "Double pendulum tracker logs 200 runs a day unattended", evidence: "the video and the code" },
-    ],
-    signers: "the lab instructor, the PI or a TA",
+    study: {
+      moments: [
+        { when: "A measurement lands with its uncertainty", becomes: "result", example: "Measured g = 9.79 ± 0.02 m/s² over 200 pendulum runs", evidence: "the analysis notebook and the raw data" },
+        { when: "The rig works", becomes: "milestone", example: "Double pendulum tracker logs 200 runs a day unattended", evidence: "the video and the code" },
+      ],
+      signers: "the lab instructor, the PI or a TA",
+    },
+    work: {
+      moments: [{ when: "An instrument meets its spec", becomes: "milestone", example: "Detector reached 1.8% energy resolution at 662 keV, inside spec", evidence: "the calibration report and the run log" }],
+      signers: "the group lead or the facility manager",
+    },
   },
   {
     id: "chemistry", field: "Chemistry",
     tools: [T("Benchling", "official", "notebook entries, registry and results (your institution's tenant)"), T("LabArchives", "community", "notebook listing and search (small project); or PDF exports"), T("Instrument software (NMR, HPLC, IR)", "files", "exported spectra and reports"), T("Zotero", "community", "your references and notes"), T("Jupyter", "community", "analysis notebooks")],
-    moments: [
-      { when: "A synthesis or growth works", becomes: "milestone", example: "Grew a 14 mm single crystal over three weeks", evidence: "the notebook entry and photos" },
-      { when: "Characterization confirms it", becomes: "result", example: "Product confirmed by ¹H NMR, 87% yield", evidence: "the spectrum and the notebook entry" },
-    ],
-    signers: "the PI, the lab manager or the course instructor",
+    study: {
+      moments: [
+        { when: "A synthesis or growth works", becomes: "milestone", example: "Grew a 14 mm single crystal over three weeks", evidence: "the notebook entry and photos" },
+        { when: "Characterization confirms it", becomes: "result", example: "Product confirmed by ¹H NMR, 87% yield", evidence: "the spectrum and the notebook entry" },
+      ],
+      signers: "the PI, the lab manager or the course instructor",
+    },
+    work: {
+      moments: [{ when: "A process scales", becomes: "milestone", example: "Scaled the coupling step from 5 g to 2 kg at 84% yield", evidence: "the batch record and the certificate of analysis" }],
+      signers: "the lab head, the quality lead or your manager",
+    },
   },
   {
     id: "biology", field: "Biology",
     tools: [T("Benchling", "official", "notebook entries, sequences, registry and results"), T("PubMed", "official", "search and full text through Anthropic's PubMed connector (it isn't NCBI's)"), T("R / RStudio", "official", "run R in your session through Posit's mcptools package"), T("Zotero", "community", "references and annotations"), T("Google Sheets", "official", "plate maps and data (Developer Preview)")],
-    moments: [
-      { when: "An experiment gives a clear result", becomes: "result", example: "Knockdown cut expression 72% (n = 3, p < 0.01)", evidence: "the notebook entry and the figure" },
-      { when: "Something you built is used", becomes: "milestone", example: "DNA model printed and used in the BIO 101 lab", evidence: "photos and the course page" },
-    ],
-    signers: "the PI, a postdoc who supervised it, or the course instructor",
+    study: {
+      moments: [
+        { when: "An experiment gives a clear result", becomes: "result", example: "Knockdown cut expression 72% (n = 3, p < 0.01)", evidence: "the notebook entry and the figure" },
+        { when: "Something you built is used", becomes: "milestone", example: "DNA model printed and used in the BIO 101 lab", evidence: "photos and the course page" },
+      ],
+      signers: "the PI, a postdoc who supervised it, or the course instructor",
+    },
+    work: {
+      moments: [{ when: "An assay is validated", becomes: "milestone", example: "Assay validated: under 8% variation across three operators", evidence: "the validation report" }],
+      signers: "the lab director or the study director",
+    },
   },
   {
     id: "environment", field: "Environment",
     tools: [T("QGIS", "community", "layers and processing via a plugin; or GeoPackage/GeoJSON"), T("ArcGIS", "official", "Esri's servers cover developer docs and location services; your own content via the ArcGIS API or exports"), T("Google Earth Engine", "community", "imagery queries (early); or earthengine-api in Python"), T("R / RStudio", "official", "analysis through Posit's mcptools"), T("Google Sheets", "official", "logger data (Developer Preview)")],
-    moments: [
-      { when: "A data series runs unbroken", becomes: "milestone", example: "Weather station logged 90 days without a gap", evidence: "the data export and a photo of the station" },
-      { when: "The analysis finds something", becomes: "result", example: "Campus canopy cuts surface temperature 4.2 °C in July", evidence: "the map and the notebook" },
-    ],
-    signers: "the environmental club's officers, a field-course instructor or the PI",
+    study: {
+      moments: [
+        { when: "A data series runs unbroken", becomes: "milestone", example: "Weather station logged 90 days without a gap", evidence: "the data export and a photo of the station" },
+        { when: "The analysis finds something", becomes: "result", example: "Campus canopy cuts surface temperature 4.2 °C in July", evidence: "the map and the notebook" },
+      ],
+      signers: "the environmental club's officers, a field-course instructor or the PI",
+    },
+    work: {
+      moments: [{ when: "A plan or report is accepted", becomes: "milestone", example: "Stormwater plan approved by the county on first submission", evidence: "the approval letter and the report" }],
+      signers: "the project manager, the client or the agency's reviewing engineer",
+    },
   },
   {
     id: "space", field: "Space",
     tools: [T("Autodesk Fusion", "official", "models and data"), T("ANSYS", "official", "structural and thermal runs through PyAnsys"), T("MATLAB", "official", "orbit and link-budget analysis"), T("KiCad", "community", "avionics boards"), GITHUB],
-    moments: [
-      { when: "A qualification test passes", becomes: "milestone", example: "CubeSat structure passed the vibration test at launch levels", evidence: "the test report and the video" },
-      { when: "A subsystem meets its budget", becomes: "result", example: "Link budget closes with 6.3 dB margin at 500 km", evidence: "the analysis and the commit" },
-    ],
-    signers: "the space systems lab's lead, the test-facility engineer or the faculty advisor",
+    study: {
+      moments: [
+        { when: "A qualification test passes", becomes: "milestone", example: "CubeSat structure passed the vibration test at launch levels", evidence: "the test report and the video" },
+        { when: "A subsystem meets its budget", becomes: "result", example: "Link budget closes with 6.3 dB margin at 500 km", evidence: "the analysis and the commit" },
+      ],
+      signers: "the space systems lab's lead, the test-facility engineer or the faculty advisor",
+    },
+    work: {
+      moments: [{ when: "A unit passes acceptance", becomes: "milestone", example: "Flight radio passed thermal vacuum: 8 cycles, no anomalies", evidence: "the test report and the as-run procedure" }],
+      signers: "the test conductor, the systems lead or your manager",
+    },
   },
   {
     id: "medicine", field: "Medicine",
     tools: [T("PubMed", "official", "literature through Anthropic's PubMed connector (not NCBI's)"), T("REDCap", "community", "records and instruments with a project API token: check your IRB and institution's rules first, and never post patient data"), T("R / RStudio", "official", "analysis through Posit's mcptools"), T("Stata", "community", "do-files and results (licensed Stata 17+)"), T("Autodesk Fusion", "official", "device models")],
-    moments: [
-      { when: "A device works in testing", becomes: "milestone", example: "Prosthetic hand gripped and lifted a 500 g bottle", evidence: "the test video and the design version" },
-      { when: "A study or review is complete", becomes: "milestone", example: "Systematic review screened 1,240 abstracts, 38 included", evidence: "the protocol registration and the preprint" },
-    ],
-    signers: "the supervising physician or PI, the course director, or the biomedical society's officers",
+    study: {
+      moments: [
+        { when: "A device works in testing", becomes: "milestone", example: "Prosthetic hand gripped and lifted a 500 g bottle", evidence: "the test video and the design version" },
+        { when: "A study or review is complete", becomes: "milestone", example: "Systematic review screened 1,240 abstracts, 38 included", evidence: "the protocol registration and the preprint" },
+      ],
+      signers: "the supervising physician or PI, the course director, or the biomedical society's officers",
+    },
+    work: {
+      moments: [{ when: "A quality-improvement project moves its measure", becomes: "milestone", example: "Discharge checklist cut 30-day readmissions on one ward from 14% to 9%", evidence: "the aggregate report, never patient data, with the institution's approval" }],
+      signers: "the department head or the medical director",
+    },
   },
   {
     id: "business", field: "Business",
     tools: [T("Stripe", "official", "payments, customers and subscriptions (use test mode while you learn)"), T("Shopify", "official", "products, orders and analytics through your store's server"), T("Notion", "official", "pages and databases"), T("Google Analytics", "official", "GA4 reports (experimental, read-only)"), T("HubSpot", "official", "CRM records and activities"), T("QuickBooks", "official", "invoices and reports")],
-    moments: [
-      { when: "A sales or revenue mark is hit", becomes: "result", example: "Coffee cart sold 1,200 cups in its first month", evidence: "a Stripe or Shopify summary (totals only, no customer details)" },
-      { when: "You launch", becomes: "milestone", example: "Launched online ordering; 140 orders in week one", evidence: "the live page and the order summary" },
-    ],
-    signers: "the entrepreneurship club's officers, an accelerator mentor or a professor",
+    study: {
+      moments: [
+        { when: "A sales or revenue mark is hit", becomes: "result", example: "Coffee cart sold 1,200 cups in its first month", evidence: "a Stripe or Shopify summary (totals only, no customer details)" },
+        { when: "You launch", becomes: "milestone", example: "Launched online ordering; 140 orders in week one", evidence: "the live page and the order summary" },
+      ],
+      signers: "the entrepreneurship club's officers, an accelerator mentor or a professor",
+    },
+    work: {
+      moments: [{ when: "A target is hit", becomes: "milestone", example: "New pricing tiers cut churn 9%", evidence: "the pilot results, totals only" }],
+      signers: "your manager, the director who owned the target, or the client",
+    },
   },
   {
     id: "design", field: "Design",
     tools: [T("Figma", "official", "frames, components and variables"), T("Canva", "official", "designs, folders and exports"), T("Autodesk Fusion", "official", "product models"), T("Blender", "official", "scenes and objects (Blender Lab's server; the popular ahujasid one is separate and unaffiliated)"), T("Adobe Express", "official", "Adobe's hosted creativity server (the Photoshop and Illustrator desktop servers are only previewed)")],
-    moments: [
-      { when: "A prototype passes its test", becomes: "milestone", example: "Flat-pack chair held 120 kg in the load test", evidence: "the test video and the model" },
-      { when: "A design ships or is critiqued", becomes: "update", example: "Wayfinding system v2: 6 of 8 testers found the lab in under a minute", evidence: "the Figma file and the test notes" },
-    ],
-    signers: "the studio instructor, the critique panel or a client",
+    study: {
+      moments: [
+        { when: "A prototype passes its test", becomes: "milestone", example: "Flat-pack chair held 120 kg in the load test", evidence: "the test video and the model" },
+        { when: "A design ships or is critiqued", becomes: "update", example: "Wayfinding system v2: 6 of 8 testers found the lab in under a minute", evidence: "the Figma file and the test notes" },
+      ],
+      signers: "the studio instructor, the critique panel or a client",
+    },
+    work: {
+      moments: [{ when: "A redesign ships and moves a number", becomes: "milestone", example: "Checkout redesign lifted conversion 12%", evidence: "the design file and the test report" }],
+      signers: "the client, the product lead or your manager",
+    },
   },
   {
     id: "media", field: "Media",
     tools: [T("DaVinci Resolve", "community", "projects, timelines and renders (easiest with Studio); or EDL/XML exports"), T("YouTube", "community", "video and channel stats through the Data API (no Google server)"), T("Adobe Premiere", "files", "exports and EDLs (Adobe's desktop server is only previewed)"), T("Canva", "official", "posters and thumbnails"), T("Google Drive", "official", "scripts and cuts (Developer Preview)")],
-    moments: [
-      { when: "The piece is screened or published", becomes: "milestone", example: "Documentary short screened to 300 people at the fall showcase", evidence: "the screening page and the film link" },
-      { when: "The audience responds", becomes: "result", example: "12,400 views and 61% average watch time in the first week", evidence: "the YouTube analytics summary" },
-    ],
-    signers: "the film club's officers, the festival programmer or the course instructor",
+    study: {
+      moments: [
+        { when: "The piece is screened or published", becomes: "milestone", example: "Documentary short screened to 300 people at the fall showcase", evidence: "the screening page and the film link" },
+        { when: "The audience responds", becomes: "result", example: "12,400 views and 61% average watch time in the first week", evidence: "the YouTube analytics summary" },
+      ],
+      signers: "the film club's officers, the festival programmer or the course instructor",
+    },
+    work: {
+      moments: [{ when: "A piece is published and performs", becomes: "milestone", example: "Launch film reached 480,000 views, 58% watched to the end", evidence: "the published piece and the analytics summary" }],
+      signers: "the client, the commissioning editor or a producer who isn't on the project",
+    },
   },
   {
     id: "social-science", field: "Social science",
     tools: [T("Qualtrics", "official", "surveys and responses (check its setup docs); or CSV/SPSS exports"), T("Google Sheets", "official", "data (Developer Preview); Google Forms has no server, so link its responses to a Sheet"), T("R / RStudio", "official", "analysis through Posit's mcptools"), T("Stata", "community", "do-files and results"), T("SPSS", "files", "no server: export .sav to CSV"), T("Zotero", "community", "references")],
-    moments: [
-      { when: "Data collection closes", becomes: "result", example: "Campus rent survey closed with 412 responses (31% response rate)", evidence: "the survey summary (never individual responses)" },
-      { when: "The findings are published or used", becomes: "milestone", example: "Rent report published and cited by the student senate", evidence: "the report and the senate minutes" },
-    ],
-    signers: "the faculty advisor, the IRB-approved PI or the society's officers",
+    study: {
+      moments: [
+        { when: "Data collection closes", becomes: "result", example: "Campus rent survey closed with 412 responses (31% response rate)", evidence: "the survey summary (never individual responses)" },
+        { when: "The findings are published or used", becomes: "milestone", example: "Rent report published and cited by the student senate", evidence: "the report and the senate minutes" },
+      ],
+      signers: "the faculty advisor, the IRB-approved PI or the society's officers",
+    },
+    work: {
+      moments: [{ when: "Findings change a decision", becomes: "milestone", example: "Tenant survey (1,150 responses) led the council to extend rent relief", evidence: "the report and the council minutes" }],
+      signers: "the research director, the client or the body that commissioned it",
+    },
   },
   {
     id: "education", field: "Education",
     tools: [T("Google Classroom", "official", "courses, coursework and submissions (Developer Preview)"), T("Canvas LMS", "community", "courses and assignments with a personal API token"), T("Google Forms / Sheets", "official", "feedback, through Sheets (Developer Preview)"), T("Canva", "official", "materials"), T("Notion", "official", "lesson plans")],
-    moments: [
-      { when: "Something you made is used in a classroom", becomes: "milestone", example: "Tactile fraction kit used in three fourth-grade classes this term", evidence: "photos (no students' faces) and the lesson plan" },
-      { when: "Learners improve", becomes: "result", example: "Post-test scores rose 18 points across 64 students", evidence: "the aggregate results (never individual students)" },
-    ],
-    signers: "the cooperating teacher, the school's principal or the course instructor",
+    study: {
+      moments: [
+        { when: "Something you made is used in a classroom", becomes: "milestone", example: "Tactile fraction kit used in three fourth-grade classes this term", evidence: "photos (no students' faces) and the lesson plan" },
+        { when: "Learners improve", becomes: "result", example: "Post-test scores rose 18 points across 64 students", evidence: "the aggregate results (never individual students)" },
+      ],
+      signers: "the cooperating teacher, the school's principal or the course instructor",
+    },
+    work: {
+      moments: [{ when: "A unit lifts results", becomes: "milestone", example: "Fractions unit lifted quiz scores 18%", evidence: "the unit plan and aggregate scores, never individual students" }],
+      signers: "the head of department or the principal",
+    },
   },
 ];
 
@@ -220,6 +342,31 @@ export function playbookFor(field?: string | null): Playbook | undefined {
   return PLAYBOOKS.find((p) => norm(p.id) === k || norm(p.field) === k) ?? PLAYBOOKS.find((p) => k.length >= 4 && (norm(p.field).startsWith(k) || k.startsWith(norm(p.field))));
 }
 
+// Lanes (docs/superpowers/specs/2026-11-20-playbook-lanes-design.md): every playbook has a part for
+// studying and a part for working, and the lane belongs to the piece of work, not the person: an
+// intern's summer project is working, their rocketry is studying.
+export const LANES: Lane[] = ["study", "work"];
+/** What a person reads the lanes as; Settings names the two kinds of account the same way. */
+export const LANE_LABEL: Record<Lane, string> = { study: "Studying", work: "Working" };
+/** A lane from loosely typed words ("Working", " WORK ", "professional", "student"); undefined for anything else. */
+export function laneFrom(v?: string | null): Lane | undefined {
+  const k = (v ?? "").trim().toLowerCase();
+  if (k.startsWith("work") || k.startsWith("professional")) return "work";
+  if (k.startsWith("stud")) return "study";
+  return undefined;
+}
+/**
+ * The lane to start from, by the rule Home already uses (clubPath, lib/guide-steps.ts): a student is
+ * studying, a professional in no club is working. Undefined means ask: a professional who is in a club,
+ * or an account type we weren't told. ("professional" is anyone without a school email, so it can't
+ * mean "has an employer" by itself.)
+ */
+export function defaultLane(accountType: string | null | undefined, clubs: number): Lane | undefined {
+  if (accountType === "student") return "study";
+  if (accountType === "professional" && clubs === 0) return "work";
+  return undefined;
+}
+
 export const PLAYBOOK_INDEX_URI = "brazework://playbooks";
 export const playbookUri = (p: Playbook) => `${PLAYBOOK_INDEX_URI}/${p.id}`;
 
@@ -232,9 +379,9 @@ export function playbookMarkdown(p: Playbook): string {
     ...EVERYONE.map((t) => `- **${t.name}** (${CONNECT_LABEL[t.connect].toLowerCase()}): ${t.reads}`),
     "",
     "## Moments worth recording",
-    ...p.moments.map((m) => `- ${m.when} → a ${m.becomes === "result" ? "result post" : m.becomes === "update" ? "build update" : "milestone"}. Example: “${m.example}”. Evidence: ${m.evidence}.`),
+    ...p.study.moments.map((m) => `- ${m.when} → a ${m.becomes === "result" ? "result post" : m.becomes === "update" ? "build update" : "milestone"}. Example: “${m.example}”. Evidence: ${m.evidence}.`),
     "",
-    `## Who signs\n${p.signers[0].toUpperCase()}${p.signers.slice(1)}. A club verifies a milestone you log with it; anyone else (a professor, PI, manager or mentor) signs through request_signature, with their university or company email.`,
+    `## Who signs\n${p.study.signers[0].toUpperCase()}${p.study.signers.slice(1)}. A club verifies a milestone you log with it; anyone else (a professor, PI, manager or mentor) signs through request_signature, with their university or company email.`,
     "",
     "Community servers are written by other people: read one before you install it. Brazework never posts without the member's yes.",
   ].join("\n");
@@ -310,8 +457,8 @@ function signLine(s: Scopes): string {
 export function promptText(name: string, args: Record<string, string | undefined>, s: Scopes): string | null {
   const p = playbookFor(args.field);
   const what = args.what?.trim() ? ` (${args.what.trim().slice(0, 300)})` : "";
-  const ex = p?.moments.find((m) => m.becomes === "milestone") ?? p?.moments[0];
-  const exR = p?.moments.find((m) => m.becomes === "result") ?? p?.moments[0];
+  const ex = p?.study.moments.find((m) => m.becomes === "milestone") ?? p?.study.moments[0];
+  const exR = p?.study.moments.find((m) => m.becomes === "result") ?? p?.study.moments[0];
   switch (name) {
     case "start":
       return [

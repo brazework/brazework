@@ -7,7 +7,7 @@ import { join } from "node:path";
 import { test } from "node:test";
 import { SAMPLES } from "@/components/projects/sample-models";
 import { MCP_TOOLS, annotationsFor, scopeFlags, toolsFor } from "@/lib/mcp";
-import { PLAYBOOKS, PROMPTS, playbookFor, playbookMarkdown, playbookUri, playbooksIndexMarkdown, promptText } from "@/lib/mcp-playbooks";
+import { PLAYBOOKS, PROMPTS, defaultLane, laneFrom, playbookFor, playbookMarkdown, playbookUri, playbooksIndexMarkdown, promptText } from "@/lib/mcp-playbooks";
 
 const ROOT = join(__dirname, "..", "..");
 
@@ -19,10 +19,29 @@ test("there's a playbook for each of the 20 fields the landing page shows, and n
   for (const p of PLAYBOOKS) {
     assert.match(p.id, /^[a-z]+(-[a-z]+)*$/, `${p.field}: id is a slug`);
     assert.ok(p.tools.length >= 3, `${p.field}: at least 3 tools`);
-    assert.ok(p.moments.length >= 2, `${p.field}: at least 2 moments`);
-    assert.ok(p.moments.some((m) => m.becomes === "milestone"), `${p.field}: at least one milestone moment`);
-    assert.ok(p.signers.length > 10, `${p.field}: who signs`);
+    assert.ok(p.study.moments.length >= 2, `${p.field}: at least 2 studying moments`);
+    assert.ok(p.study.moments.some((m) => m.becomes === "milestone"), `${p.field}: a studying milestone`);
+    assert.ok(p.study.signers.length > 10, `${p.field}: who signs when studying`);
+    assert.ok(p.work.moments.length >= 1 && p.work.moments.every((m) => m.becomes === "milestone"), `${p.field}: a working milestone`);
+    assert.match(p.work.signers, /manager|lead|client|director|head|engineer of record|principal|conductor/, `${p.field}: someone at work signs`);
+    assert.doesNotMatch(p.work.signers, /club|officers|TA\b|professor/, `${p.field}: no campus signers at work`);
   }
+});
+
+// Lanes (docs/superpowers/specs/2026-11-20-playbook-lanes-design.md): the lane belongs to the piece of
+// work. A loosely typed lane still means the obvious one, and with none the default follows the rule
+// Home already uses (lib/guide-steps.ts): a professional in no club is working.
+test("lanes: loose words mean the obvious lane, and the default follows Home's rule", () => {
+  for (const v of ["work", "Working", " WORK ", "professional"]) assert.equal(laneFrom(v), "work", v);
+  for (const v of ["study", "Studying", "student"]) assert.equal(laneFrom(v), "study", v);
+  for (const v of ["job", "", undefined, null]) assert.equal(laneFrom(v), undefined, String(v));
+  assert.equal(defaultLane("student", 0), "study");
+  assert.equal(defaultLane("student", 3), "study");
+  assert.equal(defaultLane("professional", 0), "work");
+  assert.equal(defaultLane("professional", 2), undefined, "a professional in a club is asked");
+  assert.equal(defaultLane(undefined, 0), undefined, "no account type yet: ask");
+  assert.equal(playbookFor("Mechanical")!.work.moments[0].example, "Housing rev D released: 9 parts, down from 14, at the same load rating");
+  assert.equal(playbookFor("Software")!.work.moments[0].example, "Checkout p95 latency down from 820 to 310 ms");
 });
 
 test("playbooks don't claim integrations that don't exist (checked November 2026)", () => {

@@ -49,7 +49,7 @@ export function FieldRecipes({ initialField }: { initialField: string }) {
         <div>
           <p className="flex items-center gap-1.5 text-xs font-medium text-muted"><Sparkles className="size-3.5" /> Moments worth recording</p>
           <ul className="mt-2 space-y-3">
-            {p.moments.map((m) => (
+            {p.study.moments.map((m) => (
               <li key={m.example} className="rounded-2xl border border-line p-3 text-sm">
                 <p className="text-text-2">{m.when}</p>
                 <p className="mt-1.5 flex items-start gap-1.5 font-medium">{m.becomes === "milestone" ? <BadgeCheck className="mt-0.5 size-4 shrink-0 text-ok" /> : <FileText className="mt-0.5 size-4 shrink-0 text-muted" />}<span><span className="text-muted">{BECOMES[m.becomes]}:</span> &ldquo;{m.example}&rdquo;</span></p>
@@ -57,7 +57,7 @@ export function FieldRecipes({ initialField }: { initialField: string }) {
               </li>
             ))}
           </ul>
-          <p className="mt-3 flex items-start gap-1.5 text-xs text-muted"><Users className="mt-0.5 size-3.5 shrink-0" />Who signs: {p.signers}.</p>
+          <p className="mt-3 flex items-start gap-1.5 text-xs text-muted"><Users className="mt-0.5 size-3.5 shrink-0" />Who signs: {p.study.signers}.</p>
         </div>
       </div>
 
