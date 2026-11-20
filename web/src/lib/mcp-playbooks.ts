@@ -1,4 +1,4 @@
-import { laneFrom } from "@/lib/lanes";
+import { laneFrom, type Lane } from "@/lib/lanes";
 import { INTENT_PROMPTS, intentPromptText } from "@/lib/mcp-intent-prompts";
 
 // Field playbooks for Brazework's MCP server (docs/mcp-workflows.md): for each of the 20 fields the
@@ -575,6 +575,10 @@ function workPromptText(name: string, args: Record<string, string | undefined>, 
   }
 }
 
+// For a student the server sent the studying text to: no question, and one way in if this piece of
+// work turns out to be an internship or a job.
+const SWITCH_LINE = "If I tell you this piece of work was for an employer or a client (a job, an internship, a contract), use the “If you're working” part of the playbook instead: its rules come first.";
+
 // With no lane the prompt carries the studying steps, so for each command this names the step the
 // working rules replace. Without it a working member's assistant is told both "pick the club that
 // saw it" and "no club", or "draft a post" and "never save a post" (found in review).
@@ -599,13 +603,18 @@ function workInstead(name: string, s: Scopes): string {
 
 /** The message a prompt sends, for this member's field and what their token may do. */
 // The intent prompts (club_week, career_fair) live in lib/mcp-intent-prompts.ts.
-export function promptText(name: string, args: Record<string, string | undefined>, s: Scopes): string | null {
+export function promptText(name: string, args: Record<string, string | undefined>, s: Scopes, known?: Lane): string | null {
   const p = playbookFor(args.field);
   const what = args.what?.trim() ? ` (${args.what.trim().slice(0, 300)})` : "";
   // The working lane has its own text (workPromptText). Studying, or no lane, reads as it always has;
   // with no lane it also says how to choose one and carries the working rules, so a plain /shipped
   // from someone who works is covered (spec: "Where the rules live").
-  const lane = laneFrom(args.lane);
+  // Which lane: what the member typed wins; a lane typed in words we can't read is asked about;
+  // otherwise the one the server knows from their account and clubs (`known`, from route.ts), so a
+  // student's command carries no question and someone who works in no club gets the working text.
+  const typed = laneFrom(args.lane);
+  const unread = !typed && !!args.lane?.trim();
+  const lane = typed ?? (unread ? undefined : known);
   if (lane === "work") {
     const text = workPromptText(name, args, s, p, what);
     if (text) return text;
@@ -613,8 +622,8 @@ export function promptText(name: string, args: Record<string, string | undefined
   const ex = p?.study.moments.find((m) => m.becomes === "milestone") ?? p?.study.moments[0];
   const exR = p?.study.moments.find((m) => m.becomes === "result") ?? p?.study.moments[0];
   // A lane typed in words we couldn't read ("banana") is said back, so the assistant can still use it.
-  const said = !lane && args.lane?.trim() ? `I said this was “${args.lane.trim().slice(0, 60)}”. ` : "";
-  const pick = lane ? [] : [
+  const said = unread ? `I said this was “${args.lane!.trim().slice(0, 60)}”. ` : "";
+  const pick = typed ? [] : lane === "study" ? [SWITCH_LINE] : [
     `${said}${laneSteps()}`,
     "If it's Studying, follow the numbered steps below as they are.",
     `If it's Working, the rules below win over any step they conflict with, and the example and who signs come from the “If you're working” part of the playbook, not from the steps. ${workInstead(name, s)}`.trim(),

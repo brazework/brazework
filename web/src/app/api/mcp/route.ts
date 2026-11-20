@@ -3,6 +3,7 @@ import { MCP_PROTOCOLS, MCP_TOOLS, absolutize, annotationsFor, mcpDb, scopeFlags
 import { actionPayload } from "@/lib/tool-actions";
 import { findBuilders, talentAsk, type TalentData } from "@/lib/mcp-talent";
 import { goalSummary, type GoalRead } from "@/lib/mcp-goal";
+import { defaultLane, type Lane } from "@/lib/lanes";
 import { LANES_NOTE, PLAYBOOKS, PLAYBOOK_INDEX_URI, PROMPTS, playbookMarkdown, playbookUri, playbooksIndexMarkdown, promptText } from "@/lib/mcp-playbooks";
 import { mailer } from "@/lib/email";
 import { CARD_HTML, CARD_MIME, CARD_URI, cardMeta, cardResourceMeta } from "@/lib/mcp-card";
@@ -101,8 +102,11 @@ export async function POST(req: Request) {
       const name = String(msg.params?.name ?? "");
       const raw = (msg.params?.arguments ?? {}) as Record<string, unknown>;
       const args = Object.fromEntries(Object.entries(raw).filter(([, v]) => typeof v === "string").map(([k, v]) => [k, String(v).slice(0, 300)]));
-      const text = promptText(name, args, can);
       const def = PROMPTS.find((p) => p.name === name);
+      // With no lane typed, the lane this member starts from (their account and clubs), so a student's
+      // command carries no question and someone who works in no club gets the working text.
+      const known = def?.arguments.some((a) => a.name === "lane") && !args.lane?.trim() ? await memberLane(db, hash) : undefined;
+      const text = promptText(name, args, can, known);
       if (!text || !def) return rpc(msg.id, { error: { code: -32602, message: `Unknown prompt: ${name}` } });
       return rpc(msg.id, { result: { description: def.description, messages: [{ role: "user", content: { type: "text", text } }] } });
     }
@@ -145,6 +149,16 @@ export async function POST(req: Request) {
     default:
       return rpc(msg.id, { error: { code: -32601, message: `Method not found: ${msg.method}` } });
   }
+}
+
+// The lane a member starts from, from what me says about them (defaultLane, lib/lanes.ts): Studying
+// for a student, Working for someone who works and is in no club. Undefined when it can't be told
+// (someone who works and is in a club, a database without step 85 yet, or a read that failed); the
+// prompt then has the assistant ask.
+async function memberLane(db: ReturnType<typeof mcpDb>, hash: string): Promise<Lane | undefined> {
+  const { data } = await db.rpc("mcp_me", { p_hash: hash });
+  const me = (data ?? {}) as { account_type?: string; clubs?: number };
+  return defaultLane(me.account_type, typeof me.clubs === "number" ? me.clubs : NaN);
 }
 
 // Writes also say what happens next and where to see it (lib/mcp-results.ts).

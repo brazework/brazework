@@ -108,7 +108,8 @@ Every field's playbook has two parts. **Studying** is work for a class, a lab or
 work for an employer or a client. The part belongs to the piece of work, not to you: an intern's summer
 project is Working, and their rocketry is Studying.
 
-Your assistant picks the part like this:
+The part is picked like this. Brazework decides 2 and 3 itself when you run a command, because it knows
+whose account it is, so your assistant only has to ask in 4:
 
 1. You said which (`lane`, below). Plain words work: "at work", "my internship", "a class project".
 2. A student account is Studying. It isn't asked.
@@ -124,8 +125,8 @@ Your assistant picks the part like this:
 For work, your assistant is given seven rules. They are instructions, not locks: Brazework can't see what
 an assistant reads in your other tools, so know your employer's rules yourself. They're written once
 (`WORK_RULES`, `web/src/lib/mcp-playbooks.ts`) and repeated wherever an assistant can come in: a command
-with or without a lane, the playbook's working part, and the server's own instructions. A command with no
-lane also says which of its steps the rules replace.
+with or without a lane, the playbook's working part, and the server's own instructions. When Brazework can't tell which
+part it is, the command carries both and says which of its steps the rules replace.
 
 1. It asks whether your employer allows it before it reads a work tool. If you're not sure, it doesn't.
 2. It keeps confidential things out of everything it writes, the project's title included: no customer

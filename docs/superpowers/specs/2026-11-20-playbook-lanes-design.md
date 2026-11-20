@@ -104,11 +104,15 @@ and each field adds its own working moment and signers on top.
 Two lanes, in the app's own words: **Studying** and **Working** (`study` and `work` in code). Working
 covers employed, freelance and on your own; the signer for a freelancer is the client.
 
-How the lane is chosen, in order. It follows the rule Home already uses (finding 4):
+How the lane is chosen, in order. It follows the rule Home already uses (finding 4). Brazework's server
+decides steps 2 and 3 when a command is fetched, because it knows whose token it is; the assistant is
+only left to ask in step 4 (Decided 4).
 
-1. The `lane` argument on a prompt, when the member gave one.
-2. A `student` account is Studying, with no question.
-3. A `professional` account in no club is Working.
+1. The `lane` argument on a prompt, when the member gave one. Plain words count ("at work", "my
+   internship"); a word that can't be read is said back to the assistant, which asks.
+2. A `student` account is Studying, with no question: the command carries the studying text, and one
+   line saying that work for an employer or a client uses the working part instead.
+3. A `professional` account in no club is Working: the command carries the working text.
 4. A `professional` account in a club is asked once: "Was this at work, or for school or a club?"
 5. In any lane, once the member says the work was for an employer or a client (a job, an internship, a
    contract), the working rules apply.
@@ -161,8 +165,10 @@ Wording for the builder to polish; the meaning is fixed.
 Most people type a command with no arguments, or just talk, so the rules can't live only in a prompt
 that was given `lane: work`:
 
-- **A prompt with no lane** (the normal case) carries the lane steps above, the working rules in full,
-  and for that command the step the rules replace (no club, a milestone instead of a post, a post only
+- **A prompt with no lane** (the normal case) is written for the lane the server knows: the studying
+  text for a student, the working text for someone who works and is in no club. When the server can't
+  tell (someone who works and is in a club, or a database without step 85 yet), it carries the lane
+  steps above, the working rules in full, and for that command the step the rules replace (no club, a milestone instead of a post, a post only
   on a private project). It points to the playbook's working part for the field's example and signers.
   A lane typed in words it can't read is said back to the assistant, which then asks.
 - **A prompt given `lane: work`** carries the rules in full, the working example and the working
@@ -232,6 +238,9 @@ and the builder walks one field from each family end to end on the local demo me
 - **Prompts take `lane`** (`study` or `work`, optional): `start`, `shipped`, `result`, `standup`,
   `week`, `setup`, `ask_signature`. `ask_signature` also gains `field`, which it lacks today, so it can
   name the field's signers.
+- **The server picks the lane** when one of those is fetched with no lane typed: it reads `mcp_me` for
+  the token and passes `defaultLane(account_type, clubs)` to the prompt (Decided 4). If that read
+  fails, the prompt asks, as if the server couldn't tell.
 - **What each prompt does in the working lane.** `shipped` and `start` log a hidden milestone and never
   start by picking a club. `result` logs a hidden milestone instead of drafting a post. `week` picks
   milestones only, unless the project is private. `standup` saves its draft only on a private project.
@@ -325,6 +334,7 @@ Measured by the owner's `account_type`, since the lane isn't stored. Claude's pr
 - The rules repeated in prompts without a lane, the resource, the instructions and the tool
   descriptions, so the plain-words path is covered.
 - The assistant reads the lane from `me`, as it reads the field, with no lookup on the server.
+  **Reversed by Josh after the review (Decided 4): the server looks it up.**
 - One working moment per field in v1, and all 20 examples (invented). Tools shared across lanes.
 - Leaving the consent default alone. Claude first suggested "Drafts only" for work, then found that
   chat-logged milestones already start hidden.
@@ -346,3 +356,7 @@ Josh approved Claude's default on each. Ian hasn't been asked yet.
    what the 90-day picker already stores for a private repo. Some employers won't allow even the
    address of an inside page in an outside system. Allowing none would change what a signature proves,
    so it isn't in these PRs; ask the first working members whether the link stops them.
+4. **The server picks the lane.** Found in the review of the whole branch: with the choice left to the
+   assistant, a student's command still carried the lane question beside an instruction not to ask it,
+   so "a student is never asked" was a hope. The server knows whose token it is, so a command fetched
+   with no lane is written for the lane `defaultLane` gives. Josh: "Yes, do it".

@@ -282,3 +282,23 @@ test("the tools say where work stays, and which part of the playbook to read", (
   }
   assert.match(LANES_NOTE, /ask whether their employer allows/);
 });
+
+// When a command is fetched with no lane typed, the server knows who is asking (their account and
+// clubs) and passes the lane it would start from. So a student's command carries no question at all,
+// and someone who works and is in no club gets the working text as if they had said so. Only when the
+// server can't tell (someone who works and is in a club; an older database) does the assistant ask.
+test("the server picks the lane when it knows the member, and what the member typed still wins", () => {
+  for (const n of RECORDS) for (const s of [POST, DRAFT, READ]) {
+    const student = promptText(n, { field: "Mechanical" }, s, "study")!;
+    assert.doesNotMatch(student, /Was this at work|employer allows|The rules for work/, `${n}: a student is never asked`);
+    assert.match(student, /for an employer or a client[\s\S]*If you're working/, `${n}: an internship still has a way in`);
+    assert.equal(promptText(n, { field: "Mechanical" }, s, "work"), promptText(n, { field: "Mechanical", lane: "work" }, s), `${n}: the working text, as if they had said so`);
+  }
+  assert.equal(promptText("ask_signature", { field: "Mechanical" }, POST, "work"), promptText("ask_signature", { field: "Mechanical", lane: "work" }, POST));
+  assert.equal(promptText("shipped", { field: "Mechanical", lane: "work" }, POST, "study"), at("work", "shipped"), "typed Working beats a student account");
+  assert.equal(promptText("shipped", { field: "Mechanical", lane: "study" }, POST, "work"), at("study", "shipped"), "typed Studying beats a working account");
+  assert.match(promptText("shipped", { field: "Mechanical", lane: "banana" }, POST, "study")!, /I said this was “banana”[\s\S]*Was this at work/, "a lane it can't read is asked about, whatever the account");
+  assert.match(promptText("shipped", { field: "Mechanical" }, POST, undefined)!, /Was this at work, or for school or a club\?/, "when the server can't tell, the assistant asks");
+  assert.doesNotMatch(at("study", "shipped"), /for an employer or a client \(a job/, "typed Studying reads exactly as it always has");
+  for (const n of ["career_fair", "club_week"]) assert.equal(promptText(n, {}, POST, "work"), promptText(n, {}, POST), `${n} has no lanes`);
+});
