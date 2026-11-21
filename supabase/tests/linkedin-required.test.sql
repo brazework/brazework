@@ -1,7 +1,7 @@
--- Tests for supabase/linkedin-required.sql: a working account adds a LinkedIn profile link before
--- asking a person to sign. Signing up doesn't need one (a wrong one is refused); asking does, by
--- every route, since the rule sits on the table the asks are saved in; the link has one shape; and
--- it is private (nobody else reads it, nobody writes it directly). Students are never asked.
+-- Tests for supabase/linkedin-required.sql, as changed by linkedin-optional.sql (step 87): the LinkedIn
+-- profile link is optional for everyone. Signing up doesn't need one (a wrong one is refused); asking
+-- for a signature doesn't either, by any route; the link has one shape; anyone can remove theirs;
+-- and it is private (nobody else reads it, nobody writes it directly).
 -- Rolls back.
 \set QUIET on
 begin;
@@ -58,7 +58,7 @@ reset role;
 select t.oauth('sky@voltline.example') as sky \gset
 select t.as_(:'sky'); set local role authenticated;
 select public.finish_signup('professional', 'Sky', 'Adu', '1993-07-01', '');
-select t.ok(public.needs_linkedin(), 'a professional may sign up without one; they will be asked when they ask for a signature');
+select t.ok(not public.needs_linkedin(), 'a professional may sign up without one, and owes nothing (optional, step 87)');
 reset role;
 select t.ok((select account_type = 'professional' and linkedin_url is null from public.profiles where id = :'sky'), 'their profile exists, with no link');
 -- The other sign-up rules still hold through the five-argument form.
@@ -94,18 +94,19 @@ reset role;
 update auth.users set email = 'ben@example.com' where id = :'ben';
 select t.as_(:'ben'); set local role authenticated;
 select public.set_account_type('professional');
-select t.ok(public.needs_linkedin(), 'now working, with no link: he owes one before asking');
-select t.must_fail($$select public.request_vouch(current_setting('t.ms'), 'dr.ruiz@hartford.edu', 'mentor', repeat('2', 64))$$, 'Add your LinkedIn profile link before you ask');
+select t.ok(not public.needs_linkedin(), 'now working, with no link: he still owes nothing (optional)');
+select t.ok(public.request_vouch(current_setting('t.ms'), 'dr.kim@hartford.edu', 'mentor', repeat('4', 64)) > 0, 'a working account with no link asks (optional)');
 select t.must_fail($$select public.set_linkedin('not a link')$$, 'LinkedIn profile link');
-select t.ok(public.needs_linkedin(), 'a refused link changes nothing');
+select t.ok(public.my_linkedin() is null, 'a refused link changes nothing');
 select t.ok(public.set_linkedin('https://www.linkedin.com/in/ben-cho') = 'https://www.linkedin.com/in/ben-cho', 'he adds it');
-select t.ok(not public.needs_linkedin(), 'and owes nothing');
+select t.ok(public.my_linkedin() = 'https://www.linkedin.com/in/ben-cho', 'it is saved, cleaned');
 select t.ok(public.request_vouch(current_setting('t.ms'), 'dr.ruiz@hartford.edu', 'mentor', repeat('2', 64)) > 0, 'with the link, the ask goes out');
 select t.ok(public.set_linkedin('linkedin.com/in/ben-cho-ee') = 'https://www.linkedin.com/in/ben-cho-ee', 'he can change it');
-select t.must_fail($$select public.set_linkedin('')$$, 'keeps a LinkedIn link');
+select t.ok(public.set_linkedin('') is null, 'he can remove it, even after asking someone to sign (optional)');
+select t.ok(public.set_linkedin('linkedin.com/in/ben-cho-ee') = 'https://www.linkedin.com/in/ben-cho-ee', 'and add it back');
 reset role;
--- The rule is on the table, so no route around request_vouch() skips it.
-select t.must_fail(format($$insert into public.milestone_vouches (milestone_id, requested_by, email, relationship, token_hash) values (%L, %L, 'x@hartford.edu', 'other', repeat('3', 64))$$, :'ms', :'sky'), 'Add your LinkedIn profile link before you ask');
+-- No rule on the table any more (step 87): nothing refuses an ask for a missing link.
+select t.ok(not exists (select 1 from pg_trigger where tgname = 'vouch_needs_linkedin'), 'the asks table has no LinkedIn rule');
 -- A working account that has asked nobody may still take its link away.
 select t.as_(:'pat'); set local role authenticated;
 select t.ok(public.set_linkedin('') is null, 'a working account with no asks can remove its link');
