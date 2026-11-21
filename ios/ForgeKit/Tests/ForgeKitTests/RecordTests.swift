@@ -67,4 +67,15 @@ final class RecordTests: XCTestCase {
     m.achievedOn = now; m.clubId = ""; XCTAssertEqual(RecordLogic.problem(m, now: now), "Pick the club that saw it.")
     m.clubId = "rkt"; m.projectId = ""; XCTAssertEqual(RecordLogic.problem(m, now: now), "Pick the project it's part of.")
   }
+
+  // A person who saw it signs instead of a club: their email and how they know the work.
+  func testAskingAPerson() {
+    let now = ISO8601DateFormatter().date(from: "2026-11-21T12:00:00Z")!
+    var m = MilestoneDraft(projectId: "p1", title: "Shipped the parser", evidence: "https://github.com/me/app/pull/9", achievedOn: now, byPerson: true)
+    XCTAssertEqual(RecordLogic.problem(m, now: now), "Enter the email of the person who saw it.", "no club needed, but someone to ask")
+    m.signerEmail = "dana"; XCTAssertEqual(RecordLogic.problem(m, now: now), "Enter their email address.")
+    m.signerEmail = "dana@acme.com"; XCTAssertNil(RecordLogic.problem(m, now: now))
+    m.relationship = "boss"; XCTAssertEqual(RecordLogic.problem(m, now: now), "Pick how they know your work.")
+    XCTAssertEqual(Signers.relationships.map(\.id), ["professor", "ta", "pi", "manager", "mentor", "other"], "the web's RELATIONSHIPS")
+  }
 }

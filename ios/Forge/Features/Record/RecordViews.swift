@@ -187,8 +187,8 @@ struct ProjectDetailView: View {
 
 // MARK: Milestones
 
-/// Log a result with its evidence and ask the club that saw it to verify it. A person who saw it
-/// (a manager, a professor) signs on the web for now, where the private link is mailed to them.
+/// Log a result with its evidence and ask who saw it to sign: the club (its officers verify it here),
+/// or a person (a manager, a professor), who gets a private link by email from the website.
 struct AddMilestoneView: View {
   let projects: [Build]
   var start: String = ""
@@ -198,7 +198,7 @@ struct AddMilestoneView: View {
   @Environment(\.openURL) private var openURL
   @State private var draft = MilestoneDraft()
   @State private var clubs: [Club] = []
-  @State private var person = false
+  @State private var needsLinkedin = false
   @State private var saving = false
   @State private var error: String?
   @State private var sent = false
@@ -216,11 +216,20 @@ struct AddMilestoneView: View {
           TextField("Detail (optional)", text: $draft.detail, axis: .vertical).lineLimit(2...5)
         } footer: { Text("No evidence, no request: whoever signs looks at it first.") }
         Section("Who saw it") {
-          Picker("Signs it", selection: Binding(get: { person ? "person" : draft.clubId }, set: { v in person = v == "person"; if !person { draft.clubId = v } })) {
+          Picker("Signs it", selection: Binding(get: { draft.byPerson ? "person" : draft.clubId }, set: { v in withAnimation(.snappy) { draft.byPerson = v == "person"; if !draft.byPerson { draft.clubId = v } } })) {
             ForEach(clubs) { Text($0.name).tag($0.id) }
             Text("A person who saw it").tag("person")
           }
           .pickerStyle(.inline).labelsHidden()
+        }
+        if draft.byPerson {
+          Section {
+            TextField("Their email", text: $draft.signerEmail).keyboardType(.emailAddress).textContentType(.emailAddress).textInputAutocapitalization(.never).autocorrectionDisabled()
+            Picker("How they know your work", selection: $draft.relationship) { ForEach(Signers.relationships, id: \.id) { Text($0.label).tag($0.id) } }
+            if needsLinkedin {
+              TextField("Your LinkedIn profile link", text: $draft.linkedin).keyboardType(.URL).textInputAutocapitalization(.never).autocorrectionDisabled()
+            }
+          } footer: { Text("We email them a private link to sign. You never see it, so nobody can sign their own work.") }
         }
         Section { Toggle("Show on my profile once it's signed", isOn: $draft.showOnProfile) }
         if let error { Section { Label(error, icon: "exclamationmark.circle").foregroundStyle(p.danger) } }
@@ -230,7 +239,7 @@ struct AddMilestoneView: View {
       .toolbar {
         ToolbarItem(placement: .cancellationAction) { Button("Cancel") { dismiss() } }
         ToolbarItem(placement: .confirmationAction) {
-          Button(person ? "Continue on the web" : "Ask to verify") { Task { await send() } }.disabled(saving).fontWeight(.semibold)
+          Button(draft.byPerson ? "Ask to sign" : "Ask to verify") { Task { await send() } }.disabled(saving).fontWeight(.semibold)
         }
       }
       .overlay { if sent { sentView } }
@@ -238,7 +247,7 @@ struct AddMilestoneView: View {
       .task {
         if draft.projectId.isEmpty { draft.projectId = start.isEmpty ? (projects.first?.id ?? "") : start }
         if let me = session.userId { clubs = (try? await API.myClubs(me: me)) ?? [] }
-        if draft.clubId.isEmpty { if let first = clubs.first { draft.clubId = first.id } else { person = true } }
+        if draft.clubId.isEmpty { if let first = clubs.first { draft.clubId = first.id } else { draft.byPerson = true } }
       }
     }
   }
@@ -246,8 +255,8 @@ struct AddMilestoneView: View {
   private var sentView: some View {
     VStack(spacing: 12) {
       Icon("checkmark.circle.fill").font(.system(size: 44)).foregroundStyle(p.ok)
-      Text("Asked \(clubs.first { $0.id == draft.clubId }?.name ?? "your club")").font(.title3.weight(.semibold)).foregroundStyle(p.text)
-      Text("Its officers see it now. It's on your record as waiting until one of them verifies it.").font(.subheadline).foregroundStyle(p.muted).multilineTextAlignment(.center)
+      Text(draft.byPerson ? "Asked \(draft.signerEmail)" : "Asked \(clubs.first { $0.id == draft.clubId }?.name ?? "your club")").font(.title3.weight(.semibold)).foregroundStyle(p.text).multilineTextAlignment(.center)
+      Text(draft.byPerson ? "We emailed them a link to sign. You'll be notified when they answer; it's on your record as waiting until then." : "Its officers see it now. It's on your record as waiting until one of them verifies it.").font(.subheadline).foregroundStyle(p.muted).multilineTextAlignment(.center)
       Button("Done") { dismiss() }.buttonStyle(PrimaryButtonStyle()).padding(.top, 6)
     }
     .padding(28).frame(maxWidth: .infinity, maxHeight: .infinity).background(p.bg)
@@ -255,19 +264,16 @@ struct AddMilestoneView: View {
   }
 
   private func send() async {
-    if person {
-      // The web mails the signer a private link the member never holds, so this step is there.
-      openURL(Env.web("projects/\(draft.projectId)"))
-      dismiss()
-      return
-    }
     if let problem = RecordLogic.problem(draft) { error = problem; return }
     saving = true; error = nil
     defer { saving = false }
     do {
-      try await API.askClub(draft)
+      if draft.byPerson { try await API.askPerson(draft) } else { try await API.askClub(draft) }
       UINotificationFeedbackGenerator().notificationOccurred(.success)
       withAnimation(.snappy) { sent = true }
+    } catch SignatureError.needsLinkedin(let message) {
+      withAnimation(.snappy) { needsLinkedin = true }
+      self.error = message
     } catch { self.error = friendly(error) }
   }
 }
