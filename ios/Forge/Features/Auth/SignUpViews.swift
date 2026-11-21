@@ -220,7 +220,7 @@ struct OnboardingView: View {
             HStack {
               Text("Your interests").font(.headline).foregroundStyle(p.text)
               Spacer()
-              Text("\(form.interests.count) picked · 3+").font(.caption.weight(.semibold)).foregroundStyle(form.interests.count >= 3 ? Color(hex: 0x10B981) : p.faint)
+              Text("\(form.interests.count) picked · 3+").font(.caption.weight(.semibold)).foregroundStyle(form.interests.count >= 3 ? p.ok : p.faint)
             }
             // Your field's topics first.
             ForEach(Topics.all.sorted { a, _ in a.field == form.field }, id: \.field) { group in

@@ -16,7 +16,7 @@ struct NextStepView: View {
   var body: some View {
     if let goal {
       if goal.done {
-        Label { Text("\(goal.text). Next week starts Monday.") } icon: { Image(systemName: "checkmark.seal.fill").foregroundStyle(.green) }
+        Label { Text("\(goal.text). Next week starts Monday.") } icon: { Image(systemName: "checkmark.seal.fill").foregroundStyle(p.ok) }
           .font(.subheadline).foregroundStyle(p.text2)
           .frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 4).padding(.vertical, 2)
           .accessibilityElement(children: .combine).accessibilityLabel("Next step: \(goal.text). Next week starts Monday.")

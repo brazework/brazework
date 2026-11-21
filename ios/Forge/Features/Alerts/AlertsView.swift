@@ -76,7 +76,7 @@ struct AlertsView: View {
     switch kind {
     case "like": Color(hex: 0xF43F5E)
     case "mention", "comment": Color(hex: 0x6366F1)
-    case "milestone_verified": Color(hex: 0x10B981)
+    case "milestone_verified": p.ok
     default: Color(hex: 0x71717A)
     }
   }

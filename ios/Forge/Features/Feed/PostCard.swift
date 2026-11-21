@@ -67,7 +67,7 @@ struct PostCard: View {
         HStack(spacing: 6) { ForEach(post.tags, id: \.self) { Text("#\($0)").font(.caption).foregroundStyle(p.muted) } }
       }
       HStack(spacing: 4) {
-        action(liked ? "heart.fill" : "heart", post.likeCount, tint: liked ? Color(hex: 0xF43F5E) : p.muted, label: liked ? "Unlike" : "Like", run: onLike)
+        action(liked ? "heart.fill" : "heart", post.likeCount, tint: liked ? p.accent : p.muted, label: liked ? "Unlike" : "Like", run: onLike)
           .sensoryFeedback(.impact(weight: .light), trigger: liked)
         NavigationLink(value: post) {
           Label { Text(post.commentCount > 0 ? "\(post.commentCount)" : (post.kind == "question" ? "Answer" : "Reply")).monospacedDigit() } icon: { Image(systemName: "bubble.left") }
@@ -76,7 +76,7 @@ struct PostCard: View {
         .accessibilityLabel(post.kind == "question" ? "Answer" : "Reply")
         Spacer()
         if post.kind == "question" && post.commentCount == 0 {
-          Text("Unanswered").font(.caption2.weight(.semibold)).foregroundStyle(Color(hex: 0xF59E0B)).padding(.horizontal, 8).padding(.vertical, 3).background(Color(hex: 0xF59E0B).opacity(0.12), in: Capsule())
+          Text("Unanswered").font(.caption2.weight(.semibold)).foregroundStyle(p.wait).padding(.horizontal, 8).padding(.vertical, 3).background(p.wait.opacity(0.12), in: Capsule())
         }
         action(saved ? "bookmark.fill" : "bookmark", nil, tint: saved ? p.accent : p.muted, label: saved ? "Unsave" : "Save", run: onSave)
         ShareLink(item: Env.web("post/\(post.id)")) { Image(systemName: "square.and.arrow.up").font(.subheadline).foregroundStyle(p.muted).frame(width: 44, height: 44) }
@@ -89,7 +89,7 @@ struct PostCard: View {
     .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous).strokeBorder(p.border, lineWidth: 0.5))
     .overlay {
       // Double-tap to like: a heart that pops and fades.
-      Image(systemName: "heart.fill").font(.system(size: 84)).foregroundStyle(Color(hex: 0xF43F5E))
+      Image(systemName: "heart.fill").font(.system(size: 84)).foregroundStyle(p.accent)
         .shadow(color: .black.opacity(0.2), radius: 10)
         .scaleEffect(showBurst ? 1 : 0.4).opacity(showBurst ? 1 : 0)
         .allowsHitTesting(false)

@@ -60,7 +60,7 @@ private struct EventRow: View {
         Text(event.title).font(.body.weight(.semibold)).foregroundStyle(p.text).multilineTextAlignment(.leading)
         Text(event.startsAt.formatted(.dateTime.weekday(.wide).hour().minute())).font(.subheadline).foregroundStyle(p.text2)
         Text([event.host, event.format == "Online" ? "Online" : event.location].filter { !$0.isEmpty }.joined(separator: " · ")).font(.caption).foregroundStyle(p.muted).lineLimit(1)
-        if going { Label("Going", systemImage: "checkmark.circle.fill").font(.caption.weight(.semibold)).foregroundStyle(Color(hex: 0x10B981)) }
+        if going { Label("Going", systemImage: "checkmark.circle.fill").font(.caption.weight(.semibold)).foregroundStyle(p.ok) }
       }
       Spacer(minLength: 0)
     }
