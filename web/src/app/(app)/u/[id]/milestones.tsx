@@ -8,6 +8,7 @@ import { FreshSeal } from "@/components/app/fresh-seal";
 import { Button, Field, inputCls } from "@/components/ui";
 import { cn } from "@/lib/forge";
 import { signerNote } from "@/lib/signers";
+import { LINKEDIN_PLACEHOLDER, LINKEDIN_PRIVATE, LINKEDIN_WHY } from "@/lib/linkedin";
 import { addMilestone, disputeMilestone, removeMilestone, setMilestoneVisible, shareMilestone, type MilestoneState } from "@/lib/milestones";
 import { approvedLine } from "@/lib/backing";
 import { proofPostText, proofUrl, shareLinks } from "@/lib/proof-card";
@@ -217,6 +218,9 @@ function MilestoneDialog({ projectId, projectTitle, clubs, vouches, backing, onC
   const note = club?.signers ? signerNote(club.name, club.signers) : null;
   useEffect(() => { ref.current?.showModal(); }, []);
   useEffect(() => { if (state.ok) { onSent(); onClose(); } }, [state.ok, onSent, onClose]);
+  // A working account adds its LinkedIn link before asking a person to sign (Linear FIX-214): when
+  // the server says it's missing or wrong, the field shows. Once saved, it isn't asked again.
+  const askLinkedin = Boolean(state.linkedin);
   const today = new Date().toISOString().slice(0, 10);
   return (
     <dialog ref={ref} onCancel={(e) => { e.preventDefault(); onClose(); }} className="m-auto max-h-[92dvh] w-[min(560px,calc(100vw-24px))] overflow-y-auto rounded-3xl border border-line bg-surface p-0 text-text shadow-[var(--shadow)] backdrop:bg-black/60 backdrop:backdrop-blur-sm">
@@ -271,6 +275,13 @@ function MilestoneDialog({ projectId, projectTitle, clubs, vouches, backing, onC
                 {Object.entries(RELATIONSHIPS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
               </select>
             </Field>
+            {askLinkedin && (
+              <div className="sm:col-span-2">
+                <Field label="Your LinkedIn profile" hint={`${LINKEDIN_WHY} ${LINKEDIN_PRIVATE}`}>
+                  <input name="linkedin" type="text" inputMode="url" autoComplete="url" autoCapitalize="none" autoCorrect="off" spellCheck={false} maxLength={200} placeholder={LINKEDIN_PLACEHOLDER} className={inputCls} />
+                </Field>
+              </div>
+            )}
           </div>
         ) : (
           <p className="rounded-xl bg-surface-2 px-3 py-2 text-xs leading-relaxed text-text-2">

@@ -21,6 +21,10 @@ export async function GET() {
     q("saved", (b) => b.select("post_id, saved_at").eq("user_id", me)),
     q("notifications", (b) => b.select("kind, snippet, created_at, read").eq("user_id", me).order("created_at", { ascending: false }).limit(500)),
   ]);
+  // Your LinkedIn profile link, if you gave one (supabase/linkedin-required.sql). It is private, so
+  // it is read through my_linkedin(), which only ever returns your own; before that step, none.
+  const li = await supabase.rpc("my_linkedin");
+  const linkedin = li.error ? null : ((li.data as string | null) ?? null);
   // Your files: post photos and videos, profile photo and cover.
   const paths = new Set<string>();
   for (const p of posts as { media?: { path?: string }[] }[]) for (const m of p.media ?? []) if (m?.path) paths.add(m.path);
@@ -30,7 +34,7 @@ export async function GET() {
   const body = {
     exported_at: new Date().toISOString(),
     note: "Everything you've put on Brazework. Files are linked under files; download them while signed in or before deleting your account.",
-    account: { id: me, email: user.email },
+    account: { id: me, email: user.email, linkedin_profile: linkedin },
     profile: (profile as unknown[])[0] ?? null, posts, comments, projects, milestones, messages_you_sent: messages,
     clubs: memberships, following: follows, saved, notifications,
     files: [...paths].map((path) => ({ path, url: mediaUrl(path) })),

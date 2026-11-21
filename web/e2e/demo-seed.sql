@@ -64,3 +64,9 @@ begin
   end if;
   perform set_config('request.jwt.claim.sub', '', true);
 end $$;
+
+-- A professional account has a LinkedIn profile link (supabase/linkedin-required.sql). The demo's
+-- working members get a made-up one, so the app doesn't stop them to ask.
+update public.profiles p set linkedin_url = 'https://www.linkedin.com/in/demo-' || lower(regexp_replace(p.first_name || '-' || p.last_name, '[^A-Za-z0-9-]', '', 'g'))
+  where p.account_type = 'professional' and p.linkedin_url is null
+    and exists (select 1 from auth.users u where u.id = p.id and u.email like '%@forge.test');
