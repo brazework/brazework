@@ -18,10 +18,13 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
     await hydrated(page.locator("#hero-build"));
     await stage.getByText("A line-following robot").waitFor();
     // The AI moment: asked in plain words, the draft with its evidence, sent to the club, then the officer verifies.
-    await stage.getByText("Your AI drafts it").waitFor();
+    await stage.getByText("You log what you finished").waitFor();
     await stage.getByText("Sent to Rocketry Club").waitFor({ timeout: 10000 });
     await stage.getByRole("list", { name: "Evidence" }).getByText(/github\.com/).waitFor();
     await stage.getByText("Verified", { exact: true }).waitFor({ timeout: 10000 });
+    // The flow is named along the top of the card, and once it's signed the entry is on the record.
+    for (const f of ["Log it", "Get it signed", "Get found"]) await stage.getByText(f, { exact: true }).waitFor();
+    await stage.getByText("On your Brazework record").waitFor();
     // In the chat: what the AI read, then its reply asking before it sends.
     await stage.getByRole("list", { name: "What your AI read" }).getByText("Read your merged pull request").waitFor();
     await stage.getByText(/Send it to your club to verify\?/).waitFor();
@@ -118,6 +121,23 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
     await go(page, "/");
   }, page);
 
+  await step("how it works: three steps straight after the hero; the signed state shows once you scroll to it, and the nav says where you are", async () => {
+    const how = page.locator("#how");
+    await how.getByRole("heading", { name: "Log it. Get it signed. Keep it." }).waitFor();
+    const order = await page.locator("main > section").evaluateAll((els) => els.map((el) => el.id));
+    if (order[0] !== "top" || order[1] !== "how") throw new Error(`the page starts ${order.slice(0, 3).join(", ")}`);
+    const states = how.locator("ol > li figcaption");
+    if ((await states.count()) !== 3) throw new Error("expected three steps");
+    // At the top of the page the line hasn't reached any step yet.
+    await states.nth(2).waitFor({ state: "hidden" });
+    await states.nth(2).scrollIntoViewIfNeeded();
+    await page.mouse.wheel(0, 300);
+    await states.nth(2).waitFor({ state: "visible", timeout: 10000 });
+    if (!/Signed by Dana R\./.test(await states.nth(2).innerText())) throw new Error("the third step isn't the signed one");
+    await page.locator('header a[aria-current="location"]').filter({ hasText: "How it works" }).waitFor();
+    await go(page, "/");
+  }, page);
+
   await step("hero: on a phone it keeps one height while a story plays and when the next starts (nothing below it jumps)", async () => {
     const ph = await (await b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true })).newPage();
     await ph.goto(BASE + "/", { waitUntil: "domcontentloaded" });
@@ -184,6 +204,8 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
     await stage.getByText("Sent to Rocketry Club").waitFor({ timeout: 3000 });
     await stage.getByRole("button", { name: "Accept" }).click({ timeout: 3000 });
     await stage.getByText(/You're talking/).waitFor({ timeout: 3000 });
+    // How it works: all three states are there without scrolling to them.
+    await still.locator("#how ol > li figcaption").nth(2).waitFor({ state: "visible", timeout: 3000 });
   }, still);
 
   await b.close();

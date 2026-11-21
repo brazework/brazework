@@ -11,10 +11,10 @@ import { Faq } from "./faq";
 import { LANDING_AUDIENCES, PRICING_LINKS } from "@/lib/pricing";
 import { PricingTiers } from "./pricing";
 
-// The landing page's sections, in the order a cold visitor needs them: who it's for (a student,
-// someone employed, someone working for themselves), the app itself (to try), a
-// build in 3D, why
-// proof matters now, Ember, what clubs get, what companies get and what it costs, and questions.
+// The landing page's sections. The order they show in is set by app/page.tsx: who it's for (a
+// student, someone employed, someone working for themselves), why proof matters now, the app itself
+// (to try), a build in 3D, Ember and the AI tools you already use, what clubs get, what companies get
+// and what it costs, and questions.
 // Each one is a heading, a few plain sentences and something to try; the demos are client components.
 
 export const H2 = "text-[clamp(2rem,4.4vw,3.25rem)] leading-[1.03] font-semibold tracking-[-0.04em] text-balance";
@@ -43,7 +43,7 @@ const STAGES = [
 
 export function Stages() {
   return (
-    <section id="who" className="scroll-mt-20 border-t border-line py-16 sm:py-24">
+    <section id="who" className="scroll-mt-20 py-16 sm:py-24">
       <div className={WRAP}>
         <h2 className={H2}>Who signs it? Whoever saw it.</h2>
         <p className={LEAD}>At school that&apos;s your club or a professor. At work, your manager or tech lead. On your own, your client. They sign from their own email (a work or university one carries the most weight), and the record stays yours when you move on.</p>
@@ -70,7 +70,7 @@ export function Stages() {
 
 export function Tour() {
   return (
-    <section id="app" className={cn(SEC, BAND)}>
+    <section id="app" className={SEC}>
       <div className={WRAP}>
         <h2 className={H2}>The whole app is five places.</h2>
         <p className={LEAD}>This is a working copy with example data. Tap around: what you do in one place shows up in the next.</p>
@@ -84,7 +84,7 @@ export function Tour() {
 // (build-showcase.tsx). three.js loads only when this nears the screen.
 export function ShowBuild() {
   return (
-    <section id="projects" className={SEC}>
+    <section id="projects" className={cn(SEC, BAND)}>
       {/* Phone: the heading, then the picker and the model, then the detail. Laptop: the model on the left, the words beside it. */}
       <div className={cn(WRAP, "grid grid-cols-1 gap-x-16 gap-y-8 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]")}>
         <div className="lg:col-start-2 lg:row-start-1 lg:self-end">
@@ -138,11 +138,11 @@ export function EmberSection() {
       <div className={cn(WRAP, "grid grid-cols-1 items-start gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:gap-16")}>
         <div>
           <h2 className={H2}>Ember does the busywork.</h2>
-          <p className={LEAD}>Ember is the assistant inside Brazework. It reads your club&apos;s real numbers, drafts the update, and waits for your OK.</p>
+          <p className={LEAD}>Ember is the assistant inside Brazework. Say what you did in a sentence. It writes it up, gets it in front of the person who can sign, and tells you what to do next.</p>
           <Points items={[
-            ["It checks before it answers", "Every number in a draft comes from what members posted and what officers verified."],
+            ["It knows your record", "What's signed, what's waiting and who you've asked. So it opens with your next step, not a blank box."],
             ["It asks before it acts", "A post, a request or a milestone sits on a card until you press the button."],
-            ["It works with the AI tools you already use", "Add Brazework to Claude, Cursor or VS Code in a minute (below), and they log your progress while you work. They can never verify anything. Only people do."],
+            ["It writes from what's proven", "Your self-review, your résumé bullets and your story year by year, each from signed work, with who signed it."],
           ]} />
         </div>
         <EmberDemo />
@@ -155,11 +155,11 @@ export function EmberSection() {
 // three steps in Claude, and one tap for the editors, so a visitor goes from here to connected.
 export function ConnectSection() {
   return (
-    <section id="connect" aria-labelledby="connect-h" className={SEC}>
+    <section id="connect" aria-labelledby="connect-h" className="scroll-mt-20 pb-20 sm:pb-28">
       <div className={cn(WRAP, "grid grid-cols-1 items-start gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:gap-16")}>
         <div>
-          <h2 id="connect-h" className={H2}>Connect your AI in a minute.</h2>
-          <p className={LEAD}>Brazework is a connector for Claude and a server for the editors you code in. Add it once, then say what you did, like &ldquo;put the analysis I finished on my record.&rdquo; It drafts the milestone with its proof and waits for your OK.</p>
+          <h2 id="connect-h" className={H2}>Works with the AI you already use.</h2>
+          <p className={LEAD}>Add Brazework to Claude, Cursor or VS Code once. Then say what you did, like &ldquo;put the analysis I finished on my record.&rdquo; It drafts the entry with its proof and waits for your OK. It can never sign anything. Only people do.</p>
           <Link href="/ai" className="mt-6 inline-flex items-center gap-1 text-[15px] font-medium underline-offset-4 hover:underline">Everything it can do, field by field</Link>
         </div>
         <ConnectSlot />
