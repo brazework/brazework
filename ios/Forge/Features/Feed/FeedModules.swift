@@ -24,7 +24,7 @@ struct ComposerPrompt: View {
       HStack(spacing: 8) {
         quick("Photo", "photo.on.rectangle.angled", Color(hex: 0x6366F1)) { onCompose("update", true) }
         quick("Question", "questionmark.bubble", Color(hex: 0xF59E0B)) { onCompose("question", false) }
-        quick("Result", "checkmark.seal", Color(hex: 0x10B981)) { onCompose("result", false) }
+        quick("Result", "checkmark.seal", p.ok) { onCompose("result", false) }
       }
     }
     .padding(14)
@@ -218,7 +218,7 @@ struct EventCard: View {
         HStack(alignment: .top) {
           DateTile(date: event.startsAt, size: 44)
           Spacer()
-          if going { Image(systemName: "checkmark.circle.fill").foregroundStyle(Color(hex: 0x10B981)).accessibilityLabel("Going") }
+          if going { Image(systemName: "checkmark.circle.fill").foregroundStyle(p.ok).accessibilityLabel("Going") }
         }
         Text(event.title).font(.subheadline.weight(.semibold)).foregroundStyle(p.text).lineLimit(2, reservesSpace: true).multilineTextAlignment(.leading)
         Text(event.startsAt.formatted(.dateTime.weekday(.abbreviated).hour().minute())).font(.caption).foregroundStyle(p.text2)
