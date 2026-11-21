@@ -21,6 +21,9 @@ drop policy if exists ember_memories_add on public.ember_memories;
 create policy ember_memories_add on public.ember_memories for insert to authenticated with check (user_id = auth.uid());
 drop policy if exists ember_memories_forget on public.ember_memories;
 create policy ember_memories_forget on public.ember_memories for delete to authenticated using (user_id = auth.uid());
+-- Members only (members-only.sql, FIX-138): an account that hasn't finished sign-up reads nothing here.
+drop policy if exists "members only" on public.ember_memories;
+create policy "members only" on public.ember_memories as restrictive for select to authenticated using ((select public.is_member()));
 
 -- At most 50 each: a memory is a short list, not a diary.
 create or replace function public.ember_memories_cap() returns trigger
