@@ -68,3 +68,12 @@ test("a card in the page is a line or two until you press Edit", () => {
   const edit = cardSummary({ id: "4", kind: "project_edit", project_id: "p1", project_title: "Thrust stand", summary: "New", details: "More", before: { summary: "", details: "", link: "", specs: [] } });
   assert.deepEqual(edit?.lines, ["summary, write-up"]);
 });
+
+test("the goal card says what confirming does", () => {
+  assert.equal(cardLabels("goal", true).confirm, "Set this goal");
+  assert.equal(cardLabels("goal", false).confirm, "Set this goal");
+  const s = cardSummary({ id: "g1", kind: "goal", goal_kind: "job", target: "product design", title: "your next full-time role in product design", why: "You said you want to move into design." });
+  assert.equal(s?.title, "Work toward your next full-time role in product design");
+  assert.deepEqual(s?.lines, ["You said you want to move into design."]);
+});
+

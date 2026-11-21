@@ -1,3 +1,4 @@
+import { goalTitle, isGoalKind } from "@/lib/goals";
 import type Anthropic from "@anthropic-ai/sdk";
 import { can, rank } from "@/lib/communities";
 import { EVENT_FORMATS, EVENT_TYPES } from "@/lib/events";
@@ -84,6 +85,11 @@ export const TOOLS: Anthropic.Tool[] = [
     name: "propose_project_edit",
     description: "Prepare a change to one of the member's own projects: its summary, its write-up or its link. Pass only the fields that change; the card shows what is there now beside the new text. Write from what the member told you or what github_repo returned, never invented results. It is NOT saved until they confirm.",
     input_schema: { type: "object", properties: { project_id: { type: "string" }, summary: { type: "string", description: "The one-paragraph summary, at most 600 characters" }, details: { type: "string", description: "The write-up, at most 5,000 characters" }, link: { type: "string", description: "An https link to the repo, doc or demo" } }, required: ["project_id"] },
+  },
+  {
+    name: "propose_goal",
+    description: "Prepare what the member is working toward, as a card they confirm: one of internship, job (their next full-time role, for students and working people), grad, research, competition, funding, with an optional field or area (target, like 'power electronics' or 'product design'). Ask what they want first if it isn't clear; never pick for them. The card also asks whether companies searching Brazework may see it. Setting a new goal replaces the active one. It is NOT set until they confirm.",
+    input_schema: { type: "object", properties: { kind: { type: "string", enum: ["internship", "job", "grad", "research", "competition", "funding"] }, target: { type: "string", description: "The field or area, at most 80 characters; may be empty" }, why: { type: "string", description: "One sentence, in plain words, on why this fits what they said" } }, required: ["kind"] },
   },
   {
     name: "propose_milestone",
@@ -342,6 +348,14 @@ export function makeExec(db: DB, userId: string, onProposal: (p: Proposal) => vo
           items: (unread.length ? unread : rows).slice(0, 12).map((n) => ({ what: n.kind.replace(/_/g, " "), from: `${n.actor_first ?? ""} ${n.actor_last ?? ""}`.trim() || undefined, about: snip(n.snippet, 140) || undefined, club: n.community_name || undefined, when: n.created_at, unread: !n.read })),
           link: "/notifications",
         };
+      }
+      case "propose_goal": {
+        const kind = String(a.kind ?? "");
+        if (!isGoalKind(kind)) return { error: "Pick one of: internship, job, grad, research, competition, funding." };
+        const target = typeof a.target === "string" ? a.target.trim().replace(/[<>]/g, "").slice(0, 80) : "";
+        const why = typeof a.why === "string" ? a.why.trim().slice(0, 240) : "";
+        onProposal({ id: pid(), kind: "goal", goal_kind: kind, target, title: goalTitle({ kind, target }), why });
+        return SHOWN;
       }
       case "propose_project_edit": {
         const projectId = String(a.project_id ?? "");

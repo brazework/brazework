@@ -36,12 +36,23 @@ export type EmberRecord = {
   repos: string[];
   /** Their own merged pull requests that aren't on the record yet, with the project they belong to. */
   unlogged: { project_id: string; count: number } | null;
+  /**
+   * What they're working toward (supabase/goals.sql): null when they haven't set one; undefined when
+   * it isn't known (the step hasn't run, or it couldn't be read), so nothing is offered or assumed.
+   */
+  goal?: { kind: GoalKind; target: string } | null;
 };
 
 export const EMPTY_RECORD: EmberRecord = { student: true, needsLinkedin: false, projects: [], open: [], proven: 0, repos: [], unlogged: null };
 
 /** A reminder is worth offering once an ask has sat this long. */
 export const SLOW_DAYS = 5;
+
+import { GOAL_KINDS, goalTitle, nextStep as goalNext, type GoalKind } from "@/lib/goals";
+
+// The goal's path, from what Ember already knows (lib/goals.ts): signed counts the proven, waiting the
+// open. Who looked isn't known here, so the path's last stage reads "get found" until it is.
+const goalRecord = (r: EmberRecord) => ({ projects: r.projects.length, signed: r.proven, waiting: r.open.length, looked: 0 });
 
 const cut = (s: string, n: number) => (s.length > n ? `${s.slice(0, n - 1).trimEnd()}…` : s);
 const days = (n: number) => (n <= 0 ? "today" : n === 1 ? "1 day ago" : `${n} days ago`);
@@ -60,6 +71,12 @@ export function recordLines(r: EmberRecord): string[] {
   }
   if (r.repos.length) lines.push(`GitHub repos linked to their projects: ${r.repos.slice(0, 5).join(", ")}.`);
   if (r.unlogged?.count) lines.push(`${r.unlogged.count} of their own merged pull requests from the last 90 days aren't on their record yet; they add them in one tap on the project page, /projects/${r.unlogged.project_id}.`);
+  if (r.goal) {
+    const k = GOAL_KINDS[r.goal.kind];
+    lines.push(`Their goal: ${goalTitle(r.goal)}. On the path: ${Math.min(r.proven, k.target)} of ${k.target} milestones signed (by ${k.signers})${r.open.length ? `, ${r.open.length} waiting` : ""}. The next step on it: ${goalNext(r.goal, goalRecord(r)).text} Tie your suggestions to this goal.`);
+  } else if (r.goal === null) {
+    lines.push(`They haven't set a goal yet. ${r.student ? "For a student" : "For someone working"}, a goal points everything Ember suggests somewhere: when it fits (they ask what to do next, or about their career), ask what they're working toward in one question and offer it with propose_goal. Don't push it into unrelated answers.`);
+  }
   if (r.needsLinkedin) lines.push("They haven't added a LinkedIn profile link yet. A working account adds one before asking a person to sign; the signature card asks for it, so don't ask for it yourself.");
   return lines;
 }
@@ -69,7 +86,7 @@ export function recordLines(r: EmberRecord): string[] {
  * the sentence is started and waits for them to complete it); `href` opens a page instead, for a step
  * that isn't Ember's to do.
  */
-export type NextStep = { id: "first-project" | "slow" | "unsigned" | "unlogged" | "first-result"; label: string; hint: string } & ({ text: string; finish?: string } | { href: string });
+export type NextStep = { id: "goal" | "set-goal" | "first-project" | "slow" | "unsigned" | "unlogged" | "first-result"; label: string; hint: string } & ({ text: string; finish?: string } | { href: string });
 
 /** Up to three steps from the member's own record, most useful first. None when the record is in order. */
 export function nextSteps(r: EmberRecord): NextStep[] {
@@ -77,6 +94,15 @@ export function nextSteps(r: EmberRecord): NextStep[] {
   if (!r.projects.length) {
     steps.push({ id: "first-project", label: "Add your first project", hint: "Paste a GitHub link, or say what you built.", text: "Help me add my first project. I built ", finish: "Say what you built, or paste a GitHub link. Ember drafts the project for you to check." });
     return steps;
+  }
+  // Their goal leads: where they're going, and the next step on the way (lib/goals.ts). With none set
+  // (and it's known there's none), the first step is choosing one.
+  if (r.goal) {
+    const k = GOAL_KINDS[r.goal.kind];
+    const signed = Math.min(r.proven, k.target);
+    steps.push({ id: "goal", label: signed >= k.target ? `Ready for ${goalTitle(r.goal)}` : `Toward ${goalTitle(r.goal)}: ${signed} of ${k.target} signed`, hint: goalNext(r.goal, goalRecord(r)).text, text: "Plan my next steps toward my goal, from my record." });
+  } else if (r.goal === null) {
+    steps.push({ id: "set-goal", label: "Set what you're working toward", hint: r.student ? "An internship, grad school, a research lab, your first job. Ember points everything at it." : "Your next role, funding for what you build. Ember points everything at it.", text: "Help me choose what to work toward. ", finish: "Say where you'd like to be in a year, or what you're unsure about." });
   }
   // Someone was asked and hasn't answered: the record is stuck on them.
   const slow = r.open.flatMap((m) => m.asked.filter((a) => a.days >= SLOW_DAYS).map((a) => ({ m, a }))).sort((x, y) => y.a.days - x.a.days)[0];
