@@ -7,7 +7,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import type { Proposal } from "@/lib/copilot-agent";
-import { TOOLS, makeExec } from "@/lib/copilot-tools";
+import { TOOLS, makeExec, openMilestones } from "@/lib/copilot-tools";
 
 const ME = "00000000-0000-0000-0000-000000000001";
 type Tables = Record<string, unknown[]>;
@@ -106,4 +106,17 @@ test("propose_project_edit refuses nothing-to-change, a bad link and someone els
   const other = await run("propose_project_edit", { project_id: "p9", summary: "x" }, { projects: [], project_details: [] });
   assert.match(String(other.result.error), /only the owner/);
   assert.equal(other.cards.length, 0);
+});
+
+// "My latest milestone" needs a day to go by: on production Ember said it had no dates and guessed.
+// my_profile itself needs a request to run in, so this pins the list it returns.
+test("my_profile's waiting milestones come newest first by their day, each with its date", () => {
+  const open = openMilestones([
+    { id: "m-old", project_id: "p1", title: "Older", status: "draft", community_id: null, achieved_on: "2026-11-03" },
+    { id: "m-signed", project_id: "p1", title: "Signed", status: "verified", community_id: null, achieved_on: "2026-11-21" },
+    { id: "m-new", project_id: "p1", title: "Newer", status: "pending", community_id: "c1", achieved_on: "2026-11-20" },
+    { id: "m-undated", project_id: "p1", title: "No day", status: "draft", community_id: null },
+  ]);
+  assert.deepEqual(open.map((m) => [m.id, m.date]), [["m-new", "2026-11-20"], ["m-old", "2026-11-03"], ["m-undated", undefined]]);
+  assert.deepEqual(open.map((m) => m.waiting_on), ["a club", "a person who saw it", "a person who saw it"]);
 });

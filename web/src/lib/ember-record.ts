@@ -10,7 +10,18 @@ export type OpenMilestone = {
   club: boolean;
   /** People asked who haven't answered yet, oldest first. */
   asked: { email: string; days: number }[];
+  /** The day it happened, as the member logged it (YYYY-MM-DD); "" when unknown. */
+  on: string;
 };
+
+/**
+ * Newest first by the day on the milestone, so "my latest milestone" has an answer. Two from the
+ * same day keep the order they came in (the loaders read newest-logged first); one with no day
+ * goes last. Used for what Ember is told up front and for its my_profile tool, so they agree.
+ */
+export function newestFirst<T extends { on: string }>(rows: T[]): T[] {
+  return [...rows].sort((a, b) => (a.on === b.on ? 0 : a.on < b.on ? 1 : -1));
+}
 
 export type EmberRecord = {
   student: boolean;
@@ -43,9 +54,9 @@ export function recordLines(r: EmberRecord): string[] {
   if (r.open.length) {
     const each = r.open.slice(0, 6).map((m) => {
       const who = m.club ? "with a club's officers" : m.asked.length ? m.asked.map((a) => `asked ${a.email} ${days(a.days)}, no answer yet`).join("; ") : "nobody asked yet";
-      return `"${cut(m.title, 90)}" (milestone id ${m.id}; ${who})`;
+      return `"${cut(m.title, 90)}" (${m.on ? `${m.on}; ` : ""}milestone id ${m.id}; ${who})`;
     });
-    lines.push(`Waiting for proof: ${each.join("; ")}${r.open.length > 6 ? `; and ${r.open.length - 6} more` : ""}. To ask a person about one of these, pass its milestone id to propose_signature.`);
+    lines.push(`Waiting for proof, newest first by the day each happened: ${each.join("; ")}${r.open.length > 6 ? `; and ${r.open.length - 6} more` : ""}. To ask a person about one of these, pass its milestone id to propose_signature.`);
   }
   if (r.repos.length) lines.push(`GitHub repos linked to their projects: ${r.repos.slice(0, 5).join(", ")}.`);
   if (r.unlogged?.count) lines.push(`${r.unlogged.count} of their own merged pull requests from the last 90 days aren't on their record yet; they add them in one tap on the project page, /projects/${r.unlogged.project_id}.`);
