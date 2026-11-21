@@ -1,6 +1,6 @@
 "use client";
 import { AnimatePresence, motion } from "motion/react";
-import { ArrowRight, BadgeCheck, CalendarCheck, CalendarPlus, Check, ExternalLink, Flag, Loader2, Megaphone, MessageSquare, PencilLine, Sparkles, UserPlus, Users, X } from "lucide-react";
+import { ArrowRight, BadgeCheck, CalendarCheck, CalendarPlus, Check, ExternalLink, Flag, Loader2, Megaphone, MessageSquare, PenLine, PencilLine, Sparkles, UserPlus, Users, X } from "lucide-react";
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import { createPost } from "@/app/(app)/feed/actions";
@@ -10,7 +10,9 @@ import { Celebrate } from "@/components/app/celebrate";
 import type { Proposal } from "@/lib/copilot-agent";
 import { EVENT_FORMATS, EVENT_TYPES } from "@/lib/events";
 import { cardLabels, cardSummary } from "@/lib/ember-bar";
+import { emberAskToSign } from "@/lib/ember-sign";
 import { ALL_TOPICS, cn } from "@/lib/forge";
+import { LINKEDIN_PLACEHOLDER, LINKEDIN_PRIVATE, LINKEDIN_WHY } from "@/lib/linkedin";
 import { addMilestone, reviewMilestone } from "@/lib/milestones";
 import { saveProject, updateProjectFields } from "@/lib/projects";
 import { addTeammate } from "@/lib/project-team";
@@ -19,11 +21,13 @@ import { acceptInviteCard } from "@/lib/invites";
 import { toggleFollow } from "@/lib/network";
 import { toggleRsvp } from "@/app/(app)/events/actions";
 import { acceptConversation, messagePerson } from "@/lib/messages";
+import { RELATIONSHIPS } from "@/lib/vouch-email";
 
 const field = "w-full rounded-xl border border-line bg-surface px-3 py-2 text-sm outline-none focus:border-line-strong";
 const HEAD = {
   post: { icon: Megaphone, title: "Post to the feed", done: "Posted", href: "/feed?tab=latest", go: "See it in the feed" },
   milestone: { icon: Flag, title: "Ask your club to verify", done: "Sent to the club", href: "/profile#projects", go: "See your projects" },
+  signature: { icon: PenLine, title: "Ask them to sign", done: "Asked", href: "/profile#projects", go: "See your projects" },
   join: { icon: Users, title: "Join a club", done: "Done", href: "", go: "Open the club" },
   follow: { icon: UserPlus, title: "Follow", done: "Following", href: "", go: "Open their profile" },
   event: { icon: CalendarPlus, title: "Host a club event", done: "Published", href: "", go: "See the club's events" },
@@ -54,6 +58,11 @@ export function ProposalCard({ p: initial, fromTool, inline = false }: { p: Prop
   const [msg, setMsg] = useState("");
   const [held, setHeld] = useState("");
   const [cid, setCid] = useState("");
+  // The signature card: what the server said when it sent the ask, and the LinkedIn link a working
+  // account adds first (the field shows only once the server asks for it).
+  const [note, setNote] = useState("");
+  const [linkedin, setLinkedin] = useState("");
+  const [askLinkedin, setAskLinkedin] = useState(false);
   const [pending, start] = useTransition();
   const [editing, setEditing] = useState(false);
   const h = HEAD[p.kind];
@@ -76,6 +85,11 @@ export function ProposalCard({ p: initial, fromTool, inline = false }: { p: Prop
       const f = new FormData();
       f.set("projectId", p.project_id); f.set("communityId", p.club_id); f.set("title", p.title); f.set("detail", p.detail); f.set("evidence", p.evidence); f.set("achievedOn", p.achieved_on); f.set("showOnProfile", "on");
       r = await addMilestone({ ok: false, message: "" }, f);
+    } else if (p.kind === "signature") {
+      const res = await emberAskToSign({ milestone_id: p.milestone_id, project_id: p.project_id, title: p.title, evidence: p.evidence, detail: p.detail, achieved_on: p.achieved_on, email: p.email, relationship: p.relationship, linkedin });
+      if (res.linkedin) setAskLinkedin(true);
+      if (res.ok) setNote(res.message);
+      r = res;
     } else if (p.kind === "join") {
       r = await joinCommunity(p.club_id);
     } else if (p.kind === "follow") {
@@ -135,6 +149,7 @@ export function ProposalCard({ p: initial, fromTool, inline = false }: { p: Prop
       {state === "done" ? (
         <>
           {held && <p className="mt-2 text-xs text-muted">{held}</p>}
+          {note && <p className="mt-2 text-xs text-muted">{note}</p>}
           <Link href={href} className="mt-3 inline-flex items-center gap-1 text-sm font-medium text-text hover:underline">{h.go} <ArrowRight className="size-4" /></Link>
         </>
       ) : (
@@ -160,6 +175,31 @@ export function ProposalCard({ p: initial, fromTool, inline = false }: { p: Prop
               <input aria-label="Evidence link" type="url" value={p.evidence} onChange={(e) => set({ evidence: e.target.value })} maxLength={300} placeholder="Evidence: https://…" className={field} />
               <textarea aria-label="Details" value={p.detail} onChange={(e) => set({ detail: e.target.value })} maxLength={600} rows={2} placeholder="Details (optional)" className={cn(field, "resize-none")} />
               <input aria-label="Date" type="date" value={p.achieved_on} onChange={(e) => set({ achieved_on: e.target.value })} className={cn(field, "w-auto")} />
+            </>
+          )}
+          {p.kind === "signature" && (
+            <>
+              <p className="text-xs text-muted">On <b className="font-medium text-text-2">{p.project_title}</b>, for the person who saw it to sign. They get one email with a link and don&apos;t need an account.</p>
+              {p.milestone_id ? (
+                <div className="rounded-xl border border-line bg-surface-2/60 p-3">
+                  <div className="font-medium text-text">{p.title}</div>
+                  {p.detail && <p className="mt-1 text-xs text-text-2">{p.detail}</p>}
+                  {p.evidence && <a href={p.evidence} target="_blank" rel="noopener noreferrer nofollow" className="mt-1.5 inline-flex max-w-full items-center gap-1 truncate text-xs font-medium text-text underline underline-offset-4"><ExternalLink className="size-3 shrink-0" /> {p.evidence.replace(/^https?:\/\//, "")}</a>}
+                </div>
+              ) : (
+                <>
+                  <input aria-label="Milestone" value={p.title} onChange={(e) => set({ title: e.target.value })} maxLength={120} className={field} />
+                  <input aria-label="Evidence link" type="url" value={p.evidence} onChange={(e) => set({ evidence: e.target.value })} maxLength={300} placeholder="Evidence: https://…" className={field} />
+                  <textarea aria-label="Details" value={p.detail} onChange={(e) => set({ detail: e.target.value })} maxLength={600} rows={2} placeholder="Details (optional)" className={cn(field, "resize-none")} />
+                  <input aria-label="Date" type="date" value={p.achieved_on} onChange={(e) => set({ achieved_on: e.target.value })} className={cn(field, "w-auto")} />
+                </>
+              )}
+              <div className="grid grid-cols-1 gap-2">
+                <label className="text-xs text-muted">Their email<input aria-label="Their email" type="email" value={p.email} onChange={(e) => set({ email: e.target.value })} maxLength={254} autoComplete="off" placeholder="name@company.com" className={cn(field, "mt-1")} /></label>
+                <label className="text-xs text-muted">They&apos;re<select aria-label="They're" value={p.relationship} onChange={(e) => set({ relationship: e.target.value })} className={cn(field, "mt-1")}>{Object.entries(RELATIONSHIPS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select></label>
+              </div>
+              <p className="text-[11px] text-faint">A work or university address carries the most weight; a personal one works too, and the signature says which kind it came from.</p>
+              {askLinkedin && <label className="text-xs text-muted">Your LinkedIn profile<input aria-label="Your LinkedIn profile" value={linkedin} onChange={(e) => setLinkedin(e.target.value)} maxLength={300} autoComplete="off" placeholder={LINKEDIN_PLACEHOLDER} className={cn(field, "mt-1")} /><span className="mt-1 block text-[11px] text-faint">{LINKEDIN_WHY} {LINKEDIN_PRIVATE}</span></label>}
             </>
           )}
           {p.kind === "project" && (

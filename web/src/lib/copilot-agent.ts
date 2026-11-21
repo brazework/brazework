@@ -13,6 +13,7 @@ export const TOOL_LABEL: Record<string, { doing: string; done: string }> = {
   club_overview: { doing: "Looking at your club", done: "your club" },
   propose_post: { doing: "Drafting a post", done: "a post draft" },
   propose_milestone: { doing: "Drafting a milestone", done: "a milestone draft" },
+  propose_signature: { doing: "Drafting an ask to sign", done: "an ask to sign" },
   propose_join_club: { doing: "Preparing to join", done: "a club" },
   propose_follow: { doing: "Preparing a follow", done: "a person" },
   propose_event: { doing: "Drafting an event", done: "an event draft" },
@@ -32,6 +33,9 @@ export const TOOL_LABEL: Record<string, { doing: string; done: string }> = {
 export type Proposal = { id: string } & (
   | { kind: "post"; body: string; postKind: "update" | "question" | "result" | "project"; tags: string[] }
   | { kind: "milestone"; project_id: string; project_title: string; club_id: string; club_name: string; title: string; evidence: string; detail: string; achieved_on: string }
+  // A person who saw the work signs it (supabase/vouches.sql). milestone_id is "" for a new milestone,
+  // or the member's own milestone that is still waiting. email may be "": the member types it on the card.
+  | { kind: "signature"; milestone_id: string; project_id: string; project_title: string; title: string; evidence: string; detail: string; achieved_on: string; email: string; relationship: string }
   | { kind: "join"; club_id: string; club_name: string; privacy: "public" | "approval" }
   | { kind: "follow"; person_id: string; name: string; headline: string }
   | { kind: "event"; club_id: string; club_name: string; title: string; description: string; type: string; format: string; location: string; topic: string; starts_at: string; ends_at: string }
