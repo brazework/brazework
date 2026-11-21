@@ -6,7 +6,7 @@ import { friendlyError } from "@/lib/forge";
 import type { Signature } from "@/lib/signatures";
 import { createClient, getViewer } from "@/lib/supabase/server";
 import { RELATIONSHIPS, type Relationship } from "@/lib/vouch-email";
-import { askToVouch, type VouchState } from "@/lib/vouch-ask";
+import { askProjectSignoff, askToVouch, type VouchState } from "@/lib/vouch-ask";
 
 // Vouches (supabase/vouches.sql, Linear FIX-94): proof without a club. The database decides who may
 // ask and what a vouch needs; these actions make the link, email it, and turn errors into sentences.
@@ -44,6 +44,18 @@ const answer = z.object({
   saw: z.string().trim().max(600),
   knowsFrom: z.string().trim().max(300),
 });
+
+// One person signs off several results on a project, from one email (lib/vouch-ask.ts).
+export async function requestProjectSignoff(projectId: string, milestoneIds: string[], email: string, relationship: string): Promise<VouchState> {
+  const v = ask.safeParse({ milestoneId: milestoneIds[0] ?? "", email, relationship });
+  if (!v.success) return { ok: false, message: v.error.issues[0]?.message ?? "Check the form." };
+  if (!z.array(z.string().min(1).max(64)).max(5).safeParse(milestoneIds).success || !/^[A-Za-z0-9_-]{1,64}$/.test(projectId)) return { ok: false, message: "Check the results you picked." };
+  const viewer = await getViewer();
+  if (!viewer.user) return { ok: false, message: "Log in again." };
+  const r = await askProjectSignoff(viewer, projectId, milestoneIds, v.data.email, v.data.relationship);
+  if (r.ok) revalidatePath(`/projects/${projectId}`);
+  return r;
+}
 
 export async function answerVouch(input: { token: string; vouch: boolean; name: string; title: string; saw: string; knowsFrom: string }): Promise<VouchState> {
   const v = answer.safeParse(input);
