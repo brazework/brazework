@@ -82,3 +82,41 @@ test("a long list is cut, and says how many more", () => {
   const many = Array.from({ length: 9 }, (_, i) => open({ id: `m${i}`, title: `Result ${i}` }));
   assert.match(recordLines(rec({ open: many })).join("\n"), /and 3 more/);
 });
+
+// Ember as a career guide: the goal leads the steps and what Ember is told (lib/goals.ts).
+test("a goal leads the steps: where they're going and how far along", () => {
+  const r = rec({ goal: { kind: "internship", target: "power electronics" }, proven: 1, open: [open()] });
+  const steps = nextSteps(r);
+  assert.equal(steps[0].id, "goal");
+  assert.equal(steps[0].label, "Toward a summer internship in power electronics: 1 of 3 signed");
+  assert.ok("text" in steps[0] && /goal/.test(steps[0].text));
+  // The path's own next step, from the record: one is waiting.
+  assert.match(steps[0].hint, /1 milestone is waiting to be signed/);
+  assert.ok(steps.length <= 3);
+  const said = recordLines(r).join(" ");
+  assert.match(said, /Their goal: a summer internship in power electronics\. On the path: 1 of 3 milestones signed/);
+  assert.match(said, /Tie your suggestions to this goal/);
+});
+
+test("enough signed: the goal step says they're ready", () => {
+  assert.equal(nextSteps(rec({ goal: { kind: "grad", target: "" }, proven: 2 }))[0].label, "Ready for grad school");
+});
+
+test("no goal set: the first step offers to choose one, worded for a student or someone working", () => {
+  const student = nextSteps(rec({ goal: null, student: true }));
+  assert.equal(student[0].id, "set-goal");
+  assert.ok("finish" in student[0] && student[0].finish, "it waits for them to say where they want to be");
+  assert.match(student[0].hint, /internship/);
+  assert.match(nextSteps(rec({ goal: null, student: false }))[0].hint, /next role/);
+  assert.match(recordLines(rec({ goal: null })).join(" "), /haven't set a goal yet.*propose_goal/);
+});
+
+test("not known whether there's a goal: nothing is offered or assumed", () => {
+  const r = rec({ goal: undefined });
+  assert.ok(!nextSteps(r).some((s) => s.id === "goal" || s.id === "set-goal"));
+  assert.doesNotMatch(recordLines(r).join(" "), /goal/i);
+});
+
+test("no project yet: adding one still comes first, goal or not", () => {
+  assert.deepEqual(nextSteps({ ...EMPTY_RECORD, goal: { kind: "job", target: "" } }).map((s) => s.id), ["first-project"]);
+});

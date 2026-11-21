@@ -44,8 +44,8 @@ export function askShortcut(e: KeyLike): boolean {
  */
 export function cardLabels(kind: string, inline: boolean): { confirm: string; edit: string | null; dismiss: string } {
   // Asking a person to sign sends an email, so its button says so everywhere.
-  if (!inline) return { confirm: kind === "signature" ? "Ask them to sign" : "Confirm", edit: null, dismiss: "Dismiss" };
-  return { confirm: kind === "milestone" ? "Log and send to club" : kind === "signature" ? "Ask them to sign" : "Confirm", edit: "Edit", dismiss: "Not now" };
+  if (!inline) return { confirm: kind === "signature" ? "Ask them to sign" : kind === "goal" ? "Set this goal" : kind === "memory" ? "Remember this" : "Confirm", edit: null, dismiss: "Dismiss" };
+  return { confirm: kind === "milestone" ? "Log and send to club" : kind === "signature" ? "Ask them to sign" : kind === "goal" ? "Set this goal" : kind === "memory" ? "Remember this" : "Confirm", edit: "Edit", dismiss: "Not now" };
 }
 
 /**
@@ -64,6 +64,8 @@ export function cardSummary(p: Proposal): { title: string; lines: string[]; link
     case "project": return { title: p.title, lines: p.summary ? [cut(p.summary)] : [], link: p.link };
     case "message": return { title: cut(p.body), lines: [`To ${p.name}`], link: "" };
     case "event": return { title: p.title, lines: [`For ${p.club_name}${p.location ? ` · ${p.location}` : ""}`], link: "" };
+    case "memory": return { title: `Remember: ${cut(p.body, 120)}`, lines: ["Carries over to your next chats. Forget it any time in Settings."], link: "" };
+    case "goal": return { title: `Work toward ${p.title}`, lines: p.why ? [cut(p.why)] : [], link: "" };
     case "project_edit": return { title: `Update ${p.project_title}`, lines: [["summary", "details", "link", "specs"].filter((k) => p[k as keyof typeof p] !== undefined).map((k) => (k === "details" ? "write-up" : k)).join(", ")], link: "" };
     default: return null;
   }

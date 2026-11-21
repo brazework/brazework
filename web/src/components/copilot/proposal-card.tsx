@@ -1,6 +1,6 @@
 "use client";
 import { AnimatePresence, motion } from "motion/react";
-import { ArrowRight, BadgeCheck, CalendarCheck, CalendarPlus, Check, ExternalLink, Flag, Loader2, Megaphone, MessageSquare, PenLine, PencilLine, Sparkles, UserPlus, Users, X } from "lucide-react";
+import { ArrowRight, BadgeCheck, CalendarCheck, CalendarPlus, Check, ExternalLink, Flag, Loader2, Megaphone, MessageSquare, PenLine, PencilLine, Sparkles, Target, Bookmark, UserPlus, Users, X } from "lucide-react";
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import { createPost } from "@/app/(app)/feed/actions";
@@ -21,10 +21,15 @@ import { acceptInviteCard } from "@/lib/invites";
 import { toggleFollow } from "@/lib/network";
 import { toggleRsvp } from "@/app/(app)/events/actions";
 import { acceptConversation, messagePerson } from "@/lib/messages";
+import { setGoal } from "@/lib/goal-actions";
+import { rememberThis } from "@/lib/ember-memory";
+import { GOAL_KINDS } from "@/lib/goals";
 import { RELATIONSHIPS } from "@/lib/vouch-email";
 
 const field = "w-full rounded-xl border border-line bg-surface px-3 py-2 text-sm outline-none focus:border-line-strong";
 const HEAD = {
+  memory: { icon: Bookmark, title: "Remember this", done: "Remembered", href: "/settings#ember", go: "See what Ember remembers" },
+  goal: { icon: Target, title: "Set your goal", done: "Goal set", href: "/feed", go: "See your path on Home" },
   post: { icon: Megaphone, title: "Post to the feed", done: "Posted", href: "/feed?tab=latest", go: "See it in the feed" },
   milestone: { icon: Flag, title: "Ask your club to verify", done: "Sent to the club", href: "/profile#projects", go: "See your projects" },
   signature: { icon: PenLine, title: "Ask them to sign", done: "Asked", href: "/profile#projects", go: "See your projects" },
@@ -63,6 +68,8 @@ export function ProposalCard({ p: initial, fromTool, inline = false }: { p: Prop
   const [note, setNote] = useState("");
   const [linkedin, setLinkedin] = useState("");
   const [askLinkedin, setAskLinkedin] = useState(false);
+  // The goal card: whether companies searching Brazework may see it. Off until the member says so.
+  const [goalVisible, setGoalVisible] = useState(false);
   const [pending, start] = useTransition();
   const [editing, setEditing] = useState(false);
   const h = HEAD[p.kind];
@@ -108,6 +115,10 @@ export function ProposalCard({ p: initial, fromTool, inline = false }: { p: Prop
       r = await reviewMilestone(p.milestone_id, p.verify, p.note);
     } else if (p.kind === "rsvp") {
       r = await toggleRsvp(p.event_id, !p.cancel);
+    } else if (p.kind === "memory") {
+      r = await rememberThis(p.body);
+    } else if (p.kind === "goal") {
+      r = await setGoal(p.goal_kind, p.target, goalVisible);
     } else if (p.kind === "project_edit") {
       r = await updateProjectFields(p.project_id, { summary: p.summary, details: p.details, link: p.link, specs: p.specs });
     } else if (p.kind === "invite") {
@@ -234,6 +245,23 @@ export function ProposalCard({ p: initial, fromTool, inline = false }: { p: Prop
             </>
           )}
           {p.kind === "join" && <p className="text-text-2"><b className="font-medium">{p.club_name}</b> · {p.privacy === "public" ? "open to join" : "the club approves new members, so this sends a request"}</p>}
+          {p.kind === "memory" && (
+            <div className="space-y-1">
+              <p className="text-text-2">&ldquo;{p.body}&rdquo;</p>
+              <p className="text-xs text-muted">Ember will use this in your next chats. Only you can see it, and you can forget it any time in Settings.</p>
+            </div>
+          )}
+          {p.kind === "goal" && (
+            <div className="space-y-2">
+              <p className="text-text-2">Work toward <b className="font-medium">{p.title}</b></p>
+              {p.why && <p className="text-xs text-muted">{p.why}</p>}
+              <p className="text-xs text-muted">Your path: log your work, get {GOAL_KINDS[p.goal_kind].target} milestones signed by {GOAL_KINDS[p.goal_kind].signers}, then get found by {GOAL_KINDS[p.goal_kind].looking}.</p>
+              <label className="flex items-center gap-2 text-xs text-text-2">
+                <input type="checkbox" checked={goalVisible} onChange={(e) => setGoalVisible(e.target.checked)} className="size-4 accent-[var(--text)]" />
+                Let companies searching Brazework see this goal
+              </label>
+            </div>
+          )}
           {p.kind === "rsvp" && (
             <p className="text-text-2"><b className="font-medium">{p.title}</b><span className="block text-xs text-muted">{new Date(p.starts_at).toLocaleString("en-US", { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}{p.where && ` · ${p.where}`} · {p.going} going</span></p>
           )}

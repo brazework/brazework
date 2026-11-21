@@ -1,6 +1,7 @@
 import { dbFeatures } from "@/lib/db-features";
 import { EMPTY_RECORD, newestFirst, type EmberRecord, type OpenMilestone } from "@/lib/ember-record";
 import { requestTime } from "@/lib/forge";
+import { isGoalKind, type GoalKind } from "@/lib/goals";
 import { loadRecentWork } from "@/lib/recent-work-load";
 import type { createClient } from "@/lib/supabase/server";
 
@@ -21,11 +22,14 @@ export async function loadEmberRecord(db: DB, userId: string, accountType: strin
   try {
     const f = await dbFeatures();
     const now = requestTime();
-    const [projects, ms, asks, linkedin] = await Promise.all([
+    const [projects, ms, asks, linkedin, goals] = await Promise.all([
       db.from("projects").select("id, title").eq("owner_id", userId).order("created_at", { ascending: false }).limit(20),
       f.milestones ? db.from("milestones").select("id, project_id, title, status, community_id, achieved_on").eq("owner_id", userId).order("created_at", { ascending: false }).limit(300) : Promise.resolve({ data: [] }),
       f.milestones ? db.from("milestone_vouches").select("milestone_id, email, created_at").eq("state", "asked").gt("expires_at", new Date(now).toISOString()).order("created_at", { ascending: true }).limit(60) : Promise.resolve({ data: [] }),
       !student && f.linkedinRequired ? db.rpc("needs_linkedin") : Promise.resolve({ data: false }),
+      // What they're working toward (supabase/goals.sql); null when they haven't set one, undefined if
+      // the table isn't there or the read failed (then Ember neither offers nor assumes a goal).
+      f.goals ? db.from("member_goals").select("kind, target").eq("uid", userId).eq("status", "active").order("created_at", { ascending: false }).limit(1) : Promise.resolve({ data: null, error: null }),
     ]);
     const mine = ((projects.data ?? []) as { id: string; title: string }[]);
     const rows = ((ms.data ?? []) as { id: string; project_id: string; title: string; status: string; community_id: string | null; achieved_on?: string | null }[]);
@@ -44,7 +48,9 @@ export async function loadEmberRecord(db: DB, userId: string, accountType: strin
       const work = await Promise.race([loadRecentWork(projectId, userId), new Promise<[]>((ok) => setTimeout(() => ok([]), 2500))]);
       if (work.length) unlogged = { project_id: projectId, count: work.length };
     }
-    return { student, needsLinkedin: linkedin.data === true, projects: mine, open, proven: rows.filter((m) => PROVEN.includes(m.status)).length, repos: [...new Set(repos.map((r) => r.full_name))], unlogged };
+    const g = ((goals.data ?? []) as { kind: string; target: string }[]).find((x) => isGoalKind(x.kind));
+    const goal: EmberRecord["goal"] = goals.error || goals.data === null ? undefined : g ? { kind: g.kind as GoalKind, target: g.target ?? "" } : null;
+    return { student, needsLinkedin: linkedin.data === true, projects: mine, open, proven: rows.filter((m) => PROVEN.includes(m.status)).length, repos: [...new Set(repos.map((r) => r.full_name))], unlogged, goal };
   } catch {
     return { ...EMPTY_RECORD, student };
   }

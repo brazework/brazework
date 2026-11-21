@@ -96,4 +96,5 @@ approved-by
 linkedin-required
 personal-email-signers
 linkedin-optional
+ember-memory
 playbook-lanes
