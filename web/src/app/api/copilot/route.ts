@@ -1,4 +1,5 @@
-import Anthropic from "@anthropic-ai/sdk";
+import type Anthropic from "@anthropic-ai/sdk";
+import { claudeClient } from "@/lib/claude";
 import { COPILOT_MODEL, copilotEnabled, copilotRequest, memberContext, taskPrompt } from "@/lib/copilot";
 import { emberSystem, frame, runAgent } from "@/lib/copilot-agent";
 import { pageLine } from "@/lib/copilot-page";
@@ -27,7 +28,7 @@ export async function POST(req: Request) {
 
   const { instructions, maxTokens } = taskPrompt(r);
   const messages: Anthropic.MessageParam[] = [...(r.history ?? []), { role: "user", content: r.input }];
-  const client = new Anthropic();
+  const client = await claudeClient();
   // Asked from the bar on a project, club or event page: what that page is, read as the member.
   const here = r.task === "ask" ? await pageLine(ctx.supabase, ctx.userId, r.page) : "";
   // The rules first, cached; then what's particular to this member and this request.

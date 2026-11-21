@@ -267,7 +267,7 @@ function MilestoneDialog({ projectId, projectTitle, clubs, vouches, backing, onC
           </Field>
         )) : by === "vouch" ? (
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_auto]">
-            <Field label="Their email" hint="Their work or university address, not Gmail. We email them a link; they don't need an account. If their company isn't verified on Brazework, the signature says so.">
+            <Field label="Their email" hint="A university or work address carries the most weight; a personal one (like Gmail) works too. We email them a link; they don't need an account. The signature says which kind of address it came from.">
               <input name="vouchEmail" type="email" required maxLength={254} autoComplete="off" placeholder="name@company.com" className={inputCls} />
             </Field>
             <Field label="They're">

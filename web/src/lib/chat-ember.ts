@@ -1,5 +1,5 @@
 "use server";
-import Anthropic from "@anthropic-ai/sdk";
+import { claudeClient } from "@/lib/claude";
 import { revalidatePath } from "next/cache";
 import { COPILOT_MODEL, copilotEnabled, memberContext } from "@/lib/copilot";
 import { runAgent } from "@/lib/copilot-agent";
@@ -36,7 +36,7 @@ async function transcript(chatId: string) {
 async function answer(system: string, prompt: string, ctx: NonNullable<Awaited<ReturnType<typeof memberContext>>>, tools: boolean) {
   let text = "";
   await runAgent({
-    client: new Anthropic(),
+    client: await claudeClient(),
     model: COPILOT_MODEL,
     system,
     messages: [{ role: "user", content: prompt }],

@@ -12,7 +12,7 @@ import { MoreAsks } from "./more-asks";
 
 // /vouch/<token>: someone a member asked (a professor, TA, PI, manager, mentor) vouches for one
 // milestone, or declines (supabase/vouches.sql, Linear FIX-94). Works signed out: the link, emailed to
-// their university or company address, is the proof. The URL is a secret, so it's never indexed and
+// the address they really use (a university or work one carries the most weight), is the proof. The URL is a secret, so it's never indexed and
 // never sent on as a referrer (evidence links open without one).
 export const metadata: Metadata = {
   title: "Vouch for their work",

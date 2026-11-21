@@ -46,7 +46,7 @@ export function Stages() {
     <section id="who" className="scroll-mt-20 border-t border-line py-16 sm:py-24">
       <div className={WRAP}>
         <h2 className={H2}>Who signs it? Whoever saw it.</h2>
-        <p className={LEAD}>At school that&apos;s your club or a professor. At work, your manager or tech lead. On your own, your client. They sign from their work or university email, and the record stays yours when you move on.</p>
+        <p className={LEAD}>At school that&apos;s your club or a professor. At work, your manager or tech lead. On your own, your client. They sign from their own email (a work or university one carries the most weight), and the record stays yours when you move on.</p>
         <ul className="mt-10 grid grid-cols-1 overflow-hidden rounded-[1.25rem] border border-line bg-surface md:grid-cols-3 md:divide-x md:divide-line">
           {STAGES.map((s, i) => (
             <li key={s.when} className={cn("flex flex-col p-6 sm:p-7", i > 0 && "border-t border-line md:border-t-0")}>

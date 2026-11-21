@@ -76,7 +76,7 @@ export function nextStep(tool: string, data: unknown, origin: string): { next: s
 // Refusals the database explains already ("That isn't one of your projects. my_projects lists them…")
 // get one more line where the member or the assistant has a choice to make.
 const HINTS: [RegExp, string][] = [
-  [/university or company address/i, "Ask the member for that person's school or work address. If they only have a personal address, keep the milestone waiting and ask someone else who saw it, or send it to a club the member is in (my_clubs)."],
+  [/throwaway inbox/i, "Ask the member for the address that person really uses: school, work or personal (a personal one is labelled as such on the signature). Throwaway inboxes can't sign."],
   [/isn'?t on the project/i, "Teammates can't sign each other's work. Ask a professor, PI, manager or mentor who saw it."],
   [/asked 3 people|already asked them/i, "Wait for an answer: the member is notified. my_projects shows what's still open."],
   [/asks this week|drafts this hour|milestones waiting for review/i, "This is a limit, not an error. Tell the member, and try again later."],

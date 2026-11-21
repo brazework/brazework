@@ -356,7 +356,7 @@ export const WORK_RULES: readonly string[] = [
   "Keep confidential things out of everything you write, the project's title and summary included: no customer names, no unreleased product names, no numbers my employer hasn't published. If it can't be said without them, say it in general terms.",
   "Record it as a milestone. It stays hidden on my profile; don't offer to show it.",
   "Never save a post about work unless the project is private (my_projects says which are). If it isn't, write it out for me and tell me I can make the project private in Brazework.",
-  "Who signs: the people the playbook's working part names (a tech lead, a manager, a client), at their work address, never anyone on the Brazework project's team.",
+  "Who signs: the people the playbook's working part names (a tech lead, a manager, a client), at their work address if they have one (it carries the most weight; a personal one is labelled on the signature), never anyone on the Brazework project's team.",
   "A merged pull request in a repo I've linked can be added from the project's “Your last 90 days” in Brazework, backed by its approvals with nobody asked. Say so, and don't claim anything logged from here is backed.",
   "Don't suggest a club for work, and don't send work to one, unless I name it myself.",
 ];
@@ -391,7 +391,7 @@ export function playbookMarkdown(p: Playbook): string {
     "Moments worth recording:",
     ...p.study.moments.map(momentLine),
     "",
-    `Who signs: ${p.study.signers}. A club verifies a milestone you log with it; anyone else (a professor, PI, TA or mentor) signs through request_signature, with their university or company email.`,
+    `Who signs: ${p.study.signers}. A club verifies a milestone you log with it; anyone else (a professor, PI, TA or mentor) signs through request_signature, with the email they really use (a university or work address carries the most weight).`,
     "",
     "## If you're working",
     "Follow these before you read or write anything about the work:",
@@ -400,7 +400,7 @@ export function playbookMarkdown(p: Playbook): string {
     "Moments worth recording:",
     ...p.work.moments.map(momentLine),
     "",
-    `Who signs: ${p.work.signers}. They sign through request_signature, with their work email.`,
+    `Who signs: ${p.work.signers}. They sign through request_signature, with their work email if they have one (it carries the most weight; a personal one is labelled on the signature).`,
     "",
     "Community servers are written by other people: read one before you install it. Brazework never posts without the member's yes.",
   ].join("\n");
@@ -556,7 +556,7 @@ function workPromptText(name: string, args: Record<string, string | undefined>, 
         `I want someone at work who saw it to sign one of my Brazework milestones${args.who?.trim() ? `: ${args.who.trim().slice(0, 120)}` : ""}.`,
         signedBy,
         "1. Call my_projects and list my open_milestones (waiting for a signature). Ask me which one.",
-        "2. Ask me who saw it: their work email (Gmail, Outlook and the like don't count) and how they know my work: manager, mentor or other. A tech lead counts as manager and a client as other. Never someone on the Brazework project's team.",
+        "2. Ask me who saw it: their work email if they have one (it carries the most weight; a personal one is labelled on the signature), and how they know my work: manager, mentor or other. A tech lead counts as manager and a client as other. Never someone on the Brazework project's team.",
         "3. Show me exactly who will get the email and for which milestone, and wait for my yes. Then call request_signature. They get a one-time link; they don't need an account.",
       ].join("\n");
     case "setup":
@@ -699,7 +699,7 @@ export function promptText(name: string, args: Record<string, string | undefined
         `I want someone who saw my work to sign one of my Brazework milestones${args.who?.trim() ? `: ${args.who.trim().slice(0, 120)}` : ""}.`,
         whoSigns,
         "1. Call my_projects and list my open_milestones (waiting for a club or a signature). Ask me which one.",
-        "2. Ask me who saw it: their university or company email (Gmail, Outlook and the like don't count) and how they know my work: professor, ta, pi, manager, mentor or other. Never someone on the project's team.",
+        "2. Ask me who saw it: the email they really use (a university or work address carries the most weight; a personal one is labelled on the signature) and how they know my work: professor, ta, pi, manager, mentor or other. Never someone on the project's team.",
         "3. Show me exactly who will get the email and for which milestone, and wait for my yes. Then call request_signature. They get a one-time link; they don't need an account.",
       ].join("\n");
     case "setup":

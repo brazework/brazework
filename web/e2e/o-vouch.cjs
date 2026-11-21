@@ -3,7 +3,7 @@
 //    two questions and vouches; the milestone is verified with their name, role and domain; the link
 //    can't be used again.
 // 2. The member sees "Signed by …" on their profile.
-// 3. Asking from the app: free mail is refused, and when the email can't go out (it's off in this
+// 3. Asking from the app: a throwaway inbox is refused, and when the email can't go out (it's off in this
 //    stack), nothing is left waiting.
 // The ask is seeded straight into the database with a known link, because the real link only ever
 // exists in the email.
@@ -68,8 +68,9 @@ const title = `Vouch e2e: thrust stand within 2% (${Date.now()})`;
     const ms = psql(`select set_config('request.jwt.claim.sub', '${ben}', false);
       insert into public.milestones (project_id, community_id, title, detail, evidence, private)
       values ('p1', null, '${t3}', 'Before and after on the dashboard', 'https://github.com/acme/checkout/pull/1187', false) returning id;`).split("\n").pop();
-    const ok = psql("select public.vouch_email_kind('sam.rivera@northwind-payments.io') || '|' || public.vouch_email_kind('sam.rivera@gmail.com')");
-    if (ok !== "work|") throw new Error("address kinds: " + ok);
+    // Kinds (step 86): a work address is work, a personal one is personal, a throwaway inbox can't sign.
+    const ok = psql("select public.vouch_email_kind('sam.rivera@northwind-payments.io') || '|' || public.vouch_email_kind('sam.rivera@gmail.com') || '|' || public.vouch_email_kind('x@mailinator.com')");
+    if (ok !== "work|personal|") throw new Error("address kinds: " + ok);
     psql(`insert into public.milestone_vouches (milestone_id, requested_by, email, relationship, token_hash) values ('${ms}', '${ben}', 'sam.rivera@northwind-payments.io', 'manager', '${crypto.createHash("sha256").update(tok3).digest("hex")}');`);
     const ctx = await b.newContext({ viewport: { width: 390, height: 844 } });
     const signer = await ctx.newPage();
@@ -86,7 +87,7 @@ const title = `Vouch e2e: thrust stand within 2% (${Date.now()})`;
     await page.getByText("Signed by Sam Rivera, Staff Engineer · northwind-payments.io (company not verified)").first().waitFor({ timeout: 15000 });
   }, page);
 
-  await step("asking from the app: free mail is refused; with email off, nothing is left waiting", async () => {
+  await step("asking from the app: a throwaway inbox is refused; with email off, nothing is left waiting", async () => {
     await go(page, `/u/${ben}`);
     await page.getByRole("button", { name: "Add milestone" }).first().click();
     const dialog = page.locator("dialog[open]");
@@ -94,11 +95,11 @@ const title = `Vouch e2e: thrust stand within 2% (${Date.now()})`;
     const t2 = `Vouch e2e ask (${Date.now()})`;
     await dialog.locator('input[name="title"]').fill(t2);
     await dialog.locator('input[name="evidence"]').fill("https://github.com/acme/rig/pull/11");
-    await dialog.locator('input[name="vouchEmail"]').fill("prof.lee@gmail.com");
+    await dialog.locator('input[name="vouchEmail"]').fill("prof.lee@mailinator.com");
     await dialog.getByRole("button", { name: "Ask them to vouch" }).click();
     await dialog.getByRole("alert").waitFor({ timeout: 15000 });
     const msg1 = await dialog.getByRole("alert").innerText();
-    if (!/university or company address|isn't available/.test(msg1)) throw new Error("unexpected message for free mail: " + msg1);
+    if (!/throwaway inbox|isn't available/.test(msg1)) throw new Error("unexpected message for a throwaway inbox: " + msg1);
     await dialog.locator('input[name="vouchEmail"]').fill("prof.lee@utexas.edu");
     await dialog.getByRole("button", { name: "Ask them to vouch" }).click();
     await page.waitForTimeout(1500);

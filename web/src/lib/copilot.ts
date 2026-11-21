@@ -1,15 +1,18 @@
 import { goalTitle, isGoalKind, type GoalKind } from "@/lib/goals";
 import { dbFeatures } from "@/lib/db-features";
 import { getViewer } from "@/lib/supabase/server";
+import { claudeModel, claudeRoute } from "@/lib/claude";
 
-// Brazework Copilot: Claude, writing and advising for members. Server-only by use (the API key is a
-// non-public env var, so it never reaches the browser). On only when both the key is set and
-// supabase/copilot.sql (the daily limit) has run.
+// Brazework Copilot: Claude, writing and advising for members. Server-only by use (credentials are
+// non-public env vars, so they never reach the browser). On only when Claude is reachable
+// (lib/claude.ts: an Anthropic key, or Vercel AI Gateway) and supabase/copilot.sql (the daily limit)
+// has run.
 
-export const COPILOT_MODEL = process.env.COPILOT_MODEL || "claude-sonnet-5";
+// Named the way the route expects ("anthropic/claude-sonnet-5" on the gateway).
+export const COPILOT_MODEL = claudeModel(process.env.COPILOT_MODEL || "claude-sonnet-5");
 
 export async function copilotEnabled() {
-  return Boolean(process.env.ANTHROPIC_API_KEY) && (await dbFeatures()).copilot;
+  return claudeRoute() !== "off" && (await dbFeatures()).copilot;
 }
 
 export { copilotRequest, type CopilotRequest } from "@/lib/copilot-request";

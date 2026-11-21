@@ -28,3 +28,9 @@ test("a work address at a company that isn't verified is never called verified",
   assert.equal(work, "signed by a manager at a company (not verified)");
   assert.doesNotMatch(work, /a verified company/);
 });
+
+test("a personal address is said plainly, never called a company's (step 86)", () => {
+  const personal = redactedSigner(r({ signer: { kind: "vouch", role: "mentor", org: "personal" } }));
+  assert.equal(personal, "signed by a mentor (from a personal email)");
+  assert.doesNotMatch(personal, /company|university/);
+});

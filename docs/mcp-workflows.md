@@ -133,8 +133,8 @@ part it is, the command carries both and says which of its steps the rules repla
    names, no unreleased product names, no numbers your employer hasn't published.
 3. It records a milestone, which stays hidden on your profile.
 4. It never saves a post about work unless the project is private.
-5. It asks someone at work to sign (a tech lead, a manager, a client), at their work address, never
-   anyone on the Brazework project's team.
+5. It asks someone at work to sign (a tech lead, a manager, a client), at their work address if they
+   have one (it carries the most weight; a personal one is labelled on the signature), never anyone on the Brazework project's team.
 6. It tells you a merged pull request in a repo you've linked can be added from the project's "Your last
    90 days", backed by its approvals with nobody asked. It doesn't claim anything logged from chat is
    backed.
@@ -148,7 +148,7 @@ What the commands do for work:
 | `result` | The number becomes a hidden milestone, not a post in the feed. |
 | `standup` | Saved as a draft only on a private project; otherwise written out for you. |
 | `week` | Milestones only (a post only on a private project), then your review packet with hidden work included. |
-| `ask_signature` | Asks for a manager, a mentor or someone else at work, by their work email. |
+| `ask_signature` | Asks for a manager, a mentor or someone else at work, by their work email if they have one (a personal one is labelled). |
 | `setup` | Asks which tools your employer allows before suggesting you connect any. |
 
 Studying or working, a milestone logged from chat is hidden to begin with: it's on your record, and it
@@ -289,8 +289,8 @@ Each one sends one JSON-RPC `tools/call` to `/api/mcp`.
 ## Signatures
 
 Brazework's proof is a club verifying your milestone, or a person who saw the work signing it. From chat:
-`log_milestone` without a club, then `request_signature` with the person's **work or university email** (a signature from a company that isn't verified on Brazework says so)
-(Gmail, Outlook and the like don't count) and how they know you (`professor`, `ta`, `pi`, `manager`, `mentor`,
+`log_milestone` without a club, then `request_signature` with the person's **work or university email** (a signature from a company that isn't verified on Brazework says so; a personal address can sign too,
+and the signature says it's personal; throwaway inboxes can't) and how they know you (`professor`, `ta`, `pi`, `manager`, `mentor`,
 `other`). All of the app's vouch rules apply, from `supabase/vouches.sql`:
 
 - never yourself or anyone on the project's team
