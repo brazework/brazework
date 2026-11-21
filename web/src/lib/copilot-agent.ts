@@ -83,15 +83,31 @@ export async function runAgent(opts: {
 }) {
   const { client, model, system, tools, exec, emit, maxRounds = 4, maxTokens = 1000, signal } = opts;
   const messages = [...opts.messages];
+  // What Claude writes before a tool and after it are separate thoughts, but they arrive as one run
+  // of text ("…on the card.I've put together…"). The first text after a tool starts a new paragraph,
+  // unless the line breaks are already there. `tail` is the end of the text sent so far.
+  let tail = "";
+  let afterTool = false;
+  const say = (text: string) => {
+    if (!text) return;
+    if (afterTool && tail) {
+      const have = (/\n*$/.exec(tail)?.[0].length ?? 0) + (/^\n*/.exec(text)?.[0].length ?? 0);
+      if (have < 2) text = "\n".repeat(2 - have) + text;
+    }
+    afterTool = false;
+    tail = (tail + text).slice(-2);
+    emit({ type: "text", text });
+  };
   for (let round = 0; round < maxRounds; round++) {
     // Top-level cache_control: each round also caches the conversation so far, so the next tool
     // round reads it back instead of paying for it again (on top of the rules' own marker).
     const stream = client.messages.stream({ model, max_tokens: maxTokens, system, messages, tools, cache_control: { type: "ephemeral" } }, { signal });
     for await (const ev of stream) {
-      if (ev.type === "content_block_delta" && ev.delta.type === "text_delta") emit({ type: "text", text: ev.delta.text });
+      if (ev.type === "content_block_delta" && ev.delta.type === "text_delta") say(ev.delta.text);
     }
     const final = await stream.finalMessage();
     if (final.stop_reason !== "tool_use") return;
+    afterTool = true;
     const uses = final.content.filter((b): b is Anthropic.ToolUseBlock => b.type === "tool_use");
     messages.push({ role: "assistant", content: final.content });
     const results: Anthropic.ToolResultBlockParam[] = [];

@@ -3,6 +3,7 @@ import { can, rank } from "@/lib/communities";
 import { EVENT_FORMATS, EVENT_TYPES } from "@/lib/events";
 import type { Proposal } from "@/lib/copilot-agent";
 import { dbFeatures } from "@/lib/db-features";
+import { newestFirst } from "@/lib/ember-record";
 import { ALL_TOPICS, requestTime } from "@/lib/forge";
 import { loadClubReport } from "@/lib/club-report";
 import { GitHubError, fetchRepo, fetchUser, matchTopics, parseRepo, parseUser } from "@/lib/connectors/github";
@@ -16,7 +17,17 @@ import type { createClient } from "@/lib/supabase/server";
 // and the app's normal server action (with its own checks) does the saving.
 
 type DB = Awaited<ReturnType<typeof createClient>>;
-type MsRow = { id: string; project_id: string; title: string; status: string; community_id: string | null };
+type MsRow = { id: string; project_id: string; title: string; status: string; community_id: string | null; achieved_on?: string | null };
+
+/**
+ * my_profile's open_milestones: what is still waiting for proof, newest first by the day each
+ * happened, with that date, so "my latest milestone" is the first one. Pure (tests/ember-record-tools.test.ts).
+ */
+export function openMilestones(rows: MsRow[]) {
+  return newestFirst(rows.filter((m) => m.status === "draft" || m.status === "pending").map((m) => ({ ...m, on: m.achieved_on ?? "" })))
+    .slice(0, 10)
+    .map((m) => ({ id: m.id, title: snip(m.title, 120), date: m.on || undefined, project_id: m.project_id, waiting_on: m.community_id ? "a club" : "a person who saw it" }));
+}
 
 export const TOOLS: Anthropic.Tool[] = [
   {
@@ -46,7 +57,7 @@ export const TOOLS: Anthropic.Tool[] = [
   },
   {
     name: "my_profile",
-    description: "The member's own profile: headline, field, interests, clubs and roles, projects with milestone counts, and the guide steps they haven't done yet.",
+    description: "The member's own profile: headline, field, interests, clubs and roles, projects with milestone counts, the milestones still waiting for proof (newest first, each with the date it happened) and the guide steps they haven't done yet.",
     input_schema: { type: "object", properties: {} },
   },
   {
@@ -221,7 +232,7 @@ export function makeExec(db: DB, userId: string, onProposal: (p: Proposal) => vo
           db.from("profiles").select("first_name, last_name, headline, field, interests, bio").eq("id", userId).maybeSingle(),
           db.from("community_members").select("role, communities(id, name)").eq("uid", userId).limit(30),
           db.from("projects").select("id, title, status").eq("owner_id", userId).limit(20),
-          f.milestones ? db.from("milestones").select("id, project_id, title, status, community_id").eq("owner_id", userId).order("created_at", { ascending: false }).limit(300) : Promise.resolve({ data: [] as MsRow[] }),
+          f.milestones ? db.from("milestones").select("id, project_id, title, status, community_id, achieved_on").eq("owner_id", userId).order("created_at", { ascending: false }).limit(300) : Promise.resolve({ data: [] as MsRow[] }),
           loadGuide(),
           // Cards the member's AI tools left over MCP (supabase/tool-actions.sql), waiting for them.
           f.toolActions ? db.from("tool_drafts").select("id", { count: "exact", head: true }).eq("status", "waiting") : Promise.resolve({ count: 0 }),
@@ -233,7 +244,7 @@ export function makeExec(db: DB, userId: string, onProposal: (p: Proposal) => vo
           clubs: ((clubs.data ?? []) as unknown as { role: string; communities: C | C[] | null }[]).flatMap((r) => (Array.isArray(r.communities) ? r.communities : r.communities ? [r.communities] : []).map((c) => ({ id: c.id, name: c.name, role: r.role, link: `/c/${c.id}` }))),
           projects: (projects.data ?? []).map((p) => ({ id: p.id, title: p.title, status: p.status, verified_milestones: msRows.filter((m) => m.project_id === p.id && m.status === "verified").length, pending_milestones: msRows.filter((m) => m.project_id === p.id && m.status === "pending").length })),
           // Still waiting for proof: propose_signature takes one of these ids to ask a person about it.
-          open_milestones: msRows.filter((m) => m.status === "draft" || m.status === "pending").slice(0, 10).map((m) => ({ id: m.id, title: snip(m.title, 120), project_id: m.project_id, waiting_on: m.community_id ? "a club" : "a person who saw it" })),
+          open_milestones: openMilestones(msRows),
           steps_left: (guide?.member ?? []).filter((s) => !s.done).map((s) => ({ step: s.label, where: s.href })),
           waiting_from_your_tools: { count: fromTools.count ?? 0, where: "/drafts" },
         };

@@ -6,7 +6,7 @@ import { test } from "node:test";
 import { EMPTY_RECORD, SLOW_DAYS, nextSteps, recordLines, type EmberRecord, type OpenMilestone } from "@/lib/ember-record";
 
 const P = [{ id: "p1", title: "Clinic check-in kiosk" }];
-const open = (o: Partial<OpenMilestone> = {}): OpenMilestone => ({ id: "m1", title: "Check-in time from 48 s to 19 s", project_id: "p1", club: false, asked: [], ...o });
+const open = (o: Partial<OpenMilestone> = {}): OpenMilestone => ({ id: "m1", title: "Check-in time from 48 s to 19 s", project_id: "p1", club: false, asked: [], on: "2026-11-03", ...o });
 const rec = (r: Partial<EmberRecord>): EmberRecord => ({ ...EMPTY_RECORD, projects: P, ...r });
 const ids = (r: EmberRecord) => nextSteps(r).map((s) => s.id);
 
@@ -68,9 +68,9 @@ test("Ember is told what is waiting, on whom, and the id to act on", () => {
     open({ asked: [{ email: "sam@northwind.example", days: 6 }] }), open({ id: "m2", title: "Second", club: true }), open({ id: "m3", title: "Third" }),
   ] })).join("\n");
   assert.match(text, /signed, verified or backed so far: 3/);
-  assert.match(text, /"Check-in time from 48 s to 19 s" \(milestone id m1; asked sam@northwind\.example 6 days ago, no answer yet\)/);
-  assert.match(text, /"Second" \(milestone id m2; with a club's officers\)/);
-  assert.match(text, /"Third" \(milestone id m3; nobody asked yet\)/);
+  assert.match(text, /"Check-in time from 48 s to 19 s" \(2026-11-03; milestone id m1; asked sam@northwind\.example 6 days ago, no answer yet\)/);
+  assert.match(text, /"Second" \(2026-11-03; milestone id m2; with a club's officers\)/);
+  assert.match(text, /"Third" \(2026-11-03; milestone id m3; nobody asked yet\)/);
   assert.match(text, /propose_signature/);
   assert.match(text, /acme\/kiosk/);
   assert.match(text, /2 of their own merged pull requests/);
