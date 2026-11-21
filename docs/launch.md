@@ -19,8 +19,9 @@ What the launch shows:
 - **The record:** milestones signed by the people who saw them (a club officer, a professor, a
   manager). The profile leads with a timeline of signed work over time. Three kinds of proof, one
   colour each, everywhere: green signed, blue backed by GitHub, dashed amber waiting.
-  - **A work email can sign** (never Gmail and the like). A signature from a company that isn't
-    verified on Brazework says "(company not verified)" in the signature itself.
+  - **A work email can sign, and so can a personal one.** The signature itself says which kind it
+    is: "(company not verified)" for a company that isn't verified on Brazework, "(personal email)"
+    for Gmail and the like. Throwaway inboxes can't sign.
   - **Backed by GitHub, with who approved it:** link a repo to a project and a merged pull request
     shows "approved by @sam" from its GitHub reviews; nobody is asked to sign. On a private repo only
     the count shows.

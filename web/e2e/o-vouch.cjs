@@ -3,7 +3,7 @@
 //    two questions and vouches; the milestone is verified with their name, role and domain; the link
 //    can't be used again.
 // 2. The member sees "Signed by …" on their profile.
-// 3. Asking from the app: free mail is refused, and when the email can't go out (it's off in this
+// 3. Asking from the app: a throwaway inbox is refused, and when the email can't go out (it's off in this
 //    stack), nothing is left waiting.
 // The ask is seeded straight into the database with a known link, because the real link only ever
 // exists in the email.
