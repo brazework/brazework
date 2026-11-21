@@ -1,4 +1,4 @@
-// Ember picks up where you left off (Linear FIX-232): what a member has talked to Ember about lately,
+// Ember picks up where you left off (Linear FIX-233): what a member has talked to Ember about lately,
 // from the chats Ember already saves for them (supabase/copilot-chats.sql). Nothing new is stored:
 // these are the chats the member sees in "Your chats" and can delete. Pure, so it's tested
 // (tests/ember-continuity.test.ts).

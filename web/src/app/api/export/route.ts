@@ -9,7 +9,7 @@ export async function GET() {
   if (!user) return new Response("Log in first.", { status: 401 });
   const me = user.id;
   const q = async (table: string, build: (b: ReturnType<typeof supabase.from>) => PromiseLike<{ data: unknown }>) => ((await build(supabase.from(table))).data ?? []);
-  const [profile, posts, comments, projects, milestones, messages, memberships, follows, saved, notifications] = await Promise.all([
+  const [profile, posts, comments, projects, milestones, messages, memberships, follows, saved, notifications, emberMemories] = await Promise.all([
     q("profiles", (b) => b.select("*").eq("id", me)),
     q("posts", (b) => b.select("*").eq("author_id", me).order("created_at")),
     q("comments", (b) => b.select("*").eq("author_id", me).order("created_at")),
@@ -20,6 +20,8 @@ export async function GET() {
     q("follows", (b) => b.select("target, created_at").eq("follower", me)),
     q("saved", (b) => b.select("post_id, saved_at").eq("user_id", me)),
     q("notifications", (b) => b.select("kind, snippet, created_at, read").eq("user_id", me).order("created_at", { ascending: false }).limit(500)),
+    // What you asked Ember to remember (supabase/ember-memory.sql); none before that step.
+    q("ember_memories", (b) => b.select("body, created_at").eq("user_id", me).order("created_at")),
   ]);
   // Your LinkedIn profile link, if you gave one (supabase/linkedin-required.sql). It is private, so
   // it is read through my_linkedin(), which only ever returns your own; before that step, none.
@@ -36,7 +38,7 @@ export async function GET() {
     note: "Everything you've put on Brazework. Files are linked under files; download them while signed in or before deleting your account.",
     account: { id: me, email: user.email, linkedin_profile: linkedin },
     profile: (profile as unknown[])[0] ?? null, posts, comments, projects, milestones, messages_you_sent: messages,
-    clubs: memberships, following: follows, saved, notifications,
+    clubs: memberships, following: follows, saved, notifications, ember_remembers: emberMemories,
     files: [...paths].map((path) => ({ path, url: mediaUrl(path) })),
   };
   const day = new Date().toISOString().slice(0, 10);

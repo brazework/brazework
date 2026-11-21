@@ -1,4 +1,4 @@
-// Ember picks up where you left off (lib/ember-continuity.ts, Linear FIX-232): from the chats Ember
+// Ember picks up where you left off (lib/ember-continuity.ts, Linear FIX-233): from the chats Ember
 // already saves, never anything new. Run: npm test
 import assert from "node:assert/strict";
 import { test } from "node:test";

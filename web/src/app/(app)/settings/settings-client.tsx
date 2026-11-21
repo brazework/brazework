@@ -1,4 +1,5 @@
 "use client";
+import { forgetMemory, type Memory } from "@/lib/ember-memory";
 import { Check, ChevronRight, Loader2, Monitor, Moon, Plug, Sun } from "lucide-react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -242,7 +243,7 @@ export function PasswordForm() {
 }
 
 // What Ember can and can't see, and deleting your chats with it (supabase/copilot-chats.sql).
-export function EmberSettings({ saving, chats }: { saving: boolean; chats: number }) {
+export function EmberSettings({ saving, chats, memories }: { saving: boolean; chats: number; memories?: Memory[] }) {
   const [left, setLeft] = useState(chats);
   const [msg, setMsg] = useState("");
   const [pending, start] = useTransition();
@@ -254,6 +255,7 @@ export function EmberSettings({ saving, chats }: { saving: boolean; chats: numbe
         <li><strong className="font-medium text-text">What it does on its own:</strong> nothing. It prepares cards; posting, joining, RSVPing or messaging happens only when you confirm.</li>
         <li><strong className="font-medium text-text">Your chats:</strong> {saving ? "private to you, and deleted 180 days after you last use them. A thumbs up or down sends only that question and answer to the Brazework team." : "not kept after you leave the page."}</li>
       </ul>
+      {memories && <EmberMemories initial={memories} />}
       {saving && (
         <div className="flex flex-wrap items-center gap-3 border-t border-line pt-4">
           <span className="text-muted">{left ? `${left} saved ${left === 1 ? "chat" : "chats"}` : "No saved chats"}</span>
@@ -352,6 +354,33 @@ export function EmailSettings({ weekly, alerts, dailyDrafts }: { weekly: boolean
         </label>
       )}
       <Status state={msg} />
+    </div>
+  );
+}
+
+// What Ember remembers (supabase/ember-memory.sql): every item, in the member's words, each with Forget.
+function EmberMemories({ initial }: { initial: Memory[] }) {
+  const [items, setItems] = useState(initial);
+  const [msg, setMsg] = useState("");
+  const [pending, start] = useTransition();
+  return (
+    <div className="border-t border-line pt-4">
+      <p className="font-medium text-text">What Ember remembers</p>
+      <p className="mt-0.5 text-xs text-muted">Only what you said yes to on a card. Only you can see it, and Ember uses it in your next chats.</p>
+      {items.length ? (
+        <ul className="mt-3 divide-y divide-line rounded-xl border border-line">
+          {items.map((m) => (
+            <li key={m.id} className="flex items-start gap-3 px-3 py-2.5">
+              <span className="min-w-0 flex-1 text-text">&ldquo;{m.body}&rdquo;</span>
+              <button type="button" disabled={pending} onClick={() => start(async () => { const r = await forgetMemory(m.id); if (r.ok) setItems((xs) => xs.filter((x) => x.id !== m.id)); setMsg(r.message); })}
+                className="shrink-0 rounded-lg border border-line px-2.5 py-1 text-xs font-medium text-text-2 transition hover:border-line-strong hover:text-text disabled:opacity-50">Forget</button>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="mt-3 rounded-xl border border-dashed border-line px-3 py-2.5 text-xs text-muted">Nothing yet. When you tell Ember something worth keeping, it offers to remember it.</p>
+      )}
+      {msg && <p role="status" className="mt-2 text-xs text-muted">{msg}</p>}
     </div>
   );
 }
