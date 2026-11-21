@@ -36,7 +36,7 @@ select t.ok((select status = 'pending' and community_id is null from public.mile
 
 -- Asking: only good addresses, only your own milestone, never yourself.
 select t.as_('ben'); set local role authenticated;
-select t.refused($$select public.request_vouch(current_setting('t.ms'), 'prof.lee@mailinator.com', 'professor', repeat('1', 64))$, 'P0001', 'a throwaway inbox can''t vouch');
+select t.refused($$select public.request_vouch(current_setting('t.ms'), 'prof.lee@mailinator.com', 'professor', repeat('1', 64))$$, 'P0001', 'a throwaway inbox can''t vouch');
 select t.refused($$select public.request_vouch(current_setting('t.ms'), 'not an email', 'professor', repeat('1', 64))$$, 'P0001', 'it has to be an email address');
 select t.refused($$select public.request_vouch(current_setting('t.ms'), 'prof.lee@utexas.edu', 'friend', repeat('1', 64))$$, 'P0001', 'the relationship must be one we know');
 select t.refused($$select public.request_vouch(current_setting('t.ms'), 'prof.lee@utexas.edu', 'professor', 'short')$$, 'P0001', 'the link hash must look like a sha256');

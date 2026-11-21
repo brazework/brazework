@@ -53,7 +53,7 @@ select set_config('t.m1', :'m1', false), set_config('t.m2', :'m2', false);
 select t.as_('ben'); set local role authenticated;
 select public.request_vouch(:'m1', 'sam.rivera@northwind-payments.io', 'manager', repeat('a', 64));
 select public.request_vouch(:'m2', 'lee@verified-test-co.example', 'mentor', repeat('b', 64));
-select t.refused($$select public.request_vouch(current_setting('t.m1'), 'sam.rivera@mailinator.com', 'manager', repeat('c', 64))$, 'P0001', 'a throwaway inbox still can''t be asked');
+select t.refused($$select public.request_vouch(current_setting('t.m1'), 'sam.rivera@mailinator.com', 'manager', repeat('c', 64))$$, 'P0001', 'a throwaway inbox still can''t be asked');
 select t.refused($$select public.request_vouch(current_setting('t.m1'), 'ben@forge.test', 'manager', repeat('d', 64))$$, 'P0001', 'nor the member''s own address');
 reset role;
 select t.ok((select count(*) = 1 from public.milestone_vouches where milestone_id = :'m1' and state = 'asked'), 'a tech lead at a company that isn''t verified here can be asked');
