@@ -29,7 +29,7 @@ const SHIPPED_SHOWN = 4;
 type Shipped = { id: string; title: string; reviewed_at: string; community_id: string | null; community_name: string; vouched_by?: string | null; project: { id: string; title: string; private: boolean } | null; owner: { id: string; first_name: string; last_name: string; avatar_path?: string | null } | null };
 
 export async function HomeStream() {
-  const { supabase, user } = await getViewer();
+  const { supabase, user, profile } = await getViewer();
   if (!user) return null;
   const f = await dbFeatures();
   const now = requestTime();
@@ -86,7 +86,7 @@ export async function HomeStream() {
         </Group>
       )}
 
-      <Group label="Your clubs shipped this week" node={<Seal size={18} />}
+      <Group label={profile?.account_type === "professional" && !cids.length ? "Signed this week" : "Your clubs shipped this week"} node={<Seal size={18} />}
         more={ships.length ? <Link href="/communities" className={moreCls}>Your clubs</Link> : null}>
         {ships.length ? (
           <List label="Signed this week in your clubs">
@@ -97,7 +97,7 @@ export async function HomeStream() {
             ))}
           </List>
         ) : (
-          <Invite cids={cids.length} />
+          <Invite cids={cids.length} working={profile?.account_type === "professional"} />
         )}
       </Group>
 
@@ -141,14 +141,16 @@ function Tile({ children }: { children: React.ReactNode }) {
 }
 
 // Nothing signed in your clubs this week: the first step toward it, not a blank.
-function Invite({ cids }: { cids: number }) {
+// A working member in no club has nobody to join: the work they get signed is what shows here.
+function Invite({ cids, working = false }: { cids: number; working?: boolean }) {
+  const solo = working && !cids;
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-3 rounded-xl border border-dashed border-line-strong px-4 py-3.5">
       <p className="min-w-0 flex-1 basis-56 text-sm text-muted">
-        {cids ? "Nothing signed in your clubs yet this week. Log a result and ask an officer who saw it." : "Join your club, and the work its officers sign shows up here, yours included."}
+        {cids ? "Nothing signed in your clubs yet this week. Log a result and ask an officer who saw it." : solo ? "Work you get signed shows up here. Log a result and ask whoever saw it: a manager, a client, a teammate." : "Join your club, and the work its officers sign shows up here, yours included."}
       </p>
-      <Link href={cids ? "/projects" : "/communities?tab=discover"} className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg bg-text px-3 text-xs font-semibold text-bg transition hover:opacity-90">
-        <Sparkles className="size-3.5" />{cids ? "Log a milestone" : "Find your club"}
+      <Link href={cids || solo ? "/projects" : "/communities?tab=discover"} className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg bg-text px-3 text-xs font-semibold text-bg transition hover:opacity-90">
+        <Sparkles className="size-3.5" />{cids ? "Log a milestone" : solo ? "Log a result" : "Find your club"}
       </Link>
     </div>
   );
