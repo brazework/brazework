@@ -29,7 +29,7 @@ enum Lucide {
     "checkmark.shield": "shield-check", "checkmark.shield.fill": "shield-check",
     "arrow.up": "arrow-up", "arrow.right": "arrow-right", "arrow.up.right": "arrow-up-right", "arrow.up.circle": "circle-arrow-up",
     "arrow.uturn.backward": "undo-2", "arrow.up.left.and.arrow.down.right": "maximize-2", "arrow.triangle.turn.up.right.diamond.fill": "navigation",
-    "ellipsis": "ellipsis", "ellipsis.circle": "circle-ellipsis", "chevron.down": "chevron-down",
+    "ellipsis": "ellipsis", "ellipsis.circle": "circle-ellipsis", "chevron.down": "chevron-down", "chevron.right": "chevron-right",
     "pencil": "pencil", "trash": "trash-2", "doc.on.doc": "copy", "link": "link", "lock": "lock", "flag": "flag",
     "paperplane.fill": "send", "line.3.horizontal.decrease.circle": "list-filter", "gearshape": "settings",
     // People
@@ -38,7 +38,7 @@ enum Lucide {
     "graduationcap.fill": "graduation-cap", "briefcase.fill": "briefcase", "face.smiling": "smile", "eye.slash": "eye-off",
     // Status and media
     "exclamationmark.circle": "circle-alert", "exclamationmark.triangle": "triangle-alert", "questionmark.circle": "circle-question-mark",
-    "clock": "clock", "calendar": "calendar-days", "circle": "circle", "envelope.open": "mail-open", "envelope.badge": "mail", "mappin.and.ellipse": "map-pin",
+    "clock": "clock", "arrow.triangle.pull": "git-pull-request", "calendar": "calendar-days", "circle": "circle", "envelope.open": "mail-open", "envelope.badge": "mail", "mappin.and.ellipse": "map-pin",
     "video.fill": "video", "play.fill": "play.fill", "speaker.wave.2.fill": "volume-2", "speaker.slash.fill": "volume-x",
   ]
 
