@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useActionState, useState, useSyncExternalStore, useTransition } from "react";
 import { Button, Field, inputCls } from "@/components/ui";
 import { ALL_TOPICS, FIELDS, TOPICS, cn, type Profile } from "@/lib/forge";
+import { LINKEDIN_PLACEHOLDER, LINKEDIN_PRIVATE, LINKEDIN_WHY } from "@/lib/linkedin";
 import { gradYearOptions } from "@/lib/profile-meta";
 import { deleteAllChats } from "@/lib/copilot-chats";
 import { changePassword, deleteAccount, saveDraftReminder, saveEmailAlerts, saveEmailPrefs, saveMessageSettings, saveProfileSettings, type SettingsState, unblockPerson } from "@/lib/settings";
@@ -19,7 +20,9 @@ function Status({ state }: { state: SettingsState }) {
 
 // gradYear: undefined until supabase/grad-year.sql has run (the field stays hidden); null = not set.
 // canSwitch: Studying or working can be changed (supabase/account-type.sql has run).
-export function ProfileSettings({ profile, gradYear, canSwitch = false }: { profile: Profile; gradYear?: number | null; canSwitch?: boolean }) {
+// linkedin: the member's own LinkedIn link; undefined until supabase/linkedin-required.sql has run
+// (the field stays hidden). A working account needs one to ask someone to sign; the link is private.
+export function ProfileSettings({ profile, gradYear, canSwitch = false, linkedin }: { profile: Profile; gradYear?: number | null; canSwitch?: boolean; linkedin?: string }) {
   const [state, action, pending] = useActionState(saveProfileSettings, init);
   // Only current topics count (renamed or retired ones would be invisible yet still submitted).
   const [picked, setPicked] = useState<string[]>((profile.interests ?? []).filter((t) => ALL_TOPICS.includes(t)));
@@ -46,6 +49,12 @@ export function ProfileSettings({ profile, gradYear, canSwitch = false }: { prof
           </div>
           <p className="mt-1.5 text-xs text-muted">Finished school? Pick Working. Your record and signatures stay as they are.</p>
         </fieldset>
+      )}
+      {linkedin !== undefined && (
+        <Field label="LinkedIn profile" hint={`${LINKEDIN_WHY} ${LINKEDIN_PRIVATE}`}>
+          <input type="hidden" name="linkedin_was" value={linkedin} />
+          <input name="linkedin" type="text" inputMode="url" autoComplete="url" autoCapitalize="none" autoCorrect="off" spellCheck={false} maxLength={200} defaultValue={linkedin} placeholder={LINKEDIN_PLACEHOLDER} className={inputCls} />
+        </Field>
       )}
       <Field label="Headline"><input name="headline" defaultValue={profile.headline} maxLength={200} className={inputCls} /></Field>
       <Field label="Field"><select name="field" defaultValue={fieldKnown ? profile.field : ""} className={inputCls}>{!fieldKnown && <option value="" disabled>Pick your field</option>}{FIELDS.map((f) => <option key={f}>{f}</option>)}</select></Field>

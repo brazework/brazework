@@ -1,4 +1,4 @@
--- Step 85: playbook lanes (Linear FIX-209). Run after account-type.sql. Additive and safe to re-run.
+-- Step 86: playbook lanes (Linear FIX-209). Run after account-type.sql. Additive and safe to re-run.
 --
 -- Every field's playbook has a part for studying and a part for working (web/src/lib/mcp-playbooks.ts,
 -- docs/superpowers/specs/2026-11-20-playbook-lanes-design.md). A member's assistant picks the part from

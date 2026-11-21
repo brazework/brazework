@@ -41,7 +41,7 @@ function Section({ id, title, desc, children }: { id: string; title: string; des
 async function Settings() {
   const { supabase, user, profile } = await getViewer();
   if (!user || !profile) redirect("/login");
-  const { copilotChats: saving, mcp: mcpOn, gradYear: gradYearOn, accountType: canSwitch } = await dbFeatures();
+  const { copilotChats: saving, mcp: mcpOn, gradYear: gradYearOn, accountType: canSwitch, linkedinRequired: linkedinOn } = await dbFeatures();
   const tokens = mcpOn ? await listApiTokens() : [];
   const [ms, blocks, chatCount, ep, gy, ea] = await Promise.all([
     supabase.from("message_settings").select("requests_on, who_can_message").eq("user_id", user.id).maybeSingle(),
@@ -56,6 +56,9 @@ async function Settings() {
   // Before daily-triage.sql there's no daily_drafts column; the switch stays hidden.
   const dd = (await dbFeatures()).dailyTriage ? await supabase.from("email_prefs").select("daily_drafts").eq("user_id", user.id).maybeSingle() : null;
   const dailyDrafts = dd && !dd.error ? Boolean((dd.data as { daily_drafts?: boolean } | null)?.daily_drafts) : undefined;
+  // The member's own LinkedIn link (supabase/linkedin-required.sql): undefined hides the field, "" means none.
+  const li = linkedinOn ? await supabase.rpc("my_linkedin") : null;
+  const linkedin = li && !li.error ? ((li.data as string | null) ?? "") : undefined;
   // undefined hides the field (grad-year.sql hasn't run); null means not set.
   const gradYear = gradYearOn ? ((gy.data as { grad_year: number | null } | null)?.grad_year ?? null) : undefined;
   const emailOn = !ep.error;
@@ -70,7 +73,7 @@ async function Settings() {
 
   return (
     <>
-      <Section id="profile" title="Profile" desc="What people see on your profile and posts."><ProfileSettings profile={profile} gradYear={gradYear} canSwitch={canSwitch} /></Section>
+      <Section id="profile" title="Profile" desc="What people see on your profile and posts."><ProfileSettings profile={profile} gradYear={gradYear} canSwitch={canSwitch} linkedin={linkedin} /></Section>
       <Section id="appearance" title="Appearance" desc="Light or dark, and the colour theme."><AppearanceSettings /></Section>
       {emailOn && <Section id="email" title="Email" desc="What Brazework sends to your inbox. Sign-in emails always come."><EmailSettings weekly={ep.data ? Boolean(ep.data.weekly_digest) : true} alerts={alerts} dailyDrafts={dailyDrafts} /></Section>}
       <Section id="messaging" title="Messaging and privacy" desc="Who can message you, and whether you show as online."><OnlineStatusSetting /><div className="my-6 border-t border-line" /><MessagingSettings requestsOn={ms.data ? Boolean(ms.data.requests_on) : true} who={(ms.data?.who_can_message as "everyone" | "communities" | "connections") ?? "everyone"} /></Section>

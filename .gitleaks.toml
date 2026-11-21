@@ -14,4 +14,7 @@ regexes = [
   '''forge-local-test-secret''',
   '''whsec_forge_e2e''',
   '''cron_forge_e2e''',
+  # A function name, not a key: the default linkedin-client-secret rule flags any 16 letters or
+  # digits that follow the word "linkedin", and this import does (web/src/lib/linkedin-gate.ts).
+  '''^saveLinkedinFrom$''',
 ]

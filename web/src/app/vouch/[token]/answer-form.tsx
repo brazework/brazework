@@ -40,7 +40,7 @@ export function AnswerForm({ token, domain, email }: { token: string; domain: st
       <label className="text-sm font-medium">How do you know their work?
         <input required minLength={3} maxLength={300} placeholder="e.g. I'm their research advisor" value={f.knowsFrom} onChange={set("knowsFrom")} className={field} />
       </label>
-      <p className="text-xs text-faint">Shown on their record as your name, role and <b className="font-medium">{domain}</b>, with what you wrote.</p>
+      <p className="text-xs text-faint">Shown on their record as your name, role and <b className="font-medium">{domain}</b>, with what you wrote. You sign as yourself, as someone who saw it, not on behalf of your employer.</p>
       {done && !done.ok && <p role="alert" className="text-sm text-danger">{done.message}</p>}
       <div className="flex flex-wrap gap-2">
         <Button type="submit" disabled={pending}><BadgeCheck className="size-4" /> Vouch</Button>

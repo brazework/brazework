@@ -5,13 +5,16 @@ import { useActionState, useState } from "react";
 import { SignupSteps } from "@/components/signup-steps";
 import { Button, Field, inputCls } from "@/components/ui";
 import { ACADEMIC_RE, cn } from "@/lib/forge";
+import { LINKEDIN_PLACEHOLDER, LINKEDIN_PRIVATE } from "@/lib/linkedin";
 import { submitWithoutReset } from "@/lib/submit";
 import { finishSignup, type FinishState } from "./actions";
 
 // "About you": the second step for everyone, however they signed up (email and password, or Google,
 // GitHub or LinkedIn). Student or professional, name, birthday. The database holds these to the
 // sign-up rules (finish_signup()); names start from the provider's when there is one.
-export function FinishSignupForm({ email, provider, firstName, lastName }: { email: string; provider?: string; firstName: string; lastName: string }) {
+// askLinkedin: a professional is offered a LinkedIn profile link, optional here; they need it later
+// to ask someone to sign (supabase/linkedin-required.sql has run; Linear FIX-214). Students aren't asked.
+export function FinishSignupForm({ email, provider, firstName, lastName, askLinkedin = false }: { email: string; provider?: string; firstName: string; lastName: string; askLinkedin?: boolean }) {
   const [state, action, pending] = useActionState<FinishState, FormData>(finishSignup, { message: "" });
   const [type, setType] = useState<"student" | "professional" | "">("");
   // An academic address is certain; a listed school without one (school_domains) is only known to
@@ -30,7 +33,7 @@ export function FinishSignupForm({ email, provider, firstName, lastName }: { ema
           <h1 className="text-3xl font-semibold tracking-tight">About you</h1>
           <p className="mt-2 text-muted">
             {provider ? <>Signed in with {provider} as </> : <>Signed in as </>}
-            <span className="text-text">{email}</span>. Three quick things, then your first build.
+            <span className="text-text">{email}</span>. A few quick things, then your first build.
           </p>
         </div>
         <input type="hidden" name="accountType" value={type} />
@@ -60,6 +63,11 @@ export function FinishSignupForm({ email, provider, firstName, lastName }: { ema
           <Field label="Last name"><input name="lastName" autoComplete="family-name" maxLength={80} defaultValue={lastName} className={inputCls} /></Field>
         </div>
         <Field label="Birthday" hint="Private, never shown. Brazework is for people 18 and older."><input name="birthday" type="date" autoComplete="bday" className={inputCls} /></Field>
+        {askLinkedin && type === "professional" && (
+          <Field label="LinkedIn profile" optional hint={`You'll need it to ask someone to sign your work. ${LINKEDIN_PRIVATE}`}>
+            <input name="linkedin" type="text" inputMode="url" autoComplete="url" autoCapitalize="none" autoCorrect="off" spellCheck={false} maxLength={200} placeholder={LINKEDIN_PLACEHOLDER} className={inputCls} />
+          </Field>
+        )}
         {state.message && <p role="alert" className="rounded-xl border border-danger/30 bg-danger/10 px-3.5 py-2.5 text-sm text-danger">{state.message}</p>}
         {state.school && (
           <p className="-mt-2 text-sm text-muted">

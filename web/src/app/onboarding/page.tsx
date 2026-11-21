@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import { Logo } from "@/components/ui";
 import { dbFeatures } from "@/lib/db-features";
 import { getViewer } from "@/lib/supabase/server";
+import { needsLinkedin } from "@/lib/linkedin-gate";
 import { isProvider, namesFrom, providerLabel } from "@/lib/oauth";
 import { FinishSignupForm } from "./finish-signup-form";
 import { FirstBuildWizard, type WizardClub } from "./first-build-wizard";
@@ -38,7 +39,8 @@ async function Onboarding({ searchParams }: { searchParams: PageProps<"/onboardi
     const { data } = await supabase.auth.getClaims();
     const claims = (data?.claims ?? {}) as { user_metadata?: unknown; app_metadata?: { provider?: string } };
     const via = claims.app_metadata?.provider;
-    return <FinishSignupForm email={user.email} provider={isProvider(via) ? providerLabel(via) : undefined} {...namesFrom(claims.user_metadata)} />;
+    // A professional is offered a LinkedIn link here (optional), once supabase/linkedin-required.sql has run.
+    return <FinishSignupForm email={user.email} provider={isProvider(via) ? providerLabel(via) : undefined} {...namesFrom(claims.user_metadata)} askLinkedin={(await dbFeatures()).linkedinRequired} />;
   }
   if (profile?.onboarded) redirect("/feed");
   const student = profile?.account_type === "student";
@@ -58,7 +60,9 @@ async function Onboarding({ searchParams }: { searchParams: PageProps<"/onboardi
       ...own.map((c) => ({ id: c.id, name: c.name, field: c.field ?? "", members: c.member_count, mine: true })),
       ...((open.data ?? []) as Row[]).filter((c) => !ids.has(c.id)).map((c) => ({ id: c.id, name: c.name, field: c.field ?? "", members: c.member_count, mine: false })),
     ];
-    return <FirstBuildWizard firstName={profile.first_name ?? ""} student={student} userId={user.id} clubs={clubs} />;
+    // A working account adds its LinkedIn link before asking a person to sign (Linear FIX-214): the
+    // last screen offers the field to one that has none.
+    return <FirstBuildWizard firstName={profile.first_name ?? ""} student={student} userId={user.id} clubs={clubs} askLinkedin={!student && (await needsLinkedin(supabase))} />;
   }
   // Graduation year is asked of students only, once supabase/grad-year.sql has run.
   const askGradYear = student && (await dbFeatures()).gradYear;
