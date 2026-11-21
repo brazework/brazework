@@ -1,6 +1,6 @@
 "use client";
 import { AnimatePresence, motion } from "motion/react";
-import { ArrowRight, BadgeCheck, CalendarCheck, CalendarPlus, Check, ExternalLink, Flag, Loader2, Megaphone, MessageSquare, PenLine, PencilLine, Sparkles, Target, UserPlus, Users, X } from "lucide-react";
+import { ArrowRight, BadgeCheck, CalendarCheck, CalendarPlus, Check, ExternalLink, Flag, Loader2, Megaphone, MessageSquare, PenLine, PencilLine, Sparkles, Target, Bookmark, UserPlus, Users, X } from "lucide-react";
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import { createPost } from "@/app/(app)/feed/actions";
@@ -22,11 +22,13 @@ import { toggleFollow } from "@/lib/network";
 import { toggleRsvp } from "@/app/(app)/events/actions";
 import { acceptConversation, messagePerson } from "@/lib/messages";
 import { setGoal } from "@/lib/goal-actions";
+import { rememberThis } from "@/lib/ember-memory";
 import { GOAL_KINDS } from "@/lib/goals";
 import { RELATIONSHIPS } from "@/lib/vouch-email";
 
 const field = "w-full rounded-xl border border-line bg-surface px-3 py-2 text-sm outline-none focus:border-line-strong";
 const HEAD = {
+  memory: { icon: Bookmark, title: "Remember this", done: "Remembered", href: "/settings#ember", go: "See what Ember remembers" },
   goal: { icon: Target, title: "Set your goal", done: "Goal set", href: "/feed", go: "See your path on Home" },
   post: { icon: Megaphone, title: "Post to the feed", done: "Posted", href: "/feed?tab=latest", go: "See it in the feed" },
   milestone: { icon: Flag, title: "Ask your club to verify", done: "Sent to the club", href: "/profile#projects", go: "See your projects" },
@@ -113,6 +115,8 @@ export function ProposalCard({ p: initial, fromTool, inline = false }: { p: Prop
       r = await reviewMilestone(p.milestone_id, p.verify, p.note);
     } else if (p.kind === "rsvp") {
       r = await toggleRsvp(p.event_id, !p.cancel);
+    } else if (p.kind === "memory") {
+      r = await rememberThis(p.body);
     } else if (p.kind === "goal") {
       r = await setGoal(p.goal_kind, p.target, goalVisible);
     } else if (p.kind === "project_edit") {
@@ -241,6 +245,12 @@ export function ProposalCard({ p: initial, fromTool, inline = false }: { p: Prop
             </>
           )}
           {p.kind === "join" && <p className="text-text-2"><b className="font-medium">{p.club_name}</b> · {p.privacy === "public" ? "open to join" : "the club approves new members, so this sends a request"}</p>}
+          {p.kind === "memory" && (
+            <div className="space-y-1">
+              <p className="text-text-2">&ldquo;{p.body}&rdquo;</p>
+              <p className="text-xs text-muted">Ember will use this in your next chats. Only you can see it, and you can forget it any time in Settings.</p>
+            </div>
+          )}
           {p.kind === "goal" && (
             <div className="space-y-2">
               <p className="text-text-2">Work toward <b className="font-medium">{p.title}</b></p>

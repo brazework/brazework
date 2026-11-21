@@ -20,7 +20,7 @@ type Msg = { role: "user" | "assistant"; content: string; tools?: string[]; prop
 
 // What a card Ember prepared is called once the chat is saved (saved chats keep a label, never a
 // live card that could be confirmed twice).
-const CARD_LABEL: Record<Proposal["kind"], string> = { goal: "a goal", post: "a post", milestone: "a milestone to verify", signature: "an ask to sign", join: "joining a club", follow: "a follow", event: "a club event", club_post: "a club post", project: "a project", review: "a milestone review", rsvp: "an RSVP", message: "a message", project_edit: "a project update", teammate: "a teammate", invite: "a club invite" };
+const CARD_LABEL: Record<Proposal["kind"], string> = { goal: "a goal", memory: "something to remember", post: "a post", milestone: "a milestone to verify", signature: "an ask to sign", join: "joining a club", follow: "a follow", event: "a club event", club_post: "a club post", project: "a project", review: "a milestone review", rsvp: "an RSVP", message: "a message", project_edit: "a project update", teammate: "a teammate", invite: "a club invite" };
 const toSaved = (m: Msg): SavedMsg => ({ role: m.role, content: m.content, tools: m.tools, cards: [...(m.cards ?? []), ...(m.proposals ?? []).map((p) => CARD_LABEL[p.kind])] });
 const ago = (iso: string) => {
   const d = (Date.now() - new Date(iso).getTime()) / 86400000;
