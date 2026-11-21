@@ -1,11 +1,12 @@
 import { dbFeatures } from "@/lib/db-features";
+import { avatarSrc } from "@/lib/media";
 import { getViewer } from "@/lib/supabase/server";
 
 export type Conv = {
   id: string;
   status: "active" | "request";
   startedByMe: boolean;
-  other: { id: string; firstName: string; lastName: string; headline: string };
+  other: { id: string; firstName: string; lastName: string; headline: string; avatar?: string | null };
   lastBody: string;
   lastAt: string | null;
   lastFromMe: boolean;
@@ -41,6 +42,11 @@ export async function loadConversations() {
       };
     })
     .filter((c) => c.lastAt || c.startedByMe);
+  // Their profile photos, in one read (the names come with the conversation; photos change, so they're read fresh).
+  const ids = [...new Set(convs.map((c) => c.other.id))];
+  const { data: pics } = ids.length ? await supabase.from("profiles").select("id, avatar_path").in("id", ids) : { data: [] };
+  const pic = new Map(((pics ?? []) as { id: string; avatar_path?: string | null }[]).map((p) => [p.id, avatarSrc(p)]));
+  for (const c of convs) c.other.avatar = pic.get(c.other.id) ?? null;
   return { me, convs, requestsOn: settings.data ? Boolean(settings.data.requests_on) : true };
 }
 

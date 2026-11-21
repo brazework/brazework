@@ -46,7 +46,7 @@ export function ProofStage({ build }: { build: string }) {
           <button key={s.who} type="button" onClick={() => pick(n)} aria-pressed={n === at}
             className={cn("relative inline-flex h-9 shrink-0 items-center gap-1.5 overflow-hidden rounded-lg border px-3 text-xs font-medium transition",
               n === at ? "border-text bg-text text-surface" : "border-line bg-surface text-text-2 hover:border-line-strong hover:text-text")}>
-            {s.who}<span className={cn("font-normal", n === at ? "text-surface/70" : "text-faint")}>{s.tool}</span>
+            {s.who}<span className={cn("font-normal", n === at ? "text-surface/70" : "text-faint")}>{s.signs}</span>
             {/* While it plays by itself: how long until the next story, as a hairline filling under the chip. */}
             {n === at && playing && <span key={`${at}:${replays}`} aria-hidden="true" className="absolute inset-x-0 bottom-0 h-[2px] origin-left bg-surface/60" style={{ animation: `progress-fill ${storyMs(s)}ms linear forwards` }} />}
           </button>

@@ -95,7 +95,7 @@ export function ConvList({ convs, requestsOn, groups = null }: { convs: Conv[]; 
         {shown.map((c) => (
           <li key={c.id}>
             <Link href={`/messages/${c.id}`} aria-current={c.id === activeId ? "page" : undefined} className={cn("flex gap-3 rounded-2xl px-3 py-3 transition hover:bg-hover/70", c.id === activeId && "nav-pill")}>
-              <WithPresence id={c.other.id} className="self-start"><Avatar first={c.other.firstName} last={c.other.lastName} size={40} /></WithPresence>
+              <WithPresence id={c.other.id} className="self-start"><Avatar first={c.other.firstName} last={c.other.lastName} size={40} src={c.other.avatar} /></WithPresence>
               <div className="min-w-0 flex-1">
                 <div className="flex items-baseline justify-between gap-2">
                   <span className={cn("truncate text-sm", c.unread ? "font-semibold" : "font-medium")}>{`${c.other.firstName} ${c.other.lastName}`.trim() || "Brazework member"}</span>

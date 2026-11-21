@@ -112,7 +112,8 @@ test("every story fits the card: a short ask, one or two proofs, and someone who
     assert.ok(s.proof.length >= 1 && s.proof.length <= 2, s.who);
     assert.ok(s.reads.length >= 1 && s.reads.length <= 2 && s.reads.every((r) => r.length <= 40), `${s.who}: what the AI read fits two short lines`);
     assert.ok(s.reply.length <= 90 && s.reply.endsWith("?"), `${s.who}: the AI's reply is short and asks before sending`);
-    assert.ok(s.tool.length <= 24, `${s.who}: the chip's tool label stays short`);
+    assert.ok(s.signs.length <= 24, `${s.who}: the chip's line on who signs stays short`);
+    assert.match(s.signs, /signs$/, `${s.who}: the chip says who signs, not which tool`);
     assert.ok(s.signer.name && s.signer.role && s.signer.act && s.signer.done, s.who);
     assert.ok(s.finder.name && s.finder.role && s.finder.ask.endsWith("?"), `${s.who}: the finder asks`);
   }

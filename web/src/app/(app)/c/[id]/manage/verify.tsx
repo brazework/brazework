@@ -1,4 +1,5 @@
 "use client";
+import { proofSource } from "@/lib/proof-source";
 import { AnimatePresence, motion } from "motion/react";
 import { BadgeCheck, ExternalLink, Loader2, Scale, Undo2, X, XCircle } from "lucide-react";
 import Link from "next/link";
@@ -173,10 +174,7 @@ export function RecentReviews({ items, isOwner = false }: { items: QueueItem[]; 
 }
 
 // A short name for an evidence link: "Commit abc1234", "Pull request #7", or the site.
+// Any tool, not only code hosts (lib/proof-source.ts).
 function evidenceLabel(u: string, i: number): string {
-  const c = /\/commits?\/([0-9a-f]{7})/i.exec(u);
-  if (c) return `Commit ${c[1]}`;
-  const pr = /\/(pull|merge_requests)\/(\d+)/.exec(u);
-  if (pr) return `Pull request #${pr[2]}`;
-  try { return new URL(u).hostname.replace(/^www\./, ""); } catch { return `Evidence ${i + 1}`; }
+  return proofSource(u)?.label ?? `Evidence ${i + 1}`;
 }
