@@ -42,11 +42,11 @@ struct ComposerView: View {
         if !suggestions.isEmpty { MentionSuggestions(people: suggestions, onPick: pick) }
         PickedStrip(items: $picked)
         if let error { Text(error).font(.footnote).foregroundStyle(p.danger) }
-        if !status.isEmpty { Label(status, systemImage: "arrow.up.circle").font(.footnote).foregroundStyle(p.muted) }
+        if !status.isEmpty { Label(status, icon: "arrow.up.circle").font(.footnote).foregroundStyle(p.muted) }
         Spacer()
         HStack {
           Button { showPicker = true } label: {
-            Image(systemName: "photo.on.rectangle.angled").font(.title3).foregroundStyle(p.text2).frame(width: 44, height: 44)
+            Icon("photo.on.rectangle.angled").font(.title3).foregroundStyle(p.text2).frame(width: 44, height: 44)
           }
           .accessibilityLabel("Add photos or a video")
           .disabled(posting)

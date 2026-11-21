@@ -37,7 +37,7 @@ struct NewTeamChatView: View {
                   if !m.headline.isEmpty { Text(m.headline).font(.caption).foregroundStyle(p.muted).lineLimit(1) }
                 }
                 Spacer()
-                Image(systemName: picked.contains(m.uid) ? "checkmark.circle.fill" : "circle").font(.title3).foregroundStyle(picked.contains(m.uid) ? p.accent : p.faint)
+                Icon(picked.contains(m.uid) ? "checkmark.circle.fill" : "circle").font(.title3).foregroundStyle(picked.contains(m.uid) ? p.accent : p.faint)
               }
             }
             .accessibilityAddTraits(picked.contains(m.uid) ? .isSelected : [])
@@ -123,7 +123,7 @@ struct TeamMembersView: View {
       Text(m.name).foregroundStyle(p.text)
       Spacer()
       if let trailing { Text(trailing).font(.caption).foregroundStyle(p.faint) }
-      if adding { Image(systemName: "plus.circle.fill").font(.title3).foregroundStyle(p.accent) }
+      if adding { Icon("plus.circle.fill").font(.title3).foregroundStyle(p.accent) }
     }
   }
 

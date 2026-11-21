@@ -24,7 +24,7 @@ struct BuildView: View {
                 BuildCard(build: b, log: { compose = true }, open: { openURL(Env.web("projects/\(b.id)")) })
               }
               Button { openURL(Env.web("projects")) } label: {
-                Label("Start a new project", systemImage: "plus")
+                Label("Start a new project", icon: "plus")
                   .font(.subheadline.weight(.medium)).foregroundStyle(p.muted)
                   .frame(maxWidth: .infinity, minHeight: 48)
                   .overlay(RoundedRectangle(cornerRadius: 18, style: .continuous).strokeBorder(p.border, style: StrokeStyle(lineWidth: 1, dash: [5, 4])))
@@ -94,12 +94,12 @@ struct BuildCard: View {
               Circle().fill(build.completed ? p.ok : p.wait).frame(width: 6, height: 6)
               Text(build.completed ? "Completed" : "In progress")
               Text("· updated \(timeAgo(build.updatedAt))")
-              if build.isPrivate { Label("Private", systemImage: "lock").labelStyle(.titleAndIcon) }
+              if build.isPrivate { Label("Private", icon: "lock").labelStyle(.titleAndIcon) }
             }
             .font(.caption).foregroundStyle(p.muted)
           }
           Spacer(minLength: 0)
-          Button(action: open) { Image(systemName: "arrow.up.right").font(.footnote.weight(.semibold)).foregroundStyle(p.muted).frame(width: 32, height: 32).background(p.surface2, in: Circle()) }
+          Button(action: open) { Icon("arrow.up.right").font(.footnote.weight(.semibold)).foregroundStyle(p.muted).frame(width: 32, height: 32).background(p.surface2, in: Circle()) }
             .buttonStyle(.plain).accessibilityLabel("Open \(build.title)")
         }
         if !build.summary.isEmpty { Text(build.summary).font(.subheadline).foregroundStyle(p.text2).lineLimit(2) }
@@ -117,15 +117,15 @@ struct BuildCard: View {
           HStack(spacing: 8) {
             // The same buttons as the web's card: one primary, from the next step.
             if step.kind == .verify {
-              Button("Get it signed", systemImage: "checkmark.shield", action: open).buttonStyle(PrimaryButtonStyle())
-              Button("Log update", systemImage: "plus", action: log).buttonStyle(QuietButtonStyle())
+              Button("Get it signed", icon: "checkmark.shield", action: open).buttonStyle(PrimaryButtonStyle())
+              Button("Log update", icon: "plus", action: log).buttonStyle(QuietButtonStyle())
             } else {
-              Button("Log update", systemImage: "plus", action: log).buttonStyle(PrimaryButtonStyle())
-              Button(build.counts.verified > 0 ? "Milestones" : "Add a milestone", systemImage: "checkmark.shield", action: open).buttonStyle(QuietButtonStyle())
+              Button("Log update", icon: "plus", action: log).buttonStyle(PrimaryButtonStyle())
+              Button(build.counts.verified > 0 ? "Milestones" : "Add a milestone", icon: "checkmark.shield", action: open).buttonStyle(QuietButtonStyle())
             }
           }
           if build.counts.verified > 0 {
-            Button { nav.tab = .me } label: { Label("On your record", systemImage: "checkmark.seal").font(.footnote.weight(.medium)).foregroundStyle(p.text2) }
+            Button { nav.tab = .me } label: { Label("On your record", icon: "checkmark.seal").font(.footnote.weight(.medium)).foregroundStyle(p.text2) }
               .buttonStyle(.plain)
           }
         }
@@ -140,7 +140,7 @@ private struct StageChip: View {
   @Environment(\.palette) private var p
   var body: some View {
     VStack(alignment: .leading, spacing: 2) {
-      Label(label, systemImage: done ? "checkmark" : "circle").font(.caption.weight(.semibold)).foregroundStyle(done ? (signed ? p.ok : p.text) : p.muted)
+      Label(label, icon: done ? "checkmark" : "circle").font(.caption.weight(.semibold)).foregroundStyle(done ? (signed ? p.ok : p.text) : p.muted)
       Text(note).font(.caption2).monospacedDigit().foregroundStyle(p.faint).lineLimit(1).minimumScaleFactor(0.85)
     }
     .padding(.horizontal, 10).padding(.vertical, 8)
@@ -167,10 +167,10 @@ private struct EmptyBuilds: View {
   var body: some View {
     Card {
       VStack(alignment: .leading, spacing: 10) {
-        Image(systemName: "hammer").font(.title2).foregroundStyle(p.text)
+        Icon("hammer").font(.title2).foregroundStyle(p.text)
         Text("Start your first project").font(.title3.weight(.bold)).foregroundStyle(p.text)
         Text("A project is anything you're building: a robot, a rocket, a model, an experiment, an app. Post updates as you go, and your club verifies the milestones.").font(.subheadline).foregroundStyle(p.muted)
-        Button("Start a project", systemImage: "arrow.up.right", action: start).buttonStyle(PrimaryButtonStyle()).padding(.top, 4)
+        Button("Start a project", icon: "arrow.up.right", action: start).buttonStyle(PrimaryButtonStyle()).padding(.top, 4)
       }
     }
   }
@@ -193,7 +193,7 @@ struct ProofList: View {
         } else {
           ForEach(items) { m in
             HStack(alignment: .top, spacing: 10) {
-              Image(systemName: "checkmark.seal.fill").foregroundStyle(p.ok).font(.body)
+              Icon("checkmark.seal.fill").foregroundStyle(p.ok).font(.body)
               VStack(alignment: .leading, spacing: 2) {
                 Text(m.title).font(.subheadline.weight(.semibold)).foregroundStyle(p.text)
                 Text(m.signedBy).font(.caption).foregroundStyle(p.ok)

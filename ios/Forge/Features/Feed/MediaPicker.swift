@@ -87,7 +87,7 @@ struct PickedStrip: View {
 
   private func remove(_ id: UUID) -> some View {
     Button { withAnimation(.snappy) { items.removeAll { $0.id == id } } } label: {
-      Image(systemName: "xmark").font(.caption.weight(.bold)).foregroundStyle(.white).frame(width: 28, height: 28).background(.black.opacity(0.6), in: Circle())
+      Icon("xmark").font(.caption.weight(.bold)).foregroundStyle(.white).frame(width: 28, height: 28).background(.black.opacity(0.6), in: Circle())
     }
     .padding(6)
     .accessibilityLabel("Remove")

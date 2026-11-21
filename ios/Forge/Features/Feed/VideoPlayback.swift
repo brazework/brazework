@@ -88,7 +88,7 @@ struct FeedVideo: View {
       if let model { PlayerLayerView(player: model.player) }
       if model?.ready != true { ProgressView().tint(.white).frame(maxWidth: .infinity, maxHeight: .infinity) }
       if held {
-        Image(systemName: "play.fill").font(.system(size: 26)).foregroundStyle(.white)
+        Icon("play.fill").font(.system(size: 26)).foregroundStyle(.white)
           .frame(width: 64, height: 64).glassEffect(.regular, in: Circle())
           .frame(maxWidth: .infinity, maxHeight: .infinity)
           .allowsHitTesting(false)
@@ -151,7 +151,7 @@ struct FeedVideo: View {
 
   private func pill(_ text: String?, icon: String? = nil) -> some View {
     Group {
-      if let icon { Image(systemName: icon).font(.footnote.weight(.semibold)) } else { Text(text ?? "").font(.footnote.weight(.semibold).monospacedDigit()) }
+      if let icon { Icon(icon).font(.footnote.weight(.semibold)) } else { Text(text ?? "").font(.footnote.weight(.semibold).monospacedDigit()) }
     }
     .foregroundStyle(.white)
     .frame(minWidth: 34, minHeight: 34)

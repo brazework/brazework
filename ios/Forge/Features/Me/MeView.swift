@@ -64,9 +64,9 @@ struct MeView: View {
           .listRowBackground(p.surface)
         }
         Section {
-          Button { editing = true } label: { Label("Edit profile", systemImage: "person.crop.circle").foregroundStyle(p.text) }
-          NavigationLink { SavedPostsView() } label: { Label("Saved", systemImage: "bookmark").foregroundStyle(p.text) }
-          NavigationLink { SettingsView() } label: { Label("Settings", systemImage: "gearshape").foregroundStyle(p.text) }
+          Button { editing = true } label: { Label("Edit profile", icon: "person.crop.circle").foregroundStyle(p.text) }
+          NavigationLink { SavedPostsView() } label: { Label("Saved", icon: "bookmark").foregroundStyle(p.text) }
+          NavigationLink { SettingsView() } label: { Label("Settings", icon: "gearshape").foregroundStyle(p.text) }
           link("Ask Ember", "sparkles", "copilot")
         }
         .listRowBackground(p.surface)
@@ -99,7 +99,7 @@ struct MeView: View {
 
   private func link(_ title: String, _ icon: String, _ path: String) -> some View {
     Button { openURL(Env.web(path)) } label: {
-      HStack { Label(title, systemImage: icon).foregroundStyle(p.text); Spacer(); Image(systemName: "arrow.up.right").font(.caption).foregroundStyle(p.faint) }
+      HStack { Label(title, icon: icon).foregroundStyle(p.text); Spacer(); Icon("arrow.up.right").font(.caption).foregroundStyle(p.faint) }
     }
   }
 }
