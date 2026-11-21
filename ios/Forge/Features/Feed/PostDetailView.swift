@@ -37,8 +37,8 @@ struct PostDetailView: View {
           .frame(maxWidth: .infinity, alignment: .leading)
           .background(p.surface2.opacity(0.6), in: RoundedRectangle(cornerRadius: 18, style: .continuous))
           .contextMenu {
-            Button("Copy", systemImage: "doc.on.doc") { UIPasteboard.general.string = c.body }
-            if c.authorId != session.userId { Button("Report reply", systemImage: "flag") { reporting = ReportTarget(kind: .comment, id: c.id, title: "Report reply") } }
+            Button("Copy", icon: "doc.on.doc") { UIPasteboard.general.string = c.body }
+            if c.authorId != session.userId { Button("Report reply", icon: "flag") { reporting = ReportTarget(kind: .comment, id: c.id, title: "Report reply") } }
           }
         }
       }
@@ -68,7 +68,7 @@ struct PostDetailView: View {
           .padding(.horizontal, 14).padding(.vertical, 10)
           .background(p.surface2, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
         Button { Task { await send() } } label: {
-          Image(systemName: "arrow.up").font(.body.weight(.bold)).foregroundStyle(p.onAccent).frame(width: 40, height: 40).background(p.accent, in: Circle())
+          Icon("arrow.up").font(.body.weight(.bold)).foregroundStyle(p.onAccent).frame(width: 40, height: 40).background(p.accent, in: Circle())
         }
         .disabled(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || sending)
         .accessibilityLabel("Send")

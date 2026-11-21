@@ -24,7 +24,7 @@ struct ComposerPrompt: View {
       HStack(spacing: 8) {
         quick("Photo", "photo.on.rectangle.angled", Color(hex: 0x6366F1)) { onCompose("update", true) }
         quick("Question", "questionmark.bubble", Color(hex: 0xF59E0B)) { onCompose("question", false) }
-        quick("Result", "checkmark.seal", Color(hex: 0x10B981)) { onCompose("result", false) }
+        quick("Result", "checkmark.seal", p.ok) { onCompose("result", false) }
       }
     }
     .padding(14)
@@ -34,7 +34,7 @@ struct ComposerPrompt: View {
 
   private func quick(_ title: String, _ icon: String, _ tint: Color, run: @escaping () -> Void) -> some View {
     Button(action: run) {
-      Label(title, systemImage: icon).font(.footnote.weight(.semibold)).foregroundStyle(p.text2)
+      Label(title, icon: icon).font(.footnote.weight(.semibold)).foregroundStyle(p.text2)
         .frame(maxWidth: .infinity, minHeight: 36)
         .background(tint.opacity(0.12), in: Capsule())
     }
@@ -60,7 +60,7 @@ struct MessagesCard: View {
     VStack(spacing: 0) {
       Button { withAnimation(.spring(response: 0.38, dampingFraction: 0.86)) { open.toggle() } } label: {
         HStack(spacing: 10) {
-          Image(systemName: "bubble.left.and.bubble.right.fill").font(.subheadline).foregroundStyle(p.text2)
+          Icon("bubble.left.and.bubble.right.fill").font(.subheadline).foregroundStyle(p.text2)
           Text("Messages").font(.subheadline.weight(.semibold)).foregroundStyle(p.text)
           if unread > 0 {
             Text("\(unread) new").font(.caption2.weight(.bold)).foregroundStyle(p.onAccent)
@@ -69,7 +69,7 @@ struct MessagesCard: View {
           }
           Spacer()
           if !open, !shown.isEmpty { faces }
-          Image(systemName: "chevron.down").font(.caption.weight(.bold)).foregroundStyle(p.faint)
+          Icon("chevron.down").font(.caption.weight(.bold)).foregroundStyle(p.faint)
             .rotationEffect(.degrees(open ? 0 : -90))
         }
         .padding(.horizontal, 14).padding(.vertical, 12)
@@ -92,7 +92,7 @@ struct MessagesCard: View {
           }
           Divider()
           Button { nav.tab = .messages } label: {
-            HStack { Text("Open Messages").font(.footnote.weight(.semibold)); Image(systemName: "arrow.right").font(.caption.weight(.bold)) }
+            HStack { Text("Open Messages").font(.footnote.weight(.semibold)); Icon("arrow.right").font(.caption.weight(.bold)) }
               .foregroundStyle(p.text2).frame(maxWidth: .infinity, minHeight: 40)
           }
           .buttonStyle(.plain)
@@ -118,7 +118,7 @@ struct MessagesCard: View {
       let parts = d.name.split(separator: " ")
       Avatar(first: parts.first.map(String.init) ?? "", last: parts.dropFirst().first.map(String.init) ?? "", size: size)
     case .chat(let c):
-      Image(systemName: c.kind == "event" ? "calendar" : "person.3.fill").font(.system(size: size * 0.4, weight: .semibold)).foregroundStyle(p.onAccent)
+      Icon(c.kind == "event" ? "calendar" : "person.3.fill").font(.system(size: size * 0.4, weight: .semibold)).foregroundStyle(p.onAccent)
         .frame(width: size, height: size).background(p.gradient, in: Circle())
     }
   }
@@ -218,7 +218,7 @@ struct EventCard: View {
         HStack(alignment: .top) {
           DateTile(date: event.startsAt, size: 44)
           Spacer()
-          if going { Image(systemName: "checkmark.circle.fill").foregroundStyle(Color(hex: 0x10B981)).accessibilityLabel("Going") }
+          if going { Icon("checkmark.circle.fill").foregroundStyle(p.ok).accessibilityLabel("Going") }
         }
         Text(event.title).font(.subheadline.weight(.semibold)).foregroundStyle(p.text).lineLimit(2, reservesSpace: true).multilineTextAlignment(.leading)
         Text(event.startsAt.formatted(.dateTime.weekday(.abbreviated).hour().minute())).font(.caption).foregroundStyle(p.text2)
@@ -302,7 +302,7 @@ struct NewPostsPill: View {
   @Environment(\.palette) private var p
   var body: some View {
     Button(action: action) {
-      Label("\(count) new post\(count == 1 ? "" : "s")", systemImage: "arrow.up")
+      Label("\(count) new post\(count == 1 ? "" : "s")", icon: "arrow.up")
         .font(.footnote.weight(.semibold)).foregroundStyle(p.onAccent)
         .padding(.horizontal, 14).padding(.vertical, 9)
         .background(p.accent, in: Capsule())

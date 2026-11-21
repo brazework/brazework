@@ -40,13 +40,13 @@ struct ProfileView: View {
     .toolbar {
       ToolbarItem(placement: .primaryAction) {
         Menu {
-          ShareLink(item: Env.web("u/\(id.uuidString.lowercased())")) { Label("Share profile", systemImage: "square.and.arrow.up") }
+          ShareLink(item: Env.web("u/\(id.uuidString.lowercased())")) { Label("Share profile", icon: "square.and.arrow.up") }
           if !isMe {
-            Button("Report", systemImage: "flag") { reporting = ReportTarget(kind: .person, id: id.uuidString.lowercased(), title: "Report \(profile?.firstName ?? "person")") }
-            if isBlocked { Button("Unblock", systemImage: "hand.raised.slash") { Task { await unblock() } } }
-            else { Button("Block", systemImage: "hand.raised", role: .destructive) { confirmBlock = true } }
+            Button("Report", icon: "flag") { reporting = ReportTarget(kind: .person, id: id.uuidString.lowercased(), title: "Report \(profile?.firstName ?? "person")") }
+            if isBlocked { Button("Unblock", icon: "hand.raised.slash") { Task { await unblock() } } }
+            else { Button("Block", icon: "hand.raised", role: .destructive) { confirmBlock = true } }
           }
-        } label: { Image(systemName: "ellipsis.circle") }
+        } label: { Icon("ellipsis.circle") }
         .accessibilityLabel("More")
       }
     }
@@ -72,7 +72,7 @@ struct ProfileView: View {
       }
       if !isMe {
         HStack(spacing: 10) {
-          Button { Task { await message() } } label: { Label("Message", systemImage: "paperplane.fill") }
+          Button { Task { await message() } } label: { Label("Message", icon: "paperplane.fill") }
             .buttonStyle(PrimaryButtonStyle())
           Button { Task { await toggleFollow() } } label: {
             Text(following ? "Following" : "Follow").font(.body.weight(.semibold)).frame(maxWidth: .infinity, minHeight: 50)

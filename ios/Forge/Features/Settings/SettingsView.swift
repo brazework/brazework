@@ -66,7 +66,7 @@ struct SettingsView: View {
     .navigationTitle("Settings")
     .overlay(alignment: .bottom) {
       if saved {
-        Label("Saved", systemImage: "checkmark.circle.fill").font(.footnote.weight(.semibold)).foregroundStyle(p.onAccent)
+        Label("Saved", icon: "checkmark.circle.fill").font(.footnote.weight(.semibold)).foregroundStyle(p.onAccent)
           .padding(.horizontal, 14).padding(.vertical, 8).background(p.accent, in: Capsule()).padding(.bottom, 90)
           .transition(.move(edge: .bottom).combined(with: .opacity))
       }
@@ -154,7 +154,7 @@ struct FeedbackView: View {
     NavigationStack {
       Form {
         if sent {
-          Section { Label("Thanks. The team reads every one.", systemImage: "heart.fill").foregroundStyle(p.text) }.listRowBackground(p.surface)
+          Section { Label("Thanks. The team reads every one.", icon: "heart.fill").foregroundStyle(p.text) }.listRowBackground(p.surface)
         } else {
           Section {
             Picker("Kind", selection: $kind) { ForEach(kinds, id: \.0) { Text($0.1).tag($0.0) } }.pickerStyle(.segmented)
@@ -208,7 +208,7 @@ struct ReportSheet: View {
         if sent {
           Section {
             VStack(alignment: .leading, spacing: 6) {
-              Label("Thanks for telling us", systemImage: "checkmark.shield.fill").font(.headline).foregroundStyle(p.text)
+              Label("Thanks for telling us", icon: "checkmark.shield.fill").font(.headline).foregroundStyle(p.text)
               Text("The Brazework team reviews every report. You can also block them so you don't see them again.").font(.subheadline).foregroundStyle(p.muted)
             }
             .padding(.vertical, 4)
@@ -218,7 +218,7 @@ struct ReportSheet: View {
           Section("Why are you reporting this?") {
             ForEach(API.reportReasons, id: \.id) { r in
               Button { reason = r.id } label: {
-                HStack { Text(r.label).foregroundStyle(p.text); Spacer(); if reason == r.id { Image(systemName: "checkmark").foregroundStyle(p.accent) } }
+                HStack { Text(r.label).foregroundStyle(p.text); Spacer(); if reason == r.id { Icon("checkmark").foregroundStyle(p.accent) } }
               }
             }
           }

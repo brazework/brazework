@@ -16,7 +16,7 @@ struct NextStepView: View {
   var body: some View {
     if let goal {
       if goal.done {
-        Label { Text("\(goal.text). Next week starts Monday.") } icon: { Image(systemName: "checkmark.seal.fill").foregroundStyle(.green) }
+        Label { Text("\(goal.text). Next week starts Monday.") } icon: { Icon("checkmark.seal.fill").foregroundStyle(p.ok) }
           .font(.subheadline).foregroundStyle(p.text2)
           .frame(maxWidth: .infinity, alignment: .leading).padding(.horizontal, 4).padding(.vertical, 2)
           .accessibilityElement(children: .combine).accessibilityLabel("Next step: \(goal.text). Next week starts Monday.")
@@ -40,12 +40,12 @@ struct NextStepView: View {
   private func card(_ goal: WeekGoal) -> some View {
     HStack(spacing: 12) {
       VStack(alignment: .leading, spacing: 3) {
-        Label("Next step".uppercased(), systemImage: "safari").labelStyle(.titleAndIcon)
+        Label("Next step".uppercased(), icon: "safari").labelStyle(.titleAndIcon)
           .font(.caption2.weight(.semibold)).kerning(0.6).foregroundStyle(p.faint).lineLimit(1)
         Text(goal.text).font(.headline).foregroundStyle(p.text).fixedSize(horizontal: false, vertical: true)
       }
       Spacer(minLength: 0)
-      Button { go(goal) } label: { Label(goal.action.isEmpty ? "Open" : goal.action, systemImage: "arrow.right").labelStyle(.titleAndIcon) }
+      Button { go(goal) } label: { Label(goal.action.isEmpty ? "Open" : goal.action, icon: "arrow.right").labelStyle(.titleAndIcon) }
         .buttonStyle(PrimaryButtonStyle()).frame(maxWidth: 132)
     }
     .padding(16)

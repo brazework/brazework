@@ -38,8 +38,8 @@ struct KindLabel: View {
   private var color: Color {
     switch kind {
     case "question": Color(hex: 0xF59E0B)
-    case "result": Color(hex: 0x10B981)
-    case "project": Color(hex: 0x6366F1)
+    case "result": p.ok
+    case "project": Color(hex: 0x0EA5E9)
     default: p.faint
     }
   }
@@ -81,7 +81,7 @@ struct EmptyState: View {
   @Environment(\.palette) private var p
   var body: some View {
     VStack(spacing: 10) {
-      Image(systemName: icon).font(.system(size: 34, weight: .light)).foregroundStyle(p.faint)
+      Icon(icon).font(.system(size: 34, weight: .light)).foregroundStyle(p.faint)
       Text(title).font(.headline).foregroundStyle(p.text)
       Text(message).font(.subheadline).foregroundStyle(p.muted).multilineTextAlignment(.center)
     }

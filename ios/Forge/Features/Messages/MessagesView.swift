@@ -60,7 +60,7 @@ struct MessagesView: View {
       HStack(spacing: 12) {
         ZStack {
           RoundedRectangle(cornerRadius: 14, style: .continuous).fill(p.gradient)
-          Image(systemName: c.kind == "event" ? "calendar" : c.kind == "team" ? "person.2.fill" : "person.3.fill").font(.system(size: 17, weight: .semibold)).foregroundStyle(p.onAccent)
+          Icon(c.kind == "event" ? "calendar" : c.kind == "team" ? "person.2.fill" : "person.3.fill").font(.system(size: 17, weight: .semibold)).foregroundStyle(p.onAccent)
         }
         .frame(width: 48, height: 48)
         .accessibilityHidden(true)
@@ -134,7 +134,7 @@ struct ThreadView: View {
     .navigationBarTitleDisplayMode(.inline)
     .toolbar {
       ToolbarItem(placement: .primaryAction) {
-        NavigationLink(value: PersonRoute(id: item.otherId)) { Image(systemName: "person.crop.circle") }.accessibilityLabel("View profile")
+        NavigationLink(value: PersonRoute(id: item.otherId)) { Icon("person.crop.circle") }.accessibilityLabel("View profile")
       }
     }
     .safeAreaInset(edge: .bottom) { footer }
@@ -205,7 +205,7 @@ struct ThreadView: View {
             .padding(.horizontal, 14).padding(.vertical, 10)
             .background(p.surface2, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
           Button { Task { await send() } } label: {
-            Image(systemName: "arrow.up").font(.body.weight(.bold)).foregroundStyle(p.onAccent).frame(width: 40, height: 40).background(p.accent, in: Circle())
+            Icon("arrow.up").font(.body.weight(.bold)).foregroundStyle(p.onAccent).frame(width: 40, height: 40).background(p.accent, in: Circle())
           }
           .disabled(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || sending)
           .accessibilityLabel("Send")
