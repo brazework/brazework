@@ -111,7 +111,8 @@ export function RecordTimelineChart({ data, own, goal }: { data: RecordTimeline;
 
 const label = (m: TimelineMark) => (m.kind === "signed" ? "Signed" : m.kind === "backed" ? "Backed by GitHub" : m.kind === "waiting" ? "Waiting" : "Update");
 
-function Mark({ kind, small }: { kind: TimelineMark["kind"]; small?: boolean }) {
+// Shared with the year chart (record-years.tsx), so a kind of proof looks the same on both.
+export function Mark({ kind, small }: { kind: TimelineMark["kind"]; small?: boolean }) {
   if (kind === "signed") return <Seal size={small ? 12 : 20} />;
   // One colour per kind of proof, everywhere (docs/design/app.md): green signed, blue backed, amber waiting.
   if (kind === "backed") return <span className={cn("block rotate-45 rounded-[3px] bg-info", small ? "size-2" : "size-3")} />;

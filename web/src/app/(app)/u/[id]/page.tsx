@@ -5,7 +5,9 @@ import { ReportLink } from "@/components/report/report-dialog";
 import { BadgeCheck, BarChart3, ClipboardList, Eye, FileText, FolderGit2, Lock, MapPin, MessageSquare, Trophy } from "lucide-react";
 import { MoreMenu } from "@/components/app/more-menu";
 import { RecordTimelineChart } from "@/components/profile/record-timeline";
+import { RecordYearsChart } from "@/components/profile/record-years";
 import { buildTimeline } from "@/lib/record-timeline";
+import { buildYears } from "@/lib/record-years";
 import { goalTitle } from "@/lib/goals";
 import { CommunityBadge } from "../../communities/_components/badge";
 import { requestTime } from "@/lib/forge";
@@ -162,6 +164,9 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
   // The record over time (lib/record-timeline.ts): projects as lanes, signed work on its dates. Built
   // from what this viewer may see: visitors get public projects and verified work only.
   const timeline = msOn ? buildTimeline({ now: requestTime(), own: mine, projects: projectRows.filter((r) => mine || !r.private), milestones: ms.map((m) => ({ ...m, backed: isBacked(m) })), posts }) : null;
+  // The record by year (lib/record-years.ts), once it reaches past what the 12-month chart draws. The
+  // same rows and the same rule on who sees what.
+  const recordYears = msOn ? buildYears({ now: requestTime(), own: mine, projects: projectRows.filter((r) => mine || !r.private), milestones: ms.map((m) => ({ ...m, backed: isBacked(m) })) }) : null;
   // Your goal, on your own chart (visitors see it in the header line instead).
   const goalText = goal && goal.status === "active" ? goalTitle(goal) : null;
   const stats: { n: number; label: string; href: string }[] = [
@@ -287,6 +292,7 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
         <div className="flex min-w-0 flex-col gap-5">
           {/* Proof leads: the work someone signed comes before everything else on the page. */}
           {timeline && <RecordTimelineChart data={timeline} own={mine} goal={mine ? goalText : null} />}
+          {recordYears && <RecordYearsChart data={recordYears} own={mine} ember={!!copilotOn} />}
           {msOn && <div id="proof" className="scroll-mt-24"><ProofTimeline items={proof} own={mine} led={led} /></div>}
           {mine ? (hideStrength ? null : <ProfileStrength steps={steps} />) : <SharedContext clubs={sharedClubs} mutual={mutual} mutualCount={mutualCount} />}
           {nowBuilding && (

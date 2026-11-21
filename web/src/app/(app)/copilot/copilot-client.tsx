@@ -169,8 +169,9 @@ export function CopilotChat({ first, field, student = true, initial = "", initia
   const askedInitial = useRef(false);
   useEffect(() => {
     if (!initial || askedInitial.current) return;
-    askedInitial.current = true;
-    const t = setTimeout(() => void send(initial, initialPreset ?? undefined), 0);
+    // Marked as asked when it is sent, not when it's scheduled: in development React runs an effect,
+    // cleans it up and runs it again, and marking it early left the second run with nothing to send.
+    const t = setTimeout(() => { askedInitial.current = true; void send(initial, initialPreset ?? undefined); }, 0);
     return () => clearTimeout(t);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initial]);
