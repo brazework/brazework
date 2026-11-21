@@ -15,6 +15,7 @@ export const TOOL_LABEL: Record<string, { doing: string; done: string }> = {
   whats_new: { doing: "Checking what's new", done: "what's new" },
   propose_project_edit: { doing: "Drafting a project update", done: "a project update" },
   propose_goal: { doing: "Drafting a goal", done: "a goal" },
+  propose_memory: { doing: "Noting that", done: "something to remember" },
   club_overview: { doing: "Looking at your club", done: "your club" },
   propose_post: { doing: "Drafting a post", done: "a post draft" },
   propose_milestone: { doing: "Drafting a milestone", done: "a milestone draft" },
@@ -38,6 +39,8 @@ export const TOOL_LABEL: Record<string, { doing: string; done: string }> = {
 export type Proposal = { id: string } & (
   // What the member is working toward (supabase/goals.sql). visible starts false: the member chooses on the card.
   | { kind: "goal"; goal_kind: GoalKind; target: string; title: string; why: string }
+  // Something to carry over to the next chat (supabase/ember-memory.sql). Saved only when confirmed.
+  | { kind: "memory"; body: string }
   | { kind: "post"; body: string; postKind: "update" | "question" | "result" | "project"; tags: string[] }
   | { kind: "milestone"; project_id: string; project_title: string; club_id: string; club_name: string; title: string; evidence: string; detail: string; achieved_on: string }
   // A person who saw the work signs it (supabase/vouches.sql). milestone_id is "" for a new milestone,

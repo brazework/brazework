@@ -92,6 +92,11 @@ export const TOOLS: Anthropic.Tool[] = [
     input_schema: { type: "object", properties: { kind: { type: "string", enum: ["internship", "job", "grad", "research", "competition", "funding"] }, target: { type: "string", description: "The field or area, at most 80 characters; may be empty" }, why: { type: "string", description: "One sentence, in plain words, on why this fits what they said" } }, required: ["kind"] },
   },
   {
+    name: "propose_memory",
+    description: "Offer to remember something lasting the member told you, so it carries over to the next chat: where they're headed, who signs their work, how they like answers. One short sentence in their words, at most 200 characters. Never anything sensitive (health, money, family, passwords). It is NOT saved until they confirm, and they can forget it in Settings.",
+    input_schema: { type: "object", properties: { fact: { type: "string", description: "What to remember, in their words, at most 200 characters" } }, required: ["fact"] },
+  },
+  {
     name: "propose_milestone",
     description: "Prepare a milestone on one of the member's projects for one of their clubs to verify. Get project and club ids from my_profile. It is NOT sent until they confirm.",
     input_schema: { type: "object", properties: { project_id: { type: "string" }, club_id: { type: "string" }, title: { type: "string", description: "What happened, at most 120 characters" }, evidence: { type: "string", description: "Required: an https link to a photo, video, file, commit or the club event where it happened. Ask the member for it; never invent one." }, detail: { type: "string", description: "Numbers and conditions, at most 600 characters" }, achieved_on: { type: "string", description: "YYYY-MM-DD" } }, required: ["project_id", "club_id", "title", "evidence"] },
@@ -348,6 +353,12 @@ export function makeExec(db: DB, userId: string, onProposal: (p: Proposal) => vo
           items: (unread.length ? unread : rows).slice(0, 12).map((n) => ({ what: n.kind.replace(/_/g, " "), from: `${n.actor_first ?? ""} ${n.actor_last ?? ""}`.trim() || undefined, about: snip(n.snippet, 140) || undefined, club: n.community_name || undefined, when: n.created_at, unread: !n.read })),
           link: "/notifications",
         };
+      }
+      case "propose_memory": {
+        const fact = typeof a.fact === "string" ? a.fact.trim().replace(/\s+/g, " ").slice(0, 200) : "";
+        if (!fact) return { error: "Say what to remember, in one short sentence." };
+        onProposal({ id: pid(), kind: "memory", body: fact });
+        return SHOWN;
       }
       case "propose_goal": {
         const kind = String(a.kind ?? "");
