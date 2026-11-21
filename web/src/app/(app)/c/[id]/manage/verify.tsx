@@ -71,7 +71,7 @@ function QueueCard({ m, result, onDone }: { m: QueueItem; result?: "verified" | 
           return links.length > 0 && (
             <ul className="mt-2 flex flex-wrap gap-x-4 gap-y-1">
               {links.map((u, i) => (
-                <li key={u}><a href={u} target="_blank" rel="noopener noreferrer nofollow" className="inline-flex items-center gap-1 text-xs font-medium text-text underline underline-offset-4"><ExternalLink className="size-3.5" /> {links.length > 1 ? evidenceLabel(u, i) : "Open the evidence"}</a></li>
+                <li key={u}><a href={u} title={u} target="_blank" rel="noopener noreferrer nofollow" className="inline-flex items-center gap-1 text-xs font-medium text-text underline underline-offset-4"><ExternalLink className="size-3.5" /> {links.length > 1 ? evidenceLabel(u, i) : "Open the evidence"}</a></li>
               ))}
             </ul>
           );
@@ -173,7 +173,7 @@ export function RecentReviews({ items, isOwner = false }: { items: QueueItem[]; 
   );
 }
 
-// A short name for an evidence link: "Commit abc1234", "Pull request #7", or the site.
+// A short name for an evidence link: "Commit abc1234", "Pull request #7", "YouTube video", or the site.
 // Any tool, not only code hosts (lib/proof-source.ts).
 function evidenceLabel(u: string, i: number): string {
   return proofSource(u)?.label ?? `Evidence ${i + 1}`;
