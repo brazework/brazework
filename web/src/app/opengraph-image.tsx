@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 import { BrandMark } from "@/components/brand-mark";
 
-export const alt = "Brazework: your clubs, your work, proof that gets you hired.";
+export const alt = "Brazework: proof of work beats a résumé. Your work, signed by the people who saw it.";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 

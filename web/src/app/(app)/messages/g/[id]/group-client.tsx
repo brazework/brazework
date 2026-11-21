@@ -33,7 +33,7 @@ export function MarkChatRead({ id, count }: { id: string; count: number }) {
 
 // The conversation: messages from the same person within a few minutes hug together under one name;
 // announcements stand out as cards (officers see who's seen them); what you send shows at once.
-export function GroupThread({ msgs, me, myName, chatId, seen = {}, reactions = [], extras = false }: { msgs: GroupMsg[]; me: string; myName: string; chatId: string; seen?: Seen; reactions?: Reaction[]; extras?: boolean }) {
+export function GroupThread({ msgs, pics = {}, me, myName, chatId, seen = {}, reactions = [], extras = false }: { msgs: GroupMsg[]; pics?: Record<string, string | null>; me: string; myName: string; chatId: string; seen?: Seen; reactions?: Reaction[]; extras?: boolean }) {
   const tz = useTimeZone();
   const end = useRef<HTMLDivElement>(null);
   const rx = useReactions("group", me, reactions);
@@ -105,7 +105,7 @@ export function GroupThread({ msgs, me, myName, chatId, seen = {}, reactions = [
                 </div>
               ) : (
                 <div className={cn("flex items-end gap-2", isMine ? "flex-row-reverse" : "flex-row")}>
-                  {!isMine && <span className="w-7 shrink-0">{!joinsNext && (isEmber ? <Ember size={28} /> : <Avatar first={m.sender_first} last={m.sender_last} size={28} className="text-[10px]" />)}</span>}
+                  {!isMine && <span className="w-7 shrink-0">{!joinsNext && (isEmber ? <Ember size={28} /> : <Avatar first={m.sender_first} last={m.sender_last} size={28} className="text-[10px]" src={pics[m.sender_id]} />)}</span>}
                   <div className={cn("flex max-w-[78%] flex-col", isMine ? "items-end" : "items-start")}>
                     {!isMine && !joinsPrev && <span className="mb-0.5 px-2 text-[11px] font-medium text-muted">{isEmber ? <>Ember <span className="font-normal text-faint">· asked by {m.sender_first}</span></> : <>{m.sender_first} {m.sender_last}</>}</span>}
                     <div className="group/msg relative">

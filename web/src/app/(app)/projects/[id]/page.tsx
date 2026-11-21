@@ -1,3 +1,4 @@
+import { ProjectSignoff } from "./signoff";
 import type { Metadata } from "next";
 import { ReportLink } from "@/components/report/report-dialog";
 import { ArrowLeft, BadgeCheck, ExternalLink, Images, Megaphone, Pencil, Play } from "lucide-react";
@@ -111,6 +112,7 @@ async function ProjectView({ params, searchParams }: { params: PageProps<"/proje
   const link = /^https?:\/\/\S+$/i.test(details.link) ? details.link : "";
   const milestones = (ms.data ?? []) as unknown as unknown as Milestone[];
   const verified = milestones.filter((m) => m.status === "verified");
+  const signoffResults = milestones.filter((m) => !m.community_id && (m.status === "draft" || m.status === "logged")).map((m) => ({ id: m.id, title: m.title }));
   // The flow redesign (lib/next-step.ts): the one step this project needs next (toward the member's
   // goal when they have one), the drafts Ember or their tools left for it, and who could sign a waiting
   // milestone, by name (lib/signers.ts).
@@ -205,6 +207,10 @@ async function ProjectView({ params, searchParams }: { params: PageProps<"/proje
 
         {/* Their own merged pull requests from the last 90 days, one tap from the record (lib/recent-work-pick.ts). */}
         {recent.length > 0 && <RecentWork projectId={p.id} items={recent} />}
+
+        {/* A sign-off: several of its results, one person, one email (signoff.tsx). For the owner, once
+            there are at least two results nobody has been asked about and no club has. */}
+        {own && signoffResults.length >= 2 && <ProjectSignoff projectId={p.id} results={signoffResults} done={p.status === "completed"} />}
 
         {/* Milestones: what was signed, by whom, and what's waiting; drafts for it right here. */}
         {(milestones.length > 0 || builder) && (
