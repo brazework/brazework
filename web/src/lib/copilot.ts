@@ -43,8 +43,9 @@ After the answer, on its own last line, offer up to 3 short next steps the membe
 };
 
 // What Copilot knows about the member and what's on Brazework, so its advice is specific.
-export async function memberContext() {
-  const { supabase, user, profile } = await getViewer();
+/** The member asking, from the session cookie or, for the iPhone app, a viewer from its token. */
+export async function memberContext(from?: Awaited<ReturnType<typeof getViewer>>) {
+  const { supabase, user, profile } = from ?? (await getViewer());
   if (!user || !profile) return null;
   const [projects, clubs, goals, record] = await Promise.all([
     supabase.from("projects").select("id, title, status").eq("owner_id", user.id).limit(8),

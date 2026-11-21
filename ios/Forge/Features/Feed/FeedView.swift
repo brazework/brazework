@@ -14,9 +14,11 @@ struct FeedView: View {
   @State private var clubs: [Club] = []
   @State private var showAlerts = false
   @State private var goal: WeekGoal?
+  @State private var ember: EmberStart?
 
   struct SearchRoute: Hashable {}
   struct ComposeStart: Identifiable { let id = UUID(); let kind: String; let photo: Bool }
+  struct EmberStart: Identifiable { let id = UUID(); var question = "" }
 
   var body: some View {
     NavigationStack(path: $path) {
@@ -24,6 +26,8 @@ struct FeedView: View {
         ScrollView {
           LazyVStack(spacing: 12) {
             Color.clear.frame(height: 0).id("top")
+            // Ember first, as at the top of Home on the web.
+            AskEmberBar { ember = EmberStart() }
             // What needs you first: this week's goal, the same next step as Home on the web.
             NextStepView(goal: goal) { compose = ComposeStart(kind: "update", photo: false) }
             ComposerPrompt { kind, photo in compose = ComposeStart(kind: kind, photo: photo) }
@@ -118,9 +122,12 @@ struct FeedView: View {
         if env["FORGE_TEST_COMPOSE"] != nil { compose = ComposeStart(kind: "update", photo: false) }
         if env["FORGE_TEST_SEARCH"] != nil, path.isEmpty { path.append(SearchRoute()) }
         if let id = env["FORGE_TEST_PROFILE"].flatMap(UUID.init(uuidString:)), path.isEmpty { path.append(PersonRoute(id: id)) }
+        // Opens Ember; a value other than "1" is asked at once.
+        if let q = env["FORGE_TEST_EMBER"] { ember = EmberStart(question: q == "1" ? "" : q) }
       }
       #endif
       .onChange(of: compose == nil) { VideoCoordinator.shared.suspended = compose != nil }
+      .fullScreenCover(item: $ember, onDismiss: { Task { await reload(); await loadGoal() } }) { start in EmberView(initial: start.question) }
       .sheet(item: $compose) { start in
         ComposerView(initialKind: start.kind, openPicker: start.photo) { Task { store.tab = .forYou; await reload(); await loadGoal() } }
           .presentationDetents([.medium, .large])

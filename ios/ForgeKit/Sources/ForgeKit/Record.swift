@@ -98,6 +98,17 @@ struct MilestoneDraft: Sendable {
   var evidence = ""
   var achievedOn = Date.now
   var showOnProfile = true
+  /// Asking a person who saw it instead of a club: their email and how they know the work.
+  var byPerson = false
+  var signerEmail = ""
+  var relationship = "mentor"
+  /// A working account's LinkedIn link, when the ask needs one first.
+  var linkedin = ""
+}
+
+/// How a signer knows the work, in the web's words (web/src/lib/vouch-email.ts RELATIONSHIPS).
+enum Signers {
+  static let relationships: [(id: String, label: String)] = [("professor", "Professor"), ("ta", "TA"), ("pi", "Lab PI"), ("manager", "Manager"), ("mentor", "Mentor"), ("other", "Someone else who saw it")]
 }
 
 enum RecordLogic {
@@ -186,6 +197,13 @@ enum RecordLogic {
     if evidence.count > 300 { return "That link is too long (300 characters at most)." }
     let d = dayString(m.achievedOn)
     if d < "2000-01-01" || d > dayString(now.addingTimeInterval(86_400)) { return "Pick the day you did it." }
+    if m.byPerson {
+      let e = m.signerEmail.trimmingCharacters(in: .whitespaces)
+      if e.isEmpty { return "Enter the email of the person who saw it." }
+      if !(e.contains("@") && e.split(separator: "@").last?.contains(".") == true) { return "Enter their email address." }
+      if !Signers.relationships.contains(where: { $0.id == m.relationship }) { return "Pick how they know your work." }
+      return nil
+    }
     if m.clubId.isEmpty { return "Pick the club that saw it." }
     return nil
   }
@@ -233,6 +251,29 @@ extension API {
       achievedOn: RecordLogic.dayString(m.achievedOn), private: !m.showOnProfile)).execute()
   }
 
+  /// Asks a person who saw it to sign a new milestone, through the website (web/src/app/api/signatures):
+  /// the signer's private link is made and mailed there, so the member never holds it. Throws the
+  /// website's sentence; `.needsLinkedin` when a working account must add its LinkedIn link first.
+  static func askPerson(_ m: MilestoneDraft) async throws {
+    var req = URLRequest(url: Env.web("api/signatures"))
+    req.httpMethod = "POST"
+    req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+    req.setValue("Bearer \(try await supabase.auth.session.accessToken)", forHTTPHeaderField: "Authorization")
+    var body: [String: Any] = [
+      "email": m.signerEmail.trimmingCharacters(in: .whitespaces), "relationship": m.relationship,
+      "milestone": ["project_id": m.projectId, "title": m.title.trimmingCharacters(in: .whitespacesAndNewlines), "detail": m.detail.trimmingCharacters(in: .whitespacesAndNewlines),
+                    "evidence": m.evidence.trimmingCharacters(in: .whitespaces), "achieved_on": RecordLogic.dayString(m.achievedOn), "show_on_profile": m.showOnProfile],
+    ]
+    if !m.linkedin.isEmpty { body["linkedin"] = m.linkedin.trimmingCharacters(in: .whitespaces) }
+    req.httpBody = try JSONSerialization.data(withJSONObject: body)
+    let (data, response) = try await URLSession.shared.data(for: req)
+    let reply = (try? JSONSerialization.jsonObject(with: data)) as? [String: Any]
+    guard (response as? HTTPURLResponse)?.statusCode == 200 else {
+      let message = reply?["message"] as? String ?? "We couldn't send the ask. Try again in a minute."
+      throw reply?["linkedin"] as? Bool == true ? SignatureError.needsLinkedin(message) : SignatureError.refused(message)
+    }
+  }
+
   /// What's waiting for a club's officers to verify, oldest first.
   static func verifyQueue(club: String) async throws -> [QueueItem] {
     try await supabase.from("milestones")
@@ -245,4 +286,9 @@ extension API {
   static func review(_ id: String, verify: Bool, note: String = "") async throws -> String {
     try await supabase.rpc("review_milestone", params: ["p_id": AnyJSON.string(id), "p_verify": .bool(verify), "p_note": .string(String(note.prefix(300)))]).execute().value
   }
+}
+
+enum SignatureError: LocalizedError {
+  case needsLinkedin(String), refused(String)
+  var errorDescription: String? { switch self { case .needsLinkedin(let m), .refused(let m): m } }
 }
