@@ -72,7 +72,9 @@ export function ProofStage({ build }: { build: string }) {
   );
 }
 
-const STEPS = ["Your AI drafts it", "Someone who saw it signs", "Someone finds it"];
+// The person leads each step. The AI is in the first one as the help it is: it writes up what you
+// say and finds the proof, and nothing is saved until you send it.
+const STEPS = ["You log what you finished", "Someone who saw it signs", "Someone finds it"];
 type Story = HeroStory;
 type Phase = HeroPhase;
 // How long a story plays before the next one: typed at a person's pace, then the three steps, then a
@@ -104,7 +106,8 @@ function Stage({ build, story, onDone, onTouch, ghost = false }: { build: string
       at(typedBy + 150, () => setPhase("reading")),
       at(typedBy + 900, () => setPhase("draft")),
       at(typedBy + 2300, () => setPhase("sent")),
-      at(typedBy + 2800, () => setStep((s) => Math.max(s, 2))),
+      // A full second as "Waiting for …" (dashed amber) before the signature lands, so the state is seen.
+      at(typedBy + 3300, () => setStep((s) => Math.max(s, 2))),
       at(typedBy + 4600, () => setStep(3)),
       // Then the next story, while nobody has touched it (ProofStage passes onDone only then).
       ...(onDone && !reduce ? [setTimeout(onDone, storyMs(story))] : []),
@@ -115,7 +118,7 @@ function Stage({ build, story, onDone, onTouch, ghost = false }: { build: string
 
   const after = (n: number) => { if (n >= 2) { setTyped(CMD.length); setPhase("sent"); } };
   const jump = (n: number) => { stop(); onTouch(); after(n); setStep(n); };
-  const send = () => { stop(); onTouch(); setTyped(CMD.length); setPhase("sent"); timers.current = [at(500, () => setStep(2)), at(2300, () => setStep(3))]; };
+  const send = () => { stop(); onTouch(); setTyped(CMD.length); setPhase("sent"); timers.current = [at(1100, () => setStep(2)), at(2900, () => setStep(3))]; };
   const verify = () => { stop(); onTouch(); after(2); setStep(2); timers.current = [at(1500, () => setStep(3))]; };
   const shown = reduce ? CMD.length : typed;
 
@@ -123,6 +126,7 @@ function Stage({ build, story, onDone, onTouch, ghost = false }: { build: string
 
   return (
     <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-line-strong bg-surface">
+      <Flow at={step} onPick={jump} />
       <ol className="relative flex-1 px-5 pt-5 pb-4">
         <Node n={1} at={step} label={STEPS[0]} onPick={jump}>
           {/* A chat with their AI (Claude, ChatGPT or Ember, with Brazework connected): what they ask,
@@ -146,8 +150,11 @@ function Stage({ build, story, onDone, onTouch, ghost = false }: { build: string
               </ul>
               <p className={cn("text-[13px] leading-snug text-text-2 transition-opacity duration-300", phase === "draft" || phase === "sent" ? "opacity-100" : "invisible opacity-0")}>{story.reply}</p>
           {/* The draft it writes, with the proof, ready to send: dashed until someone signs it. */}
-          <div className={cn("rounded-lg border bg-surface p-3 transition duration-500", signed ? "border-line" : "border-dashed border-line-strong", phase === "draft" || phase === "sent" ? "opacity-100" : "translate-y-1 opacity-0")} inert={phase === "typing" || phase === "reading"}>
-            <p className="text-xs text-muted">{signed ? "On your Brazework record" : "Brazework · draft"}</p>
+          <div className={cn("rounded-lg border bg-surface p-3 transition duration-500", signed ? "border-ok" : phase === "sent" ? "border-dashed border-wait" : "border-dashed border-line-strong", phase === "draft" || phase === "sent" ? "opacity-100" : "translate-y-1 opacity-0")} inert={phase === "typing" || phase === "reading"}>
+            <p className="flex items-center gap-1.5 text-xs text-muted">
+              {signed ? <Seal size={14} /> : phase === "sent" ? <span aria-hidden="true" className="block size-3 shrink-0 rounded-full border-[1.5px] border-dashed border-wait" /> : null}
+              {signed ? "On your Brazework record" : phase === "sent" ? `Waiting for ${story.signer.name}` : "Brazework · draft"}
+            </p>
             <p className="mt-0.5 text-[16px] leading-snug font-semibold tracking-tight break-words">{build ? stageTitle(build) : story.title ?? stageTitle(build)}</p>
             <ul className="mt-1.5 flex flex-wrap gap-1.5" aria-label="Evidence">
               {story.proof.map((e) => <li key={e} className="max-w-full truncate rounded-md border border-line px-2 py-0.5 font-mono text-[11px] text-text-2">{e}</li>)}
@@ -215,10 +222,39 @@ function Node({ n, at, label, onPick, last, children }: { n: number; at: number;
         {done ? <Check className="size-3.5" strokeWidth={3} /> : n}
       </button>
       <div className="min-w-0 flex-1">
-        <p className="mb-1.5 pt-0.5 text-xs font-medium text-muted">{label}</p>
+        <p className={cn("mb-1.5 pt-0.5 text-[13px] font-semibold transition-colors duration-300", done ? "text-text" : "text-muted")}>{label}</p>
         {children}
       </div>
     </li>
+  );
+}
+
+// The flow, named along the top of the card so it reads before anything plays: three stages, the
+// one the story has reached in ink, a bar under each that fills as it's reached. It says the same
+// three things as the section under the hero ("Log it. Get it signed. Keep it."), and what happens
+// next once it's on the record. A pointer can press a stage to jump there; a keyboard or a screen
+// reader uses the numbered step buttons below, which do the same, so this row is hidden from them
+// rather than announcing every step twice.
+const FLOW = ["Log it", "Get it signed", "Get found"];
+function Flow({ at, onPick }: { at: number; onPick: (n: number) => void }) {
+  return (
+    <div aria-hidden="true" className="grid grid-cols-3 gap-1.5 border-b border-line bg-surface-2/60 px-3 pt-2.5 pb-3">
+      {FLOW.map((f, i) => {
+        const n = i + 1;
+        return (
+          <button key={f} type="button" tabIndex={-1} onClick={() => onPick(n)} className="group min-w-0 text-left">
+            <span className={cn("flex items-center gap-1.5 text-xs transition-colors duration-300", at === n ? "font-semibold text-text" : at > n ? "font-medium text-text-2" : "font-medium text-muted group-hover:text-text-2")}>
+              <span className="tabular-nums">{n}</span>
+              <span className="truncate">{f}</span>
+              {at > n && <Check className="size-3 shrink-0" strokeWidth={3} />}
+            </span>
+            <span className="mt-1.5 block h-[3px] overflow-hidden rounded-full bg-line">
+              <span className={cn("block size-full origin-left rounded-full bg-text transition-transform duration-500 ease-out", at >= n ? "scale-x-100" : "scale-x-0")} />
+            </span>
+          </button>
+        );
+      })}
+    </div>
   );
 }
 

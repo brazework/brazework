@@ -23,7 +23,7 @@ export function Hero() {
             you built.
           </h1>
           <p className="mt-6 max-w-[34rem] text-lg leading-relaxed text-muted sm:text-xl sm:leading-relaxed">
-            Tell your AI what you finished. It writes it up with the proof from your tools, and someone who saw the work signs it: your manager, a professor, your club. Your work, on your record, with their name on it.
+            For students and working professionals: a record of your work, signed by the people who saw it. Log what you finished, ask your professor, your club or your manager to sign, and it stays yours wherever you go next.
           </p>
 
           <div className="mt-9 max-w-[34rem]">
