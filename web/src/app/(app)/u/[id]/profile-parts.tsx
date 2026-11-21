@@ -1,4 +1,4 @@
-import { ArrowRight, BadgeCheck, Users } from "lucide-react";
+import { ArrowRight, BadgeCheck, ChevronDown, Users } from "lucide-react";
 import Link from "next/link";
 import { ProStamp, Seal, VerifiedStamp, VouchStamp } from "@/components/app/verified-seal";
 import { CommunityBadge } from "../../communities/_components/badge";
@@ -62,18 +62,7 @@ export function ProofTimeline({ items, own, led = [] }: { items: ProofItem[]; ow
     <section aria-label="Club-verified work" className="border border-line bg-surface rounded-2xl p-5">
       <h2 className="flex items-center gap-2 font-semibold"><Seal size={20} /> Proof <span className="text-sm font-normal text-muted">· signed by people who saw it</span></h2>
       <ol className="relative mt-4 space-y-5 before:absolute before:top-2 before:bottom-2 before:left-[15px] before:w-px before:bg-line">
-        {items.slice(0, 6).map((m) => (
-          <li key={m.id} className="relative flex gap-3">
-            {m.community_id ? <CommunityBadge id={m.community_id} name={m.community_name} size={32} className="relative shrink-0 rounded-full ring-4 ring-surface" /> : <span className="relative grid size-8 shrink-0 place-items-center rounded-full bg-surface-2 ring-4 ring-surface"><Seal size={18} /></span>}
-            <div className="min-w-0">
-              <p className="font-medium leading-snug">{m.title}</p>
-              {m.pro?.map((r) => <ProStamp key={r.name + r.at} name={r.name} title={r.title} employer={r.employer} note={r.note} className="mt-1.5" />)}
-              <p className="mt-1">{m.vouched_by ? <VouchStamp by={m.vouched_by} when={day(m.achieved_on)} /> : <VerifiedStamp club={m.community_name} clubId={m.community_id ?? undefined} by={m.reviewer_name} when={day(m.achieved_on)} size="sm" />}</p>
-              <p className="mt-1 text-xs text-muted">On <Link href={`/projects/${m.project.id}`} className="hover:text-text hover:underline">{m.project.title}</Link></p>
-              {m.detail && <p className="mt-1 line-clamp-2 text-sm text-text-2">{m.detail}</p>}
-            </div>
-          </li>
-        ))}
+        {items.slice(0, SHOWN).map((m) => <ProofRow key={m.id} m={m} day={day} />)}
         {led.slice(0, 4).map((s) => (
           <li key={`study-${s.community_id}`} className="relative flex gap-3">
             <CommunityBadge id={s.community_id} name={s.name} size={32} className="relative shrink-0 rounded-full ring-4 ring-surface" />
@@ -85,8 +74,39 @@ export function ProofTimeline({ items, own, led = [] }: { items: ProofItem[]; ow
           </li>
         ))}
       </ol>
-      {items.length > 6 && <a href="#projects" className="mt-4 inline-flex items-center gap-1 text-sm font-medium hover:underline">All {items.length} on their projects <ArrowRight className="size-3.5" /></a>}
+      {/* The rest fold away, so the projects below stay near the top of the page. A plain <details>: it
+          opens without the page's script, and the browser's find-in-page opens it too. */}
+      {items.length > SHOWN && (
+        <details className="group mt-4">
+          <summary className="inline-flex h-9 cursor-pointer list-none items-center gap-1.5 rounded-lg border border-line px-3 text-sm font-medium text-text-2 transition hover:border-line-strong hover:text-text [&::-webkit-details-marker]:hidden">
+            <span className="group-open:hidden">Show {items.length - SHOWN} more</span><span className="hidden group-open:inline">Show fewer</span>
+            <ChevronDown className="size-4 transition-transform group-open:rotate-180" aria-hidden="true" />
+          </summary>
+          <ol className="relative mt-5 space-y-5 before:absolute before:top-2 before:bottom-2 before:left-[15px] before:w-px before:bg-line">
+            {items.slice(SHOWN).map((m) => <ProofRow key={m.id} m={m} day={day} />)}
+          </ol>
+        </details>
+      )}
     </section>
+  );
+}
+
+// Signed work shown before "Show more"; the rest fold away (ProofTimeline).
+const SHOWN = 3;
+
+// One signed result in the proof list: who signed it, when, and on which project.
+function ProofRow({ m, day }: { m: ProofItem; day: (d: string) => string }) {
+  return (
+    <li className="relative flex gap-3">
+      {m.community_id ? <CommunityBadge id={m.community_id} name={m.community_name} size={32} className="relative shrink-0 rounded-full ring-4 ring-surface" /> : <span className="relative grid size-8 shrink-0 place-items-center rounded-full bg-surface-2 ring-4 ring-surface"><Seal size={18} /></span>}
+      <div className="min-w-0">
+        <p className="font-medium leading-snug">{m.title}</p>
+        {m.pro?.map((r) => <ProStamp key={r.name + r.at} name={r.name} title={r.title} employer={r.employer} note={r.note} className="mt-1.5" />)}
+        <p className="mt-1">{m.vouched_by ? <VouchStamp by={m.vouched_by} when={day(m.achieved_on)} /> : <VerifiedStamp club={m.community_name} clubId={m.community_id ?? undefined} by={m.reviewer_name} when={day(m.achieved_on)} size="sm" />}</p>
+        <p className="mt-1 text-xs text-muted">On <Link href={`/projects/${m.project.id}`} className="hover:text-text hover:underline">{m.project.title}</Link></p>
+        {m.detail && <p className="mt-1 line-clamp-2 text-sm text-text-2">{m.detail}</p>}
+      </div>
+    </li>
   );
 }
 
