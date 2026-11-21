@@ -43,8 +43,9 @@ export function askShortcut(e: KeyLike): boolean {
  * buttons say what happens; on Ember's page and /drafts it stays as it was.
  */
 export function cardLabels(kind: string, inline: boolean): { confirm: string; edit: string | null; dismiss: string } {
-  if (!inline) return { confirm: "Confirm", edit: null, dismiss: "Dismiss" };
-  return { confirm: kind === "milestone" ? "Log and send to club" : "Confirm", edit: "Edit", dismiss: "Not now" };
+  // Asking a person to sign sends an email, so its button says so everywhere.
+  if (!inline) return { confirm: kind === "signature" ? "Ask them to sign" : "Confirm", edit: null, dismiss: "Dismiss" };
+  return { confirm: kind === "milestone" ? "Log and send to club" : kind === "signature" ? "Ask them to sign" : "Confirm", edit: "Edit", dismiss: "Not now" };
 }
 
 /**
@@ -56,6 +57,8 @@ export function cardSummary(p: Proposal): { title: string; lines: string[]; link
   const cut = (s: string, n = 160) => (s.length > n ? `${s.slice(0, n - 1).trimEnd()}…` : s);
   switch (p.kind) {
     case "milestone": return { title: p.title, lines: [`On ${p.project_title}, for ${p.club_name} to sign`, ...(p.detail ? [cut(p.detail)] : [])], link: p.evidence };
+    // With no address yet the card opens with its fields, so the member can type one.
+    case "signature": return p.email ? { title: p.title, lines: [`On ${p.project_title}, for ${p.email} to sign`, ...(p.detail ? [cut(p.detail)] : [])], link: p.evidence } : null;
     case "post": return { title: cut(p.body), lines: p.tags.length ? [p.tags.map((t) => `#${t}`).join(" ")] : [], link: "" };
     case "club_post": return { title: cut(p.body), lines: [`In ${p.club_name}. Only the club sees it.`], link: "" };
     case "project": return { title: p.title, lines: p.summary ? [cut(p.summary)] : [], link: p.link };

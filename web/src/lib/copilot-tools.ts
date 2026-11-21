@@ -16,6 +16,7 @@ import type { createClient } from "@/lib/supabase/server";
 // and the app's normal server action (with its own checks) does the saving.
 
 type DB = Awaited<ReturnType<typeof createClient>>;
+type MsRow = { id: string; project_id: string; title: string; status: string; community_id: string | null };
 
 export const TOOLS: Anthropic.Tool[] = [
   {
@@ -62,6 +63,11 @@ export const TOOLS: Anthropic.Tool[] = [
     name: "propose_milestone",
     description: "Prepare a milestone on one of the member's projects for one of their clubs to verify. Get project and club ids from my_profile. It is NOT sent until they confirm.",
     input_schema: { type: "object", properties: { project_id: { type: "string" }, club_id: { type: "string" }, title: { type: "string", description: "What happened, at most 120 characters" }, evidence: { type: "string", description: "Required: an https link to a photo, video, file, commit or the club event where it happened. Ask the member for it; never invent one." }, detail: { type: "string", description: "Numbers and conditions, at most 600 characters" }, achieved_on: { type: "string", description: "YYYY-MM-DD" } }, required: ["project_id", "club_id", "title", "evidence"] },
+  },
+  {
+    name: "propose_signature",
+    description: "Prepare an ask for a person who saw the member's work to sign a milestone, by email: a manager, tech lead, professor, TA, lab PI, mentor, client or a colleague who isn't on the project. Two uses. A new milestone: pass project_id (from my_profile), title and evidence. A milestone already waiting: pass milestone_id from my_profile's open_milestones and nothing else about the milestone. Pass the person's email only if the member gave it; never guess one. Without it the card still shows, and the member types the address there. It is NOT sent until they confirm the card.",
+    input_schema: { type: "object", properties: { milestone_id: { type: "string", description: "Only for a milestone already waiting: its id from open_milestones" }, project_id: { type: "string" }, title: { type: "string", description: "What happened, at most 120 characters, with the number if the member gave one" }, evidence: { type: "string", description: "For a new milestone, required: an https link to a pull request, commit, doc, photo, video or file. Ask the member for it; never invent one." }, detail: { type: "string", description: "Numbers, method, what it was measured against (optional)" }, achieved_on: { type: "string", description: "YYYY-MM-DD, the day it happened (default today)" }, email: { type: "string", description: "The signer's email, exactly as the member gave it" }, relationship: { type: "string", enum: ["professor", "ta", "pi", "manager", "mentor", "other"], description: "How the signer knows the work. A tech lead is 'manager'; a client or colleague is 'other'." } } },
   },
   {
     name: "propose_join_club",
@@ -124,6 +130,8 @@ export const TOOLS: Anthropic.Tool[] = [
 const SHOWN = { shown_to_member: true, note: "The member sees this as a card and will confirm, edit or dismiss it. Don't say it's done; tell them to check the card." };
 const pid = () => Math.random().toString(36).slice(2, 10);
 const ID_RE = /^[A-Za-z0-9-]{1,64}$/;
+// How a signer knows the work (lib/vouch-email.ts RELATIONSHIPS; the database checks the same list).
+const SIGNERS = ["professor", "ta", "pi", "manager", "mentor", "other"];
 
 // Keywords go into PostgREST filters, so keep only characters that can't change the filter's meaning.
 const clean = (v: unknown, max = 60) => (typeof v === "string" ? v.replace(/[^\p{L}\p{N} '&.+#-]/gu, " ").replace(/\s+/g, " ").trim().slice(0, max) : "");
@@ -198,17 +206,19 @@ export function makeExec(db: DB, userId: string, onProposal: (p: Proposal) => vo
           db.from("profiles").select("first_name, last_name, headline, field, interests, bio").eq("id", userId).maybeSingle(),
           db.from("community_members").select("role, communities(id, name)").eq("uid", userId).limit(30),
           db.from("projects").select("id, title, status").eq("owner_id", userId).limit(20),
-          f.milestones ? db.from("milestones").select("project_id, status").eq("owner_id", userId).limit(300) : Promise.resolve({ data: [] as { project_id: string; status: string }[] }),
+          f.milestones ? db.from("milestones").select("id, project_id, title, status, community_id").eq("owner_id", userId).order("created_at", { ascending: false }).limit(300) : Promise.resolve({ data: [] as MsRow[] }),
           loadGuide(),
           // Cards the member's AI tools left over MCP (supabase/tool-actions.sql), waiting for them.
           f.toolActions ? db.from("tool_drafts").select("id", { count: "exact", head: true }).eq("status", "waiting") : Promise.resolve({ count: 0 }),
         ]);
         type C = { id: string; name: string };
-        const msRows = (ms.data ?? []) as { project_id: string; status: string }[];
+        const msRows = (ms.data ?? []) as MsRow[];
         return {
           name: `${me.data?.first_name ?? ""} ${me.data?.last_name ?? ""}`.trim(), headline: me.data?.headline, field: me.data?.field, interests: me.data?.interests, bio: snip(me.data?.bio, 300),
           clubs: ((clubs.data ?? []) as unknown as { role: string; communities: C | C[] | null }[]).flatMap((r) => (Array.isArray(r.communities) ? r.communities : r.communities ? [r.communities] : []).map((c) => ({ id: c.id, name: c.name, role: r.role, link: `/c/${c.id}` }))),
           projects: (projects.data ?? []).map((p) => ({ id: p.id, title: p.title, status: p.status, verified_milestones: msRows.filter((m) => m.project_id === p.id && m.status === "verified").length, pending_milestones: msRows.filter((m) => m.project_id === p.id && m.status === "pending").length })),
+          // Still waiting for proof: propose_signature takes one of these ids to ask a person about it.
+          open_milestones: msRows.filter((m) => m.status === "draft" || m.status === "pending").slice(0, 10).map((m) => ({ id: m.id, title: snip(m.title, 120), project_id: m.project_id, waiting_on: m.community_id ? "a club" : "a person who saw it" })),
           steps_left: (guide?.member ?? []).filter((s) => !s.done).map((s) => ({ step: s.label, where: s.href })),
           waiting_from_your_tools: { count: fromTools.count ?? 0, where: "/drafts" },
         };
@@ -264,6 +274,34 @@ export function makeExec(db: DB, userId: string, onProposal: (p: Proposal) => vo
         if (!/^https:\/\/\S{4,290}$/i.test(evidence)) return { error: "A milestone needs evidence: ask the member for an https link to a photo, video, file, commit or the club event. Don't make one up." };
         const day = typeof a.achieved_on === "string" && /^\d{4}-\d{2}-\d{2}$/.test(a.achieved_on) ? a.achieved_on : new Date(requestTime()).toISOString().slice(0, 10);
         onProposal({ id: pid(), kind: "milestone", project_id: projectId, project_title: proj.data.title, club_id: clubId, club_name: club.name, title, evidence, detail: typeof a.detail === "string" ? a.detail.trim().slice(0, 600) : "", achieved_on: day });
+        return SHOWN;
+      }
+      case "propose_signature": {
+        const relationship = SIGNERS.includes(String(a.relationship)) ? String(a.relationship) : "other";
+        const given = typeof a.email === "string" ? a.email.trim().toLowerCase() : "";
+        // An address that doesn't look like one is dropped, not guessed at: the member types it on the card.
+        const email = /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(given) && given.length <= 254 ? given : "";
+        const milestoneId = String(a.milestone_id ?? "");
+        if (milestoneId) {
+          if (!ID_RE.test(milestoneId)) return { error: "Use a milestone id from my_profile's open_milestones." };
+          const { data: m } = await db.from("milestones").select("id, project_id, title, detail, evidence, achieved_on, status").eq("id", milestoneId).eq("owner_id", userId).maybeSingle();
+          const row = m as { id: string; project_id: string; title: string; detail: string | null; evidence: string | null; achieved_on: string | null; status: string } | null;
+          if (!row?.id) return { error: "That isn't one of the member's milestones." };
+          if (row.status !== "draft" && row.status !== "pending") return { error: "That milestone isn't waiting for proof, so nobody needs to be asked." };
+          const { data: proj } = await db.from("projects").select("title").eq("id", row.project_id).maybeSingle();
+          onProposal({ id: pid(), kind: "signature", milestone_id: row.id, project_id: row.project_id, project_title: (proj as { title?: string } | null)?.title ?? "your project", title: row.title, evidence: row.evidence ?? "", detail: row.detail ?? "", achieved_on: row.achieved_on ?? "", email, relationship });
+          return SHOWN;
+        }
+        const projectId = String(a.project_id ?? "");
+        if (!ID_RE.test(projectId)) return { error: "Use a project id from my_profile. If the member has no project yet, prepare one with propose_project first." };
+        const { data: proj } = await db.from("projects").select("title").eq("id", projectId).eq("owner_id", userId).maybeSingle();
+        if (!proj) return { error: "That isn't one of the member's projects." };
+        const title = typeof a.title === "string" ? a.title.trim().slice(0, 120) : "";
+        if (!title) return { error: "Say what happened." };
+        const evidence = typeof a.evidence === "string" ? a.evidence.trim() : "";
+        if (!/^https:\/\/\S{4,290}$/i.test(evidence)) return { error: "A milestone needs evidence: ask the member for an https link to a pull request, commit, doc, photo, video or file. Don't make one up." };
+        const day = typeof a.achieved_on === "string" && /^\d{4}-\d{2}-\d{2}$/.test(a.achieved_on) ? a.achieved_on : new Date(requestTime()).toISOString().slice(0, 10);
+        onProposal({ id: pid(), kind: "signature", milestone_id: "", project_id: projectId, project_title: (proj as { title: string }).title, title, evidence, detail: typeof a.detail === "string" ? a.detail.trim().slice(0, 600) : "", achieved_on: day, email, relationship });
         return SHOWN;
       }
       case "propose_join_club": {

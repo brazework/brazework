@@ -42,6 +42,9 @@ test("a card in the page says what it does; elsewhere it's unchanged", () => {
   assert.deepEqual(cardLabels("milestone", true), { confirm: "Log and send to club", edit: "Edit", dismiss: "Not now" });
   assert.deepEqual(cardLabels("post", true), { confirm: "Confirm", edit: "Edit", dismiss: "Not now" });
   assert.deepEqual(cardLabels("milestone", false), { confirm: "Confirm", edit: null, dismiss: "Dismiss" });
+  // Asking a person to sign sends an email, so the button says so wherever the card is.
+  assert.deepEqual(cardLabels("signature", false), { confirm: "Ask them to sign", edit: null, dismiss: "Dismiss" });
+  assert.deepEqual(cardLabels("signature", true), { confirm: "Ask them to sign", edit: "Edit", dismiss: "Not now" });
   assert.equal(ASK_PLACEHOLDER, "Ask Ember, or tell it what you did…");
 });
 
@@ -55,6 +58,9 @@ test("the request carries the page, and refuses an id that isn't one", () => {
 test("a card in the page is a line or two until you press Edit", () => {
   const m = cardSummary({ id: "1", kind: "milestone", project_id: "p1", project_title: "Thrust stand", club_id: "rkt", club_name: "Rocketry Club", title: "PID loop holds within 2%", evidence: "https://github.com/ben/stand/pull/12", detail: "", achieved_on: "2026-11-19" });
   assert.deepEqual(m, { title: "PID loop holds within 2%", lines: ["On Thrust stand, for Rocketry Club to sign"], link: "https://github.com/ben/stand/pull/12" });
+  const sig = { id: "5", kind: "signature" as const, milestone_id: "", project_id: "p1", project_title: "Checkout", title: "p95 down to 310 ms", evidence: "https://github.com/acme/checkout/pull/1187", detail: "", achieved_on: "2026-11-20", relationship: "manager" };
+  assert.deepEqual(cardSummary({ ...sig, email: "sam@northwind.example" }), { title: "p95 down to 310 ms", lines: ["On Checkout, for sam@northwind.example to sign"], link: "https://github.com/acme/checkout/pull/1187" });
+  assert.equal(cardSummary({ ...sig, email: "" }), null, "with no address yet, the card opens with its fields");
   const long = cardSummary({ id: "2", kind: "post", body: "x".repeat(400), postKind: "update", tags: ["robotics"] });
   assert.ok(long && long.title.length <= 160 && long.title.endsWith("…"));
   assert.deepEqual(long?.lines, ["#robotics"]);

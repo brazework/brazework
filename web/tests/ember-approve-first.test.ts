@@ -58,6 +58,7 @@ test("propose_* tools never write; they only hand over a card", async () => {
   const args: Record<string, Record<string, unknown>> = {
     propose_post: { body: "Static fire went clean", kind: "result" },
     propose_milestone: { project_id: "p1", club_id: "rkt", title: "Passed load test", evidence: "https://github.com/josh/rig/commit/abc123" },
+    propose_signature: { project_id: "p1", title: "Checkout p95 down to 310 ms", evidence: "https://github.com/acme/checkout/pull/1187", email: "sam@northwind.example", relationship: "manager" },
     propose_join_club: { club_id: "rkt" },
     propose_rsvp: { event_id: "e1" },
     propose_message: { person_id: ME, body: "Hi Ben" },
