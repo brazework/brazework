@@ -10,20 +10,22 @@ struct BuildView: View {
   @Environment(\.openURL) private var openURL
   @State private var builds: [Build]?
   @State private var compose = false
+  @State private var newProject = false
+  @State private var path = NavigationPath()
 
   var body: some View {
-    NavigationStack {
+    NavigationStack(path: $path) {
       ScrollView {
         LazyVStack(alignment: .leading, spacing: 14) {
           if let builds {
             if builds.isEmpty {
-              EmptyBuilds { openURL(Env.web("projects")) }
+              EmptyBuilds { newProject = true }
             } else {
               BuildRecord(builds: builds)
               ForEach(builds) { b in
-                BuildCard(build: b, log: { compose = true }, open: { openURL(Env.web("projects/\(b.id)")) })
+                BuildCard(build: b, log: { compose = true }, open: { path.append(b) })
               }
-              Button { openURL(Env.web("projects")) } label: {
+              Button { newProject = true } label: {
                 Label("Start a new project", icon: "plus")
                   .font(.subheadline.weight(.medium)).foregroundStyle(p.muted)
                   .frame(maxWidth: .infinity, minHeight: 48)
@@ -43,6 +45,8 @@ struct BuildView: View {
       .refreshable { await load() }
       .task { await load() }
       .sheet(isPresented: $compose, onDismiss: { Task { await load() } }) { ComposerView(initialKind: "update") { } }
+      .sheet(isPresented: $newProject, onDismiss: { Task { await load() } }) { NewProjectView { _ in } }
+      .navigationDestination(for: Build.self) { ProjectDetailView(build: $0) }
     }
   }
 
@@ -170,42 +174,8 @@ private struct EmptyBuilds: View {
         Icon("hammer").font(.title2).foregroundStyle(p.text)
         Text("Start your first project").font(.title3.weight(.bold)).foregroundStyle(p.text)
         Text("A project is anything you're building: a robot, a rocket, a model, an experiment, an app. Post updates as you go, and your club verifies the milestones.").font(.subheadline).foregroundStyle(p.muted)
-        Button("Start a project", icon: "arrow.up.right", action: start).buttonStyle(PrimaryButtonStyle()).padding(.top, 4)
+        Button("Start a project", icon: "plus", action: start).buttonStyle(PrimaryButtonStyle()).padding(.top, 4)
       }
     }
-  }
-}
-
-// The record: the results someone signed, newest first. The first thing on the Record tab.
-struct ProofList: View {
-  let items: [ProofItem]?
-  @Environment(\.palette) private var p
-  var body: some View {
-    VStack(alignment: .leading, spacing: 10) {
-      HStack(alignment: .firstTextBaseline) {
-        Text("Signed work").font(.headline).foregroundStyle(p.text)
-        Spacer()
-        if let items, !items.isEmpty { Text("\(items.count) signed result\(items.count == 1 ? "" : "s")").font(.caption.weight(.semibold)).foregroundStyle(p.ok) }
-      }
-      if let items {
-        if items.isEmpty {
-          Text("Nothing signed yet. Log a result on a project and ask someone who saw it to sign it.").font(.subheadline).foregroundStyle(p.muted)
-        } else {
-          ForEach(items) { m in
-            HStack(alignment: .top, spacing: 10) {
-              Icon("checkmark.seal.fill").foregroundStyle(p.ok).font(.body)
-              VStack(alignment: .leading, spacing: 2) {
-                Text(m.title).font(.subheadline.weight(.semibold)).foregroundStyle(p.text)
-                Text(m.signedBy).font(.caption).foregroundStyle(p.ok)
-                if let t = m.project?.title { Text(t).font(.caption).foregroundStyle(p.faint) }
-              }
-            }
-          }
-        }
-      } else {
-        ProgressView()
-      }
-    }
-    .padding(.vertical, 6)
   }
 }

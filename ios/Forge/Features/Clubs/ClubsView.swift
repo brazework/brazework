@@ -169,6 +169,16 @@ struct ClubView: View {
         .buttonStyle(.plain)
       }
       .disabled(working)
+      if API.isOfficer(role) {
+        // Officers verify what members ask the club to sign (the web's Manage → Verify).
+        NavigationLink { VerifyQueueView(club: club) } label: {
+          HStack { Label("To verify", icon: "checkmark.shield").font(.body.weight(.semibold)); Spacer(); Icon("chevron.right").font(.footnote).foregroundStyle(p.faint) }
+            .foregroundStyle(p.text).padding(.horizontal, 16).frame(minHeight: 50)
+            .background(p.surface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(p.border, lineWidth: 0.5))
+        }
+        .buttonStyle(.plain)
+      }
     } else if requested {
       Label("Request sent", icon: "clock").font(.subheadline.weight(.medium)).foregroundStyle(p.muted)
     } else {

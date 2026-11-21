@@ -9,7 +9,7 @@ struct MeView: View {
   @State private var editing = false
   @State private var showSettings = false
   @State private var testReport: ReportTarget?
-  @State private var proof: [ProofItem]?
+  @State private var record: [RecordItem]?
 
   var body: some View {
     NavigationStack {
@@ -36,7 +36,7 @@ struct MeView: View {
           }
         }
         // The record leads: the work someone signed comes before everything else here.
-        Section { ProofList(items: proof).listRowBackground(p.surface) }
+        Section { RecordList(items: record).listRowBackground(p.surface) }
         Section("Look") {
           Picker("Appearance", selection: $appearance) {
             Text("System").tag("system"); Text("Light").tag("light"); Text("Dark").tag("dark")
@@ -78,8 +78,8 @@ struct MeView: View {
       .scrollContentBackground(.hidden)
       .background(p.bg)
       .navigationTitle("Record")
-      .task { if let me = session.userId { proof = await API.proof(of: me) } }
-      .refreshable { if let me = session.userId { proof = await API.proof(of: me) } }
+      .task { await loadRecord() }
+      .refreshable { await loadRecord() }
       .sheet(isPresented: $editing) { if let me = session.profile { EditProfileView(profile: me) } }
       #if DEBUG
       .task {
@@ -95,6 +95,11 @@ struct MeView: View {
       .navigationDestination(for: Post.self) { PostLoader(id: $0.id) }
       .navigationDestination(for: InboxItem.self) { ThreadView(item: $0) }
     }
+  }
+
+  private func loadRecord() async {
+    guard let me = session.userId else { return }
+    record = (try? await API.record(of: me)) ?? record ?? []
   }
 
   private func link(_ title: String, _ icon: String, _ path: String) -> some View {
