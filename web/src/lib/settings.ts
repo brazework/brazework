@@ -2,6 +2,7 @@
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { ALL_TOPICS, FIELDS, friendlyError } from "@/lib/forge";
+import { cleanLinkedin } from "@/lib/linkedin";
 import { parseGradYear } from "@/lib/profile-meta";
 import { getViewer } from "@/lib/supabase/server";
 
@@ -31,10 +32,23 @@ export async function saveProfileSettings(_: SettingsState, form: FormData): Pro
     if (!year.ok) return { ok: false, message: "Pick a graduation year from the list." };
     row.grad_year = year.value;
   }
+  // LinkedIn link (supabase/linkedin-required.sql): the form only sends it once that step has run.
+  // A working account needs one to ask someone to sign; here it is only checked for shape.
+  const link = form.has("linkedin") ? cleanLinkedin(form.get("linkedin")) : null;
+  if (link && !link.ok) return { ok: false, message: link.message };
   const { supabase, user } = await getViewer();
   if (!user) return { ok: false, message: "Log in again." };
   const { error } = await supabase.from("profiles").update(row).eq("id", user.id);
   if (error) return { ok: false, message: friendlyError(error) };
+  const saveLink = async (): Promise<SettingsState | null> => {
+    if (!link || !link.ok || (link.url ?? "") === String(form.get("linkedin_was") ?? "")) return null;
+    const { error: e3 } = await supabase.rpc("set_linkedin", { p_url: link.url ?? "" });
+    return e3 ? { ok: false, message: e3.code === "P0001" ? e3.message : friendlyError(e3) } : null;
+  };
+  // Becoming a student: the type changes first, since a working account that has asked for
+  // signatures can't drop its link. Otherwise the link is saved first.
+  const toStudent = form.get("account_type") === "student" && form.get("account_type_was") !== "student";
+  if (!toStudent) { const bad = await saveLink(); if (bad) { revalidatePath("/", "layout"); return bad; } }
   // Studying or working (supabase/account-type.sql): the form only sends it once that step has run,
   // and only a change is saved. Becoming a student needs a university email, as at sign-up.
   const kind = form.get("account_type");
@@ -42,6 +56,7 @@ export async function saveProfileSettings(_: SettingsState, form: FormData): Pro
     const { error: e2 } = await supabase.rpc("set_account_type", { p_type: kind });
     if (e2) { revalidatePath("/", "layout"); return { ok: false, message: e2.code === "P0001" ? e2.message : friendlyError(e2) }; }
   }
+  if (toStudent) { const bad = await saveLink(); if (bad) { revalidatePath("/", "layout"); return bad; } }
   revalidatePath("/", "layout");
   return { ok: true, message: "Profile saved." };
 }

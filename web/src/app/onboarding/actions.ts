@@ -2,7 +2,10 @@
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { ALL_TOPICS, FIELDS, ageFrom, friendlyError } from "@/lib/forge";
+import { dbFeatures } from "@/lib/db-features";
 import { joinRememberedInvite } from "@/lib/invites";
+import { LINKEDIN_ADD_HERE, cleanLinkedin } from "@/lib/linkedin";
+import { needsLinkedin, saveLinkedinFrom } from "@/lib/linkedin-gate";
 import { parseGradYear } from "@/lib/profile-meta";
 import { getViewer } from "@/lib/supabase/server";
 import { cleanBuild, firstHeadline, starterInterests } from "@/lib/front-door";
@@ -38,7 +41,17 @@ export async function finishSignup(_: FinishState, form: FormData): Promise<Fini
   if (!user) redirect("/login");
   if (profile) redirect("/onboarding");
   const { accountType, firstName, lastName, birthday } = parsed.data;
-  const { error } = await supabase.rpc("finish_signup", { p_account_type: accountType, p_first_name: firstName, p_last_name: lastName, p_birthday: birthday });
+  const args = { p_account_type: accountType, p_first_name: firstName, p_last_name: lastName, p_birthday: birthday };
+  // A professional may give a LinkedIn link here, once supabase/linkedin-required.sql has run. It
+  // is optional (they need it later, to ask someone to sign); one that isn't a LinkedIn profile is
+  // said so before the round trip.
+  let linkedin: string | null | undefined;
+  if (accountType === "professional" && (await dbFeatures()).linkedinRequired) {
+    const link = cleanLinkedin(form.get("linkedin"));
+    if (!link.ok) return { message: link.message };
+    linkedin = link.url;
+  }
+  const { error } = linkedin ? await supabase.rpc("finish_signup", { ...args, p_linkedin: linkedin }) : await supabase.rpc("finish_signup", args);
   if (error) {
     const message = error.code === "P0001" ? error.message : friendlyError(error);
     return { message, school: /university email/.test(message) };
@@ -82,7 +95,8 @@ export async function completeOnboarding(_: OnboardState, form: FormData): Promi
 // proof or nobody to ask, a draft. If the ask fails, the project id comes back so a retry doesn't
 // start a second project.
 export type FirstBuildSigner = { kind: "none" } | { kind: "email"; email: string; relationship: string } | { kind: "club"; clubId: string };
-export type FirstBuildInput = { text: string; field: string; achievedOn: string; evidence: string; signer: FirstBuildSigner; projectId?: string };
+// linkedin: a working account with no LinkedIn link gives it on the last screen, to ask by email.
+export type FirstBuildInput = { text: string; field: string; achievedOn: string; evidence: string; signer: FirstBuildSigner; projectId?: string; linkedin?: string };
 export type FirstBuildResult = { ok: false; message: string; projectId?: string; step?: "build" | "proof" | "signer" };
 
 const today = () => new Date().toISOString().slice(0, 10);
@@ -97,6 +111,7 @@ const firstBuild = z.object({
     z.object({ kind: z.literal("club"), clubId: z.string().regex(/^[A-Za-z0-9-]{1,64}$/, "Pick a club.") }),
   ]),
   projectId: z.string().regex(/^[A-Za-z0-9-]{1,64}$/).optional(),
+  linkedin: z.string().max(200).optional(),
 });
 
 export async function finishFirstBuild(input: FirstBuildInput): Promise<FirstBuildResult> {
@@ -110,6 +125,14 @@ export async function finishFirstBuild(input: FirstBuildInput): Promise<FirstBui
   const { supabase, user, profile } = await getViewer();
   if (!user) redirect("/login");
   if (!profile) redirect("/onboarding");
+
+  // Asking a person to sign: a working account adds its LinkedIn link first (the database holds
+  // the rule). Checked before anything is saved, so a missing or wrong link starts no project.
+  if (d.evidence !== "" && d.signer.kind === "email") {
+    const bad = await saveLinkedinFrom(supabase, d.linkedin);
+    if (bad) return { ok: false, message: bad, step: "signer", projectId: input.projectId };
+    if (await needsLinkedin(supabase)) return { ok: false, message: LINKEDIN_ADD_HERE, step: "signer", projectId: input.projectId };
+  }
 
   // A retry after a failed ask reuses the project it already started.
   let projectId = "";

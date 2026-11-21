@@ -4,6 +4,8 @@ import { z } from "zod";
 import { friendlyError } from "@/lib/forge";
 import { getViewer } from "@/lib/supabase/server";
 import { verifyTag } from "@/lib/verify-load";
+import { LINKEDIN_ADD_HERE } from "@/lib/linkedin";
+import { needsLinkedin, saveLinkedinFrom } from "@/lib/linkedin-gate";
 import { requestVouch } from "@/lib/vouches";
 import { backingMessage } from "@/lib/backing";
 import { checkBacking, recordBacking } from "@/lib/backing-check";
@@ -18,7 +20,8 @@ import { buildProofSharedEmail } from "@/lib/witness-invite";
 // (supabase/backed.sql, lib/backing-check.ts). The database enforces who can ask and who can verify; these actions
 // validate input and turn database errors into plain sentences.
 
-export type MilestoneState = { ok: boolean; message: string };
+// linkedin: the ask needs the member's LinkedIn link first; the form shows the field (Linear FIX-214).
+export type MilestoneState = { ok: boolean; message: string; linkedin?: boolean };
 
 const add = z.object({
   projectId: z.string().min(1).max(64),
@@ -51,6 +54,13 @@ export async function addMilestone(_: MilestoneState, form: FormData): Promise<M
   const d = v.data;
   if (d.verifyBy === "club" && !d.communityId) return { ok: false, message: "Pick the club that saw it happen." };
   if (d.verifyBy === "vouch" && !d.vouchEmail) return { ok: false, message: "Enter the email of the person who saw it." };
+  // Asking a person to sign: a working account adds its LinkedIn link first. The form can carry it;
+  // checked before anything is saved (the database holds the rule where the ask is saved).
+  if (d.verifyBy === "vouch") {
+    const bad = await saveLinkedinFrom(supabase, form.get("linkedin"));
+    if (bad) return { ok: false, message: bad, linkedin: true };
+    if (await needsLinkedin(supabase)) return { ok: false, message: LINKEDIN_ADD_HERE, linkedin: true };
+  }
   // Nobody asked: check GitHub first, so nothing is saved unless it's the member's own work.
   const backing = d.verifyBy === "data" ? await checkBacking(d.evidence, d.projectId, user.id) : null;
   if (backing && !backing.ok) return { ok: false, message: backingMessage(backing.reason) };

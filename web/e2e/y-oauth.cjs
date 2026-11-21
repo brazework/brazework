@@ -106,6 +106,8 @@ async function providerNewcomer(email, name) {
   }, p);
   await step("a professional finishes sign-up, then onboarding, then lands on the feed", async () => {
     await p.fill('input[name="birthday"]', "1994-03-03");
+    // A professional is offered a LinkedIn profile link (optional; Linear FIX-214), however they signed in.
+    await p.getByLabel("LinkedIn profile").fill("linkedin.com/in/ola-ade");
     await p.getByRole("button", { name: "Continue" }).click();
     await hydrated(p.getByRole("link", { name: /Set up your profile instead/ }));
     await p.getByRole("link", { name: /Set up your profile instead/ }).click();

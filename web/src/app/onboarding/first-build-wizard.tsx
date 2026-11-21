@@ -10,6 +10,7 @@ import { TOPICS, cn } from "@/lib/forge";
 import { mediaUrl } from "@/lib/media";
 import { UploadError, uploadMedia } from "@/lib/upload";
 import { RELATIONSHIPS } from "@/lib/vouch-email";
+import { LINKEDIN_ADD_HERE, LINKEDIN_PLACEHOLDER, LINKEDIN_PRIVATE, LINKEDIN_WHY } from "@/lib/linkedin";
 import { finishFirstBuild, type FirstBuildSigner } from "./actions";
 
 // Build-first onboarding (the Product Hunt launch): after About you, the way in *is* the first
@@ -23,7 +24,7 @@ type Proof = "link" | "photo" | "later";
 type Signer = "email" | "club" | "none";
 type State = {
   step: Step; text: string; field: string; fieldTouched: boolean; achievedOn: string;
-  proof: Proof; link: string; photo: string; signer: Signer; email: string; relationship: string; clubId: string; projectId?: string;
+  proof: Proof; link: string; photo: string; signer: Signer; email: string; relationship: string; clubId: string; projectId?: string; linkedin: string;
 };
 
 const KEY = "brazework-first-build";
@@ -31,7 +32,7 @@ const today = () => { const d = new Date(); return new Date(d.getTime() - d.getT
 const isLink = (s: string) => /^https:\/\/\S+\.\S+/i.test(s.trim()) && s.trim().length <= 300;
 
 function initial(student: boolean): State {
-  return { step: "build", text: "", field: TOPICS[0].name, fieldTouched: false, achievedOn: today(), proof: "link", link: "", photo: "", signer: "email", email: "", relationship: student ? "professor" : "manager", clubId: "" };
+  return { step: "build", text: "", field: TOPICS[0].name, fieldTouched: false, achievedOn: today(), proof: "link", link: "", photo: "", signer: "email", email: "", relationship: student ? "professor" : "manager", clubId: "", linkedin: "" };
 }
 
 // Where they left off in this tab, or else the build they typed on the landing page (browser only).
@@ -48,7 +49,8 @@ function load(student: boolean): State {
 }
 const noStore = () => () => {};
 
-export function FirstBuildWizard({ firstName, student, userId, clubs }: { firstName: string; student: boolean; userId: string; clubs: WizardClub[] }) {
+// askLinkedin: a working account with no LinkedIn link adds it here to ask by email (Linear FIX-214).
+export function FirstBuildWizard({ firstName, student, userId, clubs, askLinkedin = false }: { firstName: string; student: boolean; userId: string; clubs: WizardClub[]; askLinkedin?: boolean }) {
   // The server renders a placeholder; the browser renders the wizard, from what this tab remembers.
   const ready = useSyncExternalStore(noStore, () => true, () => false);
   const [s, setS] = useState<State>(() => load(student));
@@ -85,10 +87,11 @@ export function FirstBuildWizard({ firstName, student, userId, clubs }: { firstN
       : s.signer === "club" ? { kind: "club", clubId: s.clubId } : { kind: "email", email: s.email, relationship: s.relationship };
     if (signer.kind === "club" && !s.clubId) return setError("Pick the club that saw it.");
     if (signer.kind === "email" && !/^\S+@\S+\.\S+$/.test(s.email.trim())) return setError("Enter the email of the person who saw it.");
+    if (signer.kind === "email" && askLinkedin && !s.linkedin.trim()) return setError(LINKEDIN_ADD_HERE);
     setError("");
     start(async () => {
       try { localStorage.removeItem(BUILD_KEY); sessionStorage.removeItem(KEY); } catch {}
-      const r = await finishFirstBuild({ text: s.text, field: s.field, achievedOn: s.achievedOn, evidence: hasProof ? evidence : "", signer, projectId: s.projectId });
+      const r = await finishFirstBuild({ text: s.text, field: s.field, achievedOn: s.achievedOn, evidence: hasProof ? evidence : "", signer, projectId: s.projectId, linkedin: signer.kind === "email" && askLinkedin ? s.linkedin : undefined });
       // Only an error comes back (success redirects to the profile): keep everything as it was.
       if (r && !r.ok) { setS((p) => ({ ...p, projectId: r.projectId ?? p.projectId, step: r.step ?? p.step })); setError(r.message); }
     });
@@ -214,6 +217,13 @@ export function FirstBuildWizard({ firstName, student, userId, clubs }: { firstN
                           {Object.entries(RELATIONSHIPS).map(([id, label]) => <option key={id} value={id}>{label.replace(/^(a|their lab's) /, (m) => (m === "their lab's " ? "my lab's " : "my "))}</option>)}
                         </select>
                       </Field>
+                      {askLinkedin && (
+                        <div className="sm:col-span-2">
+                          <Field label="Your LinkedIn profile" hint={`${LINKEDIN_WHY} ${LINKEDIN_PRIVATE}`}>
+                            <input type="text" name="linkedin" value={s.linkedin} onChange={(e) => set({ linkedin: e.target.value })} inputMode="url" autoComplete="url" autoCapitalize="none" autoCorrect="off" spellCheck={false} maxLength={200} placeholder={LINKEDIN_PLACEHOLDER} className={inputCls} />
+                          </Field>
+                        </div>
+                      )}
                     </div>
                   )}
                   {s.signer === "club" && (fieldClubs.length ? (
