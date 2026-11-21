@@ -22,7 +22,7 @@ import { Mark } from "./record-timeline";
 
 const TELL = "Tell the story of my record so far, year by year.";
 
-export function RecordYearsChart({ data, own, ember }: { data: RecordYears; own: boolean; ember: boolean }) {
+export function RecordYearsChart({ data, own, ember, toggle }: { data: RecordYears; own: boolean; ember: boolean; toggle?: React.ReactNode }) {
   const years = data.years;
   const [picked, setPicked] = useState(years[years.length - 1].year);
   const y = years.find((x) => x.year === picked) ?? years[years.length - 1];
@@ -37,7 +37,7 @@ export function RecordYearsChart({ data, own, ember }: { data: RecordYears; own:
   return (
     <section aria-labelledby="record-years-h" className="rounded-2xl border border-line bg-surface p-5">
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-        <h2 id="record-years-h" className="text-[15px] font-semibold tracking-tight">Record by year</h2>
+        <span className="flex items-center gap-3"><h2 id="record-years-h" className="text-[15px] font-semibold tracking-tight">Record by year</h2>{toggle}</span>
         <p className="text-sm text-muted">{summary}</p>
       </div>
 

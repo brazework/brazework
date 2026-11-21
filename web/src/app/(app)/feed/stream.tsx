@@ -54,6 +54,8 @@ export async function HomeStream() {
   const nRequests = requests.count ?? 0, nInvites = invites.count ?? 0;
   const ships = ((shipped.data ?? []) as unknown as Shipped[]).filter((m) => m.project && !m.project.private && m.owner).slice(0, SHIPPED_SHOWN);
   const needsYou = nRequests > 0 || nInvites > 0 || !!verify;
+  // From the record already loaded for your goal (no extra query); unknown counts as "no projects yet".
+  const hasProjects = (record?.projects ?? 0) > 0;
 
   return (
     <div aria-label="Your day" role="group" className="relative flex flex-col gap-7 pl-7 sm:pl-8 before:absolute before:top-3 before:bottom-3 before:left-[8.5px] before:w-px before:bg-line">
@@ -86,7 +88,10 @@ export async function HomeStream() {
         </Group>
       )}
 
-      <Group label={profile?.account_type === "professional" && !cids.length ? "Signed this week" : "Your clubs shipped this week"} node={<Seal size={18} />}
+      {/* What was signed this week. With nothing signed yet it says how to get there, but only for a
+          member whose next step above isn't already saying it (less clutter, Nov 21): someone with
+          projects is shown "ask someone who saw it" there, so the empty box would repeat it. */}
+      {(ships.length > 0 || !hasProjects) && <Group label={profile?.account_type === "professional" && !cids.length ? "Signed this week" : "Your clubs shipped this week"} node={<Seal size={18} />}
         more={ships.length ? <Link href="/communities" className={moreCls}>Your clubs</Link> : null}>
         {ships.length ? (
           <List label="Signed this week in your clubs">
@@ -99,7 +104,7 @@ export async function HomeStream() {
         ) : (
           <Invite cids={cids.length} working={profile?.account_type === "professional"} />
         )}
-      </Group>
+      </Group>}
 
       {record && (
         <Group label="Where you're headed" node={<span className="grid size-[18px] place-items-center rounded-full bg-surface-2 text-muted ring-4 ring-bg"><Flag className="size-3" /></span>}>
