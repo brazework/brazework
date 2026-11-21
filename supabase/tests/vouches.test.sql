@@ -1,5 +1,5 @@
 -- Tests for supabase/vouches.sql: a member without a club can log a milestone and ask someone who saw
--- it to vouch, only at a university or verified-company address (never free mail, never themselves),
+-- it to vouch, never at a throwaway inbox (free mail is allowed since step 86, labelled), never themselves,
 -- only for their own milestone. The member never sees the link's hash. Whoever holds the link can
 -- preview it and vouch once (with real answers), which verifies the milestone with their name on it;
 -- the link can't be reused, and expired links refuse. Runs in one transaction; rolls back.
@@ -36,7 +36,7 @@ select t.ok((select status = 'pending' and community_id is null from public.mile
 
 -- Asking: only good addresses, only your own milestone, never yourself.
 select t.as_('ben'); set local role authenticated;
-select t.refused($$select public.request_vouch(current_setting('t.ms'), 'prof.lee@gmail.com', 'professor', repeat('1', 64))$$, 'P0001', 'free mail can''t vouch');
+select t.refused($$select public.request_vouch(current_setting('t.ms'), 'prof.lee@mailinator.com', 'professor', repeat('1', 64))$, 'P0001', 'a throwaway inbox can''t vouch');
 select t.refused($$select public.request_vouch(current_setting('t.ms'), 'not an email', 'professor', repeat('1', 64))$$, 'P0001', 'it has to be an email address');
 select t.refused($$select public.request_vouch(current_setting('t.ms'), 'prof.lee@utexas.edu', 'friend', repeat('1', 64))$$, 'P0001', 'the relationship must be one we know');
 select t.refused($$select public.request_vouch(current_setting('t.ms'), 'prof.lee@utexas.edu', 'professor', 'short')$$, 'P0001', 'the link hash must look like a sha256');

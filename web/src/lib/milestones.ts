@@ -25,7 +25,7 @@ export type MilestoneState = { ok: boolean; message: string; linkedin?: boolean 
 
 const add = z.object({
   projectId: z.string().min(1).max(64),
-  // Either the club that saw it, or someone (at a university or company address) who'll vouch.
+  // Either the club that saw it, or someone who saw it (any real address; throwaway inboxes are refused).
   verifyBy: z.enum(["club", "vouch", "data"]),
   communityId: z.string().max(64),
   vouchEmail: z.string().trim().max(254),

@@ -82,7 +82,8 @@ from (values
   (82, 'account-type',    to_regprocedure('public.account_type_ready()') is not null),
   (83, 'work-email-signers', to_regprocedure('public.work_email_signers_ready()') is not null),
   (84, 'approved-by',     to_regprocedure('public.approved_by_ready()') is not null),
-  (85, 'linkedin-required', to_regprocedure('public.linkedin_required_ready()') is not null)
+  (85, 'linkedin-required', to_regprocedure('public.linkedin_required_ready()') is not null),
+  (86, 'personal-email-signers', to_regprocedure('public.personal_email_signers_ready()') is not null)
 ) as s(step, file, present)
 order by step;
 

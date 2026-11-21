@@ -1,7 +1,7 @@
 -- Tests for supabase/work-email-signers.sql: any work address can sign, and the signature says which
 -- kind it is. A university or a verified company reads as before; a work address at a company that
--- isn't verified here is labelled "(company not verified)". Free mail and throwaway inboxes still
--- can't sign, and every other guard holds. Runs in one transaction; rolls back.
+-- isn't verified here is labelled "(company not verified)". Throwaway inboxes still can't sign
+-- (free mail can since step 86, labelled; personal-email-signers.test.sql), and every other guard holds. Runs in one transaction; rolls back.
 \set QUIET on
 begin;
 
@@ -32,11 +32,11 @@ where not exists (select 1 from public.organizations where lower(domain) = 'veri
 select t.ok(public.vouch_email_kind('Prof.Lee@UTexas.edu') = 'school', 'a university address is a school');
 select t.ok(public.vouch_email_kind('sam@verified-test-co.example') = 'company', 'a verified company''s address is a company');
 select t.ok(public.vouch_email_kind('sam@northwind-payments.io') = 'work', 'any other work address is work');
-select t.ok(public.vouch_email_kind('sam@gmail.com') = '' and public.vouch_email_kind('sam@outlook.fr') = '' and public.vouch_email_kind('sam@yahoo.co.uk') = ''
-  and public.vouch_email_kind('sam@mail.proton.me') = '' and public.vouch_email_kind('sam@icloud.com') = '', 'free mail is never a signer''s address, under any country ending');
+select t.ok(public.vouch_email_kind('sam@gmail.com') = 'personal' and public.vouch_email_kind('sam@outlook.fr') = 'personal' and public.vouch_email_kind('sam@yahoo.co.uk') = 'personal'
+  and public.vouch_email_kind('sam@mail.proton.me') = 'personal' and public.vouch_email_kind('sam@icloud.com') = 'personal', 'free mail is a personal address (step 86), under any country ending, never work');
 select t.ok(public.vouch_email_kind('x@mailinator.com') = '' and public.vouch_email_kind('x@yopmail.com') = '', 'nor a throwaway inbox');
 select t.ok(public.vouch_email_kind('not an email') = '' and public.vouch_email_kind('a@b') = '' and public.vouch_email_kind('a@b..com') = '' and public.vouch_email_kind(null) = '', 'nor something that isn''t an address');
-select t.ok(public.vouch_email_ok('sam@northwind-payments.io') and not public.vouch_email_ok('sam@gmail.com'), 'the ask''s check follows the kind');
+select t.ok(public.vouch_email_ok('sam@northwind-payments.io') and not public.vouch_email_ok('x@mailinator.com'), 'the ask''s check follows the kind');
 -- A company whose own name starts like a mail provider's is still a company.
 select t.ok(public.vouch_email_kind('dana@livewire-robotics.com') = 'work' and public.vouch_email_kind('dana@outlookgroup.com') = 'work', 'a company isn''t mistaken for free mail by its name');
 
@@ -53,7 +53,7 @@ select set_config('t.m1', :'m1', false), set_config('t.m2', :'m2', false);
 select t.as_('ben'); set local role authenticated;
 select public.request_vouch(:'m1', 'sam.rivera@northwind-payments.io', 'manager', repeat('a', 64));
 select public.request_vouch(:'m2', 'lee@verified-test-co.example', 'mentor', repeat('b', 64));
-select t.refused($$select public.request_vouch(current_setting('t.m1'), 'sam.rivera@gmail.com', 'manager', repeat('c', 64))$$, 'P0001', 'free mail still can''t be asked');
+select t.refused($$select public.request_vouch(current_setting('t.m1'), 'sam.rivera@mailinator.com', 'manager', repeat('c', 64))$, 'P0001', 'a throwaway inbox still can''t be asked');
 select t.refused($$select public.request_vouch(current_setting('t.m1'), 'ben@forge.test', 'manager', repeat('d', 64))$$, 'P0001', 'nor the member''s own address');
 reset role;
 select t.ok((select count(*) = 1 from public.milestone_vouches where milestone_id = :'m1' and state = 'asked'), 'a tech lead at a company that isn''t verified here can be asked');
