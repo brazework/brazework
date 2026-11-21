@@ -2,7 +2,7 @@
 
 Native SwiftUI app on the same Supabase backend as `web/`: same tables, same row-level security, same feed ranking (`FeedRank.swift` is a port of `web/src/lib/feed-rank.ts`, with tests that pin the numbers).
 
-Members see Brazework everywhere (the home-screen name, sign-up, copy). The code keeps its older Forge names (`ForgeKit`, the `Forge` scheme, `FORGE_*` settings, bundle id `com.shualabs.forge`), as the web keeps `/feed` and `forge.test`; changing the bundle id would make it a different app in the App Store.
+Members see Brazework everywhere (the home-screen name, sign-up, copy). The code keeps its older Forge names (`ForgeKit`, the `Forge` scheme, `FORGE_*` settings), as the web keeps `/feed` and `forge.test`. The bundle id is `com.brazework.app` (it was `com.shualabs.forge` until the first TestFlight build); it is now permanent, since changing it would make it a different app in the App Store.
 
 `ForgeKit/` is the data layer (models, ranking, every read and write in `API.swift`, the feed and inbox stores). The app compiles those sources directly; `swift test` runs them on the Mac against the local stack. `Forge/` is the SwiftUI app.
 
@@ -25,7 +25,7 @@ The table below describes the screens behind those tabs (it predates the rename:
 | **Alerts** | Likes, replies, mentions, follows, club and milestone news; marked read once seen; tap to open the post or person |
 | **You** | Edit your profile (photo, name, headline, field, about, interests; the web's rules), your saved posts, light/dark and the web's five themes, links to settings and Ember on the web, sign out |
 
-Sign-up (student or professional; students use a university email; 18+), email confirmation, password reset and onboarding (major, field, 3+ interests) are native. Ember opens on the web for now.
+Sign-up (student or professional; students use a university email; 18+), email confirmation, password reset and onboarding (major, field, 3+ interests) are native. So is Ember (`Features/Ember`), on the same `/api/copilot` as the web.
 
 ## Build and run
 
@@ -52,8 +52,24 @@ scripts/test-kit.sh   # on the Mac, no simulator: ranking and dates, plus the ap
 scripts/test.sh       # the same, then UI journeys on a simulator (XCUITest; macOS asks once to allow UI automation)
 ```
 
+## TestFlight
+
+TestFlight builds point at production and last 90 days (a free Personal Team's installs expire after 7). Once, with the paid Apple Developer account:
+
+1. Xcode → Settings → Accounts: add the account.
+2. [App Store Connect](https://appstoreconnect.apple.com) → Apps → New App: iOS, name Brazework, bundle id `com.brazework.app`, SKU `brazework-ios`.
+3. Users and Access: invite each tester (internal testers need a role on the team; up to 100, no review). For a public link, add an external group in TestFlight; its first build waits for Apple's beta review.
+
+Then each build is one command (the team ID is under developer.apple.com → Membership):
+
+```sh
+TEAM=ABCDE12345 scripts/testflight.sh              # build for production, sign, upload
+TEAM=ABCDE12345 scripts/testflight.sh --no-upload  # the same, stopping at build/export/Forge.ipa
+```
+
+The build number is the UTC time (`yymmdd.HHMM`), so each upload is higher than the last; the version is `MARKETING_VERSION` in `project.yml`. The production URL and anon key are passed to that build only (from `FORGE_SUPABASE_URL` / `FORGE_SUPABASE_ANON_KEY`, or the public values in `web/.env.local`), so `Config/` keeps pointing at the local stack. To upload without Xcode's account (for CI later), set `ASC_KEY_PATH`, `ASC_KEY_ID` and `ASC_ISSUER_ID` to an App Store Connect API key. `ITSAppUsesNonExemptEncryption` is false (the app only uses the system's HTTPS), and `Forge/Resources/PrivacyInfo.xcprivacy` declares what the app collects: keep it in step when the app starts collecting something new.
+
 ## Next
 
 1. Push notifications (APNs + a Supabase webhook on `notifications` and `messages`).
-2. TestFlight (needs an App Store Connect app record).
-3. Native sign-up and onboarding; TestFlight.
+2. Upload from CI on each merge, with an App Store Connect API key.

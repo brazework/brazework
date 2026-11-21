@@ -10,7 +10,7 @@ export const LINKEDIN_PLACEHOLDER = "linkedin.com/in/yourname";
 export const LINKEDIN_TO_ASK = "Add your LinkedIn profile link before you ask someone to sign. It's in Settings, under Profile.";
 // Said where there is a form to add it in.
 export const LINKEDIN_ADD_HERE = "Add your LinkedIn profile link to ask someone to sign.";
-export const LINKEDIN_WHY = "A working account adds one before asking someone to sign.";
+export const LINKEDIN_WHY = "Optional.";
 export const LINKEDIN_BAD = "Enter your LinkedIn profile link, like linkedin.com/in/yourname.";
 export const LINKEDIN_PRIVATE = "Private: it isn't shown on your profile or your record.";
 
