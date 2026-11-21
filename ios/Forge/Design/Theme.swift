@@ -13,12 +13,14 @@ struct Palette: Sendable {
   var danger = Color(hex: 0xDC2626)
   // The web's three kinds of proof, one colour each, everywhere (globals.css, the same in every skin):
   // green signed, blue backed by GitHub, amber waiting for a signature. Tag and pro as the web's.
+  var ember = EmberColors.of(.forge)
   var ok = Color(hex: 0x15703A), info = Color(hex: 0x2563EB), wait = Color(hex: 0x92570A), tag = Color(hex: 0x7C3AED), pro = Color(hex: 0xD97706)
 
   var gradient: LinearGradient { LinearGradient(colors: grad, startPoint: .topLeading, endPoint: .bottomTrailing) }
 
   static func of(_ skin: Skin, dark: Bool) -> Palette {
     var p = base(skin, dark: dark)
+    p.ember = .of(skin)
     if dark { p.ok = .init(hex: 0x4ADE80); p.info = .init(hex: 0x60A5FA); p.wait = .init(hex: 0xFBBF24); p.tag = .init(hex: 0xA78BFA); p.pro = .init(hex: 0xFBBF24) }
     return p
   }

@@ -1,6 +1,6 @@
 import SwiftUI
 
-// Ember on iPhone: the web's /copilot as one chat. Say what you did or what you need; Ember looks
+// Ember on iPhone: the web's /copilot as one chat, with the web's orb (Design/EmberOrb.swift). Say what you did or what you need; Ember looks
 // it up on Brazework and prepares each step as a card you approve (ForgeKit/Ember.swift talks to the
 // same route the web does). Cards the iPhone can do itself (post, join, follow, RSVP, message) run
 // here; the rest open the page on the web that finishes them.
@@ -64,7 +64,7 @@ struct EmberView: View {
   private var hero: some View {
     VStack(alignment: .leading, spacing: 20) {
       VStack(alignment: .leading, spacing: 12) {
-        EmberMark(size: 56)
+        EmberMark(size: 72, thinking: busy)
         Text(EmberLogic.greeting(session.profile?.firstName ?? "")).font(.title2.weight(.semibold)).foregroundStyle(p.text)
           .fixedSize(horizontal: false, vertical: true)
         Text("Say what you did or what you need. Ember looks it up on Brazework and prepares each step as a card you approve.")
@@ -245,24 +245,11 @@ struct EmberView: View {
   }
 }
 
-/// Ember's mark: a flame in the brand gradient, breathing while it thinks.
+/// Ember's mark: the web's orb, swirling faster while it thinks.
 struct EmberMark: View {
   var size: CGFloat = 28
   var thinking = false
-  @State private var pulse = false
-
-  var body: some View {
-    ZStack {
-      Circle().fill(Palette.brand).opacity(0.18)
-      Image(systemName: "flame.fill").font(.system(size: size * 0.5, weight: .semibold))
-        .foregroundStyle(LinearGradient(colors: [Color(hex: 0xF59E0B), Color(hex: 0xEF4444), Color(hex: 0xE879F9)], startPoint: .top, endPoint: .bottom))
-    }
-    .frame(width: size, height: size)
-    .scaleEffect(thinking && pulse ? 1.08 : 1)
-    .animation(thinking ? .easeInOut(duration: 0.7).repeatForever(autoreverses: true) : .default, value: pulse)
-    .onAppear { pulse = true }
-    .accessibilityHidden(true)
-  }
+  var body: some View { EmberOrb(size: size, mood: thinking ? .thinking : .idle) }
 }
 
 /// Home's "Ask Ember" bar, as at the top of Home on the web.
