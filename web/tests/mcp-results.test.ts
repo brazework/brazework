@@ -26,9 +26,9 @@ test("reads and signature asks add nothing (they carry their own links and next 
 });
 
 test("refusals keep the database's words and add the fix when there's a choice", () => {
-  const free = withFix("Use their university or company address (not Gmail, Outlook and the like), so the vouch means something.");
-  assert.match(free, /^Use their university/);
-  assert.match(free, /school or work address/);
+  const throwaway = withFix("Use the email they really use: a throwaway inbox can't sign.");
+  assert.match(throwaway, /^Use the email they really use/);
+  assert.match(throwaway, /school, work or personal/);
   assert.match(withFix("Ask someone who isn't on the project."), /Teammates can't sign/);
   assert.match(withFix("You've sent 10 asks this week. Try again in a few days."), /a limit, not an error/);
   assert.equal(withFix("Write between 1 and 3,000 characters."), "Write between 1 and 3,000 characters.");

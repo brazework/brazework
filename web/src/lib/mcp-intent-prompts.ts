@@ -42,7 +42,7 @@ export function intentPromptText(name: string, args: Record<string, string | und
         "1. Call upcoming_events (90 days) and find it, and the employer session if it has its own event. If more than one could match, ask me which.",
         "2. Call my_projects. List my projects, and for each one the open_milestones still waiting for a club or a signature.",
         s.canPost
-          ? "3. For each unsigned milestone, ask me who saw it (their university or company email and how they know my work). Show me the ask and send it with request_signature only after my yes. Skip any I say to skip."
+          ? "3. For each unsigned milestone, ask me who saw it (the email they really use and how they know my work). Show me the ask and send it with request_signature only after my yes. Skip any I say to skip."
           : "3. For each unsigned milestone, tell me who could sign it and that I can ask them from the milestone in Brazework (“Ask someone to vouch”): this token can't email anyone for me.",
         "4. Call my_resume and write the résumé section: one line per signed result (what was achieved, with numbers), who signed it, and its link. Say which results have no public link yet, and that sharing one from the project gives it a proof card anyone can open.",
         s.canDraft

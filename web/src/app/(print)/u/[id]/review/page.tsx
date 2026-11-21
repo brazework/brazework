@@ -107,7 +107,7 @@ async function Packet({ params, searchParams }: { params: PageProps<"/u/[id]/rev
           </ol>
         )}
         <footer className="mt-8 border-t border-zinc-300 pt-3 text-[11px] text-zinc-500">
-          From Brazework on {fmtDay(new Date().toISOString())}. Each item was signed by the person named, from their club role or their university or company email; the member can&apos;t sign or edit their own.
+          From Brazework on {fmtDay(new Date().toISOString())}. Each item was signed by the person named, from their club role or their own email address (a personal address is labelled); the member can&apos;t sign or edit their own.
         </footer>
       </article>
     </>

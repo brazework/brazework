@@ -209,7 +209,7 @@ export function FirstBuildWizard({ firstName, student, userId, clubs, askLinkedi
                   </div>
                   {s.signer === "email" && (
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_14rem]">
-                      <Field label="Their email" hint="A school or company address, so the signature means something.">
+                      <Field label="Their email" hint="A school or work address carries the most weight; a personal one works too, and the signature says so.">
                         <input type="email" name="signerEmail" value={s.email} onChange={(e) => set({ email: e.target.value })} placeholder={student ? "professor@university.edu" : "manager@company.com"} autoComplete="off" className={inputCls} />
                       </Field>
                       <Field label="They are">

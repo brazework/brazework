@@ -87,7 +87,7 @@ export async function askToSignDraft(id: string, email: string, relationship: st
   if (!user) return { ok: false, message: "Log in again." };
   if (!mailer().enabled) return { ok: false, message: "Email isn't available right now, so we can't send the ask. Keep it and ask later." };
   const { data: okAddr } = await supabase.rpc("vouch_email_ok", { p_email: addr });
-  if (okAddr !== true) return { ok: false, message: "Use their university or company address (not Gmail, Outlook and the like), so the signature means something." };
+  if (okAddr !== true) return { ok: false, message: "Use the email they really use: a throwaway inbox can't sign." };
   const kept = await triageDraft(id, "keep");
   if (!kept.ok) return kept;
   const { data: d } = await supabase.from("tool_drafts").select("result_id").eq("id", id).maybeSingle();
