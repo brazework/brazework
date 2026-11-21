@@ -1,3 +1,5 @@
+import { goalFirst } from "@/lib/feed-goal";
+import { isGoalKind } from "@/lib/goals";
 import type { Metadata } from "next";
 import { SlidersHorizontal } from "lucide-react";
 import Link from "next/link";
@@ -80,7 +82,7 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
   let emptyTitle = "No posts yet";
   let emptyBody: React.ReactNode = "Be the first to share what you're building.";
   let emptyAction: React.ReactNode = null;
-  const { media: mediaEnabled, mentions: mentionsEnabled, milestones: proofOn, videoCaptions: captionsEnabled, chapters: chaptersOn, feedPages: pagesOn, vouches: vouchesOn } = await dbFeatures();
+  const { media: mediaEnabled, mentions: mentionsEnabled, milestones: proofOn, videoCaptions: captionsEnabled, chapters: chaptersOn, feedPages: pagesOn, vouches: vouchesOn, goals: goalsOn } = await dbFeatures();
   const cols = await postSelect();
   const base = () => {
     let q = supabase.from("posts").select(cols).order("created_at", { ascending: sort === "old" });
@@ -167,8 +169,16 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
       sort: tab === "for-you" ? sort : sort === "old" ? "old" : "new",
       kind, tag, community: tab === "chapter" ? chapter!.id : null,
     };
-    const { data } = await supabase.rpc("feed_page", { p_tab: params.tab, p_sort: params.sort, p_kind: kind, p_tag: tag, p_community: params.community, p_limit: 12 });
+    const [{ data }, goalRow] = await Promise.all([
+      supabase.rpc("feed_page", { p_tab: params.tab, p_sort: params.sort, p_kind: kind, p_tag: tag, p_community: params.community, p_limit: 12 }),
+      // For you, ranked: your goal's field comes first on page one (lib/feed-goal.ts). One small read.
+      tab === "for-you" && sort === "best" && !kind && !tag && goalsOn
+        ? supabase.from("member_goals").select("kind, target").eq("uid", user.id).eq("status", "active").limit(1).maybeSingle()
+        : Promise.resolve({ data: null }),
+    ]);
     if (data) first = data as FirstPage;
+    const g = goalRow.data as { kind: string; target: string } | null;
+    if (g && isGoalKind(g.kind)) first = { ...first, items: goalFirst(first.items, { kind: g.kind, target: g.target ?? "" }, user.id) };
   } else {
     first = await legacyFirstPage();
   }
