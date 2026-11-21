@@ -1,5 +1,5 @@
 "use server";
-import Anthropic from "@anthropic-ai/sdk";
+import { claudeClient } from "@/lib/claude";
 import { revalidatePath } from "next/cache";
 import { COPILOT_MODEL, copilotEnabled } from "@/lib/copilot";
 import { ALL_TOPICS } from "@/lib/forge";
@@ -27,7 +27,7 @@ export async function organizeProject(projectId: string): Promise<Suggestion> {
   const text = `${p.title}\n${p.summary}\n${d?.details ?? ""}\n${d?.link ?? ""}`.slice(0, 6000);
   const catalog = TOOLS.map((t) => t.name).join(", ");
   try {
-    const res = await new Anthropic().messages.create({
+    const res = await (await claudeClient()).messages.create({
       model: COPILOT_MODEL,
       max_tokens: 300,
       system: `You organize student projects on Brazework. From the project text, pick the tools it was built with and its topics. Only name tools the text says or clearly implies were used. Prefer names from this catalog: ${catalog}. Topics must come from: ${ALL_TOPICS.join(", ")}. Reply with JSON only: {"tools": [up to 12 strings], "topics": [up to 3 strings]}.`,
