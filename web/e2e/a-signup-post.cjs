@@ -148,10 +148,15 @@ const { BASE, step, browser, as, go, closeTour, hydrated, summary } = require(".
     await go(ben, "/feed");
     const q = ben.locator("article").filter({ hasText: "Kalman filtering" }).first();
     await q.getByRole("button", { name: /^Answer/ }).click();
-    await q.getByPlaceholder("Write an answer…").fill("Start with a complementary filter.");
-    await q.getByPlaceholder("Write an answer…").press("Enter");
-    await q.getByText("Start with a complementary filter.").waitFor({ timeout: 10000 });
-    await ben.waitForLoadState("networkidle");
+    const box = q.getByPlaceholder("Write an answer…");
+    await box.fill("Start with a complementary filter.");
+    await box.press("Enter");
+    // Sent once the server has saved it: the box empties only then (post-card.tsx). Waiting on the text
+    // alone wasn't enough: React mirrors a textarea's value into its text, so the answer still sitting
+    // in the box matched, and the reload below could cancel the save before it reached the server.
+    await ben.waitForFunction((el) => el && el.value === "", await box.elementHandle(), { timeout: 10000 });
+    // With the box empty, the only copy of the text is the answer itself.
+    await q.getByText("Start with a complementary filter.", { exact: true }).first().waitFor({ timeout: 10000 });
     // Saved exactly once: checked on the post's own page. Home's feed is virtualized and ranked, so
     // after the answer the question can sit below the cards that are rendered (CI saw exactly that).
     const href = await q.locator('a[href^="/post/"]').first().getAttribute("href");
