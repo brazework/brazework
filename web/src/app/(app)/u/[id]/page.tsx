@@ -4,14 +4,12 @@ import type { Metadata } from "next";
 import { ReportLink } from "@/components/report/report-dialog";
 import { BadgeCheck, BarChart3, ClipboardList, Eye, FileText, FolderGit2, Lock, MapPin, MessageSquare, Trophy } from "lucide-react";
 import { MoreMenu } from "@/components/app/more-menu";
-import { RecordTimelineChart } from "@/components/profile/record-timeline";
-import { RecordYearsChart } from "@/components/profile/record-years";
+import { RecordCard } from "@/components/profile/record-card";
 import { buildTimeline } from "@/lib/record-timeline";
 import { buildYears } from "@/lib/record-years";
 import { goalTitle } from "@/lib/goals";
 import { CommunityBadge } from "../../communities/_components/badge";
 import { requestTime } from "@/lib/forge";
-import { ProjectIcon } from "../../projects/project-card";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
@@ -179,7 +177,6 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
   const mutualCount = (mutualRes as { count?: number | null }).count ?? mutual.length;
   const sharedClubs = own ? [] : clubs.filter((c) => myClubs.some((m) => m.id === c.id));
   // Now building: their most recently updated project that's still in progress (public, unless it's you).
-  const nowBuilding = projectRows.filter((x) => x.status === "in_progress" && (mine || !x.private)).sort((a, b) => Date.parse(b.updated_at) - Date.parse(a.updated_at))[0];
   // Skills from their work: the tools across their projects, most used first.
   const skills = [...projectRows.flatMap((x) => x.tools ?? []).reduce((m, t) => m.set(t, (m.get(t) ?? 0) + 1), new Map<string, number>())].sort((a, b) => b[1] - a[1]).slice(0, 12);
   const steps: Step[] = [
@@ -260,7 +257,7 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
               {mine && waiting > 0 && <a href="#proof" className="inline-flex items-center gap-1.5 transition hover:text-text"><span aria-hidden="true" className="block size-2.5 rounded-full border-[1.5px] border-dashed border-wait" /><span className="font-semibold text-wait tabular-nums">{waiting}</span> waiting to be signed</a>}
               {mine && record && (record.looked
                 ? <Link href="/dashboard" className="inline-flex items-center gap-1.5 transition hover:text-text"><Eye className="size-3.5" /><span className="font-semibold text-text tabular-nums">{record.looked}</span> looked this month</Link>
-                : <span className="inline-flex items-center gap-1.5 text-faint"><Eye className="size-3.5" /> No views yet this month</span>)}
+                : null)}
             </p>
             {wins.length > 0 && (
               <div className="flex flex-wrap gap-1.5" aria-label="Challenge wins">
@@ -291,8 +288,8 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
       <div className="mt-5 grid grid-cols-1 gap-5 lg:grid-cols-[minmax(0,1fr)_20rem]">
         <div className="flex min-w-0 flex-col gap-5">
           {/* Proof leads: the work someone signed comes before everything else on the page. */}
-          {timeline && <RecordTimelineChart data={timeline} own={mine} goal={mine ? goalText : null} />}
-          {recordYears && <RecordYearsChart data={recordYears} own={mine} ember={!!copilotOn} />}
+          {/* The record as one card: the last twelve months, or by year (components/profile/record-card.tsx). */}
+          {(timeline || recordYears) && <RecordCard timeline={timeline} years={recordYears} own={mine} goal={mine ? goalText : null} ember={!!copilotOn} />}
           {msOn && <div id="proof" className="scroll-mt-24"><ProofTimeline items={proof} own={mine} led={led} /></div>}
           {/* Projects, with their milestones, straight after the proof (they sat below everything else). */}
           <section id="projects" data-tour="projects-tab" className="scroll-mt-24">
@@ -303,7 +300,7 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
                   id: "projects", label: "Projects", count: projects.length,
                   content: (
                     <>
-                      {mine && <div className="mb-4 flex items-center justify-between gap-3 rounded-2xl border border-dashed border-line-strong bg-surface/60 p-4"><p className="text-sm text-muted">Show what you&apos;ve built: a summary everyone sees, and a write-up you can keep private.</p><ProjectEditor interests={p.interests ?? []} copilot={copilotOn} stack={stackOn} specsOn={f.projectSpecs} /></div>}
+                      {mine && <div className="mb-3 flex justify-end"><ProjectEditor interests={p.interests ?? []} copilot={copilotOn} stack={stackOn} specsOn={f.projectSpecs} /></div>}
                       <ProjectGrid projects={projects} own={mine} interests={p.interests ?? []} copilot={copilotOn} clubs={msOn && mine ? myClubs : undefined} vouches={f.vouches} backing={f.backed && !!githubConfig()} stack={stackOn} specsOn={f.projectSpecs} />
                       {!projects.length && <EmptyState icon={<FolderGit2 className="size-6" />} title={mine ? "Show what you've built" : "No projects yet"} body={mine ? "Add a project with a summary, what you did and a link. Keep the write-up private and share only the card if you like." : undefined} />}
                       {projects.some((x) => x.private) && !mine && <p className="mt-3 flex items-center gap-1.5 text-xs text-faint"><Lock className="size-3" /> Private projects show their card only.</p>}
@@ -323,15 +320,6 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
             />
           </section>
           {mine ? (hideStrength ? null : <ProfileStrength steps={steps} />) : <SharedContext clubs={sharedClubs} mutual={mutual} mutualCount={mutualCount} />}
-          {nowBuilding && (
-            <Link href={`/projects/${nowBuilding.id}`} className="border border-line bg-surface group flex flex-col rounded-2xl p-5 transition">
-              <span className="flex items-center gap-2 text-xs font-medium text-muted"><span className="size-1.5 animate-pulse rounded-full bg-text" /> Now building</span>
-              <span className="mt-3 flex items-start gap-3">
-                <span className="nav-tile grid size-10 shrink-0 place-items-center rounded-xl text-text-2"><ProjectIcon tools={nowBuilding.tools} className="size-5" /></span>
-                <span className="min-w-0"><span className="block text-lg font-semibold tracking-tight group-hover:underline">{nowBuilding.title}</span><span className="mt-0.5 line-clamp-2 block text-sm text-text-2">{nowBuilding.summary}</span></span>
-              </span>
-            </Link>
-          )}
           {mine && f.goals && record && <GoalCard goal={goal} record={record} profileId={p.id} />}
 
           {/* Proof without revealing (redacted-proof.sql): private signed work, as one line each. */}
@@ -361,7 +349,7 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
               </ul>
             </SideCard>
           )}
-          <SideCard title="Network">
+          {(followers.length > 0 || (counts.followers ?? 0) + (counts.following ?? 0) + (counts.connections ?? 0) > 0) && <SideCard title="Network">
             {followers.length > 0 && <MemberFaces faces={followers.map((x) => ({ uid: x.id, first: x.first, last: x.last }))} ids={followers.map((x) => x.id)} total={counts.followers ?? followers.length} size={28} />}
             <div className="mt-2 grid grid-cols-3 gap-2 text-center">
               {([["followers", counts.followers, "Followers"], ["following", counts.following, "Following"], ["connections", counts.connections, "Connections"]] as const).map(([tab, n, label]) => {
@@ -369,7 +357,7 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
                 return mine ? <Link key={tab} href={`/network?tab=${tab}`} className="rounded-xl py-1.5 transition hover:bg-hover">{inner}</Link> : <div key={tab} className="py-1.5">{inner}</div>;
               })}
             </div>
-          </SideCard>
+          </SideCard>}
           {p.interests?.length > 0 && (
             <SideCard title="Interests">
               <div className="flex flex-wrap gap-1.5">{p.interests.map((t) => <Link key={t} href={`/feed?tab=latest&tag=${encodeURIComponent(t)}`} className="rounded-full border border-line bg-surface px-2.5 py-0.5 text-xs text-text-2 transition hover:border-transparent hover:bg-text hover:text-surface">#{t}</Link>)}</div>

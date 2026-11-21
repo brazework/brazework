@@ -266,13 +266,15 @@ async function ProjectView({ params, searchParams }: { params: PageProps<"/proje
           {(team.length > 0 || canManage) && <TeamList projectId={p.id} people={canManage ? everyone : team} candidates={candidates} manage={canManage} isOwner={own} roles={accessOn} me={user.id} />}
           {!own && <Link href={`/messages/new?to=${p.owner_id}`} className="mt-4 inline-flex h-9 w-full items-center justify-center rounded-lg border border-line text-sm font-medium transition hover:bg-hover">Message {owner?.first_name || "them"}</Link>}
         </Panel>
-        <ThirtySeconds lines={summary} ownerId={p.owner_id} />
+        {/* For people reading someone else's build (less clutter, Nov 21): you know your own project, and
+            Ember is in the bar at the top of every page. */}
+        {!own && <ThirtySeconds lines={summary} ownerId={p.owner_id} />}
         {/* Rendered once (no hidden copy for phones): the side column follows the log on a phone. */}
         {about}
-        <Link href={`/copilot?q=${encodeURIComponent(ask)}`} className="glass-card flex items-center gap-3 rounded-3xl p-4 transition">
+        {!own && <Link href={`/copilot?q=${encodeURIComponent(ask)}`} className="glass-card flex items-center gap-3 rounded-3xl p-4 transition">
           <Ember size={36} />
           <span className="min-w-0"><span className="block text-sm font-medium">Ask Ember about this project</span><span className="block text-xs text-muted">What it is, what&apos;s impressive, what to ask.</span></span>
-        </Link>
+        </Link>}
         {(more.data ?? []).length > 0 && (
           <Panel>
             <Kicker>More from {owner?.first_name || "them"}</Kicker>

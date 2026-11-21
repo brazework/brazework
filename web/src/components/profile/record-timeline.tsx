@@ -16,7 +16,7 @@ import type { RecordTimeline, TimelineMark } from "@/lib/record-timeline";
 // reads the same with a finger. On phones each project's name sits above its lane (no sideways scroll).
 // Every mark is a 24×24 tap target (e2e/m-layout.cjs); an update's dot stays small inside its own.
 
-export function RecordTimelineChart({ data, own, goal }: { data: RecordTimeline; own: boolean; goal?: string | null }) {
+export function RecordTimelineChart({ data, own, goal, toggle }: { data: RecordTimeline; own: boolean; goal?: string | null; toggle?: React.ReactNode }) {
   const lanes = data.lanes;
   const latest = lanes.flatMap((l) => l.marks.map((m) => ({ m, lane: l }))).filter((x) => x.m.kind !== "post").sort((a, b) => b.m.at - a.m.at)[0];
   const [active, setActive] = useState<string>(latest ? `${latest.lane.id}:${latest.m.id}` : "");
@@ -32,7 +32,7 @@ export function RecordTimelineChart({ data, own, goal }: { data: RecordTimeline;
   return (
     <section aria-labelledby="record-tl-h" className="rounded-2xl border border-line bg-surface p-5">
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
-        <h2 id="record-tl-h" className="text-[15px] font-semibold tracking-tight">Record over time</h2>
+        <span className="flex items-center gap-3"><h2 id="record-tl-h" className="text-[15px] font-semibold tracking-tight">Record over time</h2>{toggle}</span>
         <p className="text-sm text-muted">{summary}{data.since ? ` since ${data.since}` : ""}</p>
       </div>
       {goal && <p className="mt-1 flex items-center gap-1.5 text-xs text-text-2"><Flag className="size-3.5 text-muted" /> Heading toward {goal}</p>}
