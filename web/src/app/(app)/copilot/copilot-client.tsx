@@ -1,7 +1,7 @@
 "use client";
 import { AnimatePresence, motion } from "motion/react";
 import type { Preset } from "@/lib/copilot-presets";
-import { ArrowRight, BadgeCheck, CalendarCheck, CalendarDays, Check, Compass, Copy, CornerDownRight, FileText, GitBranch, History, Loader2, Megaphone, Plus, Search, ShieldCheck, ThumbsDown, ThumbsUp, Trash2, Users, X } from "lucide-react";
+import { ArrowRight, BadgeCheck, CalendarCheck, CalendarDays, Check, Compass, Copy, CornerDownRight, FileText, GitBranch, History, Loader2, Megaphone, Plus, ScrollText, Search, ShieldCheck, ThumbsDown, ThumbsUp, Trash2, Users, Waypoints, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useCopilot } from "@/components/copilot/use-copilot";
@@ -128,7 +128,7 @@ function NextSteps({ steps, busy, onAsk }: { steps: NextStep[]; busy: boolean; o
 
 // The chat: a rail of your saved chats (when supabase/copilot-chats.sql has run), the conversation
 // with real Brazework cards under each answer, tap-to-ask follow-ups, and the confirm cards.
-const ACTION_ICON: Record<EmberAction["id"], ComposerAction["icon"]> = { log: BadgeCheck, post: FileText, github: GitBranch, sign: ShieldCheck, event: CalendarCheck, people: Users };
+const ACTION_ICON: Record<EmberAction["id"], ComposerAction["icon"]> = { log: BadgeCheck, post: FileText, github: GitBranch, sign: ShieldCheck, review: ScrollText, story: Waypoints, event: CalendarCheck, people: Users };
 
 export function CopilotChat({ first, field, student = true, initial = "", initialPreset = null, chats = [], chat = null, saving = false, fromTools = null, steps = [] }: { steps?: NextStep[]; first: string; field: string; student?: boolean; initial?: string; initialPreset?: Preset | null; chats?: ChatSummary[]; chat?: { id: string; title: string; messages: SavedMsg[] } | null; saving?: boolean; fromTools?: FromTools | null }) {
   const { run, stop, busy, error, remaining } = useCopilot();

@@ -4,7 +4,7 @@
 // Worded for who's asking: a student's work is verified by their club, someone who works asks a
 // person who saw it. Pure, so the wording is unit-tested (tests/ember-actions.test.ts).
 
-export type EmberAction = { id: "log" | "post" | "github" | "sign" | "event" | "people"; label: string; text: string; finish?: string };
+export type EmberAction = { id: "log" | "post" | "github" | "sign" | "review" | "story" | "event" | "people"; label: string; text: string; finish?: string };
 
 export function emberActions({ field, student }: { field?: string | null; student: boolean }): EmberAction[] {
   const f = field?.trim();
@@ -15,6 +15,11 @@ export function emberActions({ field, student }: { field?: string | null; studen
     student
       ? { id: "sign", label: "Get it verified", text: "Help me get my latest milestone verified by my club." }
       : { id: "sign", label: "Get it signed", text: "Help me ask someone who saw my latest milestone to sign it." },
+    // From the record itself (Ember's my_record): only work someone stood behind goes in.
+    student
+      ? { id: "review", label: "Résumé bullets", text: "Write résumé bullets from my verified work." }
+      : { id: "review", label: "Prep my review", text: "Write my self-review for the last six months from my signed work." },
+    { id: "story", label: "Tell my story", text: "Tell the story of my record so far, year by year." },
     { id: "event", label: "Find an event", text: "Find an event this week that fits me and RSVP me." },
     { id: "people", label: "Meet people", text: `Find someone in ${f || "my field"} worth meeting and draft an intro message.` },
   ];
