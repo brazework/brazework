@@ -26,7 +26,7 @@ struct SignUpView: View {
             }
           }
           .transition(.asymmetric(insertion: .move(edge: .trailing).combined(with: .opacity), removal: .move(edge: .leading).combined(with: .opacity)))
-          if let error { Label(error, systemImage: "exclamationmark.circle").font(.footnote).foregroundStyle(p.danger) }
+          if let error { Label(error, icon: "exclamationmark.circle").font(.footnote).foregroundStyle(p.danger) }
           Button { Task { await next() } } label: { if busy { ProgressView().tint(p.onAccent) } else { Text(step < 2 ? "Continue" : "Create account") } }
             .buttonStyle(PrimaryButtonStyle())
             .disabled(busy)
@@ -60,14 +60,14 @@ struct SignUpView: View {
     let on = form.accountType == value
     return Button { withAnimation(.snappy) { form.accountType = value } } label: {
       HStack(alignment: .top, spacing: 14) {
-        Image(systemName: icon).font(.title2).foregroundStyle(on ? p.onAccent : p.text2).frame(width: 46, height: 46)
+        Icon(icon).font(.title2).foregroundStyle(on ? p.onAccent : p.text2).frame(width: 46, height: 46)
           .background(on ? AnyShapeStyle(p.accent) : AnyShapeStyle(p.surface2), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
         VStack(alignment: .leading, spacing: 3) {
           Text(title).font(.headline).foregroundStyle(p.text)
           Text(detail).font(.subheadline).foregroundStyle(p.muted).multilineTextAlignment(.leading)
         }
         Spacer(minLength: 0)
-        Image(systemName: on ? "checkmark.circle.fill" : "circle").font(.title3).foregroundStyle(on ? p.accent : p.faint)
+        Icon(on ? "checkmark.circle.fill" : "circle").font(.title3).foregroundStyle(on ? p.accent : p.faint)
       }
       .padding(16)
       .background(p.surface, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
@@ -99,7 +99,7 @@ struct SignUpView: View {
           .focused($focus, equals: .email).submitLabel(.next).onSubmit { focus = .password }
       }
       field { SecureField("Password (8+ characters)", text: $form.password).textContentType(.newPassword).focused($focus, equals: .password).submitLabel(.go).onSubmit { Task { await next() } } }
-      if form.accountType == "student" { Label("We'll send a link to confirm it's yours.", systemImage: "checkmark.shield").font(.caption).foregroundStyle(p.muted) }
+      if form.accountType == "student" { Label("We'll send a link to confirm it's yours.", icon: "checkmark.shield").font(.caption).foregroundStyle(p.muted) }
     }
     .onAppear { focus = .email }
   }
@@ -139,7 +139,7 @@ struct CheckEmailView: View {
   @State private var note: String?
   var body: some View {
     VStack(spacing: 18) {
-      Image(systemName: "envelope.badge").font(.system(size: 52)).foregroundStyle(p.accent).padding(.top, 40)
+      Icon("envelope.badge").font(.system(size: 52)).foregroundStyle(p.accent).padding(.top, 40)
       Text("Check your email").font(.title.weight(.bold)).foregroundStyle(p.text)
       Text("We sent a link to \(email). Open it to confirm your account, then come back and log in.").font(.body).foregroundStyle(p.muted).multilineTextAlignment(.center)
       Button("I've confirmed it — log in", action: onDone).buttonStyle(PrimaryButtonStyle())
@@ -164,7 +164,7 @@ struct ForgotPasswordView: View {
     NavigationStack {
       VStack(alignment: .leading, spacing: 16) {
         if sent {
-          Label("If there's an account for \(email), a reset link is on its way.", systemImage: "envelope.open").foregroundStyle(p.text)
+          Label("If there's an account for \(email), a reset link is on its way.", icon: "envelope.open").foregroundStyle(p.text)
         } else {
           Text("Enter your email and we'll send a link to choose a new password.").foregroundStyle(p.muted)
           TextField("Email", text: $email).textContentType(.emailAddress).keyboardType(.emailAddress).textInputAutocapitalization(.never).autocorrectionDisabled()

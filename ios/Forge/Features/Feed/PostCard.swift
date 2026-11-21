@@ -22,7 +22,7 @@ struct PostCard: View {
   var body: some View {
     VStack(alignment: .leading, spacing: 12) {
       if !item.reason.isEmpty {
-        Label(item.reason, systemImage: "sparkles").font(.caption).foregroundStyle(p.faint).labelStyle(.titleAndIcon)
+        Label(item.reason, icon: "sparkles").font(.caption).foregroundStyle(p.faint).labelStyle(.titleAndIcon)
       }
       HStack(spacing: 10) {
         NavigationLink(value: PersonRoute(id: post.authorId)) {
@@ -47,14 +47,14 @@ struct PostCard: View {
         if session.userId != nil {
           Menu {
             if mine {
-              Button("Edit", systemImage: "pencil") { editing = true }
-              Button("Delete", systemImage: "trash", role: .destructive) { confirmDelete = true }
+              Button("Edit", icon: "pencil") { editing = true }
+              Button("Delete", icon: "trash", role: .destructive) { confirmDelete = true }
             } else {
-              Button("Report post", systemImage: "flag") { reporting = ReportTarget(kind: .post, id: post.id, title: "Report post") }
-              Button("Block \(post.authorFirst)", systemImage: "hand.raised", role: .destructive) { confirmBlock = true }
+              Button("Report post", icon: "flag") { reporting = ReportTarget(kind: .post, id: post.id, title: "Report post") }
+              Button("Block \(post.authorFirst)", icon: "hand.raised", role: .destructive) { confirmBlock = true }
             }
           } label: {
-            Image(systemName: "ellipsis").font(.subheadline.weight(.semibold)).foregroundStyle(p.muted).frame(width: 32, height: 32).contentShape(Rectangle())
+            Icon("ellipsis").font(.subheadline.weight(.semibold)).foregroundStyle(p.muted).frame(width: 32, height: 32).contentShape(Rectangle())
           }
           .accessibilityLabel("Post options")
         }
@@ -70,7 +70,7 @@ struct PostCard: View {
         action(liked ? "heart.fill" : "heart", post.likeCount, tint: liked ? p.accent : p.muted, label: liked ? "Unlike" : "Like", run: onLike)
           .sensoryFeedback(.impact(weight: .light), trigger: liked)
         NavigationLink(value: post) {
-          Label { Text(post.commentCount > 0 ? "\(post.commentCount)" : (post.kind == "question" ? "Answer" : "Reply")).monospacedDigit() } icon: { Image(systemName: "bubble.left") }
+          Label { Text(post.commentCount > 0 ? "\(post.commentCount)" : (post.kind == "question" ? "Answer" : "Reply")).monospacedDigit() } icon: { Icon("bubble.left") }
             .font(.subheadline).foregroundStyle(p.muted).padding(.horizontal, 10).frame(minHeight: 44)
         }
         .accessibilityLabel(post.kind == "question" ? "Answer" : "Reply")
@@ -79,7 +79,7 @@ struct PostCard: View {
           Text("Unanswered").font(.caption2.weight(.semibold)).foregroundStyle(p.wait).padding(.horizontal, 8).padding(.vertical, 3).background(p.wait.opacity(0.12), in: Capsule())
         }
         action(saved ? "bookmark.fill" : "bookmark", nil, tint: saved ? p.accent : p.muted, label: saved ? "Unsave" : "Save", run: onSave)
-        ShareLink(item: Env.web("post/\(post.id)")) { Image(systemName: "square.and.arrow.up").font(.subheadline).foregroundStyle(p.muted).frame(width: 44, height: 44) }
+        ShareLink(item: Env.web("post/\(post.id)")) { Icon("square.and.arrow.up").font(.subheadline).foregroundStyle(p.muted).frame(width: 44, height: 44) }
           .accessibilityLabel("Share")
       }
       .padding(.top, -4)
@@ -89,7 +89,7 @@ struct PostCard: View {
     .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous).strokeBorder(p.border, lineWidth: 0.5))
     .overlay {
       // Double-tap to like: a heart that pops and fades.
-      Image(systemName: "heart.fill").font(.system(size: 84)).foregroundStyle(p.accent)
+      Icon("heart.fill").font(.system(size: 84)).foregroundStyle(p.accent)
         .shadow(color: .black.opacity(0.2), radius: 10)
         .scaleEffect(showBurst ? 1 : 0.4).opacity(showBurst ? 1 : 0)
         .allowsHitTesting(false)
@@ -99,18 +99,18 @@ struct PostCard: View {
     .onTapGesture(count: 2) { doubleTapLike() }
     .sensoryFeedback(.impact(weight: .medium), trigger: burst)
     .contextMenu {
-      Button(liked ? "Unlike" : "Like", systemImage: liked ? "heart.slash" : "heart") { onLike() }
-      Button(saved ? "Remove from saved" : "Save", systemImage: saved ? "bookmark.slash" : "bookmark") { onSave() }
-      ShareLink(item: Env.web("post/\(post.id)")) { Label("Share", systemImage: "square.and.arrow.up") }
-      Button("Copy link", systemImage: "link") { UIPasteboard.general.url = Env.web("post/\(post.id)") }
-      Button("Copy text", systemImage: "doc.on.doc") { UIPasteboard.general.string = post.body }
+      Button(liked ? "Unlike" : "Like", icon: liked ? "heart.slash" : "heart") { onLike() }
+      Button(saved ? "Remove from saved" : "Save", icon: saved ? "bookmark.slash" : "bookmark") { onSave() }
+      ShareLink(item: Env.web("post/\(post.id)")) { Label("Share", icon: "square.and.arrow.up") }
+      Button("Copy link", icon: "link") { UIPasteboard.general.url = Env.web("post/\(post.id)") }
+      Button("Copy text", icon: "doc.on.doc") { UIPasteboard.general.string = post.body }
       Divider()
       if mine {
-        Button("Edit", systemImage: "pencil") { editing = true }
-        Button("Delete", systemImage: "trash", role: .destructive) { confirmDelete = true }
+        Button("Edit", icon: "pencil") { editing = true }
+        Button("Delete", icon: "trash", role: .destructive) { confirmDelete = true }
       } else {
-        Button("Report post", systemImage: "flag") { reporting = ReportTarget(kind: .post, id: post.id, title: "Report post") }
-        Button("Block \(post.authorFirst)", systemImage: "hand.raised", role: .destructive) { confirmBlock = true }
+        Button("Report post", icon: "flag") { reporting = ReportTarget(kind: .post, id: post.id, title: "Report post") }
+        Button("Block \(post.authorFirst)", icon: "hand.raised", role: .destructive) { confirmBlock = true }
       }
     }
     .sheet(item: $reporting) { ReportSheet(kind: $0.kind, targetId: $0.id, title: $0.title) }
@@ -166,7 +166,7 @@ struct PostCard: View {
   private func action(_ icon: String, _ count: Int?, tint: Color, label: String, run: @escaping () -> Void) -> some View {
     Button(action: run) {
       HStack(spacing: 5) {
-        Image(systemName: icon).contentTransition(.symbolEffect(.replace))
+        Icon(icon).contentTransition(.symbolEffect(.replace))
         if let count, count > 0 { Text("\(count)").monospacedDigit().contentTransition(.numericText()) }
       }
       .font(.subheadline).foregroundStyle(tint).padding(.horizontal, 10).frame(minHeight: 44)
@@ -200,7 +200,7 @@ struct MediaView: View {
     AsyncImage(url: mediaURL(i.path)) { phase in
       switch phase {
       case .success(let img): img.resizable().scaledToFill()
-      case .failure: ZStack { p.surface2; Image(systemName: "photo").foregroundStyle(p.faint) }
+      case .failure: ZStack { p.surface2; Icon("photo").foregroundStyle(p.faint) }
       default: p.surface2
       }
     }

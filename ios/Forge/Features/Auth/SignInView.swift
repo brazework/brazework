@@ -39,7 +39,7 @@ struct SignInView: View {
             SecureField("Password", text: $password)
               .textContentType(.password).focused($field, equals: .password).submitLabel(.go).onSubmit { Task { await submit() } }
               .modifier(InputStyle())
-            if let error { Label(error, systemImage: "exclamationmark.circle").font(.footnote).foregroundStyle(p.danger).frame(maxWidth: .infinity, alignment: .leading) }
+            if let error { Label(error, icon: "exclamationmark.circle").font(.footnote).foregroundStyle(p.danger).frame(maxWidth: .infinity, alignment: .leading) }
             Button { Task { await submit() } } label: { if busy { ProgressView().tint(p.onAccent) } else { Text("Log in") } }
               .buttonStyle(PrimaryButtonStyle())
               .disabled(email.isEmpty || password.isEmpty || busy)

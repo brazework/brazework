@@ -60,7 +60,7 @@ private struct EventRow: View {
         Text(event.title).font(.body.weight(.semibold)).foregroundStyle(p.text).multilineTextAlignment(.leading)
         Text(event.startsAt.formatted(.dateTime.weekday(.wide).hour().minute())).font(.subheadline).foregroundStyle(p.text2)
         Text([event.host, event.format == "Online" ? "Online" : event.location].filter { !$0.isEmpty }.joined(separator: " · ")).font(.caption).foregroundStyle(p.muted).lineLimit(1)
-        if going { Label("Going", systemImage: "checkmark.circle.fill").font(.caption.weight(.semibold)).foregroundStyle(p.ok) }
+        if going { Label("Going", icon: "checkmark.circle.fill").font(.caption.weight(.semibold)).foregroundStyle(p.ok) }
       }
       Spacer(minLength: 0)
     }
@@ -94,17 +94,17 @@ struct EventDetailView: View {
           }
         }
         VStack(alignment: .leading, spacing: 8) {
-          Label(event.startsAt.formatted(.dateTime.weekday(.wide).month().day().hour().minute()) + " – " + event.endsAt.formatted(.dateTime.hour().minute()), systemImage: "clock")
-          Label(event.format == "Online" ? "Online" : event.location, systemImage: event.format == "Online" ? "video" : "mappin.and.ellipse")
-          Label("\(event.type) · \(count) going", systemImage: "person.2")
+          Label(event.startsAt.formatted(.dateTime.weekday(.wide).month().day().hour().minute()) + " – " + event.endsAt.formatted(.dateTime.hour().minute()), icon: "clock")
+          Label(event.format == "Online" ? "Online" : event.location, icon: event.format == "Online" ? "video" : "mappin.and.ellipse")
+          Label("\(event.type) · \(count) going", icon: "person.2")
         }
         .font(.subheadline).foregroundStyle(p.text2)
 
-        Button { Task { await toggle() } } label: { Label(going ? "You're going" : "I'm going", systemImage: going ? "checkmark.circle.fill" : "plus.circle") }
+        Button { Task { await toggle() } } label: { Label(going ? "You're going" : "I'm going", icon: going ? "checkmark.circle.fill" : "plus.circle") }
           .buttonStyle(PrimaryButtonStyle())
           .sensoryFeedback(.success, trigger: going)
         if going {
-          Button { Task { await openChat() } } label: { Label("Event chat", systemImage: "bubble.left.and.bubble.right").frame(maxWidth: .infinity, minHeight: 44) }
+          Button { Task { await openChat() } } label: { Label("Event chat", icon: "bubble.left.and.bubble.right").frame(maxWidth: .infinity, minHeight: 44) }
             .buttonStyle(.bordered)
         }
         if let error { Text(error).font(.footnote).foregroundStyle(p.danger) }
@@ -113,7 +113,7 @@ struct EventDetailView: View {
           map
         }
         if event.format != "In person", let url = URL(string: event.link), !event.link.isEmpty {
-          Button { openURL(url) } label: { Label("Join online", systemImage: "video.fill").frame(maxWidth: .infinity, minHeight: 44) }.buttonStyle(.bordered)
+          Button { openURL(url) } label: { Label("Join online", icon: "video.fill").frame(maxWidth: .infinity, minHeight: 44) }.buttonStyle(.bordered)
         }
         if !event.description.isEmpty {
           Text("About").font(.headline).foregroundStyle(p.text)
@@ -143,7 +143,7 @@ struct EventDetailView: View {
         .allowsHitTesting(false)
         .accessibilityLabel("Map of \(event.location)")
         Button { place.openInMaps(launchOptions: [MKLaunchOptionsDirectionsModeKey: MKLaunchOptionsDirectionsModeDefault]) } label: {
-          Label("Directions", systemImage: "arrow.triangle.turn.up.right.diamond.fill").frame(maxWidth: .infinity, minHeight: 44)
+          Label("Directions", icon: "arrow.triangle.turn.up.right.diamond.fill").frame(maxWidth: .infinity, minHeight: 44)
         }
         .buttonStyle(.bordered)
       } else {

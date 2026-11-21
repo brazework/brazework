@@ -46,7 +46,7 @@ struct GroupThreadView: View {
     .toolbar {
       if route.kind == "team" {
         ToolbarItem(placement: .primaryAction) {
-          Button { showMembers = true } label: { Image(systemName: "person.2") }.accessibilityLabel("Members")
+          Button { showMembers = true } label: { Icon("person.2") }.accessibilityLabel("Members")
         }
       }
     }
@@ -64,7 +64,7 @@ struct GroupThreadView: View {
     let mine = m.senderId == session.userId && !m.ember
     if m.announcement {
       VStack(alignment: .leading, spacing: 6) {
-        Label("Announcement · \(m.senderName)", systemImage: "megaphone.fill").font(.caption.weight(.semibold)).foregroundStyle(p.accent)
+        Label("Announcement · \(m.senderName)", icon: "megaphone.fill").font(.caption.weight(.semibold)).foregroundStyle(p.accent)
         Text(m.body).font(.body).foregroundStyle(p.text)
         Text(timeAgo(m.createdAt)).font(.caption2).foregroundStyle(p.faint)
       }
@@ -78,7 +78,7 @@ struct GroupThreadView: View {
         if mine { Spacer(minLength: 48) }
         if !mine {
           if first {
-            if m.ember { Image(systemName: "sparkles").font(.caption).foregroundStyle(p.onAccent).frame(width: 28, height: 28).background(Palette.brand, in: Circle()) }
+            if m.ember { Icon("sparkles").font(.caption).foregroundStyle(p.onAccent).frame(width: 28, height: 28).background(Palette.brand, in: Circle()) }
             else { NavigationLink(value: PersonRoute(id: m.senderId)) { Avatar(first: m.senderFirst, last: m.senderLast, size: 28) } }
           } else { Color.clear.frame(width: 28, height: 1) }
         }
@@ -115,7 +115,7 @@ struct GroupThreadView: View {
       if let error { Text(error).font(.caption).foregroundStyle(p.danger) }
       if let r = replying { ReplyBar(name: r.ember ? "Ember" : r.senderFirst, text: r.body) { replying = nil } }
       if officer && replying == nil {
-        Toggle(isOn: $announce) { Label("Post as an announcement", systemImage: "megaphone") }
+        Toggle(isOn: $announce) { Label("Post as an announcement", icon: "megaphone") }
           .font(.footnote).toggleStyle(.switch).tint(p.accent)
       }
       HStack(alignment: .bottom, spacing: 8) {
@@ -124,7 +124,7 @@ struct GroupThreadView: View {
           .padding(.horizontal, 14).padding(.vertical, 10)
           .background(p.surface2, in: RoundedRectangle(cornerRadius: 22, style: .continuous))
         Button { Task { await send() } } label: {
-          Image(systemName: announce ? "megaphone.fill" : "arrow.up").font(.body.weight(.bold)).foregroundStyle(p.onAccent).frame(width: 40, height: 40).background(p.accent, in: Circle())
+          Icon(announce ? "megaphone.fill" : "arrow.up").font(.body.weight(.bold)).foregroundStyle(p.onAccent).frame(width: 40, height: 40).background(p.accent, in: Circle())
         }
         .disabled(draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || sending)
         .accessibilityLabel(announce ? "Announce" : "Send")

@@ -30,7 +30,7 @@ struct FeedView: View {
             MessagesCard(entries: inbox)
             FeedFilterBar(store: store).padding(.top, 4)
             if let error = store.error {
-              Label(error, systemImage: "exclamationmark.triangle").font(.footnote).foregroundStyle(p.danger).frame(maxWidth: .infinity, alignment: .leading)
+              Label(error, icon: "exclamationmark.triangle").font(.footnote).foregroundStyle(p.danger).frame(maxWidth: .infinity, alignment: .leading)
             }
             if !store.loaded && store.items.isEmpty {
               ForEach(0..<3, id: \.self) { _ in SkeletonCard() }
@@ -79,16 +79,16 @@ struct FeedView: View {
         // Alerts live here now (they were a tab): the bell, with a dot when something's new.
         ToolbarItem(placement: .primaryAction) {
           Button { showAlerts = true } label: {
-            Image(systemName: session.unreadAlerts > 0 ? "bell.badge" : "bell")
+            Icon(session.unreadAlerts > 0 ? "bell.badge" : "bell")
           }
           .accessibilityLabel(session.unreadAlerts > 0 ? "Alerts, \(session.unreadAlerts) new" : "Alerts")
         }
         ToolbarItem(placement: .primaryAction) {
-          NavigationLink { SearchView() } label: { Image(systemName: "magnifyingglass") }
+          NavigationLink { SearchView() } label: { Icon("magnifyingglass") }
             .accessibilityLabel("Search")
         }
         ToolbarItem(placement: .primaryAction) {
-          Button { compose = ComposeStart(kind: "update", photo: false) } label: { Image(systemName: "square.and.pencil") }
+          Button { compose = ComposeStart(kind: "update", photo: false) } label: { Icon("square.and.pencil") }
             .accessibilityLabel("New post")
         }
       }
@@ -159,7 +159,7 @@ struct FeedView: View {
 
   private var caughtUp: some View {
     VStack(spacing: 8) {
-      Image(systemName: "checkmark.circle").font(.title2).foregroundStyle(p.faint)
+      Icon("checkmark.circle").font(.title2).foregroundStyle(p.faint)
       Text("You're all caught up").font(.subheadline.weight(.semibold)).foregroundStyle(p.text2)
       Text(clubs.isEmpty ? "Post something, or check back later." : "Find more in Clubs and Events.").font(.footnote).foregroundStyle(p.muted)
     }

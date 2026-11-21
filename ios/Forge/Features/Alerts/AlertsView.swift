@@ -14,7 +14,7 @@ struct AlertsView: View {
         HStack(alignment: .top, spacing: 12) {
           ZStack(alignment: .bottomTrailing) {
             Avatar(first: n.actorFirst, last: n.actorLast, size: 44)
-            Image(systemName: icon(n.kind)).font(.system(size: 10, weight: .bold)).foregroundStyle(.white)
+            Icon(icon(n.kind)).font(.system(size: 10, weight: .bold)).foregroundStyle(.white)
               .frame(width: 20, height: 20).background(color(n.kind), in: Circle()).overlay(Circle().strokeBorder(p.bg, lineWidth: 2)).offset(x: 4, y: 4)
           }
           VStack(alignment: .leading, spacing: 3) {
