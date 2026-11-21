@@ -12,8 +12,8 @@ import { finishSignup, type FinishState } from "./actions";
 // "About you": the second step for everyone, however they signed up (email and password, or Google,
 // GitHub or LinkedIn). Student or professional, name, birthday. The database holds these to the
 // sign-up rules (finish_signup()); names start from the provider's when there is one.
-// askLinkedin: a professional is offered a LinkedIn profile link, optional here; they need it later
-// to ask someone to sign (supabase/linkedin-required.sql has run; Linear FIX-214). Students aren't asked.
+// askLinkedin: a professional is offered a LinkedIn profile link, optional (supabase/linkedin-optional.sql:
+// asking someone to sign never needs it; Linear FIX-214). Students aren't asked.
 export function FinishSignupForm({ email, provider, firstName, lastName, askLinkedin = false }: { email: string; provider?: string; firstName: string; lastName: string; askLinkedin?: boolean }) {
   const [state, action, pending] = useActionState<FinishState, FormData>(finishSignup, { message: "" });
   const [type, setType] = useState<"student" | "professional" | "">("");
@@ -64,7 +64,7 @@ export function FinishSignupForm({ email, provider, firstName, lastName, askLink
         </div>
         <Field label="Birthday" hint="Private, never shown. Brazework is for people 18 and older."><input name="birthday" type="date" autoComplete="bday" className={inputCls} /></Field>
         {askLinkedin && type === "professional" && (
-          <Field label="LinkedIn profile" optional hint={`You'll need it to ask someone to sign your work. ${LINKEDIN_PRIVATE}`}>
+          <Field label="LinkedIn profile" optional hint={LINKEDIN_PRIVATE}>
             <input name="linkedin" type="text" inputMode="url" autoComplete="url" autoCapitalize="none" autoCorrect="off" spellCheck={false} maxLength={200} placeholder={LINKEDIN_PLACEHOLDER} className={inputCls} />
           </Field>
         )}

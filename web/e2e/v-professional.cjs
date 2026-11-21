@@ -3,8 +3,8 @@
 // land on Today, start with what they're building, and the next steps send them to a person who saw
 // it. The landing page says who signs for a student, an employee and someone on their own. Home asks
 // what they're working on (no semester), and Settings lets anyone switch Studying ↔ Working.
-// A working account adds its LinkedIn profile link before asking a person to sign (Linear FIX-214):
-// offered in About you (optional), asked for where they ask, kept private, shown in Settings.
+// The LinkedIn profile link (Linear FIX-214) is optional (supabase/linkedin-optional.sql, step 87):
+// offered in About you and Settings, never asked for where they ask, removable, kept private.
 const { execSync } = require("child_process");
 const { step, browser, go, closeTour, hydrated, summary } = require("./lib.cjs");
 // stderr is kept out of the run's output: one step expects the database to refuse, and reads why.
@@ -59,7 +59,7 @@ const psql = (sql) => execSync(`docker exec -i ${process.env.E2E_STACK || "forge
     await page.fill('input[name="birthday"]', "1996-03-12");
     // A professional is offered a LinkedIn profile link: optional, but a wrong one is refused.
     await page.getByLabel(/LinkedIn profile/).waitFor();
-    await page.getByText("You'll need it to ask someone to sign your work. Private: it isn't shown on your profile or your record.").waitFor();
+    await page.getByText("Private: it isn't shown on your profile or your record.").waitFor();
     await page.getByLabel(/LinkedIn profile/).fill("twitter.com/pat");
     await page.getByRole("button", { name: "Continue" }).click();
     await page.getByText(/Enter your LinkedIn profile link/).waitFor({ timeout: 15000 });
@@ -137,10 +137,10 @@ const psql = (sql) => execSync(`docker exec -i ${process.env.E2E_STACK || "forge
     insert into public.milestones (project_id, community_id, title, detail, evidence) select id, null, '${title}', '', 'https://github.com/voltline/cell/pull/7' from public.projects where owner_id = '${id}' limit 1;
     select public.request_vouch((select id from public.milestones where owner_id = '${id}' and title = '${title}' limit 1), 'sam.rivera@northwind-payments.io', 'manager', repeat('${token}', 64)); commit;`);
 
-  await step("asking someone to sign needs their LinkedIn link first: the dialog says so and takes it; nothing is saved meanwhile", async () => {
-    let refused = "";
-    try { askAs("a"); } catch (e) { refused = String(e.stderr || e.message); }
-    if (!/Add your LinkedIn profile link before you ask someone to sign/.test(refused)) throw new Error("the database let a working account with no link ask: " + refused.slice(0, 200));
+  await step("asking someone to sign doesn't need a LinkedIn link: the database lets them, and the dialog never asks for one", async () => {
+    askAs("a");
+    if (psql(`select count(*) from public.milestone_vouches where requested_by = '${id}' and state = 'asked'`) !== "1") throw new Error("a working account with no link couldn't ask");
+    psql(`delete from public.milestones where owner_id = '${id}' and title = '${title}'`);
     await go(page, "/u/" + id);
     await hydrated(page.getByRole("button", { name: "Add milestone" }).first());
     await page.getByRole("button", { name: "Add milestone" }).first().click();
@@ -150,41 +150,34 @@ const psql = (sql) => execSync(`docker exec -i ${process.env.E2E_STACK || "forge
     await dialog.locator('input[name="title"]').fill(title);
     await dialog.locator('input[name="evidence"]').fill("https://github.com/voltline/cell/pull/7");
     await dialog.locator('input[name="vouchEmail"]').fill("sam.rivera@northwind-payments.io");
-    if (await dialog.locator('input[name="linkedin"]').count()) throw new Error("the LinkedIn field shows before it's needed");
     await dialog.getByRole("button", { name: "Ask them to vouch" }).click();
-    await dialog.getByText("Add your LinkedIn profile link to ask someone to sign.").waitFor({ timeout: 15000 });
-    if (psql(`select count(*) from public.milestones where owner_id = '${id}' and title = '${title}'`) !== "0") throw new Error("a milestone was saved though the ask couldn't go");
-    await dialog.getByLabel("Your LinkedIn profile").fill("linkedin.com/company/voltline");
-    await dialog.getByRole("button", { name: "Ask them to vouch" }).click();
-    await dialog.getByText(/Enter your LinkedIn profile link/).waitFor({ timeout: 15000 });
-    await dialog.getByLabel("Your LinkedIn profile").fill("https://uk.linkedin.com/in/pat-okoro/?utm_source=share");
-    await dialog.getByRole("button", { name: "Ask them to vouch" }).click();
-    // The link is saved and the ask is no longer refused for it: either it went (the dialog closes)
-    // or, on a stack that sends no email, the app says so.
+    // The ask goes (the dialog closes) or, on a stack that sends no email, the app says so. Never a LinkedIn stop.
     await Promise.race([
       page.locator("dialog[open]").waitFor({ state: "detached", timeout: 20000 }),
       dialog.getByText(/Email isn't available right now/).waitFor({ timeout: 20000 }),
     ]);
-    if (psql(`select public.linkedin_clean(linkedin_url) from public.profiles where id = '${id}'`) !== "https://www.linkedin.com/in/pat-okoro") throw new Error("the link from the dialog wasn't saved");
-    psql(`delete from public.milestones where owner_id = '${id}' and title = '${title}'`);
-    askAs("b");
-    const asked = psql(`select count(*) from public.milestone_vouches where requested_by = '${id}' and state = 'asked'`);
-    if (asked !== "1") throw new Error("with the link, the ask should go out: " + asked);
+    if (await page.getByText(/Add your LinkedIn profile link/).count()) throw new Error("the dialog asked for a LinkedIn link");
+    if (await page.locator('dialog[open] input[name="linkedin"]').count()) throw new Error("the dialog shows a LinkedIn field");
+    if (psql(`select coalesce(linkedin_url, '') from public.profiles where id = '${id}'`) !== "") throw new Error("a link was saved nobody gave");
   }, page);
 
-  await step("Settings shows the link, cleaned; having asked, they can change it but not remove it", async () => {
+  await step("Settings: the link is optional, saved cleaned, and can be removed even after asking someone to sign", async () => {
     await go(page, "/settings");
     const link = page.getByLabel(/LinkedIn profile/);
     await link.waitFor({ timeout: 15000 });
-    if ((await link.inputValue()) !== "https://www.linkedin.com/in/pat-okoro") throw new Error("the saved link is " + (await link.inputValue()));
-    await link.fill("");
-    await page.getByRole("button", { name: "Save profile" }).click();
-    await page.getByText(/your account keeps a LinkedIn link/).waitFor({ timeout: 15000 });
-    await link.fill("linkedin.com/in/pat-okoro-pe");
+    await link.fill("https://uk.linkedin.com/in/pat-okoro/?utm_source=share");
     await page.getByRole("button", { name: "Save profile" }).click();
     await page.getByText("Profile saved.").waitFor({ timeout: 15000 });
     await go(page, "/settings");
-    if ((await page.getByLabel(/LinkedIn profile/).inputValue()) !== "https://www.linkedin.com/in/pat-okoro-pe") throw new Error("the changed link wasn't kept");
+    if ((await page.getByLabel(/LinkedIn profile/).inputValue()) !== "https://www.linkedin.com/in/pat-okoro") throw new Error("the saved link is " + (await page.getByLabel(/LinkedIn profile/).inputValue()));
+    await page.getByLabel(/LinkedIn profile/).fill("");
+    await page.getByRole("button", { name: "Save profile" }).click();
+    await page.getByText("Profile saved.").waitFor({ timeout: 15000 });
+    if (psql(`select coalesce(linkedin_url, '') from public.profiles where id = '${id}'`) !== "") throw new Error("the link couldn't be removed");
+    // Back on, for the privacy check below.
+    await page.getByLabel(/LinkedIn profile/).fill("linkedin.com/in/pat-okoro");
+    await page.getByRole("button", { name: "Save profile" }).click();
+    await page.getByText("Profile saved.").waitFor({ timeout: 15000 });
   }, page);
 
   await step("the link is private: it isn't on their record, and another member can't read it", async () => {
@@ -195,12 +188,12 @@ const psql = (sql) => execSync(`docker exec -i ${process.env.E2E_STACK || "forge
     if (/pat-okoro/.test(other)) throw new Error("another member read the link: " + other);
   }, page);
 
-  // The way in for most new people is the first build. A working account with no LinkedIn link is
-  // asked for it on the last screen, only when they ask a person; "Not yet" needs none.
+  // The way in for most new people is the first build. A working account with no LinkedIn link asks
+  // a person on the last screen without being asked for one.
   const ctx2 = await b.newContext({ viewport: { width: 1440, height: 950 } });
   const p2 = await ctx2.newPage(); p2.errs = []; p2.on("pageerror", (e) => p2.errs.push(e.message));
   const email2 = `sky${Date.now() % 100000}@voltline.test`;
-  await step("first build as a professional with no link: the last screen asks for it before the ask, and saves nothing until it's right", async () => {
+  await step("first build as a professional with no link: the last screen never asks for one, and the ask goes", async () => {
     await go(p2, "/signup");
     await p2.fill('input[name="email"]', email2); await p2.fill('input[name="password"]', "forge-test-pass-1");
     await p2.locator('button[type="submit"]').click();
@@ -224,21 +217,14 @@ const psql = (sql) => execSync(`docker exec -i ${process.env.E2E_STACK || "forge
     await p2.getByText("Step 5 of 5").waitFor({ timeout: 10000 });
     await p2.getByRole("radio", { name: /A manager or mentor/ }).click();
     await p2.locator('input[name="signerEmail"]').fill("sam.rivera@northwind-payments.io");
-    await p2.getByLabel("Your LinkedIn profile").waitFor();
+    if (await p2.getByLabel("Your LinkedIn profile").count()) throw new Error("the last screen asks for a LinkedIn link");
     await p2.getByRole("button", { name: "Ask for a signature" }).click();
-    await p2.getByText("Add your LinkedIn profile link to ask someone to sign.").waitFor({ timeout: 15000 });
-    await p2.getByLabel("Your LinkedIn profile").fill("linkedin.com/company/voltline");
-    await p2.getByRole("button", { name: "Ask for a signature" }).click();
-    await p2.getByText(/Enter your LinkedIn profile link/).waitFor({ timeout: 15000 });
-    if (psql(`select count(*) from public.projects where owner_id = '${id2}'`) !== "0") throw new Error("a project was started though the ask couldn't go");
-    await p2.getByLabel("Your LinkedIn profile").fill("linkedin.com/in/sky-adu");
-    await p2.getByRole("button", { name: "Ask for a signature" }).click();
-    // The link is saved; the ask itself goes, or (on a stack that sends no email) the app says so.
     await Promise.race([
       p2.waitForURL(/\/u\//, { timeout: 25000 }),
       p2.getByText(/Email isn't available right now/).waitFor({ timeout: 25000 }),
     ]);
-    if (psql(`select coalesce(linkedin_url, '') from public.profiles where id = '${id2}'`) !== "https://www.linkedin.com/in/sky-adu") throw new Error("the link from the last screen wasn't saved");
+    if (await p2.getByText(/Add your LinkedIn profile link/).count()) throw new Error("the ask stopped for a LinkedIn link");
+    if (psql(`select count(*) from public.projects where owner_id = '${id2}'`) === "0") throw new Error("the first build wasn't saved");
   }, p2);
 
   summary();
