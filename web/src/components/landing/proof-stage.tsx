@@ -1,15 +1,17 @@
 "use client";
-import { Check, Plug, RotateCcw } from "lucide-react";
+import { Check, Plug, RotateCcw, Sparkles } from "lucide-react";
 import { useReducedMotion } from "motion/react";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Seal } from "@/components/app/verified-seal";
 import { cn } from "@/lib/forge";
-import { HERO_STORIES, type HeroPhase, type HeroStory, stageTitle } from "@/lib/landing-demo";
+import { HERO_STORIES, type HeroPhase, type HeroStory, heroRecord, shortName, stageTitle } from "@/lib/landing-demo";
 import { REF_KEY, firstStoryFor, refFrom } from "@/lib/launch";
 
-// The hero's demo: the whole product in one card. The member asks their AI in a chat, in plain words;
-// it drafts the result with its proof (the visitor's own line, once they type one) and sends it to
-// whoever saw the work, they sign it, and someone who searched signed work asks to talk. The chips
+// The hero's demo: the whole product in one card (rebuilt around the record, Linear FIX-222). The
+// member says what they finished in a sentence; their AI does the write-up (what it read, the draft,
+// its proof); and the entry itself is the biggest thing on the card, with a title block that fills
+// in as the story goes: status, who signed, when, who found it. Whoever saw the work signs it, and
+// someone who searched signed work asks to talk. The person leads each step; the AI is the help. The chips
 // above the card name seven ways of working (HERO_STORIES: a student, software, mechanical, electrical
 // and civil engineers, a researcher and a designer, each with what their AI reads and who signs), because
 // the same record works for anyone who builds, with any tool. It plays them in turn until the visitor
@@ -123,53 +125,67 @@ function Stage({ build, story, onDone, onTouch, ghost = false }: { build: string
   const shown = reduce ? CMD.length : typed;
 
   const signed = step >= 2;
+  const drafted = phase === "draft" || phase === "sent";
+  // Where the entry stands, as a drawing's title block: it fills in as the story goes (lib/landing-demo.ts).
+  const cells = heroRecord({ phase, step, signer: story.signer.name, finder: shortName(story.finder.name), today: "Today" });
 
   return (
     <div className="flex h-full flex-col overflow-hidden rounded-2xl border border-line-strong bg-surface">
       <Flow at={step} onPick={jump} />
-      <ol className="relative flex-1 px-5 pt-5 pb-4">
-        <Node n={1} at={step} label={STEPS[0]} onPick={jump}>
-          {/* A chat with their AI (Claude, ChatGPT or Ember, with Brazework connected): what they ask,
-              what it reads, what it says, and the draft it writes, as a card in the chat. */}
-          <div className="overflow-hidden rounded-xl border border-line bg-surface-2">
-            <p className="flex items-center justify-between gap-2 border-b border-line px-3 py-1.5 text-[11px] text-muted">
-              <span className="font-medium text-text-2">Your AI</span>
-              <span className="inline-flex items-center gap-1"><Plug className="size-3" aria-hidden="true" /> Brazework connected</span>
+      <div className="flex flex-1 flex-col gap-3.5 p-4 sm:p-5">
+        {/* 1. You say it, in a sentence. Your AI does the write-up: what it read, and what it says back. */}
+        <div>
+          <StepHead n={1} at={step} label={STEPS[0]} onPick={jump} />
+          <p className="flex justify-end">
+            {/* The whole ask, unseen, holds the lines it will take; the typed part is drawn over it. */}
+            <span aria-hidden="true" className="grid max-w-[92%] min-w-0 rounded-2xl rounded-br-md bg-text px-3 py-1.5 text-[13px] leading-snug text-surface">
+              <span className="invisible col-start-1 row-start-1">{CMD}</span>
+              <span className="col-start-1 row-start-1">{CMD.slice(0, shown)}{phase === "typing" && !reduce && <span className="ml-px inline-block h-3 w-1 translate-y-0.5 animate-pulse bg-surface" />}</span>
+            </span>
+            <span className="sr-only">You say: “{CMD}”.</span>
+          </p>
+          <div className="mt-2 rounded-xl border border-line bg-surface-2 px-3 py-2.5">
+            <p className="flex items-center justify-between gap-2 text-xs text-muted">
+              <span className="inline-flex items-center gap-1.5 font-medium text-text-2"><Sparkles className="size-3.5" aria-hidden="true" /> Your AI does the write-up</span>
+              <span className="inline-flex shrink-0 items-center gap-1"><Plug className="size-3" aria-hidden="true" /> Connected</span>
             </p>
-            <div className="space-y-2 p-3">
-              <p className="flex justify-end">
-                {/* The whole ask, unseen, holds the lines it will take; the typed part is drawn over it. */}
-                <span aria-hidden="true" className="grid max-w-[88%] min-w-0 rounded-2xl rounded-br-md bg-text px-3 py-1.5 text-[13px] leading-snug text-surface">
-                  <span className="invisible col-start-1 row-start-1">{CMD}</span>
-                  <span className="col-start-1 row-start-1">{CMD.slice(0, shown)}{phase === "typing" && !reduce && <span className="ml-px inline-block h-3 w-1 translate-y-0.5 animate-pulse bg-surface" />}</span>
-                </span>
-                <span className="sr-only">You ask your AI: “{CMD}”.</span>
-              </p>
-              <ul aria-label="What your AI read" className={cn("space-y-0.5 transition-opacity duration-300", phase === "typing" ? "invisible opacity-0" : "opacity-100")}>
-                {story.reads.map((r) => <li key={r} className="flex items-center gap-1.5 text-[12px] text-muted"><Check className="size-3 shrink-0" aria-hidden="true" />{r}</li>)}
-              </ul>
-              <p className={cn("text-[13px] leading-snug text-text-2 transition-opacity duration-300", phase === "draft" || phase === "sent" ? "opacity-100" : "invisible opacity-0")}>{story.reply}</p>
-          {/* The draft it writes, with the proof, ready to send: dashed until someone signs it. */}
-          <div className={cn("rounded-lg border bg-surface p-3 transition duration-500", signed ? "border-ok" : phase === "sent" ? "border-dashed border-wait" : "border-dashed border-line-strong", phase === "draft" || phase === "sent" ? "opacity-100" : "translate-y-1 opacity-0")} inert={phase === "typing" || phase === "reading"}>
-            <p className="flex items-center gap-1.5 text-xs text-muted">
-              {signed ? <Seal size={14} /> : phase === "sent" ? <span aria-hidden="true" className="block size-3 shrink-0 rounded-full border-[1.5px] border-dashed border-wait" /> : null}
-              {signed ? "On your Brazework record" : phase === "sent" ? `Waiting for ${story.signer.name}` : "Brazework · draft"}
-            </p>
-            <p className="mt-0.5 text-[16px] leading-snug font-semibold tracking-tight break-words">{build ? stageTitle(build) : story.title ?? stageTitle(build)}</p>
-            <ul className="mt-1.5 flex flex-wrap gap-1.5" aria-label="Evidence">
-              {story.proof.map((e) => <li key={e} className="max-w-full truncate rounded-md border border-line px-2 py-0.5 font-mono text-[11px] text-text-2">{e}</li>)}
+            <ul aria-label="What your AI read" className={cn("mt-1.5 space-y-0.5 transition-opacity duration-300", phase === "typing" ? "invisible opacity-0" : "opacity-100")}>
+              {story.reads.map((r) => <li key={r} className="flex items-center gap-1.5 text-xs text-muted"><Check className="size-3 shrink-0" aria-hidden="true" />{r}</li>)}
             </ul>
-            <div className="mt-2.5 flex min-h-8 items-center">
-              {phase === "sent"
-                ? <span className="inline-flex items-center gap-1.5 text-xs font-medium text-text-2"><Check className="size-3.5" /> {story.sent}</span>
-                : <button type="button" onClick={send} className="inline-flex h-8 items-center rounded-lg bg-accent px-3.5 text-xs font-medium text-on-accent transition hover:opacity-90">{story.send}</button>}
-            </div>
+            <p className={cn("mt-1.5 text-[13px] leading-snug text-text-2 transition-opacity duration-300", drafted ? "opacity-100" : "invisible opacity-0")}>{story.reply}</p>
           </div>
-            </div>
-          </div>
-        </Node>
+        </div>
 
-        <Node n={2} at={step} label={STEPS[1]} onPick={jump}>
+        {/* The entry: the thing all of this makes, and the biggest thing on the card. Dashed while it's
+            a draft, dashed amber while it waits, green once a person has signed it. */}
+        <div className={cn("rounded-xl border bg-surface p-3.5 transition duration-500", signed ? "border-ok" : phase === "sent" ? "border-dashed border-wait" : "border-dashed border-line-strong", drafted ? "opacity-100" : "translate-y-1 opacity-0")} inert={!drafted}>
+          <p className="flex items-center gap-1.5 text-xs text-muted">
+            {signed ? <Seal size={14} /> : phase === "sent" ? <span aria-hidden="true" className="block size-3 shrink-0 rounded-full border-[1.5px] border-dashed border-wait" /> : null}
+            {signed ? "On your Brazework record" : phase === "sent" ? `Waiting for ${story.signer.name}` : "Brazework · draft"}
+          </p>
+          <p className="mt-1 text-lg leading-snug font-semibold tracking-tight break-words">{build ? stageTitle(build) : story.title ?? stageTitle(build)}</p>
+          <ul className="mt-2 flex flex-wrap gap-1.5" aria-label="Evidence">
+            {story.proof.map((e) => <li key={e} className="max-w-full truncate rounded-md border border-line px-2 py-0.5 font-mono text-[11px] text-text-2">{e}</li>)}
+          </ul>
+          <div className="mt-2.5 flex min-h-11 items-center justify-between gap-3">
+            {phase === "sent"
+              ? <span className="inline-flex items-center gap-1.5 text-xs font-medium text-text-2"><Check className="size-3.5" /> {story.sent}</span>
+              : <button type="button" onClick={send} className="inline-flex h-8 items-center rounded-lg bg-accent px-3.5 text-xs font-medium text-on-accent transition hover:opacity-90">{story.send}</button>}
+            <Signature drawn={signed} still={!!reduce} />
+          </div>
+          <dl className="mt-2.5 grid grid-cols-2 overflow-hidden rounded-lg border border-line sm:grid-cols-4">
+            {cells.map((c, i) => (
+              <div key={c.label} className={cn("min-w-0 px-2.5 py-1.5", i % 2 === 1 && "border-l border-line", i > 1 && "border-t border-line sm:border-t-0", i > 0 && "sm:border-l")}>
+                <dt className="truncate text-xs text-muted">{c.label}</dt>
+                <dd className={cn("truncate text-xs font-semibold transition-colors duration-300", c.tone === "ok" ? "text-ok" : c.tone === "waiting" ? "text-wait" : c.tone === "empty" ? "font-normal text-muted" : "text-text")}>{c.value}</dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+
+        {/* 2. The person who saw it signs. */}
+        <div>
+          <StepHead n={2} at={step} label={STEPS[1]} onPick={jump} />
           <div className="flex items-center gap-3">
             <Av>{story.signer.initials}</Av>
             <p className="min-w-0 flex-1 text-sm leading-snug"><span className="font-medium">{story.signer.name}</span><span className="block text-muted">{story.signer.role}</span></p>
@@ -177,13 +193,11 @@ function Stage({ build, story, onDone, onTouch, ghost = false }: { build: string
               ? <span className="inline-flex h-8 shrink-0 items-center gap-1.5 text-xs font-semibold text-ok"><Seal size={18} /> {story.signer.done}</span>
               : <button type="button" onClick={verify} className="inline-flex h-8 shrink-0 items-center rounded-lg bg-accent px-3.5 text-xs font-medium text-on-accent transition hover:opacity-90">{story.signer.act}</button>}
           </div>
-          <div className="mt-2 flex items-end justify-between gap-3">
-            <p className={cn("text-xs text-muted transition-opacity duration-500", signed ? "opacity-100" : "opacity-0")}>On the record with their name and today&apos;s date.</p>
-            <Signature drawn={signed} still={!!reduce} />
-          </div>
-        </Node>
+        </div>
 
-        <Node n={3} at={step} label={STEPS[2]} onPick={jump} last>
+        {/* 3. Someone who searched signed work asks to talk; you decide. */}
+        <div>
+          <StepHead n={3} at={step} label={STEPS[2]} onPick={jump} />
           <div className={cn("transition duration-500", step >= 3 ? "opacity-100" : "translate-y-1 opacity-0")} inert={step < 3}>
             <div className="flex gap-3">
               <Av>{story.finder.initials}</Av>
@@ -192,7 +206,7 @@ function Stage({ build, story, onDone, onTouch, ghost = false }: { build: string
                 <p className="mt-1 text-sm leading-snug text-text-2">{story.finder.ask}</p>
               </div>
             </div>
-            <div className="mt-3 flex min-h-9 items-center gap-2 pl-11" aria-live="polite">
+            <div className="mt-2.5 flex min-h-9 items-center gap-2 pl-11" aria-live="polite">
               {answer === null ? (
                 <>
                   <button type="button" onClick={() => { stop(); onTouch(); setAnswer("accepted"); }} className="inline-flex h-9 items-center rounded-lg bg-accent px-4 text-sm font-medium text-on-accent transition hover:opacity-90">Accept</button>
@@ -203,29 +217,24 @@ function Stage({ build, story, onDone, onTouch, ghost = false }: { build: string
               )}
             </div>
           </div>
-        </Node>
-      </ol>
-
+        </div>
+      </div>
     </div>
   );
 }
 
-// One step of the sequence: its number (a tick once it has happened) is a button that jumps there.
-function Node({ n, at, label, onPick, last, children }: { n: number; at: number; label: string; onPick: (n: number) => void; last?: boolean; children: React.ReactNode }) {
+// A step's heading: its number is a button that jumps there (a tick once the story has passed it),
+// and its name is in ink once the story has reached it.
+function StepHead({ n, at, label, onPick }: { n: number; at: number; label: string; onPick: (n: number) => void }) {
   const done = at >= n;
   return (
-    <li className={cn("relative flex gap-4", !last && "pb-5")}>
-      {/* The line down to the next step fills in ink once that step has happened. */}
-      {!last && <span aria-hidden="true" className="absolute top-[1.625rem] bottom-0 left-[0.8125rem] w-px -translate-x-1/2 bg-line"><span className={cn("block size-full origin-top bg-text transition-transform duration-700 ease-out", at > n ? "scale-y-100" : "scale-y-0")} /></span>}
+    <p className="mb-2 flex items-center gap-2">
       <button type="button" onClick={() => onPick(n)} aria-label={`Step ${n}: ${label}`} aria-current={at === n ? "step" : undefined}
-        className={cn("relative z-10 grid size-[1.625rem] shrink-0 place-items-center rounded-full border text-[11px] font-semibold tabular-nums transition-colors duration-300", done ? "border-text bg-text text-surface" : "border-dashed border-line-strong bg-surface text-muted")}>
-        {done ? <Check className="size-3.5" strokeWidth={3} /> : n}
+        className={cn("grid size-6 shrink-0 place-items-center rounded-full border text-[11px] font-semibold tabular-nums transition-colors duration-300", done ? "border-text bg-text text-surface" : "border-dashed border-line-strong bg-surface text-muted")}>
+        {at > n ? <Check className="size-3.5" strokeWidth={3} /> : n}
       </button>
-      <div className="min-w-0 flex-1">
-        <p className={cn("mb-1.5 pt-0.5 text-[13px] font-semibold transition-colors duration-300", done ? "text-text" : "text-muted")}>{label}</p>
-        {children}
-      </div>
-    </li>
+      <span className={cn("text-[13px] font-semibold transition-colors duration-300", done ? "text-text" : "text-muted")}>{label}</span>
+    </p>
   );
 }
 
