@@ -64,13 +64,13 @@ struct ReplyBar: View {
   @Environment(\.palette) private var p
   var body: some View {
     HStack(alignment: .top, spacing: 8) {
-      Image(systemName: "arrowshape.turn.up.left").font(.caption).foregroundStyle(p.faint).padding(.top, 2)
+      Icon("arrowshape.turn.up.left").font(.caption).foregroundStyle(p.faint).padding(.top, 2)
       VStack(alignment: .leading, spacing: 1) {
         Text("Replying to \(name)").font(.caption.weight(.semibold)).foregroundStyle(p.text)
         Text(text).font(.caption).foregroundStyle(p.muted).lineLimit(1)
       }
       Spacer()
-      Button(action: onCancel) { Image(systemName: "xmark.circle.fill").foregroundStyle(p.faint) }.accessibilityLabel("Cancel reply")
+      Button(action: onCancel) { Icon("xmark.circle.fill").foregroundStyle(p.faint) }.accessibilityLabel("Cancel reply")
     }
     .padding(10)
     .background(p.surface2.opacity(0.7), in: RoundedRectangle(cornerRadius: 14, style: .continuous))
@@ -91,12 +91,12 @@ struct MessageMenu: View {
       ForEach(ChatExtras.reactions.prefix(4), id: \.self) { e in Button(e) { onReact(e) } }
     }
     .controlGroupStyle(.compactMenu)
-    Menu("More reactions", systemImage: "face.smiling") {
+    Menu("More reactions", icon: "face.smiling") {
       ForEach(ChatExtras.reactions.dropFirst(4), id: \.self) { e in Button(e) { onReact(e) } }
     }
-    Button("Reply", systemImage: "arrowshape.turn.up.left", action: onReply)
-    Button("Copy", systemImage: "doc.on.doc") { UIPasteboard.general.string = text }
-    if let removeLabel, let onRemove { Button(removeLabel, systemImage: "arrow.uturn.backward", role: .destructive, action: onRemove) }
-    if let onReport { Button("Report", systemImage: "flag", action: onReport) }
+    Button("Reply", icon: "arrowshape.turn.up.left", action: onReply)
+    Button("Copy", icon: "doc.on.doc") { UIPasteboard.general.string = text }
+    if let removeLabel, let onRemove { Button(removeLabel, icon: "arrow.uturn.backward", role: .destructive, action: onRemove) }
+    if let onReport { Button("Report", icon: "flag", action: onReport) }
   }
 }

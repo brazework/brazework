@@ -7,20 +7,40 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { Button, Logo } from "@/components/ui";
 import { cn } from "@/lib/forge";
 
-const LINKS = [
+// `wide`: only in the bar on a wide screen (the menu on a phone lists them all).
+const LINKS: { href: string; label: string; wide?: boolean }[] = [
+  { href: "#how", label: "How it works" },
   { href: "#app", label: "The app" },
-  { href: "#ember", label: "AI agent" },
+  { href: "#ember", label: "Ember" },
   { href: "#clubs", label: "Clubs" },
   { href: "#companies", label: "Companies" },
   { href: "#pricing", label: "Pricing" },
-  { href: "#faq", label: "Questions" },
+  { href: "#faq", label: "Questions", wide: true },
 ];
 
 export function Nav() {
-  const { scrollY } = useScroll();
+  const { scrollY, scrollYProgress } = useScroll();
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
   useMotionValueEvent(scrollY, "change", (v) => setScrolled(v > 24));
+  // Where you are on the page: the last linked section whose top has passed a third of the way down
+  // the screen. The sections between two links (who signs, why, the 3D build) count as the one above.
+  const [here, setHere] = useState("");
+  useEffect(() => {
+    const marks = LINKS.map((l) => document.getElementById(l.href.slice(1))).filter((el): el is HTMLElement => !!el);
+    let frame = 0;
+    const read = () => {
+      frame = 0;
+      const line = window.innerHeight / 3;
+      const past = marks.filter((el) => el.getBoundingClientRect().top <= line);
+      setHere(past.length ? `#${past[past.length - 1].id}` : "");
+    };
+    const onScroll = () => { if (!frame) frame = requestAnimationFrame(read); };
+    read();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    window.addEventListener("resize", onScroll);
+    return () => { cancelAnimationFrame(frame); window.removeEventListener("scroll", onScroll); window.removeEventListener("resize", onScroll); };
+  }, []);
   // Close the mobile menu with Escape.
   useEffect(() => {
     if (!open) return;
@@ -38,11 +58,13 @@ export function Nav() {
           scrolled || open ? "glass shadow-[var(--shadow-float)]" : "border border-transparent",
         )}
       >
+        {/* How far down the page you've read: a hairline along the bar's lower edge, once it floats. */}
+        <motion.span aria-hidden="true" className={cn("pointer-events-none absolute inset-x-4 bottom-0 h-px origin-left bg-text transition-opacity duration-300", scrolled && !open ? "opacity-60" : "opacity-0")} style={{ scaleX: scrollYProgress }} />
         <Link href="/" aria-label="Brazework home"><Logo /></Link>
         <ul className="ml-4 hidden items-center gap-1 md:flex">
           {LINKS.map((l) => (
-            <li key={l.href}>
-              <a href={l.href} className="rounded-md px-3 py-1.5 text-sm text-muted transition hover:bg-hover hover:text-text">{l.label}</a>
+            <li key={l.href} className={cn(l.wide && "hidden xl:block")}>
+              <a href={l.href} aria-current={here === l.href ? "location" : undefined} className={cn("rounded-md px-3 py-1.5 text-sm transition hover:bg-hover hover:text-text", here === l.href ? "bg-hover text-text" : "text-muted")}>{l.label}</a>
             </li>
           ))}
         </ul>

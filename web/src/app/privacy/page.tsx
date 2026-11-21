@@ -14,7 +14,7 @@ const SECTIONS: { h: string; items: string[] }[] = [
     h: "What Brazework keeps",
     items: [
       "What you give it: your profile, posts, replies, projects, milestones and their evidence links, messages, clubs and the events you RSVP to.",
-      "Your LinkedIn profile link, if you add it (a working account adds one before asking someone to sign). It is private: no other member can read it, and it isn't shown on your profile or your record. Brazework stores the link only; it doesn't read or copy anything from LinkedIn.",
+      "Your LinkedIn profile link, if you add it (it's optional). It is private: no other member can read it, and it isn't shown on your profile or your record. Brazework stores the link only; it doesn't read or copy anything from LinkedIn.",
       "Brazework never pulls records from your school. Nothing about you comes from a registrar, a transcript or a student system.",
       "Brazework counts views of your profile so you can see your own analytics.",
     ],

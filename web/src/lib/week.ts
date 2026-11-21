@@ -18,7 +18,13 @@ export type WeekInput = {
   hasMilestone?: boolean;
   // Your goal and the record its path is built from (goals.sql, lib/goals.ts), when you've set one.
   goal?: { kind: GoalKind; target: string; record: Record_ } | null;
+  // A working (professional) account. With no club there is nobody to join: whoever saw the work
+  // signs it (a manager, a client), so the next step is to ask them, never "join your club".
+  working?: boolean;
 };
+
+// Working, and in no club: their work is signed by a person they ask, not by a club's officers.
+const solo = (w: WeekInput) => !!w.working && !w.hasClub;
 
 // `email` is the longer line the weekly email uses when Home's card has room for less (the goal check-in:
 // Home shows your goal card right above it, so its line there is only the count).
@@ -54,14 +60,15 @@ export function buildWeek(w: WeekInput): WeekItem[] {
   } else if (w.viewers && w.viewers.total > 0)
     items.push({ id: "viewers", tone: "news", text: `${plural(w.viewers.total, "person", "people")} viewed your profile this week`, href: "/dashboard" });
   if (w.myPending > 0)
-    items.push({ id: "pending", tone: "news", text: `${plural(w.myPending, "milestone")} of yours waiting for your club`, href: "/projects" });
+    items.push({ id: "pending", tone: "news", text: `${plural(w.myPending, "milestone")} of yours waiting ${solo(w) ? "to be signed" : "for your club"}`, href: "/projects" });
   // What happened.
   for (const v of w.verifiedInClubs.slice(0, 2))
     if (v.n > 0) items.push({ id: `verified-${v.club}`, tone: "news", text: `${plural(v.n, "milestone")} verified in ${v.club} this week`, href: "/communities" });
   if (w.clubPosts > 0) items.push({ id: "posts", tone: "news", text: `${plural(w.clubPosts, "new post")} in your clubs this week`, href: "/feed?tab=clubs" });
   // The one next step.
-  if (!w.hasClub) items.push({ id: "join", tone: "nudge", text: "Join your club so its officers can verify your work", href: "/communities?tab=discover", action: "Find it" });
+  if (!w.hasClub && !w.working) items.push({ id: "join", tone: "nudge", text: "Join your club so its officers can verify your work", href: "/communities?tab=discover", action: "Find it" });
   else if (!w.hasProject) items.push({ id: "project", tone: "nudge", text: "Add what you're building: a robot, a rig, a model, an app", href: "/projects", action: "Add" });
+  else if (solo(w) && !w.hasMilestone) items.push({ id: "ask", tone: "nudge", text: "Ask someone who saw your work to sign it", href: "/projects", action: "Ask" });
   else if (w.quietProject && w.quietProject.days >= 7)
     items.push({ id: "quiet", tone: "nudge", text: `No update on ${w.quietProject.title} in ${w.quietProject.days} days`, href: `/feed?project=${w.quietProject.id}#composer`, action: "Post an update" });
   return items;
@@ -75,9 +82,9 @@ export type WeekGoal = { id: string; text: string; href: string; action: string;
 export function weekGoal(w: WeekInput, shownThisWeek: boolean): WeekGoal {
   if (w.toVerify && w.toVerify.n > 0)
     return { id: "verify", text: `Verify ${plural(w.toVerify.n, "milestone")} for your club`, href: `/c/${w.toVerify.clubId}/manage?tab=verify`, action: "Review", done: false };
-  if (!w.hasClub) return { id: "join", text: "Join your club, so its officers can verify your work", href: "/communities?tab=discover", action: "Find it", done: false };
+  if (!w.hasClub && !w.working) return { id: "join", text: "Join your club, so its officers can verify your work", href: "/communities?tab=discover", action: "Find it", done: false };
   if (!w.hasProject) return { id: "project", text: "Add what you're building", href: "/projects", action: "Add", done: false };
-  if (!w.hasMilestone) return { id: "ask", text: "Ask your club to verify your first milestone", href: "/projects", action: "Ask", done: false };
+  if (!w.hasMilestone) return { id: "ask", text: solo(w) ? "Ask someone who saw your work to sign it" : "Ask your club to verify your first milestone", href: "/projects", action: "Ask", done: false };
   if (shownThisWeek) return { id: "done", text: "You've shown your work this week", href: "/profile", action: "", done: true };
   if (w.quietProject) return { id: "update", text: `Post an update on ${w.quietProject.title}`, href: `/feed?project=${w.quietProject.id}#composer`, action: "Post", done: false };
   return { id: "share", text: "Share what you built this week", href: "/feed#composer", action: "Post", done: false };
@@ -97,11 +104,13 @@ export function buildLoopSteps(w: WeekInput, s: { shownThisWeek: boolean; verifi
       cta: s.shownThisWeek ? null : !w.hasProject ? { label: "Add a project", href: "/projects" } : quiet ? { label: "Post an update", href: `/feed?project=${quiet.id}#composer` } : { label: "Post", href: "/feed#composer" },
     },
     {
-      id: "verify", title: "Verify",
+      id: "verify", title: solo(w) ? "Get it signed" : "Verify",
       line: s.verified > 0
-        ? `${plural(s.verified, "milestone")} verified by your club${w.myPending ? ` · ${w.myPending} waiting` : ""}`
-        : w.myPending > 0 ? `${plural(w.myPending, "milestone")} waiting for your club` : !w.hasClub ? "Join your club, so its officers can verify your work" : "Ask your club to verify a milestone",
-      cta: s.verified > 0 || w.myPending > 0 ? { label: "See your record", href: `/u/${s.me}#proof` } : !w.hasClub ? { label: "Find your club", href: "/communities?tab=discover" } : { label: "Ask your club", href: "/projects" },
+        ? `${plural(s.verified, "milestone")} ${solo(w) ? "signed" : "verified by your club"}${w.myPending ? ` · ${w.myPending} waiting` : ""}`
+        : w.myPending > 0 ? `${plural(w.myPending, "milestone")} waiting ${solo(w) ? "to be signed" : "for your club"}`
+        : solo(w) ? "Ask someone who saw your work to sign it" : !w.hasClub ? "Join your club, so its officers can verify your work" : "Ask your club to verify a milestone",
+      cta: s.verified > 0 || w.myPending > 0 ? { label: "See your record", href: `/u/${s.me}#proof` }
+        : solo(w) ? { label: "Ask for a signature", href: "/projects" } : !w.hasClub ? { label: "Find your club", href: "/communities?tab=discover" } : { label: "Ask your club", href: "/projects" },
     },
     {
       id: "found", title: "Get found",

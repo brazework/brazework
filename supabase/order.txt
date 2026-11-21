@@ -95,4 +95,5 @@ work-email-signers
 approved-by
 linkedin-required
 personal-email-signers
+linkedin-optional
 playbook-lanes

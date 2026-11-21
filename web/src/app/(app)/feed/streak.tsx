@@ -10,9 +10,9 @@ import { loadLoop, type Loop } from "@/lib/week-load";
 // Record. One card, not a streak card plus a week card saying the same things.
 
 export async function YourWeekCard() {
-  const { supabase, user } = await getViewer();
+  const { supabase, user, profile } = await getViewer();
   if (!user) return null;
-  const l = await loadLoop(supabase, user.id, requestTime());
+  const l = await loadLoop(supabase, user.id, requestTime(), profile?.account_type === "professional");
   return (
     <section aria-label="Your week" className="glass-card rounded-2xl p-4">
       <Header l={l} />

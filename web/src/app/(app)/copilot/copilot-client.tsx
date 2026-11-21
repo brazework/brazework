@@ -1,7 +1,7 @@
 "use client";
 import { AnimatePresence, motion } from "motion/react";
 import type { Preset } from "@/lib/copilot-presets";
-import { ArrowRight, BadgeCheck, CalendarCheck, CalendarDays, Check, Compass, Copy, CornerDownRight, FileText, GitBranch, History, Loader2, Megaphone, Plus, Search, ShieldCheck, ThumbsDown, ThumbsUp, Trash2, Users, X } from "lucide-react";
+import { ArrowRight, BadgeCheck, CalendarCheck, CalendarDays, Check, Compass, Copy, CornerDownRight, FileText, GitBranch, History, Loader2, Megaphone, Plus, ScrollText, Search, ShieldCheck, ThumbsDown, ThumbsUp, Trash2, Users, Waypoints, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useCopilot } from "@/components/copilot/use-copilot";
@@ -13,13 +13,14 @@ import { ProposalCard } from "@/components/copilot/proposal-card";
 import { LinkCards } from "@/components/copilot/link-cards";
 import { forgeLinks, splitNext } from "@/lib/copilot-text";
 import { emberActions, emberGreeting, type EmberAction } from "@/lib/ember-actions";
+import type { NextStep } from "@/lib/ember-record";
 import { deleteAllChats, deleteChat, loadChat, rateAnswer, saveChat, type ChatSummary, type SavedMsg } from "@/lib/copilot-chats";
 
 type Msg = { role: "user" | "assistant"; content: string; tools?: string[]; proposals?: Proposal[]; cards?: string[]; next?: string[] };
 
 // What a card Ember prepared is called once the chat is saved (saved chats keep a label, never a
 // live card that could be confirmed twice).
-const CARD_LABEL: Record<Proposal["kind"], string> = { post: "a post", milestone: "a milestone to verify", join: "joining a club", follow: "a follow", event: "a club event", club_post: "a club post", project: "a project", review: "a milestone review", rsvp: "an RSVP", message: "a message", project_edit: "a project update", teammate: "a teammate", invite: "a club invite" };
+const CARD_LABEL: Record<Proposal["kind"], string> = { post: "a post", milestone: "a milestone to verify", signature: "an ask to sign", join: "joining a club", follow: "a follow", event: "a club event", club_post: "a club post", project: "a project", review: "a milestone review", rsvp: "an RSVP", message: "a message", project_edit: "a project update", teammate: "a teammate", invite: "a club invite" };
 const toSaved = (m: Msg): SavedMsg => ({ role: m.role, content: m.content, tools: m.tools, cards: [...(m.cards ?? []), ...(m.proposals ?? []).map((p) => CARD_LABEL[p.kind])] });
 const ago = (iso: string) => {
   const d = (Date.now() - new Date(iso).getTime()) / 86400000;
@@ -100,11 +101,36 @@ export function Lookups({ tools, live }: { tools?: string[]; live: boolean }) {
 }
 
 
+// What a new chat opens with: up to three steps from the member's own record (lib/ember-record.ts).
+// They come from the database, not the model. One tap asks Ember, or opens the page that does it.
+function NextSteps({ steps, busy, onAsk }: { steps: NextStep[]; busy: boolean; onAsk: (s: Extract<NextStep, { text: string }>) => void }) {
+  const row = "flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-hover disabled:opacity-50";
+  return (
+    <section aria-labelledby="ember-next" className="mt-7">
+      <h2 id="ember-next" className="px-1 text-xs font-medium text-muted">Next on your record</h2>
+      <ul className="mt-2 divide-y divide-line overflow-hidden rounded-2xl border border-line bg-surface">
+        {steps.map((s) => {
+          const body = (
+            <>
+              <span className="min-w-0 flex-1">
+                <span className="block text-sm font-medium text-pretty text-text">{s.label}</span>
+                <span className="mt-0.5 block text-xs text-pretty text-muted">{s.hint}</span>
+              </span>
+              <ArrowRight className="size-4 shrink-0 text-muted" aria-hidden="true" />
+            </>
+          );
+          return <li key={s.id}>{"href" in s ? <Link href={s.href} className={row}>{body}</Link> : <button type="button" disabled={busy} onClick={() => onAsk(s)} className={row}>{body}</button>}</li>;
+        })}
+      </ul>
+    </section>
+  );
+}
+
 // The chat: a rail of your saved chats (when supabase/copilot-chats.sql has run), the conversation
 // with real Brazework cards under each answer, tap-to-ask follow-ups, and the confirm cards.
-const ACTION_ICON: Record<EmberAction["id"], ComposerAction["icon"]> = { log: BadgeCheck, post: FileText, github: GitBranch, sign: ShieldCheck, event: CalendarCheck, people: Users };
+const ACTION_ICON: Record<EmberAction["id"], ComposerAction["icon"]> = { log: BadgeCheck, post: FileText, github: GitBranch, sign: ShieldCheck, review: ScrollText, story: Waypoints, event: CalendarCheck, people: Users };
 
-export function CopilotChat({ first, field, student = true, initial = "", initialPreset = null, chats = [], chat = null, saving = false, fromTools = null }: { first: string; field: string; student?: boolean; initial?: string; initialPreset?: Preset | null; chats?: ChatSummary[]; chat?: { id: string; title: string; messages: SavedMsg[] } | null; saving?: boolean; fromTools?: FromTools | null }) {
+export function CopilotChat({ first, field, student = true, initial = "", initialPreset = null, chats = [], chat = null, saving = false, fromTools = null, steps = [] }: { steps?: NextStep[]; first: string; field: string; student?: boolean; initial?: string; initialPreset?: Preset | null; chats?: ChatSummary[]; chat?: { id: string; title: string; messages: SavedMsg[] } | null; saving?: boolean; fromTools?: FromTools | null }) {
   const { run, stop, busy, error, remaining } = useCopilot();
   const [msgs, setMsgs] = useState<Msg[]>(chat?.messages ?? []);
   const [chatId, setChatId] = useState<string | null>(chat?.id ?? null);
@@ -143,8 +169,9 @@ export function CopilotChat({ first, field, student = true, initial = "", initia
   const askedInitial = useRef(false);
   useEffect(() => {
     if (!initial || askedInitial.current) return;
-    askedInitial.current = true;
-    const t = setTimeout(() => void send(initial, initialPreset ?? undefined), 0);
+    // Marked as asked when it is sent, not when it's scheduled: in development React runs an effect,
+    // cleans it up and runs it again, and marking it early left the second run with nothing to send.
+    const t = setTimeout(() => { askedInitial.current = true; void send(initial, initialPreset ?? undefined); }, 0);
     return () => clearTimeout(t);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initial]);
@@ -200,6 +227,10 @@ export function CopilotChat({ first, field, student = true, initial = "", initia
             {/* A new chat: the greeting and the box, a little above the middle of the page. */}
             <div className="flex flex-1 flex-col justify-center pb-[8vh]">
               <Hero title={emberGreeting(first)} sub="Say what you did or what you need. Ember looks it up on Brazework and prepares each step as a card you approve." mood={busy ? "thinking" : "idle"} />
+              {steps.length > 0 && <NextSteps steps={steps} busy={busy} onAsk={(s) => {
+                // A step that starts a sentence waits in the box for the member to finish it.
+                if (s.finish) { setInput(s.text); document.getElementById("copilot-input")?.focus(); } else void send(s.text);
+              }} />}
               {composer}
               {fromTools && <FromYourTools {...fromTools} />}
             </div>

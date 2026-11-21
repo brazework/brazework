@@ -24,8 +24,8 @@ export async function pageLine(db: DB, userId: string, page: PageRef | undefined
       const linked = ((repos.data ?? []) as { full_name: string }[]).map((r) => r.full_name);
       return [
         `The member is on the page of their project ${q(p.title)} (id ${p.id})${linked.length ? `, linked to GitHub: ${linked.join(", ")}` : ""}.`,
-        mine.length ? `Clubs that can sign it: ${mine.map((c) => `${c.name} (id ${c.id})`).join(", ")}.` : "They aren't in a club yet, so nobody can sign a milestone; say so and point them to /communities?tab=discover.",
-        "When they tell you what they did, prepare it as a milestone on this project with propose_milestone, for the club that fits (ask if more than one could). For evidence, read the linked repo with github_repo and use the https link of the commit, release or pull request that matches; if nothing matches, ask them for a link. Keep their words for the title. It's a card they approve, so never say it's done.",
+        mine.length ? `Clubs that can sign it: ${mine.map((c) => `${c.name} (id ${c.id})`).join(", ")}.` : "They aren't in a club, so a person who saw the work signs it: prepare it with propose_signature.",
+        "When they tell you what they did, prepare it as a milestone on this project: with propose_milestone for the club that fits (ask if more than one could), or with propose_signature when a person saw it (a manager, tech lead, professor or client). For evidence, read the linked repo with github_repo and use the https link of the commit, release or pull request that matches; if nothing matches, ask them for a link. Keep their words for the title. It's a card they approve, so never say it's done.",
       ].join(" ");
     }
     if (page.kind === "club") {

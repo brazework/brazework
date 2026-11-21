@@ -157,20 +157,30 @@ struct ClubView: View {
 
   @ViewBuilder private var joinButton: some View {
     if let role {
-      Label(role == "member" ? "You're a member" : "You're \(role == "admin" ? "an" : "a") \(role)", systemImage: "checkmark.circle.fill")
+      Label(role == "member" ? "You're a member" : "You're \(role == "admin" ? "an" : "a") \(role)", icon: "checkmark.circle.fill")
         .font(.subheadline.weight(.medium)).foregroundStyle(p.muted)
       HStack(spacing: 10) {
-        Button { Task { await openChat() } } label: { Label("Club chat", systemImage: "bubble.left.and.bubble.right.fill") }
+        Button { Task { await openChat() } } label: { Label("Club chat", icon: "bubble.left.and.bubble.right.fill") }
           .buttonStyle(PrimaryButtonStyle())
         Button { newTeam = true } label: {
-          Label("Team chat", systemImage: "person.2.badge.plus").font(.body.weight(.semibold)).foregroundStyle(p.text)
+          Label("Team chat", icon: "person.2.badge.plus").font(.body.weight(.semibold)).foregroundStyle(p.text)
             .frame(maxWidth: .infinity, minHeight: 50).background(p.surface2, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         }
         .buttonStyle(.plain)
       }
       .disabled(working)
+      if API.isOfficer(role) {
+        // Officers verify what members ask the club to sign (the web's Manage → Verify).
+        NavigationLink { VerifyQueueView(club: club) } label: {
+          HStack { Label("To verify", icon: "checkmark.shield").font(.body.weight(.semibold)); Spacer(); Icon("chevron.right").font(.footnote).foregroundStyle(p.faint) }
+            .foregroundStyle(p.text).padding(.horizontal, 16).frame(minHeight: 50)
+            .background(p.surface, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).strokeBorder(p.border, lineWidth: 0.5))
+        }
+        .buttonStyle(.plain)
+      }
     } else if requested {
-      Label("Request sent", systemImage: "clock").font(.subheadline.weight(.medium)).foregroundStyle(p.muted)
+      Label("Request sent", icon: "clock").font(.subheadline.weight(.medium)).foregroundStyle(p.muted)
     } else {
       Button { Task { await join() } } label: { Text(club.isPublic ? "Join club" : "Ask to join") }
         .buttonStyle(PrimaryButtonStyle())

@@ -40,12 +40,12 @@ struct MainTabs: View {
     TabView(selection: $nav.tab) {
       // The same five places as the web, each answering one question: what needs me, what am I
       // making, what's my team doing, what have I done and who signed it, who's reaching out.
-      Tab("Home", systemImage: "house", value: AppTab.feed) { FeedView() }
+      Tab("Home", image: "lc.house", value: AppTab.feed) { FeedView() }
         .badge(session.unreadAlerts)
-      Tab("Projects", systemImage: "hammer", value: AppTab.build) { BuildView() }
-      Tab("Clubs", systemImage: "person.3", value: AppTab.clubs) { ClubsView() }
-      Tab("Record", systemImage: "checkmark.seal", value: AppTab.me) { MeView() }
-      Tab("Inbox", systemImage: "tray", value: AppTab.messages) { MessagesView() }
+      Tab("Projects", image: "lc.folder-git-2", value: AppTab.build) { BuildView() }
+      Tab("Clubs", image: "lc.users", value: AppTab.clubs) { ClubsView() }
+      Tab("Record", image: "lc.badge-check", value: AppTab.me) { MeView() }
+      Tab("Inbox", image: "lc.inbox", value: AppTab.messages) { MessagesView() }
         .badge(session.unreadMessages)
     }
     .tabBarMinimizeBehavior(.onScrollDown)

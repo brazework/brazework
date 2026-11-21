@@ -9,7 +9,7 @@ struct MeView: View {
   @State private var editing = false
   @State private var showSettings = false
   @State private var testReport: ReportTarget?
-  @State private var proof: [ProofItem]?
+  @State private var record: [RecordItem]?
 
   var body: some View {
     NavigationStack {
@@ -36,7 +36,7 @@ struct MeView: View {
           }
         }
         // The record leads: the work someone signed comes before everything else here.
-        Section { ProofList(items: proof).listRowBackground(p.surface) }
+        Section { RecordList(items: record).listRowBackground(p.surface) }
         Section("Look") {
           Picker("Appearance", selection: $appearance) {
             Text("System").tag("system"); Text("Light").tag("light"); Text("Dark").tag("dark")
@@ -64,9 +64,9 @@ struct MeView: View {
           .listRowBackground(p.surface)
         }
         Section {
-          Button { editing = true } label: { Label("Edit profile", systemImage: "person.crop.circle").foregroundStyle(p.text) }
-          NavigationLink { SavedPostsView() } label: { Label("Saved", systemImage: "bookmark").foregroundStyle(p.text) }
-          NavigationLink { SettingsView() } label: { Label("Settings", systemImage: "gearshape").foregroundStyle(p.text) }
+          Button { editing = true } label: { Label("Edit profile", icon: "person.crop.circle").foregroundStyle(p.text) }
+          NavigationLink { SavedPostsView() } label: { Label("Saved", icon: "bookmark").foregroundStyle(p.text) }
+          NavigationLink { SettingsView() } label: { Label("Settings", icon: "gearshape").foregroundStyle(p.text) }
           link("Ask Ember", "sparkles", "copilot")
         }
         .listRowBackground(p.surface)
@@ -78,8 +78,8 @@ struct MeView: View {
       .scrollContentBackground(.hidden)
       .background(p.bg)
       .navigationTitle("Record")
-      .task { if let me = session.userId { proof = await API.proof(of: me) } }
-      .refreshable { if let me = session.userId { proof = await API.proof(of: me) } }
+      .task { await loadRecord() }
+      .refreshable { await loadRecord() }
       .sheet(isPresented: $editing) { if let me = session.profile { EditProfileView(profile: me) } }
       #if DEBUG
       .task {
@@ -97,9 +97,14 @@ struct MeView: View {
     }
   }
 
+  private func loadRecord() async {
+    guard let me = session.userId else { return }
+    record = (try? await API.record(of: me)) ?? record ?? []
+  }
+
   private func link(_ title: String, _ icon: String, _ path: String) -> some View {
     Button { openURL(Env.web(path)) } label: {
-      HStack { Label(title, systemImage: icon).foregroundStyle(p.text); Spacer(); Image(systemName: "arrow.up.right").font(.caption).foregroundStyle(p.faint) }
+      HStack { Label(title, icon: icon).foregroundStyle(p.text); Spacer(); Icon("arrow.up.right").font(.caption).foregroundStyle(p.faint) }
     }
   }
 }

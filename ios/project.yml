@@ -1,6 +1,6 @@
 name: Forge
 options:
-  bundleIdPrefix: com.shualabs
+  bundleIdPrefix: com.brazework
   deploymentTarget:
     iOS: "26.0"
   createIntermediateGroups: true
@@ -41,9 +41,11 @@ targets:
         NSAppTransportSecurity:
           NSAllowsLocalNetworking: true
         NSPhotoLibraryUsageDescription: Attach photos and video to your posts.
+        # Only the system's HTTPS (no encryption of our own), so App Store Connect doesn't ask on every build.
+        ITSAppUsesNonExemptEncryption: false
     settings:
       base:
-        PRODUCT_BUNDLE_IDENTIFIER: com.shualabs.forge
+        PRODUCT_BUNDLE_IDENTIFIER: com.brazework.app
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME: AccentColor
     dependencies:

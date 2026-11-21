@@ -11,13 +11,26 @@ struct Palette: Sendable {
   var bg, surface, surface2, raised, border, text, text2, muted, faint, accent, onAccent: Color
   var grad: [Color]
   var danger = Color(hex: 0xDC2626)
+  // The web's three kinds of proof, one colour each, everywhere (globals.css, the same in every skin):
+  // green signed, blue backed by GitHub, amber waiting for a signature. Tag and pro as the web's.
+  var ember = EmberColors.of(.forge)
+  var ok = Color(hex: 0x15703A), info = Color(hex: 0x2563EB), wait = Color(hex: 0x92570A), tag = Color(hex: 0x7C3AED), pro = Color(hex: 0xD97706)
 
   var gradient: LinearGradient { LinearGradient(colors: grad, startPoint: .topLeading, endPoint: .bottomTrailing) }
 
   static func of(_ skin: Skin, dark: Bool) -> Palette {
+    var p = base(skin, dark: dark)
+    p.ember = .of(skin)
+    if dark { p.ok = .init(hex: 0x4ADE80); p.info = .init(hex: 0x60A5FA); p.wait = .init(hex: 0xFBBF24); p.tag = .init(hex: 0xA78BFA); p.pro = .init(hex: 0xFBBF24) }
+    return p
+  }
+
+  private static func base(_ skin: Skin, dark: Bool) -> Palette {
     switch (skin, dark) {
-    case (.forge, false): .init(bg: .init(hex: 0xFFFFFF), surface: .init(hex: 0xFAFAFA), surface2: .init(hex: 0xF4F4F5), raised: .init(hex: 0xECECEE), border: .init(hex: 0xE4E4E7), text: .init(hex: 0x09090B), text2: .init(hex: 0x27272A), muted: .init(hex: 0x52525B), faint: .init(hex: 0x71717A), accent: .init(hex: 0x09090B), onAccent: .white, grad: [.init(hex: 0x27272A), .init(hex: 0x09090B)])
-    case (.forge, true): .init(bg: .init(hex: 0x09090B), surface: .init(hex: 0x101012), surface2: .init(hex: 0x161618), raised: .init(hex: 0x1F1F22), border: .init(hex: 0x232326), text: .init(hex: 0xFAFAFA), text2: .init(hex: 0xD4D4D8), muted: .init(hex: 0xA1A1AA), faint: .init(hex: 0x8B8B94), accent: .init(hex: 0xFAFAFA), onAccent: .init(hex: 0x09090B), grad: [.init(hex: 0xFFFFFF), .init(hex: 0xD4D4D8)], danger: .init(hex: 0xF87171))
+    // Graphite is the web's default (globals.css :root, the 2026-11 redesign): a warm canvas, white
+    // surfaces with hairline borders, ink text.
+    case (.forge, false): .init(bg: .init(hex: 0xFBFBFA), surface: .white, surface2: .init(hex: 0xF6F6F4), raised: .init(hex: 0xEFEFED), border: .init(hex: 0xE9E9E6), text: .init(hex: 0x1F1F1D), text2: .init(hex: 0x37352F), muted: .init(hex: 0x5F5E5A), faint: .init(hex: 0x6B6A66), accent: .init(hex: 0x1F1F1D), onAccent: .white, grad: [.init(hex: 0x37352F), .init(hex: 0x1F1F1D)])
+    case (.forge, true): .init(bg: .init(hex: 0x191919), surface: .init(hex: 0x202020), surface2: .init(hex: 0x252525), raised: .init(hex: 0x2C2C2C), border: .init(hex: 0x2F2F2F), text: .init(hex: 0xEDEDEB), text2: .init(hex: 0xD3D3D0), muted: .init(hex: 0xA3A29E), faint: .init(hex: 0x959490), accent: .init(hex: 0xFAFAFA), onAccent: .init(hex: 0x09090B), grad: [.init(hex: 0xFFFFFF), .init(hex: 0xD3D3D0)], danger: .init(hex: 0xF87171))
     case (.blueprint, false): .init(bg: .init(hex: 0xF4F7FB), surface: .white, surface2: .init(hex: 0xEEF3FA), raised: .init(hex: 0xE2EAF6), border: .init(hex: 0xC9D7EA), text: .init(hex: 0x0E2A52), text2: .init(hex: 0x1E3D6B), muted: .init(hex: 0x3C5C8A), faint: .init(hex: 0x4B6A95), accent: .init(hex: 0x1F5FBF), onAccent: .white, grad: [.init(hex: 0x2563EB), .init(hex: 0x1F5FBF), .init(hex: 0x1E40AF)])
     case (.blueprint, true): .init(bg: .init(hex: 0x0A1C35), surface: .init(hex: 0x0E2645), surface2: .init(hex: 0x112D52), raised: .init(hex: 0x15365F), border: .init(hex: 0x23477A), text: .init(hex: 0xEAF2FF), text2: .init(hex: 0xC8DAF4), muted: .init(hex: 0x9DB9DF), faint: .init(hex: 0x8AA8D2), accent: .init(hex: 0x7CC4FF), onAccent: .init(hex: 0x0A1C35), grad: [.init(hex: 0xA5D8FF), .init(hex: 0x7CC4FF), .init(hex: 0x5B9DFF)], danger: .init(hex: 0xF87171))
     case (.fire, false): .init(bg: .init(hex: 0xFFF8F3), surface: .white, surface2: .init(hex: 0xFFF1E7), raised: .init(hex: 0xFFE6D5), border: .init(hex: 0xF3D6C2), text: .init(hex: 0x2A1208), text2: .init(hex: 0x4A2413), muted: .init(hex: 0x7A4528), faint: .init(hex: 0x8A5434), accent: .init(hex: 0xEA580C), onAccent: .init(hex: 0x2A1208), grad: [.init(hex: 0xFCD34D), .init(hex: 0xFB923C), .init(hex: 0xF87171)])

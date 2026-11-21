@@ -50,6 +50,40 @@ final class JourneyTests: XCTestCase {
     if ben.id == "update" { XCTAssertEqual(ben.text, "Post an update on Liquid engine test stand") }
   }
 
+  // The record on iPhone (Record.swift): Ben adds a project, asks Rocketry Club to verify a result
+  // with evidence (never without, and never verifying his own), Maya (an admin there) sees it in the
+  // club's queue and verifies it, and it's on Ben's record as signed by her.
+  func testAddAProjectAskTheClubAndAnOfficerVerifies() async throws {
+    let ben = try await signIn("ben")
+    let project = try await API.createProject(ProjectDraft(title: "Thrust stand v2 \(Self.stamp)", summary: "A second stand for 5 kN static fires.", link: "https://github.com/bencho/stand"))
+    var ask = MilestoneDraft(projectId: project, clubId: "rkt", title: "Load cell calibrated to 0.5% \(Self.stamp)", detail: "Five-point calibration.", evidence: "", achievedOn: .now)
+    do { try await API.askClub(ask); XCTFail("no evidence, no request") } catch {}
+    ask.evidence = "https://github.com/bencho/stand/commit/abc123"
+    XCTAssertNil(RecordLogic.problem(ask))
+    try await API.askClub(ask)
+    let before = try await API.record(of: ben)
+    let waiting = try XCTUnwrap(before.first { $0.title == ask.title })
+    XCTAssertEqual(waiting.kind, .waiting)
+    XCTAssertEqual(waiting.by, "Waiting for Rocketry Club")
+    let onProject = try await API.milestones(project: project)
+    XCTAssertEqual(onProject.map(\.id), [waiting.id])
+    do { _ = try await API.review(waiting.id, verify: true); XCTFail("never your own work") } catch {}
+
+    _ = try await signIn("maya")
+    let queue = try await API.verifyQueue(club: "rkt")
+    let item = try XCTUnwrap(queue.first { $0.id == waiting.id })
+    XCTAssertEqual(item.ownerName, "Ben Cho")
+    XCTAssertEqual(item.project?.title, "Thrust stand v2 \(Self.stamp)")
+    let result = try await API.review(waiting.id, verify: true, note: "Saw the calibration run.")
+    XCTAssertEqual(result, "verified")
+
+    _ = try await signIn("ben")
+    let after = try await API.record(of: ben)
+    let signed = try XCTUnwrap(after.first { $0.id == waiting.id })
+    XCTAssertEqual(signed.kind, .signed)
+    XCTAssertEqual(signed.by, "Verified by Maya P. (admin), Rocketry Club", "as the web shows it: first name, initial and club role")
+  }
+
   func testPostShowsFirstThenLikeSaveAndReply() async throws {
     let me = try await signIn("maya")
     let body = "Telemetry board talks to the ground station \(Self.stamp)"

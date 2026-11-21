@@ -1,4 +1,4 @@
-// Ember's composer actions (lib/ember-actions.ts): the same six for everyone, worded for who's asking;
+// Ember's composer actions (lib/ember-actions.ts): the same eight for everyone, worded for who's asking;
 // the ones that start a sentence say how to finish it. Run: npm test
 import assert from "node:assert/strict";
 import { test } from "node:test";
@@ -9,6 +9,16 @@ test("someone who works is never sent to a club to get work signed", () => {
   assert.equal(pro.find((a) => a.id === "sign")?.label, "Get it signed");
   for (const a of pro) assert.doesNotMatch(`${a.label} ${a.text} ${a.finish ?? ""}`, /club|semester/i);
   assert.match(emberActions({ field: "Software", student: true }).find((a) => a.id === "sign")!.text, /verified by my club/);
+});
+
+test("Ember writes from the record: a review for someone who works, résumé bullets for a student, and the story for both", () => {
+  const pro = emberActions({ student: false }), stu = emberActions({ student: true });
+  assert.equal(pro.find((a) => a.id === "review")?.label, "Prep my review");
+  assert.match(pro.find((a) => a.id === "review")!.text, /from my signed work/);
+  assert.equal(stu.find((a) => a.id === "review")?.label, "Résumé bullets");
+  assert.match(stu.find((a) => a.id === "story")!.text, /year by year/);
+  assert.equal(pro.length, 8);
+  assert.equal(new Set(pro.map((a) => a.id)).size, 8, "one button per thing");
 });
 
 test("an action either asks at once or starts a sentence and says how to finish it", () => {

@@ -10,9 +10,13 @@ export const TOOL_LABEL: Record<string, { doing: string; done: string }> = {
   upcoming_events: { doing: "Checking upcoming events", done: "events" },
   find_people: { doing: "Finding people", done: "people" },
   my_profile: { doing: "Reading your profile", done: "your profile" },
+  my_record: { doing: "Reading your signed work", done: "your record" },
+  whats_new: { doing: "Checking what's new", done: "what's new" },
+  propose_project_edit: { doing: "Drafting a project update", done: "a project update" },
   club_overview: { doing: "Looking at your club", done: "your club" },
   propose_post: { doing: "Drafting a post", done: "a post draft" },
   propose_milestone: { doing: "Drafting a milestone", done: "a milestone draft" },
+  propose_signature: { doing: "Drafting an ask to sign", done: "an ask to sign" },
   propose_join_club: { doing: "Preparing to join", done: "a club" },
   propose_follow: { doing: "Preparing a follow", done: "a person" },
   propose_event: { doing: "Drafting an event", done: "an event draft" },
@@ -32,6 +36,9 @@ export const TOOL_LABEL: Record<string, { doing: string; done: string }> = {
 export type Proposal = { id: string } & (
   | { kind: "post"; body: string; postKind: "update" | "question" | "result" | "project"; tags: string[] }
   | { kind: "milestone"; project_id: string; project_title: string; club_id: string; club_name: string; title: string; evidence: string; detail: string; achieved_on: string }
+  // A person who saw the work signs it (supabase/vouches.sql). milestone_id is "" for a new milestone,
+  // or the member's own milestone that is still waiting. email may be "": the member types it on the card.
+  | { kind: "signature"; milestone_id: string; project_id: string; project_title: string; title: string; evidence: string; detail: string; achieved_on: string; email: string; relationship: string }
   | { kind: "join"; club_id: string; club_name: string; privacy: "public" | "approval" }
   | { kind: "follow"; person_id: string; name: string; headline: string }
   | { kind: "event"; club_id: string; club_name: string; title: string; description: string; type: string; format: string; location: string; topic: string; starts_at: string; ends_at: string }
@@ -76,15 +83,31 @@ export async function runAgent(opts: {
 }) {
   const { client, model, system, tools, exec, emit, maxRounds = 4, maxTokens = 1000, signal } = opts;
   const messages = [...opts.messages];
+  // What Claude writes before a tool and after it are separate thoughts, but they arrive as one run
+  // of text ("…on the card.I've put together…"). The first text after a tool starts a new paragraph,
+  // unless the line breaks are already there. `tail` is the end of the text sent so far.
+  let tail = "";
+  let afterTool = false;
+  const say = (text: string) => {
+    if (!text) return;
+    if (afterTool && tail) {
+      const have = (/\n*$/.exec(tail)?.[0].length ?? 0) + (/^\n*/.exec(text)?.[0].length ?? 0);
+      if (have < 2) text = "\n".repeat(2 - have) + text;
+    }
+    afterTool = false;
+    tail = (tail + text).slice(-2);
+    emit({ type: "text", text });
+  };
   for (let round = 0; round < maxRounds; round++) {
     // Top-level cache_control: each round also caches the conversation so far, so the next tool
     // round reads it back instead of paying for it again (on top of the rules' own marker).
     const stream = client.messages.stream({ model, max_tokens: maxTokens, system, messages, tools, cache_control: { type: "ephemeral" } }, { signal });
     for await (const ev of stream) {
-      if (ev.type === "content_block_delta" && ev.delta.type === "text_delta") emit({ type: "text", text: ev.delta.text });
+      if (ev.type === "content_block_delta" && ev.delta.type === "text_delta") say(ev.delta.text);
     }
     const final = await stream.finalMessage();
     if (final.stop_reason !== "tool_use") return;
+    afterTool = true;
     const uses = final.content.filter((b): b is Anthropic.ToolUseBlock => b.type === "tool_use");
     messages.push({ role: "assistant", content: final.content });
     const results: Anthropic.ToolResultBlockParam[] = [];

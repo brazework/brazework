@@ -5,8 +5,10 @@ import { emberSystem, frame, runAgent } from "@/lib/copilot-agent";
 import { pageLine } from "@/lib/copilot-page";
 import { presetInstruction } from "@/lib/copilot-presets";
 import { TOOLS, makeExec } from "@/lib/copilot-tools";
+import { viewerFromToken } from "@/lib/supabase/server";
 
 // POST /api/copilot: streams Copilot's reply as plain text, so it types out live in the UI.
+// Signed in with the session cookie (the web) or "Authorization: Bearer <Supabase access token>" (the iPhone app).
 // Questions ("ask") can use read-only tools; each lookup is announced in the stream as a frame
 // (see copilot-agent.ts) so the UI can show "Searching clubs…".
 // Errors come back as JSON { message } with a status: 400 bad input, 401 signed out,
@@ -18,7 +20,11 @@ export async function POST(req: Request) {
   if (!parsed.success) return json(400, parsed.error.issues[0]?.message ?? "Check your request.");
   const r = parsed.data;
 
-  const ctx = await memberContext();
+  // The web sends its session cookie; the iPhone app sends its Supabase access token instead.
+  const token = (req.headers.get("authorization") ?? "").match(/^Bearer\s+(\S+)$/i)?.[1];
+  const viewer = token ? await viewerFromToken(token) : undefined;
+  if (token && !viewer) return json(401, "Log in again to ask Ember.");
+  const ctx = await memberContext(viewer ?? undefined);
   if (!ctx) return json(401, "Log in again to ask Ember.");
   if (!(await copilotEnabled())) return json(503, "Ember isn't switched on here yet.");
 
