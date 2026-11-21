@@ -1,5 +1,5 @@
 import { MCP_TOOLS } from "@/lib/mcp";
-import { CONNECT_LABEL, EVERYONE, PLAYBOOKS, PROMPTS, type Playbook } from "@/lib/mcp-playbooks";
+import { CONNECT_LABEL, EVERYONE, PLAYBOOKS, PROMPTS, type LaneContent, type Playbook } from "@/lib/mcp-playbooks";
 import { TOOLS } from "@/lib/tool-setup";
 
 // The public guide to connecting your AI (/ai, docs/mcp-workflows.md), built from the code's own lists
@@ -39,12 +39,14 @@ export function toolGroups() {
   ];
 }
 
-/** One field's section: the tools people in it use, the moments worth recording, who signs. */
+const laneSection = (l: LaneContent) => ({ signers: l.signers, moments: l.moments.map((m) => ({ when: m.when, example: m.example, evidence: m.evidence })) });
+
+/** One field's section: the tools people in it use, and for studying and for working, the moments worth recording and who signs. */
 export function fieldSection(p: Playbook) {
   return {
-    id: p.id, field: p.field, signers: p.signers,
+    id: p.id, field: p.field,
     tools: p.tools.map((t) => ({ name: t.name, how: CONNECT_LABEL[t.connect], reads: t.reads })),
-    moments: p.moments.map((m) => ({ when: m.when, example: m.example, evidence: m.evidence })),
+    lanes: { study: laneSection(p.study), work: laneSection(p.work) },
   };
 }
 export const FIELDS = PLAYBOOKS.map(fieldSection);

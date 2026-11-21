@@ -2,6 +2,8 @@
 import { ArrowRight, BadgeCheck, FileText, Plug, Sparkles, Users } from "lucide-react";
 import { useState } from "react";
 import { cn } from "@/lib/forge";
+import { LaneSwitch } from "@/components/playbooks/lane-switch";
+import type { Lane } from "@/lib/lanes";
 import { CONNECT_LABEL, PLAYBOOKS, playbookFor, type Connect } from "@/lib/mcp-playbooks";
 
 const TONE: Record<Connect, string> = { official: "bg-ok/12 text-ok", community: "bg-info/12 text-info", files: "bg-surface-2 text-muted" };
@@ -16,9 +18,14 @@ const COMMANDS = [
 
 // Recipes for your field (docs/mcp-workflows.md): the same playbooks the MCP server serves to your
 // assistant, shown here so you can see what it will do before you connect anything.
-export function FieldRecipes({ initialField }: { initialField: string }) {
+// Each field has a part for studying and a part for working (lib/lanes.ts); it opens on the member's own.
+export function FieldRecipes({ initialField, initialLane = "study" }: { initialField: string; initialLane?: Lane }) {
   const [id, setId] = useState(playbookFor(initialField)?.id ?? PLAYBOOKS[0].id);
+  const [lane, setLane] = useState<Lane>(initialLane);
   const p = PLAYBOOKS.find((x) => x.id === id) ?? PLAYBOOKS[0];
+  const part = p[lane];
+  // At work a number is logged as a hidden milestone, never posted to the feed.
+  const commands = COMMANDS.map((c) => (lane === "work" && c.cmd === "/result" ? { ...c, what: "a number → a hidden milestone" } : c));
   return (
     <section aria-label="Recipes for your field" className="border border-line bg-surface rounded-2xl p-5 sm:p-6">
       <div className="flex flex-wrap items-end justify-between gap-3">
@@ -26,12 +33,15 @@ export function FieldRecipes({ initialField }: { initialField: string }) {
           <h2 className="text-lg font-semibold tracking-tight">Recipes for your field</h2>
           <p className="mt-0.5 text-sm text-muted">The tools you already use, and the moments your assistant turns into your record.</p>
         </div>
-        <label className="text-sm">
-          <span className="sr-only">Field</span>
-          <select value={id} onChange={(e) => setId(e.target.value)} aria-label="Field" className="h-9 rounded-lg border border-line bg-surface pr-8 pl-3 text-sm">
-            {PLAYBOOKS.map((x) => <option key={x.id} value={x.id}>{x.field}</option>)}
-          </select>
-        </label>
+        <div className="flex flex-wrap items-center gap-2">
+          <LaneSwitch value={lane} onChange={setLane} />
+          <label className="text-sm">
+            <span className="sr-only">Field</span>
+            <select value={id} onChange={(e) => setId(e.target.value)} aria-label="Field" className="h-9 rounded-lg border border-line bg-surface pr-8 pl-3 text-sm">
+              {PLAYBOOKS.map((x) => <option key={x.id} value={x.id}>{x.field}</option>)}
+            </select>
+          </label>
+        </div>
       </div>
 
       <div className="mt-5 grid gap-5 lg:grid-cols-[1fr_1.2fr]">
@@ -49,7 +59,7 @@ export function FieldRecipes({ initialField }: { initialField: string }) {
         <div>
           <p className="flex items-center gap-1.5 text-xs font-medium text-muted"><Sparkles className="size-3.5" /> Moments worth recording</p>
           <ul className="mt-2 space-y-3">
-            {p.moments.map((m) => (
+            {part.moments.map((m) => (
               <li key={m.example} className="rounded-2xl border border-line p-3 text-sm">
                 <p className="text-text-2">{m.when}</p>
                 <p className="mt-1.5 flex items-start gap-1.5 font-medium">{m.becomes === "milestone" ? <BadgeCheck className="mt-0.5 size-4 shrink-0 text-ok" /> : <FileText className="mt-0.5 size-4 shrink-0 text-muted" />}<span><span className="text-muted">{BECOMES[m.becomes]}:</span> &ldquo;{m.example}&rdquo;</span></p>
@@ -57,14 +67,14 @@ export function FieldRecipes({ initialField }: { initialField: string }) {
               </li>
             ))}
           </ul>
-          <p className="mt-3 flex items-start gap-1.5 text-xs text-muted"><Users className="mt-0.5 size-3.5 shrink-0" />Who signs: {p.signers}.</p>
+          <p className="mt-3 flex items-start gap-1.5 text-xs text-muted"><Users className="mt-0.5 size-3.5 shrink-0" />Who signs: {part.signers}.</p>
         </div>
       </div>
 
       <div className="mt-5 border-t border-line pt-4">
         <p className="text-xs font-medium text-muted">In your assistant</p>
         <ul className="mt-2 grid gap-1.5 text-sm sm:grid-cols-2">
-          {COMMANDS.map((c) => <li key={c.cmd} className="text-text-2"><code className="font-mono text-[13px] text-text">{c.cmd}</code> {c.what}</li>)}
+          {commands.map((c) => <li key={c.cmd} className="text-text-2"><code className="font-mono text-[13px] text-text">{c.cmd}</code> {c.what}</li>)}
         </ul>
         <p className="mt-3 text-xs text-muted">In Claude Code they&apos;re <code className="font-mono">/mcp__brazework__shipped</code> and so on; other assistants list them under Brazework. Community servers are written by other people: read one before you install it.</p>
       </div>

@@ -52,8 +52,10 @@ a detail. Here the detail belongs to the piece of work.
    work doesn't show by accident. The gap is the other way round: from chat nothing can show a
    milestone, and nothing can write a hidden milestone's public line.
 2. **The server tells assistants the opposite.** `log_milestone`'s description says "It shows on the
-   member's profile only once verified or signed" (`web/src/lib/mcp.ts`), and its result says "It shows
-   on your profile once they do" (`supabase/mcp-workflows.sql`).
+   member's profile only once verified or signed" (`web/src/lib/mcp.ts`). The database's result says the
+   same ("It shows on your profile once they do", `supabase/mcp-workflows.sql`), but that line never
+   reaches an assistant: `ok()` in `web/src/app/api/mcp/route.ts` replaces it with the server's own next
+   step (`web/src/lib/mcp-results.ts`). Corrected while planning the build.
 3. **An assistant can't tell a student from a professional.** `mcp_me` returns the headline, field,
    interests and counts (clubs among them), but not `account_type` (`supabase/mcp.sql`).
 4. **`student` means a school email.** Everyone else is `professional`, including someone studying who
@@ -102,11 +104,15 @@ and each field adds its own working moment and signers on top.
 Two lanes, in the app's own words: **Studying** and **Working** (`study` and `work` in code). Working
 covers employed, freelance and on your own; the signer for a freelancer is the client.
 
-How the lane is chosen, in order. It follows the rule Home already uses (finding 4):
+How the lane is chosen, in order. It follows the rule Home already uses (finding 4). Brazework's server
+decides steps 2 and 3 when a command is fetched, because it knows whose token it is; the assistant is
+only left to ask in step 4 (Decided 4).
 
-1. The `lane` argument on a prompt, when the member gave one.
-2. A `student` account is Studying, with no question.
-3. A `professional` account in no club is Working.
+1. The `lane` argument on a prompt, when the member gave one. Plain words count ("at work", "my
+   internship"); a word that can't be read is said back to the assistant, which asks.
+2. A `student` account is Studying, with no question: the command carries the studying text, and one
+   line saying that work for an employer or a client uses the working part instead.
+3. A `professional` account in no club is Working: the command carries the working text.
 4. A `professional` account in a club is asked once: "Was this at work, or for school or a club?"
 5. In any lane, once the member says the work was for an employer or a client (a job, an internship, a
    contract), the working rules apply.
@@ -150,16 +156,21 @@ Wording for the builder to polish; the meaning is fixed.
 6. A merged pull request in a repo I've linked can be added from the project's "Your last 90 days" in
    Brazework, backed by its approvals with nobody asked. Say so, and don't claim anything logged from
    here is backed (finding 5).
-7. Don't suggest a club unless `my_clubs` shows I'm in one.
+7. Don't suggest a club for work, and don't send work to one, unless I name it myself. (Tightened in
+   review: a milestone sent to a club is readable by its officers, so being in a club isn't a reason
+   to send it employer work.)
 
 ### Where the rules live
 
 Most people type a command with no arguments, or just talk, so the rules can't live only in a prompt
 that was given `lane: work`:
 
-- **A prompt with no lane** (the normal case) carries the lane steps above and the working rules,
-  shortened, and points to the playbook's working part for the field's example and signers. This is how
-  prompts already handle a missing field.
+- **A prompt with no lane** (the normal case) is written for the lane the server knows: the studying
+  text for a student, the working text for someone who works and is in no club. When the server can't
+  tell (someone who works and is in a club, or a database without step 85 yet), it carries the lane
+  steps above, the working rules in full, and for that command the step the rules replace (no club, a milestone instead of a post, a post only
+  on a private project). It points to the playbook's working part for the field's example and signers.
+  A lane typed in words it can't read is said back to the assistant, which then asks.
 - **A prompt given `lane: work`** carries the rules in full, the working example and the working
   signers.
 - **The playbook resource's working part** opens with the rules, for an assistant that reads it without
@@ -176,9 +187,9 @@ them).
 |---|---|---|---|---|
 | Robotics | A cell or robot passes acceptance on site | Palletizing cell passed site acceptance: 11 cycles a minute over an 8-hour run | The acceptance report and the release it ran | The test lead, your manager or the customer's engineer |
 | Aerospace | A part passes qualification | Bracket passed qualification vibration at 14 g RMS with no cracks | The test report and the drawing revision | The test engineer, your lead or the quality engineer |
-| Mechanical | A design is released to production | Housing rev D released: 9 parts, down from 14, at the same load rating | The engineering change and the test report | Your lead, the manufacturing engineer or your manager |
-| Electronics | A board passes validation | Controller board rev C passed validation: every rail within 2%, no rework | The validation report and the release | The hardware lead, the test engineer or your manager |
-| Civil | A structure passes inspection, or a design is approved | Footbridge deck passed its load test at 1.5 times the design load | The inspection report or the permit | The engineer of record, the project manager or the client |
+| Mechanical | A redesign passes its test | Bracket 38% lighter, passed the 3.2 g vibration test | The two CAD versions and the test log | Your lead, the manufacturing engineer or your manager |
+| Electronics | A board revision measures better than the last | Power board rev C: ripple down from 120 to 18 mV | The schematic revisions and the scope captures | The hardware lead, the test engineer or your manager |
+| Civil | A structure passes inspection, or a design is approved | Retaining wall pour passed inspection, zero rework | The inspection report and the site photos | The engineer of record, the project manager or the client |
 | Software | A change ships and a number moves | Checkout p95 latency down from 820 to 310 ms | The merged pull requests, the ticket and the dashboard | Your tech lead, a reviewer outside the project or your manager |
 | Computer science | A system change is adopted | Scheduler change rolled out to every cluster: 14% fewer preemptions | The design doc, the merged change and the rollout report | The reviewing engineer, your lead or your manager |
 | Data & AI | A model goes live and holds its number | Fraud model live for 30 days: recall 91% at 0.5% false positives | The evaluation report and the model card | The ML lead, the product owner or your manager |
@@ -195,8 +206,12 @@ them).
 | Social science | Findings change a decision | Tenant survey (1,150 responses) led the council to extend rent relief | The report and the council minutes | The research director, the client or the body that commissioned it |
 | Education | A unit lifts results | Fractions unit lifted quiz scores 18% | The unit plan and aggregate scores, never individual students | The head of department or the principal |
 
-The Software, Business, Design and Education examples are the landing page's own, so the assistant and
-the front door tell the same story.
+The Software, Design, Mechanical, Electronics and Civil examples are the landing page's own, so the
+assistant and the front door tell the same story. When this table was approved the Business and
+Education ones were too; the landing page changed the same day (#170) and now tells its own Mechanical,
+Electrical and Civil stories. Josh chose to match them (Decided 5), and each moment and its proof were
+reworded to fit: the bracket's proof is the two CAD versions and the test log, the board's is the
+schematic revisions and the scope captures, as the landing page shows them.
 
 ### Which fields get checked first
 
@@ -218,11 +233,14 @@ and the builder walks one field from each family end to end on the local demo me
   and `signers`. Today's moments and signers move into `study` unchanged.
 - **`me` returns `account_type`.** One database step replaces `mcp_me`. The tool's description says the
   field picks the playbook, and the account type and the clubs count pick the lane.
-- **The same step corrects what the server says about showing** (finding 2): a milestone stays hidden
-  until the member shows or shares it in Brazework. The tool description changes to match.
+- **The tool descriptions stop saying a milestone shows once it's verified** (finding 2): it stays
+  hidden until the member shows or shares it in Brazework. This needs no database change.
 - **Prompts take `lane`** (`study` or `work`, optional): `start`, `shipped`, `result`, `standup`,
   `week`, `setup`, `ask_signature`. `ask_signature` also gains `field`, which it lacks today, so it can
   name the field's signers.
+- **The server picks the lane** when one of those is fetched with no lane typed: it reads `mcp_me` for
+  the token and passes `defaultLane(account_type, clubs)` to the prompt (Decided 4). If that read
+  fails, the prompt asks, as if the server couldn't tell.
 - **What each prompt does in the working lane.** `shipped` and `start` log a hidden milestone and never
   start by picking a club. `result` logs a hidden milestone instead of drafting a post. `week` picks
   milestones only, unless the project is private. `standup` saves its draft only on a private project.
@@ -316,6 +334,7 @@ Measured by the owner's `account_type`, since the lane isn't stored. Claude's pr
 - The rules repeated in prompts without a lane, the resource, the instructions and the tool
   descriptions, so the plain-words path is covered.
 - The assistant reads the lane from `me`, as it reads the field, with no lookup on the server.
+  **Reversed by Josh after the review (Decided 4): the server looks it up.**
 - One working moment per field in v1, and all 20 examples (invented). Tools shared across lanes.
 - Leaving the consent default alone. Claude first suggested "Drafts only" for work, then found that
   chat-logged milestones already start hidden.
@@ -337,3 +356,11 @@ Josh approved Claude's default on each. Ian hasn't been asked yet.
    what the 90-day picker already stores for a private repo. Some employers won't allow even the
    address of an inside page in an outside system. Allowing none would change what a signature proves,
    so it isn't in these PRs; ask the first working members whether the link stops them.
+4. **The server picks the lane.** Found in the review of the whole branch: with the choice left to the
+   assistant, a student's command still carried the lane question beside an instruction not to ask it,
+   so "a student is never asked" was a hope. The server knows whose token it is, so a command fetched
+   with no lane is written for the lane `defaultLane` gives. Josh: "Yes, do it".
+5. **Mechanical, Electronics and Civil use the landing page's working examples.** The landing page
+   changed the same day (#170) and told different stories for those three fields. Matching them means
+   a member hears the same example on the front door and from their assistant. Josh: "Yes, match
+   landing". Ian's read in Decided 2 is of the bracket example.

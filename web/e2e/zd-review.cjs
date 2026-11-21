@@ -34,6 +34,49 @@ const body = `Done: thrust logger v2 merged, CI green. Next: static fire #5 prep
     if (psql(`select count(*) from public.posts where body = '${body}'`) !== "0") throw new Error("the standup was posted");
   });
 
+  // Playbook lanes (FIX-209), through the server as an assistant meets them: what it's told on
+  // connecting, what me says, a working prompt, a plain one, and the playbook itself.
+  await step("playbook lanes over MCP: me says studying or working, a working /shipped asks about the employer, with no lane typed the server picks it from who is asking, and the playbook has both parts", async () => {
+    const init = await mcp("initialize", { protocolVersion: "2025-06-18", capabilities: {}, clientInfo: { name: "e2e", version: "1" } });
+    if (!/Working part/.test(init.result?.instructions ?? "")) throw new Error("instructions: " + JSON.stringify(init).slice(0, 200));
+    const me = await mcp("tools/call", { name: "me", arguments: {} });
+    if (!["student", "professional"].includes(me.result?.structuredContent?.account_type)) throw new Error("me.account_type: " + JSON.stringify(me).slice(0, 240));
+    const tools = (await mcp("tools/list", {})).result?.tools ?? [];
+    const log = tools.find((t) => t.name === "log_milestone")?.description ?? "";
+    if (!/stays hidden/.test(log) || /only once verified/.test(log)) throw new Error("log_milestone still says it shows once verified: " + log.slice(0, 160));
+    const text = (n, args) => mcp("prompts/get", { name: n, arguments: args }).then((r) => r.result?.messages?.[0]?.content?.text ?? "");
+    const work = await text("shipped", { field: "Software", lane: "work" });
+    if (!/employer allows/.test(work) || !/Checkout p95 latency/.test(work) || /pick the club that saw it/.test(work)) throw new Error("working /shipped: " + work.slice(0, 200));
+    const result = await text("result", { field: "Software", lane: "work" });
+    if (/post_update|draft_post/.test(result) || !/log_milestone/.test(result)) throw new Error("a number at work should be a hidden milestone: " + result.slice(0, 200));
+    // With no lane typed, the server picks it from who is asking (their account and their clubs).
+    // Ben is a student: plain studying text, and nothing asks him about work.
+    const asStudent = await text("shipped", {});
+    if (/Was this at work|employer allows/.test(asStudent) || !/pick the club that saw it/.test(asStudent)) throw new Error("a student's plain /shipped asks about work: " + asStudent.slice(0, 200));
+    const loner = psql(`select p.id from public.profiles p where p.id <> '${ben}' and not exists (select 1 from public.community_members m where m.uid = p.id) order by p.created_at limit 1`);
+    // (A member, so someone with a profile: a sign-up left half done has a login and nothing else.)
+    if (!loner) throw new Error("no member without a club to check the working default with");
+    const benWas = psql(`select account_type from public.profiles where id = '${ben}'`), lonerWas = psql(`select account_type from public.profiles where id = '${loner}'`);
+    const t2 = `forge_${crypto.randomBytes(30).toString("base64url")}`, h2 = crypto.createHash("sha256").update(t2).digest("hex");
+    try {
+      // Someone who works and is in a club (Ben is in two): the server can't tell, so the assistant asks.
+      psql(`update public.profiles set account_type = 'professional' where id = '${ben}'`);
+      const asked = await text("shipped", {});
+      if (!/Was this at work, or for school or a club\?/.test(asked) || !/employer allows/.test(asked)) throw new Error("someone who works and is in a club isn't asked which it was");
+      // Someone who works and is in no club: the working text, with nothing to ask.
+      psql(`update public.profiles set account_type = 'professional' where id = '${loner}'; insert into public.api_tokens (user_id, name, token_hash, prefix, scopes) values ('${loner}', 'Claude Code (lanes e2e)', '${h2}', '${t2.slice(0, 12)}', '{read,draft,post}');`);
+      const got = await fetch(`${BASE}/api/mcp`, { method: "POST", headers: { "content-type": "application/json", authorization: `Bearer ${t2}` }, body: JSON.stringify({ jsonrpc: "2.0", id: 1, method: "prompts/get", params: { name: "shipped", arguments: {} } }) }).then((r) => r.json());
+      const working = got.result?.messages?.[0]?.content?.text ?? "";
+      if (!/employer allows/.test(working) || /Was this at work/.test(working) || /pick the club that saw it/.test(working)) throw new Error("someone who works and is in no club should get the working text: " + working.slice(0, 200));
+    } finally {
+      psql(`update public.profiles set account_type = '${benWas}' where id = '${ben}'; update public.profiles set account_type = '${lonerWas}' where id = '${loner}'; delete from public.api_tokens where token_hash = '${h2}';`);
+    }
+    const study = await text("shipped", { field: "Software", lane: "study" });
+    if (/employer allows|Was this at work/.test(study)) throw new Error("a studying /shipped asks about work");
+    const md = (await mcp("resources/read", { uri: "brazework://playbooks/software" })).result?.contents?.[0]?.text ?? "";
+    if (!md.includes("## If you're studying") || !md.includes("## If you're working") || !md.includes("Checkout p95 latency")) throw new Error("playbook: " + md.slice(0, 160));
+  });
+
   const page = await as(b, "ben@forge.test");
   await step("the standup waits for Ben on /drafts", async () => {
     await go(page, "/drafts");

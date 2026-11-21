@@ -18,7 +18,7 @@ type Tool = { name: string; title: string; description: string; inputSchema: Rec
 const none = { type: "object", properties: {}, additionalProperties: false };
 
 export const MCP_TOOLS: Tool[] = [
-  { name: "me", title: "My Brazework profile", description: "The signed-in member's Brazework profile at a glance: headline, field, interests, and counts of projects, club-verified milestones, clubs and unread notifications. Call it first: the field picks the playbook (brazework://playbooks).", inputSchema: none, rpc: "mcp_me", args: () => ({}) },
+  { name: "me", title: "My Brazework profile", description: "The signed-in member's Brazework profile at a glance: headline, field, interests, and counts of projects, club-verified milestones, clubs and unread notifications. Call it first: the field picks the playbook (brazework://playbooks), and account_type (student or professional) with the clubs count picks its part, Studying or Working.", inputSchema: none, rpc: "mcp_me", args: () => ({}) },
   { name: "my_clubs", title: "My clubs", description: "Clubs the member belongs to, with their role in each.", inputSchema: none, rpc: "mcp_my_clubs", args: () => ({}) },
   { name: "upcoming_events", title: "Upcoming events", description: "Published events in the next N days (default 14, up to 90) from public clubs and the member's clubs, with whether the member is going.", inputSchema: { type: "object", properties: { days: { type: "integer", minimum: 1, maximum: 90, description: "How many days ahead to look." } }, additionalProperties: false }, rpc: "mcp_events", args: (i) => ({ p_days: typeof i.days === "number" ? Math.round(i.days) : 14 }) },
   { name: "my_projects", title: "My projects", description: "The member's projects, newest first, each with its club-verified milestones (the proof on their profile) and its open_milestones: the ones still waiting for a club or a signature, with their ids.", inputSchema: none, rpc: "mcp_my_projects", args: () => ({}) },
@@ -49,7 +49,7 @@ export const MCP_TOOLS: Tool[] = [
 MCP_TOOLS.push(
   {
     name: "log_milestone", writes: true, title: "Log a milestone for your club to verify",
-    description: "Record a milestone on one of the member's projects (ids from my_projects) and ask one of their clubs (ids from my_clubs) to verify it, or leave the club out when no club saw it: it then waits for a signature (request_signature). It needs evidence: 1 to 8 https links such as the commit, the pull request, a test run, a video or a doc. It shows on the member's profile only once verified or signed. Write the title as what was achieved, with numbers where possible; ask the member before submitting. The result has the milestone's id, a next step and a link to open it.",
+    description: "Record a milestone on one of the member's projects (ids from my_projects) and ask one of their clubs (ids from my_clubs) to verify it, or leave the club out when no club saw it: it then waits for a signature (request_signature). It needs evidence: 1 to 8 https links such as the commit, the pull request, a test run, a video or a doc. It stays hidden on the member's profile until they show or share it in Brazework. For work done for an employer or a client, read the Working part of the field's playbook first. Write the title as what was achieved, with numbers where possible; ask the member before submitting. The result has the milestone's id, a next step and a link to open it.",
     inputSchema: {
       type: "object",
       properties: {
@@ -89,7 +89,7 @@ MCP_TOOLS.push(
   },
   {
     name: "draft_milestone", writes: true, needs: "draft", title: "Draft a milestone for the member to approve",
-    description: "Leave a milestone in the member's Brazework drafts. When they approve it, it goes to the club to verify (club_id) or waits for a signature (no club). Use it for work that just landed, like a merged pull request with CI green, when you can't ask the member now. Same fields as log_milestone, plus source and source_key.",
+    description: "Leave a milestone in the member's Brazework drafts. When they approve it, it goes to the club to verify (club_id) or waits for a signature (no club). Use it for work that just landed, like a merged pull request with CI green, when you can't ask the member now. Same fields as log_milestone, plus source and source_key. Once approved it stays hidden on the member's profile until they show or share it in Brazework. For work done for an employer or a client, read the Working part of the field's playbook first.",
     inputSchema: withSource(liveTool("log_milestone").inputSchema),
     rpc: "mcp_draft_milestone",
     args: (i) => ({ ...liveTool("log_milestone").args(i), ...sourceArgs(i) }),
