@@ -1,3 +1,5 @@
+import { requestTime } from "@/lib/forge";
+import { continueStep } from "@/lib/ember-continuity";
 import type { Metadata } from "next";
 import { redirect } from "next/navigation";
 import { presetFromQuery } from "@/lib/copilot-presets";
@@ -36,7 +38,9 @@ async function Copilot({ searchParams }: { searchParams: PageProps<"/copilot">["
   const id = typeof sp.chat === "string" ? sp.chat : "";
   const [chats, chat] = saving ? await Promise.all([listChats(), id ? loadChat(id) : Promise.resolve(null)]) : [[], null];
   // A new chat opens with up to three next steps from the member's own record (lib/ember-record.ts).
-  const steps = chat || q ? [] : nextSteps(await loadEmberRecord(supabase, user.id, profile.account_type, { withGitHub: true }));
+  // First, the chat they were last in, if it was in the last few days (lib/ember-continuity.ts).
+  const pickUp = chat || q ? null : continueStep(chats, requestTime());
+  const steps = chat || q ? [] : [...(pickUp ? [pickUp] : []), ...nextSteps(await loadEmberRecord(supabase, user.id, profile.account_type, { withGitHub: true }))].slice(0, 3);
   return <CopilotChat first={profile.first_name} field={profile.field} student={profile.account_type !== "professional"} initial={chat ? "" : q} initialPreset={chat ? null : preset} chats={chats} chat={chat} saving={saving} steps={steps} fromTools={await fromTools(supabase)} />;
 }
 

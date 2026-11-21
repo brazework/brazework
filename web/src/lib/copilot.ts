@@ -1,3 +1,4 @@
+import { recentChatLines, type RecentChat } from "@/lib/ember-continuity";
 import { goalTitle, isGoalKind, type GoalKind } from "@/lib/goals";
 import { dbFeatures } from "@/lib/db-features";
 import { getViewer } from "@/lib/supabase/server";
@@ -57,6 +58,10 @@ export async function memberContext(from?: Awaited<ReturnType<typeof getViewer>>
     // Ember can act on it without being asked to look first. No GitHub call here: this runs on every question.
     loadEmberRecord(supabase, user.id, profile.account_type),
   ]);
+  // What they've talked to Ember about lately (lib/ember-continuity.ts), from the chats Ember saves.
+  const recent = (await dbFeatures()).copilotChats
+    ? ((await supabase.from("copilot_chats").select("id, title, updated_at").eq("user_id", user.id).order("updated_at", { ascending: false }).limit(6)).data ?? []) as RecentChat[]
+    : [];
   const goal = ((goals.data ?? []) as { kind: string; target: string }[]).find((g) => isGoalKind(g.kind));
   type C = { id: string; name: string };
   const mine = ((clubs.data ?? []) as unknown as { communities: C | C[] | null }[]).flatMap((r) => (Array.isArray(r.communities) ? r.communities : r.communities ? [r.communities] : []));
@@ -71,6 +76,7 @@ export async function memberContext(from?: Awaited<ReturnType<typeof getViewer>>
     goal && record.goal === undefined && `Their goal: ${goalTitle(goal as { kind: GoalKind; target: string })}. Point advice toward it.`,
     projects.data?.length && `Their projects: ${projects.data.map((p) => `${p.title} (project id ${p.id}; ${p.status === "completed" ? "completed" : "in progress"})`).join("; ")}.`,
     ...recordLines(record),
+    ...recentChatLines(recent, Date.now()),
   ].filter(Boolean);
   // `rules` and `about` apart, so the rules can be cached (copilot-agent.ts emberSystem); `system` is
   // both together, for callers that send one string.

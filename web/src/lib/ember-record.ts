@@ -86,7 +86,7 @@ export function recordLines(r: EmberRecord): string[] {
  * the sentence is started and waits for them to complete it); `href` opens a page instead, for a step
  * that isn't Ember's to do.
  */
-export type NextStep = { id: "goal" | "set-goal" | "first-project" | "slow" | "unsigned" | "unlogged" | "first-result"; label: string; hint: string } & ({ text: string; finish?: string } | { href: string });
+export type NextStep = { id: "continue" | "goal" | "set-goal" | "first-project" | "slow" | "unsigned" | "unlogged" | "first-result"; label: string; hint: string } & ({ text: string; finish?: string } | { href: string });
 
 /** Up to three steps from the member's own record, most useful first. None when the record is in order. */
 export function nextSteps(r: EmberRecord): NextStep[] {
