@@ -46,10 +46,10 @@ struct EmberView: View {
       .safeAreaInset(edge: .bottom) { composer }
       .navigationTitle("Ember").navigationBarTitleDisplayMode(.inline)
       .toolbar {
-        ToolbarItem(placement: .topBarLeading) { Button("Close", systemImage: "xmark") { dismiss() } }
+        ToolbarItem(placement: .topBarLeading) { Button("Close", icon: "xmark") { dismiss() } }
         if !turns.isEmpty {
           ToolbarItem(placement: .topBarTrailing) {
-            Button("New chat", systemImage: "square.and.pencil") { withAnimation(.snappy) { turns = []; done = [:] } }.disabled(busy)
+            Button("New chat", icon: "square.and.pencil") { withAnimation(.snappy) { turns = []; done = [:] } }.disabled(busy)
           }
         }
       }
@@ -112,7 +112,7 @@ struct EmberView: View {
             VStack(alignment: .leading, spacing: 4) {
               ForEach(Array(r.tools.enumerated()), id: \.offset) { i, tool in
                 let current = busy && turn.id == turns.last?.id && i == r.tools.count - 1 && r.text.isEmpty
-                Label(EmberLogic.doing(tool) + (current ? "…" : ""), systemImage: current ? "magnifyingglass" : "checkmark")
+                Label(EmberLogic.doing(tool) + (current ? "…" : ""), icon: current ? "magnifyingglass" : "checkmark")
                   .font(.caption).foregroundStyle(p.faint)
               }
             }
@@ -137,7 +137,7 @@ struct EmberView: View {
         Text(card.detail).font(.subheadline).foregroundStyle(p.text2).fixedSize(horizontal: false, vertical: true).lineLimit(8)
       }
       if let state = done[card.id] {
-        Label(state, systemImage: state == "Not now" ? "xmark" : "checkmark.circle.fill")
+        Label(state, icon: state == "Not now" ? "xmark" : "checkmark.circle.fill")
           .font(.footnote.weight(.semibold)).foregroundStyle(state == "Not now" ? p.faint : p.ok)
       } else {
         HStack(spacing: 8) {
@@ -145,7 +145,7 @@ struct EmberView: View {
             HStack(spacing: 6) {
               if working == card.id { ProgressView().controlSize(.small).tint(p.onAccent) }
               Text(card.confirmLabel)
-              if !card.native { Image(systemName: "arrow.up.right") }
+              if !card.native { Icon("arrow.up.right") }
             }
           }
           .buttonStyle(PrimaryButtonStyle()).fixedSize().disabled(working != nil)
@@ -211,7 +211,7 @@ struct EmberView: View {
           .overlay(RoundedRectangle(cornerRadius: 24, style: .continuous).strokeBorder(p.border, lineWidth: 0.5))
           .submitLabel(.send).onSubmit { Task { await send() } }
         Button { Task { await send() } } label: {
-          Image(systemName: busy ? "ellipsis" : "arrow.up").font(.body.weight(.semibold)).foregroundStyle(p.onAccent)
+          Icon(busy ? "ellipsis" : "arrow.up").font(.body.weight(.semibold)).foregroundStyle(p.onAccent)
             .frame(width: 44, height: 44).background(p.accent, in: Circle())
         }
         .disabled(busy || input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
