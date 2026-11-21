@@ -6,6 +6,8 @@ import { Skeleton } from "@/components/app/page-ui";
 import { copilotEnabled } from "@/lib/copilot";
 import { listChats, loadChat } from "@/lib/copilot-chats";
 import { dbFeatures } from "@/lib/db-features";
+import { nextSteps } from "@/lib/ember-record";
+import { loadEmberRecord } from "@/lib/ember-record-load";
 import { getViewer } from "@/lib/supabase/server";
 import { draftToProposal, isCardKind, type ToolDraftRow } from "@/lib/tool-actions";
 import { CopilotChat, CopilotSoon, type FromTools } from "./copilot-client";
@@ -33,7 +35,9 @@ async function Copilot({ searchParams }: { searchParams: PageProps<"/copilot">["
   const saving = (await dbFeatures()).copilotChats;
   const id = typeof sp.chat === "string" ? sp.chat : "";
   const [chats, chat] = saving ? await Promise.all([listChats(), id ? loadChat(id) : Promise.resolve(null)]) : [[], null];
-  return <CopilotChat first={profile.first_name} field={profile.field} student={profile.account_type !== "professional"} initial={chat ? "" : q} initialPreset={chat ? null : preset} chats={chats} chat={chat} saving={saving} fromTools={await fromTools(supabase)} />;
+  // A new chat opens with up to three next steps from the member's own record (lib/ember-record.ts).
+  const steps = chat || q ? [] : nextSteps(await loadEmberRecord(supabase, user.id, profile.account_type, { withGitHub: true }));
+  return <CopilotChat first={profile.first_name} field={profile.field} student={profile.account_type !== "professional"} initial={chat ? "" : q} initialPreset={chat ? null : preset} chats={chats} chat={chat} saving={saving} steps={steps} fromTools={await fromTools(supabase)} />;
 }
 
 // What your AI tools drafted for you (supabase/tool-actions.sql), as Ember cards.
