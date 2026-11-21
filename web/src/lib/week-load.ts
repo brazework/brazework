@@ -21,7 +21,7 @@ export async function loadWeek(
 async function loadWeekInput(
   supabase: SupabaseClient, me: string,
   memberships: { role: string; communities: { id: string; name: string } | null }[], events: HostedEvent[], going: Set<string>, now: number,
-  asService = false,
+  asService = false, working?: boolean,
 ): Promise<WeekInput> {
   const f = await dbFeatures();
   const weekAgo = new Date(now - 7 * 864e5).toISOString();
@@ -69,6 +69,7 @@ async function loadWeekInput(
     viewers: v ? { total: v.total ?? 0, companies: v.companies ?? [] } : undefined,
     hasMilestone: (anyMilestone.count ?? 0) > 0,
     goal,
+    working,
   };
 }
 
@@ -95,16 +96,20 @@ export async function loadWeekFor(supabase: SupabaseClient, me: string, now: num
   return buildWeek(await loadWeekInputFor(supabase, me, now, asService));
 }
 
-async function loadWeekInputFor(supabase: SupabaseClient, me: string, now: number, asService = false): Promise<WeekInput> {
-  const [mine, rsvps] = await Promise.all([
+// working: whether this is a working (professional) account. Home passes it from the profile it has
+// already loaded (no extra query); the digest, which has no profile at hand, looks it up here.
+async function loadWeekInputFor(supabase: SupabaseClient, me: string, now: number, asService = false, working?: boolean): Promise<WeekInput> {
+  const [mine, rsvps, kind] = await Promise.all([
     supabase.from("community_members").select("role, communities(id, name)").eq("uid", me).limit(50),
     supabase.from("event_rsvps").select("event_id").eq("user_id", me).limit(200),
+    working === undefined && asService ? supabase.from("profiles").select("account_type").eq("id", me).maybeSingle() : Promise.resolve({ data: null }),
   ]);
+  const isWorking = working ?? ((kind.data as { account_type?: string } | null)?.account_type === "professional");
   const going = new Set(((rsvps.data ?? []) as { event_id: string }[]).map((r) => r.event_id));
   const { data: evs } = going.size
     ? await supabase.from("events").select("id, title, starts_at, ends_at").in("id", [...going]).gt("starts_at", new Date(now).toISOString()).order("starts_at").limit(5)
     : { data: [] };
-  return loadWeekInput(supabase, me, (mine.data ?? []) as unknown as { role: string; communities: { id: string; name: string } | null }[], (evs ?? []) as unknown as HostedEvent[], going, now, asService);
+  return loadWeekInput(supabase, me, (mine.data ?? []) as unknown as { role: string; communities: { id: string; name: string } | null }[], (evs ?? []) as unknown as HostedEvent[], going, now, asService, isWorking);
 }
 
 // The weekly loop on Home (Linear FIX-67): this week's goal, your build streak (weeks in a row with a
@@ -117,16 +122,16 @@ export type Loop = { goal: WeekGoal; streak: Streak; recent: boolean[]; viewers:
 // asking, not the time (each caller's Date.now() differs by a few ms); the first ask's time is used.
 // (The arguments are only the cache key.)
 const loopSlot = cache((supabase: SupabaseClient, me: string): { p?: Promise<Loop>; key: string } => ({ key: `${me}:${Boolean(supabase)}` }));
-export function loadLoop(supabase: SupabaseClient, me: string, now: number): Promise<Loop> {
+export function loadLoop(supabase: SupabaseClient, me: string, now: number, working?: boolean): Promise<Loop> {
   const slot = loopSlot(supabase, me);
-  return (slot.p ??= loadLoopOnce(supabase, me, now));
+  return (slot.p ??= loadLoopOnce(supabase, me, now, working));
 }
-async function loadLoopOnce(supabase: SupabaseClient, me: string, now: number): Promise<Loop> {
+async function loadLoopOnce(supabase: SupabaseClient, me: string, now: number, working?: boolean): Promise<Loop> {
   const f = await dbFeatures();
   const since = new Date(weekStart(now) - 26 * 7 * 864e5).toISOString();
   const none = Promise.resolve({ data: [] as never[] });
   const [input, posts, milestones, verified] = await Promise.all([
-    loadWeekInputFor(supabase, me, now),
+    loadWeekInputFor(supabase, me, now, false, working),
     supabase.from("posts").select("created_at").eq("author_id", me).gt("created_at", since).order("created_at", { ascending: false }).limit(500),
     f.milestones ? supabase.from("milestones").select("created_at").eq("owner_id", me).gt("created_at", since).limit(500) : none,
     f.milestones ? supabase.from("milestones").select("id", { count: "exact", head: true }).eq("owner_id", me).eq("status", "verified") : Promise.resolve({ count: 0 }),

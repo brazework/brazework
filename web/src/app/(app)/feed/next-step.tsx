@@ -10,9 +10,9 @@ import { loadLoop } from "@/lib/week-load";
 // keeping your streak. Done for the week: one quiet line instead of a box. Before that, the
 // first-five-minutes checklist sits in this same slot (start-checklist.tsx).
 export async function NextStep() {
-  const { supabase, user } = await getViewer();
+  const { supabase, user, profile } = await getViewer();
   if (!user) return null;
-  const { goal } = await loadLoop(supabase, user.id, requestTime());
+  const { goal } = await loadLoop(supabase, user.id, requestTime(), profile?.account_type === "professional");
   if (goal.done) {
     return (
       <section aria-label="Next step">

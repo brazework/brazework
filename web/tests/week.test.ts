@@ -88,3 +88,41 @@ test("the goal check-in comes first: progress, the next step from goalPath, and 
   assert.match(mail.text, /2 of 3 signed toward a summer internship in power electronics\. .*Next: /, "the weekly email carries the full line");
   assert.match(mail.html, /2 of 3 signed toward a summer internship in power electronics/);
 });
+
+// A working (professional) account in no club: there is nobody to join. Whoever saw the work signs it,
+// so every nudge points at asking them (Linear FIX-224).
+test("a working member with no club is asked to get work signed, never to join a club", () => {
+  const solo = { ...quiet, hasClub: false, working: true };
+  // No project yet: add one first, as for anyone.
+  assert.equal(buildWeek({ ...solo, hasProject: false }).at(-1)?.id, "project");
+  // A project, nothing asked yet: ask someone who saw it.
+  const ask = buildWeek({ ...solo, hasMilestone: false }).at(-1)!;
+  assert.deepEqual([ask.id, ask.text, ask.href, ask.action], ["ask", "Ask someone who saw your work to sign it", "/projects", "Ask"]);
+  // Already asked: no nudge to join, and what's waiting isn't "for your club".
+  assert.deepEqual(buildWeek({ ...solo, hasMilestone: true }), []);
+  assert.equal(buildWeek({ ...solo, hasMilestone: true, myPending: 2 })[0].text, "2 milestones of yours waiting to be signed");
+  for (const w of [solo, { ...solo, hasProject: false }, { ...solo, hasMilestone: true, myPending: 1 }])
+    assert.ok(!buildWeek(w).some((i) => i.id === "join" || /club/i.test(i.text)), "no club wording");
+
+  assert.equal(weekGoal({ ...solo, hasProject: false }, false).id, "project");
+  assert.equal(weekGoal({ ...solo, hasMilestone: false }, false).text, "Ask someone who saw your work to sign it");
+  assert.equal(weekGoal({ ...solo, hasMilestone: true }, false).id, "share");
+
+  const steps = buildLoopSteps({ ...solo, hasMilestone: false }, { shownThisWeek: true, verified: 0, me: "u1" });
+  const verify = steps.find((s) => s.id === "verify")!;
+  assert.equal(verify.title, "Get it signed");
+  assert.equal(verify.line, "Ask someone who saw your work to sign it");
+  assert.deepEqual(verify.cta, { label: "Ask for a signature", href: "/projects" });
+  assert.equal(buildLoopSteps({ ...solo, myPending: 1 }, { shownThisWeek: true, verified: 0, me: "u1" })[1].line, "1 milestone waiting to be signed");
+  assert.equal(buildLoopSteps(solo, { shownThisWeek: true, verified: 3, me: "u1" })[1].line, "3 milestones signed");
+});
+
+test("a working member who is in a club, and a student with none, read as before", () => {
+  // In a club: the club's wording, whatever the account type.
+  assert.equal(weekGoal({ ...quiet, working: true, hasMilestone: false }, false).text, "Ask your club to verify your first milestone");
+  assert.equal(buildWeek({ ...quiet, working: true, myPending: 1 })[0].text, "1 milestone of yours waiting for your club");
+  assert.equal(buildLoopSteps({ ...quiet, working: true }, { shownThisWeek: true, verified: 0, me: "u1" })[1].title, "Verify");
+  // A student with no club is still pointed at one.
+  assert.equal(buildWeek({ ...quiet, hasClub: false, working: false }).at(-1)?.id, "join");
+  assert.equal(weekGoal({ ...quiet, hasClub: false, working: false, hasMilestone: true }, false).id, "join");
+});
