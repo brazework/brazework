@@ -8,6 +8,7 @@ import { WithPresence } from "@/components/presence/presence";
 import { cn, timeAgo } from "@/lib/forge";
 import type { Conv, GroupChat } from "./data";
 import { nestGroups } from "@/lib/group-nesting";
+import { CommunityBadge } from "../communities/_components/badge";
 
 // Two panes on desktop; on phones the list shows until a thread page (marked data-thread) is open.
 // Pure CSS (:has), so the layout needs no runtime URL read and still prerenders.
@@ -86,7 +87,7 @@ export function ConvList({ convs, requestsOn, groups = null }: { convs: Conv[]; 
               <li key={g.id}>
                 <div className="relative">
                   <Link href={`/messages/g/${g.id}`} aria-current={g.id === activeGroup ? "page" : undefined} className={cn("flex gap-3 rounded-2xl px-3 py-3 transition hover:bg-hover/70", g.id === activeGroup && "nav-pill", teams.length > 0 && "pr-11")}>
-                    <span className="nav-tile grid size-10 shrink-0 place-items-center rounded-xl text-text-2"><Icon className="size-[18px]" /></span>
+                    {g.logo ? <CommunityBadge id={g.community_id ?? g.id} name={g.title} size={40} logo={g.logo} /> : <span className="nav-tile grid size-10 shrink-0 place-items-center rounded-xl text-text-2"><Icon className="size-[18px]" /></span>}
                     <div className="min-w-0 flex-1">
                       <div className="flex items-baseline justify-between gap-2">
                         <span className={cn("truncate text-sm", g.unread || (!open && teamUnread) ? "font-semibold" : "font-medium")}>{g.title}</span>

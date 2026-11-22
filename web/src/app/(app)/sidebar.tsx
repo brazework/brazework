@@ -1,6 +1,6 @@
 "use client";
 import { AnimatePresence, motion } from "motion/react";
-import { BadgeCheck, Bell, Bookmark, CalendarDays, Compass, FolderGit2, House, Inbox, LayoutDashboard, LogOut, Network, PanelLeftClose, PanelLeftOpen, PenLine, Plus, Search, Settings, Sparkles, Sun, Trophy, UserRound, Users, X } from "lucide-react";
+import { BadgeCheck, Bell, Bookmark, CalendarDays, Compass, FolderGit2, House, MessageCircle, LayoutDashboard, LogOut, Network, PanelLeftClose, PanelLeftOpen, PenLine, Plus, Search, Settings, Sparkles, Sun, Trophy, UserRound, Users, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -16,10 +16,10 @@ export type Badges = Record<BadgeKey, number>;
 
 // The five places of the signed-in app, each answering one question: Home (what needs me?), Projects
 // (what am I making?), Clubs (what's my team doing?), Record (what have I done, and who signed it?),
-// Inbox (who's reaching out?). The list itself, and which place a page belongs to, live in
+// Chats (who's reaching out?). The list itself, and which place a page belongs to, live in
 // lib/places.ts; here they only get their icons. There is no More drawer: every other page sits inside
 // one of the five, a tab away (components/app/place-tabs.tsx), and settings are on your avatar.
-const PLACE_ICON: Record<PlaceId, typeof Sun> = { home: House, projects: FolderGit2, clubs: Users, record: BadgeCheck, inbox: Inbox };
+const PLACE_ICON: Record<PlaceId, typeof Sun> = { home: House, projects: FolderGit2, clubs: Users, record: BadgeCheck, inbox: MessageCircle };
 const NAV = PLACES.map((p) => ({ ...p, icon: PLACE_ICON[p.id] }));
 
 // Phones keep one sheet with every page inside the places (lib/places.ts MENU_PAGES).

@@ -1,5 +1,6 @@
 "use client";
 import { emberCreditCost } from "@/lib/ember-credits";
+import { bubbleCls, dayPillCls } from "@/components/chat/bubble";
 import { ArrowUp, Check, ChevronDown, Eye, Hash, Loader2, Megaphone, Plus, Search, Users, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
@@ -95,7 +96,7 @@ export function GroupThread({ msgs, pics = {}, me, myName, chatId, seen = {}, re
           const s = seen[m.id];
           return (
             <li key={m.id} className={cn("flex flex-col", joinsPrev ? "mt-0.5" : "mt-3")}>
-              {showDay && <span className="glass-card mb-3 self-center rounded-full px-3 py-0.5 text-[11px] text-faint">{d}</span>}
+              {showDay && <span className={cn("mb-3 self-center", dayPillCls)}>{d}</span>}
               {m.announcement ? (
                 <div className={cn("glass-card mx-auto w-full max-w-xl rounded-2xl border-l-4 border-l-text p-4", isPending && "opacity-60")}>
                   <div className="flex items-center gap-2 text-xs text-muted">
@@ -120,9 +121,7 @@ export function GroupThread({ msgs, pics = {}, me, myName, chatId, seen = {}, re
                         onUnsend={() => { setActive(null); void rx.unsend(m.id); }}
                       />
                     )}
-                    <div onClick={(e) => { if (extras && !(e.target as Element).closest("a,button")) setActive((a) => (a === m.id ? null : m.id)); }} className={cn("px-3.5 py-2 text-[15px] leading-relaxed whitespace-pre-wrap", isMine ? "bg-accent-grad text-on-accent" : "glass-card text-text",
-                      isMine ? cn("rounded-3xl", joinsPrev && "rounded-tr-md", joinsNext && "rounded-br-md") : cn("rounded-3xl", joinsPrev && "rounded-tl-md", joinsNext && "rounded-bl-md"),
-                      isPending && "opacity-60")}>
+                    <div onClick={(e) => { if (extras && !(e.target as Element).closest("a,button")) setActive((a) => (a === m.id ? null : m.id)); }} className={bubbleCls({ mine: isMine, joinsPrev: !!joinsPrev, joinsNext: !!joinsNext, pending: isPending })}>
                       {m.reply_to && (() => { const q = byId.get(m.reply_to!); return <ReplyQuote target={q ? { id: q.id, name: nameOf(q), body: q.body } : null} mine={isMine} />; })()}
                       <MessageBody body={m.body} mine={isMine} />
                     </div>

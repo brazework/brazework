@@ -335,10 +335,10 @@ export async function setCommunityLogo(cid: string, path: string): Promise<Resul
   if (!user || !can(role, "editInfo")) return denied;
   if (path && !new RegExp(`^${user.id}/[A-Za-z0-9._-]+$`).test(path)) return { ok: false, message: "That file couldn't be used." };
   const { data, error } = await supabase.from("communities").update({ logo_path: path }).eq("id", cid).select("id");
-  if (error) return { ok: false, message: error.code === "42703" ? "Club logos aren't turned on yet." : communityError(error) };
+  if (error) return { ok: false, message: error.code === "42703" ? "Club pictures aren't turned on yet." : communityError(error) };
   if (!data?.length) return denied;
   revalidateCommunity(cid);
-  return { ok: true, message: path ? "Logo updated." : "Logo removed." };
+  return { ok: true, message: path ? "Club picture updated." : "Club picture removed." };
 }
 
 export async function saveCommunityLook(cid: string, look: { tagline: string; website: string; accent: string }): Promise<Result> {

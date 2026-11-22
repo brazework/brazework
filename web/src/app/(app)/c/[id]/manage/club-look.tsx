@@ -24,7 +24,7 @@ export function ClubLook({ cid, name, logo: initialLogo = "", tagline: t0 = "", 
     setBusy(true);
     try {
       const item = await uploadMedia(file, userId, { maxSide: 512 });
-      if (item.type !== "image") { await removeUploaded(item.path); throw new UploadError("Logos have to be images."); }
+      if (item.type !== "image") { await removeUploaded(item.path); throw new UploadError("The club picture has to be an image."); }
       const r = await setCommunityLogo(cid, item.path);
       if (r.ok) setLogo(item.path); else await removeUploaded(item.path);
       setMsg({ ok: r.ok, text: r.message });
@@ -49,7 +49,7 @@ export function ClubLook({ cid, name, logo: initialLogo = "", tagline: t0 = "", 
 
       <div className="flex flex-wrap items-center gap-3">
         <input ref={input} type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) void pick(f); }} />
-        <Button type="button" variant="outline" disabled={busy} onClick={() => input.current?.click()}>{busy ? <Loader2 className="size-4 animate-spin" /> : <ImagePlus className="size-4" />} {logo ? "Change logo" : "Add a logo"}</Button>
+        <Button type="button" variant="outline" disabled={busy} onClick={() => input.current?.click()}>{busy ? <Loader2 className="size-4 animate-spin" /> : <ImagePlus className="size-4" />} {logo ? "Change club picture" : "Add a club picture"}</Button>
         {logo && <Button type="button" variant="ghost" disabled={busy || pending} onClick={() => start(async () => { const r = await setCommunityLogo(cid, ""); if (r.ok) setLogo(""); setMsg({ ok: r.ok, text: r.message }); })}><Trash2 className="size-4" /> Remove</Button>}
         <span className="text-xs text-faint">Square images look best. It shows on the club page, cards and chats.</span>
       </div>
