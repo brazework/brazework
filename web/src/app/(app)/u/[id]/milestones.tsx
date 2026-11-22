@@ -10,7 +10,7 @@ import { Button, Field, inputCls } from "@/components/ui";
 import { cn } from "@/lib/forge";
 import { signerNote } from "@/lib/signers";
 import { LINKEDIN_PLACEHOLDER, LINKEDIN_PRIVATE, LINKEDIN_WHY } from "@/lib/linkedin";
-import { addMilestone, disputeMilestone, removeMilestone, setMilestoneVisible, shareMilestone, type MilestoneState } from "@/lib/milestones";
+import { addMilestone, addMilestoneEvidence, disputeMilestone, removeMilestone, setMilestoneVisible, shareMilestone, type EvidenceItem, type MilestoneState } from "@/lib/milestones";
 import { approvedLine } from "@/lib/backing";
 import { proofPostText, proofUrl, shareLinks } from "@/lib/proof-card";
 import { PublicLine } from "./public-line";
@@ -31,6 +31,9 @@ export type Milestone = {
   shared_at?: string | null;
   // With supabase/redacted-proof.sql: the one line other members see for private signed work (owner only).
   public_line?: string;
+  // With supabase/verification.sql: evidence beyond the first link; with milestone-late-evidence.sql, some
+  // added later, and marked when that was after it was signed (FIX-238).
+  evidence_items?: EvidenceItem[];
 };
 export type Backing = { kind: "commit" | "pull_request" | "release"; repo_full_name: string; ref: string; url: string; checked_at: string; approvals?: number | null; approvers?: string[] | null };
 const backingOf = (m: Milestone): Backing | null => (Array.isArray(m.milestone_backings) ? m.milestone_backings[0] ?? null : m.milestone_backings ?? null);
@@ -50,9 +53,19 @@ export function MilestoneTimeline({ items, own, projectPrivate = false }: { item
   const [sharing, setSharing] = useState<string | null>(null);
   const [note, setNote] = useState("");
   const [msg, setMsg] = useState("");
+  const [adding, setAdding] = useState<string | null>(null);
+  const [evidenceDraft, setEvidenceDraft] = useState("");
+  const [addPending, startAdd] = useTransition();
   const [, start] = useTransition();
   const shown = items.filter((m) => !gone.has(m.id)).map((m) => ({ ...m, ...patch[m.id] }));
   if (!shown.length) return null;
+  // More evidence after logging (FIX-238): at most 8 extra items, not while it's revoked or disputed.
+  const canAddEvidence = (m: Milestone) => own && m.evidence_items !== undefined && m.evidence_items.length < 8 && m.status !== "revoked" && m.status !== "disputed";
+  const addEvidence = (m: Milestone) => startAdd(async () => {
+    const r = await addMilestoneEvidence(m.id, evidenceDraft);
+    setMsg(r.message);
+    if (r.ok && r.item) { setPatch((p) => ({ ...p, [m.id]: { ...p[m.id], evidence_items: [...(m.evidence_items ?? []), r.item!] } })); setAdding(null); setEvidenceDraft(""); }
+  });
   const refused = (s: Milestone["status"]) => s === "declined" || s === "refused";
   return (
     <ol className="relative mt-4 flex flex-col gap-3 border-l-2 border-line pl-4">
@@ -96,6 +109,17 @@ export function MilestoneTimeline({ items, own, projectPrivate = false }: { item
                   {m.status === "revoked" && <span className="inline-flex items-center gap-1 rounded-full bg-[color-mix(in_oklab,var(--danger)_12%,transparent)] px-2 py-0.5 text-danger"><XCircle className="size-3" /> Revoked by {m.community_name}</span>}
                   {m.status === "disputed" && <span className="inline-flex items-center gap-1 rounded-full bg-surface-2 px-2 py-0.5 text-muted"><Scale className="size-3" /> Disputed · {m.escalated ? "with Brazework admins" : "with the club's owner"}</span>}
                   {m.evidence && <a href={m.evidence} target="_blank" rel="noopener noreferrer nofollow" className="inline-flex items-center gap-1 text-muted hover:text-text"><ExternalLink className="size-3" /> {proofSource(m.evidence)?.label ?? "Evidence"}</a>}
+                  {/* Evidence beyond the first link. Anything added after it was signed says so, with the
+                      date, so nobody mistakes it for what the signer saw. */}
+                  {(m.evidence_items ?? []).filter((e) => e.url).map((e) => (
+                    <a key={e.url} href={e.url} target="_blank" rel="noopener noreferrer nofollow" data-late={e.after_signing ? "" : undefined} className="inline-flex items-center gap-1 text-muted hover:text-text">
+                      <ExternalLink className="size-3" /> {proofSource(e.url!)?.label ?? "Evidence"}
+                      {e.after_signing && <span className="rounded bg-surface-2 px-1 text-faint">added after signing{e.added_at ? ` · ${new Date(e.added_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}` : ""}</span>}
+                    </a>
+                  ))}
+                  {canAddEvidence(m) && adding !== m.id && (
+                    <button type="button" onClick={() => { setAdding(m.id); setEvidenceDraft(""); }} className="inline-flex items-center gap-1 font-medium text-text-2 hover:text-text"><Plus className="size-3" /> Add evidence</button>
+                  )}
                   {own && (m.status === "verified" || (m.status === "logged" && backingOf(m))) && m.private !== undefined && (
                     <button type="button" onClick={() => start(async () => { const r = await setMilestoneVisible(m.id, !!m.private); setMsg(r.message); if (r.ok) setPatch((p) => ({ ...p, [m.id]: { private: !m.private } })); })} className="inline-flex items-center gap-1 text-muted hover:text-text">
                       {m.private ? <><EyeOff className="size-3" /> Only you · Show on profile</> : <><Eye className="size-3" /> On your profile · Hide</>}
@@ -112,6 +136,17 @@ export function MilestoneTimeline({ items, own, projectPrivate = false }: { item
                     </button>
                   )}
                 </div>
+                {adding === m.id && (
+                  <form className="mt-2 flex flex-col gap-1.5" onSubmit={(e) => { e.preventDefault(); addEvidence(m); }}>
+                    <div className="flex gap-2">
+                      <label htmlFor={`ev-${m.id}`} className="sr-only">Evidence link for {m.title}</label>
+                      <input id={`ev-${m.id}`} autoFocus value={evidenceDraft} onChange={(e) => setEvidenceDraft(e.target.value)} onKeyDown={(e) => e.key === "Escape" && setAdding(null)} maxLength={300} placeholder="github.com/you/repo, the Onshape doc, the write-up…" className={cn(inputCls, "h-9 min-w-0 flex-1 text-xs")} />
+                      <Button type="submit" disabled={addPending || !evidenceDraft.trim()}>{addPending && <Loader2 className="size-4 animate-spin" />} Add</Button>
+                      <Button type="button" variant="ghost" onClick={() => setAdding(null)}>Cancel</Button>
+                    </div>
+                    {m.status === "verified" && <p className="text-[11px] text-faint">It&apos;s already signed: the signature stays, and this shows as added after signing.</p>}
+                  </form>
+                )}
                 {refused(m.status) && m.review_note && <p className="mt-1 rounded-lg bg-surface-2 px-2 py-1 text-[11px] text-text-2">&ldquo;{m.review_note}&rdquo;</p>}
                 {m.status === "revoked" && m.revoked_reason && <p className="mt-1 rounded-lg bg-surface-2 px-2 py-1 text-[11px] text-text-2">&ldquo;{m.revoked_reason}&rdquo;</p>}
                 {own && (refused(m.status) || m.status === "revoked") && (disputing === m.id ? (

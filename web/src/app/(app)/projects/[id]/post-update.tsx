@@ -3,12 +3,11 @@ import { Box, FileText, Link2, Loader2, Megaphone, Paperclip, X } from "lucide-r
 import { useRouter } from "next/navigation";
 import { useRef, useState } from "react";
 import { cn } from "@/lib/forge";
-import { ACCEPT_ATTR, MODEL_ACCEPT_ATTR, cleanUrl, extOf, githubRepo, kindOfFile, maxBytesFor, sizeLabel, storedType } from "@/lib/project-file-types";
-import { storageUpload } from "@/lib/storage-upload";
-import { addProjectLink, recordProjectFile } from "@/lib/project-files";
+import { ACCEPT_ATTR, MODEL_ACCEPT_ATTR, cleanUrl, githubRepo, kindOfFile, maxBytesFor, sizeLabel } from "@/lib/project-file-types";
+import { uploadAttachments, type PendingFile } from "@/lib/attach-upload";
 import { shareProject } from "@/lib/projects";
 
-type Pending = { key: string; file: File; name: string };
+type Pending = PendingFile;
 
 // Post progress on a project: what changed, plus the files that show it (documents, photos, video,
 // CAD, 3D models you can rotate, code) and links (a GitHub repo, an Onshape doc), all as one update.
@@ -59,21 +58,11 @@ export function PostUpdate({ projectId, title, className, autoFocus = false, att
     setStep("Posting…");
     const r = await shareProject(projectId, text);
     if (!r.ok) { setStep(""); setMsg({ ok: false, text: r.message }); return; }
-    // The update is up; now its files and links, each tied to it.
-    const failed: string[] = [];
-    for (const [i, p] of files.entries()) {
-      const label = `Uploading ${i + 1} of ${files.length}`;
-      setStep(`${label}…`);
-      const path = `${projectId}/${p.key}.${extOf(p.name)}`;
-      // Big files go up resumably in 6 MB pieces, with progress (lib/storage-upload.ts).
-      const up = await storageUpload({ bucket: "project-files", path, file: p.file, contentType: storedType(p.name), onProgress: (f) => setStep(`${label}: ${Math.round(f * 100)}%`) }).then(() => true, () => false);
-      const rec = up ? await recordProjectFile(projectId, path, p.name, p.file.size, r.postId) : { ok: false };
-      if (!rec.ok) failed.push(p.name);
-    }
-    for (const l of links) { const a = await addProjectLink(projectId, l, r.postId); if (!a.ok) failed.push(l); }
+    // The update is up; now its files and links, each tied to it (lib/attach-upload.ts).
+    const failed = await uploadAttachments({ projectId, postId: r.postId, files, links, onStep: setStep });
     setStep("");
     setBody(""); setFiles([]); setLinks([]);
-    setMsg(failed.length ? { ok: false, text: `Posted, but ${failed.length === 1 ? `${failed[0]} didn't upload` : `${failed.length} attachments didn't upload`}. Try adding ${failed.length === 1 ? "it" : "them"} in a new update.` } : { ok: true, text: r.message });
+    setMsg(failed.length ? { ok: false, text: `Posted, but ${failed.length === 1 ? `${failed[0]} didn't upload` : `${failed.length} attachments didn't upload`}. Edit the update to add ${failed.length === 1 ? "it" : "them"} again.` } : { ok: true, text: r.message });
     router.refresh();
     onPosted?.();
   };
