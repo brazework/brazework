@@ -18,7 +18,7 @@ export const metadata: Metadata = { title: "Ember" };
 
 export default function CopilotPage({ searchParams }: PageProps<"/copilot">) {
   return (
-    <div className="mx-auto max-w-6xl">
+    <div className="mx-auto max-w-[92rem]">
       <Suspense fallback={<Skeleton className="h-[70vh]" />}>
         <Copilot searchParams={searchParams} />
       </Suspense>
