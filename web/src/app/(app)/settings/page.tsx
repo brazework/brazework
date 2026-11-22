@@ -61,6 +61,9 @@ async function Settings() {
   // The member's own LinkedIn link (supabase/linkedin-required.sql): undefined hides the field, "" means none.
   const li = linkedinOn ? await supabase.rpc("my_linkedin") : null;
   const linkedin = li && !li.error ? ((li.data as string | null) ?? "") : undefined;
+  // Whether it shows on their profile (supabase/linkedin-public.sql): undefined hides the switch until that step has run.
+  const lp = linkedin !== undefined ? await supabase.rpc("my_linkedin_public") : null;
+  const linkedinPublic = lp && !lp.error ? lp.data === true : undefined;
   // undefined hides the field (grad-year.sql hasn't run); null means not set.
   const gradYear = gradYearOn ? ((gy.data as { grad_year: number | null } | null)?.grad_year ?? null) : undefined;
   const emailOn = !ep.error;
@@ -75,7 +78,7 @@ async function Settings() {
 
   return (
     <>
-      <Section id="profile" title="Profile" desc="What people see on your profile and posts."><ProfileSettings profile={profile} gradYear={gradYear} canSwitch={canSwitch} linkedin={linkedin} /></Section>
+      <Section id="profile" title="Profile" desc="What people see on your profile and posts."><ProfileSettings profile={profile} gradYear={gradYear} canSwitch={canSwitch} linkedin={linkedin} linkedinPublic={linkedinPublic} /></Section>
       <Section id="appearance" title="Appearance" desc="Light or dark, and the colour theme."><AppearanceSettings /></Section>
       {emailOn && <Section id="email" title="Email" desc="What Brazework sends to your inbox. Sign-in emails always come."><EmailSettings weekly={ep.data ? Boolean(ep.data.weekly_digest) : true} alerts={alerts} dailyDrafts={dailyDrafts} /></Section>}
       <Section id="messaging" title="Messaging and privacy" desc="Who can message you, and whether you show as online."><OnlineStatusSetting /><div className="my-6 border-t border-line" /><MessagingSettings requestsOn={ms.data ? Boolean(ms.data.requests_on) : true} who={(ms.data?.who_can_message as "everyone" | "communities" | "connections") ?? "everyone"} /></Section>
