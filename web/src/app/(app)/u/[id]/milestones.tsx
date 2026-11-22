@@ -1,5 +1,6 @@
 "use client";
-import { PROOF_TOOLS_HINT, proofSource } from "@/lib/proof-source";
+import { proofSource } from "@/lib/proof-source";
+import { ProofPicker } from "@/components/projects/proof-picker";
 import { AnimatePresence, motion } from "motion/react";
 import { BadgeCheck, Clock, ExternalLink, Eye, EyeOff, Flag, GitMerge, Loader2, Plus, Scale, Share2, Trash2, X, XCircle } from "lucide-react";
 import Link from "next/link";
@@ -230,7 +231,7 @@ const initial: MilestoneState = { ok: false, message: "" };
 // "Add milestone": what happened, when, a link to the evidence, and the club that saw it.
 // `vouches`: whether the database has vouches (supabase/vouches.sql); until then it's clubs only.
 // `backing`: whether "No one yet: back it with GitHub" is on (supabase/backed.sql run, GitHub App set up).
-export function AddMilestone({ projectId, projectTitle, clubs, vouches = false, backing = false }: { projectId: string; projectTitle: string; clubs: Club[]; vouches?: boolean; backing?: boolean }) {
+export function AddMilestone({ projectId, projectTitle, clubs, vouches = false, backing = false, field }: { projectId: string; projectTitle: string; clubs: Club[]; vouches?: boolean; backing?: boolean; field?: string | null }) {
   const [open, setOpen] = useState(false);
   const [sent, setSent] = useState(false);
   return (
@@ -239,12 +240,12 @@ export function AddMilestone({ projectId, projectTitle, clubs, vouches = false, 
         {sent && <Celebrate pieces={16} />}
         <Flag className="size-3.5" /> Add milestone
       </button>
-      {open && <MilestoneDialog projectId={projectId} projectTitle={projectTitle} clubs={clubs} vouches={vouches} backing={backing} onClose={() => setOpen(false)} onSent={() => setSent(true)} />}
+      {open && <MilestoneDialog projectId={projectId} projectTitle={projectTitle} clubs={clubs} vouches={vouches} backing={backing} field={field} onClose={() => setOpen(false)} onSent={() => setSent(true)} />}
     </>
   );
 }
 
-function MilestoneDialog({ projectId, projectTitle, clubs, vouches, backing, onClose, onSent }: { projectId: string; projectTitle: string; clubs: Club[]; vouches: boolean; backing: boolean; onClose: () => void; onSent: () => void }) {
+function MilestoneDialog({ projectId, projectTitle, clubs, vouches, backing, field, onClose, onSent }: { projectId: string; projectTitle: string; clubs: Club[]; vouches: boolean; backing: boolean; field?: string | null; onClose: () => void; onSent: () => void }) {
   const ref = useRef<HTMLDialogElement>(null);
   const [state, action, pending] = useActionState(addMilestone, initial);
   const [by, setBy] = useState<"club" | "vouch" | "data">(clubs.length || !vouches ? "club" : "vouch");
@@ -271,10 +272,8 @@ function MilestoneDialog({ projectId, projectTitle, clubs, vouches, backing, onC
         <input type="hidden" name="projectId" value={projectId} />
         <Field label="What happened?"><input name="title" maxLength={120} required placeholder="e.g. Passed load test at 3.2 g" className={inputCls} /></Field>
         <Field label="Details" hint="Numbers, conditions, who was there."><textarea name="detail" maxLength={600} rows={3} className={cn(inputCls, "h-auto resize-none py-3")} /></Field>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Field label="When"><input name="achievedOn" type="date" max={today} defaultValue={today} required className={inputCls} /></Field>
-          <Field label="Evidence" hint={PROOF_TOOLS_HINT}><input name="evidence" type="url" required maxLength={300} placeholder="https://…" className={inputCls} /></Field>
-        </div>
+        <div className="sm:w-1/2 sm:pr-2"><Field label="When"><input name="achievedOn" type="date" max={today} defaultValue={today} required className={inputCls} /></Field></div>
+        <ProofPicker field={field} label="Evidence" required />
         {!vouches && !clubs.length && <p className="rounded-2xl border border-dashed border-line p-4 text-sm text-muted">Milestones are verified by a club you belong to. <Link href="/communities?tab=discover" className="font-medium text-text underline underline-offset-4">Join your club</Link> first.</p>}
         {vouches && <fieldset>
           <legend className="text-sm font-medium">Who confirms it?</legend>

@@ -15,6 +15,7 @@ const SECTIONS: { h: string; items: string[] }[] = [
     items: [
       "What you give it: your profile, posts, replies, projects, milestones and their evidence links, messages, clubs and the events you RSVP to.",
       "Your LinkedIn profile link, if you add it (it's optional). It is private: no other member can read it, and it isn't shown on your profile or your record. Brazework stores the link only; it doesn't read or copy anything from LinkedIn.",
+      "When you add a proof link from Google Docs or Drive, GitHub, YouTube, Vimeo, Loom or arXiv, Brazework asks that site, as a stranger would, for the page's title and whether it opens without signing in, so it can warn you before a signer hits a locked page. Only the link is sent; nothing of yours is read from your account there.",
       "Brazework never pulls records from your school. Nothing about you comes from a registrar, a transcript or a student system.",
       "Brazework counts views of your profile so you can see your own analytics.",
     ],

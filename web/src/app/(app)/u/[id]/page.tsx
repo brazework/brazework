@@ -302,7 +302,7 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
                   content: (
                     <>
                       {mine && <div className="mb-3 flex justify-end"><ProjectEditor interests={p.interests ?? []} copilot={copilotOn} stack={stackOn} specsOn={f.projectSpecs} /></div>}
-                      <ProjectGrid projects={projects} own={mine} interests={p.interests ?? []} copilot={copilotOn} clubs={msOn && mine ? myClubs : undefined} vouches={f.vouches} backing={f.backed && !!githubConfig()} stack={stackOn} specsOn={f.projectSpecs} />
+                      <ProjectGrid projects={projects} own={mine} field={p.field} interests={p.interests ?? []} copilot={copilotOn} clubs={msOn && mine ? myClubs : undefined} vouches={f.vouches} backing={f.backed && !!githubConfig()} stack={stackOn} specsOn={f.projectSpecs} />
                       {!projects.length && <EmptyState icon={<FolderGit2 className="size-6" />} title={mine ? "Show what you've built" : "No projects yet"} body={mine ? "Add a project with a summary, what you did and a link. Keep the write-up private and share only the card if you like." : undefined} />}
                       {projects.some((x) => x.private) && !mine && <p className="mt-3 flex items-center gap-1.5 text-xs text-faint"><Lock className="size-3" /> Private projects show their card only.</p>}
                     </>
