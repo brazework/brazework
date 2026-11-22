@@ -11,9 +11,9 @@ export type Redacted = {
   signer: { kind: "club" } | { kind: "vouch"; role: string; org: "university" | "company" | "work" | "personal" };
 };
 
-const ROLE: Record<string, string> = { professor: "a professor", ta: "a TA", pi: "a lab PI", manager: "a manager", mentor: "a mentor", other: "someone who saw it" };
+const ROLE: Record<string, string> = { professor: "a professor", ta: "a TA", pi: "a lab PI", manager: "a coworker", mentor: "a mentor", other: "someone who saw it" };
 
-/** "signed by a manager at a verified company", "verified by a club's officers". */
+/** "signed by a coworker at a verified company", "verified by a club's officers". */
 export function redactedSigner(r: Pick<Redacted, "signer" | "pro">): string {
   const base = r.signer.kind === "club" ? "verified by a club's officers"
     : r.signer.org === "personal"
@@ -24,5 +24,5 @@ export function redactedSigner(r: Pick<Redacted, "signer" | "pro">): string {
 
 export const redactedMonth = (m: string) => (/^\d{4}-\d{2}$/.test(m) ? new Date(`${m}-15T12:00:00Z`).toLocaleDateString("en-US", { month: "short", year: "numeric", timeZone: "UTC" }) : "");
 
-/** The whole public line: "Shipped a payments migration · signed by a manager at a verified company · Nov 2026". */
+/** The whole public line: "Shipped a payments migration · signed by a coworker at a verified company · Nov 2026". */
 export const redactedText = (r: Redacted) => [r.line, redactedSigner(r), redactedMonth(r.month)].filter(Boolean).join(" · ");

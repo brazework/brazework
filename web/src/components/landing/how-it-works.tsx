@@ -22,7 +22,7 @@ import { H2 } from "./sections";
 const WORK = "Cut the pick-and-place cycle from 9.4 to 7.1 seconds";
 const STEPS = [
   { title: "Log what you finished", body: "One sentence, plus a link or a file that shows it: a pull request, a test log, a photo." },
-  { title: "Ask someone who saw it", body: "Your manager, professor, client or club gets one email and signs in under a minute. They don't need an account." },
+  { title: "Ask someone who saw it", body: "Your coworker, professor, client or club gets one email and signs in under a minute. They don't need an account." },
   { title: "It's on your record", body: "With their name on it. Share it, put it on a résumé, and keep it when you graduate or change jobs." },
 ];
 // Where along the line each step sits (the start of its column).
@@ -68,8 +68,8 @@ export function HowItWorks() {
                   {/* Kept in the layout while it waits, so nothing below moves when it appears. */}
                   <figcaption className={cn("mt-2.5 flex min-h-9 items-center gap-2 text-xs leading-snug text-muted transition-opacity duration-300", on ? "opacity-100" : "invisible opacity-0")}>
                     {i === 0 && <><FileText className="size-4 shrink-0" aria-hidden="true" /><span>Logged, with <span className="font-medium text-text-2">cycle-test-log.csv</span> as proof</span></>}
-                    {i === 1 && <><span aria-hidden="true" className="block size-4 shrink-0 rounded-full border-2 border-dashed border-wait" /><span>Waiting for <span className="font-medium text-text-2">Dana R.</span>, engineering manager</span></>}
-                    {i === 2 && <><Seal size={18} /><span>Signed by <span className="font-medium text-text-2">Dana R.</span>, engineering manager, Voltline</span></>}
+                    {i === 1 && <><span aria-hidden="true" className="block size-4 shrink-0 rounded-full border-2 border-dashed border-wait" /><span>Waiting for <span className="font-medium text-text-2">Dana R.</span>, engineering coworker</span></>}
+                    {i === 2 && <><Seal size={18} /><span>Signed by <span className="font-medium text-text-2">Dana R.</span>, coworker at Voltline</span></>}
                   </figcaption>
                 </figure>
               </li>

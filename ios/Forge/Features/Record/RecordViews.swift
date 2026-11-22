@@ -188,7 +188,7 @@ struct ProjectDetailView: View {
 // MARK: Milestones
 
 /// Log a result with its evidence and ask who saw it to sign: the club (its officers verify it here),
-/// or a person (a manager, a professor), who gets a private link by email from the website.
+/// or a person (a coworker, a professor), who gets a private link by email from the website.
 struct AddMilestoneView: View {
   let projects: [Build]
   var start: String = ""

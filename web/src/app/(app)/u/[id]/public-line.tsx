@@ -7,7 +7,7 @@ import { setPublicLine } from "@/lib/milestones";
 
 // Proof without revealing confidential work (supabase/redacted-proof.sql): the owner writes one line
 // that other members see in place of a private signed milestone, with who stood behind it in general
-// terms ("signed by a manager at a verified company") and the month. Nothing else about it shows.
+// terms ("signed by a coworker at a verified company") and the month. Nothing else about it shows.
 export function PublicLine({ id, line }: { id: string; line: string }) {
   const [open, setOpen] = useState(false);
   const [saved, setSaved] = useState(line);

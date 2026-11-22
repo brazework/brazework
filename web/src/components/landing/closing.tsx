@@ -11,7 +11,7 @@ export function FinalCta() {
           <br />
           Put it on the record.
         </h2>
-        <p className="mt-6 max-w-xl text-lg text-muted">Log the first thing you&apos;ve built and ask whoever saw it to sign it: your club, a professor, a manager. It takes a few minutes, and it&apos;s free for you and your club.</p>
+        <p className="mt-6 max-w-xl text-lg text-muted">Log the first thing you&apos;ve built and ask whoever saw it to sign it: your club, a professor, a coworker. It takes a few minutes, and it&apos;s free for you and your club.</p>
         <BuildStart />
         <div className="mt-4 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm text-muted">
           <span>Free for everyone who builds</span>

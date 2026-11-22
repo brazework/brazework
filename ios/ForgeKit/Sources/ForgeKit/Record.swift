@@ -108,7 +108,7 @@ struct MilestoneDraft: Sendable {
 
 /// How a signer knows the work, in the web's words (web/src/lib/vouch-email.ts RELATIONSHIPS).
 enum Signers {
-  static let relationships: [(id: String, label: String)] = [("professor", "Professor"), ("ta", "TA"), ("pi", "Lab PI"), ("manager", "Manager"), ("mentor", "Mentor"), ("other", "Someone else who saw it")]
+  static let relationships: [(id: String, label: String)] = [("professor", "Professor"), ("ta", "TA"), ("pi", "Lab PI"), ("manager", "Coworker"), ("mentor", "Mentor"), ("other", "Someone else who saw it")]
 }
 
 enum RecordLogic {

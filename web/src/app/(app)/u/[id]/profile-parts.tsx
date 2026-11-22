@@ -53,7 +53,7 @@ export function ProofTimeline({ items, own, led = [] }: { items: ProofItem[]; ow
     return own ? (
       <section className="rounded-2xl border border-dashed border-line-strong p-5">
         <h2 className="flex items-center gap-2 font-semibold"><BadgeCheck className="size-4" /> Proof</h2>
-        <p className="mt-1 text-sm text-muted">Hit a milestone on a project? Ask someone who saw it to sign it (your club, a professor, a manager), and it shows here with their name on it.</p>
+        <p className="mt-1 text-sm text-muted">Hit a milestone on a project? Ask someone who saw it to sign it (your club, a professor, a coworker), and it shows here with their name on it.</p>
         <a href="#projects" className="mt-3 inline-flex items-center gap-1 text-sm font-medium hover:underline">Open your projects <ArrowRight className="size-3.5" /></a>
       </section>
     ) : null;

@@ -58,7 +58,7 @@ export function inThirtySeconds(p: {
   if (p.verified.length) {
     const latest = p.verified[0];
     // A milestone is verified by a club's officer or signed by a person who saw it (a professor, a
-    // manager), so there may be no club to name.
+    // coworker), so there may be no club to name.
     const clubs = [...new Set(p.verified.map((v) => v.club?.trim()).filter(Boolean))];
     const n = `${p.verified.length} ${p.verified.length === 1 ? "milestone" : "milestones"}`;
     const by = clubs.length ? `verified by ${list(clubs)}` : `signed by ${p.verified.length === 1 ? "someone" : "people"} who saw the work`;

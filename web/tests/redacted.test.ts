@@ -6,8 +6,8 @@ import { redactedMonth, redactedSigner, redactedText, type Redacted } from "@/li
 
 const r = (o: Partial<Redacted>): Redacted => ({ id: "m", line: "Shipped a payments migration", month: "2026-11", pro: false, signer: { kind: "vouch", role: "manager", org: "company" }, ...o });
 
-test("a manager at a verified company", () => {
-  assert.equal(redactedText(r({})), "Shipped a payments migration · signed by a manager at a verified company · Nov 2026");
+test("a coworker at a verified company", () => {
+  assert.equal(redactedText(r({})), "Shipped a payments migration · signed by a coworker at a verified company · Nov 2026");
 });
 
 test("a professor at a university, a club, and a pro sign-off", () => {
@@ -20,12 +20,12 @@ test("a professor at a university, a club, and a pro sign-off", () => {
 test("the month, or nothing", () => {
   assert.equal(redactedMonth("2026-01"), "Jan 2026");
   assert.equal(redactedMonth("nope"), "");
-  assert.equal(redactedText(r({ month: "" })), "Shipped a payments migration · signed by a manager at a verified company");
+  assert.equal(redactedText(r({ month: "" })), "Shipped a payments migration · signed by a coworker at a verified company");
 });
 
 test("a work address at a company that isn't verified is never called verified", () => {
   const work = redactedSigner(r({ signer: { kind: "vouch", role: "manager", org: "work" } }));
-  assert.equal(work, "signed by a manager at a company (not verified)");
+  assert.equal(work, "signed by a coworker at a company (not verified)");
   assert.doesNotMatch(work, /a verified company/);
 });
 

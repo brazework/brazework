@@ -96,13 +96,13 @@ MCP_TOOLS.push(
   },
   {
     name: "request_signature", writes: true, needs: "post", title: "Ask someone who saw the work to sign a milestone",
-    description: "Email a one-time link to someone who saw the member's work (a professor, TA, lab PI, manager or mentor) asking them to sign one of the member's milestones that is still waiting (open_milestones in my_projects). They answer without an account; their name and role show on the milestone. Any address they really use works: a university or work address carries the most weight, and a personal one (like Gmail) is labelled '(personal email)' on the signature; throwaway inboxes are refused. Never anyone on the project's team. Show the member who will get the email, and for which milestone, and send only after they say yes.",
+    description: "Email a one-time link to someone who saw the member's work (a professor, TA, lab PI, coworker or mentor) asking them to sign one of the member's milestones that is still waiting (open_milestones in my_projects). They answer without an account; their name and role show on the milestone. Any address they really use works: a university or work address carries the most weight, and a personal one (like Gmail) is labelled '(personal email)' on the signature; throwaway inboxes are refused. Never anyone on the project's team. Show the member who will get the email, and for which milestone, and send only after they say yes.",
     inputSchema: {
       type: "object",
       properties: {
         milestone_id: { type: "string", description: "One of the member's open milestones, from my_projects → open_milestones." },
         email: { type: "string", format: "email", maxLength: 254, description: "The email address they really use: university, work or personal." },
-        relationship: { type: "string", enum: ["professor", "ta", "pi", "manager", "mentor", "other"], description: "How they know the member's work." },
+        relationship: { type: "string", enum: ["professor", "ta", "pi", "manager", "mentor", "other"], description: "How they know the member's work. Use 'manager' for a coworker outside the project." },
       },
       required: ["milestone_id", "email", "relationship"],
       additionalProperties: false,

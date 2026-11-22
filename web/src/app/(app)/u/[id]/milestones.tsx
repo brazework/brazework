@@ -279,7 +279,7 @@ function MilestoneDialog({ projectId, projectTitle, clubs, vouches, backing, fie
           <legend className="text-sm font-medium">Who confirms it?</legend>
           <input type="hidden" name="verifyBy" value={by} />
           <div role="radiogroup" className={cn("mt-2 grid grid-cols-1 gap-2", backing ? "sm:grid-cols-3" : "grid-cols-2")}>
-            {([["club", "Your club", clubs.length ? "Its officers verify it" : "You're not in one yet"], ["vouch", "Someone who saw it", "A professor, TA, PI, manager or mentor"], ...(backing ? [["data", "No one yet", "Back it with GitHub: your own commit, merged pull request or release"]] : [])] as [("club" | "vouch" | "data"), string, string][]).map(([id, label, hint]) => (
+            {([["club", "Your club", clubs.length ? "Its officers verify it" : "You're not in one yet"], ["vouch", "Someone who saw it", "A professor, TA, PI, coworker or mentor"], ...(backing ? [["data", "No one yet", "Back it with GitHub: your own commit, merged pull request or release"]] : [])] as [("club" | "vouch" | "data"), string, string][]).map(([id, label, hint]) => (
               <button key={id} type="button" role="radio" aria-checked={by === id} disabled={id === "club" && !clubs.length} onClick={() => setBy(id)}
                 className={cn("rounded-xl border p-3 text-left transition disabled:opacity-50", by === id ? "border-text bg-surface-2" : "border-line hover:border-line-strong")}>
                 <span className="block text-sm font-medium">{label}</span>

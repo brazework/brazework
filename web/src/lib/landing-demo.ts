@@ -1,6 +1,6 @@
 // The landing page's demos (components/landing): the example people, clubs and work they show, and
 // the logic behind what a visitor can try. Everything here is example data, and the page says so.
-// The people are a mix on purpose: students signed by a club, and working people signed by a manager
+// The people are a mix on purpose: students signed by a club, and working people signed by a coworker
 // or a client.
 // Pure, so it's tested without a browser (tests/landing-demo.test.ts).
 
@@ -103,7 +103,7 @@ export const BUILDERS: Builder[] = [
     signed: [{ title: "Line-following robot beat the course in 41.2 seconds", by: "Ben C.", club: "Rocketry Club", when: "Nov 16" }],
     skills: ["Robotics", "PID control", "C++"] },
   { id: "theo", name: "Theo Nguyen", initials: "TN", role: "Electrical engineer, three years in EV charging", open: "Open to new roles",
-    signed: [{ title: "Battery management PCB passed bring-up", by: "Priya S., engineering manager", club: "Voltline", when: "Nov 2" }, { title: "Charger held 4.2 V across 50 cycles", by: "Priya S., engineering manager", club: "Voltline", when: "Oct 14" }],
+    signed: [{ title: "Battery management PCB passed bring-up", by: "Priya S., hardware engineer and coworker", club: "Voltline", when: "Nov 2" }, { title: "Charger held 4.2 V across 50 cycles", by: "Priya S., hardware engineer and coworker", club: "Voltline", when: "Oct 14" }],
     skills: ["PCB design", "KiCad", "Power electronics"] },
   { id: "ines", name: "Ines Okafor", initials: "IO", role: "Molecular biology, class of 2026", open: "Open to research",
     signed: [{ title: "CRISPR knockout confirmed on a gel", by: "Dr. Lee", club: "Gene Editing Lab", when: "Oct 29" }],
@@ -149,8 +149,8 @@ export const HERO_STORIES: HeroStory[] = [
   { who: "Mechanical", signs: "your test lead signs", tool: "Onshape · test log", title: "Bracket 38% lighter, passed the 3.2 g vibration test", cmd: "Log the bracket redesign from today's shake test", reads: ["Compared the CAD, version 13 to 14", "Read the vibration test log"], reply: "Weight is from the two models, the pass is from the log. Ask Priya, who ran the test?", proof: ["onshape: bracket v13 → v14", "vibe-test-log.csv"],
     send: "Ask Priya to sign", sent: "Sent to Priya Nair", signer: { initials: "PN", name: "Priya Nair", role: "Test lead, ran the shake test", act: "Sign", done: "Signed" },
     finder: { initials: "KO", name: "Kofi Owusu", role: "Halcyon Drones", ask: "Saw your signed bracket work. Want to talk about our structures team?" } },
-  { who: "Electrical", signs: "your manager signs", tool: "KiCad · scope", title: "Power board rev C: ripple down from 120 to 18 mV", cmd: "Add the rev C power board result to my record", reads: ["Compared the schematic, rev B to C", "Read both scope captures"], reply: "Ripple is from the scope captures. Ask Marcus, your hardware lead?", proof: ["kicad: power-board rev B → C", "scope-rev-c.png"],
-    send: "Ask Marcus to sign", sent: "Sent to Marcus Lee", signer: { initials: "ML", name: "Marcus Lee", role: "Hardware lead, your manager", act: "Sign", done: "Signed" },
+  { who: "Electrical", signs: "your coworker signs", tool: "KiCad · scope", title: "Power board rev C: ripple down from 120 to 18 mV", cmd: "Add the rev C power board result to my record", reads: ["Compared the schematic, rev B to C", "Read both scope captures"], reply: "Ripple is from the scope captures. Ask Marcus, your hardware lead?", proof: ["kicad: power-board rev B → C", "scope-rev-c.png"],
+    send: "Ask Marcus to sign", sent: "Sent to Marcus Lee", signer: { initials: "ML", name: "Marcus Lee", role: "Hardware lead, your coworker", act: "Sign", done: "Signed" },
     finder: { initials: "SA", name: "Sofia Alvarez", role: "Voltline Energy", ask: "Saw your signed power board work. Open to a hardware engineer role?" } },
   { who: "Civil", signs: "the site engineer signs", tool: "Reports · site photos", title: "Retaining wall pour passed inspection, zero rework", cmd: "Put the retaining wall pour on my record", reads: ["Read inspection report #22", "Looked at six site photos"], reply: "The inspection report is the proof. Ask Hannah, who stamped it?", proof: ["inspection-report-22.pdf", "site-photos-nov-12"],
     send: "Ask Hannah to sign", sent: "Sent to Hannah Ortiz", signer: { initials: "HO", name: "Hannah Ortiz, PE", role: "Project engineer, on site", act: "Sign", done: "Signed" },

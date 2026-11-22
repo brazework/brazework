@@ -8,7 +8,7 @@
 
 **Brazework is the record of your work, signed by the people who saw it. It launches inside university clubs, one club and one campus at a time.**
 
-> **Updated 2026-11-16 (Josh's call, FIX-120): for anyone who builds, at any stage.** The public positioning no longer says "STEM" or "students". A student signed by a club officer, an employee signed by a manager and a freelancer signed by a client all keep the same record. What did not change is where we start: one club of 30 to 100 people is still the smallest group that is useful with nobody else there, and section 7's cold-start risk is why. The STEM figures in section 1 stay as the evidence for the first market, not as the limit of who it's for. Design: [superpowers/specs/2026-11-16-positioning-builders-design.md](superpowers/specs/2026-11-16-positioning-builders-design.md).
+> **Updated 2026-11-16 (Josh's call, FIX-120): for anyone who builds, at any stage.** The public positioning no longer says "STEM" or "students". A student signed by a club officer, an employee signed by a coworker and a freelancer signed by a client all keep the same record. What did not change is where we start: one club of 30 to 100 people is still the smallest group that is useful with nobody else there, and section 7's cold-start risk is why. The STEM figures in section 1 stay as the evidence for the first market, not as the limit of who it's for. Design: [superpowers/specs/2026-11-16-positioning-builders-design.md](superpowers/specs/2026-11-16-positioning-builders-design.md).
 
 Claims marked *(unverified)* couldn't be confirmed against a primary source.
 
@@ -41,7 +41,7 @@ Claims marked *(unverified)* couldn't be confirmed against a primary source.
 
 ## 4. Positioning
 
-**One-liner:** Brazework is the record of your work, signed by the people who saw it: your club's officers, a manager, a mentor. Companies find you by that proof, not a résumé.
+**One-liner:** Brazework is the record of your work, signed by the people who saw it: your club's officers, a coworker, a mentor. Companies find you by that proof, not a résumé.
 
 **Wedge (where we launch, not who it's for):** university club leaders, starting with engineering and science: robotics, rocketry, ACM/IEEE, hackathon organizers, SWE/NSBE/SHPE. Win one campus deeply before the next ([PG, *Do Things That Don't Scale*](https://paulgraham.com/ds.html)).
 

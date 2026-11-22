@@ -152,7 +152,7 @@ function Invite({ cids, working = false }: { cids: number; working?: boolean }) 
   return (
     <div className="flex flex-wrap items-center gap-x-4 gap-y-3 rounded-xl border border-dashed border-line-strong px-4 py-3.5">
       <p className="min-w-0 flex-1 basis-56 text-sm text-muted">
-        {cids ? "Nothing signed in your clubs yet this week. Log a result and ask an officer who saw it." : solo ? "Work you get signed shows up here. Log a result and ask whoever saw it: a manager, a client, a teammate." : "Join your club, and the work its officers sign shows up here, yours included."}
+        {cids ? "Nothing signed in your clubs yet this week. Log a result and ask an officer who saw it." : solo ? "Work you get signed shows up here. Log a result and ask whoever saw it: a coworker outside the project, a client, a mentor." : "Join your club, and the work its officers sign shows up here, yours included."}
       </p>
       <Link href={cids || solo ? "/projects" : "/communities?tab=discover"} className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg bg-text px-3 text-xs font-semibold text-bg transition hover:opacity-90">
         <Sparkles className="size-3.5" />{cids ? "Log a milestone" : solo ? "Log a result" : "Find your club"}

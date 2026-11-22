@@ -19,7 +19,7 @@ export type WeekInput = {
   // Your goal and the record its path is built from (goals.sql, lib/goals.ts), when you've set one.
   goal?: { kind: GoalKind; target: string; record: Record_ } | null;
   // A working (professional) account. With no club there is nobody to join: whoever saw the work
-  // signs it (a manager, a client), so the next step is to ask them, never "join your club".
+  // signs it (a coworker, a client), so the next step is to ask them, never "join your club".
   working?: boolean;
 };
 

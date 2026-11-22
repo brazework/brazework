@@ -78,7 +78,7 @@ takes an optional `field` (it defaults to the field on your profile) and reads y
 | `result` | A number (a run, a test, a measurement, a sales total) becomes a result post with the specifics. |
 | `standup` | Writes today's standup (Done, Next, Blocked) from what your tools show since your last working day, and saves it to your drafts with `source_key` `standup:<date>`, so running it twice makes one. It never posts by itself, even with a token that can. |
 | `week` | Looks over the last 7 days in your connected tools and drafts the 1 to 3 things worth recording, without repeating what's already there. |
-| `ask_signature` | Asks the professor, TA, PI, manager or mentor who saw your work to sign one of your milestones. |
+| `ask_signature` | Asks the professor, TA, PI, coworker or mentor who saw your work to sign one of your milestones. |
 | `setup` | Lists your field's tools and how your assistant reaches each one (official server, community server, or your exports). |
 
 What each command does at the end depends on your token:
@@ -374,7 +374,7 @@ Moments worth recording:
 - **A pull request merges with CI green** → milestone: “Shipped live arrival times: p95 under 300 ms”. Proof: the pull request and the CI run.
 - **Real people use what you shipped** → result post: “Shuttle tracker reached 2,100 weekly riders”. Proof: the analytics export and the release.
 
-Who signs: the club's officers, a code reviewer who isn't on the team, or a manager. Try `/shipped` with the field Software.
+Who signs: the club's officers, a code reviewer who isn't on the team, or a coworker. Try `/shipped` with the field Software.
 
 ### Computer science
 

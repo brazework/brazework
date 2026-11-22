@@ -1,6 +1,6 @@
 // The review packet (/u/<id>/review): a member's signed milestones over a date range, printable, for a
 // performance review. Only work someone else signed: a club officer verified it, or a professor,
-// manager or mentor vouched for it, with their name, role, date and words. Pure, so the range and the
+// coworker or mentor vouched for it, with their name, role, date and words. Pure, so the range and the
 // wording are tested (tests/review-packet.test.ts). Gated by lib/plans.ts (FEATURE_ACCESS.reviewPacket).
 
 export type PacketItem = {
@@ -26,7 +26,7 @@ export function packetRange(from: string | undefined, to: string | undefined, to
 
 const ROLES: Record<string, string> = {
   owner: "club president", admin: "club officer", moderator: "club officer", helper: "club helper",
-  professor: "professor", ta: "teaching assistant", pi: "lab PI", manager: "manager", mentor: "mentor", other: "witness",
+  professor: "professor", ta: "teaching assistant", pi: "lab PI", manager: "coworker", mentor: "mentor", other: "witness",
 };
 export const fmtDay = (d: string | null) => (d ? new Date(d.length === 10 ? `${d}T12:00:00Z` : d).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" }) : "");
 

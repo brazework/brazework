@@ -12,8 +12,8 @@ Your AI drafts the proof. A person who saw it signs. The record of what you buil
 Link: brazework.com/?ref=x-bio
 
 ## LinkedIn company page
-Tagline (120): Your AI drafts the proof of what you built. A club officer, professor or manager who saw it signs.
-About: Brazework is the record of what people build, signed by the people who saw it. Connect Claude, Cursor or VS Code and your assistant drafts milestones from the tools you already use (GitHub, Onshape, Weights & Biases, Figma and more), with the evidence attached. A club officer, professor or manager who saw the work signs it. Companies search signed work instead of résumés. Free for builders and clubs.
+Tagline (120): Your AI drafts the proof of what you built. A club officer, professor or coworker who saw it signs.
+About: Brazework is the record of what people build, signed by the people who saw it. Connect Claude, Cursor or VS Code and your assistant drafts milestones from the tools you already use (GitHub, Onshape, Weights & Biases, Figma and more), with the evidence attached. A club officer, professor or coworker who saw the work signs it. Companies search signed work instead of résumés. Free for builders and clubs.
 Website: brazework.com/?ref=li-page
 
 ## Josh and Ian (LinkedIn headline add-on)

@@ -17,7 +17,7 @@ To see what production runs, check `version` at https://brazework.com/api/health
 
 What the launch shows:
 - **The record:** milestones signed by the people who saw them (a club officer, a professor, a
-  manager). The profile leads with a timeline of signed work over time. Three kinds of proof, one
+  coworker). The profile leads with a timeline of signed work over time. Three kinds of proof, one
   colour each, everywhere: green signed, blue backed by GitHub, dashed amber waiting.
   - **A work email can sign, and so can a personal one.** The signature itself says which kind it
     is: "(company not verified)" for a company that isn't verified on Brazework, "(personal email)"
