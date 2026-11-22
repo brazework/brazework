@@ -53,4 +53,5 @@ select t.ok(not has_column_privilege('authenticated', 'public.profiles', 'linked
 reset role;
 select t.ok(not has_function_privilege('anon', 'public.profile_linkedin(uuid)', 'EXECUTE'), 'signed-out visitors can''t read it');
 
+echo 'linkedin-public: all passed'
 rollback;
