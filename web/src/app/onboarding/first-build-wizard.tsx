@@ -1,4 +1,5 @@
 "use client";
+import { ProofPicker } from "@/components/projects/proof-picker";
 import { AnimatePresence, motion } from "motion/react";
 import { ArrowLeft, ArrowRight, Building2, Camera, Check, Clock, Link2, Loader2, Mail, Users, X } from "lucide-react";
 import Link from "next/link";
@@ -146,7 +147,7 @@ export function FirstBuildWizard({ firstName, student, userId, clubs, askLinkedi
                 <p className="mt-3 max-w-xl text-[15px] leading-relaxed text-muted">The person who signs looks at this first. A repo, a video, a doc, slides, a photo of it working: whatever shows <span className="text-text">&ldquo;{s.text.length > 80 ? `${s.text.slice(0, 77)}…` : s.text}&rdquo;</span> is real.</p>
               </div>
               <div role="radiogroup" aria-label="Kind of proof" className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                {([["link", "A link", "GitHub, Drive, YouTube, a doc", Link2], ["photo", "A photo", "Of it built, running or on stage", Camera], ["later", "Add it later", "Save it as a draft for now", Clock]] as const).map(([id, label, hint, Icon]) => (
+                {([["link", "A link", "From the tool you used: Drive, Figma, Onshape, GitHub…", Link2], ["photo", "A photo", "Of it built, running or on stage", Camera], ["later", "Add it later", "Save it as a draft for now", Clock]] as const).map(([id, label, hint, Icon]) => (
                   <button key={id} type="button" role="radio" aria-checked={s.proof === id} onClick={() => { setError(""); set({ proof: id }); }}
                     className="flex flex-col items-start gap-1 rounded-2xl border border-line bg-surface p-4 text-left transition hover:border-line-strong aria-checked:border-accent aria-checked:ring-[3px] aria-checked:ring-accent/15">
                     <Icon className="size-5 text-accent" />
@@ -156,9 +157,8 @@ export function FirstBuildWizard({ firstName, student, userId, clubs, askLinkedi
                 ))}
               </div>
               {s.proof === "link" && (
-                <Field label="Link to your proof" hint="It has to start with https://. Make sure the person signing can open it.">
-                  <input type="url" inputMode="url" value={s.link} onChange={(e) => set({ link: e.target.value })} placeholder="https://github.com/you/your-project" autoFocus className={inputCls} />
-                </Field>
+                <ProofPicker field={s.field} label="Link to your proof" name="proofLink" max={1} autoFocus initial={s.link ? [s.link] : []} onLinks={(links) => set({ link: links[0] ?? "" })}
+                  hint="Pick where it is for how to share it, then paste the link. Make sure the person signing can open it." />
               )}
               {s.proof === "photo" && (
                 <div className="flex flex-col gap-3">

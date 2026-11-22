@@ -58,7 +58,13 @@ const psql = (sql) => execSync(`docker exec -i forge-e2e-db psql -U postgres -h 
   await step("proof: a link", async () => {
     await page.getByText("Step 4 of 5").waitFor({ timeout: 10000 });
     await page.getByRole("radio", { name: /A link/ }).click();
-    await page.getByPlaceholder("https://github.com/you/your-project").fill(`https://github.com/eli/robot-${n}`);
+    // Engineering's own tools lead (lib/proof-tools.ts); picking one shows what its link looks like.
+    const where = page.getByRole("group", { name: "Where your proof is" });
+    if ((await where.getByRole("button").first().innerText()) !== "Onshape") throw new Error("Engineering's proof tools don't lead with Onshape");
+    await where.getByRole("button", { name: "Onshape", exact: true }).click();
+    await page.getByPlaceholder("https://cad.onshape.com/documents/…").waitFor();
+    await page.getByText(/view-only link sharing/).waitFor();
+    await page.getByLabel("Link to your proof").fill(`https://github.com/eli/robot-${n}`);
     await page.getByRole("button", { name: /Next: who saw it/ }).click();
     await page.getByText("Step 5 of 5").waitFor({ timeout: 10000 });
   }, page);

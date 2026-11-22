@@ -131,7 +131,7 @@ async function ProjectView({ params, searchParams }: { params: PageProps<"/proje
   const asker = waitingOn ? officers.find((o) => o.community_id === waitingOn && o.uid !== user.id) : undefined;
   // Adding a milestone happens here, for the owner too (it used to send them to their profile).
   const addMilestone = builder && (myClubs.length > 0 || f.vouches)
-    ? <AddMilestone projectId={id} projectTitle={p.title} clubs={myClubs.map((c) => ({ ...c, signers: signers.get(c.id) ?? [] }))} vouches={f.vouches} backing={f.backed && !!githubConfig()} />
+    ? <AddMilestone projectId={id} projectTitle={p.title} clubs={myClubs.map((c) => ({ ...c, signers: signers.get(c.id) ?? [] }))} vouches={f.vouches} backing={f.backed && !!githubConfig()} field={p.profiles?.field} />
     : null;
   const posts = (ups.data ?? []) as unknown as Post[];
   const ids = posts.map((x) => x.id);
