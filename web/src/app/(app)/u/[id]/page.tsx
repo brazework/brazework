@@ -119,7 +119,7 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
   const viewer = { id: user.id, first: me?.first_name ?? "", last: me?.last_name ?? "" };
   type Win = { challenge_id: string; placement: number; challenges: { title: string; status: string; organizations: { name: string } | null } | null };
   const wins = ((winsRes.data ?? []) as unknown as Win[]).filter((w) => w.challenges?.status === "closed").sort((a, b) => a.placement - b.placement);
-  // Their LinkedIn, unless they hid it (supabase/linkedin-public.sql); an error before that step runs.
+  // Their LinkedIn, only if they chose to show it (supabase/linkedin-public.sql); an error before that step runs.
   const [goal, record, liRes] = await Promise.all([goalP, recordP, supabase.rpc("profile_linkedin", { p_id: id })]);
   const linkedinUrl = !liRes.error && typeof liRes.data === "string" && liRes.data.startsWith("https://www.linkedin.com/in/") ? liRes.data : null;
   const liked = new Set(((likesRes.data ?? []) as { post_id: string }[]).map((l) => l.post_id));
@@ -281,13 +281,13 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
             )}
           </div>
 
-          {/* LinkedIn (supabase/linkedin-public.sql): shown unless its owner hid it in Settings. */}
+          {/* LinkedIn (supabase/linkedin-public.sql): shown only when its owner turned it on in Settings. */}
           {linkedinUrl ? (
             <a href={linkedinUrl} target="_blank" rel="noopener noreferrer me" data-linkedin className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-text-2 transition hover:text-text hover:underline">
               <LinkedinMark /> LinkedIn
             </a>
           ) : mine && !liRes.error ? (
-            <Link href="/settings#profile" className="mt-3 inline-flex items-center gap-1.5 text-sm text-muted transition hover:text-text"><LinkedinMark /> Add your LinkedIn</Link>
+            <Link href="/settings#profile" className="mt-3 inline-flex items-center gap-1.5 text-sm text-muted transition hover:text-text"><LinkedinMark /> Show your LinkedIn here</Link>
           ) : null}
 
           <div id="about" className="scroll-mt-24">

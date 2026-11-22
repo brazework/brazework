@@ -2,8 +2,8 @@
 // rule: a professional adds it before asking a person to sign their work. Signing up doesn't need it
 // (the form offers it), and students are never asked. The database cleans and checks the link
 // (linkedin_clean()) and holds the rule, on the table the asks are saved in; this is the same shape
-// check, to catch a typo before the round trip. Signed-in members see it on the profile unless its
-// owner turns off "Show it on my profile" (supabase/linkedin-public.sql); it never shows on a public record. Plain functions, no server
+// check, to catch a typo before the round trip. It stays private unless its owner turns on
+// "Show it on my profile" (supabase/linkedin-public.sql); it never shows on a public record. Plain functions, no server
 // imports, so forms and tests can use them.
 export const LINKEDIN_PLACEHOLDER = "linkedin.com/in/yourname";
 // The database's own message when an ask is refused (vouch_needs_linkedin()), for routes with no form.
@@ -12,8 +12,8 @@ export const LINKEDIN_TO_ASK = "Add your LinkedIn profile link before you ask so
 export const LINKEDIN_ADD_HERE = "Add your LinkedIn profile link to ask someone to sign.";
 export const LINKEDIN_WHY = "Optional.";
 export const LINKEDIN_BAD = "Enter your LinkedIn profile link, like linkedin.com/in/yourname.";
-// Shown on the profile by default (supabase/linkedin-public.sql); the member can hide it in Settings.
-export const LINKEDIN_PRIVATE = "Shown on your profile to signed-in members. You can hide it in Settings. It's never on your public record.";
+// Private unless the member turns on "Show it on my profile" in Settings (supabase/linkedin-public.sql).
+export const LINKEDIN_PRIVATE = "Private unless you choose to show it on your profile. It's never on your public record.";
 
 const PROFILE = /^(?:https?:\/\/)?(?:[a-z]{1,3}\.)?linkedin\.com\/in\/([a-z0-9_%-]{3,100})\/?(?:[?#].*)?$/i;
 
