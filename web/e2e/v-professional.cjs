@@ -212,7 +212,7 @@ const psql = (sql) => execSync(`docker exec -i ${process.env.E2E_STACK || "forge
     await p2.getByRole("button", { name: /Next: proof/ }).click();
     await p2.getByText("Step 4 of 5").waitFor({ timeout: 10000 });
     await p2.getByRole("radio", { name: /A link/ }).click();
-    await p2.getByPlaceholder("https://github.com/you/your-project").fill("https://github.com/voltline/cell/pull/12");
+    await p2.getByLabel("Link to your proof").fill("https://github.com/voltline/cell/pull/12");
     await p2.getByRole("button", { name: /Next: who saw it/ }).click();
     await p2.getByText("Step 5 of 5").waitFor({ timeout: 10000 });
     await p2.getByRole("radio", { name: /A manager or mentor/ }).click();
