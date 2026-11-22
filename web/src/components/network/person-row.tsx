@@ -12,7 +12,7 @@ export function PersonRow({
   actions,
   className,
 }: {
-  // founding: their founding-member number (FIX-241), shown as a small mark beside the name.
+  // founding: set for a founding member (FIX-241), shown as a small mark beside the name.
   person: { id: string; firstName: string; lastName: string; headline: string; founding?: number | null };
   sub?: React.ReactNode;
   note?: string;
@@ -26,7 +26,7 @@ export function PersonRow({
         <WithPresence id={person.id}><Avatar first={person.firstName} last={person.lastName} size={44} /></WithPresence>
       </Link>
       <div className="flex min-w-0 flex-[1_1_180px] flex-col gap-0.5">
-        <span className="flex min-w-0 items-center gap-1.5"><Link href={`/u/${person.id}`} className="truncate font-medium hover:underline">{name}</Link>{person.founding ? <FoundingBadge n={person.founding} compact /> : null}</span>
+        <span className="flex min-w-0 items-center gap-1.5"><Link href={`/u/${person.id}`} className="truncate font-medium hover:underline">{name}</Link>{person.founding ? <FoundingBadge compact /> : null}</span>
         {person.headline && <span className="truncate text-sm text-muted">{person.headline}</span>}
         {sub && <span className="text-xs text-faint">{sub}</span>}
         {note && <p className="mt-1.5 rounded-2xl border border-line bg-surface-2 px-3 py-2 text-sm leading-relaxed text-text-2">&ldquo;{note}&rdquo;</p>}
