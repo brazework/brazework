@@ -1,5 +1,5 @@
 "use client";
-import { ArrowUp, Check, Eye, Hash, Loader2, Megaphone, Plus, Search, X } from "lucide-react";
+import { ArrowUp, Check, ChevronDown, Eye, Hash, Loader2, Megaphone, Plus, Search, Users, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { Avatar } from "@/components/ui";
@@ -229,10 +229,57 @@ export function GroupComposer({ chatId, canAnnounce = false, placeholder = "Writ
   );
 }
 
-// Start a team chat inside the club: name it, pick people from the club, go.
-export function NewTeamChat({ communityId, members, me }: { communityId: string; members: { uid: string; first: string; last: string }[]; me: string }) {
+// The club's chats in one menu (FIX-248): its main chat, the team chats you're in, and "New team chat".
+// Switching opens that chat in this same screen; the list on the left keeps one row per club.
+export type ClubChatLink = { id: string; kind: "club" | "team"; name: string };
+export function TeamSwitcher({ communityId, current, chats, members, me }: { communityId: string; current: string; chats: ClubChatLink[]; members: { uid: string; first: string; last: string }[]; me: string }) {
   const router = useRouter();
-  const [open, setOpen] = useState(false);
+  const [mode, setMode] = useState<"closed" | "menu" | "new">("closed");
+  const box = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (mode !== "menu") return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setMode("closed");
+    const onDown = (e: PointerEvent) => { if (!box.current?.contains(e.target as Node)) setMode("closed"); };
+    window.addEventListener("keydown", onKey);
+    window.addEventListener("pointerdown", onDown);
+    return () => { window.removeEventListener("keydown", onKey); window.removeEventListener("pointerdown", onDown); };
+  }, [mode]);
+  const main = chats.find((c) => c.kind === "club");
+  const teams = chats.filter((c) => c.kind === "team").sort((a, b) => a.name.localeCompare(b.name));
+  const item = "flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-sm transition hover:bg-hover";
+  const go = (id: string) => { setMode("closed"); if (id !== current) router.push(`/messages/g/${id}`); };
+  return (
+    <div ref={box} className="relative">
+      <button type="button" onClick={() => setMode(mode === "menu" ? "closed" : "menu")} aria-haspopup="menu" aria-expanded={mode === "menu"} className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-line px-3 text-xs font-medium text-text-2 transition hover:bg-hover">
+        <Hash className="size-3.5" /> Teams{teams.length ? <span className="font-mono text-[10px] text-faint">{teams.length}</span> : null} <ChevronDown className="size-3.5" />
+      </button>
+      {mode === "menu" && (
+        <div role="menu" aria-label="Club chats" className="absolute top-full right-0 z-30 mt-2 w-64 rounded-2xl border border-line bg-surface p-1.5 shadow-[var(--shadow-float)]">
+          {main && (
+            <button type="button" role="menuitemradio" aria-checked={main.id === current} onClick={() => go(main.id)} className={item}>
+              <Users className="size-4 shrink-0 text-muted" /> <span className="flex-1 truncate">Main club chat</span>{main.id === current && <Check className="size-4" />}
+            </button>
+          )}
+          {teams.length > 0 && <div className="mx-2.5 mt-1.5 mb-1 font-mono text-[10px] tracking-wide text-faint uppercase">Team chats</div>}
+          {teams.map((t) => (
+            <button key={t.id} type="button" role="menuitemradio" aria-checked={t.id === current} onClick={() => go(t.id)} className={item}>
+              <Hash className="size-4 shrink-0 text-muted" /> <span className="flex-1 truncate">{t.name}</span>{t.id === current && <Check className="size-4" />}
+            </button>
+          ))}
+          <div className="my-1 border-t border-line" />
+          <button type="button" role="menuitem" onClick={() => setMode("new")} className={cn(item, "font-medium")}><Plus className="size-4 shrink-0" /> New team chat</button>
+        </div>
+      )}
+      {mode === "new" && <NewTeamChat communityId={communityId} members={members} me={me} defaultOpen onClose={() => setMode("closed")} />}
+    </div>
+  );
+}
+
+// Start a team chat inside the club: name it, pick people from the club, go.
+export function NewTeamChat({ communityId, members, me, defaultOpen = false, onClose }: { communityId: string; members: { uid: string; first: string; last: string }[]; me: string; defaultOpen?: boolean; onClose?: () => void }) {
+  const router = useRouter();
+  const [open, setOpenState] = useState(defaultOpen);
+  const setOpen = (v: boolean) => { setOpenState(v); if (!v) onClose?.(); };
   const [name, setName] = useState("");
   const [q, setQ] = useState("");
   const [picked, setPicked] = useState<string[]>([]);

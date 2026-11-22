@@ -7,7 +7,7 @@ import { MemberFaces, type Face } from "@/components/network/member-faces";
 import { leaveTeamChat } from "@/lib/chats";
 import { dbFeatures } from "@/lib/db-features";
 import { getViewer } from "@/lib/supabase/server";
-import { GroupComposer, GroupThread, MarkChatRead, NewTeamChat, type GroupMsg, type Seen } from "./group-client";
+import { GroupComposer, GroupThread, MarkChatRead, TeamSwitcher, type ClubChatLink, type GroupMsg, type Seen } from "./group-client";
 import { CatchMeUp, MemberList } from "./details";
 import { MessageBody } from "@/components/share/message-body";
 import type { Reaction } from "@/components/chat/message-tools";
@@ -55,6 +55,18 @@ async function Group({ params }: { params: PageProps<"/messages/g/[id]">["params
   type MemberRow = { uid: string; first_name?: string; last_name?: string; profiles?: { first_name: string; last_name: string } | null };
   const people: Face[] = ((memberRes.data ?? []) as MemberRow[]).map((m) => ({ uid: m.uid, first: m.first_name ?? m.profiles?.first_name ?? "", last: m.last_name ?? m.profiles?.last_name ?? "" }));
 
+  // The Teams menu (FIX-248): this club's main chat and the team chats you can see (row-level security
+  // shows a team chat only to its members), and, inside a team chat, the whole club to start a new one with.
+  const club = (c.kind === "club" || c.kind === "team") && c.community_id ? c.community_id : null;
+  const [clubChatRes, clubPeopleRes] = club
+    ? await Promise.all([
+        supabase.from("chats").select("id, kind, name").eq("community_id", club).in("kind", ["club", "team"]).limit(100),
+        c.kind === "team" ? supabase.from("community_members").select("uid, first_name, last_name").eq("community_id", club).order("joined_at", { ascending: false }).limit(500) : Promise.resolve({ data: null }),
+      ])
+    : [{ data: [] }, { data: null }];
+  const clubChats = (clubChatRes.data ?? []) as ClubChatLink[];
+  const clubPeople: Face[] = clubPeopleRes.data ? (clubPeopleRes.data as MemberRow[]).map((m) => ({ uid: m.uid, first: m.first_name ?? "", last: m.last_name ?? "" })) : people;
+
   // Club officers see how many members have seen each announcement.
   let seen: Seen = {};
   if (canAnnounce) {
@@ -87,7 +99,7 @@ async function Group({ params }: { params: PageProps<"/messages/g/[id]">["params
           <div className="truncate text-xs text-faint">{sub}</div>
         </Link>
         <MemberFaces faces={people.slice(0, 4)} ids={people.map((p) => p.uid)} total={people.length} size={24} className="hidden sm:flex" />
-        {c.kind === "club" && c.community_id && <NewTeamChat communityId={c.community_id} members={people} me={user.id} />}
+        {club && <TeamSwitcher communityId={club} current={id} chats={clubChats} members={clubPeople} me={user.id} />}
         {c.kind === "team" && (
           <form action={async () => { "use server"; await leaveTeamChat(id); }}>
             <button aria-label="Leave this team chat" title="Leave chat" className="grid size-8 place-items-center rounded-full text-faint transition hover:bg-hover hover:text-text"><LogOut className="size-4" /></button>
