@@ -5,7 +5,7 @@ import { Suspense } from "react";
 import { Footer } from "@/components/landing/closing";
 import { ThemeChrome } from "@/components/theme-chrome";
 import { Logo } from "@/components/ui";
-import { plusOnSale, plusYearlyOnSale } from "@/lib/billing";
+import { PLUS_STUDENT_ANNUAL_PRICE_ENV, plusOnSale, plusPriceEnv, plusYearlyOnSale } from "@/lib/billing";
 import { dbFeatures } from "@/lib/db-features";
 import { EMBER_DAILY_LIMIT, PLUS, PLUS_SOON, TIERS } from "@/lib/pricing";
 import { getViewer } from "@/lib/supabase/server";
@@ -45,9 +45,11 @@ async function Plus({ searchParams }: { searchParams: PageProps<"/plus">["search
   const { supabase, user, profile } = await getViewer();
   const has = user && (await dbFeatures()).money ? Boolean((await supabase.rpc("has_plus")).data) : false;
   const onSale = plusOnSale();
-  // By the year, when its Stripe price is set: the button names the viewer's own price.
-  const yearly = onSale && plusYearlyOnSale();
-  const student = profile?.account_type === "student";
+  const studying = profile?.account_type === "student";
+  const student = studying && (await supabase.rpc("student_plus_eligible")).data === true;
+  const yearly = onSale && (student
+    ? plusPriceEnv({ student, yearly: true }) === PLUS_STUDENT_ANNUAL_PRICE_ENV
+    : plusYearlyOnSale());
   const tier = TIERS.find((t) => t.id === "plus")!;
   return (
     <>
@@ -73,6 +75,9 @@ async function Plus({ searchParams }: { searchParams: PageProps<"/plus">["search
             )
           ) : (
             <Link href="/login?next=/plus" className="inline-flex h-11 items-center rounded-lg bg-accent px-5 text-[15px] font-medium text-on-accent hover:opacity-90">{onSale ? `Log in to get ${PLUS.name}` : "Log in to join the waitlist"}</Link>
+          )}
+          {!has && studying && !student && (
+            <p className="mt-3 text-sm text-muted">Student pricing requires a confirmed school email. <Link href="/settings#school-email" className="font-medium text-text underline underline-offset-4">Switch to your school email</Link></p>
           )}
           {!has && !onSale && <p className="mt-3 text-sm text-muted">{PLUS.name} opens soon. Join the waitlist and we&apos;ll email you, at the launch price.</p>}
           {!has && onSale && <p className="mt-3 text-sm text-muted">Cancel anytime, from Settings. Your record stays yours either way.</p>}

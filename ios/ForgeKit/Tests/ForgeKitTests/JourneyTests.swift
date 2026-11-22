@@ -505,7 +505,7 @@ final class JourneyTests: XCTestCase {
     var f = SignUpForm()
     f.firstName = "Riya"; f.lastName = "Shah"; f.password = "forge-test-pass-1"
     f.email = "riya\(Self.stamp)@gmail.com"
-    XCTAssertEqual(f.problem, "Use your university email (for example, ending in .edu or .ac.uk).")
+    XCTAssertNil(f.problem, "students can use a personal email")
     f.accountType = "professional"
     XCTAssertNil(f.problem, "professionals can use any email")
     f.accountType = "student"; f.email = "riya\(Self.stamp)@mit.edu"

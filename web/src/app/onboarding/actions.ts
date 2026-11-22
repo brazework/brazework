@@ -16,11 +16,11 @@ import { RELATIONSHIPS } from "@/lib/vouch-email";
 import { joinCommunity } from "../(app)/communities/actions";
 
 export type OnboardState = { message: string };
-export type FinishState = { message: string; school?: boolean };
+export type FinishState = { message: string };
 
 // Someone who signed up with Google, GitHub or LinkedIn gives what the sign-up form asks for.
 // The database applies the same rules as for an email sign-up (finish_signup() in
-// supabase/oauth-signup.sql: minimum age, a school email for a student account); this only
+// supabase/oauth-signup.sql: confirmed email and minimum age); this only
 // catches the obvious before the round trip.
 const finishSchema = z
   .object({
@@ -55,7 +55,7 @@ export async function finishSignup(_: FinishState, form: FormData): Promise<Fini
   const { error } = linkedin ? await supabase.rpc("finish_signup", { ...args, p_linkedin: linkedin }) : await supabase.rpc("finish_signup", args);
   if (error) {
     const message = error.code === "P0001" ? error.message : friendlyError(error);
-    return { message, school: /university email/.test(message) };
+    return { message };
   }
   // Where they're headed, if they said (optional; private until they choose otherwise). A goal that
   // can't be saved never stops sign-up: Ember offers to set one later.

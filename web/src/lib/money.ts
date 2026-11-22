@@ -1,7 +1,7 @@
 "use server";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { billing, plusOnSale, plusPriceEnv } from "@/lib/billing";
+import { billing, PLUS_STUDENT_ANNUAL_PRICE_ENV, PLUS_STUDENT_PRICE_ENV, plusOnSale, plusPriceEnv } from "@/lib/billing";
 import { dbFeatures } from "@/lib/db-features";
 import { env } from "@/lib/env";
 import { friendlyError } from "@/lib/forge";
@@ -27,9 +27,15 @@ export async function startPlus(yearly = false): Promise<MoneyState> {
   const { data: has } = await supabase.rpc("has_plus");
   if (has) return { ok: true, message: "You already have Plus." };
   if (plusOnSale()) {
+    const eligibility = profile.account_type === "student" ? await supabase.rpc("student_plus_eligible") : null;
+    if (eligibility?.error) return { ok: false, message: "Couldn’t check student pricing. Try again in a minute." };
+    const student = eligibility?.data === true;
+    const priceEnv = plusPriceEnv({ student, yearly: yearly === true });
+    if (student && priceEnv !== (yearly ? PLUS_STUDENT_ANNUAL_PRICE_ENV : PLUS_STUDENT_PRICE_ENV)) {
+      return { ok: false, message: "That student billing period isn’t available yet." };
+    }
     const pay = await billing().checkout({
-      plan: "plus", userId: user.id, reference: user.id, email: user.email,
-      priceEnv: plusPriceEnv({ student: profile.account_type === "student", yearly: yearly === true }),
+      plan: "plus", userId: user.id, reference: user.id, email: user.email, priceEnv,
       successUrl: `${env.siteUrl}/plus?welcome=1`, cancelUrl: `${env.siteUrl}/plus`,
     });
     if (pay.ok) redirect(pay.url);

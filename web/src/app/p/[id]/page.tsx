@@ -67,6 +67,8 @@ async function Proof({ params }: { params: PageProps<"/p/[id]">["params"] }) {
               <p className="truncate font-medium">{who}</p>
               {p.member.headline && <p className="truncate text-sm text-muted">{p.member.headline}</p>}
             </div>
+            {/* Their profile, opened at this result in its project's log (FIX-240). */}
+            {p.member.id && <Link href={`/u/${p.member.id}#milestone-${p.id}`} prefetch={false} className="ml-auto shrink-0 text-sm font-medium text-text-2 hover:text-text hover:underline">See it on their profile</Link>}
           </div>
         </div>
       </article>
