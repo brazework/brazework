@@ -78,5 +78,5 @@ revoke execute on function public.admin_launch_metrics() from anon, public;
 grant execute on function public.admin_launch_metrics() to authenticated;
 
 -- So the health check (and the app) can tell this step has run.
-create or replace function public.launch_metrics_ready() returns boolean language sql immutable as $$ select true $$;
+create or replace function public.launch_metrics_ready() returns boolean language sql stable set search_path = public as $$ select true $$;
 grant execute on function public.launch_metrics_ready() to anon, authenticated;
