@@ -57,7 +57,7 @@ const psql = (sql) => execSync(`docker exec -i forge-e2e-db psql -U postgres -h 
     await newcomer(page, email, "Eli", ["An internship", "robotics"]);
     // Sign-up asked where he's headed: saved as his goal, private until he chooses otherwise.
     const g = require("child_process").execSync("docker exec -i forge-e2e-db psql -U postgres -h localhost -d postgres -tA", { input: `select g.kind || '|' || g.target || '|' || g.visible from public.member_goals g join auth.users u on u.id = g.uid where u.email = '${email}' and g.status = 'active'` }).toString().trim();
-    if (g !== "internship|robotics|f") throw new Error(`the goal from sign-up wasn't saved as asked: ${g || "none"}`);
+    if (g !== "internship|robotics|false") throw new Error(`the goal from sign-up wasn't saved as asked: ${g || "none"}`);
     await page.getByRole("heading", { name: /What did you build/ }).waitFor();
     if ((await page.locator("#first-build-text").inputValue()) !== BUILD) throw new Error("the landing page's build isn't waiting");
     await page.getByRole("radio", { name: "Engineering", checked: true }).waitFor();
