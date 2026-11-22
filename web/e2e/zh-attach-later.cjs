@@ -29,7 +29,7 @@ const LATE = `https://docs.google.com/document/d/late-${Date.now() % 100000}`;
       await card.getByLabel("Link", { exact: true }).fill(LINK);
       await card.getByRole("button", { name: "Add", exact: true }).click();
       await card.getByRole("list", { name: "To add" }).getByText("cube.stl").waitFor();
-      await card.getByRole("button", { name: "Save" }).click();
+      await card.getByRole("button", { name: "Save", exact: true }).click();
       await card.getByRole("button", { name: "Edit post" }).waitFor({ timeout: 30000 });
       const rows = psql(`select string_agg(f.kind || ':' || f.name, ',' order by f.kind) from public.project_files f join public.posts p on p.id = f.post_id where p.body = '${NOTE}'`);
       if (!/file:cube\.stl/.test(rows ?? "") || !/link:/.test(rows ?? "")) throw new Error("attached to the update: " + rows);
