@@ -17,6 +17,7 @@ import { ConfidentialWork } from "./confidential-work";
 import { CopyLink } from "@/components/app/copy-link";
 import { signersFor, type MemberRow } from "@/lib/signers";
 import { PlaceTabsRow } from "@/components/app/place-tabs";
+import { FoundingBadge } from "@/components/profile/founding-badge";
 import { OwnProofTabs } from "@/components/app/place-tabs-counted";
 import { GoalCard, GoalLine } from "@/components/app/goal-card";
 import { loadGoal, loadRecord } from "@/lib/goal-load";
@@ -85,7 +86,7 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
 
   // Everything that only needs the profile's id, at once (one round of requests, not seven).
   const [pr, rel, counts, postsRes, projectsRes, msRes, theirClubs, followRows, myClubRows, myFollows, , copilotOn] = await Promise.all([
-    supabase.from("profiles").select(`id, first_name, last_name, account_type, headline, bio, field, interests, onboarded, created_at${f.media ? ", avatar_path, cover_path" : ""}${extrasOn ? ", open_to, links, location" : ""}${f.gradYear ? ", grad_year" : ""}`).eq("id", id).maybeSingle(),
+    supabase.from("profiles").select(`id, first_name, last_name, account_type, headline, bio, field, interests, onboarded, created_at${f.media ? ", avatar_path, cover_path" : ""}${extrasOn ? ", open_to, links, location" : ""}${f.gradYear ? ", grad_year" : ""}${f.foundingMembers ? ", founding_number" : ""}`).eq("id", id).maybeSingle(),
     own ? Promise.resolve(null) : getRelationship(id),
     getNetworkCounts(id),
     supabase.from("posts").select(await postSelect()).eq("author_id", id).is("community_id", null).order("created_at", { ascending: false }).limit(50),
@@ -100,7 +101,7 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
     own ? copilotEnabled() : Promise.resolve(false),
   ]);
   if (!pr.data) notFound();
-  const p = pr.data as unknown as Profile & { open_to?: string[]; links?: ProfileLink[]; location?: string; grad_year?: number | null };
+  const p = pr.data as unknown as Profile & { open_to?: string[]; links?: ProfileLink[]; location?: string; grad_year?: number | null; founding_number?: number | null };
   const mediaOn = f.media;
 
   const posts = (postsRes.data ?? []) as unknown as Post[];
@@ -225,7 +226,7 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
               )}
             </div>
           </div>
-          <div className="mt-3 flex flex-wrap items-center gap-3"><h1 className="text-[1.75rem] leading-tight font-semibold tracking-[-0.02em] sm:text-3xl">{name || "Brazework member"}</h1><OnlineLabel id={p.id} /></div>
+          <div className="mt-3 flex flex-wrap items-center gap-3"><h1 className="text-[1.75rem] leading-tight font-semibold tracking-[-0.02em] sm:text-3xl">{name || "Brazework member"}</h1><OnlineLabel id={p.id} />{p.founding_number ? <FoundingBadge n={p.founding_number} /> : null}</div>
           {p.headline && <p className="mt-1 text-base text-text-2 sm:text-lg">{p.headline}</p>}
           {goal && !mine && <div className="mt-2.5"><GoalLine goal={goal} /></div>}
           <p className="mt-2 flex flex-wrap items-center gap-x-1.5 text-sm text-muted">
