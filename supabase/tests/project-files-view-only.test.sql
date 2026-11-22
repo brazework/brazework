@@ -16,6 +16,8 @@ create function t.ok(cond boolean, what text) returns void language plpgsql as $
 begin if not coalesce(cond, false) then raise exception 'FAILED: %', what; end if; raise notice 'ok: %', what; end $$;
 grant execute on all functions in schema t to authenticated;
 
+-- Rows are recorded as the signed-in member (a trigger sets added_by), so Ben is signed in for them.
+select set_config('request.jwt.claim.sub', :'ben', true);
 insert into public.project_files (project_id, added_by, kind, name, path, size)
   values ('p1', :'ben', 'file', 'stand.stl', 'p1/vo-stand.stl', 1000), ('p1', :'ben', 'file', 'write-up.pdf', 'p1/vo-writeup.pdf', 1000);
 select id as stl from public.project_files where path = 'p1/vo-stand.stl' \gset
