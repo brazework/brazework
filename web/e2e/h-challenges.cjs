@@ -37,6 +37,10 @@ const { step, browser, as, go, summary } = require("./lib.cjs");
     // Retention by sign-up week and the company reply rate (admin-retention.sql, step 33).
     await maya.getByText("Retention by sign-up week").waitFor();
     await maya.getByText("Students reply to companies").waitFor();
+    // The launch numbers (launch-metrics.sql, step 92): four tiles and eight weeks of signed results.
+    const launch = maya.getByRole("region", { name: "Launch numbers" });
+    for (const t of ["Signed results last week", "Signed within 48 hours", "Logged a second result", "Companies that looked and wrote"]) await launch.getByText(t, { exact: true }).waitFor();
+    if ((await maya.getByRole("list", { name: "Signed results a week" }).getByRole("listitem").count()) !== 8) throw new Error("the weekly chart doesn't show 8 weeks");
     const row = maya.locator("div").filter({ hasText: title }).filter({ has: maya.getByRole("button", { name: "Approve pilot" }) }).last();
     await row.getByRole("button", { name: "Approve pilot" }).click();
     // Approved requests leave the list.
