@@ -6,7 +6,7 @@
 // 4. Ben finds "Verify link" on his profile (link, QR, open the page); hiding the milestone takes the
 //    page down at once, even though it was just cached.
 const { execSync } = require("child_process");
-const { BASE, step, browser, as, go, summary } = require("./lib.cjs");
+const { BASE, step, browser, as, go, openLogs, summary } = require("./lib.cjs");
 
 const psql = (sql) => execSync("docker exec -i forge-e2e-db psql -U postgres -h localhost -d postgres -v ON_ERROR_STOP=1 -qtA", { input: sql }).toString().trim();
 const ben = psql("select id from auth.users where email = 'ben@forge.test'");
@@ -62,6 +62,7 @@ const rid = `vrev-${Date.now()}`;
   const page = await as(b, "ben@forge.test");
   await step("Ben's Verify link: the link, its QR code, and the page", async () => {
     await go(page, `/u/${ben}`);
+    await openLogs(page); // a long log on the profile is folded (FIX-240)
     await page.getByRole("button", { name: "Verify link" }).first().click();
     const dialog = page.getByRole("dialog", { name: "Verify link for your résumé" });
     await dialog.waitFor({ timeout: 10000 });
@@ -74,6 +75,7 @@ const rid = `vrev-${Date.now()}`;
     await anon.goto(`${BASE}/v/m1`, { waitUntil: "networkidle" });
     await anon.getByRole("heading", { level: 1, name: "Static fire at 1.2 kN" }).waitFor({ timeout: 15000 });
     await go(page, `/u/${ben}`);
+    await openLogs(page); // a long log on the profile is folded (FIX-240)
     const hide = page.getByRole("button", { name: /On your profile · Hide/ });
     const row = page.locator("li").filter({ hasText: "Static fire at 1.2 kN" }).filter({ has: hide }).last();
     await row.getByRole("button", { name: /On your profile · Hide/ }).click();

@@ -1,7 +1,7 @@
 "use client";
 import { ProofPicker } from "@/components/projects/proof-picker";
 import { AnimatePresence, motion } from "motion/react";
-import { ArrowLeft, ArrowRight, Building2, Camera, Check, Clock, Link2, Loader2, Mail, Users, X } from "lucide-react";
+import { ArrowLeft, ArrowRight, Building2, Camera, Check, ChevronDown, Clock, Link2, Loader2, Mail, Users, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState, useSyncExternalStore, useTransition } from "react";
 import { SignupSteps } from "@/components/signup-steps";
@@ -102,40 +102,48 @@ export function FirstBuildWizard({ firstName, student, userId, clubs, askLinkedi
   const errorBox = error && <p role="alert" className="rounded-xl border border-danger/30 bg-danger/10 px-3.5 py-2.5 text-sm text-danger">{error}</p>;
 
   return (
-    <div className="flex flex-col gap-8">
+    <div className="flex flex-col gap-5 sm:gap-7">
       <SignupSteps at={s.step} />
       <AnimatePresence mode="wait" initial={false}>
         <motion.div key={s.step} initial={{ opacity: 0, x: 24 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -24 }} transition={{ duration: 0.22 }} className="flex flex-col gap-7">
           {s.step === "build" && (
             <form onSubmit={(e) => { e.preventDefault(); if (cleanBuild(s.text).length >= 3) go("proof"); }} className="flex flex-col gap-7">
               <div>
-                <h1 className="text-4xl font-semibold tracking-tight">Welcome{firstName ? `, ${firstName}` : ""}. <span className="text-shine">What did you build?</span></h1>
-                <p className="mt-3 max-w-xl text-[15px] leading-relaxed text-muted">One line about something you made, ran, wrote or shipped: a class project counts. It becomes the first milestone on your record, and the person who saw it signs it.</p>
+                <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Welcome{firstName ? `, ${firstName}` : ""}. <span className="text-shine">What did you build?</span></h1>
+                <p className="mt-3 max-w-xl text-[15px] leading-relaxed text-muted">Start with one thing you made, ran, wrote, or shipped. A class project counts. You can add evidence and ask someone to sign when you’re ready.</p>
               </div>
+              <Link href="/onboarding?path=profile" className="w-fit rounded-xl border border-line px-3.5 py-2 text-sm font-medium text-text-2 transition hover:bg-hover">Set up your profile instead</Link>
               <Field label="What you built" count={s.text.length} max={300}>
-                <textarea id="first-build-text" value={s.text} onChange={(e) => setText(e.target.value)} maxLength={300} rows={2} autoFocus
+                <textarea id="first-build-text" value={s.text} onChange={(e) => setText(e.target.value)} maxLength={300} rows={2}
                   placeholder={student ? "e.g. A line-following robot that won our club's fall expo" : "e.g. Shipped the onboarding flow that cut sign-up time in half"}
                   className={cn(inputCls, "h-auto min-h-20 resize-none py-2.5 text-[17px] leading-snug")} />
               </Field>
-              <div>
-                <div id="fb-field-label" className="mb-3 text-sm font-medium text-text-2">Your field <span className="font-normal text-faint">{s.fieldTouched || !guessField(s.text) ? "" : "(guessed from your build; tap to change)"}</span></div>
-                <div role="radiogroup" aria-labelledby="fb-field-label" className="flex flex-wrap gap-2">
-                  {TOPICS.map((t) => (
-                    <button key={t.name} type="button" role="radio" aria-checked={s.field === t.name} onClick={() => set({ field: t.name, fieldTouched: true })}
-                      className="relative rounded-lg border border-line px-3.5 py-1.5 text-sm text-muted transition aria-checked:border-transparent aria-checked:text-on-accent">
-                      {s.field === t.name && <motion.span layoutId="fb-field" className="absolute inset-0 rounded-lg bg-accent" />}
-                      <span className="relative">{t.name}</span>
-                    </button>
-                  ))}
+              <details className="group overflow-hidden rounded-xl border border-line">
+                <summary aria-label="Edit field and date" className="flex min-h-11 cursor-pointer list-none items-center justify-between gap-3 px-3.5 py-2 text-sm hover:bg-hover [&::-webkit-details-marker]:hidden">
+                  <span><span className="font-medium">{s.field}</span> <span className="text-muted">· {s.achievedOn === today() ? "Today" : s.achievedOn}</span></span>
+                  <span className="inline-flex items-center gap-1.5 text-xs text-muted">Edit <ChevronDown aria-hidden="true" className="size-4 transition-transform group-open:rotate-180" /></span>
+                </summary>
+                <div className="grid gap-5 border-t border-line px-3.5 py-4">
+                  <div>
+                    <div id="fb-field-label" className="mb-3 text-sm font-medium text-text-2">Your field <span className="font-normal text-faint">{s.fieldTouched || !guessField(s.text) ? "" : "(guessed from your build; tap to change)"}</span></div>
+                    <div role="radiogroup" aria-labelledby="fb-field-label" className="flex flex-wrap gap-2">
+                      {TOPICS.map((t) => (
+                        <button key={t.name} type="button" role="radio" aria-checked={s.field === t.name} onClick={() => set({ field: t.name, fieldTouched: true })}
+                          className="relative rounded-lg border border-line px-3.5 py-1.5 text-sm text-muted transition aria-checked:border-transparent aria-checked:text-on-accent">
+                          {s.field === t.name && <motion.span layoutId="fb-field" className="absolute inset-0 rounded-lg bg-accent" />}
+                          <span className="relative">{t.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <Field label="When did it happen?">
+                    <input type="date" value={s.achievedOn} max={today()} onChange={(e) => set({ achievedOn: e.target.value || today() })} className={cn(inputCls, "max-w-48")} />
+                  </Field>
                 </div>
-              </div>
-              <Field label="When did it happen?">
-                <input type="date" value={s.achievedOn} max={today()} onChange={(e) => set({ achievedOn: e.target.value })} className={cn(inputCls, "max-w-48")} />
-              </Field>
+              </details>
               {errorBox}
-              <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
+              <div className="flex flex-col border-t border-line pt-4 sm:items-end">
                 <Button type="submit" size="lg" disabled={cleanBuild(s.text).length < 3}>Next: proof <ArrowRight className="size-4" /></Button>
-                <Link href="/onboarding?path=profile" className="text-sm text-muted underline-offset-4 hover:text-text hover:underline">Haven&apos;t built anything yet? Set up your profile instead</Link>
               </div>
             </form>
           )}
@@ -143,7 +151,7 @@ export function FirstBuildWizard({ firstName, student, userId, clubs, askLinkedi
           {s.step === "proof" && (
             <form onSubmit={(e) => { e.preventDefault(); if (s.proof === "later" || hasProof) go("signer"); else setError(s.proof === "photo" ? "Add a photo, or pick another kind of proof." : "Paste a link that starts with https://"); }} className="flex flex-col gap-7">
               <div>
-                <h1 className="text-4xl font-semibold tracking-tight">Show it.</h1>
+                <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Show it.</h1>
                 <p className="mt-3 max-w-xl text-[15px] leading-relaxed text-muted">The person who signs looks at this first. A repo, a video, a doc, slides, a photo of it working: whatever shows <span className="text-text">&ldquo;{s.text.length > 80 ? `${s.text.slice(0, 77)}…` : s.text}&rdquo;</span> is real.</p>
               </div>
               <div role="radiogroup" aria-label="Kind of proof" className="grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -190,7 +198,7 @@ export function FirstBuildWizard({ firstName, student, userId, clubs, askLinkedi
           {s.step === "signer" && (
             <form onSubmit={(e) => { e.preventDefault(); finish(); }} className="flex flex-col gap-7">
               <div>
-                <h1 className="text-4xl font-semibold tracking-tight">Who saw it?</h1>
+                <h1 className="text-3xl font-semibold tracking-tight sm:text-4xl">Who saw it?</h1>
                 <p className="mt-3 max-w-xl text-[15px] leading-relaxed text-muted">{hasProof
                   ? "A signature from someone who saw it is what makes it count. They get one email with your proof, and sign in a minute. No account needed."
                   : "A signature needs proof to look at, so this one waits as a draft. Add proof from your profile, then ask."}</p>

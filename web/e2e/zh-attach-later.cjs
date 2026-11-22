@@ -5,7 +5,7 @@
 //    says "added after signing", on his profile and on the public verify page (/v/<id>).
 // 3. Someone else can't add evidence to his milestone (the database refuses).
 const path = require("path"), { execSync } = require("child_process");
-const { BASE, step, browser, as, go, summary } = require("./lib.cjs");
+const { BASE, step, browser, as, go, openLogs, summary } = require("./lib.cjs");
 
 const psql = (sql) => execSync("docker exec -i forge-e2e-db psql -U postgres -h localhost -d postgres -v ON_ERROR_STOP=1 -qtA", { input: sql }).toString().trim();
 const NOTE = `Attach later e2e (${Date.now()})`;
@@ -42,6 +42,7 @@ const LATE = `https://docs.google.com/document/d/late-${Date.now() % 100000}`;
     await step("evidence added to a signed milestone keeps the signature and says it came later", async () => {
       if (psql("select status from public.milestones where id = 'm1'") !== "verified") throw new Error("the seeded milestone should be signed");
       await go(ben, `/u/${psql("select id from auth.users where email = 'ben@forge.test'")}`);
+      await openLogs(ben); // a long log on the profile is folded (FIX-240)
       const ms = ben.locator("li", { hasText: "Static fire at 1.2 kN" }).last();
       await ms.getByRole("button", { name: "Add evidence" }).click();
       await ms.getByLabel(/Evidence link for/).fill(LATE);

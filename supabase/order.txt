@@ -104,3 +104,4 @@ launch-metrics
 ember-allowances
 ember-credits
 club-deletion
+student-plus-email

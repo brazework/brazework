@@ -58,7 +58,7 @@ export const TIERS: Tier[] = [
   },
   {
     id: "plus", audience: "builders", name: PLUS.name, price: `$${PLUS.everyoneYear}/yr`,
-    note: `For professionals, or $${PLUS.everyone}/mo. Students: $${PLUS.student}/mo or $${PLUS.studentYear}/year. Join the waitlist while paid plans are being set up.`,
+    note: `For professionals, or $${PLUS.everyone}/mo. Students with a confirmed school email: $${PLUS.student}/mo or $${PLUS.studentYear}/year. Join the waitlist while paid plans are being set up.`,
     points: [
       "Everything in Free",
       // Free while it's a Plus preview (lib/plans.ts), and the card says so: one word there changes both.

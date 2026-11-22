@@ -21,15 +21,23 @@ const { BASE, step, browser, as, go, closeTour, hydrated, summary } = require(".
     await page.getByText("Step 1 of 5").waitFor();
     for (const gone of ["firstName", "lastName", "birthday"]) if (await page.locator(`input[name="${gone}"]`).count()) throw new Error(`/signup still asks for ${gone}`);
     if (await page.getByRole("button", { name: /^Student/ }).count()) throw new Error("/signup still asks student or professional");
-    await page.getByText("Student? Use your university email").waitFor();
+    await page.getByText("Use a personal, work, or school email.").waitFor();
   }, page);
-  await step("a student email the app doesn't recognize offers 'Request your school' (on About you)", async () => {
+  await step("a student with a personal email can skip their first result and request a school from Settings", async () => {
     await go(page, "/signup");
-    await page.fill('input[name="email"]', `sam@${schoolDomain}`); await page.fill('input[name="password"]', "forge-test-pass-1");
+    await page.fill('input[name="email"]', `sam${Date.now() % 100000}@gmail.com`); await page.fill('input[name="password"]', "forge-test-pass-1");
     await page.locator('button[type="submit"]').click();
     await page.getByText("Check your inbox").first().waitFor({ timeout: 20000 });
     await aboutYou("student", "Sam", "Roy", "2003-05-01");
-    await page.getByText(/Use your university email/).waitFor({ timeout: 15000 });
+    await page.getByRole("link", { name: "Set up your profile instead" }).click();
+    await page.getByRole("heading", { name: /What do you build/ }).waitFor();
+    await page.fill('input[name="headline"]', "Design student");
+    await page.getByRole("button", { name: "Enter Brazework" }).click();
+    await page.waitForURL(/\/onboarding\/club/);
+    await go(page, "/settings#school-email");
+    await page.getByLabel("School email", { exact: true }).fill(`sam@${schoolDomain}`);
+    await page.getByRole("button", { name: "Switch to school email" }).click();
+    await page.getByText(/We don’t recognize this school email/).waitFor();
     await page.locator("#request-school").click();
     await page.waitForURL(/\/request-school/);
     if ((await page.locator("#school-domain").inputValue()) !== schoolDomain) throw new Error("domain not prefilled");
