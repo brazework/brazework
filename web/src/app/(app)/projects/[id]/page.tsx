@@ -2,7 +2,7 @@ import { emberCreditCost } from "@/lib/ember-credits";
 import { ProjectSignoff } from "./signoff";
 import type { Metadata } from "next";
 import { ReportLink } from "@/components/report/report-dialog";
-import { ArrowLeft, BadgeCheck, ExternalLink, Images, Megaphone, Pencil, Play } from "lucide-react";
+import { ArrowLeft, BadgeCheck, ChevronDown, ExternalLink, Images, Megaphone, Pencil, Play } from "lucide-react";
 import { schematicFor } from "@/lib/schematic-field";
 import { MediaGrid } from "@/components/media/media-grid";
 import { signedUrls } from "@/lib/signed-urls";
@@ -237,12 +237,12 @@ async function ProjectView({ params, searchParams }: { params: PageProps<"/proje
         <section id="log" aria-label="Build log" className="flex scroll-mt-24 flex-col gap-4">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
             <h2 className="text-lg font-semibold tracking-tight">Build log</h2>
-            <span className="text-xs text-muted">
-              {log.length ? `${posts.length} ${posts.length === 1 ? "update" : "updates"} · ${verified.length} verified` : "Updates and verified milestones, as they happen"}
-              {repos.map((r) => <a key={r.full_name} href={r.html_url} target="_blank" rel="noopener noreferrer nofollow" className="ml-2 inline-flex items-center gap-1 rounded-md border border-line px-1.5 py-0.5 font-medium text-text-2 hover:text-text"><span className="size-1.5 rounded-full bg-ok" aria-hidden="true" /> Live from {r.full_name}</a>)}
-            </span>
+            {repos.length > 0 && (
+              <div className="flex flex-wrap gap-2 text-xs">
+                {repos.map((r) => <a key={r.full_name} href={r.html_url} target="_blank" rel="noopener noreferrer nofollow" className="inline-flex items-center gap-1 rounded-md border border-line px-1.5 py-0.5 font-medium text-text-2 hover:text-text"><span className="size-1.5 rounded-full bg-ok" aria-hidden="true" /> Live from {r.full_name}</a>)}
+              </div>
+            )}
           </div>
-          {own && ghOn && <GitHubConnect supabase={supabase} projectId={p.id} linked={repos} note={typeof ghNote === "string" ? ghNote : undefined} />}
           {builder && <PostUpdate projectId={p.id} title={p.title} attach={filesOn} />}
           {log.length > 0 && <BuildLogTimeline entries={log} liked={liked} saved={saved} me={user.id} projectId={p.id} ownerId={p.owner_id} filesByPost={filesByPost} team={builder} replies={replies} viewer={{ id: user.id, first: viewerProfile?.first_name ?? "", last: viewerProfile?.last_name ?? "" }} />}
           {!log.length && (own ? (
@@ -279,6 +279,14 @@ async function ProjectView({ params, searchParams }: { params: PageProps<"/proje
         {!own && <ThirtySeconds lines={summary} ownerId={p.owner_id} />}
         {/* Rendered once (no hidden copy for phones): the side column follows the log on a phone. */}
         {about}
+        {own && ghOn && githubConfig() && (
+          <details open={repos.length > 0 || typeof ghNote === "string"} className="group rounded-2xl border border-line bg-surface p-4">
+            <summary className="flex min-h-9 cursor-pointer list-none items-center justify-between gap-2 text-sm font-medium [&::-webkit-details-marker]:hidden">
+              GitHub repository <ChevronDown className="size-4 text-muted transition-transform group-open:rotate-180" aria-hidden="true" />
+            </summary>
+            <div className="pt-3"><GitHubConnect supabase={supabase} projectId={p.id} linked={repos} note={typeof ghNote === "string" ? ghNote : undefined} /></div>
+          </details>
+        )}
         {!own && <Link href={`/copilot?q=${encodeURIComponent(ask)}`} className="glass-card flex items-center gap-3 rounded-3xl p-4 transition">
           <Ember size={36} />
           <span className="min-w-0"><span className="block text-sm font-medium">Ask Ember about this project</span><span className="block text-xs text-muted">{emberCreditCost("ask")} · What it is, what&apos;s impressive, what to ask.</span></span>

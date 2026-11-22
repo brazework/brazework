@@ -25,7 +25,7 @@ The table below describes the screens behind those tabs (it predates the rename:
 | **Alerts** | Likes, replies, mentions, follows, club and milestone news; marked read once seen; tap to open the post or person |
 | **You** | Edit your profile (photo, name, headline, field, about, interests; the web's rules), your saved posts, light/dark and the web's five themes, links to settings and Ember on the web, sign out |
 
-Sign-up (student or professional; students use a university email; 18+), email confirmation, password reset and onboarding (major, field, 3+ interests) are native. So is Ember (`Features/Ember`), on the same `/api/copilot` as the web.
+Sign-up (student or professional; personal, work, or school email; 18+), email confirmation, password reset and onboarding (major, field, 3+ interests) are native. So is Ember (`Features/Ember`), on the same `/api/copilot` as the web.
 
 ## Build and run
 

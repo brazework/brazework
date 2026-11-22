@@ -16,8 +16,7 @@ const psql = (sql) => execSync(`docker exec -i forge-e2e-db psql -U postgres -h 
   const n = Date.now() % 100000;
   const BUILD = `A line-following robot for the spring expo ${n}`;
 
-  // `goal`: [label, target] to answer "Where are you headed?"; without it the optional question is skipped.
-  async function newcomer(page, email, first, goal) {
+  async function newcomer(page, email, first) {
     await page.fill('input[name="email"]', email); await page.fill('input[name="password"]', "forge-test-pass-1");
     await page.getByRole("button", { name: "Create account" }).click();
     await page.getByText("Check your inbox").first().waitFor({ timeout: 20000 });
@@ -26,10 +25,6 @@ const psql = (sql) => execSync(`docker exec -i forge-e2e-db psql -U postgres -h 
     await page.getByText("Step 2 of 5").waitFor();
     await hydrated(page.getByRole("button", { name: /student/i }));
     await page.getByRole("button", { name: /student/i }).click();
-    if (goal) {
-      await page.getByRole("group", { name: /Where are you headed/ }).getByRole("button", { name: goal[0], exact: true }).click();
-      await page.getByPlaceholder(/In what\?/).fill(goal[1]);
-    }
     await page.fill('input[name="firstName"]', first); await page.fill('input[name="lastName"]', "Build");
     await page.fill('input[name="birthday"]', "2003-05-01");
     await page.getByRole("button", { name: "Continue" }).click();
@@ -54,13 +49,14 @@ const psql = (sql) => execSync(`docker exec -i forge-e2e-db psql -U postgres -h 
     await page.getByRole("status", { name: "Welcome from Product Hunt" }).waitFor({ timeout: 15000 });
   }, page);
   await step("after About you, 'What did you build?' has the landing page's build and a guessed field", async () => {
-    await newcomer(page, email, "Eli", ["An internship", "robotics"]);
-    // Sign-up asked where he's headed: saved as his goal, private until he chooses otherwise.
-    const g = require("child_process").execSync("docker exec -i forge-e2e-db psql -U postgres -h localhost -d postgres -tA", { input: `select g.kind || '|' || g.target || '|' || g.visible from public.member_goals g join auth.users u on u.id = g.uid where u.email = '${email}' and g.status = 'active'` }).toString().trim();
-    if (g !== "internship|robotics|false") throw new Error(`the goal from sign-up wasn't saved as asked: ${g || "none"}`);
+    await newcomer(page, email, "Eli");
     await page.getByRole("heading", { name: /What did you build/ }).waitFor();
     if ((await page.locator("#first-build-text").inputValue()) !== BUILD) throw new Error("the landing page's build isn't waiting");
+    const fields = page.locator('summary[aria-label="Edit field and date"]');
+    await fields.getByText("Engineering", { exact: true }).waitFor();
+    await fields.click();
     await page.getByRole("radio", { name: "Engineering", checked: true }).waitFor();
+    await fields.click();
     await page.getByRole("button", { name: /Next: proof/ }).click();
   }, page);
   await step("proof: a link", async () => {
@@ -132,7 +128,7 @@ const psql = (sql) => execSync(`docker exec -i forge-e2e-db psql -U postgres -h 
     await go(p2, "/signup");
     await newcomer(p2, `fay${n}@forge.edu`, "Fay");
     await p2.locator("#first-build-text").fill("A podcast on our town's history");
-    await p2.getByRole("radio", { name: "Media & Communication", checked: true }).waitFor();
+    await p2.locator('summary[aria-label="Edit field and date"]').getByText("Media & Communication", { exact: true }).waitFor();
     await p2.getByRole("button", { name: /Next: proof/ }).click();
     await p2.getByRole("radio", { name: /Add it later/ }).click();
     await p2.getByRole("button", { name: /Next: who saw it/ }).click();

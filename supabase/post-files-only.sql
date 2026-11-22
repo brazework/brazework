@@ -1,4 +1,4 @@
--- A post can be just its files (Linear FIX-247). Run after linkedin-public.sql. Changes one check on
+-- A post can be just its files (Linear FIX-247). Run after student-plus-email.sql. Changes one check on
 -- posts; nothing else.
 --
 -- Attaching a file to a project update used to write "Added photo.jpg, cube.stl…" as the post's text

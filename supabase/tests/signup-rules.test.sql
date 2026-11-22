@@ -21,13 +21,12 @@ $$;
 
 select t.must_fail($$select t.signup('kid@uhart.edu', 'student', (now() - interval '15 years')::date::text)$$, 'at least 18');
 select t.must_fail($$select t.signup('nobday@uhart.edu', 'student', '')$$, 'Enter your birthday');
-select t.must_fail($$select t.signup('student@gmail.com', 'student', '2004-01-01')$$, 'university email');
+select t.signup('student@gmail.com', 'student', '2004-01-01');
 select t.signup('dana@hartford.edu', 'student', '2004-01-01');
 select t.signup('pro@gmail.com', 'professional', '1990-01-01');
-select t.ok((select count(*) = 2 from public.profiles p join auth.users u on u.id = p.id where u.email in ('dana@hartford.edu', 'pro@gmail.com')), 'a school-email student and a professional get profiles');
+select t.ok((select count(*) = 3 from public.profiles p join auth.users u on u.id = p.id where u.email in ('dana@hartford.edu', 'pro@gmail.com', 'student@gmail.com')), 'a school-email student and a professional get profiles');
 
 -- A school without an academic domain, once listed.
-select t.must_fail($$select t.signup('sam@cegep-test.qc.ca', 'student', '2004-01-01')$$, 'university email');
 insert into public.school_domains (domain, school) values ('cegep-test.qc.ca', 'Test college');
 select t.signup('sam@cegep-test.qc.ca', 'student', '2004-01-01');
 select t.ok(public.is_school_email('sam@mail.cegep-test.qc.ca'), 'subdomains of a listed school count');

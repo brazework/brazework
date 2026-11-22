@@ -137,6 +137,11 @@ function startGitHub() {
   const avionics = psql(`select id from projects where owner_id = '${ben}' and title = 'Recovery avionics'`);
   await step("Ben connects GitHub to Recovery avionics: installs, signs in, picks the repo, and its merged PRs and releases fill the log", async () => {
     await go(benPage, `/projects/${avionics}`);
+    const buildLog = benPage.getByRole("region", { name: "Build log" });
+    if (await buildLog.getByText(/\bupdates? · \d+ verified/).count() || await buildLog.getByRole("link", { name: "Connect GitHub" }).count()) {
+      throw new Error("the build log still shows the repo prompt or counts");
+    }
+    await benPage.locator("summary").filter({ hasText: "GitHub repository" }).click();
     const card = benPage.getByRole("region", { name: "Connect GitHub" });
     await card.getByRole("link", { name: "Connect GitHub" }).click();
     await benPage.waitForURL((u) => u.searchParams.get("github") === "pick", { timeout: 20000 });
@@ -144,7 +149,7 @@ function startGitHub() {
     await card.getByText("bencho/flight-computer").waitFor({ timeout: 15000 });
     await card.getByRole("button", { name: "Connect" }).click();
     const log = benPage.getByRole("region", { name: "Build log" });
-    await log.getByText("bencho/flight-computer is live in this log").waitFor({ timeout: 20000 });
+    await benPage.getByText("bencho/flight-computer is live in this log").waitFor({ timeout: 20000 });
     await log.getByRole("link", { name: /Merged #7: Kalman filter for altitude/ }).waitFor();
     await log.getByRole("link", { name: /Released Flight computer v0\.3/ }).waitFor();
     if (await log.getByText(/Abandoned idea/).count()) throw new Error("an unmerged pull request was logged");
@@ -168,7 +173,10 @@ function startGitHub() {
   await step("Disconnect stops the repo feeding the project; what it logged stays", async () => {
     await go(benPage, `/projects/${avionics}`);
     await benPage.getByRole("button", { name: "Disconnect" }).click();
-    await benPage.getByRole("region", { name: "Connect GitHub" }).getByText("bencho/flight-computer").waitFor({ timeout: 15000 });
+    const setup = benPage.locator('section[aria-label="Connect GitHub"]');
+    await setup.waitFor({ state: "attached", timeout: 15000 });
+    if (!await setup.isVisible()) await benPage.locator("summary").filter({ hasText: "GitHub repository" }).click();
+    await setup.getByText("bencho/flight-computer").waitFor({ timeout: 15000 });
     if (psql(`select count(*) from project_repos where project_id = '${avionics}'`) !== "0") throw new Error("still linked");
     if (psql(`select count(*) from build_events where project_id = '${avionics}'`) === "0") throw new Error("the history went with it");
   }, benPage);
