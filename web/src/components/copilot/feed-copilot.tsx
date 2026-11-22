@@ -59,7 +59,7 @@ export function EmberAnswer({ a, busy, error, remaining, onClear }: { a: EmberAn
             <div className="mt-3 flex items-center gap-3 text-xs">
               <Link href="/copilot" className="inline-flex items-center gap-1 font-medium text-text hover:underline">Continue with Ember <ArrowRight className="size-3.5" /></Link>
               <button type="button" onClick={onClear} className="inline-flex items-center gap-1 text-muted hover:text-text"><RotateCcw className="size-3.5" /> Clear</button>
-              {remaining !== null && <span className="ml-auto text-faint">{remaining} left today</span>}
+              {remaining !== null && <span className="ml-auto text-faint">{remaining} credits left today</span>}
             </div>
           </div>
         </motion.div>

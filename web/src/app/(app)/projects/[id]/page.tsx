@@ -1,3 +1,4 @@
+import { emberCreditCost } from "@/lib/ember-credits";
 import { ProjectSignoff } from "./signoff";
 import type { Metadata } from "next";
 import { ReportLink } from "@/components/report/report-dialog";
@@ -279,7 +280,7 @@ async function ProjectView({ params, searchParams }: { params: PageProps<"/proje
         {about}
         {!own && <Link href={`/copilot?q=${encodeURIComponent(ask)}`} className="glass-card flex items-center gap-3 rounded-3xl p-4 transition">
           <Ember size={36} />
-          <span className="min-w-0"><span className="block text-sm font-medium">Ask Ember about this project</span><span className="block text-xs text-muted">What it is, what&apos;s impressive, what to ask.</span></span>
+          <span className="min-w-0"><span className="block text-sm font-medium">Ask Ember about this project</span><span className="block text-xs text-muted">{emberCreditCost("ask")} · What it is, what&apos;s impressive, what to ask.</span></span>
         </Link>}
         {(more.data ?? []).length > 0 && (
           <Panel>

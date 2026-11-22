@@ -1,4 +1,5 @@
 "use client";
+import { emberCreditCost } from "@/lib/ember-credits";
 import { ArrowUp, Check, ChevronDown, Eye, Hash, Loader2, Megaphone, Plus, Search, Users, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
@@ -198,8 +199,9 @@ export function GroupComposer({ chatId, canAnnounce = false, placeholder = "Writ
     <form onSubmit={(e) => { e.preventDefault(); send(); }} className="border-t border-line p-3">
       {error && <p role="alert" className="mb-2 px-1 text-xs text-danger">{error}</p>}
       {ember && !body && (
-        <button type="button" onClick={() => { setBody("@Ember "); ref.current?.focus(); }} className="mb-2 mr-3 inline-flex items-center gap-1.5 rounded-full border border-line px-2.5 py-1 text-xs text-text-2 transition hover:bg-hover"><Ember size={16} /> Ask Ember</button>
+        <button type="button" onClick={() => { setBody("@Ember "); ref.current?.focus(); }} className="mb-2 mr-3 inline-flex items-center gap-1.5 rounded-full border border-line px-2.5 py-1 text-xs text-text-2 transition hover:bg-hover"><Ember size={16} /> Ask Ember · {emberCreditCost("group_ask")}</button>
       )}
+      {ember && /^@ember\b/i.test(body.trim()) && <p className="mb-2 px-1 text-xs text-muted">{emberCreditCost("group_ask")} to ask Ember</p>}
       {canAnnounce && (
         <label className="mb-2 inline-flex cursor-pointer items-center gap-2 px-1 text-xs text-muted">
           <input type="checkbox" checked={announce} onChange={(e) => setAnnounce(e.target.checked)} className="size-3.5 accent-[var(--text)]" />

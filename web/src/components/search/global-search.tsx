@@ -1,4 +1,5 @@
 "use client";
+import { emberCreditCost } from "@/lib/ember-credits";
 import { AnimatePresence, motion } from "motion/react";
 import { CalendarDays, Check, FolderGit2, Hash, Loader2, MessageSquare, Search, Sparkles, UserPlus, Users, X } from "lucide-react";
 import Link from "next/link";
@@ -80,7 +81,7 @@ export function GlobalSearch({ onAsk, asking = false, joined = false }: { onAsk?
   const askInside = (
     <>
       <span className="bg-accent-grad grid size-9 shrink-0 place-items-center rounded-xl text-on-accent"><Sparkles className="size-4" /></span>
-      <span className="min-w-0"><span className="block truncate font-medium">Ask Ember: &ldquo;{query}&rdquo;</span><span className="block text-xs text-faint">{onAsk ? "Answers here, and drafts what you did for you to approve" : "Answers with clubs, events and people from Brazework"}</span></span>
+      <span className="min-w-0"><span className="block truncate font-medium">Ask Ember: &ldquo;{query}&rdquo;</span><span className="block text-xs text-faint">{onAsk ? `${emberCreditCost("ask")} · Answers or drafts for you to approve` : `${emberCreditCost("ask")} · Answers with clubs, events and people from Brazework`}</span></span>
       {onAsk && <kbd className="ml-auto hidden font-mono text-[10px] text-faint sm:block" aria-hidden="true">↵</kbd>}
     </>
   );

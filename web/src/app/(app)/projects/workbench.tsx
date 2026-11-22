@@ -1,3 +1,4 @@
+import { emberCreditCost } from "@/lib/ember-credits";
 import { Cpu, FlaskConical, GitBranch, Wrench } from "lucide-react";
 import Link from "next/link";
 import { ProjectEditor } from "../u/[id]/profile-client";
@@ -27,7 +28,7 @@ export function Workbench({ projects, interests, copilot, stack, specsOn = false
         </div>
         <div className="mt-5 flex flex-wrap items-center gap-2">
           <ProjectEditor interests={interests} copilot={copilot} stack={stack} specsOn={specsOn} />
-          {copilot && <Link href="/copilot?q=Import%20my%20GitHub%20repo%20as%20a%20project" className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-line px-4 text-sm font-medium transition hover:bg-hover"><GitBranch className="size-4" /> Import from GitHub with Ember</Link>}
+          {copilot && <Link href="/copilot?q=Import%20my%20GitHub%20repo%20as%20a%20project" className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-line px-4 text-sm font-medium transition hover:bg-hover"><GitBranch className="size-4" /> Import from GitHub with Ember · {emberCreditCost("ask")}</Link>}
         </div>
       </section>
     );
@@ -44,7 +45,7 @@ export function Workbench({ projects, interests, copilot, stack, specsOn = false
           </p>
         </div>
         <div className="flex shrink-0 items-center gap-2 [&_button]:whitespace-nowrap">
-          {copilot && <Link href="/copilot?q=Import%20my%20GitHub%20repo%20as%20a%20project" className="hidden h-10 items-center gap-1.5 rounded-lg border border-line px-4 text-sm transition hover:bg-hover sm:inline-flex"><GitBranch className="size-4" /> Import</Link>}
+          {copilot && <Link href="/copilot?q=Import%20my%20GitHub%20repo%20as%20a%20project" className="hidden h-10 items-center gap-1.5 rounded-lg border border-line px-4 text-sm transition hover:bg-hover sm:inline-flex"><GitBranch className="size-4" /> Import · {emberCreditCost("ask")}</Link>}
           <ProjectEditor interests={interests} copilot={copilot} stack={stack} specsOn={specsOn} />
         </div>
       </div>

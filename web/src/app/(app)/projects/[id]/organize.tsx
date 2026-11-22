@@ -1,4 +1,5 @@
 "use client";
+import { emberCreditCost } from "@/lib/ember-credits";
 import { Check, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useTransition } from "react";
@@ -36,7 +37,7 @@ export function OrganizeWithEmber({ projectId }: { projectId: string }) {
       {!s ? (
         <div className="flex flex-wrap items-center gap-3">
           <Ember size={32} mood={pending ? "thinking" : "idle"} />
-          <span className="min-w-0 flex-1 text-sm"><span className="font-medium">Organize with Ember</span><span className="block text-xs text-muted">Ember reads your write-up and suggests the stack and topics.</span></span>
+          <span className="min-w-0 flex-1 text-sm"><span className="font-medium">Organize with Ember · {emberCreditCost("organize")}</span><span className="block text-xs text-muted">Ember reads your write-up and suggests the stack and topics.</span></span>
           <button type="button" onClick={ask} disabled={pending} className="bg-accent-grad inline-flex h-9 items-center gap-1.5 rounded-lg px-4 text-sm font-medium text-on-accent disabled:opacity-60">{pending && <Loader2 className="size-4 animate-spin" />} {pending ? "Reading…" : "Organize"}</button>
         </div>
       ) : (

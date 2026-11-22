@@ -3,6 +3,8 @@ import { createHash } from "node:crypto";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { friendlyError } from "@/lib/forge";
+import { LINKEDIN_ADD_HERE } from "@/lib/linkedin";
+import { needsLinkedin, saveLinkedinFrom } from "@/lib/linkedin-gate";
 import type { Signature } from "@/lib/signatures";
 import { createClient, getViewer } from "@/lib/supabase/server";
 import { RELATIONSHIPS, type Relationship } from "@/lib/vouch-email";
@@ -24,11 +26,16 @@ const ask = z.object({
 });
 
 // quiet: don't refresh the page (Today's triage card says what happened itself).
-export async function requestVouch(milestoneId: string, email: string, relationship: string, quiet = false): Promise<VouchState> {
+export async function requestVouch(milestoneId: string, email: string, relationship: string, quiet = false, linkedin?: string): Promise<VouchState & { linkedin?: boolean }> {
   const v = ask.safeParse({ milestoneId, email, relationship });
   if (!v.success) return { ok: false, message: v.error.issues[0]?.message ?? "Check the form." };
   const viewer = await getViewer();
   if (!viewer.user) return { ok: false, message: "Log in again." };
+  if (linkedin !== undefined) {
+    const bad = await saveLinkedinFrom(viewer.supabase, linkedin);
+    if (bad) return { ok: false, message: bad, linkedin: true };
+    if (await needsLinkedin(viewer.supabase)) return { ok: false, message: LINKEDIN_ADD_HERE, linkedin: true };
+  }
   const asked = await askToVouch(viewer, v.data.milestoneId, v.data.email, v.data.relationship);
   if (!asked.ok) return asked;
   const { user } = viewer;

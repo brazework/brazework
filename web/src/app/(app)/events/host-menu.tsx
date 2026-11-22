@@ -1,4 +1,5 @@
 "use client";
+import { emberCreditCost } from "@/lib/ember-credits";
 import { AnimatePresence, motion } from "motion/react";
 import { Building2, ChevronDown, Plus, Sparkles, UsersRound } from "lucide-react";
 import Link from "next/link";
@@ -64,7 +65,7 @@ export function HostMenu({ clubs, orgAdmin }: { clubs: { id: string; name: strin
             {clubs.length > 0 && (
               <Link role="menuitem" href={`/copilot?q=${encodeURIComponent(`Plan our next ${clubs[0].name} event: suggest a date, a title and a description`)}`} className={item} onClick={() => setOpen(false)}>
                 <Sparkles className="size-4 shrink-0 text-text-2" />
-                <span className="min-w-0 flex-1"><span className="block">Plan it with Ember</span><span className="block text-xs text-faint">Ember drafts it, you approve</span></span>
+                <span className="min-w-0 flex-1"><span className="block">Plan it with Ember</span><span className="block text-xs text-faint">{emberCreditCost("ask")} · Ember drafts it, you approve</span></span>
               </Link>
             )}
             <Link role="menuitem" href="/org" className={item} onClick={() => setOpen(false)}>

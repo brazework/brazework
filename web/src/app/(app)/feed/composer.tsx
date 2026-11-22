@@ -1,4 +1,5 @@
 "use client";
+import { emberCreditCost } from "@/lib/ember-credits";
 import { AnimatePresence, motion } from "motion/react";
 import { ArrowRight, ArrowUp, AtSign, Check, FlaskConical, FolderGit2, Hash, HelpCircle, ImagePlus, Loader2, Megaphone, PenLine, Plus, Rocket, Square, Undo2, Upload, Users, Video, Wand2, X } from "lucide-react";
 import Link from "next/link";
@@ -168,7 +169,7 @@ export function Composer({ first, last, interests, userId, mediaEnabled = false,
           ? <Ember size={40} mood={ai.busy ? "thinking" : answer.text ? "happy" : "idle"} />
           : <Avatar first={first} last={last} size={40} src={avatarSrc} />}
         {asking
-          ? <p className="min-w-0 text-sm font-medium">Ask Ember <span className="font-normal text-muted">· it checks real Brazework data first</span></p>
+          ? <p className="min-w-0 text-sm font-medium">Ask Ember <span className="font-normal text-muted">· {emberCreditCost("ask")} per message</span></p>
           : <p className="min-w-0"><span className="block truncate text-sm font-medium">{first} {last}</span><span className="block truncate text-xs text-faint">Share what you built</span></p>}
         {/* The orb, on the first row's centre line: ask Ember in this same box, and back to writing. */}
         <button type="button" onClick={() => { setMode(asking ? "post" : "ask"); requestAnimationFrame(() => textRef.current?.focus()); }} aria-pressed={asking}
@@ -235,7 +236,7 @@ export function Composer({ first, last, interests, userId, mediaEnabled = false,
             {emberActions(club).map((a) => {
               const cls = "inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-line bg-surface/80 px-3 py-1.5 text-xs font-medium text-text-2 transition hover:border-line-strong hover:text-text active:scale-95";
               return copilot
-                ? <button key={a.label} type="button" onClick={() => pickAction(a)} className={cls}><a.icon className="size-3.5 text-accent" /> {a.label}</button>
+                ? <button key={a.label} type="button" onClick={() => pickAction(a)} className={cls}><a.icon className="size-3.5 text-accent" /> {a.label} · {emberCreditCost("ask")}</button>
                 : <Link key={a.label} href={a.href} className={cls}><a.icon className="size-3.5 text-accent" /> {a.label}</Link>;
             })}
           </div>
@@ -276,7 +277,7 @@ export function Composer({ first, last, interests, userId, mediaEnabled = false,
               ? <button type="button" onClick={ai.stop} aria-label="Stop polishing" className="inline-flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-sm text-muted"><Loader2 className="size-4 animate-spin" /><span className="hidden sm:inline">Polishing…</span></button>
               : before !== null
                 ? <button type="button" onClick={() => { setBody(before); setBefore(null); }} aria-label="Undo polish" className="inline-flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-sm text-muted hover:bg-hover hover:text-text"><Undo2 className="size-4" /><span className="hidden sm:inline">Undo polish</span></button>
-                : <button type="button" onClick={() => void polish()} disabled={!body.trim()} aria-label="Polish with Ember" title="Polish with Ember" className="ai-chip inline-flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-sm font-medium text-text-2 transition hover:text-text active:scale-95 disabled:pointer-events-none disabled:opacity-40"><Wand2 className="size-4 text-accent" /><span className="hidden sm:inline">Polish</span></button>)}
+                : <button type="button" onClick={() => void polish()} disabled={!body.trim()} aria-label="Polish with Ember" title={`Polish with Ember · ${emberCreditCost("post")}`} className="ai-chip inline-flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-sm font-medium text-text-2 transition hover:text-text active:scale-95 disabled:pointer-events-none disabled:opacity-40"><Wand2 className="size-4 text-accent" /><span className="hidden sm:inline">Polish · </span><span className="text-xs">{emberCreditCost("post")}</span></button>)}
             <span className="ml-auto flex shrink-0 items-center gap-2.5">
               <span className="hidden sm:block"><CharRing used={body.length} max={MAX} /></span>
               {remaining <= 200 && <span className={cn("text-xs tabular-nums", remaining < 0 ? "text-danger" : "text-faint")}>{remaining}</span>}

@@ -2,14 +2,17 @@ import { ArrowRight, Clock, Mail, PartyPopper, Users } from "lucide-react";
 import Link from "next/link";
 import { Celebrate } from "@/components/app/celebrate";
 import { CopyLink } from "@/components/app/copy-link";
+import { WelcomeNext } from "./welcome-next";
 import type { createClient } from "@/lib/supabase/server";
 import type { Milestone } from "./milestones";
 
 // The end of build-first onboarding (/u/<id>?welcome=1, owner only): your first milestone is on your
 // record, and this says where it stands. It never says "verified": only a person's signature does.
-export async function FirstMilestoneWelcome({ supabase, userId, milestone }: { supabase: Awaited<ReturnType<typeof createClient>>; userId: string; milestone: Milestone | undefined }) {
+export async function FirstMilestoneWelcome({ supabase, userId, milestone, student }: { supabase: Awaited<ReturnType<typeof createClient>>; userId: string; milestone: Milestone | undefined; student: boolean }) {
   let line = "Your profile is ready. Log your first build from Home whenever you're ready.";
   let Icon = PartyPopper;
+  const draft = milestone?.status === "draft" ? milestone : undefined;
+  const hasEvidence = !!draft && (!!draft.evidence || !!draft.evidence_items?.length);
   if (milestone) {
     if (milestone.status === "pending" && milestone.community_id) {
       line = `“${milestone.title}” is on your record, waiting for ${milestone.community_name || "your club"}'s officers to verify it.`;
@@ -19,7 +22,9 @@ export async function FirstMilestoneWelcome({ supabase, userId, milestone }: { s
       line = `“${milestone.title}” is on your record, waiting for ${data?.email ?? "the person you asked"} to sign it. We emailed them, and you'll be notified when they answer.`;
       Icon = Mail;
     } else if (milestone.status === "draft") {
-      line = `“${milestone.title}” is on your record as a draft. Add proof and ask who saw it, from the milestone below.`;
+      line = hasEvidence
+        ? `“${milestone.title}” is saved with its evidence. Ask someone to sign it when you’re ready.`
+        : `“${milestone.title}” is on your record as a draft. Add evidence when you have it.`;
       Icon = Clock;
     } else {
       line = `“${milestone.title}” is on your record.`;
@@ -33,11 +38,16 @@ export async function FirstMilestoneWelcome({ supabase, userId, milestone }: { s
         <div className="min-w-0 flex-1">
           <h2 className="text-xl font-semibold tracking-tight">You&apos;re on Brazework.</h2>
           <p className="mt-1 text-[15px] text-text-2">{line}</p>
-          <p className="mt-1 text-sm text-muted">{milestone?.status === "pending" ? <>Post it today: <strong className="font-medium text-text">Share</strong> on the milestone below makes a card that says it&apos;s waiting, and it becomes the signed card when they sign.</> : <>Once someone signs it, it gets a share card you can post anywhere.</>}</p>
-          <div className="mt-4 flex flex-wrap items-center gap-2">
-            <CopyLink path={`/u/${userId}`} label="Copy my profile link" />
-            <Link href="/feed" className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-text px-3.5 text-sm font-medium text-surface transition hover:opacity-90">Go to Today <ArrowRight className="size-4" /></Link>
-          </div>
+          {draft ? <>
+            <WelcomeNext key={draft.id} id={draft.id} hasEvidence={hasEvidence} student={student} />
+            <Link href="#projects" className="mt-2 inline-flex min-h-9 items-center text-sm font-medium underline-offset-4 hover:underline">View your record</Link>
+          </> : <>
+            <p className="mt-1 text-sm text-muted">{milestone?.status === "pending" ? <>Post it today: <strong className="font-medium text-text">Share</strong> on the milestone below makes a card that says it&apos;s waiting, and it becomes the signed card when they sign.</> : <>Once someone signs it, it gets a share card you can post anywhere.</>}</p>
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <CopyLink path={`/u/${userId}`} label="Copy my profile link" />
+              <Link href="/feed" className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-text px-3.5 text-sm font-medium text-surface transition hover:opacity-90">Go to Today <ArrowRight className="size-4" /></Link>
+            </div>
+          </>}
         </div>
       </div>
     </section>

@@ -36,9 +36,9 @@ export function Hero() {
                 placeholder="A line-following robot"
                 aria-describedby="hero-build-hint" aria-controls="hero-preview"
                 className="h-12 w-full min-w-0 shrink-0 rounded-xl border border-line-strong bg-surface px-4 text-[16px] transition outline-none placeholder:text-faint focus:border-text focus:shadow-[0_0_0_4px_color-mix(in_oklab,var(--text)_9%,transparent)]" />
-              <Button href={signupHref("", typed)} size="lg" className="h-12 shrink-0 rounded-xl px-5">{build ? "Start with this build" : "Create your free account"}</Button>
+              <Button href={signupHref("", typed)} size="lg" className="h-12 shrink-0 rounded-xl px-5">Log your first result</Button>
             </div>
-            <p id="hero-build-hint" className="mt-2.5 text-sm text-faint">{build ? "That's your first milestone. Take it with you." : "Type what you built and watch it get signed."} Free for everyone who builds.</p>
+            <p id="hero-build-hint" className="mt-2.5 text-sm text-faint">Create a free account to save it.</p>
           </div>
 
           <p className="mt-9 hidden text-sm text-muted sm:block">

@@ -90,7 +90,8 @@ from (values
   (90, 'milestone-late-evidence', to_regprocedure('public.milestone_late_evidence_ready()') is not null),
   (91, 'founding-members', to_regprocedure('public.founding_members_ready()') is not null),
   (92, 'launch-metrics', to_regprocedure('public.launch_metrics_ready()') is not null),
-  (93, 'ember-allowances', to_regprocedure('public.ember_allowances_ready()') is not null)
+  (93, 'ember-allowances', to_regprocedure('public.ember_allowances_ready()') is not null),
+  (94, 'ember-credits', to_regprocedure('public.ember_take(text)') is not null)
 ) as s(step, file, present)
 order by step;
 

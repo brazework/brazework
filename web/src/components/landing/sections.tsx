@@ -1,3 +1,4 @@
+import { emberCreditCost } from "@/lib/ember-credits";
 import { BadgeCheck } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/forge";
@@ -140,7 +141,7 @@ export function EmberSection() {
           <h2 className={H2}>Built around your field and where you&apos;re headed.</h2>
           <p className={LEAD}>Tell it your field and your goal: an internship, grad school, your next role. Ember, the guide inside Brazework, gets you there from your signed work.</p>
           <Points items={[
-            ["Included from day one", `${EMBER_DAILY_LIMIT.free} Ember requests a day on Free. Plus raises your daily total to ${EMBER_DAILY_LIMIT.plus}. No credits to buy.`],
+            ["Included from day one", `${EMBER_DAILY_LIMIT.free} Ember credits a day on Free and ${EMBER_DAILY_LIMIT.plus} on active Plus. Messages use ${emberCreditCost("ask")}. Larger actions use more, with the cost shown up front.`],
             ["It starts from your goal", "How close your signed work gets you, and the one next step: what to build, who can sign it, the clubs, events and people in your field."],
             ["It knows your record", "What's signed and what's waiting, so it opens with your next step. It writes your résumé bullets from signed work."],
             ["It asks before it acts", "A post, a request or a milestone sits on a card until you press the button."],

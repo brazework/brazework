@@ -1,4 +1,5 @@
 "use client";
+import { emberCreditCost } from "@/lib/ember-credits";
 import { AnimatePresence, motion } from "motion/react";
 import type { Preset } from "@/lib/copilot-presets";
 import { ArrowRight, BadgeCheck, CalendarCheck, CalendarDays, Check, Compass, Copy, CornerDownRight, FileText, GitBranch, History, Loader2, Megaphone, Plus, ScrollText, Search, ShieldCheck, ThumbsDown, ThumbsUp, Trash2, Users, Waypoints, X } from "lucide-react";
@@ -113,7 +114,7 @@ function NextSteps({ steps, busy, onAsk }: { steps: NextStep[]; busy: boolean; o
           const body = (
             <>
               <span className="min-w-0 flex-1">
-                <span className="block text-sm font-medium text-pretty text-text">{s.label}</span>
+                <span className="block text-sm font-medium text-pretty text-text">{s.label}{"text" in s && !s.finish && <span className="text-xs font-normal text-muted"> · {emberCreditCost("ask")}</span>}</span>
                 <span className="mt-0.5 block text-xs text-pretty text-muted">{s.hint}</span>
               </span>
               <ArrowRight className="size-4 shrink-0 text-muted" aria-hidden="true" />
@@ -280,7 +281,7 @@ export function CopilotChat({ first, field, student = true, initial = "", initia
             <div className="flex flex-wrap gap-2 pl-11">
               {lastAnswer.next.map((n) => (
                 <button key={n} type="button" onClick={() => void send(n)} className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface/80 px-3 py-1.5 text-left text-xs font-medium text-text-2 transition hover:border-line-strong hover:text-text active:scale-95">
-                  <CornerDownRight className="size-3.5 shrink-0 text-accent" /> {n}
+                  <CornerDownRight className="size-3.5 shrink-0 text-accent" /> {n} <span className="text-xs text-muted">· {emberCreditCost("ask")}</span>
                 </button>
               ))}
             </div>
@@ -289,7 +290,6 @@ export function CopilotChat({ first, field, student = true, initial = "", initia
         </div>
         {error && <p role="alert" className="mt-3 text-sm text-danger">{error}</p>}
         {!empty && composer}
-        {remaining !== null && empty && <p className="mt-1 text-center text-xs text-faint">{remaining} Ember {remaining === 1 ? "request" : "requests"} left today</p>}
       </div>
     </div>
   );

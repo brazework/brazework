@@ -1,3 +1,4 @@
+import { emberCreditCost } from "@/lib/ember-credits";
 import { eventWithHost } from "@/lib/db-features";
 import type { Metadata } from "next";
 import { ArrowLeft, BadgeCheck, Clock, ExternalLink, MapPin, MessagesSquare, Navigation, Users, Video } from "lucide-react";
@@ -137,7 +138,7 @@ async function EventView({ params }: { params: PageProps<"/events/[id]">["params
         {!over && e.status !== "cancelled" && (
           <Link href={`/copilot?q=${encodeURIComponent(prep)}`} className="border border-line bg-surface flex items-center gap-3 rounded-2xl p-5 transition">
             <Ember size={40} />
-            <span className="min-w-0 flex-1"><span className="block text-sm font-medium">Prep me with Ember</span><span className="block text-xs text-muted">What to bring, who to meet and what to ask.</span></span>
+            <span className="min-w-0 flex-1"><span className="block text-sm font-medium">Prep me with Ember</span><span className="block text-xs text-muted">{emberCreditCost("ask")} · What to bring, who to meet and what to ask.</span></span>
           </Link>
         )}
       </div>
