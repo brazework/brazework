@@ -1,12 +1,13 @@
 "use client";
 import Link from "next/link";
 import { usePathname, useSearchParams } from "next/navigation";
-import { CalendarDays, Hash, Search, Users, X } from "lucide-react";
+import { CalendarDays, ChevronDown, Hash, Search, Users, X } from "lucide-react";
 import { useState } from "react";
 import { Avatar } from "@/components/ui";
 import { WithPresence } from "@/components/presence/presence";
 import { cn, timeAgo } from "@/lib/forge";
 import type { Conv, GroupChat } from "./data";
+import { nestGroups } from "@/lib/group-nesting";
 
 // Two panes on desktop; on phones the list shows until a thread page (marked data-thread) is open.
 // Pure CSS (:has), so the layout needs no runtime URL read and still prerenders.
@@ -36,6 +37,9 @@ export function ConvList({ convs, requestsOn, groups = null }: { convs: Conv[]; 
   const startTab = groups && (inGroup || params.get("tab") === "groups") ? "groups" : activeId && requestsOn && requests.some((c) => c.id === activeId) ? "requests" : "inbox";
   const [tab, setTab] = useState<"inbox" | "groups" | "unread" | "requests">(startTab);
   const [q, setQ] = useState("");
+  // Which clubs you opened or closed in the Groups list (FIX-248); otherwise a club is open while you're in one of its chats.
+  const [openClubs, setOpenClubs] = useState<string[]>([]);
+  const [closedClubs, setClosedClubs] = useState<string[]>([]);
   const needle = q.trim().toLowerCase();
   const shown = (tab === "requests" ? requests : tab === "unread" ? unread : inbox).filter((c) => !needle || `${c.other.firstName} ${c.other.lastName} ${c.lastBody}`.toLowerCase().includes(needle));
   const shownGroups = (groups ?? []).filter((g) => !needle || `${g.title} ${g.subtitle} ${g.lastBody}`.toLowerCase().includes(needle));
@@ -68,23 +72,53 @@ export function ConvList({ convs, requestsOn, groups = null }: { convs: Conv[]; 
       {tab === "requests" && <p className="border-b border-line px-4 py-3 text-xs text-muted">People you&apos;re not connected with land here first. They can&apos;t see that you&apos;ve read their message until you accept.</p>}
       {tab === "groups" ? (
         <ul className="min-h-0 flex-1 overflow-y-auto p-2">
-          {shownGroups.map((g) => {
+          {/* One row per club (FIX-248): its team chats fold under it, closed until you open them or
+              you're in one; a search that matches a team opens its club. */}
+          {nestGroups(shownGroups).map(({ chat: g, teams, teamUnread }) => {
             const Icon = KIND_ICON[g.kind];
+            const inside = g.id === activeGroup || teams.some((t) => t.id === activeGroup);
+            const open = teams.length > 0 && (inside || !!needle || openClubs.includes(g.id)) && !closedClubs.includes(g.id);
+            const toggle = () => {
+              if (open) { setClosedClubs((c) => [...c, g.id]); setOpenClubs((c) => c.filter((x) => x !== g.id)); }
+              else { setOpenClubs((c) => [...c, g.id]); setClosedClubs((c) => c.filter((x) => x !== g.id)); }
+            };
             return (
               <li key={g.id}>
-                <Link href={`/messages/g/${g.id}`} aria-current={g.id === activeGroup ? "page" : undefined} className={cn("flex gap-3 rounded-2xl px-3 py-3 transition hover:bg-hover/70", g.id === activeGroup && "nav-pill")}>
-                  <span className="nav-tile grid size-10 shrink-0 place-items-center rounded-xl text-text-2"><Icon className="size-[18px]" /></span>
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-baseline justify-between gap-2">
-                      <span className={cn("truncate text-sm", g.unread ? "font-semibold" : "font-medium")}>{g.title}</span>
-                      {g.lastAt && <span suppressHydrationWarning className="shrink-0 text-[11px] text-faint">{timeAgo(g.lastAt)}</span>}
+                <div className="relative">
+                  <Link href={`/messages/g/${g.id}`} aria-current={g.id === activeGroup ? "page" : undefined} className={cn("flex gap-3 rounded-2xl px-3 py-3 transition hover:bg-hover/70", g.id === activeGroup && "nav-pill", teams.length > 0 && "pr-11")}>
+                    <span className="nav-tile grid size-10 shrink-0 place-items-center rounded-xl text-text-2"><Icon className="size-[18px]" /></span>
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-baseline justify-between gap-2">
+                        <span className={cn("truncate text-sm", g.unread || (!open && teamUnread) ? "font-semibold" : "font-medium")}>{g.title}</span>
+                        {g.lastAt && <span suppressHydrationWarning className="shrink-0 text-[11px] text-faint">{timeAgo(g.lastAt)}</span>}
+                      </div>
+                      <p className={cn("truncate text-sm", g.unread ? "text-text" : "text-muted")}>
+                        {g.lastBody ? <>{g.lastFromMe ? "You" : g.lastSenderName || "Someone"}: {g.lastBody}</> : <span className="text-faint">{g.subtitle} · say hello</span>}
+                      </p>
                     </div>
-                    <p className={cn("truncate text-sm", g.unread ? "text-text" : "text-muted")}>
-                      {g.lastBody ? <>{g.lastFromMe ? "You" : g.lastSenderName || "Someone"}: {g.lastBody}</> : <span className="text-faint">{g.subtitle} · say hello</span>}
-                    </p>
-                  </div>
-                  {g.unread && <span className="mt-2 size-2 shrink-0 rounded-full bg-accent" aria-label="Unread" />}
-                </Link>
+                    {(g.unread || (!open && teamUnread)) && <span className="mt-2 size-2 shrink-0 rounded-full bg-accent" aria-label={g.unread ? "Unread" : "Unread in a team chat"} />}
+                  </Link>
+                  {teams.length > 0 && (
+                    <button type="button" onClick={toggle} aria-expanded={open} aria-controls={`teams-${g.id}`} aria-label={`${open ? "Hide" : "Show"} ${g.title}'s ${teams.length} team chat${teams.length === 1 ? "" : "s"}`}
+                      className="absolute top-1/2 right-2 grid size-8 -translate-y-1/2 place-items-center rounded-full text-faint transition hover:bg-hover hover:text-text">
+                      <ChevronDown className={cn("size-4 transition-transform", open && "rotate-180")} />
+                    </button>
+                  )}
+                </div>
+                {open && (
+                  <ul id={`teams-${g.id}`} aria-label={`${g.title} team chats`} className="mb-1 ml-8 border-l border-line pl-2">
+                    {teams.map((t) => (
+                      <li key={t.id}>
+                        <Link href={`/messages/g/${t.id}`} aria-current={t.id === activeGroup ? "page" : undefined} className={cn("flex items-center gap-2 rounded-xl px-2.5 py-2 text-sm transition hover:bg-hover/70", t.id === activeGroup && "nav-pill")}>
+                          <Hash className="size-3.5 shrink-0 text-muted" />
+                          <span className={cn("min-w-0 flex-1 truncate", t.unread ? "font-semibold" : "text-text-2")}>{t.title}</span>
+                          {t.lastAt && <span suppressHydrationWarning className="shrink-0 text-[11px] text-faint">{timeAgo(t.lastAt)}</span>}
+                          {t.unread && <span className="size-2 shrink-0 rounded-full bg-accent" aria-label="Unread" />}
+                        </Link>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </li>
             );
           })}
