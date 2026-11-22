@@ -226,7 +226,7 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
               )}
             </div>
           </div>
-          <div className="mt-3 flex flex-wrap items-center gap-3"><h1 className="text-[1.75rem] leading-tight font-semibold tracking-[-0.02em] sm:text-3xl">{name || "Brazework member"}</h1><OnlineLabel id={p.id} />{p.founding_number ? <FoundingBadge n={p.founding_number} /> : null}</div>
+          <div className="mt-3 flex flex-wrap items-center gap-3"><h1 className="text-[1.75rem] leading-tight font-semibold tracking-[-0.02em] sm:text-3xl">{name || "Brazework member"}</h1><OnlineLabel id={p.id} />{p.founding_number ? <FoundingBadge /> : null}</div>
           {p.headline && <p className="mt-1 text-base text-text-2 sm:text-lg">{p.headline}</p>}
           {goal && !mine && <div className="mt-2.5"><GoalLine goal={goal} /></div>}
           <p className="mt-2 flex flex-wrap items-center gap-x-1.5 text-sm text-muted">
