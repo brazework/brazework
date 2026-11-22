@@ -55,7 +55,6 @@ export function ProviderButtons({ providers, from, next, invite }: { providers: 
           </a>
         ))}
       </div>
-      {from === "signup" && <p className="text-xs text-muted">Students: choose your school account there, so it&apos;s your university email.</p>}
       <div className="flex items-center gap-3 text-xs text-faint">
         <span aria-hidden="true" className="h-px flex-1 bg-line" /> or with your email <span aria-hidden="true" className="h-px flex-1 bg-line" />
       </div>

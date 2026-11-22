@@ -105,4 +105,5 @@ ember-allowances
 ember-credits
 club-deletion
 linkedin-public
+student-plus-email
 post-files-only

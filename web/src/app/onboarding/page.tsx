@@ -18,9 +18,9 @@ export default function OnboardingPage({ searchParams }: PageProps<"/onboarding"
     <div className="relative isolate min-h-dvh">
       <div className="app-backdrop absolute inset-0 -z-10" />
       <ThemeToggle className="absolute top-5 right-5" />
-      <div className="mx-auto max-w-3xl px-6 py-14">
+      <div className="mx-auto max-w-2xl px-4 py-7 sm:px-6 sm:py-12">
         <Logo />
-        <div className="mt-14">
+        <div className="mt-6 rounded-3xl border border-line bg-surface p-5 shadow-sm sm:mt-9 sm:p-8">
           <Suspense fallback={<div className="h-96 shimmer rounded-3xl" aria-busy="true" />}>
             <Onboarding searchParams={searchParams} />
           </Suspense>
@@ -39,10 +39,7 @@ async function Onboarding({ searchParams }: { searchParams: PageProps<"/onboardi
     const { data } = await supabase.auth.getClaims();
     const claims = (data?.claims ?? {}) as { user_metadata?: unknown; app_metadata?: { provider?: string } };
     const via = claims.app_metadata?.provider;
-    // A professional is offered a LinkedIn link here (optional), once supabase/linkedin-required.sql has
-    // run; everyone is asked where they're headed (optional), once goals exist.
-    const f = await dbFeatures();
-    return <FinishSignupForm email={user.email} provider={isProvider(via) ? providerLabel(via) : undefined} {...namesFrom(claims.user_metadata)} askLinkedin={f.linkedinRequired} askGoal={f.goals} />;
+    return <FinishSignupForm email={user.email} provider={isProvider(via) ? providerLabel(via) : undefined} {...namesFrom(claims.user_metadata)} />;
   }
   if (profile?.onboarded) redirect("/feed");
   const student = profile?.account_type === "student";

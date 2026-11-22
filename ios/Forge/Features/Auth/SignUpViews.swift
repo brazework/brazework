@@ -1,7 +1,7 @@
 import SwiftUI
 
 // Create an account in three short steps: who you are, your name and birthday, then email and
-// password. Students use their university email (that's how Forge knows they're students).
+// password. Every account type can use a personal, work, or school email.
 struct SignUpView: View {
   @Environment(\.dismiss) private var dismiss
   @Environment(\.palette) private var p
@@ -51,7 +51,7 @@ struct SignUpView: View {
   private var who: some View {
     VStack(alignment: .leading, spacing: 14) {
       Text("Which describes you?").font(.title2.weight(.bold)).foregroundStyle(p.text)
-      choice("student", "graduationcap.fill", "Student", "Verify with your university email. Join your clubs and show your work.")
+      choice("student", "graduationcap.fill", "Student", "Join your clubs and show your coursework or projects.")
       choice("professional", "briefcase.fill", "Professional", "Engineers, scientists, researchers and the people hiring them.")
     }
   }
@@ -92,9 +92,9 @@ struct SignUpView: View {
 
   private var credentials: some View {
     VStack(alignment: .leading, spacing: 14) {
-      Text(form.accountType == "student" ? "Your university email" : "Your email").font(.title2.weight(.bold)).foregroundStyle(p.text)
+      Text("Your email").font(.title2.weight(.bold)).foregroundStyle(p.text)
       field {
-        TextField(form.accountType == "student" ? "you@university.edu" : "you@company.com", text: $form.email)
+        TextField("you@example.com", text: $form.email)
           .textContentType(.emailAddress).keyboardType(.emailAddress).textInputAutocapitalization(.never).autocorrectionDisabled()
           .focused($focus, equals: .email).submitLabel(.next).onSubmit { focus = .password }
       }
@@ -115,7 +115,7 @@ struct SignUpView: View {
     error = nil
     if step == 0 { withAnimation(.snappy) { step = 1 }; return }
     if step == 1 {
-      var check = form; check.email = form.accountType == "student" ? "x@x.edu" : "x@x.com"; check.password = "12345678"
+      var check = form; check.email = "x@x.com"; check.password = "12345678"
       if let p = check.problem { error = p; return }
       withAnimation(.snappy) { step = 2 }; return
     }

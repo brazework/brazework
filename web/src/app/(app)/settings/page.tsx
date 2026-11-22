@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { SchoolEmailForm } from "./school-email-form";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { PageHeader, Panel, Skeleton } from "@/components/app/page-ui";
@@ -89,6 +90,7 @@ async function Settings() {
       <Section id="help" title="Help" desc="Tours, what's new, and how to reach us."><HelpSettings /></Section>
       <Section id="account" title="Account" desc="Your sign-in email, password and session.">
         <p className="text-sm text-muted">Signed in as <span className="text-text">{user.email}</span></p>
+        {profile.account_type === "student" && <SchoolEmailForm eligible={(await supabase.rpc("student_plus_eligible")).data === true} />}
         <PasswordForm />
         <form action="/auth/signout" method="post" className="mt-6 border-t border-line pt-6">
           <button className="inline-flex h-10 items-center rounded-lg border border-line px-4 text-sm transition hover:bg-hover">Log out</button>

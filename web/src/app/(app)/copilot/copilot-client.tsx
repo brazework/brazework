@@ -2,7 +2,7 @@
 import { emberCreditCost } from "@/lib/ember-credits";
 import { AnimatePresence, motion } from "motion/react";
 import type { Preset } from "@/lib/copilot-presets";
-import { ArrowRight, BadgeCheck, CalendarCheck, CalendarDays, Check, Compass, Copy, CornerDownRight, FileText, GitBranch, History, Loader2, Megaphone, Plus, ScrollText, Search, ShieldCheck, ThumbsDown, ThumbsUp, Trash2, Users, Waypoints, X } from "lucide-react";
+import { ArrowRight, BadgeCheck, CalendarCheck, CalendarDays, Check, Compass, Copy, CornerDownRight, FileText, GitBranch, History, Loader2, Megaphone, PanelLeftClose, PanelLeftOpen, Plus, ScrollText, Search, ShieldCheck, ThumbsDown, ThumbsUp, Trash2, Users, Waypoints, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useCopilot } from "@/components/copilot/use-copilot";
@@ -138,9 +138,10 @@ export function CopilotChat({ first, field, student = true, initial = "", initia
   const [list, setList] = useState<ChatSummary[]>(chats);
   const [opening, setOpening] = useState<string | null>(null);
   const [showHistory, setShowHistory] = useState(false);
+  const [historyCollapsed, setHistoryCollapsed] = useState(false);
   const [input, setInput] = useState("");
   const end = useRef<HTMLDivElement>(null);
-  useEffect(() => { end.current?.scrollIntoView({ behavior: "smooth", block: "end" }); }, [msgs]);
+  useEffect(() => { if (msgs.length) end.current?.scrollIntoView({ behavior: "smooth", block: "end" }); }, [msgs]);
 
   const actions: ComposerAction[] = emberActions({ field, student }).map((a) => ({ ...a, icon: ACTION_ICON[a.id] }));
 
@@ -214,16 +215,31 @@ export function CopilotChat({ first, field, student = true, initial = "", initia
   );
 
   return (
-    // Centred (FIX-239): the chat sits in the middle column, between two columns of the same width, so
-    // it's in the middle of the page whatever the width. Your chats fill the left one on wide screens;
-    // the right one only balances it. Narrower than that, the list is behind the "Your chats" button.
-    <div className={cn(saving && "xl:grid xl:grid-cols-[minmax(12rem,1fr)_minmax(0,48rem)_minmax(12rem,1fr)] xl:gap-6")}>
-      {rail && <aside aria-label="Your Ember chats" className="sticky top-6 hidden h-[calc(100dvh-8rem)] w-full max-w-64 xl:block">{rail}</aside>}
-      <div className="mx-auto flex min-h-[calc(100dvh-10rem)] w-full max-w-3xl flex-col">
+    <div className={cn(
+      saving && "xl:grid xl:grid-cols-[var(--ember-rail)_minmax(0,1fr)_var(--ember-rail)] xl:gap-5 2xl:gap-8",
+      historyCollapsed ? "[--ember-rail:2.75rem]" : "[--ember-rail:clamp(14rem,19vw,20rem)]",
+    )}>
+      {rail && (
+        <aside aria-label="Ember chat history" className="sticky top-6 hidden h-[calc(100dvh-3rem)] min-w-0 flex-col gap-3 self-start xl:flex">
+          <button
+            type="button"
+            aria-expanded={!historyCollapsed}
+            aria-controls="ember-desktop-history"
+            aria-label={historyCollapsed ? "Expand chat history" : "Collapse chat history"}
+            title={historyCollapsed ? "Expand chat history" : "Collapse chat history"}
+            onClick={() => setHistoryCollapsed((collapsed) => !collapsed)}
+            className="glass-card grid size-11 shrink-0 place-items-center self-start rounded-xl text-muted transition hover:text-text"
+          >
+            {historyCollapsed ? <PanelLeftOpen className="size-5" aria-hidden="true" /> : <PanelLeftClose className="size-5" aria-hidden="true" />}
+          </button>
+          <div id="ember-desktop-history" className="min-h-0 flex-1" hidden={historyCollapsed}>{rail}</div>
+        </aside>
+      )}
+      <div className="mx-auto flex min-h-[calc(100dvh-10rem)] w-full min-w-0 max-w-3xl flex-col">
         {saving && (
           <div className="relative mb-2 flex justify-end xl:hidden">
-            <button type="button" onClick={() => setShowHistory((v) => !v)} aria-expanded={showHistory} className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium text-muted transition hover:bg-hover hover:text-text"><History className="size-3.5" /> Your chats</button>
-            {showHistory && <div className="absolute top-full right-0 z-30 mt-1 h-96 w-72 rounded-3xl border border-line bg-surface p-3 shadow-[var(--shadow)]">{rail}</div>}
+            <button type="button" onClick={() => setShowHistory((v) => !v)} aria-expanded={showHistory} aria-controls={showHistory ? "ember-mobile-history" : undefined} className="inline-flex min-h-11 items-center gap-1.5 rounded-full px-3 text-sm font-medium text-muted transition hover:bg-hover hover:text-text"><History className="size-3.5" /> Your chats</button>
+            {showHistory && <div id="ember-mobile-history" className="absolute top-full right-0 z-30 mt-1 h-[min(70dvh,38rem)] w-[min(22rem,85vw)] rounded-3xl border border-line bg-surface p-3 shadow-[var(--shadow)]">{rail}</div>}
           </div>
         )}
         {empty ? (
@@ -231,11 +247,11 @@ export function CopilotChat({ first, field, student = true, initial = "", initia
             {/* A new chat: the greeting and the box, a little above the middle of the page. */}
             <div className="flex flex-1 flex-col justify-center pb-[8vh]">
               <Hero title={emberGreeting(first)} sub="Say what you did or what you need. Ember looks it up on Brazework and prepares each step as a card you approve." mood={busy ? "thinking" : "idle"} />
+              {composer}
               {steps.length > 0 && <NextSteps steps={steps} busy={busy} onAsk={(s) => {
                 // A step that starts a sentence waits in the box for the member to finish it.
                 if (s.finish) { setInput(s.text); document.getElementById("copilot-input")?.focus(); } else void send(s.text);
               }} />}
-              {composer}
               {fromTools && <FromYourTools {...fromTools} />}
             </div>
           </>
@@ -303,7 +319,7 @@ function ChatRail({ list, current, opening, onOpen, onNew, onDelete, onDeleteAll
     <div className="flex h-full flex-col">
       <button type="button" onClick={onNew} className="glass-card inline-flex items-center justify-center gap-1.5 rounded-2xl px-3 py-2.5 text-sm font-medium transition"><Plus className="size-4" /> New chat</button>
       <h2 className="mt-5 mb-2 px-2 text-xs font-medium tracking-wide text-faint uppercase">Your chats</h2>
-      <ul className="-mx-1 flex-1 space-y-0.5 overflow-y-auto px-1">
+      <ul className="-mx-1 min-h-0 flex-1 space-y-0.5 overflow-y-auto px-1">
         {list.map((c) => (
           <li key={c.id} className="group relative">
             <button type="button" onClick={() => onOpen(c.id)} aria-current={c.id === current ? "true" : undefined} className={cn("block w-full rounded-xl py-2 pr-8 pl-3 text-left transition", c.id === current ? "bg-hover text-text" : "text-text-2 hover:bg-hover hover:text-text")}>
