@@ -56,8 +56,11 @@ const ben = process.env.BEN_ID || psql("select id from auth.users where email = 
 
   await step("the proof list links each result into its log", async () => {
     await go(maya, `/u/${ben}`);
-    // The newest signed result tops the proof list; its title opens the log at that milestone.
-    await maya.locator("#proof").getByRole("link", { name: "Log e2e: hot fire at 900 N" }).click();
+    // Its title in the proof list opens the log at that milestone. The list shows three results and
+    // folds the rest; earlier journeys add results of their own, so open the fold if it's in there.
+    const proof = maya.locator("#proof"), link = proof.getByRole("link", { name: "Log e2e: hot fire at 900 N" });
+    if (!(await link.isVisible())) await proof.locator("details > summary").click();
+    await link.click();
     await maya.locator("#milestone-log0").waitFor({ state: "visible", timeout: 10000 });
   }, maya);
 
