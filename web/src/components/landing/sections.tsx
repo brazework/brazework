@@ -8,7 +8,7 @@ import { ClubSetupDemo } from "./club-setup-demo";
 import { CompanySearch } from "./company-search";
 import { EmberDemo } from "./ember-demo";
 import { Faq } from "./faq";
-import { EMBER_ALLOWANCE, LANDING_AUDIENCES, PRICING_LINKS } from "@/lib/pricing";
+import { EMBER_DAILY_LIMIT, LANDING_AUDIENCES, PRICING_LINKS } from "@/lib/pricing";
 import { PricingTiers } from "./pricing";
 
 // The landing page's sections. The order they show in is set by app/page.tsx: who it's for (a
@@ -140,11 +140,12 @@ export function EmberSection() {
           <h2 className={H2}>Built around your field and where you&apos;re headed.</h2>
           <p className={LEAD}>Tell it your field and your goal: an internship, grad school, your next role. Ember, the guide inside Brazework, gets you there from your signed work.</p>
           <Points items={[
-            ["Included from day one", EMBER_ALLOWANCE + ". Your allowance resets daily."],
+            ["Included from day one", `${EMBER_DAILY_LIMIT.free} Ember requests a day on Free. Plus raises your daily total to ${EMBER_DAILY_LIMIT.plus}. No credits to buy.`],
             ["It starts from your goal", "How close your signed work gets you, and the one next step: what to build, who can sign it, the clubs, events and people in your field."],
             ["It knows your record", "What's signed and what's waiting, so it opens with your next step. It writes your résumé bullets from signed work."],
             ["It asks before it acts", "A post, a request or a milestone sits on a card until you press the button."],
           ]} />
+          <Link href="#pricing-builders" className="mt-5 inline-flex text-sm font-medium underline-offset-4 hover:underline">Compare Free and Plus</Link>
         </div>
         <EmberDemo />
       </div>

@@ -217,7 +217,7 @@ struct EmberView: View {
         .disabled(busy || input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
         .accessibilityLabel("Send")
       }
-      Text(left.map { "Ember prepares, you approve. \($0) questions left today." } ?? "Ember prepares, you approve. It never posts or signs on its own.")
+      Text(left.map { "Ember prepares, you approve. \($0) Ember requests left today." } ?? "Ember prepares, you approve. It never posts or signs on its own.")
         .font(.caption2).foregroundStyle(p.faint)
     }
     .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 8)

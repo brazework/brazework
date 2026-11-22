@@ -22,7 +22,7 @@ export async function organizeProject(projectId: string): Promise<Suggestion> {
   ]);
   if (!p) return { ok: false, message: "Only the project's owner can organize it." };
   const { data: left } = await supabase.rpc("copilot_take");
-  if (typeof left !== "number" || left < 0) return { ok: false, message: "You've used today's Ember requests. They reset tomorrow." };
+  if (typeof left !== "number" || left < 0) return { ok: false, message: "You've used your daily Ember allowance. It resets at midnight UTC." };
 
   const text = `${p.title}\n${p.summary}\n${d?.details ?? ""}\n${d?.link ?? ""}`.slice(0, 6000);
   const catalog = TOOLS.map((t) => t.name).join(", ");

@@ -30,7 +30,7 @@ export async function POST(req: Request) {
 
   const { data: left, error } = await ctx.supabase.rpc("copilot_take");
   if (error) return json(503, "Ember isn't available right now. Try again in a minute.");
-  if (typeof left !== "number" || left < 0) return json(429, "You've used today's questions for Ember. They reset tomorrow.");
+  if (typeof left !== "number" || left < 0) return json(429, "You've used your daily Ember allowance. It resets at midnight UTC.");
 
   const { instructions, maxTokens } = taskPrompt(r);
   const messages: Anthropic.MessageParam[] = [...(r.history ?? []), { role: "user", content: r.input }];
