@@ -1,2 +1,0 @@
-# The LinkedIn visibility boolean was mistaken for a client ID on an unmerged branch.
-688f951b31e79685a5e52773a37e278771474436:web/src/app/(app)/settings/settings-client.tsx:linkedin-client-id:27

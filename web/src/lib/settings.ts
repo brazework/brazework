@@ -58,6 +58,14 @@ export async function saveProfileSettings(_: SettingsState, form: FormData): Pro
     if (e2) { revalidatePath("/", "layout"); return { ok: false, message: e2.code === "P0001" ? e2.message : friendlyError(e2) }; }
   }
   if (toStudent) { const bad = await saveLink(); if (bad) { revalidatePath("/", "layout"); return bad; } }
+  // Show it on my profile (supabase/linkedin-public.sql): sent once that step has run; only a change is saved.
+  if (form.has("linkedin_public_was")) {
+    const on = form.get("linkedin_public") === "on";
+    if (on !== (form.get("linkedin_public_was") === "on")) {
+      const { error: e4 } = await supabase.rpc("set_linkedin_public", { p_on: on });
+      if (e4) { revalidatePath("/", "layout"); return { ok: false, message: friendlyError(e4) }; }
+    }
+  }
   revalidatePath("/", "layout");
   return { ok: true, message: "Profile saved." };
 }
