@@ -2,7 +2,7 @@ import { githubConfig, installationRepos, type Repo } from "@/lib/github-app";
 import { linkRepo, unlinkRepo } from "@/lib/github-actions";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-// The owner's GitHub card in the build log (Linear FIX-92, phase 3): connect, pick a repo, or see
+// The owner's GitHub repository settings (Linear FIX-92, phase 3): connect, pick a repo, or see
 // which one is live. Hidden until the GitHub App's variables are set.
 // GitHub's mark (lucide no longer ships brand icons).
 function Github({ className }: { className?: string }) {
@@ -48,7 +48,7 @@ export async function GitHubConnect({ supabase, projectId, linked, note }: { sup
 
   return (
     <section aria-label="Connect GitHub" className="rounded-xl border border-line bg-surface p-4">
-      <p className="flex items-center gap-2 text-sm font-medium"><Github className="size-4" /> {repos.length ? "Which repo is this project?" : "Make this log update itself"}</p>
+      <p className="flex items-center gap-2 text-sm font-medium"><Github className="size-4" /> {repos.length ? "Choose a repository" : "Connect a repository"}</p>
       {repos.length ? (
         <ul className="mt-3 flex flex-col gap-1">
           {repos.slice(0, 30).map((r) => (
@@ -61,9 +61,7 @@ export async function GitHubConnect({ supabase, projectId, linked, note }: { sup
             </li>
           ))}
         </ul>
-      ) : (
-        <p className="mt-1 text-sm text-muted">Connect the repo and its merged pull requests, releases, CI and deploys show up here as you work. Read-only: Brazework never writes to your code or posts for you.</p>
-      )}
+      ) : null}
       <a href={connect} className="mt-3 inline-flex h-9 items-center gap-2 rounded-lg bg-text px-3.5 text-sm font-medium text-surface transition hover:opacity-90"><Github className="size-4" /> {repos.length ? "Add another account or repo on GitHub" : "Connect GitHub"}</a>
       {message}
     </section>
