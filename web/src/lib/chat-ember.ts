@@ -29,7 +29,7 @@ async function transcript(chatId: string) {
     .map((m) => `[${m.created_at.slice(0, 16).replace("T", " ")}] ${m.ember ? "Ember" : `${m.sender_first} ${m.sender_last}`.trim()}${m.announcement ? " (announcement)" : ""}: ${m.body.replace(/\s+/g, " ").slice(0, 400)}`);
   const { data: left, error } = await ctx.supabase.rpc("copilot_take");
   if (error) return { error: "Ember isn't available right now." } as const;
-  if (typeof left !== "number" || left < 0) return { error: "You've used today's Ember requests. They reset tomorrow." } as const;
+  if (typeof left !== "number" || left < 0) return { error: "You've used your daily Ember allowance. It resets at midnight UTC." } as const;
   return { ctx, title, lines } as const;
 }
 

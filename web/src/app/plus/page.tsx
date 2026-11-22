@@ -7,7 +7,7 @@ import { ThemeChrome } from "@/components/theme-chrome";
 import { Logo } from "@/components/ui";
 import { plusOnSale, plusYearlyOnSale } from "@/lib/billing";
 import { dbFeatures } from "@/lib/db-features";
-import { PLUS, PLUS_SOON, TIERS } from "@/lib/pricing";
+import { EMBER_DAILY_LIMIT, PLUS, PLUS_SOON, TIERS } from "@/lib/pricing";
 import { getViewer } from "@/lib/supabase/server";
 import { PlusButton } from "./plus-button";
 
@@ -52,7 +52,7 @@ async function Plus({ searchParams }: { searchParams: PageProps<"/plus">["search
   return (
     <>
       <h1 className="text-[clamp(2rem,5vw,2.75rem)] leading-[1.05] font-semibold tracking-[-0.03em]">{PLUS.name}</h1>
-      <p className="mt-3 text-[15px] leading-relaxed text-muted">Your signed work, ready for your next review or promotion, and every company that looked. Everything in Free stays free, for good.</p>
+      <p className="mt-3 text-[15px] leading-relaxed text-muted">Your signed work, ready for your next review or promotion, and every company that looked. Plus also includes {EMBER_DAILY_LIMIT.plus} Ember requests a day.</p>
       <section className="mt-8 rounded-[1.25rem] border border-line bg-surface p-6 sm:p-8">
         <p className="text-3xl font-semibold tracking-tight">{tier.price}</p>
         <p className="mt-1 text-sm text-muted">{tier.note}</p>

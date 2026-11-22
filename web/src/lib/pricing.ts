@@ -18,7 +18,8 @@ export const PLUS = { name: "Plus", student: 6, everyone: 12, studentYear: 48, e
 // What a school pays: a flat portal and a seat for each advisor who uses it. Never per club or
 // chapter, so a school never has a reason to keep a club off Brazework (founders, 2026-11-19).
 export const SPONSORSHIP = { chapter: 2500, challengePrizes: 5000, serviceFee: 500 };
-export const EMBER_ALLOWANCE = "Ember included: 25 questions a day, no credits to buy";
+export const EMBER_DAILY_LIMIT = { free: 15, plus: 50 } as const;
+export const EMBER_RESET = "Ember requests reset at midnight UTC.";
 export const SCHOOL = { portal: 6000, seatsIncluded: 2, perAdvisor: 1200 };
 /** A school's yearly price for this many advisors (the portal includes the first seats). */
 export const schoolPrice = (advisors: number) => SCHOOL.portal + Math.max(0, Math.ceil(advisors) - SCHOOL.seatsIncluded) * SCHOOL.perAdvisor;
@@ -52,16 +53,17 @@ export const PRICING_LINKS: { audience: Audience; label: string; href: string }[
 export const TIERS: Tier[] = [
   {
     id: "free", audience: "builders", name: "Free", price: "$0", note: "Always, with no ads", featured: true,
-    points: ["Your record: every build, with the people who signed it", "Ask anyone who saw it to sign: a professor, a coworker, your club", "A share card for every milestone, signed or waiting", "Clubs, study groups and events", EMBER_ALLOWANCE, "Connect your own AI at no extra Brazework charge; your provider’s plan and limits apply", "Be found by companies, and see who looked this week"],
+    points: ["Your record: every build, with the people who signed it", "Ask anyone who saw it to sign: a professor, a coworker, your club", "A share card for every milestone, signed or waiting", "Clubs, study groups and events", `Ember: ${EMBER_DAILY_LIMIT.free} requests a day`, "Connect your own AI at no extra Brazework charge; your provider’s plan and limits apply", "Be found by companies, and see who looked this week"],
     cta: { label: "Log your first build", href: "/signup" },
   },
   {
     id: "plus", audience: "builders", name: PLUS.name, price: `$${PLUS.everyoneYear}/yr`,
     note: `For professionals, or $${PLUS.everyone}/mo. Students: $${PLUS.student}/mo or $${PLUS.studentYear}/year. Join the waitlist while paid plans are being set up.`,
     points: [
-      "Everything in Free, including the same 25 Ember questions a day",
+      "Everything in Free",
       // Free while it's a Plus preview (lib/plans.ts), and the card says so: one word there changes both.
       `Review packets: your signed work over any period, ready for a performance review or a promotion case${FEATURE_ACCESS.reviewPacket === "plus-preview" ? " (free for everyone during launch)" : ""}`,
+      `More Ember: ${EMBER_DAILY_LIMIT.plus} requests a day total`,
       "Every company that looked in the last 90 days, not just this week",
       ...PLUS_SOON.map((x) => `${x} (coming soon)`),
     ],
