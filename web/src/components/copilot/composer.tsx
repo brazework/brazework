@@ -1,4 +1,5 @@
 "use client";
+import { emberCreditCost } from "@/lib/ember-credits";
 import { ArrowUp, Check, ChevronDown, ShieldCheck, Sparkles, Square, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
@@ -47,7 +48,7 @@ export function EmberComposer({ value, onChange, onSend, onStop, busy, actions =
             <li key={a.id} className="shrink-0">
               <button type="button" disabled={busy} onClick={() => pick(a)} aria-pressed={a.finish ? value.startsWith(a.text) : undefined}
                 className="inline-flex h-9 items-center gap-1.5 rounded-xl border border-line bg-surface px-3 text-[13px] font-medium whitespace-nowrap text-text-2 transition hover:border-line-strong hover:text-text active:scale-[0.97] disabled:opacity-50 aria-pressed:border-text aria-pressed:text-text">
-                <a.icon className="size-3.5 text-muted" aria-hidden="true" /> {a.label}
+                <a.icon className="size-3.5 text-muted" aria-hidden="true" /> {a.label}{!a.finish && <span className="text-xs text-muted">· {emberCreditCost("ask")}</span>}
               </button>
             </li>
           ))}
@@ -80,7 +81,7 @@ export function EmberComposer({ value, onChange, onSend, onStop, busy, actions =
             <ShieldCheck className="size-4 text-muted" aria-hidden="true" /> Asks first
           </Link>
           <Reads />
-          <span className="ml-auto hidden min-w-0 truncate pl-1 text-xs text-faint sm:block">{remaining !== null ? `${remaining} left today` : "Enter to send"}</span>
+          <span className="ml-auto shrink-0 text-xs text-muted">{emberCreditCost("ask")}</span>
           {busy ? (
             <button type="button" onClick={onStop} aria-label="Stop" className="ml-auto grid size-10 shrink-0 place-items-center rounded-xl border border-line text-text transition hover:bg-hover sm:ml-0"><Square className="size-3.5 fill-current" /></button>
           ) : (
@@ -88,6 +89,7 @@ export function EmberComposer({ value, onChange, onSend, onStop, busy, actions =
           )}
         </div>
       </form>
+      {remaining !== null && <p className="mt-2 px-1 text-right text-xs text-muted">{remaining} credits left today</p>}
       {started ? (
         <p role="status" className="mt-2.5 px-1 text-xs text-muted">{started.finish}</p>
       ) : (

@@ -90,6 +90,6 @@ test("company search excludes sponsorships and service fees never reduce club or
   const sponsor = TIERS.find((t) => t.id === "sponsor")!;
   assert.match(sponsor.note, /3,000 total/);
   assert.match(sponsor.points.join(" "), /5,500 total/);
-  assert.match(TIERS.find((t) => t.id === "free")!.points.join(" "), /15 requests a day/);
-  assert.match(TIERS.find((t) => t.id === "plus")!.points.join(" "), /50 requests a day total/);
+  assert.match(TIERS.find((t) => t.id === "free")!.points.join(" "), /15 credits a day/);
+  assert.match(TIERS.find((t) => t.id === "plus")!.points.join(" "), /50 credits a day total/);
 });

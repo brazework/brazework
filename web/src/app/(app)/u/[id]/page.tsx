@@ -196,7 +196,7 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
     <div id="top" className="scroll-mt-24">
       {/* Your own profile is the first page of Record: its other pages are a click away (lib/places.ts). */}
       {mine && <Suspense fallback={<PlaceTabsRow place="record" active="profile" />}><OwnProofTabs /></Suspense>}
-      {mine && sp.welcome === "1" && <FirstMilestoneWelcome supabase={supabase} userId={user.id} milestone={ms[0]} />}
+      {mine && sp.welcome === "1" && <FirstMilestoneWelcome supabase={supabase} userId={user.id} milestone={typeof sp.result === "string" ? ms.find((m) => m.id === sp.result) : ms[0]} student={p.account_type === "student"} />}
       {preview && (
         <p role="status" className="mb-4 flex items-start gap-2 rounded-2xl border border-line bg-surface-2/70 px-4 py-3 text-sm text-text-2">
           <Eye className="mt-0.5 size-4 shrink-0" /> This is how other members see your profile. Private projects, private milestones and anything not yet verified are left out.

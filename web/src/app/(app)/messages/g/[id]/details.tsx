@@ -1,4 +1,5 @@
 "use client";
+import { emberCreditCost } from "@/lib/ember-credits";
 import { Loader2, Sparkles } from "lucide-react";
 import { useState, useTransition } from "react";
 import { Avatar } from "@/components/ui";
@@ -13,7 +14,7 @@ export function CatchMeUp({ chatId }: { chatId: string }) {
   return (
     <div>
       <button type="button" disabled={pending} onClick={() => start(async () => { setError(""); const r = await catchMeUp(chatId); if (r.ok) setText(r.text ?? ""); else setError(r.message); })} className="bg-accent-grad inline-flex h-9 w-full items-center justify-center gap-1.5 rounded-full text-sm font-medium text-on-accent disabled:opacity-60">
-        {pending ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />} {text ? "Catch me up again" : "Catch me up"}
+        {pending ? <Loader2 className="size-4 animate-spin" /> : <Sparkles className="size-4" />} {text ? "Catch me up again" : "Catch me up"} · {emberCreditCost("chat_summary")}
       </button>
       {error && <p role="alert" className="mt-2 text-xs text-danger">{error}</p>}
       {text && <p className="mt-3 rounded-2xl bg-surface-2/70 p-3 text-sm leading-relaxed whitespace-pre-wrap text-text-2">{text}</p>}

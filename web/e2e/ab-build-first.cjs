@@ -49,7 +49,7 @@ const psql = (sql) => execSync(`docker exec -i forge-e2e-db psql -U postgres -h 
     const box = page.locator("#hero-build");
     await hydrated(box);
     await box.fill(BUILD);
-    await page.getByRole("link", { name: /Start with this build/ }).click();
+    await page.getByRole("link", { name: /Log your first result/ }).first().click();
     await page.waitForURL((u) => u.pathname === "/signup", { timeout: 20000 });
     await page.getByRole("status", { name: "Welcome from Product Hunt" }).waitFor({ timeout: 15000 });
   }, page);
@@ -137,9 +137,33 @@ const psql = (sql) => execSync(`docker exec -i forge-e2e-db psql -U postgres -h 
     await p2.getByRole("radio", { name: /Add it later/ }).click();
     await p2.getByRole("button", { name: /Next: who saw it/ }).click();
     await p2.getByText(/A signature needs proof to look at/).waitFor({ timeout: 10000 });
-    await p2.getByRole("button", { name: "Finish" }).click();
+    await p2.getByRole("button", { name: "Save draft" }).click();
     await p2.waitForURL(/\/u\/[0-9a-f-]{36}\?welcome=1/, { timeout: 30000 });
     await p2.getByRole("region", { name: "Welcome to Brazework" }).getByText(/as a draft/).waitFor({ timeout: 15000 });
+    const welcome = p2.getByRole("region", { name: "Welcome to Brazework" });
+    await welcome.getByRole("link", { name: "View your record" }).waitFor();
+    await welcome.getByRole("button", { name: "Add evidence", exact: true }).click();
+    await welcome.getByLabel("Evidence link").fill("https://example.com/podcast-evidence");
+    await welcome.getByRole("button", { name: "Save evidence" }).click();
+    await welcome.getByRole("button", { name: "Ask someone to sign", exact: true }).waitFor();
+    await welcome.getByRole("button", { name: "Ask someone to sign", exact: true }).click();
+    await welcome.getByLabel(/Signer.s email/).fill("witness@example.edu");
+    await welcome.getByRole("button", { name: "Send signature request" }).click();
+    await welcome.getByRole("alert").getByText(/email isn.t available/i).waitFor();
+  }, p2);
+  await step("with evidence and no signer, Save result and ask later offers a signing action", async () => {
+    await p2.context().clearCookies();
+    await go(p2, "/signup");
+    await newcomer(p2, `ava${n}@forge.edu`, "Ava");
+    await p2.locator("#first-build-text").fill("Finished a classroom audio project");
+    await p2.getByRole("button", { name: /Next: proof/ }).click();
+    await p2.getByLabel("Link to your proof").fill("https://example.com/audio-project");
+    await p2.getByRole("button", { name: /Next: who saw it/ }).click();
+    await p2.getByRole("radio", { name: /Not yet/ }).click();
+    await p2.getByRole("button", { name: "Save result and ask later" }).click();
+    const welcome = p2.getByRole("region", { name: "Welcome to Brazework" });
+    await welcome.getByRole("button", { name: "Ask someone to sign", exact: true }).waitFor();
+    await welcome.getByRole("link", { name: "View your record" }).waitFor();
   }, p2);
   await step("someone who hasn't built anything yet can set up their profile instead", async () => {
     await go(p2, "/signup");
@@ -160,6 +184,19 @@ const psql = (sql) => execSync(`docker exec -i forge-e2e-db psql -U postgres -h 
     await p3.getByRole("heading", { name: /Free for the people who build/ }).waitFor({ timeout: 15000 });
     for (const t of ["Builders", "Clubs, networks and schools", "Companies", "Book a pilot", "$15,000", "Every club included"]) await p3.getByText(t, { exact: false }).first().waitFor();
     if (await p3.getByText(/\bPro\b/).count()) throw new Error("the price list says Pro, which means pro verification");
+    const allowance = p3.getByText(/Free includes 15 credits a day/);
+    await allowance.waitFor();
+    const details = await allowance.innerText();
+    for (const text of ["50 credits a day", "1 credit", "2 credits", "3 credits", "Web and iPhone share one balance"]) {
+      if (!details.includes(text)) throw new Error(`Ember pricing is missing ${text}`);
+    }
+  }, p3);
+  await step("the landing page shows both Ember balances and Plus explains the waitlist", async () => {
+    await go(p3, "/");
+    await p3.getByText(/15 Ember credits a day on Free and 50 on active Plus/).waitFor();
+    await go(p3, "/plus");
+    await p3.getByText(/Plus also includes 50 Ember credits a day/).waitFor();
+    await p3.getByRole("link", { name: "Log in to join the waitlist" }).waitFor();
   }, p3);
   await ctx3.close();
 

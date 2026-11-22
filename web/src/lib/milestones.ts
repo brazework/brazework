@@ -22,7 +22,7 @@ import { buildProofSharedEmail } from "@/lib/witness-invite";
 // validate input and turn database errors into plain sentences.
 
 // linkedin: the ask needs the member's LinkedIn link first; the form shows the field (Linear FIX-214).
-export type MilestoneState = { ok: boolean; message: string; linkedin?: boolean };
+export type MilestoneState = { ok: boolean; message: string; linkedin?: boolean; id?: string };
 
 const add = z.object({
   projectId: z.string().min(1).max(64),
@@ -95,10 +95,10 @@ export async function addMilestone(_: MilestoneState, form: FormData): Promise<M
     // No ask went out: don't leave a milestone waiting on nobody.
     if (!asked.ok) { await supabase.from("milestones").delete().eq("id", made.id).eq("owner_id", user.id); return asked; }
     revalidatePath(`/u/${user.id}`);
-    return asked;
+    return { ...asked, id: made.id };
   }
   revalidatePath(`/u/${user.id}`);
-  return { ok: true, message: "Sent to the club for verification." };
+  return { ok: true, message: "Sent to the club for verification.", id: made.id };
 }
 
 // More evidence after it's logged (FIX-238, supabase/milestone-late-evidence.sql): a link added to a

@@ -5,6 +5,7 @@ import { emberSystem, frame, runAgent } from "@/lib/copilot-agent";
 import { pageLine } from "@/lib/copilot-page";
 import { presetInstruction } from "@/lib/copilot-presets";
 import { TOOLS, makeExec } from "@/lib/copilot-tools";
+import { takeEmberCredits } from "@/lib/ember-quota";
 import { viewerFromToken } from "@/lib/supabase/server";
 
 // POST /api/copilot: streams Copilot's reply as plain text, so it types out live in the UI.
@@ -28,9 +29,8 @@ export async function POST(req: Request) {
   if (!ctx) return json(401, "Log in again to ask Ember.");
   if (!(await copilotEnabled())) return json(503, "Ember isn't switched on here yet.");
 
-  const { data: left, error } = await ctx.supabase.rpc("copilot_take");
-  if (error) return json(503, "Ember isn't available right now. Try again in a minute.");
-  if (typeof left !== "number" || left < 0) return json(429, "You've used your daily Ember allowance. It resets at midnight UTC.");
+  const credits = await takeEmberCredits(ctx.supabase, r.task);
+  if (!credits.ok) return json(credits.status, credits.message);
 
   const { instructions, maxTokens } = taskPrompt(r);
   const messages: Anthropic.MessageParam[] = [...(r.history ?? []), { role: "user", content: r.input }];
@@ -59,5 +59,5 @@ export async function POST(req: Request) {
     },
     cancel() { abort.abort(); },
   });
-  return new Response(body, { headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store", "X-Copilot-Remaining": String(left) } });
+  return new Response(body, { headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store", "X-Copilot-Remaining": String(credits.remaining) } });
 }

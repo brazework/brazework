@@ -52,7 +52,7 @@ async function Plus({ searchParams }: { searchParams: PageProps<"/plus">["search
   return (
     <>
       <h1 className="text-[clamp(2rem,5vw,2.75rem)] leading-[1.05] font-semibold tracking-[-0.03em]">{PLUS.name}</h1>
-      <p className="mt-3 text-[15px] leading-relaxed text-muted">Your signed work, ready for your next review or promotion, and every company that looked. Plus also includes {EMBER_DAILY_LIMIT.plus} Ember requests a day.</p>
+      <p className="mt-3 text-[15px] leading-relaxed text-muted">Your signed work, ready for your next review or promotion, and every company that looked. Plus also includes {EMBER_DAILY_LIMIT.plus} Ember credits a day.</p>
       <section className="mt-8 rounded-[1.25rem] border border-line bg-surface p-6 sm:p-8">
         <p className="text-3xl font-semibold tracking-tight">{tier.price}</p>
         <p className="mt-1 text-sm text-muted">{tier.note}</p>
@@ -72,7 +72,7 @@ async function Plus({ searchParams }: { searchParams: PageProps<"/plus">["search
               <PlusButton label={onSale ? `Get ${PLUS.name}` : "Join the waitlist"} />
             )
           ) : (
-            <Link href="/login?next=/plus" className="inline-flex h-11 items-center rounded-lg bg-accent px-5 text-[15px] font-medium text-on-accent hover:opacity-90">Log in to get {PLUS.name}</Link>
+            <Link href="/login?next=/plus" className="inline-flex h-11 items-center rounded-lg bg-accent px-5 text-[15px] font-medium text-on-accent hover:opacity-90">{onSale ? `Log in to get ${PLUS.name}` : "Log in to join the waitlist"}</Link>
           )}
           {!has && !onSale && <p className="mt-3 text-sm text-muted">{PLUS.name} opens soon. Join the waitlist and we&apos;ll email you, at the launch price.</p>}
           {!has && onSale && <p className="mt-3 text-sm text-muted">Cancel anytime, from Settings. Your record stays yours either way.</p>}

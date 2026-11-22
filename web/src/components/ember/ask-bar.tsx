@@ -1,4 +1,5 @@
 "use client";
+import { emberCreditCost } from "@/lib/ember-credits";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { X } from "lucide-react";
 import Link from "next/link";
@@ -81,7 +82,7 @@ function AskAnswer({ a, busy, error, remaining, onAsk, onClose }: { a: Answer; b
               {error && <p role="alert" className="text-sm text-text-2">{error}</p>}
               {!busy && next.length > 0 && (
                 <div className="mt-3 flex flex-wrap gap-1.5 whitespace-normal">
-                  {next.map((n) => <button key={n} type="button" onClick={() => onAsk(n)} className="rounded-full border border-line px-3 py-1 text-left text-xs text-text-2 transition hover:border-line-strong hover:text-text">{n}</button>)}
+                  {next.map((n) => <button key={n} type="button" onClick={() => onAsk(n)} className="rounded-full border border-line px-3 py-1 text-left text-xs text-text-2 transition hover:border-line-strong hover:text-text">{n} · {emberCreditCost("ask")}</button>)}
                 </div>
               )}
             </div>
@@ -89,7 +90,7 @@ function AskAnswer({ a, busy, error, remaining, onAsk, onClose }: { a: Answer; b
           {(!busy || remaining !== null) && (
             <div className="flex items-center gap-3 border-t border-line px-3 py-2 text-xs sm:px-4">
               <Link href="/copilot" className="font-medium text-text-2 underline-offset-4 hover:text-text hover:underline">Keep going on Ember&apos;s page</Link>
-              {remaining !== null && <span className="ml-auto text-faint">{remaining} left today</span>}
+              {remaining !== null && <span className="ml-auto text-faint">{remaining} credits left today</span>}
             </div>
           )}
         </motion.section>

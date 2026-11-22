@@ -1,3 +1,4 @@
+import { emberCreditCost } from "@/lib/ember-credits";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { Footer } from "@/components/landing/closing";
@@ -18,7 +19,7 @@ export const metadata: Metadata = {
 // companies, clubs and schools pay, which the landing page links here for. With the questions
 // people ask about it. Static.
 const QUESTIONS: [string, string][] = [
-  ["How much Ember can I use?", `Free includes ${EMBER_DAILY_LIMIT.free} requests a day. An active Plus plan raises your total to ${EMBER_DAILY_LIMIT.plus} a day. Sending Ember a message, asking for a draft, or starting an AI action like a chat summary uses one request. Web and iPhone share one allowance. ${EMBER_RESET} There are no credits to buy. Connecting your own AI has no extra Brazework charge. Your AI provider’s plan and limits apply.`],
+  ["How much Ember can I use?", `Free includes ${EMBER_DAILY_LIMIT.free} credits a day. Active Plus includes ${EMBER_DAILY_LIMIT.plus} credits a day. An Ember message costs ${emberCreditCost("ask")}. Polishing a post, asking Ember in a group, summarizing a chat or organizing a project costs ${emberCreditCost("post")} each. Drafting or polishing a project write-up costs ${emberCreditCost("writeup")}. Web and iPhone share one balance. ${EMBER_RESET} Connecting your own AI has no extra Brazework charge. Your AI provider’s plan and limits apply.`],
   ["Is the free plan really free?", "Yes. Your record, every signature, your clubs, and being found by companies are free for good, with no ads. Companies pay so builders don't have to."],
   [`What is ${PLUS.name}?`, `An optional upgrade led by review packets: signed work ready for a performance review or promotion. Review packets are free for everyone during launch. Professional Plus is $${PLUS.everyoneYear}/year or $${PLUS.everyone}/month; students pay $${PLUS.studentYear}/year or $${PLUS.student}/month. Plus also shows every company that looked in the last 90 days. Custom profile links, PDF portfolios and more AI drafts from your tools are coming soon. Join the waitlist while paid plans are being set up. Nothing in Free moves to Plus.`],
   ["Why do signatures matter?", "Anyone can type a claim. A milestone on Brazework is signed by someone who saw the work: a club's officers, a professor, a coworker. That's what a company can trust."],

@@ -1,3 +1,4 @@
+import { emberCreditCost } from "@/lib/ember-credits";
 import { ArrowRight, BarChart3, Lock, Users } from "lucide-react";
 import Link from "next/link";
 import { clubUpdateHref } from "@/lib/copilot-presets";
@@ -77,7 +78,7 @@ export function DashboardView({ r, range, likes, comments, follows, views, repor
             <div className="font-semibold">Quiet {label}. Let&apos;s change that.</div>
             <p className="mt-0.5 text-sm text-muted">Posts with a result or a photo get the most replies. Ember can find a club to join or turn your notes into a post.</p>
           </div>
-          <Link href={`/copilot?q=${encodeURIComponent("How can I get more people to see my work on Brazework? Look at my profile and suggest three concrete next steps.")}`} className="bg-text inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-lg px-4 text-sm font-medium text-surface sm:w-auto">Ask Ember <ArrowRight className="size-4" /></Link>
+          <Link href={`/copilot?q=${encodeURIComponent("How can I get more people to see my work on Brazework? Look at my profile and suggest three concrete next steps.")}`} className="bg-text inline-flex h-10 w-full items-center justify-center gap-1.5 rounded-lg px-4 text-sm font-medium text-surface sm:w-auto">Ask Ember · {emberCreditCost("ask")} <ArrowRight className="size-4" /></Link>
         </Panel>
       )}
 
@@ -160,7 +161,7 @@ export function DashboardView({ r, range, likes, comments, follows, views, repor
                   {c.upcoming[0] && <p className="mt-3 truncate text-xs text-muted">Next: <span className="text-text-2">{c.upcoming[0].title}</span> · {c.upcoming[0].going} going</p>}
                   <div className="mt-auto flex gap-3 pt-4 text-sm">
                     <Link href={`/c/${id}/manage?tab=report`} className="font-medium hover:underline">Full report</Link>
-                    <Link href={clubUpdateHref(id, c.name)} className="inline-flex items-center gap-1 text-muted hover:text-text">Draft the update with Ember <ArrowRight className="size-3.5" /></Link>
+                    <Link href={clubUpdateHref(id, c.name)} className="inline-flex items-center gap-1 text-muted hover:text-text">Draft with Ember · {emberCreditCost("ask")} <ArrowRight className="size-3.5" /></Link>
                   </div>
                 </Panel>
               );

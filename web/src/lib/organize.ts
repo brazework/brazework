@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { COPILOT_MODEL, copilotEnabled } from "@/lib/copilot";
 import { ALL_TOPICS } from "@/lib/forge";
 import { TOOLS, toolsInText } from "@/lib/stack";
+import { takeEmberCredits } from "@/lib/ember-quota";
 import { getViewer } from "@/lib/supabase/server";
 
 // "Organize with Ember": Ember reads a project (title, summary, write-up) and suggests its "Built with"
@@ -21,8 +22,8 @@ export async function organizeProject(projectId: string): Promise<Suggestion> {
     supabase.from("project_details").select("details, link").eq("project_id", projectId).maybeSingle(),
   ]);
   if (!p) return { ok: false, message: "Only the project's owner can organize it." };
-  const { data: left } = await supabase.rpc("copilot_take");
-  if (typeof left !== "number" || left < 0) return { ok: false, message: "You've used your daily Ember allowance. It resets at midnight UTC." };
+  const credits = await takeEmberCredits(supabase, "organize");
+  if (!credits.ok) return { ok: false, message: credits.message };
 
   const text = `${p.title}\n${p.summary}\n${d?.details ?? ""}\n${d?.link ?? ""}`.slice(0, 6000);
   const catalog = TOOLS.map((t) => t.name).join(", ");

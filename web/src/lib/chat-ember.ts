@@ -4,11 +4,12 @@ import { revalidatePath } from "next/cache";
 import { COPILOT_MODEL, copilotEnabled, memberContext } from "@/lib/copilot";
 import { runAgent } from "@/lib/copilot-agent";
 import { TOOLS, makeExec } from "@/lib/copilot-tools";
+import { takeEmberCredits } from "@/lib/ember-quota";
 
 // Ember in group chats: anyone in a chat can ask it with "@Ember …"; it reads the recent conversation,
 // may look things up with its read-only tools, and answers the group (posted by post_ember_reply, shown
 // as "Ember · asked by <name>"). "Catch me up" is the same reading, answered privately. Both count
-// against the member's daily Copilot limit.
+// against the member's shared Ember credits.
 
 type R = { ok: boolean; message: string; text?: string };
 const ID_RE = /^[A-Za-z0-9-]{1,64}$/;
@@ -27,9 +28,6 @@ async function transcript(chatId: string) {
   const lines = ((rows ?? []) as { sender_first: string; sender_last: string; body: string; ember: boolean; announcement: boolean; created_at: string }[])
     .reverse()
     .map((m) => `[${m.created_at.slice(0, 16).replace("T", " ")}] ${m.ember ? "Ember" : `${m.sender_first} ${m.sender_last}`.trim()}${m.announcement ? " (announcement)" : ""}: ${m.body.replace(/\s+/g, " ").slice(0, 400)}`);
-  const { data: left, error } = await ctx.supabase.rpc("copilot_take");
-  if (error) return { error: "Ember isn't available right now." } as const;
-  if (typeof left !== "number" || left < 0) return { error: "You've used your daily Ember allowance. It resets at midnight UTC." } as const;
   return { ctx, title, lines } as const;
 }
 
@@ -54,6 +52,8 @@ export async function askEmberInChat(chatId: string, question: string): Promise<
   if (!q) return { ok: false, message: "Ask Ember something after @Ember." };
   const t = await transcript(chatId);
   if ("error" in t) return { ok: false, message: t.error ?? "" };
+  const credits = await takeEmberCredits(t.ctx.supabase, "group_ask");
+  if (!credits.ok) return { ok: false, message: credits.message };
   const system = `${t.ctx.system}\n\nYou are Ember, answering inside ${t.title} on Brazework, where everyone in the chat will read your reply. Answer the question from ${t.ctx.name} for the group: short (under 120 words), friendly, concrete, plain text. Use the conversation for context and your tools for anything on Brazework (clubs, events, people, GitHub). Never invent facts; say what you don't know. Don't address only the asker unless the question is personal.`;
   try {
     const text = await answer(system, `Recent messages in the chat:\n${t.lines.join("\n") || "(none yet)"}\n\nQuestion from ${t.ctx.name}: ${q}`, t.ctx, true);
@@ -72,6 +72,8 @@ export async function catchMeUp(chatId: string): Promise<R> {
   const t = await transcript(chatId);
   if ("error" in t) return { ok: false, message: t.error ?? "" };
   if (!t.lines.length) return { ok: true, message: "", text: "Nothing has been said here yet." };
+  const credits = await takeEmberCredits(t.ctx.supabase, "chat_summary");
+  if (!credits.ok) return { ok: false, message: credits.message };
   const system = `${t.ctx.system}\n\nYou are Ember, privately catching ${t.ctx.name} up on ${t.title}. Summarize what matters in 3 to 5 short "-" bullets: decisions, dates and times, asks aimed at ${t.ctx.name}, and anything still open. Plain text. Only what the messages say.`;
   try {
     const text = await answer(system, t.lines.join("\n"), t.ctx, false);

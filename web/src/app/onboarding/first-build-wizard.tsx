@@ -245,7 +245,7 @@ export function FirstBuildWizard({ firstName, student, userId, clubs, askLinkedi
                 <Button type="button" variant="outline" size="lg" onClick={() => go("proof")} disabled={pending}><ArrowLeft className="size-4" /> Back</Button>
                 <Button type="submit" size="lg" disabled={pending}>
                   {pending && <Loader2 className="size-4 animate-spin" />}
-                  {pending ? "Putting it on your record…" : !hasProof || s.signer === "none" ? "Finish" : s.signer === "club" ? `Send to ${club?.name ?? "the club"}` : "Ask for a signature"}
+                  {pending ? "Putting it on your record…" : !hasProof ? "Save draft" : s.signer === "none" ? "Save result and ask later" : s.signer === "club" ? `Send to ${club?.name ?? "the club"}` : "Ask for a signature"}
                 </Button>
               </div>
             </form>

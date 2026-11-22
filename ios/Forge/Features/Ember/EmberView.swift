@@ -76,7 +76,7 @@ struct EmberView: View {
         FlowLayout(spacing: 8) {
           ForEach(EmberLogic.actions(field: session.profile?.field ?? "", student: student)) { a in
             Button { tap(a) } label: {
-              Text(a.label).font(.subheadline.weight(.medium)).foregroundStyle(p.text)
+              Text(a.finish == nil ? "\(a.label) · 1 credit" : a.label).font(.subheadline.weight(.medium)).foregroundStyle(p.text)
                 .padding(.horizontal, 14).padding(.vertical, 9)
                 .background(p.surface, in: Capsule())
                 .overlay(Capsule().strokeBorder(p.border, lineWidth: 0.5))
@@ -217,7 +217,7 @@ struct EmberView: View {
         .disabled(busy || input.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
         .accessibilityLabel("Send")
       }
-      Text(left.map { "Ember prepares, you approve. \($0) Ember requests left today." } ?? "Ember prepares, you approve. It never posts or signs on its own.")
+      Text(left.map { "1 credit per message · \($0) credits left today." } ?? "1 credit per message. Ember prepares, you approve.")
         .font(.caption2).foregroundStyle(p.faint)
     }
     .padding(.horizontal, 16).padding(.top, 8).padding(.bottom, 8)

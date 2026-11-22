@@ -102,3 +102,4 @@ milestone-late-evidence
 founding-members
 launch-metrics
 ember-allowances
+ember-credits
