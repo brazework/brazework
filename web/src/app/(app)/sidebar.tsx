@@ -1,11 +1,11 @@
 "use client";
 import { AnimatePresence, motion } from "motion/react";
-import { BadgeCheck, Bell, Bookmark, CalendarDays, FolderGit2, House, Inbox, LayoutDashboard, LogOut, Network, PanelLeftClose, PanelLeftOpen, PenLine, Plus, Search, Settings, Sparkles, Sun, Trophy, UserRound, Users, X } from "lucide-react";
+import { BadgeCheck, Bell, Bookmark, CalendarDays, Compass, FolderGit2, House, Inbox, LayoutDashboard, LogOut, Network, PanelLeftClose, PanelLeftOpen, PenLine, Plus, Search, Settings, Sparkles, Sun, Trophy, UserRound, Users, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { ThemeToggle } from "@/components/theme-toggle";
-import { UpdatesButton, UpdatesDialog } from "@/components/tour/tour-mount";
+import { UpdatesButton, UpdatesDialog, startTour } from "@/components/tour/tour-mount";
 import { Avatar, Logo, menuCls, menuItemCls } from "@/components/ui";
 import { MyStatus, WithPresence } from "@/components/presence/presence";
 import { cn } from "@/lib/forge";
@@ -203,6 +203,7 @@ function YouMenu({ first, last, userId, avatar, collapsed, path }: { first: stri
             <Link href="/settings" onClick={() => setOpen(false)} className={menuItemCls}><Settings className="size-4" /> Settings</Link>
             <div className="flex items-center justify-between px-2.5 py-1 text-sm text-text-2">Appearance <ThemeToggle className={TOP_BTN} /></div>
             <button type="button" onClick={() => { setOpen(false); setUpdates(true); }} className={menuItemCls}><Sparkles className="size-4" /> What&apos;s new</button>
+            <button type="button" onClick={() => { setOpen(false); startTour(); }} className={menuItemCls}><Compass className="size-4" /> Take the tour</button>
             <form action="/auth/signout" method="post" className="mt-1 border-t border-line pt-1">
               <button className={menuItemCls}><LogOut className="size-4" /> Log out</button>
             </form>
@@ -274,7 +275,7 @@ export function MobileBar({ first, last, badges, avatar }: { first: string; last
       </header>
 
       {/* Floating tab bar above the home indicator: the five places. */}
-      <motion.nav layoutRoot aria-label="Main" className="fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+0.5rem)] z-40 md:hidden">
+      <motion.nav layoutRoot data-tour="menu" aria-label="Main" className="fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+0.5rem)] z-40 md:hidden">
         <div className="glass grid grid-cols-5 items-center rounded-2xl border border-line p-1 shadow-[var(--shadow-float)]">
           {TABS.map(tab)}
         </div>
@@ -311,6 +312,7 @@ export function MobileBar({ first, last, badges, avatar }: { first: string; last
         </div>
         <div className="mt-2 flex items-center justify-between rounded-xl px-3 py-1 text-sm text-muted">Appearance <ThemeToggle /></div>
         <div className="mt-1"><UpdatesButton /></div>
+        <button type="button" onClick={() => { setSheet(null); startTour(); }} className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm text-muted transition hover:bg-hover hover:text-text"><Compass className="size-[18px]" /> Take the tour</button>
         <form action="/auth/signout" method="post" className="mt-1">
           <button className="flex w-full items-center gap-3 rounded-xl px-3 py-3 text-sm text-muted transition hover:bg-hover hover:text-text"><LogOut className="size-[18px]" /> Log out</button>
         </form>

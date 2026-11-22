@@ -86,7 +86,8 @@ from (values
   (86, 'personal-email-signers', to_regprocedure('public.personal_email_signers_ready()') is not null),
   (87, 'linkedin-optional', to_regprocedure('public.linkedin_optional_ready()') is not null),
   (88, 'ember-memory', to_regprocedure('public.ember_memory_ready()') is not null),
-  (89, 'playbook-lanes',         to_regprocedure('public.playbook_lanes_ready()') is not null)
+  (89, 'school-link-email', to_regprocedure('public.school_link_email_ready()') is not null),
+  (90, 'playbook-lanes',         to_regprocedure('public.playbook_lanes_ready()') is not null)
 ) as s(step, file, present)
 order by step;
 

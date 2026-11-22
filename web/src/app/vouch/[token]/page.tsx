@@ -1,3 +1,4 @@
+import { proofSource } from "@/lib/proof-source";
 import type { Metadata } from "next";
 import { isMediaUrl } from "@/lib/media";
 import { ExternalLink, FileCheck2 } from "lucide-react";
@@ -70,7 +71,7 @@ async function Vouch({ params }: { params: PageProps<"/vouch/[token]">["params"]
         {links.length > 0 && (
           <ul className="mt-3 flex flex-col gap-1.5">
             {links.map((u) => (
-              <li key={u}><a href={u} target="_blank" rel="noopener noreferrer" className="inline-flex max-w-full items-center gap-1.5 text-sm font-medium underline-offset-4 hover:underline"><FileCheck2 className="size-4 shrink-0" /><span className="truncate">{u.replace(/^https:\/\//, "")}</span><ExternalLink className="size-3.5 shrink-0 text-faint" /></a></li>
+              <li key={u}><a href={u} target="_blank" rel="noopener noreferrer" className="inline-flex max-w-full items-center gap-1.5 text-sm font-medium underline-offset-4 hover:underline"><FileCheck2 className="size-4 shrink-0" /><span className="min-w-0"><span className="block truncate">{proofSource(u)?.label ?? "Proof"}</span><span className="block truncate text-xs font-normal text-muted">{u.replace(/^https:\/\//, "")}</span></span><ExternalLink className="size-3.5 shrink-0 text-faint" /></a></li>
             ))}
           </ul>
         )}

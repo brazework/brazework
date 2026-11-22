@@ -54,6 +54,15 @@ export async function proxy(request: NextRequest) {
   }
   // Signed in: the home page is your feed.
   if (signedIn && path === "/") return redirect("/feed");
+  // "/profile" is your own profile. Sent there before the page renders, so the sidebar is drawn for the
+  // page you land on (a redirect from inside the page left it marked for /profile: a hydration mismatch).
+  if (signedIn && path === "/profile" && /^[0-9a-f-]{36}$/i.test(String(data?.claims?.sub ?? ""))) {
+    const url = request.nextUrl.clone();
+    url.pathname = `/u/${data!.claims!.sub}`;
+    const r = NextResponse.redirect(url);
+    response.cookies.getAll().forEach((c) => r.cookies.set(c));
+    return r;
+  }
   if (!signedIn && APP_PATHS.some((p) => path.startsWith(p))) return redirect("/login");
   if (signedIn && AUTH_PATHS.some((p) => path.startsWith(p))) return redirect("/feed");
   return response;

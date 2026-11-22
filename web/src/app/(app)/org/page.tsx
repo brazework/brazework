@@ -11,6 +11,8 @@ import { requestTime } from "@/lib/forge";
 import { getViewer } from "@/lib/supabase/server";
 import { EventEditor, EventRow, RegisterOrg } from "./org-client";
 import { SchoolLinkDecision } from "@/components/clubs/school-link-decision";
+import { dbFeatures } from "@/lib/db-features";
+import { SchoolLinkBackers } from "@/components/clubs/school-link-backers";
 
 export const metadata: Metadata = { title: "Your organization" };
 
@@ -46,6 +48,8 @@ async function Org() {
   const log = events.filter((e) => inLog(e, now));
   // An official school account (set up by Brazework, step 56) reviews the clubs that say they operate
   // under it, and sees the ones it has verified. That's the start of the school's view.
+  // Which officers' confirmed school addresses back each request (step 89, FIX-237).
+  const backersOn = (await dbFeatures()).schoolLinkEmail;
   const officialSchool = org.type === "school" && (org as Organization & { official?: boolean }).official === true && !!org.domain;
   type ClubLink = { community_id: string; school_name: string; evidence_url: string; status: string; requester_at_school: boolean; requested_at: string; communities: { name: string; member_count: number } | null };
   const clubLinks = officialSchool
@@ -68,6 +72,7 @@ async function Org() {
                   <p className="font-medium"><Link href={`/c/${a.community_id}`} className="hover:underline">{a.communities?.name ?? "A club"}</Link></p>
                   <p className="mt-0.5 text-xs text-faint">{a.communities?.member_count ?? 0} members · {a.requester_at_school ? "asked from a school email" : "not asked from a school email"}</p>
                   <a href={a.evidence_url} target="_blank" rel="noopener noreferrer nofollow" className="mt-1.5 block text-sm break-all text-text-2 underline underline-offset-2">{a.evidence_url}</a>
+                  {backersOn && <SchoolLinkBackers cid={a.community_id} domain={org.domain!} />}
                 </div>
                 <SchoolLinkDecision cid={a.community_id} />
               </Panel>

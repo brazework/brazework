@@ -156,7 +156,7 @@ export const UPDATES: ForgeUpdate[] = [
     ],
     tour: [
       { route: ROUTES.projects, target: "projects-tab", title: "Projects", body: "Your projects live on your profile. Add one with New project, and choose whether it's public or private." },
-      { route: ROUTES.projects, target: "projects-new", title: "Share it", body: "Keep \"Share it to the feed\" on and people interested in its topics see it in For you. Post an update from the project as it moves along." },
+      { route: "/projects", target: "projects", title: "Share it", body: "Keep \"Share it to the feed\" on and people interested in its topics see it in For you. Post an update from the project as it moves along." },
     ],
   },
   {
@@ -247,19 +247,26 @@ export const UPDATES: ForgeUpdate[] = [
 // Updates that announce something (not previews of what's next).
 export const RELEASED = UPDATES.filter((u) => u.kind !== "Next");
 
+// The first-time tour: what a new member needs explained, on the pages where it lives today (the five
+// places in lib/places.ts). Every target is a [data-tour] the app renders on that page (checked in
+// tests/tours.test.ts). A step whose target isn't on screen (a feature switched off, a phone layout
+// without it) is skipped, never shown over nothing.
+export const WELCOME_TARGETS = ["menu", "search", "feed-tabs", "composer", "projects", "proof", "share", "clubs", "ai-tools", "bell"] as const;
+
 export function welcomeSteps(firstName: string): TourStep[] {
   return [
-    { route: ROUTES.feed, title: `Welcome to Brazework, ${firstName || "there"}`, body: "Here's a one-minute look at the essentials. Close this at any time, or use Back to see a step again." },
-    { route: ROUTES.feed, target: "feed-tabs", title: "Your feed", body: "For you only shows posts that match your interests, with a note saying why. Latest has every post, Following has the people you follow, and Clubs has your clubs." },
-    { route: ROUTES.feed, target: "search", title: "Ask Ember, search, or jump anywhere", body: "One bar at the top of every page. Type a name, field or club to search and connect or join from the results, or ask Ember with ⌘K." },
-    { route: ROUTES.feed, target: "composer", title: "Share your work", body: "Post an update, question, result or project. Add up to 3 topics so it reaches the people interested in them." },
-    { route: ROUTES.feed, target: "interests", title: "Your focus areas", body: "Filter narrows the feed by kind of post or by one of your topics. Your interests decide what's in For you and which people and events we suggest; change them in Settings." },
-    { route: ROUTES.feed, target: "menu", title: "Five places", body: "Today is what needs you. Build is what you're making. Club is your team. Proof is what you've proven and who looked. Inbox is who's reaching out. Settings are on your photo at the bottom." },
-    { route: ROUTES.feed, target: "bell", title: "Notifications", body: "Likes, comments, new followers and connection requests show up here." },
-    { route: ROUTES.projects, target: "projects-tab", title: "Your profile and projects", body: "Show what you've built. Projects can be public or private, and you can share them to the feed." },
-    { route: ROUTES.profile, target: "analytics", title: "Your dashboard", body: "See how people find your profile and how your posts are doing over time. Only you can see it." },
-    { route: ROUTES.feed, target: "updates-panel", title: "Brazework updates", body: "Recent changes and what's coming next. Click any update to read what changed. When a new feature ships, we'll show you around it." },
-    { route: ROUTES.feed, title: "You're all set", body: "You can replay this tour any time from Settings, under Help." },
+    { route: ROUTES.feed, title: `Welcome to Brazework, ${firstName || "there"}`, body: "A one-minute look at how it works: log what you build, get it signed by someone who saw it, and let that record speak for you. Close this at any time, or use Back to see a step again." },
+    { route: ROUTES.feed, target: "menu", title: "Five places", body: "Home is what needs you. Projects is what you're making. Clubs is your team. Record is what you've proven and who looked. Inbox is who's reaching out." },
+    { route: ROUTES.feed, target: "search", title: "Ask Ember, or log what you did", body: "One bar above every page. Search people and clubs, ask Ember, Brazework's assistant, a question, or tell it what you built today and it drafts the update for you." },
+    { route: ROUTES.feed, target: "feed-tabs", title: "Your feed", body: "For you shows posts that match your interests, with a note saying why. Latest has every post, Following the people you follow, and Clubs your clubs." },
+    { route: ROUTES.feed, target: "composer", title: "Share progress", body: "Post an update, a result or a question. Add up to 3 topics so it reaches the people who care about them." },
+    { route: "/projects", target: "projects", title: "Projects", body: "Each project keeps its updates, files and 3D models together, with teammates if you build with others. A project stays private until you're ready to show it." },
+    { route: ROUTES.profile, target: "proof", title: "Proof", body: "Log a milestone with a link to the evidence, then get it signed: by someone who saw it (any real email; the signature says what kind), by your club's officers, or by GitHub when the code shows it." },
+    { route: ROUTES.profile, target: "share", title: "Your record", body: "Everything signed adds up on your profile. Share its link or its résumé, and people see what was proven and who signed it." },
+    { route: "/communities", target: "clubs", title: "Clubs", body: "Your chapter, team or lab: members, events and chat in one place. Officers sign the work they saw, and a club its school has verified says so." },
+    { route: "/settings/tools", target: "ai-tools", title: "Ask your AI", body: "Connect Claude or ChatGPT and it can read your Brazework and add what you did, after your yes." },
+    { route: ROUTES.feed, target: "bell", title: "Notifications", body: "Signatures, comments, follows and requests show up here." },
+    { route: ROUTES.feed, title: "You're all set", body: "Take the tour again any time from the menu on your photo, or from Settings, under Help." },
   ];
 }
 
@@ -300,4 +307,40 @@ export function onRoute(route: string, pathname: string, search: URLSearchParams
   if (!pathname.startsWith(path)) return false;
   for (const [k, v] of new URLSearchParams(query)) if (search.get(k) !== v) return false;
   return true;
+}
+
+// The spotlight's box on screen, in pixels.
+export type TourBox = { top: number; left: number; width: number; height: number };
+
+// Where the card goes so it never covers what the step is pointing at: the first clear spot among the
+// four corners (bottom right first, where it's least in the way), then just below or above the target.
+// On a phone the card spans the screen, so it's the bottom or the top. If nothing is fully clear (a
+// target that fills the screen), the spot that covers the least of it.
+export function placeCard(box: TourBox | null, h: number, W = window.innerWidth, H = window.innerHeight) {
+  const phone = W < 640;
+  const m = phone ? 16 : 24;
+  const width = phone ? Math.min(448, W - 2 * m) : 400;
+  const center = (W - width) / 2;
+  const clampTop = (t: number) => Math.max(m, Math.min(t, H - m - h));
+  const clampLeft = (l: number) => Math.max(m, Math.min(l, W - m - width));
+  const spots = phone
+    ? [{ left: center, top: H - m - h }, { left: center, top: m }]
+    : [
+        { left: W - m - width, top: H - m - h },
+        { left: W - m - width, top: m },
+        { left: m, top: H - m - h },
+        { left: m, top: m },
+      ];
+  if (box) {
+    spots.push({ left: phone ? center : clampLeft(box.left), top: clampTop(box.top + box.height + 12) });
+    spots.push({ left: phone ? center : clampLeft(box.left), top: clampTop(box.top - h - 12) });
+  }
+  const covered = (s: { left: number; top: number }) => {
+    if (!box) return 0;
+    const x = Math.min(s.left + width, box.left + box.width) - Math.max(s.left, box.left);
+    const y = Math.min(s.top + h, box.top + box.height) - Math.max(s.top, box.top);
+    return x > 0 && y > 0 ? x * y : 0;
+  };
+  const best = spots.reduce((a, s) => (covered(s) < covered(a) ? s : a), spots[0]);
+  return { ...best, top: Math.max(m, best.top), width };
 }

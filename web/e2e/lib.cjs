@@ -42,7 +42,18 @@ async function as(b, email, viewport = { width: 1440, height: 950 }, opts = {}) 
     }
   }
 }
-async function closeTour(page) { await page.waitForTimeout(900); const t = page.getByRole("button", { name: "Close tour" }); if (await t.isVisible().catch(() => false)) await t.click(); }
+// The tour locks the page while it runs (FIX-236), so close it before doing anything else. The tour
+// says on <html> when it has decided (data-tour-state: "pending" or "none"); wait for that rather than
+// a fixed delay, then close the card if one is coming (it starts on the feed).
+async function closeTour(page) {
+  const state = await page.waitForFunction(() => document.documentElement.dataset.tourState, null, { timeout: 15000 }).then((h) => h.jsonValue()).catch(() => "none");
+  const t = page.getByRole("button", { name: "Close tour" });
+  if (state === "pending") await t.waitFor({ timeout: 5000 }).catch(() => {});
+  if (await t.isVisible().catch(() => false)) {
+    await t.click();
+    await page.locator("[data-tour-lock]").waitFor({ state: "detached", timeout: 5000 }).catch(() => {});
+  }
+}
 // Navigate, then wait until React has hydrated the page (its root element carries React props),
 // so typing behaves like a person who waits a beat.
 async function go(page, path) {

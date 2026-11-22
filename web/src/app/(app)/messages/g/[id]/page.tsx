@@ -1,3 +1,4 @@
+import { avatarSrc } from "@/lib/media";
 import { ArrowLeft, CalendarDays, Hash, LogOut, Users } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -43,6 +44,10 @@ async function Group({ params }: { params: PageProps<"/messages/g/[id]">["params
       : c.community_id ? supabase.from("community_members").select("uid, first_name, last_name").eq("community_id", c.community_id).order("joined_at", { ascending: false }).limit(500) : Promise.resolve({ data: [] }),
   ]);
   const msgs = ((msgRes.data ?? []) as unknown as GroupMsg[]).reverse();
+  // The senders' profile photos, in one read.
+  const senders = [...new Set(msgs.map((m) => m.sender_id).filter(Boolean))];
+  const { data: picRows } = senders.length ? await supabase.from("profiles").select("id, avatar_path").in("id", senders) : { data: [] };
+  const pics: Record<string, string | null> = Object.fromEntries(((picRows ?? []) as { id: string; avatar_path?: string | null }[]).map((p) => [p.id, avatarSrc(p)]));
   const { data: rxRows } = extras && msgs.length ? await supabase.from("chat_message_reactions").select("message_id, user_id, emoji").in("message_id", msgs.map((m) => m.id)) : { data: [] };
   const role = (roleRes.data as { role?: string } | null)?.role ?? "";
   const officer = ["owner", "admin", "moderator"].includes(role);
@@ -89,7 +94,7 @@ async function Group({ params }: { params: PageProps<"/messages/g/[id]">["params
           </form>
         )}
       </header>
-      <GroupThread msgs={msgs} me={user.id} myName={profile.first_name} chatId={id} seen={seen} reactions={(rxRows ?? []) as Reaction[]} extras={extras} />
+      <GroupThread msgs={msgs} pics={pics} me={user.id} myName={profile.first_name} chatId={id} seen={seen} reactions={(rxRows ?? []) as Reaction[]} extras={extras} />
       <GroupComposer chatId={id} canAnnounce={canAnnounce} ember={emberOn} placeholder={c.kind === "event" ? "Ask about the event, share logistics" : `Message ${title}`} />
       </div>
       <aside aria-label="Chat details" className="hidden w-80 shrink-0 flex-col gap-6 overflow-y-auto border-l border-line p-5 xl:flex">

@@ -1,5 +1,5 @@
 "use client";
-import { Check, Loader2, ScrollText, X } from "lucide-react";
+import { Check, GraduationCap, Loader2, ScrollText, X } from "lucide-react";
 import { useActionState, useEffect, useRef, useState } from "react";
 import { chipCls } from "@/components/app/page-ui";
 import { Button, Field, inputCls } from "@/components/ui";
@@ -8,13 +8,19 @@ import { ALL_TOPICS, cn } from "@/lib/forge";
 import { STUDY_LIMITS } from "@/lib/study";
 import { STARTER_RULES } from "@/lib/club-setup";
 import { submitWithoutReset } from "@/lib/submit";
+import { emailAtDomain, schoolDomain } from "@/lib/school-domain";
 import { createCommunity, type CreateState } from "./actions";
 import { CommunityBadge } from "./_components/badge";
 
 
 // `term`: this term ("Spring 2027") once study groups are on (supabase/study-groups.sql), else null.
-export function CreateCommunity({ interests, field, term, startType = "field" }: { interests: string[]; field: string; term: string | null; startType?: string }) {
+// `school`: offer "This club operates under a university" (FIX-237, step 89), with your sign-in `email`,
+// which the request goes from.
+export function CreateCommunity({ interests, field, term, startType = "field", school = false, email = "" }: { interests: string[]; field: string; term: string | null; startType?: string; school?: boolean; email?: string }) {
   const [state, action, pending] = useActionState<CreateState, FormData>(createCommunity, { ok: false, message: "" });
+  const [underSchool, setUnderSchool] = useState(false);
+  const [schoolSite, setSchoolSite] = useState("");
+  const schoolHost = schoolDomain(schoolSite);
   const [type, setType] = useState(startType);
   const [course, setCourse] = useState("");
   const study = type === "study" && term !== null;
@@ -86,6 +92,29 @@ export function CreateCommunity({ interests, field, term, startType = "field" }:
         <textarea name="rules" value={rules} onChange={(e) => setRules(e.target.value)} maxLength={LIMITS.rules} rows={4} className={cn(inputCls, "h-auto resize-y py-3")} />
       </Field>
       {!rules && <button type="button" onClick={() => setRules(STARTER_RULES)} className="-mt-3 inline-flex items-center gap-1.5 self-start text-xs font-medium text-text-2 underline-offset-4 hover:underline"><ScrollText className="size-3.5" /> Use starter rules</button>}
+      {/* Ask to be listed under your university now, or later from Manage → School. The school (or the
+          Brazework team, until the school is set up) approves it, and the club gets its badge. */}
+      {school && (
+        <div className="rounded-3xl border border-line bg-surface-2/60 p-4">
+          <label className="flex items-start gap-3 text-sm">
+            <input type="checkbox" name="underSchool" checked={underSchool} onChange={(e) => setUnderSchool(e.target.checked)} className="mt-0.5 size-4 accent-current" />
+            <span><span className="inline-flex items-center gap-1.5 font-medium"><GraduationCap className="size-4 text-muted" /> This club operates under a university</span>
+              <span className="mt-0.5 block text-xs text-faint">Once the school approves, the club shows a &ldquo;Verified club of&rdquo; badge and is listed among its clubs. You can also do this later.</span></span>
+          </label>
+          {underSchool && (
+            <div className="mt-4 flex flex-col gap-3">
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <Field label="School"><input name="schoolName" maxLength={120} placeholder="University of Hartford" className={inputCls} required /></Field>
+                <Field label="School website"><input name="schoolWebsite" value={schoolSite} onChange={(e) => setSchoolSite(e.target.value)} placeholder="https://hartford.edu" className={inputCls} required /></Field>
+              </div>
+              <Field label="Proof the club is part of the school" hint="A page on the school's site that lists your club works best."><input name="schoolEvidence" type="url" placeholder="https://… the club's page in the school's student-organization directory" className={inputCls} required /></Field>
+              {schoolHost && !emailAtDomain(email, schoolHost)
+                ? <p role="note" className="text-sm text-text-2">The request goes from an @{schoolHost} email, so the school knows you study there, and you&apos;re signed in as {email}. Your club is still created; change your email in Settings, or have an officer with an @{schoolHost} address send it from Manage → School.</p>
+                : <p className="text-xs text-faint">Sent from your confirmed address{email ? `, ${email}` : ""}.</p>}
+            </div>
+          )}
+        </div>
+      )}
       {state.message && !state.ok && <p role="alert" className="text-sm text-danger">{state.message}</p>}
       <div className="flex flex-wrap items-center gap-3">
         <Button type="submit" size="lg" disabled={pending || !ready}>{pending && <Loader2 className="size-4 animate-spin" />} {pending ? "Creating…" : "Create community"}</Button>

@@ -4,15 +4,20 @@ import { useState, useTransition } from "react";
 import { Button, inputCls } from "@/components/ui";
 import { cn, timeAgo } from "@/lib/forge";
 import { removeSchoolLink, requestSchoolLink, type SchoolLink } from "@/lib/school-links";
+import { emailAtDomain, schoolDomain } from "@/lib/school-domain";
 
-// Club settings → School: ask to be verified as a club of your school, and see where it stands.
-// The school (once Brazework has set up its official account) or the Brazework team reviews it.
-export function SchoolLinkPanel({ cid, link, canEdit }: { cid: string; link: SchoolLink | null; canEdit: boolean }) {
+// Manage → School: ask to be verified as a club of your school, and see where it stands. The school
+// (once Brazework has set up its official account) or the Brazework team reviews it. Since FIX-237 the
+// ask goes from an officer's confirmed email at the school (`needsSchoolEmail`), so the school knows
+// they're its students; `email` is yours, to say which address it goes from before you send it.
+export function SchoolLinkPanel({ cid, link, canEdit, email = "", needsSchoolEmail = false, notice = "" }: { cid: string; link: SchoolLink | null; canEdit: boolean; email?: string; needsSchoolEmail?: boolean; notice?: string }) {
   const [editing, setEditing] = useState(!link);
   const [school, setSchool] = useState(link?.school_name ?? "");
   const [website, setWebsite] = useState(link ? `https://${link.school_domain}` : "");
   const [evidence, setEvidence] = useState(link?.evidence_url ?? "");
-  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(notice ? { ok: false, text: notice } : null);
+  const domain = schoolDomain(website);
+  const wrongEmail = needsSchoolEmail && !!domain && !emailAtDomain(email, domain);
   const [pending, start] = useTransition();
   const send = () => start(async () => { const r = await requestSchoolLink(cid, school, website, evidence); setMsg({ ok: r.ok, text: r.message }); if (r.ok) setEditing(false); });
   const remove = () => { if (confirm(link?.status === "verified" ? "Stop being listed as a club of this school? The badge goes too." : "Take back this request?")) start(async () => { const r = await removeSchoolLink(cid); setMsg({ ok: r.ok, text: r.message }); if (r.ok) setEditing(true); }); };
@@ -50,15 +55,20 @@ export function SchoolLinkPanel({ cid, link, canEdit }: { cid: string; link: Sch
           <label className="flex flex-col gap-1.5 text-sm font-medium text-text-2">
             Proof the club is part of the school
             <input value={evidence} onChange={(e) => setEvidence(e.target.value)} type="url" placeholder="https://… the club's page in the school's student-organization directory" className={inputCls} required />
-            <span className="text-xs font-normal text-faint">A page on the school&apos;s site that lists your club works best. Asking from your school email helps too.</span>
+            <span className="text-xs font-normal text-faint">A page on the school&apos;s site that lists your club works best.</span>
           </label>
+          {needsSchoolEmail && (
+            wrongEmail
+              ? <p role="note" className="rounded-xl border border-line bg-surface-2/70 px-3.5 py-2.5 text-sm text-text-2">The school needs to know the people asking are its students, so this goes from an @{domain} email. You&apos;re signed in as {email || "an address that isn't confirmed"}. <a href="/settings#account" className="font-medium underline-offset-4 hover:underline">Change your email in Settings</a>, or ask another officer with an @{domain} address.</p>
+              : <p className="text-xs text-faint">{domain ? <>Sent from your confirmed address, {email}, so the school knows you study there.</> : <>It goes from your confirmed school email, so the school knows you study there.</>}</p>
+          )}
           <div className="flex flex-wrap items-center gap-2">
-            <Button type="submit" disabled={pending || !school.trim() || !website.trim() || !evidence.trim()}>{pending && <Loader2 className="size-4 animate-spin" />} Ask to be verified</Button>
+            <Button type="submit" disabled={pending || wrongEmail || !school.trim() || !website.trim() || !evidence.trim()}>{pending && <Loader2 className="size-4 animate-spin" />} Ask to be verified</Button>
             {link && <button type="button" onClick={() => setEditing(false)} className="h-10 rounded-lg px-3.5 text-sm text-muted hover:bg-hover hover:text-text">Cancel</button>}
           </div>
         </form>
       )}
-      {!canEdit && !link && <p className="mt-3 text-sm text-faint">The club&apos;s owner or an admin can ask to verify it with its school.</p>}
+      {!canEdit && !link && <p className="mt-3 text-sm text-faint">The club&apos;s officers can ask to verify it with its school.</p>}
       {msg && <p role={msg.ok ? "status" : "alert"} className={cn("mt-3 text-sm", msg.ok ? "text-ok" : "text-danger")}>{msg.text}</p>}
     </section>
   );

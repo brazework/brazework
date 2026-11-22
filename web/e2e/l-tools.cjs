@@ -127,7 +127,7 @@ const { step, browser, as, go, summary, BASE } = require("./lib.cjs");
     await card.waitFor({ timeout: 15000 });
     await card.getByText("via Claude Code").waitFor();
     await card.getByRole("link", { name: /Commit abc1234/ }).waitFor();
-    await card.getByRole("link", { name: /youtu\.be/ }).waitFor();
+    await card.getByRole("link", { name: /YouTube video/ }).waitFor();
     await card.getByRole("button", { name: /^Verify/ }).first().click();
     // The card leaves the queue for "Recently reviewed" once the page refreshes; the database says what happened.
     const status = () => require("child_process").execSync("docker exec -i forge-e2e-db psql -U postgres -h localhost -d postgres -tA", { input: `select status || '|' || coalesce(via, '') from public.milestones where title = '${title}'` }).toString().trim();

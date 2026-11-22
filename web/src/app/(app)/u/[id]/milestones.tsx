@@ -1,4 +1,5 @@
 "use client";
+import { PROOF_TOOLS_HINT, proofSource } from "@/lib/proof-source";
 import { AnimatePresence, motion } from "motion/react";
 import { BadgeCheck, Clock, ExternalLink, Eye, EyeOff, Flag, GitMerge, Loader2, Plus, Scale, Share2, Trash2, X, XCircle } from "lucide-react";
 import Link from "next/link";
@@ -94,7 +95,7 @@ export function MilestoneTimeline({ items, own, projectPrivate = false }: { item
                   {refused(m.status) && <span className="inline-flex items-center gap-1 rounded-full bg-[color-mix(in_oklab,var(--danger)_12%,transparent)] px-2 py-0.5 text-danger"><XCircle className="size-3" /> Not verified by {m.community_name}</span>}
                   {m.status === "revoked" && <span className="inline-flex items-center gap-1 rounded-full bg-[color-mix(in_oklab,var(--danger)_12%,transparent)] px-2 py-0.5 text-danger"><XCircle className="size-3" /> Revoked by {m.community_name}</span>}
                   {m.status === "disputed" && <span className="inline-flex items-center gap-1 rounded-full bg-surface-2 px-2 py-0.5 text-muted"><Scale className="size-3" /> Disputed · {m.escalated ? "with Brazework admins" : "with the club's owner"}</span>}
-                  {m.evidence && <a href={m.evidence} target="_blank" rel="noopener noreferrer nofollow" className="inline-flex items-center gap-1 text-muted hover:text-text"><ExternalLink className="size-3" /> Evidence</a>}
+                  {m.evidence && <a href={m.evidence} target="_blank" rel="noopener noreferrer nofollow" className="inline-flex items-center gap-1 text-muted hover:text-text"><ExternalLink className="size-3" /> {proofSource(m.evidence)?.label ?? "Evidence"}</a>}
                   {own && (m.status === "verified" || (m.status === "logged" && backingOf(m))) && m.private !== undefined && (
                     <button type="button" onClick={() => start(async () => { const r = await setMilestoneVisible(m.id, !!m.private); setMsg(r.message); if (r.ok) setPatch((p) => ({ ...p, [m.id]: { private: !m.private } })); })} className="inline-flex items-center gap-1 text-muted hover:text-text">
                       {m.private ? <><EyeOff className="size-3" /> Only you · Show on profile</> : <><Eye className="size-3" /> On your profile · Hide</>}
@@ -237,7 +238,7 @@ function MilestoneDialog({ projectId, projectTitle, clubs, vouches, backing, onC
         <Field label="Details" hint="Numbers, conditions, who was there."><textarea name="detail" maxLength={600} rows={3} className={cn(inputCls, "h-auto resize-none py-3")} /></Field>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Field label="When"><input name="achievedOn" type="date" max={today} defaultValue={today} required className={inputCls} /></Field>
-          <Field label="Evidence" hint="A photo, video, file, commit or the event page."><input name="evidence" type="url" required maxLength={300} placeholder="https://…" className={inputCls} /></Field>
+          <Field label="Evidence" hint={PROOF_TOOLS_HINT}><input name="evidence" type="url" required maxLength={300} placeholder="https://…" className={inputCls} /></Field>
         </div>
         {!vouches && !clubs.length && <p className="rounded-2xl border border-dashed border-line p-4 text-sm text-muted">Milestones are verified by a club you belong to. <Link href="/communities?tab=discover" className="font-medium text-text underline underline-offset-4">Join your club</Link> first.</p>}
         {vouches && <fieldset>

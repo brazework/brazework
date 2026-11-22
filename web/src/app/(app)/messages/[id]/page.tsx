@@ -1,3 +1,4 @@
+import { avatarSrc } from "@/lib/media";
 import type { Reaction } from "@/components/chat/message-tools";
 import { dbFeatures } from "@/lib/db-features";
 import type { Metadata } from "next";
@@ -33,6 +34,8 @@ async function Thread({ params }: { params: PageProps<"/messages/[id]">["params"
   const otherId = conv.user_a === me ? conv.user_b : conv.user_a;
   const other = (conv.people?.[otherId] ?? {}) as { firstName?: string; lastName?: string; headline?: string };
   const name = `${other.firstName ?? ""} ${other.lastName ?? ""}`.trim() || "Brazework member";
+  const { data: op } = await supabase.from("profiles").select("avatar_path").eq("id", otherId).maybeSingle();
+  const otherPic = avatarSrc(op as { avatar_path?: string | null } | null);
   const requestToMe = conv.status === "request" && conv.started_by !== me;
   const requestFromMe = conv.status === "request" && conv.started_by === me;
 
@@ -50,7 +53,7 @@ async function Thread({ params }: { params: PageProps<"/messages/[id]">["params"
       <header className="flex items-center gap-3 border-b border-line px-4 py-3">
         <Link href="/messages" aria-label="Back to messages" className="grid size-9 place-items-center rounded-full text-muted hover:bg-hover hover:text-text md:hidden"><ArrowLeft className="size-4" /></Link>
         <Link href={`/u/${otherId}`} className="flex min-w-0 items-center gap-3">
-          <WithPresence id={otherId} dot="size-2.5"><Avatar first={other.firstName ?? ""} last={other.lastName ?? ""} size={36} /></WithPresence>
+          <WithPresence id={otherId} dot="size-2.5"><Avatar first={other.firstName ?? ""} last={other.lastName ?? ""} size={36} src={otherPic} /></WithPresence>
           <div className="min-w-0">
             <div className="flex items-center gap-2"><span className="truncate text-sm font-medium hover:underline">{name}</span><OnlineLabel id={otherId} /></div>
             {other.headline && <div className="truncate text-xs text-faint">{other.headline}</div>}

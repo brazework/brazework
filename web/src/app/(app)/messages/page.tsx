@@ -1,3 +1,4 @@
+import { avatarSrc } from "@/lib/media";
 import type { Metadata } from "next";
 import { MessageSquare, Send, Users } from "lucide-react";
 import Link from "next/link";
@@ -45,6 +46,8 @@ async function Starts() {
     : { data: [] };
   const seen = new Set<string>();
   const people = ((mates ?? []) as { uid: string; first_name: string; last_name: string; headline: string }[]).filter((m) => !seen.has(m.uid) && seen.add(m.uid)).slice(0, 6);
+  const { data: pics } = people.length ? await supabase.from("profiles").select("id, avatar_path").in("id", people.map((p) => p.uid)) : { data: [] };
+  const pic = new Map(((pics ?? []) as { id: string; avatar_path?: string | null }[]).map((p) => [p.id, avatarSrc(p)]));
   const rooms = ((chats.data ?? []) as { id: string; kind: string; title: string; subtitle: string }[]).filter((c) => c.kind !== "event").slice(0, 4);
   return (
     <div className="mx-auto max-w-lg">
@@ -74,7 +77,7 @@ async function Starts() {
           <List label="People in your clubs">
             {people.map((p) => (
               <ListRow key={p.uid} title={`${p.first_name} ${p.last_name}`.trim()} meta={p.headline || undefined}
-                leading={<Avatar first={p.first_name} last={p.last_name} size={36} />}
+                leading={<Avatar first={p.first_name} last={p.last_name} size={36} src={pic.get(p.uid)} />}
                 trailing={<Link href={`/messages/new?to=${p.uid}`} className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-line px-3 text-xs font-medium transition hover:border-line-strong"><Send className="size-3.5" /> Message</Link>} />
             ))}
           </List>

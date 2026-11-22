@@ -97,4 +97,5 @@ linkedin-required
 personal-email-signers
 linkedin-optional
 ember-memory
+school-link-email
 playbook-lanes
