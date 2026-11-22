@@ -161,7 +161,7 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
             <div className="flex flex-wrap items-center gap-2">
               <h1 className="text-3xl font-semibold tracking-tight">{c.name}</h1>
               {clubVerified && <span title="A school-email officer runs it, and its members have club-verified work" className="inline-flex items-center gap-1 rounded-full bg-[color-mix(in_oklab,var(--ok)_12%,transparent)] px-2.5 py-0.5 text-xs font-medium text-ok"><BadgeCheck className="size-3.5" /> Verified club</span>}
-              {schoolLink && <span title={`Verified as a club of ${(schoolLink as { school_name: string }).school_name}`} className="inline-flex items-center gap-1 rounded-full bg-surface-2 px-2.5 py-0.5 text-xs font-medium text-text-2"><GraduationCap className="size-3.5" /> Verified club of {(schoolLink as { school_name: string }).school_name}</span>}
+              {schoolLink && <span title={`Verified as a club of ${(schoolLink as { school_name: string }).school_name}`} className="inline-flex items-center gap-1 rounded-full bg-[color-mix(in_oklab,var(--ok)_12%,transparent)] px-2.5 py-0.5 text-xs font-medium text-ok"><GraduationCap className="size-3.5" /> Verified club of {(schoolLink as { school_name: string }).school_name}</span>}
               {role && role !== "member" && <RoleChip role={role} />}
             </div>
             {c.tagline && <p className="mt-0.5 text-[15px] text-text-2">{c.tagline}</p>}

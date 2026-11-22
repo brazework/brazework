@@ -11,6 +11,7 @@ import { SchoolDecision } from "../../request-school/form";
 import { ClaimDecision } from "@/components/clubs/claim";
 import { dbFeatures } from "@/lib/db-features";
 import { SchoolLinkDecision } from "@/components/clubs/school-link-decision";
+import { SchoolLinkBackers } from "@/components/clubs/school-link-backers";
 
 export const metadata: Metadata = { title: "Brazework admin" };
 
@@ -58,6 +59,8 @@ async function Admin() {
   const claims = claimRows as unknown as Claim[] | null;
   // Clubs asking to be verified as one of a school's clubs (step 56), while the school has no official account.
   type SchoolAsk = { community_id: string; school_name: string; school_domain: string; evidence_url: string; requester_at_school: boolean; requested_at: string; communities: { name: string; member_count: number } | null };
+  // Which officers' confirmed school addresses back each request (step 89, FIX-237).
+  const backersOn = (await dbFeatures()).schoolLinkEmail;
   const schoolAsks = (await dbFeatures()).schoolLinks
     ? (((await supabase.from("club_school_links").select("community_id, school_name, school_domain, evidence_url, requester_at_school, requested_at, communities(name, member_count)").eq("status", "pending").order("requested_at", { ascending: true }).limit(50)).data ?? []) as unknown as SchoolAsk[])
     : null;
@@ -151,6 +154,7 @@ async function Admin() {
                   <p className="font-medium"><Link href={`/c/${a.community_id}`} className="hover:underline">{a.communities?.name ?? "A club"}</Link> · a club of {a.school_name}</p>
                   <p className="mt-0.5 text-xs text-faint">{a.school_domain} · {a.communities?.member_count ?? 0} members · {a.requester_at_school ? "asked from a school email" : "not asked from a school email"}</p>
                   <a href={a.evidence_url} target="_blank" rel="noopener noreferrer nofollow" className="mt-1.5 block text-sm break-all text-text-2 underline underline-offset-2">{a.evidence_url}</a>
+                  {backersOn && <SchoolLinkBackers cid={a.community_id} domain={a.school_domain} />}
                 </div>
                 <SchoolLinkDecision cid={a.community_id} />
               </Panel>
