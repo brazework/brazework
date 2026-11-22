@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Avatar } from "@/components/ui";
 import { cn } from "@/lib/forge";
 import { WithPresence } from "@/components/presence/presence";
+import { FoundingBadge } from "@/components/profile/founding-badge";
 
 // One member in a network list (personRow() in public/js/network.js).
 export function PersonRow({
@@ -11,7 +12,8 @@ export function PersonRow({
   actions,
   className,
 }: {
-  person: { id: string; firstName: string; lastName: string; headline: string };
+  // founding: their founding-member number (FIX-241), shown as a small mark beside the name.
+  person: { id: string; firstName: string; lastName: string; headline: string; founding?: number | null };
   sub?: React.ReactNode;
   note?: string;
   actions?: React.ReactNode;
@@ -24,7 +26,7 @@ export function PersonRow({
         <WithPresence id={person.id}><Avatar first={person.firstName} last={person.lastName} size={44} /></WithPresence>
       </Link>
       <div className="flex min-w-0 flex-[1_1_180px] flex-col gap-0.5">
-        <Link href={`/u/${person.id}`} className="truncate font-medium hover:underline">{name}</Link>
+        <span className="flex min-w-0 items-center gap-1.5"><Link href={`/u/${person.id}`} className="truncate font-medium hover:underline">{name}</Link>{person.founding ? <FoundingBadge n={person.founding} compact /> : null}</span>
         {person.headline && <span className="truncate text-sm text-muted">{person.headline}</span>}
         {sub && <span className="text-xs text-faint">{sub}</span>}
         {note && <p className="mt-1.5 rounded-2xl border border-line bg-surface-2 px-3 py-2 text-sm leading-relaxed text-text-2">&ldquo;{note}&rdquo;</p>}
