@@ -1,6 +1,6 @@
 "use client";
 import { Check, Plug, RotateCcw, Sparkles } from "lucide-react";
-import { useReducedMotion } from "motion/react";
+import { useReducedMotion } from "@/lib/use-reduced-motion";
 import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Seal } from "@/components/app/verified-seal";
 import { cn } from "@/lib/forge";

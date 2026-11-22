@@ -1,6 +1,6 @@
 "use client";
 import { Check, RotateCcw, Search } from "lucide-react";
-import { useReducedMotion } from "motion/react";
+import { useReducedMotion } from "@/lib/use-reduced-motion";
 import { useEffect, useState } from "react";
 import { Ember } from "@/components/ember/ember";
 import { cn } from "@/lib/forge";

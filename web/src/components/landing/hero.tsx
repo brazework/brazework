@@ -25,7 +25,7 @@ export function Hero() {
           <p className="mt-6 max-w-[34rem] text-lg leading-relaxed text-muted sm:text-xl sm:leading-relaxed">
             {/* A phone gets the short version: the demo below shows the rest. */}
             <span className="sm:hidden">For students and professionals: your work, signed by the people who saw it, and a guide to where you&apos;re headed next.</span>
-            <span className="hidden sm:inline">For students and working professionals: a record of your work, signed by the people who saw it. Log what you finished, ask your professor, your club or your manager to sign, and it stays yours wherever you go next.</span>
+            <span className="hidden sm:inline">For students and working professionals in engineering, research, design and software: a record of your work, signed by the people who saw it. Log what you finished, ask your professor, your club or your manager to sign, and it stays yours wherever you go next.</span>
           </p>
 
           <div className="mt-9 max-w-[34rem]">

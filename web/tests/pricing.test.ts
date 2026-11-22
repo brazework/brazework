@@ -30,7 +30,7 @@ test("the record is free; the paid tier isn't called Pro and its prices come fro
   assert.notEqual(PLUS.name.toLowerCase(), "pro", "Pro means pro verification");
   for (const t of TIERS) assert.ok(!/\bpro\b/i.test(t.name), t.name);
   const plus = TIERS.find((t) => t.id === "plus")!;
-  assert.ok(plus.price.includes(String(PLUS.student)) && plus.note.includes(String(PLUS.everyone)));
+  assert.ok(plus.price.includes(String(PLUS.everyoneYear)) && plus.note.includes(String(PLUS.student)));
 });
 
 test("schools pay for a portal and their advisors, never per club or chapter", async () => {
@@ -64,16 +64,31 @@ test("Plus leads with the review packet, says plainly it's free during launch, a
   const plus = TIERS.find((t) => t.id === "plus")!;
   assert.match(plus.points[1], /review packet/i, "the packet is the first thing Plus adds");
   assert.match(plus.points[1], /free for everyone during launch/, "it's a Plus preview today, and says so");
-  assert.ok(plus.note.includes(`$${PLUS.studentYear}`) && plus.note.includes(`$${PLUS.everyoneYear}`), plus.note);
+  assert.ok(plus.note.includes(`$${PLUS.studentYear}`) && plus.price.includes(`$${PLUS.everyoneYear}`), plus.note);
   assert.ok(PLUS.everyoneYear < PLUS.everyone * 12 && PLUS.studentYear < PLUS.student * 12, "a year costs less than twelve months");
 });
 
 test("the landing page shows only what a builder pays, and links every other buyer to their prices", () => {
   assert.deepEqual(LANDING_AUDIENCES, ["builders"]);
   const shown = LANDING_AUDIENCES.flatMap((a) => tiersFor(a));
-  for (const t of shown) assert.ok(/^\$(0|\d{1,2}\/mo)$/.test(t.price), `${t.name} at ${t.price} isn't a builder's price`);
+  for (const t of shown) assert.ok(/^\$(0|\d{1,2}\/(mo|yr))$/.test(t.price), `${t.name} at ${t.price} isn't a builder's price`);
   // Everyone whose prices aren't on the landing page gets a link to their part of /pricing.
   const hidden = AUDIENCES.filter((a) => !LANDING_AUDIENCES.includes(a.id)).map((a) => a.id);
   assert.deepEqual(PRICING_LINKS.map((l) => l.audience), hidden);
   for (const l of PRICING_LINKS) assert.equal(l.href, `/pricing#pricing-${l.audience}`);
+});
+
+
+test("company search excludes sponsorships and service fees never reduce club or prize funds", async () => {
+  const { SPONSORSHIP } = await import("@/lib/pricing");
+  const talent = TIERS.find((t) => t.id === "talent")!;
+  assert.equal(talent.price, "$15,000");
+  assert.match(talent.note, /2 search and messaging seats/);
+  assert.ok(talent.points.some((p) => /sponsorships.*separately/i.test(p)));
+  assert.doesNotMatch(talent.points.join(" "), /two chapters sponsored/i);
+  assert.equal(SPONSORSHIP.serviceFee, 500);
+  const sponsor = TIERS.find((t) => t.id === "sponsor")!;
+  assert.match(sponsor.note, /3,000 total/);
+  assert.match(sponsor.points.join(" "), /5,500 total/);
+  assert.match(TIERS.find((t) => t.id === "free")!.points.join(" "), /25 questions a day/);
 });

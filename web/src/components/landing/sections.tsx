@@ -1,14 +1,14 @@
 import { BadgeCheck } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/forge";
-import { ConnectSlot } from "@/components/connect/connect-live";
+import { PublicAiCard } from "@/components/landing/public-ai-card";
 import { AppTour } from "./app-tour";
 import { BuildShowcase } from "./build-showcase";
 import { ClubSetupDemo } from "./club-setup-demo";
 import { CompanySearch } from "./company-search";
 import { EmberDemo } from "./ember-demo";
 import { Faq } from "./faq";
-import { LANDING_AUDIENCES, PRICING_LINKS } from "@/lib/pricing";
+import { EMBER_ALLOWANCE, LANDING_AUDIENCES, PRICING_LINKS } from "@/lib/pricing";
 import { PricingTiers } from "./pricing";
 
 // The landing page's sections. The order they show in is set by app/page.tsx: who it's for (a
@@ -140,6 +140,7 @@ export function EmberSection() {
           <h2 className={H2}>Built around your field and where you&apos;re headed.</h2>
           <p className={LEAD}>Tell it your field and your goal: an internship, grad school, your next role. Ember, the guide inside Brazework, gets you there from your signed work.</p>
           <Points items={[
+            ["Included from day one", EMBER_ALLOWANCE + ". Your allowance resets daily."],
             ["It starts from your goal", "How close your signed work gets you, and the one next step: what to build, who can sign it, the clubs, events and people in your field."],
             ["It knows your record", "What's signed and what's waiting, so it opens with your next step. It writes your résumé bullets from signed work."],
             ["It asks before it acts", "A post, a request or a milestone sits on a card until you press the button."],
@@ -151,18 +152,17 @@ export function EmberSection() {
   );
 }
 
-// Connect your AI (the assistant connection, lib/mcp-oauth.ts): the connector address to copy, the
-// three steps in Claude, and one tap for the editors, so a visitor goes from here to connected.
+// Public explanation only. Account connection remains an explicit choice on /ai.
 export function ConnectSection() {
   return (
     <section id="connect" aria-labelledby="connect-h" className="scroll-mt-20 pb-20 sm:pb-28">
       <div className={cn(WRAP, "grid grid-cols-1 items-start gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:gap-16")}>
         <div>
-          <h2 id="connect-h" className={H2}>Works with the AI you already use.</h2>
-          <p className={LEAD}>Add Brazework to Claude, Cursor or VS Code once. Then say what you did, like &ldquo;put the analysis I finished on my record.&rdquo; It drafts the entry with its proof and waits for your OK. It can never sign anything. Only people do.</p>
-          <Link href="/ai" className="mt-6 inline-flex items-center gap-1 text-[15px] font-medium underline-offset-4 hover:underline">Everything it can do, field by field</Link>
+          <h2 id="connect-h" className={H2}>Ask your AI about Brazework.</h2>
+          <p className={LEAD}>An explanation of Brazework from our public pages. No account connection or personal information in the prompt.</p>
+          <Link href="/ai" className="mt-6 inline-flex items-center gap-1 text-[15px] font-medium underline-offset-4 hover:underline">Ready to connect your own record? See the setup steps</Link>
         </div>
-        <ConnectSlot />
+        <PublicAiCard />
       </div>
     </section>
   );
@@ -217,7 +217,7 @@ export function Pricing() {
   return (
     <section id="pricing" className={cn(SEC, BAND)}>
       <div className={WRAP}>
-        <h2 className={H2}>Free for the people who build. Paid by the people who hire.</h2>
+        <h2 className={H2}>Your record is free. Upgrade when it helps.</h2>
         <PricingTiers className="mt-10" only={LANDING_AUDIENCES} />
         {/* Clubs are free; what companies and schools pay is on /pricing, not here (lib/pricing.ts). */}
         <p className="mt-8 text-[15px] text-muted">

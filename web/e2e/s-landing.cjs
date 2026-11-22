@@ -16,6 +16,7 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
     // #hero-live is the story that's playing; the others sit unseen beside it only to hold its height.
     const stage = page.locator("#hero-live");
     await hydrated(page.locator("#hero-build"));
+    await page.getByRole("button", { name: /^Student/ }).click();
     await stage.getByText("A line-following robot").waitFor();
     // The AI moment: asked in plain words, the draft with its evidence, sent to the club, then the officer verifies.
     await stage.getByText("You log what you finished").waitFor();
@@ -121,6 +122,27 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
     await go(page, "/");
   }, page);
 
+  await step("public AI: links carry no member context; copying has a readable fallback", async () => {
+    await go(page, "/?ref=private-ref&email=private@example.test");
+    await hydrated(page.locator("#hero-build"));
+    await page.locator("#hero-build").fill("Private prototype details");
+    const card = page.locator("#connect");
+    await card.getByRole("heading", { name: "Ask your AI about Brazework." }).waitFor();
+    for (const name of ["Ask Claude", "Ask ChatGPT"]) {
+      const href = await card.getByRole("link", { name, exact: true }).getAttribute("href");
+      const prompt = new URL(href).searchParams.get("q");
+      if (!prompt.includes("public pages only")) throw new Error("not a public explanation");
+      if (/private-ref|private@example|Private prototype|api\/mcp|read my/i.test(prompt)) throw new Error("member context in public link");
+    }
+    await page.evaluate(() => Object.defineProperty(navigator, "clipboard", { configurable: true, value: { writeText: async () => { throw new Error("denied"); } } }));
+    await card.getByRole("button", { name: "Copy prompt", exact: true }).click();
+    await card.getByRole("status").getByText(/Copy is unavailable/).waitFor();
+    await card.getByText("Read the prompt", { exact: true }).click();
+    await card.getByText(/Explain Brazework using its public pages only/).waitFor();
+    await card.screenshot({ path: "e2e/.results/public-ai-desktop.png" });
+    await go(page, "/");
+  }, page);
+
   await step("how it works: three steps straight after the hero; the signed state shows once you scroll to it, and the nav says where you are", async () => {
     const how = page.locator("#how");
     await how.getByRole("heading", { name: "Log it. Get it signed. Keep it." }).waitFor();
@@ -163,6 +185,10 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
     await go(phone, "/");
     const box = await phone.locator("#hero-build").boundingBox();
     if (!box || box.height < 44) throw new Error(`the build box is ${box && Math.round(box.height)}px tall`);
+    const publicAi = phone.locator("#connect");
+    await publicAi.getByRole("link", { name: "Ask ChatGPT", exact: true }).scrollIntoViewIfNeeded();
+    if (await phone.evaluate(() => document.documentElement.scrollWidth > innerWidth)) throw new Error("phone has horizontal overflow");
+    await publicAi.getByRole("heading", { name: /Choose your assistant|A public explanation, in your own AI/ }).locator("..").screenshot({ path: "e2e/.results/public-ai-phone.png" });
     await tab(phone, "Clubs").click();
     await phone.locator("#app").getByRole("button", { name: "Verify" }).click();
     await phone.locator("#app").getByText(/It's on Maya's record/).waitFor();
@@ -197,15 +223,19 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
 
   // Reduced motion: the whole sequence is simply there.
   const still = await (await b.newContext({ viewport: { width: 1440, height: 950 }, reducedMotion: "reduce" })).newPage();
+  const reducedErrors = [];
+  still.on("pageerror", (error) => reducedErrors.push(error.message));
   await step("reduced motion: the hero shows every step at once", async () => {
     await still.goto(BASE + "/", { waitUntil: "networkidle" });
     const stage = still.locator("#hero-live");
+    await still.getByRole("button", { name: /^Student/ }).click();
     await stage.getByText("Verified", { exact: true }).waitFor({ timeout: 3000 });
     await stage.getByText("Sent to Rocketry Club").waitFor({ timeout: 3000 });
     await stage.getByRole("button", { name: "Accept" }).click({ timeout: 3000 });
     await stage.getByText(/You're talking/).waitFor({ timeout: 3000 });
     // How it works: all three states are there without scrolling to them.
     await still.locator("#how ol > li figcaption").nth(2).waitFor({ state: "visible", timeout: 3000 });
+    if (reducedErrors.length) throw new Error(reducedErrors[0]);
   }, still);
 
   await b.close();

@@ -1,5 +1,6 @@
 "use client";
-import { motion, useMotionValueEvent, useReducedMotion, useScroll } from "motion/react";
+import { motion, useMotionValueEvent, useScroll } from "motion/react";
+import { useReducedMotion } from "@/lib/use-reduced-motion";
 import { FileText } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { Seal } from "@/components/app/verified-seal";
