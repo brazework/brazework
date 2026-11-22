@@ -17,4 +17,6 @@ regexes = [
   # A function name, not a key: the default linkedin-client-secret rule flags any 16 letters or
   # digits that follow the word "linkedin", and this import does (web/src/lib/linkedin-gate.ts).
   '''^saveLinkedinFrom$''',
+  # The same rule on a prop name (web/src/app/(app)/settings/settings-client.tsx, FIX-254).
+  '''^linkedinPublic$''',
 ]
