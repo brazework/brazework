@@ -208,7 +208,7 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
             <div className="inline-flex rounded-full">
               <WithPresence id={p.id} dot="size-5 ring-4 top-[4%] bottom-auto"><ProfilePhoto path={p.avatar_path} first={p.first_name} last={p.last_name} editable={mine && mediaOn} userId={user.id} size={88} /></WithPresence>
             </div>
-            <div className="flex flex-wrap items-center gap-2">
+            <div data-tour={mine ? "share" : undefined} className="flex flex-wrap items-center gap-2">
               <CopyLink path={`/u/${p.id}`} label="Share" />
               <Link href={`/u/${p.id}/resume`} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-line bg-surface px-3.5 text-sm transition hover:bg-hover active:scale-95"><FileText className="size-4" /> Résumé</Link>
               {mine ? (
@@ -290,7 +290,7 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
           {/* Proof leads: the work someone signed comes before everything else on the page. */}
           {/* The record as one card: the last twelve months, or by year (components/profile/record-card.tsx). */}
           {(timeline || recordYears) && <RecordCard timeline={timeline} years={recordYears} own={mine} goal={mine ? goalText : null} ember={!!copilotOn} />}
-          {msOn && <div id="proof" className="scroll-mt-24"><ProofTimeline items={proof} own={mine} led={led} /></div>}
+          {msOn && <div id="proof" data-tour="proof" className="scroll-mt-24"><ProofTimeline items={proof} own={mine} led={led} /></div>}
           {/* Projects, with their milestones, straight after the proof (they sat below everything else). */}
           <section id="projects" data-tour="projects-tab" className="scroll-mt-24">
             <SwitchTabs

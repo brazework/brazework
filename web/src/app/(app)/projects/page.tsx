@@ -122,7 +122,7 @@ async function Explore({ searchParams }: { searchParams: PageProps<"/projects">[
 
   return (
     <>
-      <PageHeader title="Projects" subtitle="Log what you did today, get it signed, and see what people across Brazework are building." />
+      <PageHeader tour="projects" title="Projects" subtitle="Log what you did today, get it signed, and see what people across Brazework are building." />
       {!q && !topic && !tool && !status && !verifiedOnly && !mine && <Workbench projects={bench} interests={profile.interests ?? []} copilot={copilot} stack={stackOn} specsOn={specsOn} filesOn={filesOn} />}
       {!q && !topic && !tool && !status && !verifiedOnly && !mine && shared.length > 0 && <SharedWithYou rows={shared} />}
       {/* Spotlight moved here from Today (redesign stage 1): standout builds sit with the rest of Explore. */}

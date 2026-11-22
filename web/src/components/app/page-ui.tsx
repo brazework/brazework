@@ -8,9 +8,10 @@ import { TabRow } from "@/components/app/tab-row";
 
 // The top of every page (docs/design/app.md): the title, a one-line subtitle, optional `back` link
 // above and `meta` line below (a status, a count), actions on the right.
-export function PageHeader({ title, subtitle, actions, back, meta }: { title: string; subtitle?: React.ReactNode; actions?: React.ReactNode; back?: { href: string; label: string }; meta?: React.ReactNode }) {
+// `tour`: a product-tour anchor (data-tour, lib/tours.ts) for the page.
+export function PageHeader({ title, subtitle, actions, back, meta, tour }: { title: string; subtitle?: React.ReactNode; actions?: React.ReactNode; back?: { href: string; label: string }; meta?: React.ReactNode; tour?: string }) {
   return (
-    <header className="pt-2 pb-1">
+    <header data-tour={tour} className="pt-2 pb-1">
       {back && <Link href={back.href} className="mb-3 inline-flex items-center gap-1.5 text-sm text-muted transition hover:text-text"><ArrowLeft className="size-4" /> {back.label}</Link>}
       <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-3">
         <div className="min-w-0">

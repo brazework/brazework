@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useActionState, useState, useSyncExternalStore, useTransition } from "react";
 import { Button, Field, inputCls } from "@/components/ui";
+import { startTour } from "@/components/tour/tour-mount";
 import { ALL_TOPICS, FIELDS, TOPICS, cn, type Profile } from "@/lib/forge";
 import { LINKEDIN_PLACEHOLDER, LINKEDIN_PRIVATE, LINKEDIN_WHY } from "@/lib/linkedin";
 import { gradYearOptions } from "@/lib/profile-meta";
@@ -223,7 +224,7 @@ export function HelpSettings() {
   return (
     <div className="flex flex-wrap items-center justify-between gap-3">
       <p className="text-sm text-muted">Take the one-minute tour of Brazework again.</p>
-      <Button variant="outline" onClick={() => window.dispatchEvent(new CustomEvent("forge:tour", { detail: "welcome" }))}>Replay the tour</Button>
+      <Button variant="outline" onClick={startTour}>Take the tour</Button>
     </div>
   );
 }
