@@ -100,3 +100,4 @@ ember-memory
 school-link-email
 milestone-late-evidence
 founding-members
+launch-metrics
