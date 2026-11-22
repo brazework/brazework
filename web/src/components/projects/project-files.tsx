@@ -4,6 +4,7 @@ import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { ModelViewer } from "@/components/projects/model-viewer";
+import { PhotoViewer } from "@/components/media/photo-viewer";
 import { cn, timeAgo } from "@/lib/forge";
 import { extOf, githubRepo, kindOfFile, sizeLabel, type FileKind } from "@/lib/project-file-types";
 import { projectFileLink, removeProjectFile } from "@/lib/project-files";
@@ -26,6 +27,9 @@ export function ProjectFiles({ projectId, items, me, ownerId, variant = "folder"
   const media = items.filter((i) => i.kind === "file" && (kindOfFile(i.name) === "image" || kindOfFile(i.name) === "video"));
   const docs = items.filter((i) => i.kind === "file" && !["model", "image", "video"].includes(kindOfFile(i.name) ?? ""));
   const links = items.filter((i) => i.kind === "link");
+  // Pictures open in the pop-up viewer (FIX-247), stepping through this list's pictures.
+  const pictures = media.filter((m) => m.src && kindOfFile(m.name) === "image");
+  const [viewing, setViewing] = useState<number | null>(null);
   if (!items.length) return null;
 
   const open = async (it: ProjectFileItem, download = false) => {
@@ -69,7 +73,7 @@ export function ProjectFiles({ projectId, items, me, ownerId, variant = "folder"
             <li key={m.id} className="group relative aspect-square overflow-hidden rounded-2xl border border-line bg-surface-2">
               {m.src && kindOfFile(m.name) === "image" ? (
                 // A small resized copy through the image optimizer, not the full original (FIX-75).
-                <button type="button" onClick={() => open(m)} className="relative size-full"><Image src={m.src} alt={m.name} fill sizes="(min-width: 640px) 160px, 33vw" className="object-cover" /></button>
+                <button type="button" onClick={() => setViewing(pictures.findIndex((p) => p.id === m.id))} aria-label={`Open picture ${pictures.findIndex((p) => p.id === m.id) + 1} of ${pictures.length}`} className="relative size-full"><Image src={m.src} alt={m.name} fill sizes="(min-width: 640px) 160px, 33vw" className="object-cover" /></button>
               ) : m.src ? (
                 <video src={m.src} controls preload="none" className="size-full bg-black object-cover" aria-label={m.name} />
               ) : (
@@ -113,6 +117,13 @@ export function ProjectFiles({ projectId, items, me, ownerId, variant = "folder"
         </ul>
       )}
       {note && <p role="alert" className="mt-2 text-xs text-danger">{note}</p>}
+      <PhotoViewer count={pictures.length} index={viewing} onIndex={setViewing} onClose={() => setViewing(null)}>
+        {viewing !== null && pictures[viewing]?.src && (
+          <div className="relative mx-auto h-[min(80dvh,900px)] w-full">
+            <Image src={pictures[viewing].src!} alt={pictures[viewing].name} fill sizes="92vw" className="object-contain" />
+          </div>
+        )}
+      </PhotoViewer>
     </>
   );
 

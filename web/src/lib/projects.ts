@@ -140,9 +140,10 @@ export async function setProjectPrivate(id: string, value: boolean): Promise<Pro
 }
 
 // A feed post about your project. Its topics come from the project.
-export async function shareProject(id: string, body: string): Promise<ProjectState & { postId?: string }> {
+// attachments: files or links come with it, so it may have no text (supabase/post-files-only.sql, FIX-247).
+export async function shareProject(id: string, body: string, opts: { attachments?: boolean } = {}): Promise<ProjectState & { postId?: string }> {
   const text = body.trim();
-  if (!text) return { ok: false, message: "Write something about it first." };
+  if (!text && !opts.attachments) return { ok: false, message: "Write something about it first." };
   if (text.length > 3000) return { ok: false, message: "Posts can be up to 3,000 characters." };
   const { supabase, user } = await getViewer();
   if (!user) return { ok: false, message: "Log in again." };

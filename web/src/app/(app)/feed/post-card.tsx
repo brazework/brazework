@@ -174,9 +174,9 @@ export function PostCard({ post, liked, saved = false, own = false, index, proje
           onCancel={() => setEditing(false)}
           onSaved={(next) => { setEdited(next); setEditing(false); }}
         />
-      ) : (
+      ) : body.trim() ? (
         <p className={cn("mt-3 text-[15px] leading-relaxed whitespace-pre-wrap text-text-2", long && !expanded && "line-clamp-6")}><MentionText body={body} mentions={post.mentions} tags={tags} project={project} /></p>
-      )}
+      ) : null}
       {!editing && long && <button type="button" onClick={() => setExpanded((v) => !v)} className="mt-1 text-sm font-medium text-text hover:underline">{expanded ? "Show less" : "Show more"}</button>}
       {/* Tags written inline are already coloured in the text; only the rest get a line of their own. */}
       {!editing && extraTags.length > 0 && (
