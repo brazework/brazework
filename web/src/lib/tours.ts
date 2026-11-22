@@ -308,3 +308,39 @@ export function onRoute(route: string, pathname: string, search: URLSearchParams
   for (const [k, v] of new URLSearchParams(query)) if (search.get(k) !== v) return false;
   return true;
 }
+
+// The spotlight's box on screen, in pixels.
+export type TourBox = { top: number; left: number; width: number; height: number };
+
+// Where the card goes so it never covers what the step is pointing at: the first clear spot among the
+// four corners (bottom right first, where it's least in the way), then just below or above the target.
+// On a phone the card spans the screen, so it's the bottom or the top. If nothing is fully clear (a
+// target that fills the screen), the spot that covers the least of it.
+export function placeCard(box: TourBox | null, h: number, W = window.innerWidth, H = window.innerHeight) {
+  const phone = W < 640;
+  const m = phone ? 16 : 24;
+  const width = phone ? Math.min(448, W - 2 * m) : 400;
+  const center = (W - width) / 2;
+  const clampTop = (t: number) => Math.max(m, Math.min(t, H - m - h));
+  const clampLeft = (l: number) => Math.max(m, Math.min(l, W - m - width));
+  const spots = phone
+    ? [{ left: center, top: H - m - h }, { left: center, top: m }]
+    : [
+        { left: W - m - width, top: H - m - h },
+        { left: W - m - width, top: m },
+        { left: m, top: H - m - h },
+        { left: m, top: m },
+      ];
+  if (box) {
+    spots.push({ left: phone ? center : clampLeft(box.left), top: clampTop(box.top + box.height + 12) });
+    spots.push({ left: phone ? center : clampLeft(box.left), top: clampTop(box.top - h - 12) });
+  }
+  const covered = (s: { left: number; top: number }) => {
+    if (!box) return 0;
+    const x = Math.min(s.left + width, box.left + box.width) - Math.max(s.left, box.left);
+    const y = Math.min(s.top + h, box.top + box.height) - Math.max(s.top, box.top);
+    return x > 0 && y > 0 ? x * y : 0;
+  };
+  const best = spots.reduce((a, s) => (covered(s) < covered(a) ? s : a), spots[0]);
+  return { ...best, top: Math.max(m, best.top), width };
+}
