@@ -100,7 +100,8 @@ const mainCalls = () => seen.filter((b) => b.stream);
 
   await step("a chat past the budget keeps its start, and the small model summarises the middle", async () => {
     const pairs = [["Hi Ember. My rocket is called Kestrel.", "Nice name."]];
-    for (let i = 1; i < 40; i++) pairs.push([`Log ${i}: ${"telemetry ".repeat(580)}`, `Noted log ${i}. ${"ok ".repeat(1900)}`]);
+    // About 130,000 characters: past Ember's 100,000-character budget, inside what a saved chat can hold.
+    for (let i = 1; i < 22; i++) pairs.push([`Log ${i}: ${"telemetry ".repeat(310)}`, `Noted log ${i}. ${"ok ".repeat(1000)}`]);
     const id = save("Long Kestrel log", turns(pairs));
     await go(page, `/copilot?chat=${id}`);
     const before = seen.length;
@@ -113,7 +114,7 @@ const mainCalls = () => seen.filter((b) => b.stream);
     const firsts = main.messages.map((m) => text(m.content));
     if (firsts[0] !== "Hi Ember. My rocket is called Kestrel.") throw new Error("the start of the chat wasn't kept");
     if (!firsts.some((t) => /summarised so the chat fits: The member's rocket is called Kestrel/.test(t))) throw new Error("the summary isn't in what Ember saw");
-    if (main.messages.length >= 81) throw new Error("nothing was folded");
+    if (main.messages.length >= 45) throw new Error("nothing was folded");
   }, page);
 
   await step("Ember's page is centred, with past chats in a column on the left", async () => {
@@ -130,7 +131,7 @@ const mainCalls = () => seen.filter((b) => b.stream);
 
   await step("in the Ask bar, a follow-up knows the question before it, and Continue in Ember carries the conversation", async () => {
     await go(page, "/feed");
-    const bar = page.getByRole("searchbox").or(page.getByLabel("Ask Ember or search Brazework")).first();
+    const bar = page.locator("input#forge-search");
     await bar.fill("Which two clubs fit me?");
     await bar.press("Enter");
     const card = page.getByRole("region", { name: "Ember's answer" });
