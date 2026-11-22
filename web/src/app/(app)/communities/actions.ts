@@ -105,6 +105,23 @@ export async function createCommunity(_prev: CreateState, form: FormData): Promi
   redirect(`/c/${id}?created=1`);
 }
 
+export async function deleteClub(_prev: Result, form: FormData): Promise<Result> {
+  const cid = cidSchema.safeParse(str(form.get("cid")));
+  const name = str(form.get("name"));
+  if (!cid.success || !name || name.length > 100) return { ok: false, message: "Check the club name and try again." };
+  const { supabase, user } = await getViewer();
+  if (!user) return { ok: false, message: "Log in again." };
+
+  const { error } = await supabase.rpc("admin_delete_club", { p_cid: cid.data, p_name: name });
+  if (error) return { ok: false, message: error.code === "42501" || error.code === "P0001" ? error.message : "Couldn't delete this club. Try again." };
+
+  revalidateCommunity(cid.data);
+  revalidatePath("/admin");
+  revalidatePath("/events");
+  revalidatePath("/messages");
+  redirect("/communities?deleted=1");
+}
+
 /* ---------- Join, request, withdraw, leave ---------- */
 
 // Public: join right away. Approval required: send a request. The database fills in your name

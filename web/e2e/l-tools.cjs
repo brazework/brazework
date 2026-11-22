@@ -393,11 +393,14 @@ const { step, browser, as, go, summary, BASE } = require("./lib.cjs");
     if (dropped?.status !== "dropped") throw new Error(`drop_goal: ${JSON.stringify(dropped).slice(0, 200)}`);
   }, ben);
 
-  await step("FIX-92: a club's Integrations tab shows how work comes in (GitHub, members' AI tools), and no Discord", async () => {
+  await step("a club's Integrations tab shows evidence across fields and links to AI setup", async () => {
     await go(ben, "/c/rkt/manage?tab=integrations"); // Ben owns Rocketry Club
     const main = ben.locator("main");
-    await main.getByRole("heading", { name: "Members' AI tools" }).waitFor({ timeout: 15000 });
-    if ((await main.getByRole("link", { name: /How members connect/ }).getAttribute("href")) !== "/settings/tools") throw new Error("the AI tools card doesn't link to setup");
+    await main.getByRole("heading", { name: "Add evidence from any tool" }).waitFor({ timeout: 15000 });
+    await main.getByText(/Figma prototypes/).waitFor();
+    await main.getByText(/Colab notebooks/).waitFor();
+    await main.getByText(/lesson materials/).waitFor();
+    if ((await main.getByRole("link", { name: /Connect an AI tool/ }).getAttribute("href")) !== "/settings/tools") throw new Error("the AI tools card doesn't link to setup");
     if (await main.getByText(/Discord/).count()) throw new Error("Discord is still on the Integrations tab");
   }, ben);
 

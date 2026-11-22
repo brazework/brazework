@@ -89,6 +89,7 @@ async function Communities({ searchParams }: { searchParams: PageProps<"/communi
 
   return (
     <>
+      {sp.deleted === "1" && <p role="status" className="mb-4 rounded-xl border border-line bg-surface px-4 py-3 text-sm text-ok">Club deleted.</p>}
       {/* One row of tabs is enough (the place tabs above: Clubs, Events, Challenges). Finding and
           starting a club are two buttons here, and each of those views has a way back. */}
       <PageHeader
