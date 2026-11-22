@@ -17,9 +17,9 @@ export type TabId = (typeof TABS)[number]["id"];
 // of the tab row.
 export function FeedHeader({ tab, hero, hrefFor, filter, chapter = false }: { tab?: TabId; hero?: React.ReactNode; hrefFor?: (t: TabId) => string; filter?: React.ReactNode; chapter?: boolean }) {
   return (
-    <header data-tour="feed-tabs" className="flex flex-col gap-4">
+    <header className="flex flex-col gap-4">
       {hero ?? <div className="h-[132px] shimmer rounded-xl" />}
-      <div className="sticky top-[var(--m-top)] z-20 bg-bg md:top-0">
+      <div data-tour="feed-tabs" className="sticky top-[var(--m-top)] z-20 bg-bg md:top-0">
         <div className="flex items-center gap-2">
           <div className="min-w-0 flex-1"><Tabs active={tab ?? ""} tabs={TABS.filter((t) => chapter || t.id !== "chapter").map((t) => ({ id: t.id, label: t.label, href: hrefFor ? hrefFor(t.id) : t.id === "for-you" ? "/feed" : `/feed?tab=${t.id}` }))} /></div>
           {filter}
