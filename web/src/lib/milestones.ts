@@ -96,6 +96,20 @@ export async function addMilestone(_: MilestoneState, form: FormData): Promise<M
   return { ok: true, message: "Sent to the club for verification." };
 }
 
+// More evidence after it's logged (FIX-238, supabase/milestone-late-evidence.sql): a link added to a
+// milestone that's already signed keeps the signature and says it came after signing.
+export type EvidenceItem = { type: string; url?: string; added_at?: string; after_signing?: boolean };
+export async function addMilestoneEvidence(id: string, url: string): Promise<MilestoneState & { item?: EvidenceItem }> {
+  const { supabase, user } = await getViewer();
+  if (!user) return { ok: false, message: "Log in again." };
+  const clean = url.trim().replace(/^(?!https?:\/\/)/i, "https://").replace(/^http:\/\//i, "https://");
+  const { data, error } = await supabase.rpc("add_milestone_evidence", { p_id: id, p_url: clean });
+  if (error) return { ok: false, message: error.code === "PGRST202" ? "Adding evidence later isn't switched on yet." : error.code === "42501" ? error.message ?? "Only the owner can add evidence." : reason(error) };
+  revalidatePath(`/u/${user.id}`);
+  const item = data as EvidenceItem;
+  return { ok: true, message: item.after_signing ? "Added. It shows as added after signing." : "Added.", item };
+}
+
 export async function removeMilestone(id: string): Promise<MilestoneState> {
   const { supabase, user } = await getViewer();
   if (!user) return { ok: false, message: "Log in again." };

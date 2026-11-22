@@ -101,7 +101,8 @@ export async function postSelect(): Promise<string> {
 export async function milestoneCols(): Promise<string> {
   const base = "id, project_id, community_id, community_name, title, detail, evidence, achieved_on, status, reviewer_name, review_note";
   const f = await dbFeatures();
-  const cols = f.verification ? `${base}, private, revoked_reason, reviewer_role, reviewed_at, escalated` : base;
+  // evidence_items: links added beyond the first, some after it was signed (milestone-late-evidence.sql).
+  const cols = f.verification ? `${base}, private, revoked_reason, reviewer_role, reviewed_at, escalated, evidence_items` : base;
   const withVouch = f.vouches ? `${cols}, vouched_by` : cols;
   // backed.sql: what GitHub backs (lib/backing.ts).
   // approved-by.sql: who approved the pull request on GitHub.
