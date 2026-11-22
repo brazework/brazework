@@ -170,6 +170,7 @@ export function PostCard({ post, liked, saved = false, own = false, index, proje
           postId={post.id}
           body={body}
           tags={tags}
+          projectId={post.project_id ?? null}
           onCancel={() => setEditing(false)}
           onSaved={(next) => { setEdited(next); setEditing(false); }}
         />
