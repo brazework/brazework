@@ -1,5 +1,5 @@
 // The guided tour (FIX-236): while it runs the page underneath can't scroll or be clicked; every step
-// of the welcome tour spotlights a real element on today's pages; closing at any step (Done, ✕ or
+// of the welcome tour spotlights a real element on today's pages, with the card clear of it; closing at any step (Done, ✕ or
 // Escape) gives the page back; "Take the tour" in the menu on your photo replays it.
 // Maya's "seen the welcome tour" row is removed so the tour starts the way it does for a new member.
 const { execSync } = require("child_process");
@@ -41,6 +41,15 @@ async function lit(page, target) {
   }, target, { timeout: 15000 });
 }
 
+// The card has moved clear of the spotlight (it slides there, so give it a moment).
+async function clear(page, what) {
+  await page.waitForFunction(() => {
+    const c = document.querySelector("[data-tour-card]")?.getBoundingClientRect(), s = document.querySelector("[data-tour-spot]")?.getBoundingClientRect();
+    if (!c || !s) return false;
+    return !(Math.min(c.right, s.right - 6) > Math.max(c.left, s.left + 6) && Math.min(c.bottom, s.bottom - 6) > Math.max(c.top, s.top + 6));
+  }, null, { timeout: 5000 }).catch(() => { throw new Error(`the card covers what it points at (${what})`); });
+}
+
 (async () => {
   const b = await browser();
 
@@ -67,7 +76,7 @@ async function lit(page, target) {
       await card(page).getByRole("heading", { name: title, exact: typeof title === "string" }).waitFor({ timeout: 20000 });
       const count = await card(page).getByText(new RegExp(`^${n + 1} / ${STEPS.length}$`)).count();
       if (!count) throw new Error(`step ${n + 1} (${title}) isn't numbered ${n + 1} / ${STEPS.length}: a step was skipped`);
-      if (target) await lit(page, target);
+      if (target) { await lit(page, target); await clear(page, title); }
       if (!(await locked(page))) throw new Error(`the page unlocked at step ${n + 1} (${title})`);
       await card(page).getByRole("button", { name: n === STEPS.length - 1 ? "Done" : "Next" }).click();
     }
@@ -103,11 +112,11 @@ async function lit(page, target) {
     await card(phone).getByRole("button", { name: "Next" }).click();
     await card(phone).getByRole("heading", { name: "Five places" }).waitFor();
     await lit(phone, "menu");
-    const clear = await phone.evaluate(() => { const c = document.querySelector('[aria-labelledby="tour-title"]').getBoundingClientRect(), s = document.querySelector("[data-tour-spot]").getBoundingClientRect(); return c.bottom <= s.top; });
-    if (!clear) throw new Error("the card covers the tab bar it's pointing at");
+    await clear(phone, "the tab bar");
     await card(phone).getByRole("button", { name: "Next" }).click();
     await card(phone).getByRole("heading", { name: "Ask Ember, or log what you did" }).waitFor();
     await lit(phone, "search");
+    await clear(phone, "the Ask Ember bar");
     await phone.keyboard.press("Escape");
     await card(phone).waitFor({ state: "detached", timeout: 10000 });
     if (await locked(phone)) throw new Error("the page is still locked after Escape");

@@ -7,12 +7,12 @@ import { createPortal } from "react-dom";
 import { Button } from "@/components/ui";
 import { cn } from "@/lib/forge";
 import { NavTile } from "@/components/app/nav-tile";
-import { UPDATES, WELCOME, freshUpdates, onRoute, updateDate, welcomeSteps, whatsNewSteps, type TourStep } from "@/lib/tours";
+import { UPDATES, WELCOME, freshUpdates, onRoute, placeCard, updateDate, welcomeSteps, whatsNewSteps, type TourBox, type TourStep } from "@/lib/tours";
 import { loadTourState, markToursSeen } from "./actions";
 import { FeedbackForm } from "./feedback-form";
 
 type Run = { steps: TourStep[]; keys: string[] };
-type Box = { top: number; left: number; width: number; height: number };
+type Box = TourBox;
 
 // The guided tour (public/js/tour.js): runs once for new members, then "What's new" walkthroughs
 // for updates shipped since. A card follows each step to its page and spotlights [data-tour] targets.
@@ -146,10 +146,20 @@ export function TourMount() {
     return () => window.removeEventListener("keydown", onKey);
   }, [run, close]);
 
+  // The card's height changes with each step's text, and where it can go depends on it.
+  const card = useRef<HTMLDivElement>(null);
+  const [cardH, setCardH] = useState(200);
+  useEffect(() => {
+    const el = card.current;
+    if (!showing || !el) return;
+    const ro = new ResizeObserver(() => setCardH(el.offsetHeight));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [showing]);
+
   if (!run || !step) return null;
   const last = i === run.steps.length - 1;
-  // A target low on the screen (the phone's tab bar) would sit under the card: the card moves up.
-  const high = !!box && typeof window !== "undefined" && box.top + box.height > window.innerHeight - 280;
+  const at = placeCard(box, cardH);
   return (
     <AnimatePresence>
       {/* Catches every click, tap, wheel and touch meant for the page underneath while the tour runs.
@@ -172,9 +182,14 @@ export function TourMount() {
         role="dialog"
         aria-modal="true"
         aria-labelledby="tour-title"
-        initial={{ opacity: 0, y: 16 }}
-        animate={{ opacity: 1, y: 0 }}
-        className={cn("fixed inset-x-4 z-[61] mx-auto max-h-[70dvh] max-w-md overflow-y-auto overscroll-contain rounded-3xl border border-line bg-surface p-5 shadow-[var(--shadow)] sm:right-6 sm:left-auto sm:mx-0 sm:w-[400px]", high ? "top-[calc(env(safe-area-inset-top)+1rem)] sm:top-6" : "bottom-4 sm:bottom-6")}
+        ref={card}
+        data-tour-card
+        // It moves out of the way of whatever the step lights up (placeCard in lib/tours.ts).
+        initial={{ opacity: 0, y: 16, top: at.top, left: at.left }}
+        animate={{ opacity: 1, y: 0, top: at.top, left: at.left }}
+        transition={{ type: "spring", stiffness: 320, damping: 34 }}
+        style={{ width: at.width }}
+        className="fixed z-[61] max-h-[70dvh] overflow-y-auto overscroll-contain rounded-3xl border border-line bg-surface p-5 shadow-[var(--shadow)]"
       >
         <div className="flex items-start gap-3">
           <Sparkles className="mt-0.5 size-5 shrink-0" />

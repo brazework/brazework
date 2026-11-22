@@ -5,7 +5,7 @@ import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
 import { test } from "node:test";
 import { PLACES } from "@/lib/places";
-import { UPDATES, WELCOME_TARGETS, welcomeSteps, whatsNewSteps } from "@/lib/tours";
+import { UPDATES, WELCOME_TARGETS, placeCard, welcomeSteps, whatsNewSteps, type TourBox } from "@/lib/tours";
 
 // Every tour anchor in the source: data-tour="x", a tour="x" prop, or a tour: "x" field (lib/places.ts).
 function anchors() {
@@ -54,4 +54,37 @@ test("what's-new steps point at a real anchor or none", () => {
   for (const s of whatsNewSteps(UPDATES.filter((u) => u.kind !== "Next"))) {
     if (s.target) assert.ok(have.has(s.target), `no element carries data-tour="${s.target}"`);
   }
+});
+
+// The card never sits on what the step lights up (placeCard).
+const overlaps = (c: { left: number; top: number; width: number }, h: number, b: TourBox) =>
+  Math.min(c.left + c.width, b.left + b.width) > Math.max(c.left, b.left) && Math.min(c.top + h, b.top + b.height) > Math.max(c.top, b.top);
+
+test("the card moves off the highlighted element, wherever it is on a desktop", () => {
+  const W = 1440, H = 950, h = 220;
+  const targets: TourBox[] = [
+    { top: 700, left: 1000, width: 400, height: 200 }, // bottom right, under the card's usual spot
+    { top: 20, left: 1000, width: 400, height: 60 }, // top right
+    { top: 300, left: 260, width: 900, height: 380 }, // the middle, wide (a profile's proof)
+    { top: 120, left: 8, width: 240, height: 760 }, // the sidebar
+    { top: 380, left: 300, width: 1100, height: 180 }, // a full-width band across the middle
+  ];
+  for (const b of targets) {
+    const c = placeCard(b, h, W, H);
+    assert.ok(!overlaps(c, h, b), `card at ${c.left},${c.top} covers the target at ${b.left},${b.top}`);
+    assert.ok(c.left >= 0 && c.left + c.width <= W && c.top >= 0 && c.top + h <= H, "card is off the screen");
+  }
+  // With nothing to point at, it sits in its usual corner, bottom right.
+  const c = placeCard(null, h, W, H);
+  assert.deepEqual([c.left, c.top], [W - 24 - 400, H - 24 - h]);
+});
+
+test("on a phone the card goes to the top when the target is low, and stays low otherwise", () => {
+  const W = 390, H = 844, h = 240;
+  const tabBar: TourBox = { top: 760, left: 12, width: 366, height: 70 };
+  const searchBar: TourBox = { top: 70, left: 10, width: 370, height: 52 };
+  const low = placeCard(tabBar, h, W, H), high = placeCard(searchBar, h, W, H);
+  assert.ok(!overlaps(low, h, tabBar) && low.top < tabBar.top, "covers the tab bar");
+  assert.ok(!overlaps(high, h, searchBar) && high.top > searchBar.top, "covers the search bar");
+  assert.equal(low.width, W - 32);
 });
