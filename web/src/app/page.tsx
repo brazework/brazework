@@ -17,7 +17,7 @@ import { ProductHuntWelcome } from "@/components/launch/product-hunt-welcome";
 // what companies get and what it costs; questions; one last call to start. The first four answer
 // "what is this and why would I care" before anything asks the visitor to learn a feature.
 // It scrolls like any page. On a phone it's the short version (Josh, 22 Nov: "too much content on
-// iPhone"): the why, the 3D build, the AI tools, the founders and the questions are on a wider screen
+// iPhone"): the why, the 3D build, the founders and the questions are on a wider screen
 // only, and the phone menu doesn't link to them. What a phone keeps: what it is, how it works, who signs,
 // the app, Ember, clubs (and the founding form their buttons open), companies, pricing, the last call.
 export default function Landing() {
@@ -35,7 +35,7 @@ export default function Landing() {
         <Tour />
         <div className="hidden sm:block"><ShowBuild /></div>
         <EmberSection />
-        <div className="hidden sm:block"><ConnectSection /></div>
+        <ConnectSection />
         <Clubs />
         <Organizations />
         <Companies />

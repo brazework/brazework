@@ -17,6 +17,8 @@ import { FEATURE_ACCESS } from "@/lib/plans";
 export const PLUS = { name: "Plus", student: 6, everyone: 12, studentYear: 48, everyoneYear: 96 };
 // What a school pays: a flat portal and a seat for each advisor who uses it. Never per club or
 // chapter, so a school never has a reason to keep a club off Brazework (founders, 2026-11-19).
+export const SPONSORSHIP = { chapter: 2500, challengePrizes: 5000, serviceFee: 500 };
+export const EMBER_ALLOWANCE = "Ember included: 25 questions a day, no credits to buy";
 export const SCHOOL = { portal: 6000, seatsIncluded: 2, perAdvisor: 1200 };
 /** A school's yearly price for this many advisors (the portal includes the first seats). */
 export const schoolPrice = (advisors: number) => SCHOOL.portal + Math.max(0, Math.ceil(advisors) - SCHOOL.seatsIncluded) * SCHOOL.perAdvisor;
@@ -50,14 +52,14 @@ export const PRICING_LINKS: { audience: Audience; label: string; href: string }[
 export const TIERS: Tier[] = [
   {
     id: "free", audience: "builders", name: "Free", price: "$0", note: "Always, with no ads", featured: true,
-    points: ["Your record: every build, with the people who signed it", "Ask anyone who saw it to sign: a professor, a manager, your club", "A share card for every milestone, signed or waiting", "Clubs, study groups, events and your AI agent", "Be found by companies, and see who looked this week"],
+    points: ["Your record: every build, with the people who signed it", "Ask anyone who saw it to sign: a professor, a manager, your club", "A share card for every milestone, signed or waiting", "Clubs, study groups and events", EMBER_ALLOWANCE, "Connect your own AI at no extra Brazework charge; your provider’s plan and limits apply", "Be found by companies, and see who looked this week"],
     cta: { label: "Log your first build", href: "/signup" },
   },
   {
-    id: "plus", audience: "builders", name: PLUS.name, price: `$${PLUS.student}/mo`,
-    note: `For students, or $${PLUS.studentYear} a year. Professionals: $${PLUS.everyone}/mo, or $${PLUS.everyoneYear} a year.`,
+    id: "plus", audience: "builders", name: PLUS.name, price: `$${PLUS.everyoneYear}/yr`,
+    note: `For professionals, or $${PLUS.everyone}/mo. Students: $${PLUS.student}/mo or $${PLUS.studentYear}/year. Join the waitlist while paid plans are being set up.`,
     points: [
-      "Everything in Free",
+      "Everything in Free, including the same 25 Ember questions a day",
       // Free while it's a Plus preview (lib/plans.ts), and the card says so: one word there changes both.
       `Review packets: your signed work over any period, ready for a performance review or a promotion case${FEATURE_ACCESS.reviewPacket === "plus-preview" ? " (free for everyone during launch)" : ""}`,
       "Every company that looked in the last 90 days, not just this week",
@@ -66,13 +68,13 @@ export const TIERS: Tier[] = [
     cta: { label: "Get Plus", href: "/plus" },
   },
   {
-    id: "talent", audience: "companies", name: "Find builders", price: "$15,000", note: "Per year, for 2 seats and 2 chapter sponsorships", featured: true,
-    points: ["Search members by signed work, field, school and class year", "Message them in their Requests", "Two chapters sponsored each semester, your pick", "They see that you looked, so it starts warm"],
+    id: "talent", audience: "companies", name: "Find builders", price: "$15,000", note: "Per year, for 2 search and messaging seats", featured: true,
+    points: ["Search members by signed work, field, school and class year", "Message them in their Requests", "Chapter sponsorships and challenges are priced separately", "They see that you looked, so it starts warm"],
     cta: { label: "Book a pilot", href: "/book?kind=talent" },
   },
   {
-    id: "sponsor", audience: "companies", name: "Sponsor a chapter or a challenge", price: "$2,500", note: "Per chapter, per semester. All of it goes to the club.",
-    points: ["Your name on a chapter's page and its members' signed work", "Or post a build challenge that clubs opt into, from $5,000. Prizes go to the winners in full.", "Meet the members who win, signed by their clubs", "Reporting on who took part and what they built"],
+    id: "sponsor", audience: "companies", name: "Sponsor a chapter or a challenge", price: usd(SPONSORSHIP.chapter), note: `Per chapter, per semester. All of it goes to the club. Plus a separate ${usd(SPONSORSHIP.serviceFee)} service fee: ${usd(SPONSORSHIP.chapter + SPONSORSHIP.serviceFee)} total.`,
+    points: ["Your name on a chapter's page and its members' signed work", `Challenges: from ${usd(SPONSORSHIP.challengePrizes)} in prizes plus a separate ${usd(SPONSORSHIP.serviceFee)} service fee (${usd(SPONSORSHIP.challengePrizes + SPONSORSHIP.serviceFee)} total). Prizes go to the winners in full.`, "Meet the members who win, signed by their clubs", "The service fee covers setup, coordination and reporting; it never comes out of club funds or prizes"],
     cta: { label: "Sponsor a chapter", href: "/book?kind=chapter" },
   },
   {
@@ -82,7 +84,7 @@ export const TIERS: Tier[] = [
   },
   {
     id: "network", audience: "organizations", name: "Schools and networks", price: usd(SCHOOL.portal), note: `Per year for a school, with ${SCHOOL.seatsIncluded} advisor seats. ${usd(SCHOOL.perAdvisor)} per extra advisor.`, featured: true,
-    points: ["Every club included, however many join", "Your school's official account and its verified clubs", "Advisors approve clubs and follow what they build", "Reporting: what members built and who signed it", "The first 10 schools get their first semester free", "National networks: a portal across chapters, priced with the founders"],
+    points: ["Every club included, however many join", "Your school's official account and its verified clubs", "Advisors approve clubs and follow what they build", "Reporting: what members built and who signed it", "The first 10 schools get their first semester free", "Request a pilot now; self-serve billing is planned", "National networks: a portal across chapters, priced with the founders"],
     cta: { label: "Book a demo", href: "/book?kind=school" },
   },
 ];

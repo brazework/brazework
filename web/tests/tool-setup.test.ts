@@ -138,3 +138,16 @@ test("the setup prompt carries only the public address, and reads as steps any a
   }
   assert.deepEqual(ASSISTANTS.map((a) => new URL(a.open("x")).host), ["claude.ai", "chatgpt.com"]);
 });
+
+
+test("public AI explanation never requests account access and contains only fixed public URLs", async () => {
+  const { PUBLIC_EXPLAIN_PROMPT, ASSISTANTS } = await import("@/lib/tool-setup");
+  assert.match(PUBLIC_EXPLAIN_PROMPT, /https:\/\/brazework\.com/);
+  assert.match(PUBLIC_EXPLAIN_PROMPT, /public pages only/i);
+  assert.doesNotMatch(PUBLIC_EXPLAIN_PROMPT, /api\/mcp|read my|my profile|my projects|other connected tools|Bearer|forge_/i);
+  for (const a of ASSISTANTS) {
+    const link = new URL(a.open(PUBLIC_EXPLAIN_PROMPT));
+    assert.equal(link.searchParams.get("q"), PUBLIC_EXPLAIN_PROMPT);
+    assert.equal([...link.searchParams.keys()].join(), "q");
+  }
+});
