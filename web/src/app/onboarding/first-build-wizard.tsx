@@ -198,7 +198,7 @@ export function FirstBuildWizard({ firstName, student, userId, clubs, askLinkedi
               {hasProof && (
                 <>
                   <div role="radiogroup" aria-label="Who to ask" className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-                    {([["email", student ? "A professor or mentor" : "A manager or mentor", "By email, at their school or company", Mail], ["club", "My club", "Its officers verify it", Users], ["none", "Not yet", "Save it, ask later", Clock]] as const).map(([id, label, hint, Icon]) => (
+                    {([["email", student ? "A professor or mentor" : "A coworker or mentor", "By email, at their school or company", Mail], ["club", "My club", "Its officers verify it", Users], ["none", "Not yet", "Save it, ask later", Clock]] as const).map(([id, label, hint, Icon]) => (
                       <button key={id} type="button" role="radio" aria-checked={s.signer === id} onClick={() => { setError(""); set({ signer: id }); }}
                         className="flex flex-col items-start gap-1 rounded-2xl border border-line bg-surface p-4 text-left transition hover:border-line-strong aria-checked:border-accent aria-checked:ring-[3px] aria-checked:ring-accent/15">
                         <Icon className="size-5 text-accent" />
@@ -210,7 +210,7 @@ export function FirstBuildWizard({ firstName, student, userId, clubs, askLinkedi
                   {s.signer === "email" && (
                     <div className="grid grid-cols-1 gap-4 sm:grid-cols-[1fr_14rem]">
                       <Field label="Their email" hint="A school or work address carries the most weight; a personal one works too, and the signature says so.">
-                        <input type="email" name="signerEmail" value={s.email} onChange={(e) => set({ email: e.target.value })} placeholder={student ? "professor@university.edu" : "manager@company.com"} autoComplete="off" className={inputCls} />
+                        <input type="email" name="signerEmail" value={s.email} onChange={(e) => set({ email: e.target.value })} placeholder={student ? "professor@university.edu" : "coworker@company.com"} autoComplete="off" className={inputCls} />
                       </Field>
                       <Field label="They are">
                         <select value={s.relationship} onChange={(e) => set({ relationship: e.target.value })} className={inputCls}>

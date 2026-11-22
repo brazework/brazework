@@ -52,7 +52,7 @@ export const PRICING_LINKS: { audience: Audience; label: string; href: string }[
 export const TIERS: Tier[] = [
   {
     id: "free", audience: "builders", name: "Free", price: "$0", note: "Always, with no ads", featured: true,
-    points: ["Your record: every build, with the people who signed it", "Ask anyone who saw it to sign: a professor, a manager, your club", "A share card for every milestone, signed or waiting", "Clubs, study groups and events", EMBER_ALLOWANCE, "Connect your own AI at no extra Brazework charge; your provider’s plan and limits apply", "Be found by companies, and see who looked this week"],
+    points: ["Your record: every build, with the people who signed it", "Ask anyone who saw it to sign: a professor, a coworker, your club", "A share card for every milestone, signed or waiting", "Clubs, study groups and events", EMBER_ALLOWANCE, "Connect your own AI at no extra Brazework charge; your provider’s plan and limits apply", "Be found by companies, and see who looked this week"],
     cta: { label: "Log your first build", href: "/signup" },
   },
   {

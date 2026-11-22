@@ -7,7 +7,7 @@ import { cn } from "@/lib/forge";
 
 // "Show the build", to try: pick what you do and see an example of what you'd post, in the product's
 // own 3D viewer (turn it, see through it, switch to the blueprint), with the kind of milestone that
-// goes with it and who confirmed it: a club that verified it, or a professor, manager or client who
+// goes with it and who confirmed it: a club that verified it, or a professor, coworker or client who
 // signed it. Example models and results (sample-models.ts).
 export function BuildShowcase() {
   const [id, setId] = useState<SampleId>("robot");

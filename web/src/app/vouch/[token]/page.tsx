@@ -11,7 +11,7 @@ import { previewVouch, vouchInbox } from "@/lib/vouches";
 import { AnswerForm } from "./answer-form";
 import { MoreAsks } from "./more-asks";
 
-// /vouch/<token>: someone a member asked (a professor, TA, PI, manager, mentor) vouches for one
+// /vouch/<token>: someone a member asked (a professor, TA, PI, coworker, mentor) vouches for one
 // milestone, or declines (supabase/vouches.sql, Linear FIX-94). Works signed out: the link, emailed to
 // the address they really use (a university or work one carries the most weight), is the proof. The URL is a secret, so it's never indexed and
 // never sent on as a referrer (evidence links open without one).

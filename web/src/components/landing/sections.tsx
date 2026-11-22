@@ -37,7 +37,7 @@ function Points({ items }: { items: [string, string][] }) {
 // asked by email: supabase/vouches.sql). Examples, and the page says so.
 const STAGES = [
   { when: "Studying", who: "Your club's officers sign what they saw you build. A professor, a TA or a lab lead can too.", work: "Line-following robot beat the course in 41.2 seconds", by: "Ben C.", as: "officer, Rocketry Club" },
-  { when: "Working", who: "A manager or a mentor signs from their work email. They don't need an account.", work: "Cut the pick-and-place cycle from 9.4 to 7.1 seconds", by: "Dana R.", as: "engineering manager, Voltline" },
+  { when: "Working", who: "A coworker or mentor outside the project signs from their work email. They don't need an account.", work: "Cut the pick-and-place cycle from 9.4 to 7.1 seconds", by: "Dana R.", as: "coworker, Voltline" },
   { when: "On your own", who: "Whoever you built it for signs it, from their company's address: the person who saw it ship.", work: "Rebuilt a bike shop's checkout: 31% fewer abandoned carts", by: "Sam O.", as: "owner, Northside Bikes" },
 ];
 
@@ -46,7 +46,7 @@ export function Stages() {
     <section id="who" className="scroll-mt-20 py-16 sm:py-24">
       <div className={WRAP}>
         <h2 className={H2}>Who signs it? Whoever saw it.</h2>
-        <p className={LEAD}>At school that&apos;s your club or a professor. At work, your manager or tech lead. On your own, your client. They sign from their own email (a work or university one carries the most weight), and the record stays yours when you move on.</p>
+        <p className={LEAD}>At school that&apos;s your club or a professor. At work, your coworker or tech lead. On your own, your client. They sign from their own email (a work or university one carries the most weight), and the record stays yours when you move on.</p>
         <ul className="mt-10 grid grid-cols-1 overflow-hidden rounded-[1.25rem] border border-line bg-surface md:grid-cols-3 md:divide-x md:divide-line">
           {STAGES.map((s, i) => (
             <li key={s.when} className={cn("flex flex-col p-6 sm:p-7", i > 0 && "border-t border-line md:border-t-0")}>

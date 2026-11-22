@@ -15,7 +15,7 @@ export type PublicProof = {
   waiting_for?: { club: string | null; asked: { relationship: string; domain: string } | null } | null;
 };
 
-const ASKED: Record<string, string> = { professor: "a professor", ta: "a TA", pi: "a lab PI", manager: "a manager", mentor: "a mentor", other: "someone who saw it" };
+const ASKED: Record<string, string> = { professor: "a professor", ta: "a TA", pi: "a lab PI", manager: "a coworker", mentor: "a mentor", other: "someone who saw it" };
 /** Who a waiting card waits for: "Rocketry Club", or "a professor at utexas.edu". */
 export function waitingFor(p: PublicProof): string {
   const w = p.waiting_for;

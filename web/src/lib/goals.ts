@@ -5,7 +5,7 @@
 
 export const GOAL_KINDS = {
   internship: { label: "Internship", title: "a summer internship", target: 3, signers: "your club or a mentor", looking: "companies hiring interns" },
-  job: { label: "Next job", title: "your next full-time role", target: 4, signers: "a manager or your club", looking: "hiring teams" },
+  job: { label: "Next job", title: "your next full-time role", target: 4, signers: "a coworker or your club", looking: "hiring teams" },
   grad: { label: "Grad school", title: "grad school", target: 2, signers: "a professor or PI", looking: "grad programs" },
   research: { label: "Research lab", title: "a spot in a research lab", target: 2, signers: "the PI or a TA", looking: "labs" },
   competition: { label: "Competition", title: "a competition win", target: 6, signers: "your club's officers", looking: "sponsors" },

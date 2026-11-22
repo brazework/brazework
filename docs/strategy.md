@@ -17,7 +17,7 @@ Builds on [positioning.md](positioning.md) (market research, with sources). Numb
 
 ## 1. What Brazework is, in one line
 
-**Brazework is the record of your work, signed by the people who saw it.** It is for anyone who builds, at any stage: a student signed by a club officer, an employee signed by a manager, a freelancer signed by a client (Josh's call, 2026-11-16, FIX-120). We still launch inside university clubs, because a club is the smallest group that is useful with nobody else there. Organizations run on it, members prove what they've built, and the companies and universities that hire find them there. Ember, the AI agent built in, does the organization's busywork.
+**Brazework is the record of your work, signed by the people who saw it.** It is for anyone who builds, at any stage: a student signed by a club officer, an employee signed by a coworker, a freelancer signed by a client (Josh's call, 2026-11-16, FIX-120). We still launch inside university clubs, because a club is the smallest group that is useful with nobody else there. Organizations run on it, members prove what they've built, and the companies and universities that hire find them there. Ember, the AI agent built in, does the organization's busywork.
 
 - **YC "describe it in 50 characters":** *Your work, signed by the people who saw it.*
 - **Why it matters now:** AI made résumés and profiles free to generate. 91% of recruiters have caught candidate deception (Greenhouse, 2025), and Gartner expects 1 in 4 candidate profiles to be fake by 2028 (sources in positioning.md). Work that someone else saw happen is what still carries signal, and today it's buried in group chats and lab notebooks.
@@ -119,7 +119,7 @@ Don't say "NSBE partner" publicly until NSBE agrees; say "built with student cha
 
 ### Draft application answers
 
-- **What are you making?** A record of what people build, signed by the people who saw it. It starts in student organizations: chapters run on it, officers sign members' work, and employers and universities find them. The same record keeps going after graduation, signed by a manager or a client. An AI agent runs the organization's busywork.
+- **What are you making?** A record of what people build, signed by the people who saw it. It starts in student organizations: chapters run on it, officers sign members' work, and employers and universities find them. The same record keeps going after graduation, signed by a coworker or a client. An AI agent runs the organization's busywork.
 - **Why now?** AI made résumés free to fake, so hiring needs proof. And AI agents are finally good enough to run the operations that student organizations drop.
 - **How will you make money?** Free for members and organizations. Companies pay for sponsorships and search; universities and national organizations pay for campus- and network-wide tools.
 - **Competition?** LinkedIn (noise, AI-written posts), Handshake (career-center led; most revenue now from AI training), Presence/Engage (student-org admin without careers or AI), Discord/GroupMe (where organizations live today, but chat disappears). Brazework is the only one where the organization's work becomes verified career proof.
@@ -144,7 +144,7 @@ Don't say "NSBE partner" publicly until NSBE agrees; say "built with student cha
 1. **No atomic network.** Polywork raised $44.5M and still shut down: a personal profile is worth little until everyone is there. Ours is one club, useful the day it runs its events, chat and verification on Brazework, before anyone else joins.
 2. **Self-reported, so copyable.** LinkedIn can match a nicer self-written page in a quarter. It can't match a milestone signed by a named officer inside that club's history.
 3. **No buyer.** Neither found who pays. Companies already spend campus-recruiting money; sponsored clubs and challenges give them something concrete to buy.
-4. **Horizontal from day one.** "Everyone's personal brand" is LinkedIn's home ground. Our positioning is now for anyone who builds (2026-11-16), which makes this the risk to watch: the message is broad, so the launch has to stay narrow. Signed work, inside one club at a time, for the companies that hire from it, is a start LinkedIn serves badly. A working professional can join and be signed by a manager today, but we don't go looking for them until a campus is active.
+4. **Horizontal from day one.** "Everyone's personal brand" is LinkedIn's home ground. Our positioning is now for anyone who builds (2026-11-16), which makes this the risk to watch: the message is broad, so the launch has to stay narrow. Signed work, inside one club at a time, for the companies that hire from it, is a start LinkedIn serves badly. A working professional can join and be signed by a coworker today, but we don't go looking for them until a campus is active.
 
 **Where we could still look like them (watch this):** an update feed without proof is Polywork's product, and a profile that leads with bio and links is Read.cv's. Proof leads every profile, and the cold start is the same risk that killed both, which is why one campus has to be truly active (the UHart NSBE pilot) before we expand.
 

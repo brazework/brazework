@@ -77,7 +77,7 @@ export function nextStep(tool: string, data: unknown, origin: string): { next: s
 // get one more line where the member or the assistant has a choice to make.
 const HINTS: [RegExp, string][] = [
   [/throwaway inbox/i, "Ask the member for the address that person really uses: school, work or personal (a personal one is labelled as such on the signature). Throwaway inboxes can't sign."],
-  [/isn'?t on the project/i, "Teammates can't sign each other's work. Ask a professor, PI, manager or mentor who saw it."],
+  [/isn'?t on the project/i, "Teammates can't sign each other's work. Ask someone outside the project who saw it, such as a coworker, professor, PI or mentor."],
   [/asked 3 people|already asked them/i, "Wait for an answer: the member is notified. my_projects shows what's still open."],
   [/asks this week|drafts this hour|milestones waiting for review/i, "This is a limit, not an error. Tell the member, and try again later."],
   [/30 drafts waiting/i, "The member has drafts to review first. Point them to Brazework → Drafts."],

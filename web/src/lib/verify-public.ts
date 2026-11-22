@@ -17,7 +17,7 @@ export type PublicVerify = {
 
 const ROLES: Record<string, string> = {
   owner: "club president", admin: "club officer", moderator: "club officer", helper: "club helper",
-  professor: "professor", ta: "teaching assistant", pi: "lab PI", manager: "manager", mentor: "mentor", other: "witness",
+  professor: "professor", ta: "teaching assistant", pi: "lab PI", manager: "coworker", mentor: "mentor", other: "witness",
 };
 
 /** The signer's role in plain words ("professor", "club officer"). */

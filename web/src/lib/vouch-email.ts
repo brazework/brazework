@@ -3,7 +3,7 @@
 // (tests/vouch-email.test.ts).
 
 export const RELATIONSHIPS = {
-  professor: "a professor", ta: "a TA", pi: "their lab's PI", manager: "a manager", mentor: "a mentor", other: "someone who saw the work",
+  professor: "a professor", ta: "a TA", pi: "their lab's PI", manager: "a coworker", mentor: "a mentor", other: "someone who saw the work",
 } as const;
 export type Relationship = keyof typeof RELATIONSHIPS;
 

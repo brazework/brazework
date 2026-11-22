@@ -53,7 +53,7 @@ export function loopSteps(f: LoopFacts): GuideStep[] {
     project,
     { id: "update", label: "Post an update about it", done: f.hasUpdate, href: "/feed#composer", why: "Pick the project in the composer. Steady updates are what a signature sits next to." },
     ...(f.milestones ? [
-      { id: "ask-verify", label: "Ask someone who saw it to verify a milestone", done: f.asked, href: "/profile#projects", why: "A manager, a mentor or anyone who was there. We email them a link; they don't need an account." },
+      { id: "ask-verify", label: "Ask someone who saw it to verify a milestone", done: f.asked, href: "/profile#projects", why: "A coworker, a mentor or anyone who was there. We email them a link; they don't need an account." },
       { id: "verified", label: "Get your first verified milestone", done: f.verified, href: "/profile#projects", why: "It shows on your profile with their name and where they work: proof no résumé can fake." },
     ] : []),
   ];
