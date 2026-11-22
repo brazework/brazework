@@ -35,8 +35,9 @@ end $$;
 revoke execute on function public.add_milestone_evidence(text, text) from anon, public;
 grant execute on function public.add_milestone_evidence(text, text) to authenticated;
 
--- The public verify page (verify-links.sql, /v/<id>): the same as before, plus each link says whether it
--- was added after signing and when, so a résumé link never passes off later evidence as what was signed.
+-- The public verify page (verify-links.sql, /v/<id>): the same as before, except a link added after it
+-- was signed also carries after_signing and added_at, so a résumé link never passes off later evidence as
+-- what was signed. Every other link reads exactly as before.
 create or replace function public.public_verify(p_id text) returns jsonb
 language sql stable security definer set search_path = public as $$
   with m as (
@@ -53,7 +54,7 @@ language sql stable security definer set search_path = public as $$
       'name', m.reviewer_name, 'role', m.reviewer_role, 'club', m.community_name, 'vouched_by', m.vouched_by, 'at', m.reviewed_at),
     'pro', coalesce((select jsonb_agg(jsonb_build_object('name', r.reviewer_name, 'title', r.reviewer_title, 'employer', r.employer_name, 'at', r.created_at) order by r.created_at)
                      from public.pro_reviews r where r.milestone_id = m.id), '[]'),
-    'evidence', coalesce((select jsonb_agg(case when e->>'type' in ('link', 'commit') then jsonb_build_object('type', e->>'type', 'url', e->>'url', 'after_signing', coalesce((e->>'after_signing')::boolean, false), 'added_at', e->>'added_at')
+    'evidence', coalesce((select jsonb_agg(case when e->>'type' in ('link', 'commit') then jsonb_strip_nulls(jsonb_build_object('type', e->>'type', 'url', e->>'url', 'after_signing', case when (e->>'after_signing')::boolean then true end, 'added_at', case when (e->>'after_signing')::boolean then e->>'added_at' end))
                                                 else jsonb_build_object('type', 'image', 'path', e->>'path') end order by o)
                           from jsonb_array_elements(m.evidence_items) with ordinality x(e, o) where e->>'type' in ('link', 'commit', 'image')), '[]'),
     'legacy_evidence', case when m.evidence ~ '^https://[^\s]+$' then m.evidence else '' end,
