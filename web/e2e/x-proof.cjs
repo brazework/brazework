@@ -3,7 +3,7 @@
 // Ben's tools; the preview image LinkedIn and X show is a real PNG; and when Ben stops sharing, the
 // link says so. Nothing is public until he shares it.
 const { execSync } = require("child_process");
-const { BASE, step, browser, as, go, summary } = require("./lib.cjs");
+const { BASE, step, browser, as, go, openLogs, summary } = require("./lib.cjs");
 const psql = (sql) => execSync("docker exec -i forge-e2e-db psql -U postgres -h localhost -d postgres -v ON_ERROR_STOP=1 -qtA", { input: sql }).toString().trim();
 const TITLE = "Static fire at 1.2 kN";
 
@@ -24,6 +24,7 @@ const TITLE = "Static fire at 1.2 kN";
   await step("Ben shares his signed result and gets a link, with LinkedIn, X and the image", async () => {
     await go(ben, "/profile");
     await ben.waitForURL(/\/u\//, { timeout: 15000 }).catch(() => {});
+    await openLogs(ben); // a long log on the profile is folded (FIX-240)
     // The timeline entry (the profile also lists the result in its summary, without tools).
     const item = ben.locator("li").filter({ hasText: TITLE }).filter({ has: ben.getByRole("button", { name: /^Share$/ }) }).first();
     await item.getByRole("button", { name: /^Share$/ }).click();

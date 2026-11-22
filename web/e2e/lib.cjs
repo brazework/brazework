@@ -60,6 +60,11 @@ async function go(page, path) {
   await page.goto(BASE + path, { waitUntil: "networkidle" });
   await page.waitForFunction(() => { const el = document.querySelector("main input, main textarea, main button"); return !el || Object.keys(el).some((k) => k.startsWith("__reactProps")); }, null, { timeout: 15000 }).catch(() => {});
 }
+// Open every folded milestone log on a profile (FIX-240), for steps that check what's inside one.
+async function openLogs(page) {
+  const shut = page.locator("[data-milestone-log] > button[aria-expanded='false']");
+  for (let n = await shut.count(); n > 0; n--) { await shut.first().click(); }
+}
 // Wait until React is attached to this element (streamed parts of a page hydrate after the rest).
 async function hydrated(locator) {
   await locator.waitFor();
@@ -72,4 +77,4 @@ function summary() {
     console.log(`FAIL no Content-Security-Policy violations → ${seen.length} blocked:\n  ${seen.slice(0, 8).join("\n  ")}`);
   }
   const f = results.filter((r) => r[0] === "FAIL"); console.log(`\n${results.length - f.length}/${results.length} passed`); for (const r of f) console.log("  FAIL", r[1], "→", (r[3] || "").slice(0, 200)); }
-module.exports = { BASE, step, browser, as, go, closeTour, hydrated, summary, results };
+module.exports = { BASE, step, browser, as, go, openLogs, closeTour, hydrated, summary, results };

@@ -1,13 +1,14 @@
 "use client";
 import { PROOF_TOOLS_HINT, proofSource } from "@/lib/proof-source";
 import { AnimatePresence, motion } from "motion/react";
-import { BadgeCheck, Clock, ExternalLink, Eye, EyeOff, Flag, GitMerge, Loader2, Plus, Scale, Share2, Trash2, X, XCircle } from "lucide-react";
+import { BadgeCheck, ChevronDown, Clock, ExternalLink, Eye, EyeOff, Flag, GitMerge, Loader2, Plus, Scale, Share2, Trash2, X, XCircle } from "lucide-react";
 import Link from "next/link";
-import { useActionState, useEffect, useRef, useState, useTransition } from "react";
+import { useActionState, useEffect, useId, useRef, useState, useTransition } from "react";
 import { Celebrate } from "@/components/app/celebrate";
 import { FreshSeal } from "@/components/app/fresh-seal";
 import { Button, Field, inputCls } from "@/components/ui";
 import { cn } from "@/lib/forge";
+import { anchoredMilestone, latestSigned, logFolds, logStartsOpen, logSummary, milestoneAnchor } from "@/lib/milestone-log";
 import { signerNote } from "@/lib/signers";
 import { LINKEDIN_PLACEHOLDER, LINKEDIN_PRIVATE, LINKEDIN_WHY } from "@/lib/linkedin";
 import { addMilestone, disputeMilestone, removeMilestone, setMilestoneVisible, shareMilestone, type MilestoneState } from "@/lib/milestones";
@@ -59,7 +60,7 @@ export function MilestoneTimeline({ items, own, projectPrivate = false }: { item
       {msg && <li className="text-xs text-muted" role="status">{msg}</li>}
       <AnimatePresence initial={false}>
         {shown.map((m) => (
-          <motion.li key={m.id} layout initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, height: 0 }} className={cn("relative", m.status === "pending" && "rounded-xl border border-dashed border-line-strong px-2.5 py-2")}>
+          <motion.li key={m.id} id={milestoneAnchor(m.id)} layout initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, height: 0 }} className={cn("relative scroll-mt-24", m.status === "pending" && "rounded-xl border border-dashed border-line-strong px-2.5 py-2")}>
             <span className={cn("absolute top-0.5 -left-[25px] grid size-[18px] place-items-center rounded-full ring-4 ring-surface", m.status === "verified" ? "bg-ok text-white" : m.status === "logged" ? "bg-info text-white" : m.status === "pending" || m.status === "disputed" || m.status === "draft" ? "bg-raised text-muted" : "bg-danger text-white")}>
               {m.status === "verified" ? <BadgeCheck className="size-3" /> : m.status === "disputed" ? <Scale className="size-3" /> : m.status === "logged" ? <GitMerge className="size-3" /> : m.status === "pending" || m.status === "draft" ? <Clock className="size-3" /> : <X className="size-3" />}
             </span>
@@ -134,6 +135,51 @@ export function MilestoneTimeline({ items, own, projectPrivate = false }: { item
       </AnimatePresence>
       {sharing && (() => { const m = shown.find((x) => x.id === sharing); return m ? <ShareProof m={m} onClose={() => setSharing(null)} onChange={(shared_at, priv) => setPatch((p) => ({ ...p, [m.id]: { shared_at, private: priv } }))} /> : null; })()}
     </ol>
+  );
+}
+
+// A project's milestones on a profile (Linear FIX-240), folded to one line so a long build log doesn't
+// push the rest of the profile down: "8 milestones · 5 signed · latest Nov 18", with the most recent
+// signed one under it. The full log stays in the page while folded, so its state survives a toggle and
+// print shows it. A #milestone-… link (the proof list, a share card) opens it and scrolls there.
+export function MilestoneLog({ items, own, projectPrivate = false }: { items: Milestone[]; own: boolean; projectPrivate?: boolean }) {
+  const folds = logFolds(items);
+  const [open, setOpen] = useState(() => !folds || logStartsOpen(items, own));
+  const listId = useId();
+  const ids = items.map((m) => m.id).join(",");
+  useEffect(() => {
+    const go = () => {
+      const id = anchoredMilestone(window.location.hash);
+      if (!id || !ids.split(",").includes(id)) return;
+      setOpen(true);
+      // After the log is shown: the browser's own jump to the anchor happened while it was hidden.
+      requestAnimationFrame(() => document.getElementById(milestoneAnchor(id))?.scrollIntoView({ block: "center" }));
+    };
+    go();
+    window.addEventListener("hashchange", go);
+    return () => window.removeEventListener("hashchange", go);
+  }, [ids]);
+  if (!items.length) return null;
+  if (!folds) return <MilestoneTimeline items={items} own={own} projectPrivate={projectPrivate} />;
+  const top = latestSigned(items);
+  return (
+    <div data-milestone-log className="mt-4">
+      <button type="button" aria-expanded={open} aria-controls={listId} onClick={() => setOpen((v) => !v)}
+        className="inline-flex max-w-full items-center gap-1.5 rounded-lg px-1 py-0.5 -mx-1 text-left text-xs font-medium text-text-2 transition hover:bg-hover hover:text-text print:hidden">
+        <ChevronDown aria-hidden="true" className={cn("size-3.5 shrink-0 transition-transform", open && "rotate-180")} />
+        <span suppressHydrationWarning>{logSummary(items)}</span>
+        <span className="sr-only">{open ? ", hide the log" : ", show the log"}</span>
+      </button>
+      {!open && top && (
+        <p data-log-latest className="mt-1.5 flex items-start gap-1.5 text-xs text-muted print:hidden">
+          <BadgeCheck aria-hidden="true" className="mt-px size-3.5 shrink-0 text-ok" />
+          <span className="min-w-0"><span className="font-medium text-text-2">{top.title}</span>{" · "}{top.vouched_by ? `Signed by ${top.vouched_by.split(",")[0]}` : `Verified by ${top.reviewer_name ? `${top.reviewer_name}, ` : ""}${top.community_name}`}</span>
+        </p>
+      )}
+      <div id={listId} className={cn(!open && "hidden print:block")}>
+        <MilestoneTimeline items={items} own={own} projectPrivate={projectPrivate} />
+      </div>
+    </div>
   );
 }
 
