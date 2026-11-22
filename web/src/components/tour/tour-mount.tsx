@@ -100,6 +100,7 @@ export function TourMount() {
     // (the sidebar and the phone's tab bar both carry "menu"; only one is showing).
     const until = Date.now() + 4000;
     let raf = 0;
+    let ro: ResizeObserver | null = null;
     const find = () => {
       if (!step.target) { setBox(null); return; }
       const el = [...document.querySelectorAll<HTMLElement>(`[data-tour="${step.target}"]`)].find((e) => e.getClientRects().length > 0 && getComputedStyle(e).visibility !== "hidden");
@@ -107,6 +108,16 @@ export function TourMount() {
         target.current = el;
         el.scrollIntoView({ block: "center", behavior: "instant" });
         setBox(measure(el));
+        // The rest of the page keeps streaming in after the target shows up (a box above it loads and
+        // pushes it down, or it grows): follow it, so the spotlight and the card stay where it really is.
+        ro = new ResizeObserver(() => {
+          if (!el.isConnected) return;
+          const r = el.getBoundingClientRect();
+          if (r.top < 0 || r.bottom > window.innerHeight) el.scrollIntoView({ block: "center", behavior: "instant" });
+          setBox(measure(el));
+        });
+        ro.observe(el);
+        ro.observe(document.body);
         return;
       }
       if (Date.now() < until) { raf = requestAnimationFrame(find); return; }
@@ -116,7 +127,7 @@ export function TourMount() {
       else setBox(null);
     };
     raf = requestAnimationFrame(find);
-    return () => cancelAnimationFrame(raf);
+    return () => { cancelAnimationFrame(raf); ro?.disconnect(); };
   }, [step, run, i, pathname, search, router]);
 
   // The page can't scroll, but the window can change size (a phone turning): follow the target.
