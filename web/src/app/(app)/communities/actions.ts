@@ -90,6 +90,18 @@ export async function createCommunity(_prev: CreateState, form: FormData): Promi
     if (sErr) console.error("study group details", sErr.message);
   }
   revalidatePath("/communities");
+  // "This club operates under a university" (FIX-237): ask the school now. The club exists either way;
+  // if the ask is refused (most often: not signed in with an address at that school), Manage → School
+  // opens with the reason, so it can be fixed and sent from there.
+  if (form.get("underSchool") === "on") {
+    const { error: lErr } = await supabase.rpc("request_school_link", {
+      p_cid: id, p_school: str(form.get("schoolName")), p_website: str(form.get("schoolWebsite")), p_evidence: str(form.get("schoolEvidence")),
+    });
+    if (lErr) {
+      const why = lErr.code === "P0001" || lErr.code === "42501" ? lErr.message : "The school request didn't go through. Try again here.";
+      redirect(`/c/${id}/manage?tab=school&schoolError=${encodeURIComponent(`Your club is created, but the school request wasn't sent. ${why}`)}`);
+    }
+  }
   redirect(`/c/${id}?created=1`);
 }
 

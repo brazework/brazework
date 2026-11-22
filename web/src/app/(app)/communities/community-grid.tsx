@@ -1,6 +1,6 @@
 "use client";
 import { AnimatePresence, motion } from "motion/react";
-import { CalendarDays, Check, Flame, Loader2, Search, Settings2, ShieldCheck, X } from "lucide-react";
+import { CalendarDays, Check, Flame, GraduationCap, Loader2, Search, Settings2, ShieldCheck, X } from "lucide-react";
 import Image from "next/image";
 import Link from "next/link";
 import { useMemo, useState, useTransition } from "react";
@@ -15,7 +15,8 @@ import { MemberFaces, type Face } from "@/components/network/member-faces";
 
 // A club's pulse: a few faces, member ids for the live online count, and posts this week.
 // For your own clubs: what's next on the calendar, and (officers) how many results wait for a signature.
-export type Pulse = { faces: Face[]; ids: string[]; week: number; next?: { id: string; title: string; when: string } | null; verify?: number };
+// `school`: the university that verified it as one of its clubs (school-links.sql), for the badge.
+export type Pulse = { faces: Face[]; ids: string[]; week: number; next?: { id: string; title: string; when: string } | null; verify?: number; school?: string };
 type Item = { c: Community; role?: Role; pulse?: Pulse };
 
 // Communities as a live grid: search and field filters apply as you type, cards glide into
@@ -85,6 +86,7 @@ export function CommunityCard({ c, role, joinable, pulse }: { c: Community; role
             {role && role !== "member" && <RoleChip role={role} />}
           </div>
           <MetaLine parts={[membersLabel(c.member_count), PRIVACY_LABEL[c.privacy], c.field, TYPE_LABEL[c.type]]} />
+          {pulse?.school && <p className="mt-1.5 inline-flex max-w-full items-center gap-1 rounded-full bg-[color-mix(in_oklab,var(--ok)_12%,transparent)] px-2 py-0.5 text-[11px] font-medium text-ok"><GraduationCap className="size-3 shrink-0" /> <span className="truncate">Verified club of {pulse.school}</span></p>}
           <p className="mt-2 line-clamp-2 text-sm text-text-2">{c.tagline || c.about}</p>
           {(c.topics ?? []).length > 0 && (
             <div className="mt-3 flex flex-wrap gap-1">

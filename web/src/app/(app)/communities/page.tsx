@@ -67,6 +67,11 @@ async function Communities({ searchParams }: { searchParams: PageProps<"/communi
   // Your clubs also show what's next on their calendar, and (where you're an officer) how many
   // results are waiting for a signature. Row-level security shows pending milestones to officers only.
   const f = await dbFeatures();
+  // Clubs a university has verified as its own show it on their card (school-links.sql, FIX-237).
+  if (f.schoolLinks && pulseIds.length) {
+    const links = await supabase.from("club_school_links").select("community_id, school_name").in("community_id", pulseIds).eq("status", "verified").limit(500);
+    for (const l of (links.data ?? []) as { community_id: string; school_name: string }[]) at(l.community_id).school = l.school_name;
+  }
   const now = requestTime();
   const mineIds = joined.map((j) => j.c.id), officerIds = joined.filter((j) => rank(j.role) >= 3).map((j) => j.c.id);
   const [evRows, msRows] = await Promise.all([
@@ -123,7 +128,7 @@ async function Communities({ searchParams }: { searchParams: PageProps<"/communi
           />
         )}
         {tab === "create" && <Suspense fallback={null}><StartChapterCard className="mb-4" /></Suspense>}
-        {tab === "create" && <Panel className="p-6"><CreateCommunity key={sp.type === "study" ? "study" : "club"} interests={profile.interests ?? []} field={profile.field} term={f.studyGroups ? currentTerm(now) : null} startType={sp.type === "study" ? "study" : "field"} /></Panel>}
+        {tab === "create" && <Panel className="p-6"><CreateCommunity school={f.schoolLinks && f.schoolLinkEmail && sp.type !== "study"} email={user.email ?? ""} key={sp.type === "study" ? "study" : "club"} interests={profile.interests ?? []} field={profile.field} term={f.studyGroups ? currentTerm(now) : null} startType={sp.type === "study" ? "study" : "field"} /></Panel>}
       </div>
     </>
   );

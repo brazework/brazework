@@ -28,16 +28,19 @@ begin if not coalesce(cond, false) then raise exception 'FAILED: %', what; end i
 grant execute on all functions in schema t to authenticated;
 
 -- ---------- Asking ----------
+-- Since step 89 (school-link-email.sql) asking needs a confirmed address at the school: give Ben one
+-- for this test (rolled back with the rest).
+update auth.users set email = 'ben@hartford.edu', email_confirmed_at = coalesce(email_confirmed_at, now()) where id = current_setting('t.ben')::uuid;
 select t.as_('josh'); set local role authenticated;
-select t.must_fail($$select public.request_school_link('rkt', 'University of Hartford', 'hartford.edu', 'https://hartford.edu/clubs/rocketry')$$, 'owner or an admin');
+select t.must_fail($$select public.request_school_link('rkt', 'University of Hartford', 'hartford.edu', 'https://hartford.edu/clubs/rocketry')$$, 'club''s officers');
 reset role;
 
 select t.as_('ben'); set local role authenticated;
 select t.must_fail($$select public.request_school_link('rkt', 'University of Hartford', 'example.com', 'https://hartford.edu/clubs/rocketry')$$, 'academic domain');
 select t.must_fail($$select public.request_school_link('rkt', 'University of Hartford', 'hartford.edu', 'not a link')$$, 'student-organization directory');
 select public.request_school_link('rkt', 'University of Hartford', 'https://www.hartford.edu/student-life', 'https://hartford.edu/clubs/rocketry');
-select t.ok((select status = 'pending' and school_domain = 'hartford.edu' and not requester_at_school from public.club_school_links where community_id = 'rkt'),
-  'a request is pending, the website is reduced to its domain, and the requester isn''t at the school');
+select t.ok((select status = 'pending' and school_domain = 'hartford.edu' and requester_at_school from public.club_school_links where community_id = 'rkt'),
+  'a request is pending, the website is reduced to its domain, and the requester is at the school');
 select t.must_fail($$select public.decide_school_link('rkt', true)$$, 'Only the school or a Brazework admin');
 reset role;
 

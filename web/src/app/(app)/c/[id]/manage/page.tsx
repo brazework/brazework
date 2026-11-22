@@ -61,6 +61,8 @@ async function Manage({ params, searchParams }: { params: PageProps<"/c/[id]/man
     { id: "members", label: "Members", show: true },
     { id: "bans", label: "Bans", show: can(role, "removeMembers") },
     { id: "settings", label: "Settings", show: can(role, "editInfo") },
+    // Its link to a university (step 56; officers since FIX-237, step 89).
+    { id: "school", label: "School", show: rank(role) >= (features.schoolLinkEmail ? 3 : 4) && features.schoolLinks },
     { id: "roles", label: "Roles", show: true },
     { id: "handoff", label: "Hand off", show: rank(role) >= 3 && features.handoff },
   ].filter((t) => t.show);
@@ -72,8 +74,8 @@ async function Manage({ params, searchParams }: { params: PageProps<"/c/[id]/man
     : null;
 
   const feat = await dbFeatures();
-  // Settings → School (step 56): this club's link to its school, if any.
-  const schoolLink = tab === "settings" && feat.schoolLinks ? ((await supabase.from("club_school_links").select("community_id, school_name, school_domain, evidence_url, status, requester_at_school, requested_at, decided_at, decision_note").eq("community_id", id).maybeSingle()).data as SchoolLink | null) : null;
+  // Manage → School (step 56): this club's link to its school, if any.
+  const schoolLink = tab === "school" && feat.schoolLinks ? ((await supabase.from("club_school_links").select("community_id, school_name, school_domain, evidence_url, status, requester_at_school, requested_at, decided_at, decision_note").eq("community_id", id).maybeSingle()).data as SchoolLink | null) : null;
   const MS_COLS = (feat.verification ? "dispute_note, escalated, revoked_reason, evidence_items, " : "") + (feat.mcpMilestones ? "via, " : "") + "id, owner_id, title, detail, evidence, achieved_on, created_at, status, reviewer_name, review_note, project:projects(title, summary), owner:profiles!milestones_owner_id_fkey(first_name, last_name, headline)";
   const [reqs, members, bans, invites, queue, reviewed] = await Promise.all([
     tab === "requests" ? supabase.from("community_requests").select("*").eq("community_id", id).order("at", { ascending: true }).limit(100) : Promise.resolve({ data: [] }),
@@ -136,7 +138,7 @@ async function Manage({ params, searchParams }: { params: PageProps<"/c/[id]/man
 
         {tab === "settings" && features.media && features.clubProfile && <Panel className="mb-4 p-6"><h2 className="mb-4 text-base font-semibold">Club look</h2><ClubLook cid={id} name={c.name} logo={c.logo_path} tagline={c.tagline} website={c.website} accent={c.accent} userId={user.id} /></Panel>}
         {tab === "settings" && features.media && <Panel className="mb-4 p-6"><ClubCoverUpload cid={id} path={c.cover_path} userId={user.id} /></Panel>}
-        {tab === "settings" && feat.schoolLinks && <Panel className="mb-4 p-6"><SchoolLinkPanel cid={id} link={schoolLink} canEdit={rank(role) >= 4} /></Panel>}
+        {tab === "school" && <Panel className="mb-4 p-6"><SchoolLinkPanel cid={id} link={schoolLink} canEdit={rank(role) >= (feat.schoolLinkEmail ? 3 : 4)} email={user.email ?? ""} needsSchoolEmail={feat.schoolLinkEmail} notice={typeof sp.schoolError === "string" ? sp.schoolError.slice(0, 300) : ""} /></Panel>}
         {tab === "settings" && <Panel className="p-6"><SettingsForm cid={id} about={c.about} rules={c.rules} privacy={c.privacy} words={(c.automod?.words ?? []).join("\n")} holdNewLinks={!!c.automod?.holdNewLinks} canAutomod={can(role, "automod")} /></Panel>}
 
         {tab === "handoff" && (
