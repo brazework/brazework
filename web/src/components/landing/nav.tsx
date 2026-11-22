@@ -7,15 +7,16 @@ import { ThemeToggle } from "@/components/theme-toggle";
 import { Button, Logo } from "@/components/ui";
 import { cn } from "@/lib/forge";
 
-// `wide`: only in the bar on a wide screen (the menu on a phone lists them all).
-const LINKS: { href: string; label: string; wide?: boolean }[] = [
+// `wide`: only in the bar on a wide screen. `noPhone`: a section a phone doesn't show (app/page.tsx), so
+// the phone menu leaves it out.
+const LINKS: { href: string; label: string; wide?: boolean; noPhone?: boolean }[] = [
   { href: "#how", label: "How it works" },
   { href: "#app", label: "The app" },
   { href: "#ember", label: "Ember" },
   { href: "#clubs", label: "Clubs" },
   { href: "#companies", label: "Companies" },
   { href: "#pricing", label: "Pricing" },
-  { href: "#faq", label: "Questions", wide: true },
+  { href: "#faq", label: "Questions", wide: true, noPhone: true },
 ];
 
 export function Nav() {
@@ -93,7 +94,7 @@ export function Nav() {
               transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
               className="w-full overflow-hidden md:hidden"
             >
-              {[...LINKS, { href: "/login", label: "Log in" }].map((l) => (
+              {[...LINKS.filter((l) => !l.noPhone), { href: "/login", label: "Log in" }].map((l) => (
                 <li key={l.href}>
                   <a href={l.href} onClick={() => setOpen(false)} className="block rounded-xl px-2 py-3 text-[15px] text-text-2 transition hover:bg-hover hover:text-text">
                     {l.label}

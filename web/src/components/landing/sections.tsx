@@ -137,12 +137,12 @@ export function EmberSection() {
     <section id="ember" className={SEC}>
       <div className={cn(WRAP, "grid grid-cols-1 items-start gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:gap-16")}>
         <div>
-          <h2 className={H2}>Ember does the busywork.</h2>
-          <p className={LEAD}>Ember is the assistant inside Brazework. Say what you did in a sentence. It writes it up, gets it in front of the person who can sign, and tells you what to do next.</p>
+          <h2 className={H2}>Built around your field and where you&apos;re headed.</h2>
+          <p className={LEAD}>Tell it your field and your goal: an internship, grad school, your next role. Ember, the guide inside Brazework, gets you there from your signed work.</p>
           <Points items={[
-            ["It knows your record", "What's signed, what's waiting and who you've asked. So it opens with your next step, not a blank box."],
+            ["It starts from your goal", "How close your signed work gets you, and the one next step: what to build, who can sign it, the clubs, events and people in your field."],
+            ["It knows your record", "What's signed and what's waiting, so it opens with your next step. It writes your résumé bullets from signed work."],
             ["It asks before it acts", "A post, a request or a milestone sits on a card until you press the button."],
-            ["It writes from what's proven", "Your self-review, your résumé bullets and your story year by year, each from signed work, with who signed it."],
           ]} />
         </div>
         <EmberDemo />
@@ -182,7 +182,8 @@ export function Clubs() {
           ]} />
           <Link href="#founding" className="mt-8 inline-flex h-11 items-center justify-center rounded-lg bg-accent px-5 text-[15px] font-medium text-on-accent transition hover:opacity-90">Bring your club</Link>
         </div>
-        <ClubSetupDemo />
+        {/* The setup demo is for a wider screen; a phone keeps the points and the button. */}
+        <div className="hidden sm:block"><ClubSetupDemo /></div>
       </div>
     </section>
   );
@@ -205,7 +206,8 @@ export function Companies() {
             <Link href="/pricing#pricing-companies" className="inline-flex h-11 items-center justify-center rounded-lg border border-line-strong bg-surface px-5 text-[15px] font-medium transition hover:bg-hover">See pricing</Link>
           </div>
         </div>
-        <CompanySearch />
+        {/* The search demo is for a wider screen; a phone keeps the points and the buttons. */}
+        <div className="hidden sm:block"><CompanySearch /></div>
       </div>
     </section>
   );
