@@ -61,10 +61,10 @@ final class EmberTests: XCTestCase {
   func testGreetingAndHistoryAsTheRouteAcceptsIt() {
     XCTAssertEqual(EmberLogic.greeting("Josh"), "Hi Josh, what are we getting done?")
     XCTAssertEqual(EmberLogic.greeting(""), "What are we getting done?")
-    let turns = (0..<20).map { (user: $0 % 2 == 0, text: "turn \($0)") }
+    let turns = (0..<100).map { (user: $0 % 2 == 0, text: "turn \($0)") }
     let h = EmberLogic.history(turns + [(user: false, text: "")])
-    XCTAssertEqual(h.count, 12, "the route takes at most 12")
-    XCTAssertEqual(h.last?["content"], "turn 19")
+    XCTAssertEqual(h.count, 80, "the route takes at most 80")
+    XCTAssertEqual(h.last?["content"], "turn 99")
     XCTAssertEqual(h.first?["role"], "user")
     XCTAssertEqual(EmberLogic.history([(user: true, text: String(repeating: "a", count: 7000))])[0]["content"]?.count, 6000)
   }
