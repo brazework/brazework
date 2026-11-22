@@ -38,16 +38,20 @@ export function TourMount() {
   // Decide what to show once per session.
   useEffect(() => {
     let alive = true;
+    // Says on <html> once the decision is made: "pending" (a tour is about to start) or "none". The
+    // end-to-end tests wait for it instead of guessing how long the tour takes to appear (e2e/lib.cjs).
+    const decided = (v: "pending" | "none") => { document.documentElement.dataset.tourState = v; };
+    const later = (r: Run) => setTimeout(() => { if (!alive) return; setPending(r); decided("pending"); }, 700);
     loadTourState().then((s) => {
-      if (!alive || !s) return;
+      if (!alive) return;
+      if (!s) return decided("none");
       nameRef.current = s.firstName;
       const seen = new Set(s.seen);
-      if (!seen.has(WELCOME)) setTimeout(() => setPending({ steps: welcomeSteps(s.firstName), keys: [WELCOME, ...UPDATES.map((u) => u.id)] }), 700);
-      else {
-        const fresh = freshUpdates(seen, s.joinedAt);
-        if (fresh.length) setTimeout(() => setPending({ steps: whatsNewSteps(fresh), keys: fresh.map((u) => u.id) }), 700);
-      }
-    });
+      if (!seen.has(WELCOME)) return later({ steps: welcomeSteps(s.firstName), keys: [WELCOME, ...UPDATES.map((u) => u.id)] });
+      const fresh = freshUpdates(seen, s.joinedAt);
+      if (fresh.length) return later({ steps: whatsNewSteps(fresh), keys: fresh.map((u) => u.id) });
+      decided("none");
+    }, () => alive && decided("none"));
     const replay = () => { navFor.current = null; dir.current = 1; setI(0); setRun({ steps: welcomeSteps(nameRef.current), keys: [WELCOME] }); };
     window.addEventListener("forge:tour", replay);
     return () => { alive = false; window.removeEventListener("forge:tour", replay); };
