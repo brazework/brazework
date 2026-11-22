@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { ALL_TOPICS, FIELDS, ageFrom, friendlyError } from "@/lib/forge";
 import { dbFeatures } from "@/lib/db-features";
+import { signupGoalFrom } from "@/lib/goals";
 import { joinRememberedInvite } from "@/lib/invites";
 import { LINKEDIN_ADD_HERE, cleanLinkedin } from "@/lib/linkedin";
 import { needsLinkedin, saveLinkedinFrom } from "@/lib/linkedin-gate";
@@ -56,6 +57,10 @@ export async function finishSignup(_: FinishState, form: FormData): Promise<Fini
     const message = error.code === "P0001" ? error.message : friendlyError(error);
     return { message, school: /university email/.test(message) };
   }
+  // Where they're headed, if they said (optional; private until they choose otherwise). A goal that
+  // can't be saved never stops sign-up: Ember offers to set one later.
+  const goal = signupGoalFrom(form.get("goalKind"), form.get("goalTarget"), accountType);
+  if (goal && (await dbFeatures()).goals) await supabase.rpc("set_goal", { p_kind: goal.kind, p_target: goal.target, p_visible: false });
   redirect("/onboarding");
 }
 

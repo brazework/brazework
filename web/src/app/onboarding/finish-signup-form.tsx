@@ -5,6 +5,7 @@ import { useActionState, useState } from "react";
 import { SignupSteps } from "@/components/signup-steps";
 import { Button, Field, inputCls } from "@/components/ui";
 import { ACADEMIC_RE, cn } from "@/lib/forge";
+import { signupGoals, type GoalKind } from "@/lib/goals";
 import { LINKEDIN_PLACEHOLDER, LINKEDIN_PRIVATE } from "@/lib/linkedin";
 import { submitWithoutReset } from "@/lib/submit";
 import { finishSignup, type FinishState } from "./actions";
@@ -14,9 +15,14 @@ import { finishSignup, type FinishState } from "./actions";
 // sign-up rules (finish_signup()); names start from the provider's when there is one.
 // askLinkedin: a professional is offered a LinkedIn profile link, optional (supabase/linkedin-optional.sql:
 // asking someone to sign never needs it; Linear FIX-214). Students aren't asked.
-export function FinishSignupForm({ email, provider, firstName, lastName, askLinkedin = false }: { email: string; provider?: string; firstName: string; lastName: string; askLinkedin?: boolean }) {
+// askGoal: once goals exist (supabase/goals.sql), "Where are you headed?", optional, so the feed, Ember
+// and Home are set up around it from the first visit (lib/goals.ts signupGoals). Saved private.
+export function FinishSignupForm({ email, provider, firstName, lastName, askLinkedin = false, askGoal = false }: { email: string; provider?: string; firstName: string; lastName: string; askLinkedin?: boolean; askGoal?: boolean }) {
   const [state, action, pending] = useActionState<FinishState, FormData>(finishSignup, { message: "" });
   const [type, setType] = useState<"student" | "professional" | "">("");
+  const [goal, setGoal] = useState<GoalKind | "">("");
+  // A goal that doesn't fit the account type picked since (a professional's "funding") is dropped.
+  const picked = type && goal ? signupGoals(type).find((g) => g.kind === goal) : undefined;
   // An academic address is certain; a listed school without one (school_domains) is only known to
   // the database, so a non-academic email is a heads-up, not a block.
   const notAcademic = type === "student" && !ACADEMIC_RE.test(email);
@@ -58,6 +64,27 @@ export function FinishSignupForm({ email, provider, firstName, lastName, askLink
             Student accounts use a university email. <span className="text-text">{email}</span> doesn&apos;t look like one; if your school uses its own domain, continue and we&apos;ll check.
           </p>
         )}
+        {askGoal && type && (
+          <fieldset className="flex flex-col gap-2.5">
+            <legend className="mb-1 text-sm font-medium text-text-2">Where are you headed? <span className="font-normal text-faint">Optional</span></legend>
+            <div className="flex flex-wrap gap-2">
+              {signupGoals(type).map((g) => (
+                <button key={g.kind} type="button" aria-pressed={picked?.kind === g.kind} onClick={() => setGoal(picked?.kind === g.kind ? "" : g.kind)}
+                  className={cn("h-9 rounded-full border px-3.5 text-sm transition", picked?.kind === g.kind ? "border-accent bg-accent/[0.07] text-text" : "border-line text-text-2 hover:border-line-strong")}>
+                  {g.label}
+                </button>
+              ))}
+            </div>
+            {picked && (
+              <label className="flex flex-col gap-1.5">
+                <span className="sr-only">In what?</span>
+                <input name="goalTarget" maxLength={80} placeholder={`In what? For example, ${picked.example}`} className={inputCls} />
+              </label>
+            )}
+            <p className="text-xs text-faint">{picked ? "Your feed, Ember and Home start from it. Only you see it until you choose otherwise." : "Pick one and Brazework starts from it: your feed, Ember and your next steps."}</p>
+          </fieldset>
+        )}
+        <input type="hidden" name="goalKind" value={picked?.kind ?? ""} />
         <div className="grid grid-cols-2 gap-3">
           <Field label="First name"><input name="firstName" autoComplete="given-name" maxLength={80} defaultValue={firstName} className={inputCls} /></Field>
           <Field label="Last name"><input name="lastName" autoComplete="family-name" maxLength={80} defaultValue={lastName} className={inputCls} /></Field>
