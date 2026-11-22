@@ -70,7 +70,7 @@ export function FinishSignupForm({ email, provider, firstName, lastName, askLink
             <div className="flex flex-wrap gap-2">
               {signupGoals(type).map((g) => (
                 <button key={g.kind} type="button" aria-pressed={picked?.kind === g.kind} onClick={() => setGoal(picked?.kind === g.kind ? "" : g.kind)}
-                  className={cn("h-9 rounded-full border px-3.5 text-sm transition", picked?.kind === g.kind ? "border-accent bg-accent/[0.07] text-text" : "border-line text-text-2 hover:border-line-strong")}>
+                  className={cn("h-9 rounded-lg border px-3.5 text-sm transition", picked?.kind === g.kind ? "border-accent bg-accent/[0.07] text-text" : "border-line text-text-2 hover:border-line-strong")}>
                   {g.label}
                 </button>
               ))}
