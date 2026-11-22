@@ -75,4 +75,4 @@ end $$;
 revoke execute on function public.school_link_backers(text), public.email_at_domain(text, text) from anon, public;
 grant execute on function public.school_link_backers(text), public.email_at_domain(text, text) to authenticated;
 
-create or replace function public.school_link_email_ready() returns boolean language sql stable as $$ select true $$;
+create or replace function public.school_link_email_ready() returns boolean language sql stable set search_path = public as $$ select true $$;
