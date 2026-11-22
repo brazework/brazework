@@ -32,10 +32,19 @@ test("the status line says whether it still stands", () => {
   assert.equal(stateLine({ ...base, state: "disputed", revoked_at: null }).tone, "warn");
 });
 
-test("evidence: links and commits, or the old single link when there's nothing else", () => {
+test("evidence: the first link, then the other links and commits, each once", () => {
+  // Since FIX-238 a milestone can gain links after logging, so the first link always shows too.
   assert.deepEqual(evidenceLinks({ evidence: [{ type: "commit", url: "https://github.com/a/b/commit/1" }, { type: "image", path: "x.webp" }], legacy_evidence: "https://old.example/" }),
-    [{ type: "commit", url: "https://github.com/a/b/commit/1", label: "github.com/a/b/commit/1" }]);
+    [{ type: "link", url: "https://old.example/", label: "old.example" }, { type: "commit", url: "https://github.com/a/b/commit/1", label: "github.com/a/b/commit/1" }]);
   assert.deepEqual(evidenceLinks({ evidence: [], legacy_evidence: "https://old.example/" }), [{ type: "link", url: "https://old.example/", label: "old.example" }]);
+  assert.deepEqual(evidenceLinks({ evidence: [{ type: "link", url: "https://old.example/" }], legacy_evidence: "https://old.example/" }).length, 1, "the same link isn't listed twice");
+  assert.deepEqual(evidenceLinks({ evidence: [], legacy_evidence: "" }), []);
+});
+
+test("evidence added after signing keeps its mark and date", () => {
+  const [late] = evidenceLinks({ evidence: [{ type: "link", url: "https://docs.example/writeup", after_signing: true, added_at: "2026-11-21T10:00:00Z" }], legacy_evidence: "" });
+  assert.equal(late.after_signing, true);
+  assert.equal(late.added_at, "2026-11-21T10:00:00Z");
 });
 
 test("the link and its QR code", () => {

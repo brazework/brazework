@@ -10,7 +10,8 @@ export type PublicVerify = {
   member: { id: string; first: string; last: string; headline: string };
   signer: { kind: "club" | "vouch"; name: string; role: string; club: string; vouched_by: string; at: string | null };
   pro: { name: string; title: string; employer: string; at: string }[];
-  evidence: ({ type: "link" | "commit"; url: string } | { type: "image"; path: string })[];
+  // after_signing / added_at: a link the member added after it was signed (milestone-late-evidence.sql).
+  evidence: ({ type: "link" | "commit"; url: string; after_signing?: boolean; added_at?: string | null } | { type: "image"; path: string })[];
   legacy_evidence: string; kept_private: number; revoked_at: string | null; checked_at: string;
 };
 
@@ -43,11 +44,14 @@ export function stateLine(v: Pick<PublicVerify, "state" | "signer" | "revoked_at
 
 export const verifyUrl = (site: string, id: string) => `${site.replace(/\/$/, "")}/v/${encodeURIComponent(id)}`;
 
-/** Which links to show as evidence, in order (the old single-link field counts when nothing else does). */
-export function evidenceLinks(v: Pick<PublicVerify, "evidence" | "legacy_evidence">): { type: "link" | "commit"; url: string; label: string }[] {
-  const links = v.evidence.filter((e): e is { type: "link" | "commit"; url: string } => e.type !== "image");
-  const all = links.length || !v.legacy_evidence ? links : [{ type: "link" as const, url: v.legacy_evidence }];
-  return all.map((e) => ({ ...e, label: e.url.replace(/^https:\/\//, "").replace(/\/$/, "") }));
+type EvidenceLink = { type: "link" | "commit"; url: string; after_signing?: boolean; added_at?: string | null };
+
+/** Which links to show as evidence, in order: the milestone's first link, then the rest, each once.
+ *  A link added after it was signed keeps `after_signing` and `added_at`, so the page can say so. */
+export function evidenceLinks(v: Pick<PublicVerify, "evidence" | "legacy_evidence">): (EvidenceLink & { label: string })[] {
+  const links = v.evidence.filter((e): e is EvidenceLink => e.type !== "image");
+  const first: EvidenceLink[] = v.legacy_evidence && !links.some((e) => e.url === v.legacy_evidence) ? [{ type: "link", url: v.legacy_evidence }] : [];
+  return [...first, ...links].map((e) => ({ ...e, label: e.url.replace(/^https:\/\//, "").replace(/\/$/, "") }));
 }
 
 /**
