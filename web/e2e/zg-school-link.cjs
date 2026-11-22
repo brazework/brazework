@@ -38,14 +38,14 @@ const SCHOOL = "University of Hartford";
 
     await step("Manage → School: a personal address can't send it; the officer's school address can", async () => {
       await go(ben, "/c/rkt/manage?tab=school");
-      await ben.getByLabel("School", { exact: true }).fill(SCHOOL);
+      await ben.locator('input[placeholder="University of Hartford"]').fill(SCHOOL);
       await ben.getByLabel("School website").fill("https://www.hartford.edu");
       await ben.getByLabel(/Proof the club is part of the school/).fill("https://hartford.edu/clubs/rocketry");
       await ben.getByRole("note").filter({ hasText: "@hartford.edu" }).waitFor({ timeout: 5000 });
       if (!(await ben.getByRole("button", { name: "Ask to be verified" }).isDisabled())) throw new Error("the ask can be sent from a personal address");
       setBen("ben@hartford.edu");
       await go(ben, "/c/rkt/manage?tab=school");
-      await ben.getByLabel("School", { exact: true }).fill(SCHOOL);
+      await ben.locator('input[placeholder="University of Hartford"]').fill(SCHOOL);
       await ben.getByLabel("School website").fill("https://www.hartford.edu");
       await ben.getByLabel(/Proof the club is part of the school/).fill("https://hartford.edu/clubs/rocketry");
       await ben.getByText(/Sent from your confirmed address, ben@hartford\.edu/).waitFor({ timeout: 5000 });
