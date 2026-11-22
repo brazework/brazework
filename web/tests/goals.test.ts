@@ -2,7 +2,7 @@
 // thing that moves it forward. Run: npm test
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { goalPath, goalTitle, isGoalKind, nextStep } from "../src/lib/goals";
+import { goalPath, goalTitle, isGoalKind, nextStep, signupGoalFrom, signupGoals } from "../src/lib/goals";
 
 const g = { kind: "internship" as const, target: "power electronics" };
 
@@ -39,4 +39,22 @@ test("each goal has its own bar and signers", () => {
   assert.match(goalPath({ kind: "grad", target: "" }, { projects: 1, signed: 0, waiting: 0, looked: 0 }).steps[1].detail, /0 of 2 milestones signed by a professor or PI/);
   assert.equal(isGoalKind("research"), true);
   assert.equal(isGoalKind("fame"), false);
+});
+
+// Sign-up's "Where are you headed?" (app/onboarding/finish-signup-form.tsx).
+test("sign-up offers goals that fit a student or someone who works, most likely first", () => {
+  assert.equal(signupGoals("student")[0].kind, "internship");
+  assert.equal(signupGoals("professional")[0].kind, "job");
+  assert.ok(!signupGoals("professional").some((g) => g.kind === "internship"));
+  for (const t of ["student", "professional"] as const) for (const g of signupGoals(t)) { assert.ok(isGoalKind(g.kind)); assert.ok(g.example && g.label); }
+});
+
+test("sign-up's goal is read safely: nothing picked, a kind that doesn't fit, or a bad target never blocks", () => {
+  assert.equal(signupGoalFrom("", "x", "student"), null);
+  assert.equal(signupGoalFrom("hacker", "x", "student"), null);
+  assert.equal(signupGoalFrom("internship", "x", "professional"), null);
+  assert.deepEqual(signupGoalFrom("internship", "  power   electronics ", "student"), { kind: "internship", target: "power electronics" });
+  assert.deepEqual(signupGoalFrom("funding", null, "professional"), { kind: "funding", target: "" });
+  assert.deepEqual(signupGoalFrom("job", "<script>", "professional"), { kind: "job", target: "" });
+  assert.deepEqual(signupGoalFrom("grad", "x".repeat(81), "student"), { kind: "grad", target: "" });
 });

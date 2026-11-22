@@ -53,3 +53,31 @@ export function nextStep(g: Pick<Goal, "kind" | "target">, r: Record_): Next {
   if (r.looked === 0) return { text: `Your record is ready. Send your page to ${k.looking} you'd like to work with; it's the link that replaces a résumé.`, href: "share", action: "Copy your link" };
   return { text: `${r.looked} ${r.looked === 1 ? "person" : "people"} looked this month. Keep the log going weekly and answer your Requests.`, href: "/messages", action: "Open Requests" };
 }
+
+// Sign-up asks where you're headed (Josh, 22 Nov: the app is set up around your field and your goal),
+// on "About you" (app/onboarding/finish-signup-form.tsx). The goals that fit a student or someone who
+// already works, most likely first, each with an example of what it's in. Optional: skipping it is fine.
+export type SignupGoal = { kind: GoalKind; label: string; example: string };
+export function signupGoals(type: "student" | "professional"): SignupGoal[] {
+  return type === "student"
+    ? [
+        { kind: "internship", label: "An internship", example: "power electronics" },
+        { kind: "job", label: "My first job", example: "backend engineering" },
+        { kind: "grad", label: "Grad school", example: "a robotics PhD" },
+        { kind: "research", label: "A research lab", example: "a materials lab" },
+        { kind: "competition", label: "A competition", example: "Formula SAE" },
+      ]
+    : [
+        { kind: "job", label: "My next role", example: "staff engineer" },
+        { kind: "funding", label: "Funding", example: "a climate hardware startup" },
+        { kind: "grad", label: "Grad school", example: "an MBA" },
+        { kind: "research", label: "A research lab", example: "applied ML" },
+      ];
+}
+
+/** A goal from the sign-up form, or null when none was picked or it doesn't fit (the form never blocks on it). */
+export function signupGoalFrom(kind: unknown, target: unknown, type: "student" | "professional"): { kind: GoalKind; target: string } | null {
+  if (!isGoalKind(kind) || !signupGoals(type).some((g) => g.kind === kind)) return null;
+  const t = typeof target === "string" ? target.replace(/\s+/g, " ").trim() : "";
+  return { kind, target: t.length <= 80 && !/[<>]/.test(t) ? t : "" };
+}

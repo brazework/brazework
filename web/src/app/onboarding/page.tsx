@@ -39,8 +39,10 @@ async function Onboarding({ searchParams }: { searchParams: PageProps<"/onboardi
     const { data } = await supabase.auth.getClaims();
     const claims = (data?.claims ?? {}) as { user_metadata?: unknown; app_metadata?: { provider?: string } };
     const via = claims.app_metadata?.provider;
-    // A professional is offered a LinkedIn link here (optional), once supabase/linkedin-required.sql has run.
-    return <FinishSignupForm email={user.email} provider={isProvider(via) ? providerLabel(via) : undefined} {...namesFrom(claims.user_metadata)} askLinkedin={(await dbFeatures()).linkedinRequired} />;
+    // A professional is offered a LinkedIn link here (optional), once supabase/linkedin-required.sql has
+    // run; everyone is asked where they're headed (optional), once goals exist.
+    const f = await dbFeatures();
+    return <FinishSignupForm email={user.email} provider={isProvider(via) ? providerLabel(via) : undefined} {...namesFrom(claims.user_metadata)} askLinkedin={f.linkedinRequired} askGoal={f.goals} />;
   }
   if (profile?.onboarded) redirect("/feed");
   const student = profile?.account_type === "student";
