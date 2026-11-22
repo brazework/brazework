@@ -88,11 +88,12 @@ async function ProjectView({ params, searchParams }: { params: PageProps<"/proje
   ]);
   const events = (ghEvents.data ?? []) as BuildEvent[];
   const repos = (ghRepos.data ?? []) as { repo_id: number; full_name: string; html_url: string }[];
-  // The files folder: photos, videos and 3D models get a signed link up front for their previews
-  // (the bucket is private). Other files get one when opened.
+  // The files folder: photos and videos get a signed link up front for their previews (the bucket is
+  // private). Documents and 3D models are view-only outside the team (project-files-view-only.sql): the
+  // reader and the 3D viewer fetch them through /api/project-files/<id>, and only builders download.
   type FileRow = Omit<ProjectFileItem, "src"> & { path: string | null };
   const fileRows = (filesRes.data ?? []) as unknown as FileRow[];
-  const previewPaths = fileRows.filter((f) => f.path && ["image", "video", "model"].includes(kindOfFile(f.name) ?? "")).map((f) => f.path!);
+  const previewPaths = fileRows.filter((f) => f.path && ["image", "video"].includes(kindOfFile(f.name) ?? "")).map((f) => f.path!);
   // Reused between renders (lib/signed-urls.ts), so the browser and the image cache keep their copies.
   const srcByPath = previewPaths.length ? await signedUrls(supabase, "project-files", previewPaths) : new Map<string, string>();
   const files: ProjectFileItem[] = fileRows.map(({ path, ...f }) => ({ ...f, src: path ? srcByPath.get(path) ?? null : null }));
@@ -243,7 +244,7 @@ async function ProjectView({ params, searchParams }: { params: PageProps<"/proje
           </div>
           {own && ghOn && <GitHubConnect supabase={supabase} projectId={p.id} linked={repos} note={typeof ghNote === "string" ? ghNote : undefined} />}
           {builder && <PostUpdate projectId={p.id} title={p.title} attach={filesOn} />}
-          {log.length > 0 && <BuildLogTimeline entries={log} liked={liked} saved={saved} me={user.id} projectId={p.id} ownerId={p.owner_id} filesByPost={filesByPost} replies={replies} viewer={{ id: user.id, first: viewerProfile?.first_name ?? "", last: viewerProfile?.last_name ?? "" }} />}
+          {log.length > 0 && <BuildLogTimeline entries={log} liked={liked} saved={saved} me={user.id} projectId={p.id} ownerId={p.owner_id} filesByPost={filesByPost} team={builder} replies={replies} viewer={{ id: user.id, first: viewerProfile?.first_name ?? "", last: viewerProfile?.last_name ?? "" }} />}
           {!log.length && (own ? (
             <p className="rounded-xl border border-dashed border-line-strong px-4 py-3 text-sm text-muted">
               Log what you did, what broke and what you learned: a few lines a week adds up to proof. Or let your AI tool do it as you work: <Link href="/settings/tools" className="font-medium text-text underline underline-offset-4">connect Claude Code, Cursor or Codex</Link>.
@@ -260,7 +261,7 @@ async function ProjectView({ params, searchParams }: { params: PageProps<"/proje
         )}
 
         {/* The project's folder: documents, CAD, 3D models (rotatable), code and links. */}
-        {filesOn && <ProjectFiles projectId={p.id} items={files} me={user.id} ownerId={p.owner_id} />}
+        {filesOn && <ProjectFiles projectId={p.id} items={files} me={user.id} ownerId={p.owner_id} team={builder} />}
       </div>
 
       <aside className="flex flex-col gap-4">

@@ -75,8 +75,9 @@ const settled = (v) => v.evaluate((el) => new Promise((ok) => { const t = setInt
     await ben.getByRole("list", { name: "Attached" }).getByText("cube.stl").waitFor();
     await ben.getByRole("button", { name: /^Post/ }).last().click();
     await ben.getByText(NOTE).first().waitFor({ timeout: 30000 });
-    await ben.locator('button[title="View in 3D"]').first().click({ timeout: 20000 });
-    const v = ben.locator("[data-model-viewer]").first();
+    // The update's model is in the viewer straight away, with no click (like the landing page).
+    const v = ben.locator('div[aria-label="Attachments"]', { has: ben.getByRole("button", { name: /cube.stl/ }) }).first().locator("[data-model-viewer]");
+    await v.waitFor({ timeout: 20000 });
     await v.scrollIntoViewIfNeeded();
     const state = await settled(v);
     if (state === "error") throw new Error("the uploaded cube couldn't be previewed");

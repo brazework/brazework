@@ -106,3 +106,4 @@ ember-credits
 club-deletion
 linkedin-public
 post-files-only
+project-files-view-only

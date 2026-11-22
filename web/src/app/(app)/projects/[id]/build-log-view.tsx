@@ -27,8 +27,8 @@ export function ActivityStrip({ weeks }: { weeks: number[] }) {
 
 /** One timeline, newest first: updates (with what was posted with them), verified milestones, and
  *  what happened on the project's GitHub repo (FIX-92 phase 3). */
-export function BuildLogTimeline({ entries, liked, saved, me, projectId, ownerId, filesByPost, replies, viewer }: {
-  entries: LogEntry<Post>[]; liked: Set<string>; saved: Set<string>; me: string; projectId: string; ownerId: string; filesByPost: Map<string, ProjectFileItem[]>;
+export function BuildLogTimeline({ entries, liked, saved, me, projectId, ownerId, filesByPost, team = false, replies, viewer }: {
+  entries: LogEntry<Post>[]; liked: Set<string>; saved: Set<string>; me: string; projectId: string; ownerId: string; filesByPost: Map<string, ProjectFileItem[]>; team?: boolean;
   replies?: Map<string, ReplyPreview[]>; viewer?: { id: string; first: string; last: string };
 }) {
   return (
@@ -45,7 +45,7 @@ export function BuildLogTimeline({ entries, liked, saved, me, projectId, ownerId
           ) : (
             <div className="flex flex-col gap-3">
               <PostCard post={e.post} liked={liked.has(e.post.id)} saved={saved.has(e.post.id)} own={e.post.author_id === me} index={i} replies={replies?.get(e.post.id) ?? []} viewer={viewer} />
-              {filesByPost.has(e.post.id) && <ProjectFiles projectId={projectId} items={filesByPost.get(e.post.id)!} me={me} ownerId={ownerId} variant="update" />}
+              {filesByPost.has(e.post.id) && <ProjectFiles projectId={projectId} items={filesByPost.get(e.post.id)!} me={me} ownerId={ownerId} team={team} variant="update" />}
             </div>
           )}
         </li>
