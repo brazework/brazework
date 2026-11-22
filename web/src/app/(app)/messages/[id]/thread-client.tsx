@@ -1,5 +1,6 @@
 "use client";
 import { ArrowUp, Loader2 } from "lucide-react";
+import { bubbleCls, dayPillCls } from "@/components/chat/bubble";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { cn } from "@/lib/forge";
 import { useTimeZone } from "../../events/local-time";
@@ -98,7 +99,7 @@ export function ThreadScroll({ msgs, me, cid, otherName = "", reactions = [], ex
           const quoted = m.reply_to ? byId.get(m.reply_to) : undefined;
           return (
             <li key={m.id} className={cn("flex flex-col", joinsPrev ? "mt-0.5" : "mt-3", mineRx.length && "mb-1")}>
-              {showDay && <span className="mb-3 self-center px-3 py-0.5 text-xs text-faint">{d}</span>}
+              {showDay && <span className={cn("mb-3 self-center", dayPillCls)}>{d}</span>}
               <div className={cn("group/msg relative max-w-[78%]", mine ? "self-end" : "self-start")}>
               {extras && !isPending && (
                 <MessageTools
@@ -110,12 +111,7 @@ export function ThreadScroll({ msgs, me, cid, otherName = "", reactions = [], ex
                   onUnsend={() => { setActive(null); void rx.unsend(m.id); }}
                 />
               )}
-              <div onClick={(e) => { if (extras && !(e.target as Element).closest("a,button")) setActive((a) => (a === m.id ? null : m.id)); }} className={cn(
-                "px-3.5 py-2 text-[15px] leading-relaxed whitespace-pre-wrap transition-opacity",
-                mine ? "bg-text text-surface" : "border border-line bg-surface text-text",
-                mine ? cn("rounded-3xl", joinsPrev && "rounded-tr-md", joinsNext && "rounded-br-md") : cn("rounded-3xl", joinsPrev && "rounded-tl-md", joinsNext && "rounded-bl-md"),
-                isPending && "opacity-60",
-              )}>
+              <div onClick={(e) => { if (extras && !(e.target as Element).closest("a,button")) setActive((a) => (a === m.id ? null : m.id)); }} className={bubbleCls({ mine, joinsPrev: !!joinsPrev, joinsNext: !!joinsNext, pending: isPending })}>
                 {m.reply_to && <ReplyQuote target={quoted ? { id: quoted.id, name: nameOf(quoted), body: quoted.body } : null} mine={mine} />}
                 <MessageBody body={m.body} mine={mine} />
               </div>
@@ -186,7 +182,7 @@ export function Composer({ cid, placeholder }: { cid: string; placeholder: strin
           style={{ outline: "none" }}
           className="max-h-40 min-h-10 flex-1 resize-none bg-transparent px-3 py-2 text-[15px] text-text placeholder:text-faint"
         />
-        <button type="submit" disabled={!body.trim()} aria-label="Send" className="bg-text text-surface grid size-10 shrink-0 place-items-center rounded-full transition active:scale-90 disabled:opacity-40">
+        <button type="submit" disabled={!body.trim()} aria-label="Send" className="bg-accent-grad text-on-accent grid size-10 shrink-0 place-items-center rounded-full transition active:scale-90 disabled:opacity-40">
           {pending ? <Loader2 className="size-4 animate-spin" /> : <ArrowUp className="size-4" />}
         </button>
       </div>

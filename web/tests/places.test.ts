@@ -6,7 +6,7 @@ import { test } from "node:test";
 import { MENU_PAGES, PLACES, placeFor, placeTabsFor } from "@/lib/places";
 
 test("five places, in order, on the same routes as before", () => {
-  assert.deepEqual(PLACES.map((p) => p.label), ["Home", "Projects", "Clubs", "Record", "Inbox"]);
+  assert.deepEqual(PLACES.map((p) => p.label), ["Home", "Projects", "Clubs", "Record", "Chats"]);
   assert.deepEqual(PLACES.map((p) => p.id), ["home", "projects", "clubs", "record", "inbox"]);
   // Renamed, not moved: every link, bookmark and email keeps working.
   assert.deepEqual(PLACES.map((p) => p.href), ["/feed", "/projects", "/communities", "/profile", "/messages"]);

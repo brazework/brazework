@@ -51,14 +51,19 @@ export async function loadConversations() {
 }
 
 // Your group chats (club, event, team), newest first, once supabase/group-chats.sql is applied.
-export type GroupChat = { id: string; kind: "club" | "event" | "team"; community_id: string | null; event_id: string | null; title: string; subtitle: string; lastAt: string | null; lastBody: string; lastSenderName: string; lastFromMe: boolean; unread: boolean };
+export type GroupChat = { id: string; kind: "club" | "event" | "team"; community_id: string | null; event_id: string | null; title: string; subtitle: string; lastAt: string | null; lastBody: string; lastSenderName: string; lastFromMe: boolean; unread: boolean; logo?: string | null };
 
 export async function loadGroups(): Promise<{ on: boolean; groups: GroupChat[] }> {
   if (!(await dbFeatures()).groupChats) return { on: false, groups: [] };
   const { supabase, user } = await getViewer();
   if (!user) return { on: true, groups: [] };
-  const { data } = await supabase.rpc("my_chats");
-  return { on: true, groups: (data ?? []) as GroupChat[] };
+  const [{ data }, { clubProfile }] = await Promise.all([supabase.rpc("my_chats"), dbFeatures()]);
+  const groups = (data ?? []) as GroupChat[];
+  // Each club or team chat wears its club's picture (supabase/club-profile.sql), in one read.
+  const clubs = clubProfile ? [...new Set(groups.filter((g) => g.kind !== "event" && g.community_id).map((g) => g.community_id as string))] : [];
+  const { data: logoRows } = clubs.length ? await supabase.from("communities").select("id, logo_path").in("id", clubs) : { data: [] };
+  const logos = new Map(((logoRows ?? []) as { id: string; logo_path?: string | null }[]).map((c) => [c.id, c.logo_path || null]));
+  return { on: true, groups: groups.map((g) => (g.kind !== "event" && g.community_id ? { ...g, logo: logos.get(g.community_id) ?? null } : g)) };
 }
 
 export const isRequestToMe = (c: Conv) => c.status === "request" && !c.startedByMe;

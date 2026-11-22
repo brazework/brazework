@@ -15,6 +15,7 @@ import { PRIVACY_LABEL, TYPE_LABEL, can, membersLabel, rank, type CommunityPost 
 import { PostCard } from "../../feed/post-card";
 import { cardReplies } from "@/lib/card-replies";
 import { CommunityBadge, MetaLine, RoleChip } from "../../communities/_components/badge";
+import { ClubPictureButton } from "../../communities/_components/club-picture-button";
 import { inLog, withHost, type HostedEvent } from "@/lib/events";
 import { requestTime } from "@/lib/forge";
 import { EventCard } from "../../events/event-card";
@@ -70,7 +71,7 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
         .then(([admin, ready]) => admin.data === true && ready.data === true)
       : false,
   ]);
-  const { clubEvents, media: mediaEnabled, invites: invitesOn, groupChats, videoCaptions: captionsEnabled } = await dbFeatures();
+  const { clubEvents, media: mediaEnabled, invites: invitesOn, groupChats, videoCaptions: captionsEnabled, clubProfile } = await dbFeatures();
   const { data: evRows } = clubEvents
     ? await supabase.from("events").select(await eventWithHost()).eq("community_id", id).order("starts_at", { ascending: true }).limit(100)
     : { data: [] };
@@ -143,7 +144,11 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
         </div>
         <div className="p-6">
         <div className="flex flex-wrap items-start gap-4">
-          <CommunityBadge id={c.id} name={c.name} size={72} logo={c.logo_path} accent={c.accent} className="relative z-10 -mt-12 border-4 border-surface shadow-[var(--shadow)] transition duration-300 hover:-rotate-6 hover:scale-105" />
+          {/* Owners and admins can set the club's picture right here (it shows on cards and in the club's chats). */}
+          <div className="relative z-10 -mt-12 shrink-0">
+            <CommunityBadge id={c.id} name={c.name} size={72} logo={c.logo_path} accent={c.accent} className="border-4 border-surface shadow-[var(--shadow)] transition duration-300 hover:-rotate-6 hover:scale-105" />
+            {mediaEnabled && clubProfile && can(role, "editInfo") && <ClubPictureButton cid={c.id} userId={user.id} has={!!c.logo_path} />}
+          </div>
           {/* Actions beside the badge, like a profile; the name and details get the full width below, so four
               buttons never squeeze a club's name onto two lines. On a phone they take the row under the badge
               (beside an 84px badge they wrapped one at a time, leaving Leave alone on its own line). */}
