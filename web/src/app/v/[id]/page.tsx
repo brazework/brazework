@@ -95,6 +95,7 @@ async function Verify({ params }: { params: PageProps<"/v/[id]">["params"] }) {
                     <li key={e.url} className="flex min-w-0 items-center gap-2 text-sm">
                       {e.type === "commit" ? <GitCommit className="size-4 shrink-0 text-muted" /> : <Link2 className="size-4 shrink-0 text-muted" />}
                       <a href={e.url} target="_blank" rel="noopener noreferrer nofollow" className="truncate underline-offset-4 hover:underline">{e.label}</a>
+                      {e.after_signing && <span className="shrink-0 rounded bg-surface-2 px-1.5 py-0.5 text-xs text-muted">added after signing{e.added_at ? `, ${verifyDay(e.added_at)}` : ""}</span>}
                       <ExternalLink className="size-3 shrink-0 text-faint print:hidden" />
                     </li>
                   ))}
