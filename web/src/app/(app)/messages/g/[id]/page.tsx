@@ -4,6 +4,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { MemberFaces, type Face } from "@/components/network/member-faces";
+import { CommunityBadge } from "../../../communities/_components/badge";
 import { leaveTeamChat } from "@/lib/chats";
 import { dbFeatures } from "@/lib/db-features";
 import { getViewer } from "@/lib/supabase/server";
@@ -22,16 +23,16 @@ export default function GroupChatPage({ params }: PageProps<"/messages/g/[id]">)
   );
 }
 
-type Chat = { id: string; kind: "club" | "event" | "team"; community_id: string | null; event_id: string | null; name: string; communities: { name: string } | null; events: { title: string } | null };
+type Chat = { id: string; kind: "club" | "event" | "team"; community_id: string | null; event_id: string | null; name: string; communities: { name: string; logo_path?: string | null } | null; events: { title: string } | null };
 const ICON = { club: Users, event: CalendarDays, team: Hash } as const;
 
 async function Group({ params }: { params: PageProps<"/messages/g/[id]">["params"] }) {
   const { id } = await params;
   const { supabase, user, profile } = await getViewer();
   if (!user || !profile) redirect("/login");
-  const { groupChats, chatExtras: extras } = await dbFeatures();
+  const { groupChats, chatExtras: extras, clubProfile } = await dbFeatures();
   if (!groupChats) redirect("/messages");
-  const { data: chat } = await supabase.from("chats").select("id, kind, community_id, event_id, name, communities(name), events(title)").eq("id", id).maybeSingle();
+  const { data: chat } = await supabase.from("chats").select(`id, kind, community_id, event_id, name, communities(name${clubProfile ? ", logo_path" : ""}), events(title)`).eq("id", id).maybeSingle();
   if (!chat)
     return <div data-thread className="contents"><div className="grid h-full place-items-center p-8 text-center text-sm text-muted">This chat isn&apos;t available to you.<Link href="/messages?tab=groups" className="mt-3 underline">Back to messages</Link></div></div>;
   const c = chat as unknown as Chat;
@@ -93,7 +94,7 @@ async function Group({ params }: { params: PageProps<"/messages/g/[id]">["params
       <MarkChatRead id={id} count={msgs.length} />
       <header className="relative flex items-center gap-3 border-b border-line px-4 py-3">
         <Link href="/messages?tab=groups" aria-label="Back to messages" className="grid size-9 place-items-center rounded-full text-muted hover:bg-hover hover:text-text md:hidden"><ArrowLeft className="size-4" /></Link>
-        <span className="nav-tile grid size-9 shrink-0 place-items-center rounded-xl text-text-2"><Icon className="size-4" /></span>
+        {c.kind !== "event" && c.community_id && c.communities?.logo_path ? <CommunityBadge id={c.community_id} name={c.communities.name} size={36} logo={c.communities.logo_path} /> : <span className="nav-tile grid size-9 shrink-0 place-items-center rounded-xl text-text-2"><Icon className="size-4" /></span>}
         <Link href={href} className="min-w-0 flex-1">
           <div className="truncate text-sm font-semibold hover:underline">{title}</div>
           <div className="truncate text-xs text-faint">{sub}</div>

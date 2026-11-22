@@ -214,11 +214,14 @@ export function CopilotChat({ first, field, student = true, initial = "", initia
   );
 
   return (
-    <div className={cn(saving && "lg:grid lg:grid-cols-[15rem_minmax(0,1fr)] lg:gap-8")}>
-      {rail && <aside aria-label="Your Ember chats" className="sticky top-6 hidden h-[calc(100dvh-8rem)] lg:block">{rail}</aside>}
+    // Centred (FIX-239): the chat sits in the middle column, between two columns of the same width, so
+    // it's in the middle of the page whatever the width. Your chats fill the left one on wide screens;
+    // the right one only balances it. Narrower than that, the list is behind the "Your chats" button.
+    <div className={cn(saving && "xl:grid xl:grid-cols-[minmax(12rem,1fr)_minmax(0,48rem)_minmax(12rem,1fr)] xl:gap-6")}>
+      {rail && <aside aria-label="Your Ember chats" className="sticky top-6 hidden h-[calc(100dvh-8rem)] w-full max-w-64 xl:block">{rail}</aside>}
       <div className="mx-auto flex min-h-[calc(100dvh-10rem)] w-full max-w-3xl flex-col">
         {saving && (
-          <div className="relative mb-2 flex justify-end lg:hidden">
+          <div className="relative mb-2 flex justify-end xl:hidden">
             <button type="button" onClick={() => setShowHistory((v) => !v)} aria-expanded={showHistory} className="inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium text-muted transition hover:bg-hover hover:text-text"><History className="size-3.5" /> Your chats</button>
             {showHistory && <div className="absolute top-full right-0 z-30 mt-1 h-96 w-72 rounded-3xl border border-line bg-surface p-3 shadow-[var(--shadow)]">{rail}</div>}
           </div>

@@ -47,7 +47,7 @@ export const PLACES: Place[] = [
       { id: "pro", label: "Pro reviews", href: "/pro" },
     ],
   },
-  { id: "inbox", label: "Inbox", href: "/messages", badge: "messages", match: ["/messages"], tabs: [] },
+  { id: "inbox", label: "Chats", href: "/messages", badge: "messages", match: ["/messages"], tabs: [] },
 ];
 
 // Which place lights up for this path (null for pages outside the five, like Ember's own page).

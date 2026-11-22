@@ -9,6 +9,7 @@ import { PersonRow } from "@/components/network/person-row";
 import { CONNECTION_COLS, FOLLOW_COLS, otherOf, toPerson, type ConnectionRow, type FollowRow } from "@/components/network/queries";
 import { timeAgo } from "@/lib/forge";
 import { getViewer } from "@/lib/supabase/server";
+import { avatarSrc } from "@/lib/media";
 import { AcceptAll, RowActions } from "./row-actions";
 
 export const metadata: Metadata = { title: "Network" };
@@ -48,6 +49,11 @@ async function Network({ searchParams }: { searchParams: PageProps<"/network">["
   const asked = TAB_IDS.find((t) => t === sp.tab);
   const tab: Tab = asked ?? (inv.length ? "invitations" : con.length ? "connections" : "suggested");
   const counts: Partial<Record<Tab, number>> = { invitations: inv.length, connections: con.length, sent: snt.length, following: following.length, followers: followers.length };
+  // Everyone listed, with their profile photo (one read for the whole page).
+  const listed = [...new Set([...all.map((c) => otherOf(c, me).id), ...following.map((f) => f.target), ...followers.map((f) => f.follower)])];
+  const { data: picRows } = listed.length ? await supabase.from("profiles").select("id, avatar_path").in("id", listed.slice(0, 1000)) : { data: [] };
+  const pics = new Map(((picRows ?? []) as { id: string; avatar_path?: string | null }[]).map((p) => [p.id, avatarSrc(p)]));
+  const pic = <T extends { id: string }>(p: T) => ({ ...p, avatar: pics.get(p.id) ?? null });
   const labels: Record<Tab, string> = { invitations: "Invitations", connections: "Connections", sent: "Sent", following: "Following", followers: "Followers", suggested: "People you may know" };
 
   return (
@@ -66,7 +72,7 @@ async function Network({ searchParams }: { searchParams: PageProps<"/network">["
               </div>
               <div className="divide-y divide-line">
                 {inv.map((c) => (
-                  <PersonRow key={c.id} person={otherOf(c, me)} note={c.note} sub={`Sent ${timeAgo(c.created_at)}`} actions={<RowActions kind="invite" id={c.id} />} />
+                  <PersonRow key={c.id} person={pic(otherOf(c, me))} note={c.note} sub={`Sent ${timeAgo(c.created_at)}`} actions={<RowActions kind="invite" id={c.id} />} />
                 ))}
               </div>
             </Panel>
@@ -78,7 +84,7 @@ async function Network({ searchParams }: { searchParams: PageProps<"/network">["
           (con.length ? (
             <List>
               {con.map((c) => {
-                const p = otherOf(c, me);
+                const p = pic(otherOf(c, me));
                 return <PersonRow key={c.id} person={p} sub={c.accepted_at ? `Connected ${timeAgo(c.accepted_at)}` : undefined} actions={<RowActions kind="connection" id={c.id} personId={p.id} />} />;
               })}
             </List>
@@ -90,7 +96,7 @@ async function Network({ searchParams }: { searchParams: PageProps<"/network">["
           (snt.length ? (
             <List>
               {snt.map((c) => (
-                <PersonRow key={c.id} person={otherOf(c, me)} note={c.note} sub={`Sent ${timeAgo(c.created_at)}`} actions={<RowActions kind="sent" id={c.id} />} />
+                <PersonRow key={c.id} person={pic(otherOf(c, me))} note={c.note} sub={`Sent ${timeAgo(c.created_at)}`} actions={<RowActions kind="sent" id={c.id} />} />
               ))}
             </List>
           ) : (
@@ -101,7 +107,7 @@ async function Network({ searchParams }: { searchParams: PageProps<"/network">["
           (following.length ? (
             <List>
               {following.map((f) => (
-                <PersonRow key={f.target} person={toPerson(f.target, f.target_info)} actions={<RowActions kind="following" id={f.target} />} />
+                <PersonRow key={f.target} person={pic(toPerson(f.target, f.target_info))} actions={<RowActions kind="following" id={f.target} />} />
               ))}
             </List>
           ) : (
@@ -112,7 +118,7 @@ async function Network({ searchParams }: { searchParams: PageProps<"/network">["
           (followers.length ? (
             <List>
               {followers.map((f) => (
-                <PersonRow key={f.follower} person={toPerson(f.follower, f.follower_info)} sub={`Followed you ${timeAgo(f.created_at)}`} />
+                <PersonRow key={f.follower} person={pic(toPerson(f.follower, f.follower_info))} sub={`Followed you ${timeAgo(f.created_at)}`} />
               ))}
             </List>
           ) : (
@@ -132,8 +138,8 @@ async function Network({ searchParams }: { searchParams: PageProps<"/network">["
 // People who share your interests or field, ranked by shared interests (drawSuggested() in public/js/views/network.js).
 async function Suggested({ me, interests, field, known }: { me: string; interests: string[]; field: string; known: string[] }) {
   const { supabase } = await getViewer();
-  const cols = "id, first_name, last_name, headline, field, interests, onboarded, account_type";
-  type P = { id: string; first_name: string; last_name: string; headline: string; field: string; interests: string[]; onboarded: boolean; account_type: string };
+  const cols = "id, first_name, last_name, headline, field, interests, onboarded, account_type, avatar_path";
+  type P = { id: string; first_name: string; last_name: string; headline: string; field: string; interests: string[]; onboarded: boolean; account_type: string; avatar_path?: string | null };
   const [byInterest, byField] = await Promise.all([
     interests.length ? supabase.from("profiles").select(cols).overlaps("interests", interests).limit(40) : Promise.resolve({ data: [] as P[] }),
     field ? supabase.from("profiles").select(cols).eq("field", field).limit(20) : Promise.resolve({ data: [] as P[] }),
@@ -156,7 +162,7 @@ async function Suggested({ me, interests, field, known }: { me: string; interest
         {people.map((p) => (
           <PersonRow
             key={p.id}
-            person={{ id: p.id, firstName: p.first_name, lastName: p.last_name, headline: p.headline }}
+            person={{ id: p.id, firstName: p.first_name, lastName: p.last_name, headline: p.headline, avatar: avatarSrc(p) }}
             sub={p.shared.length ? `${p.shared.length} shared interest${p.shared.length > 1 ? "s" : ""}: ${p.shared.slice(0, 2).join(", ")}` : p.field}
             actions={<RowActions kind="suggested" id={p.id} firstName={p.first_name} />}
           />
