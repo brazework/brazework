@@ -24,7 +24,7 @@ function Status({ state }: { state: SettingsState }) {
 // canSwitch: Studying or working can be changed (supabase/account-type.sql has run).
 // linkedin: the member's own LinkedIn link; undefined until supabase/linkedin-required.sql has run
 // (the field stays hidden). A working account needs one to ask someone to sign; the link is private.
-export function ProfileSettings({ profile, gradYear, canSwitch = false, linkedin }: { profile: Profile; gradYear?: number | null; canSwitch?: boolean; linkedin?: string }) {
+export function ProfileSettings({ profile, gradYear, canSwitch = false, linkedin, linkedinPublic }: { profile: Profile; gradYear?: number | null; canSwitch?: boolean; linkedin?: string; linkedinPublic?: boolean }) {
   const [state, action, pending] = useActionState(saveProfileSettings, init);
   // Only current topics count (renamed or retired ones would be invisible yet still submitted).
   const [picked, setPicked] = useState<string[]>((profile.interests ?? []).filter((t) => ALL_TOPICS.includes(t)));
@@ -56,6 +56,13 @@ export function ProfileSettings({ profile, gradYear, canSwitch = false, linkedin
         <Field label="LinkedIn profile" hint={`${LINKEDIN_WHY} ${LINKEDIN_PRIVATE}`}>
           <input type="hidden" name="linkedin_was" value={linkedin} />
           <input name="linkedin" type="text" inputMode="url" autoComplete="url" autoCapitalize="none" autoCorrect="off" spellCheck={false} maxLength={200} defaultValue={linkedin} placeholder={LINKEDIN_PLACEHOLDER} className={inputCls} />
+          {linkedinPublic !== undefined && (
+            <label className="mt-2 flex items-center gap-2 text-sm text-text-2">
+              <input type="hidden" name="linkedin_public_was" value={linkedinPublic ? "on" : ""} />
+              <input type="checkbox" name="linkedin_public" defaultChecked={linkedinPublic} className="size-4 accent-accent" />
+              Show it on my profile
+            </label>
+          )}
         </Field>
       )}
       <Field label="Headline"><input name="headline" defaultValue={profile.headline} maxLength={200} className={inputCls} /></Field>
