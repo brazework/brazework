@@ -23,7 +23,9 @@ export function Hero() {
             you built.
           </h1>
           <p className="mt-6 max-w-[34rem] text-lg leading-relaxed text-muted sm:text-xl sm:leading-relaxed">
-            For students and working professionals: a record of your work, signed by the people who saw it. Log what you finished, ask your professor, your club or your manager to sign, and it stays yours wherever you go next.
+            {/* A phone gets the short version: the demo below shows the rest. */}
+            <span className="sm:hidden">For students and professionals: your work, signed by the people who saw it, and a guide to where you&apos;re headed next.</span>
+            <span className="hidden sm:inline">For students and working professionals: a record of your work, signed by the people who saw it. Log what you finished, ask your professor, your club or your manager to sign, and it stays yours wherever you go next.</span>
           </p>
 
           <div className="mt-9 max-w-[34rem]">
@@ -39,7 +41,7 @@ export function Hero() {
             <p id="hero-build-hint" className="mt-2.5 text-sm text-faint">{build ? "That's your first milestone. Take it with you." : "Type what you built and watch it get signed."} Free for everyone who builds.</p>
           </div>
 
-          <p className="mt-9 text-sm text-muted">
+          <p className="mt-9 hidden text-sm text-muted sm:block">
             Running a club? <a href="#clubs" className="font-medium text-text underline decoration-line-strong underline-offset-4 hover:decoration-text">See what officers get</a>
             <span className="mx-2 text-line-strong" aria-hidden="true">|</span>
             Hiring? <a href="#companies" className="font-medium text-text underline decoration-line-strong underline-offset-4 hover:decoration-text">Search signed work</a>
