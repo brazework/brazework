@@ -17,7 +17,7 @@ const SCHOOL = "University of Hartford";
 (async () => {
   const b = await browser();
   const maya = await as(b, "maya@forge.test");
-  const ben = await as(b, "ben@forge.test");
+  let ben = await as(b, "ben@forge.test");
   try {
     await step("starting a club under a university from a personal address: the club is made, and School says why", async () => {
       const name = `Hartford Baja ${Date.now() % 100000}`;
@@ -43,7 +43,10 @@ const SCHOOL = "University of Hartford";
       await ben.getByLabel(/Proof the club is part of the school/).fill("https://hartford.edu/clubs/rocketry");
       await ben.getByRole("note").filter({ hasText: "@hartford.edu" }).waitFor({ timeout: 5000 });
       if (!(await ben.getByRole("button", { name: "Ask to be verified" }).isDisabled())) throw new Error("the ask can be sent from a personal address");
+      // A member who changes their email signs in with it; their session then carries the new address.
       setBen("ben@hartford.edu");
+      await ben.context().close();
+      ben = await as(b, "ben@hartford.edu");
       await go(ben, "/c/rkt/manage?tab=school");
       await ben.locator('input[placeholder="University of Hartford"]').fill(SCHOOL);
       await ben.getByLabel("School website").fill("https://www.hartford.edu");
