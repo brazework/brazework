@@ -71,6 +71,18 @@ export async function blockAndReport(cid: string): Promise<R> {
   redirect("/messages");
 }
 
+// Delete a chat for yourself (supabase/chat-delete.sql): it leaves your list and empties on your side;
+// the other person keeps their copy, and a new message brings it back with just that message.
+export async function deleteConversation(cid: string): Promise<R> {
+  if (!cidSchema.safeParse(cid).success) return { ok: false, message: "That conversation isn't available." };
+  const { supabase, user } = await getViewer();
+  if (!user) return { ok: false, message: "Log in again." };
+  const { error } = await supabase.rpc("clear_conversation", { p_id: cid });
+  if (error) return { ok: false, message: error.code === "P0001" ? error.message : friendlyError(error) };
+  touch(cid);
+  return { ok: true, message: "Chat deleted." };
+}
+
 export async function markConversationRead(cid: string): Promise<void> {
   const { supabase, user } = await getViewer();
   if (!user) return;
