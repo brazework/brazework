@@ -87,6 +87,7 @@ async function Communities({ searchParams }: { searchParams: PageProps<"/communi
       {/* One row of tabs is enough (the place tabs above: Clubs, Events, Challenges). Finding and
           starting a club are two buttons here, and each of those views has a way back. */}
       <PageHeader
+        tour="clubs"
         title={tab === "discover" ? "Find a club" : tab === "create" ? "Start a club" : "Your clubs"}
         subtitle={tab === "mine" ? "Your chapter, team or lab: members, events, chat and the work you verify, in one place." : tab === "discover" ? "Clubs in your field first, then the biggest." : "For the chapter, team or lab that isn't here yet."}
         actions={tab === "mine" ? <>

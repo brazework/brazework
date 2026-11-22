@@ -27,6 +27,8 @@ export function TourMount() {
   // link you opened), and it only changes pages when you press Next or Back.
   const [pending, setPending] = useState<Run | null>(null);
   const navFor = useRef<number | null>(null);
+  // Which way you're going (Next +1, Back -1), so a step with nothing to point at is skipped that way.
+  const dir = useRef(1);
   const nameRef = useRef("");
   if (pending && !run && (!pending.steps[0]?.route || onRoute(pending.steps[0].route, pathname, search))) {
     setRun(pending);
@@ -46,23 +48,36 @@ export function TourMount() {
         if (fresh.length) setTimeout(() => setPending({ steps: whatsNewSteps(fresh), keys: fresh.map((u) => u.id) }), 700);
       }
     });
-    const replay = () => { navFor.current = null; setI(0); setRun({ steps: welcomeSteps(nameRef.current), keys: [WELCOME] }); };
+    const replay = () => { navFor.current = null; dir.current = 1; setI(0); setRun({ steps: welcomeSteps(nameRef.current), keys: [WELCOME] }); };
     window.addEventListener("forge:tour", replay);
     return () => { alive = false; window.removeEventListener("forge:tour", replay); };
   }, []);
 
   const step = run?.steps[i];
-  // While the card is on screen, corner widgets (the feed's message dock) step aside.
+  const go = useCallback((to: number) => { setI((v) => { dir.current = to < v ? -1 : 1; return to; }); }, []);
+  const target = useRef<HTMLElement | null>(null);
+  // While the card is on screen the page is locked: it can't scroll or be clicked underneath until you
+  // finish or close the tour (FIX-236), so the spotlight stays on what it's explaining. The tour still
+  // scrolls each target into view itself. Corner widgets (the feed's message dock) step aside too.
   const showing = !!step;
   useEffect(() => {
     if (!showing) return;
-    document.documentElement.dataset.tour = "on";
-    return () => { delete document.documentElement.dataset.tour; };
+    const html = document.documentElement;
+    const gap = window.innerWidth - html.clientWidth;
+    const was = { overflow: html.style.overflow, paddingRight: html.style.paddingRight };
+    html.dataset.tour = "on";
+    html.style.overflow = "hidden";
+    if (gap > 0) html.style.paddingRight = `${gap}px`;
+    return () => {
+      delete html.dataset.tour;
+      html.style.overflow = was.overflow;
+      html.style.paddingRight = was.paddingRight;
+    };
   }, [showing]);
 
   // Go to the step's page, then find and spotlight its target.
   useEffect(() => {
-    if (!step) return;
+    if (!step || !run) return;
     if (step.route && !onRoute(step.route, pathname, search)) {
       if (navFor.current !== i) {
         navFor.current = i;
@@ -75,22 +90,38 @@ export function TourMount() {
       return () => clearTimeout(t);
     }
     navFor.current = i;
-    let tries = 0;
+    target.current = null;
+
+    // Pages stream in, so give the target a few seconds to arrive. The first one that's on screen wins
+    // (the sidebar and the phone's tab bar both carry "menu"; only one is showing).
+    const until = Date.now() + 4000;
     let raf = 0;
     const find = () => {
-      const el = step.target ? document.querySelector<HTMLElement>(`[data-tour="${step.target}"]`) : null;
-      if (el && el.offsetParent !== null) {
-        el.scrollIntoView({ block: "center", behavior: "smooth" });
-        const r = el.getBoundingClientRect();
-        setBox({ top: r.top - 6, left: r.left - 6, width: r.width + 12, height: r.height + 12 });
+      if (!step.target) { setBox(null); return; }
+      const el = [...document.querySelectorAll<HTMLElement>(`[data-tour="${step.target}"]`)].find((e) => e.getClientRects().length > 0 && getComputedStyle(e).visibility !== "hidden");
+      if (el) {
+        target.current = el;
+        el.scrollIntoView({ block: "center", behavior: "instant" });
+        setBox(measure(el));
         return;
       }
-      if (step.target && tries++ < 40) raf = requestAnimationFrame(find);
+      if (Date.now() < until) { raf = requestAnimationFrame(find); return; }
+      // Not on this page (switched off, or not on this screen size): skip it, the way you were going.
+      const next = i + dir.current;
+      if (next >= 0 && next < run.steps.length) setI(next);
       else setBox(null);
     };
     raf = requestAnimationFrame(find);
     return () => cancelAnimationFrame(raf);
-  }, [step, i, pathname, search, router]);
+  }, [step, run, i, pathname, search, router]);
+
+  // The page can't scroll, but the window can change size (a phone turning): follow the target.
+  useEffect(() => {
+    if (!showing) return;
+    const onResize = () => { if (target.current?.isConnected) { target.current.scrollIntoView({ block: "center", behavior: "instant" }); setBox(measure(target.current)); } };
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, [showing]);
 
   const close = useCallback(() => {
     if (run) void markToursSeen(run.keys);
@@ -104,8 +135,8 @@ export function TourMount() {
     if (!run) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") close();
-      if (e.key === "ArrowRight") setI((v) => Math.min(v + 1, run.steps.length - 1));
-      if (e.key === "ArrowLeft") setI((v) => Math.max(v - 1, 0));
+      if (e.key === "ArrowRight") { dir.current = 1; setI((v) => Math.min(v + 1, run.steps.length - 1)); }
+      if (e.key === "ArrowLeft") { dir.current = -1; setI((v) => Math.max(v - 1, 0)); }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -113,11 +144,18 @@ export function TourMount() {
 
   if (!run || !step) return null;
   const last = i === run.steps.length - 1;
+  // A target low on the screen (the phone's tab bar) would sit under the card: the card moves up.
+  const high = !!box && typeof window !== "undefined" && box.top + box.height > window.innerHeight - 280;
   return (
     <AnimatePresence>
+      {/* Catches every click, tap, wheel and touch meant for the page underneath while the tour runs.
+          It dims the page itself when there's no spotlight (which does its own dimming). The page under it
+          can't scroll either: the root is overflow hidden while the tour runs. */}
+      <div key="lock" data-tour-lock aria-hidden="true" className={cn("fixed inset-0 z-[59] touch-none overscroll-none", !box && "bg-black/45")} />
       {box && (
         <motion.div
           key="spot"
+          data-tour-spot
           aria-hidden="true"
           className="pointer-events-none fixed z-[60] rounded-2xl ring-2 ring-text shadow-[0_0_0_9999px_rgba(0,0,0,0.45)]"
           initial={{ opacity: 0 }}
@@ -128,11 +166,11 @@ export function TourMount() {
       <motion.div
         key="card"
         role="dialog"
-        aria-modal="false"
+        aria-modal="true"
         aria-labelledby="tour-title"
         initial={{ opacity: 0, y: 16 }}
         animate={{ opacity: 1, y: 0 }}
-        className="fixed inset-x-4 bottom-4 z-[61] mx-auto max-w-md rounded-3xl border border-line bg-surface p-5 shadow-[var(--shadow)] sm:right-6 sm:bottom-6 sm:left-auto sm:mx-0 sm:w-[400px]"
+        className={cn("fixed inset-x-4 z-[61] mx-auto max-h-[70dvh] max-w-md overflow-y-auto overscroll-contain rounded-3xl border border-line bg-surface p-5 shadow-[var(--shadow)] sm:right-6 sm:left-auto sm:mx-0 sm:w-[400px]", high ? "top-[calc(env(safe-area-inset-top)+1rem)] sm:top-6" : "bottom-4 sm:bottom-6")}
       >
         <div className="flex items-start gap-3">
           <Sparkles className="mt-0.5 size-5 shrink-0" />
@@ -149,12 +187,24 @@ export function TourMount() {
         </div>
         <div className="mt-4 flex items-center gap-2">
           <span className="font-mono text-[11px] text-faint">{i + 1} / {run.steps.length}</span>
-          {i > 0 && <Button variant="ghost" className="ml-auto" onClick={() => setI(i - 1)}>Back</Button>}
-          <Button className={i > 0 ? "" : "ml-auto"} onClick={() => (last ? close() : setI(i + 1))}>{last ? "Done" : "Next"}</Button>
+          {i > 0 && <Button variant="ghost" className="ml-auto" onClick={() => go(i - 1)}>Back</Button>}
+          <Button className={i > 0 ? "" : "ml-auto"} onClick={() => (last ? close() : go(i + 1))}>{last ? "Done" : "Next"}</Button>
         </div>
       </motion.div>
     </AnimatePresence>
   );
+}
+
+// The spotlight's box around a target, a little larger than it, kept inside the screen.
+function measure(el: HTMLElement): Box {
+  const r = el.getBoundingClientRect();
+  const top = Math.max(r.top - 6, 4), left = Math.max(r.left - 6, 4);
+  return { top, left, width: Math.min(r.right + 6, window.innerWidth - 4) - left, height: Math.min(r.bottom + 6, window.innerHeight - 4) - top };
+}
+
+// "Take the tour": the welcome tour again, from the start (the menu on your photo, Settings → Help).
+export function startTour() {
+  window.dispatchEvent(new CustomEvent("forge:tour", { detail: "welcome" }));
 }
 
 // "Brazework updates": every shipped (and upcoming) change, readable any time. In the sidebar it's a
