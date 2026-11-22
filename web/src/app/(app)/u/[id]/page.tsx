@@ -2,7 +2,7 @@ import { githubConfig } from "@/lib/github-app";
 import { canUse } from "@/lib/plans";
 import type { Metadata } from "next";
 import { ReportLink } from "@/components/report/report-dialog";
-import { BadgeCheck, BarChart3, ClipboardList, Eye, FileText, FolderGit2, Lock, MapPin, MessageSquare, Trophy } from "lucide-react";
+import { BadgeCheck, BarChart3, ChevronDown, ClipboardList, Eye, FileText, FolderGit2, Lock, MapPin, MessageSquare, Trophy } from "lucide-react";
 import { MoreMenu } from "@/components/app/more-menu";
 import { RecordCard } from "@/components/profile/record-card";
 import { buildTimeline } from "@/lib/record-timeline";
@@ -301,9 +301,16 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
                   content: (
                     <>
                       {mine && <div className="mb-3 flex justify-end"><ProjectEditor interests={p.interests ?? []} copilot={copilotOn} stack={stackOn} specsOn={f.projectSpecs} /></div>}
-                      <ProjectGrid projects={projects} own={mine} field={p.field} interests={p.interests ?? []} copilot={copilotOn} clubs={msOn && mine ? myClubs : undefined} vouches={f.vouches} backing={f.backed && !!githubConfig()} stack={stackOn} specsOn={f.projectSpecs} />
-                      {!projects.length && <EmptyState icon={<FolderGit2 className="size-6" />} title={mine ? "Show what you've built" : "No projects yet"} body={mine ? "Add a project with a summary, what you did and a link. Keep the write-up private and share only the card if you like." : undefined} />}
-                      {projects.some((x) => x.private) && !mine && <p className="mt-3 flex items-center gap-1.5 text-xs text-faint"><Lock className="size-3" /> Private projects show their card only.</p>}
+                      <details open className="group/projects">
+                        <summary className="mb-3 flex min-h-11 cursor-pointer list-none items-center gap-2 rounded-xl border border-line bg-surface px-3 text-sm font-medium hover:bg-hover [&::-webkit-details-marker]:hidden">
+                          <FolderGit2 aria-hidden="true" className="size-4 text-muted" />
+                          Project list
+                          <ChevronDown aria-hidden="true" className="ml-auto size-4 text-muted transition-transform group-open/projects:rotate-180" />
+                        </summary>
+                        <ProjectGrid projects={projects} own={mine} field={p.field} interests={p.interests ?? []} copilot={copilotOn} clubs={msOn && mine ? myClubs : undefined} vouches={f.vouches} backing={f.backed && !!githubConfig()} stack={stackOn} specsOn={f.projectSpecs} />
+                        {!projects.length && <EmptyState icon={<FolderGit2 className="size-6" />} title={mine ? "Show what you've built" : "No projects yet"} body={mine ? "Add a project with a summary, what you did and a link. Keep the write-up private and share only the card if you like." : undefined} />}
+                        {projects.some((x) => x.private) && !mine && <p className="mt-3 flex items-center gap-1.5 text-xs text-faint"><Lock className="size-3" /> Private projects show their card only.</p>}
+                      </details>
                     </>
                   ),
                 },

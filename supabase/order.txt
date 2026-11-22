@@ -103,3 +103,4 @@ founding-members
 launch-metrics
 ember-allowances
 ember-credits
+club-deletion
