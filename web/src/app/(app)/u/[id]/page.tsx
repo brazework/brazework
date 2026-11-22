@@ -119,7 +119,9 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
   const viewer = { id: user.id, first: me?.first_name ?? "", last: me?.last_name ?? "" };
   type Win = { challenge_id: string; placement: number; challenges: { title: string; status: string; organizations: { name: string } | null } | null };
   const wins = ((winsRes.data ?? []) as unknown as Win[]).filter((w) => w.challenges?.status === "closed").sort((a, b) => a.placement - b.placement);
-  const [goal, record] = await Promise.all([goalP, recordP]);
+  // Their LinkedIn, unless they hid it (supabase/linkedin-public.sql); an error before that step runs.
+  const [goal, record, liRes] = await Promise.all([goalP, recordP, supabase.rpc("profile_linkedin", { p_id: id })]);
+  const linkedinUrl = !liRes.error && typeof liRes.data === "string" && liRes.data.startsWith("https://www.linkedin.com/in/") ? liRes.data : null;
   const liked = new Set(((likesRes.data ?? []) as { post_id: string }[]).map((l) => l.post_id));
   const details = new Map(((detailsRes.data ?? []) as unknown as { project_id: string; details: string; link: string; specs?: { label: string; value: string }[] }[]).map((d) => [d.project_id, d]));
   const byId = Object.fromEntries(projectRows.map((r) => [r.id, r]));
@@ -279,6 +281,15 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
             )}
           </div>
 
+          {/* LinkedIn (supabase/linkedin-public.sql): shown unless its owner hid it in Settings. */}
+          {linkedinUrl ? (
+            <a href={linkedinUrl} target="_blank" rel="noopener noreferrer me" data-linkedin className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-text-2 transition hover:text-text hover:underline">
+              <LinkedinMark /> LinkedIn
+            </a>
+          ) : mine && !liRes.error ? (
+            <Link href="/settings#profile" className="mt-3 inline-flex items-center gap-1.5 text-sm text-muted transition hover:text-text"><LinkedinMark /> Add your LinkedIn</Link>
+          ) : null}
+
           <div id="about" className="scroll-mt-24">
             {mine ? <EditBasics headline={p.headline} bio={p.bio} /> : p.bio && <p className="mt-5 max-w-2xl text-[15px] leading-relaxed whitespace-pre-wrap text-text-2">{p.bio}</p>}
           </div>
@@ -389,5 +400,17 @@ function ProfileSkeleton() {
       <Skeleton className="mt-8 h-12" />
       <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2"><Skeleton className="h-48" /><Skeleton className="h-48" /></div>
     </div>
+  );
+}
+
+// LinkedIn's "in" mark, drawn plain in the text colour (the icon set has no brand icons).
+function LinkedinMark() {
+  return (
+    <svg viewBox="0 0 16 16" aria-hidden="true" className="size-4 shrink-0" fill="currentColor">
+      <rect x="0.5" y="0.5" width="15" height="15" rx="3" fill="none" stroke="currentColor" />
+      <rect x="3.5" y="6.5" width="2" height="6" rx="0.4" />
+      <circle cx="4.5" cy="4.3" r="1.15" />
+      <path d="M7.5 6.5h1.9v.9c.4-.7 1.2-1.1 2.1-1.1 1.6 0 2.1 1 2.1 2.6v3.6h-2V9.3c0-.8-.2-1.3-.9-1.3-.8 0-1.2.6-1.2 1.4v3.1h-2z" />
+    </svg>
   );
 }

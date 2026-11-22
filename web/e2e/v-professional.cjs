@@ -59,7 +59,7 @@ const psql = (sql) => execSync(`docker exec -i ${process.env.E2E_STACK || "forge
     await page.fill('input[name="birthday"]', "1996-03-12");
     // A professional is offered a LinkedIn profile link: optional, but a wrong one is refused.
     await page.getByLabel(/LinkedIn profile/).waitFor();
-    await page.getByText("Private: it isn't shown on your profile or your record.").waitFor();
+    await page.getByText("Shown on your profile to signed-in members. You can hide it in Settings. It's never on your public record.").waitFor();
     await page.getByLabel(/LinkedIn profile/).fill("twitter.com/pat");
     await page.getByRole("button", { name: "Continue" }).click();
     await page.getByText(/Enter your LinkedIn profile link/).waitFor({ timeout: 15000 });
