@@ -19,10 +19,12 @@ const BODY = `Delete-chat e2e ${Date.now() % 100000}`;
   try {
     await step("hovering a message shows its emoji and reply bar beside the bubble", async () => {
       await go(page, `/messages/${conv}`);
-      const bubble = page.getByText(BODY).first();
+      // The message in the thread (not its preview in the Chats list beside it).
+      const row = page.locator("[data-thread] li", { hasText: BODY }).last();
+      const bubble = row.getByText(BODY).first();
       await bubble.waitFor({ timeout: 15000 });
       await bubble.hover();
-      const bar = page.getByRole("toolbar", { name: "Message actions" }).last();
+      const bar = row.getByRole("toolbar", { name: "Message actions" });
       await bar.waitFor({ state: "visible", timeout: 5000 });
       const [bb, tb] = [await bubble.boundingBox(), await bar.boundingBox()];
       // Their message: the bar sits to its right, level with it, not on top of the messages above.
