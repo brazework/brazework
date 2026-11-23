@@ -11,6 +11,7 @@ import { EmberDemo } from "./ember-demo";
 import { Faq } from "./faq";
 import { EMBER_DAILY_LIMIT, LANDING_AUDIENCES, PRICING_LINKS } from "@/lib/pricing";
 import { PricingTiers } from "./pricing";
+import { SwipeControls } from "./swipe-controls";
 
 // The landing page's sections. The order they show in is set by app/page.tsx: who it's for (a
 // student, someone employed, someone working for themselves), why proof matters now, the app itself
@@ -20,16 +21,19 @@ import { PricingTiers } from "./pricing";
 
 export const H2 = "text-[clamp(2rem,4.4vw,3.25rem)] leading-[1.03] font-semibold tracking-[-0.04em] text-balance";
 const WRAP = "mx-auto max-w-6xl px-5 sm:px-6";
-const SEC = "scroll-mt-20 py-20 sm:py-28";
+const SEC = "scroll-mt-20 py-12 md:py-28";
 const BAND = "border-y border-line bg-surface-2/60";
 const LEAD = "mt-5 max-w-[36rem] text-lg leading-relaxed text-muted";
 
 // Three plain points beside a demo: what it is, in the visitor's words.
 function Points({ items }: { items: [string, string][] }) {
   return (
-    <dl className="mt-9 flex flex-col divide-y divide-line border-y border-line">
-      {items.map(([t, b]) => <div key={t} className="py-4"><dt className="font-medium">{t}</dt><dd className="mt-1 text-[15px] leading-relaxed text-muted">{b}</dd></div>)}
-    </dl>
+    <div className="mt-6 md:mt-9">
+      <p className="mb-2 text-xs text-muted md:hidden">Swipe for more details</p>
+      <dl aria-label="Feature details" tabIndex={0} className="landing-swipe-row flex flex-col md:divide-y md:divide-line md:border-y md:border-line">
+        {items.map(([t, b]) => <div key={t} className="rounded-2xl border border-line bg-surface p-4 md:rounded-none md:border-0 md:bg-transparent md:px-0"><dt className="font-medium">{t}</dt><dd className="mt-1 text-[15px] leading-relaxed text-muted">{b}</dd></div>)}
+      </dl>
+    </div>
   );
 }
 
@@ -44,20 +48,21 @@ const STAGES = [
 
 export function Stages() {
   return (
-    <section id="who" className="scroll-mt-20 py-16 sm:py-24">
+    <section id="who" className="scroll-mt-20 py-12 md:py-24">
       <div className={WRAP}>
         <h2 className={H2}>Who signs it? Whoever saw it.</h2>
-        <p className={LEAD}>At school that&apos;s your club or a professor. At work, your coworker or tech lead. On your own, your client. They sign from their own email (a work or university one carries the most weight), and the record stays yours when you move on.</p>
-        <ul className="mt-10 grid grid-cols-1 overflow-hidden rounded-[1.25rem] border border-line bg-surface md:grid-cols-3 md:divide-x md:divide-line">
-          {STAGES.map((s, i) => (
-            <li key={s.when} className={cn("flex flex-col p-6 sm:p-7", i > 0 && "border-t border-line md:border-t-0")}>
+        <p className={LEAD}>At school that&apos;s your club or a professor. At work, your coworker or tech lead. On your own, your client. They sign from their own email. A work or university address gives readers more context, and the record stays yours when you move on.</p>
+        <SwipeControls rowId="landing-signers" count={STAGES.length} hint="Swipe for signer examples" />
+        <ul id="landing-signers" aria-label="Who can sign your work" tabIndex={0} className="landing-swipe-row mt-2 grid grid-cols-1 md:mt-10 md:grid-cols-3 md:overflow-hidden md:rounded-[1.25rem] md:border md:border-line md:bg-surface md:divide-x md:divide-line">
+          {STAGES.map((s) => (
+            <li key={s.when} className="flex flex-col rounded-2xl border border-line bg-surface p-5 md:rounded-none md:border-0 md:bg-transparent md:p-7">
               <h3 className="text-2xl font-semibold tracking-tight">{s.when}</h3>
               <p className="mt-2 flex-1 text-[15px] leading-relaxed text-muted">{s.who}</p>
               <figure className="mt-6 rounded-xl bg-surface-2/70 px-4 py-3">
                 <p className="text-sm leading-snug font-medium">{s.work}</p>
                 <figcaption className="mt-2 flex items-start gap-1.5 text-xs leading-relaxed text-muted">
                   <BadgeCheck className="mt-0.5 size-3.5 shrink-0 text-ok" aria-hidden="true" />
-                  <span>Verified by <span className="font-medium text-text-2">{s.by}</span>, {s.as}</span>
+                  <span>Signed by <span className="font-medium text-text-2">{s.by}</span>, {s.as}</span>
                 </figcaption>
               </figure>
             </li>
@@ -93,7 +98,7 @@ export function ShowBuild() {
           <p className={LEAD}>Whatever you make, post the thing itself. Upload the model, and whoever checks your work can turn it over, look inside and see how big it is.</p>
         </div>
         <div className="min-w-0 lg:col-start-1 lg:row-span-2 lg:row-start-1 lg:self-center"><BuildShowcase /></div>
-        <div className="lg:col-start-2 lg:row-start-2 lg:self-start [&>dl]:mt-0">
+        <div className="lg:col-start-2 lg:row-start-2 lg:self-start [&>div]:mt-0">
           <Points items={[
             ["Pick what you do", "Twenty fields, from robotics and software to chemistry, business, design and education. Each shows an example build and the milestone that goes with it."],
             ["Look closer", "Front, side and top at a tap. See through the surfaces, or pull an assembly apart."],
@@ -157,7 +162,7 @@ export function EmberSection() {
 // Public explanation only. Account connection remains an explicit choice on /ai.
 export function ConnectSection() {
   return (
-    <section id="connect" aria-labelledby="connect-h" className="scroll-mt-20 pb-20 sm:pb-28">
+    <section id="connect" aria-labelledby="connect-h" className="scroll-mt-20 pb-12 md:pb-28">
       <div className={cn(WRAP, "grid grid-cols-1 items-start gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:gap-16")}>
         <div>
           <h2 id="connect-h" className={H2}>Ask your AI about Brazework.</h2>
@@ -220,7 +225,7 @@ export function Pricing() {
     <section id="pricing" className={cn(SEC, BAND)}>
       <div className={WRAP}>
         <h2 className={H2}>Your record is free. Upgrade when it helps.</h2>
-        <PricingTiers className="mt-10" only={LANDING_AUDIENCES} />
+        <PricingTiers className="mt-10" only={LANDING_AUDIENCES} swipeOnMobile />
         {/* Clubs are free; what companies and schools pay is on /pricing, not here (lib/pricing.ts). */}
         <p className="mt-8 text-[15px] text-muted">
           Clubs are free too. Hiring, sponsoring a club or running a school?{" "}

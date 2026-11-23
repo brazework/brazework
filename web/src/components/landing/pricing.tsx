@@ -2,32 +2,41 @@ import { Check } from "lucide-react";
 import Link from "next/link";
 import { cn } from "@/lib/forge";
 import { AUDIENCES, tiersFor, type Audience, type Tier } from "@/lib/pricing";
+import { SwipeControls } from "./swipe-controls";
 
 // The price list (lib/pricing.ts): who it's for, then two tiers each. /pricing shows every audience;
 // the landing page passes `only` and shows builders alone (lib/pricing.ts LANDING_AUDIENCES), with
 // links to the rest. Each audience's heading is an anchor (/pricing#pricing-companies).
 // Server-rendered, no state.
-export function PricingTiers({ className, only }: { className?: string; only?: Audience[] }) {
+export function PricingTiers({ className, only, swipeOnMobile = false }: { className?: string; only?: Audience[]; swipeOnMobile?: boolean }) {
   return (
     <div className={cn("flex flex-col gap-12", className)}>
-      {AUDIENCES.filter((a) => !only || only.includes(a.id)).map((a) => (
-        <section key={a.id} aria-labelledby={`pricing-${a.id}`}>
+      {AUDIENCES.filter((a) => !only || only.includes(a.id)).map((a) => {
+        const tiers = tiersFor(a.id);
+        const rowId = swipeOnMobile ? `landing-plans-${a.id}` : undefined;
+        return <section key={a.id} aria-labelledby={`pricing-${a.id}`}>
           <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1">
             <h3 id={`pricing-${a.id}`} className="scroll-mt-24 text-xl font-semibold tracking-tight">{a.label}</h3>
             <p className="text-[15px] text-muted">{a.line}</p>
           </div>
-          <div className="mt-4 grid grid-cols-1 overflow-hidden rounded-[1.25rem] border border-line bg-surface md:grid-cols-2 md:divide-x md:divide-line">
-            {tiersFor(a.id).map((t, i) => <TierCard key={t.id} t={t} first={i === 0} />)}
+          {rowId && <SwipeControls rowId={rowId} count={tiers.length} hint="Swipe to compare plans" />}
+          <div id={rowId} data-landing-pricing={swipeOnMobile || undefined} className={cn(
+            "grid grid-cols-1 md:grid-cols-2 md:divide-x md:divide-line",
+            swipeOnMobile
+              ? "landing-swipe-row mt-2 md:mt-4 md:overflow-hidden md:rounded-[1.25rem] md:border md:border-line md:bg-surface"
+              : "mt-4 overflow-hidden rounded-[1.25rem] border border-line bg-surface",
+          )}>
+            {tiers.map((t, i) => <TierCard key={t.id} t={t} first={i === 0} swipeOnMobile={swipeOnMobile} />)}
           </div>
-        </section>
-      ))}
+        </section>;
+      })}
     </div>
   );
 }
 
-function TierCard({ t, first }: { t: Tier; first: boolean }) {
+function TierCard({ t, first, swipeOnMobile }: { t: Tier; first: boolean; swipeOnMobile: boolean }) {
   return (
-    <div className={cn("flex flex-col p-6 sm:p-8", !first && "border-t border-line md:border-t-0")}>
+    <div className={cn("flex flex-col p-6 sm:p-8", swipeOnMobile ? "rounded-2xl border border-line bg-surface md:rounded-none md:border-0 md:bg-transparent" : !first && "border-t border-line md:border-t-0")}>
       <div className="flex items-center gap-2">
         <h4 className="text-sm font-medium text-muted">{t.name}</h4>
       </div>

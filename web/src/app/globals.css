@@ -158,6 +158,27 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity
   &::-webkit-scrollbar { display: none; }
 }
 
+/* Native swipe rows on the landing page. A piece of the next card stays in view. */
+@media (width < 48rem) {
+  .landing-swipe-row {
+    display: grid;
+    grid-auto-flow: column;
+    grid-template-columns: none;
+    grid-auto-columns: calc(100% - 2.5rem);
+    gap: 0.75rem;
+    min-width: 0;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scroll-snap-type: x proximity;
+    padding-bottom: 0.5rem;
+  }
+
+  .landing-swipe-row > :is(li, div, article) {
+    min-width: 0;
+    scroll-snap-align: start;
+  }
+}
+
 /* Headline second lines: a quiet top-to-bottom fade from the text colour into muted. */
 @utility text-shine {
   background: linear-gradient(180deg, var(--text) 20%, var(--faint) 100%);

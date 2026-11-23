@@ -196,6 +196,40 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
     if (cut) throw new Error("the verified line is cut off by the frame");
   }, phone);
 
+  await step("phone: landing details swipe sideways without making the page wider", async () => {
+    await go(phone, "/");
+    const rows = ["#how ol", "#who ul", "#ember dl", "#clubs dl", "#companies dl", "#pricing [data-landing-pricing]"];
+    for (const selector of rows) {
+      const row = phone.locator(selector).first();
+      const { width, total, peek } = await row.evaluate((el) => {
+        const first = el.firstElementChild.getBoundingClientRect();
+        return { width: el.clientWidth, total: el.scrollWidth, peek: el.getBoundingClientRect().right - first.right };
+      });
+      if (total <= width || peek < 20) throw new Error(`the next card isn't reachable or hinted at in ${selector}`);
+    }
+    const how = phone.locator("#how");
+    const next = how.getByRole("button", { name: "Next card" });
+    const previous = how.getByRole("button", { name: "Previous card" });
+    await hydrated(next);
+    for (const value of ["2 of 3", "3 of 3"]) {
+      await next.click();
+      await how.getByText(value, { exact: true }).waitFor({ timeout: 5000 });
+    }
+    if (!(await next.isDisabled())) throw new Error("the last card still allows moving forward");
+    for (const value of ["2 of 3", "1 of 3"]) {
+      await previous.click();
+      await how.getByText(value, { exact: true }).waitFor({ timeout: 5000 });
+    }
+    if (!(await previous.isDisabled())) throw new Error("the first card still allows moving back");
+    const steps = phone.getByRole("list", { name: "How it works", exact: true });
+    await steps.focus();
+    await phone.keyboard.press("ArrowRight");
+    await phone.waitForFunction(() => document.querySelector("#how ol").scrollLeft > 0);
+    await steps.locator("figcaption").last().scrollIntoViewIfNeeded();
+    if (!(await steps.getByText(/Signed by Dana R\./).isVisible())) throw new Error("swiping skips the signed example");
+    if (await phone.evaluate(() => document.documentElement.scrollWidth > innerWidth)) throw new Error("the page overflows sideways");
+  }, phone);
+
   await step("the AI guide: a signed-out visitor follows the footer to /ai and finds the setup, what to ask, the rules and all 20 fields", async () => {
     await go(page, "/");
     await page.locator("footer").getByRole("link", { name: "Connect your AI" }).click();

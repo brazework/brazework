@@ -7,13 +7,14 @@ import { Seal } from "@/components/app/verified-seal";
 import { Button } from "@/components/ui";
 import { cn } from "@/lib/forge";
 import { H2 } from "./sections";
+import { SwipeControls } from "./swipe-controls";
 
 // How it works, straight after the hero (Linear FIX-218): the whole product in three steps, for the
 // visitor who won't watch the hero's demo play. One example entry is shown three times, once per
 // step: logged with its proof, waiting for a signature (dashed amber), signed (the green seal). It is
 // the same picture as the launch film, and the same colours the app uses for those states.
 //
-// The line joining the steps is tied to the scroll: it draws as the section moves up the screen, and
+// On wider screens, the line joining the steps is tied to the scroll: it draws as the section moves up the screen, and
 // each step's state appears when the line reaches it (and goes again if you scroll back). Nothing
 // here is dimmed while it waits, so the words read at full contrast from the first paint; only the
 // state under each step and the ink on its number change. With reduced motion, and before the page's
@@ -45,37 +46,37 @@ export function HowItWorks() {
   }, [still, scrollYProgress]);
 
   return (
-    <section id="how" aria-labelledby="how-h" className="scroll-mt-20 border-y border-line bg-surface-2/60 py-16 sm:py-24">
+    <section id="how" aria-labelledby="how-h" className="scroll-mt-20 border-y border-line bg-surface-2/60 py-12 md:py-24">
       <div className="mx-auto max-w-6xl px-5 sm:px-6">
         <h2 id="how-h" className={H2}>Log it. Get it signed. Keep it.</h2>
         <p className="mt-5 max-w-[36rem] text-lg leading-relaxed text-muted">That&apos;s the whole idea, whether you&apos;re in school or at work. It takes a few minutes, and it&apos;s free for everyone who builds.</p>
 
-        <ol ref={ref} className="relative mt-12 grid grid-cols-1 gap-10 md:grid-cols-3 md:gap-8">
-          {/* The line: down the left on a phone, across the top on a laptop. */}
-          <span aria-hidden="true" className="absolute top-4 bottom-4 left-4 w-px bg-line-strong md:top-4 md:right-0 md:bottom-auto md:left-0 md:h-px md:w-auto" />
-          <motion.span aria-hidden="true" className="absolute top-4 bottom-4 left-4 w-px origin-top bg-text md:hidden" style={{ scaleY: still ? 1 : scrollYProgress }} />
+        <SwipeControls rowId="landing-steps" count={STEPS.length} hint="Swipe through the steps" />
+        <div className="relative mt-2 md:mt-12">
+          <span aria-hidden="true" className="absolute top-4 right-0 left-0 hidden h-px bg-line-strong md:block" />
           <motion.span aria-hidden="true" className="absolute top-4 right-0 left-0 hidden h-px origin-left bg-text md:block" style={{ scaleX: still ? 1 : scrollYProgress }} />
-
-          {STEPS.map((s, i) => {
-            const on = reached > i;
-            return (
-              <li key={s.title} className="relative pl-14 md:pt-14 md:pl-0">
-                <span className={cn("absolute top-0 left-0 grid size-8 place-items-center rounded-full border text-sm font-semibold tabular-nums transition-colors duration-300", on ? "border-accent bg-accent text-on-accent" : "border-line-strong bg-surface text-text-2")}>{i + 1}</span>
-                <h3 className="text-xl font-semibold tracking-tight">{s.title}</h3>
-                <p className="mt-2 text-[15px] leading-relaxed text-muted">{s.body}</p>
-                <figure className={cn("mt-5 rounded-xl border bg-surface px-4 py-3.5 transition-colors duration-300", on && i === 1 ? "border-dashed border-wait" : on && i === 2 ? "border-ok" : "border-line")}>
-                  <p className="text-sm leading-snug font-medium">{WORK}</p>
-                  {/* Kept in the layout while it waits, so nothing below moves when it appears. */}
-                  <figcaption className={cn("mt-2.5 flex min-h-9 items-center gap-2 text-xs leading-snug text-muted transition-opacity duration-300", on ? "opacity-100" : "invisible opacity-0")}>
-                    {i === 0 && <><FileText className="size-4 shrink-0" aria-hidden="true" /><span>Logged, with <span className="font-medium text-text-2">cycle-test-log.csv</span> as proof</span></>}
-                    {i === 1 && <><span aria-hidden="true" className="block size-4 shrink-0 rounded-full border-2 border-dashed border-wait" /><span>Waiting for <span className="font-medium text-text-2">Dana R.</span>, engineering coworker</span></>}
-                    {i === 2 && <><Seal size={18} /><span>Signed by <span className="font-medium text-text-2">Dana R.</span>, coworker at Voltline</span></>}
-                  </figcaption>
-                </figure>
-              </li>
-            );
-          })}
-        </ol>
+          <ol id="landing-steps" ref={ref} aria-label="How it works" tabIndex={0} className="landing-swipe-row relative grid grid-cols-1 md:grid-cols-3 md:gap-8">
+            {STEPS.map((s, i) => {
+              const on = reached > i;
+              return (
+                <li key={s.title} className="relative rounded-2xl border border-line bg-surface p-4 pt-14 md:rounded-none md:border-0 md:bg-transparent md:p-0 md:pt-14">
+                  <span className={cn("absolute top-4 left-4 grid size-8 md:top-0 md:left-0 place-items-center rounded-full border text-sm font-semibold tabular-nums transition-colors duration-300", on ? "border-accent bg-accent text-on-accent" : "border-line-strong bg-surface text-text-2")}>{i + 1}</span>
+                  <h3 className="text-xl font-semibold tracking-tight">{s.title}</h3>
+                  <p className="mt-2 text-[15px] leading-relaxed text-muted">{s.body}</p>
+                  <figure className={cn("mt-5 rounded-xl border bg-surface px-4 py-3.5 transition-colors duration-300", i === 1 ? cn("border-dashed border-wait", !on && "md:border-solid md:border-line") : i === 2 ? cn("border-ok", !on && "md:border-line") : "border-line")}>
+                    <p className="text-sm leading-snug font-medium">{WORK}</p>
+                    {/* Kept in the layout while it waits, so nothing below moves when it appears. */}
+                    <figcaption className={cn("mt-2.5 flex min-h-9 items-center gap-2 text-xs leading-snug text-muted transition-opacity duration-300", !on && "md:invisible md:opacity-0")}>
+                      {i === 0 && <><FileText className="size-4 shrink-0" aria-hidden="true" /><span>Logged, with <span className="font-medium text-text-2">cycle-test-log.csv</span> as proof</span></>}
+                      {i === 1 && <><span aria-hidden="true" className="block size-4 shrink-0 rounded-full border-2 border-dashed border-wait" /><span>Waiting for <span className="font-medium text-text-2">Dana R.</span>, engineering coworker</span></>}
+                      {i === 2 && <><Seal size={18} /><span>Signed by <span className="font-medium text-text-2">Dana R.</span>, coworker at Voltline</span></>}
+                    </figcaption>
+                  </figure>
+                </li>
+              );
+            })}
+          </ol>
+        </div>
 
         <div className="mt-10 flex flex-wrap items-center gap-x-5 gap-y-3">
           <Button href="/signup" size="lg" className="h-12 rounded-xl px-5">Create your free account</Button>
