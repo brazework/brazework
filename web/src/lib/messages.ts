@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { dbFeatures } from "@/lib/db-features";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { REACTIONS } from "@/lib/message-reactions";
 import { friendlyError } from "@/lib/forge";
 import { getViewer } from "@/lib/supabase/server";
 
@@ -90,8 +91,6 @@ export async function markConversationRead(cid: string): Promise<void> {
 }
 
 // Reactions and unsend (supabase/chat-extras.sql), for direct messages ("dm") and group chats ("group").
-const REACTIONS = ["👍", "❤️", "😂", "🎉", "🔥", "👀", "🚀", "💡"];
-
 export async function toggleReaction(kind: "dm" | "group", messageId: string, emoji: string, on: boolean): Promise<R> {
   if (!cidSchema.safeParse(messageId).success || !REACTIONS.includes(emoji)) return { ok: false, message: "That reaction isn't available." };
   const { supabase, user } = await getViewer();
