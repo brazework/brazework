@@ -38,6 +38,7 @@ export function ProfileSettings({ profile, gradYear, canSwitch = false, linkedin
         <Field label="First name"><input name="first_name" defaultValue={profile.first_name} maxLength={80} className={inputCls} /></Field>
         <Field label="Last name"><input name="last_name" defaultValue={profile.last_name} maxLength={80} className={inputCls} /></Field>
       </div>
+      <Field label="Headline"><input name="headline" defaultValue={profile.headline} maxLength={200} className={inputCls} /></Field>
       {canSwitch && (
         <fieldset>
           <legend className="mb-2 text-sm font-medium text-text-2">Right now you&apos;re</legend>
@@ -65,7 +66,6 @@ export function ProfileSettings({ profile, gradYear, canSwitch = false, linkedin
           )}
         </Field>
       )}
-      <Field label="Headline"><input name="headline" defaultValue={profile.headline} maxLength={200} className={inputCls} /></Field>
       <Field label="Field"><select name="field" defaultValue={fieldKnown ? profile.field : ""} className={inputCls}>{!fieldKnown && <option value="" disabled>Pick your field</option>}{FIELDS.map((f) => <option key={f}>{f}</option>)}</select></Field>
       {gradYear !== undefined && (
         <Field label="Graduation year" optional hint="Companies on Find builders can filter by class year.">
@@ -75,8 +75,8 @@ export function ProfileSettings({ profile, gradYear, canSwitch = false, linkedin
           </select>
         </Field>
       )}
-      <div>
-        <div className="mb-2 flex items-baseline justify-between text-sm">
+      <div className="border-t border-line pt-5">
+        <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2 text-sm">
           <span className="font-medium text-text-2">Interests</span>
           <span className={cn("font-mono text-xs", picked.length >= 3 ? "text-faint" : "text-danger")}>{picked.length} picked · at least 3</span>
         </div>
