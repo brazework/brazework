@@ -53,7 +53,7 @@ export default function ProjectPage({ params, searchParams }: PageProps<"/projec
   );
 }
 
-type Project = { tools?: string[]; id: string; title: string; summary: string; status: "in_progress" | "completed"; year: number | null; tags: string[]; private: boolean; updated_at: string; created_at: string; owner_id: string; profiles: { first_name: string; last_name: string; headline: string; field: string } | null };
+type Project = { tools?: string[]; id: string; title: string; summary: string; status: "in_progress" | "completed"; year: number | null; tags: string[]; private: boolean; updated_at: string; created_at: string; owner_id: string; community_id?: string | null; club?: { id: string; name: string } | null; profiles: { first_name: string; last_name: string; headline: string; field: string } | null };
 
 // A project's home: what it is, the write-up, what its club has verified, its updates over time,
 // and who built it. The owner posts updates here; anyone can send it on or ask Ember about it.
@@ -62,8 +62,8 @@ async function ProjectView({ params, searchParams }: { params: PageProps<"/proje
   const ghNote = (await searchParams).github;
   const { supabase, user, profile: viewerProfile } = await getViewer();
   if (!user) redirect("/login");
-  const { milestones: msOn, projectTools: stackOn, projectSpecs: specsOn, projectFiles: filesOn, updateFiles: updFilesOn, github: ghOn, projectAccess: accessOn } = await dbFeatures();
-  const { data } = await supabase.from("projects").select(`id, title, summary, status, year, tags, private, updated_at, created_at, owner_id, profiles!projects_owner_id_fkey(first_name, last_name, headline, field)${stackOn ? ", tools" : ""}`).eq("id", id).maybeSingle();
+  const { milestones: msOn, projectTools: stackOn, projectSpecs: specsOn, projectFiles: filesOn, updateFiles: updFilesOn, github: ghOn, projectAccess: accessOn, clubProjects: clubOn } = await dbFeatures();
+  const { data } = await supabase.from("projects").select(`id, title, summary, status, year, tags, private, updated_at, created_at, owner_id, profiles!projects_owner_id_fkey(first_name, last_name, headline, field)${stackOn ? ", tools" : ""}${clubOn ? ", community_id, club:communities(id, name)" : ""}`).eq("id", id).maybeSingle();
   const p = data as unknown as Project | null;
   const own = p?.owner_id === user.id;
   // Your role on it (step 55): owner, admin, teammate ("member") or viewer. A private project is for
@@ -72,6 +72,10 @@ async function ProjectView({ params, searchParams }: { params: PageProps<"/proje
   const role = own ? "owner" : ((roleData as string | null) ?? null);
   const builder = role === "owner" || role === "admin" || role === "member";
   const canManage = role === "owner" || role === "admin";
+  // A club project (supabase/club-projects.sql) is also run by every owner and admin of its club: they
+  // edit it and set it public or private, like its owner.
+  const { data: clubRole } = p?.community_id && !own && role === "admin" ? await supabase.from("community_members").select("role").eq("community_id", p.community_id).eq("uid", user.id).maybeSingle() : { data: null };
+  const editor = own || ["owner", "admin"].includes((clubRole as { role: string } | null)?.role ?? "");
   if (!p || (p.private && !role)) return <EmptyState title="This project isn't available" body="It may be private, or it was removed." />;
 
   const [det, ms, ups, more, teamRes, clubRes, filesRes, ghEvents, ghRepos] = await Promise.all([
@@ -184,8 +188,9 @@ async function ProjectView({ params, searchParams }: { params: PageProps<"/proje
           {/* The drawing sheet: the work, the title, and the title block with where it stands. */}
           <ProjectCover title={p.title} isPrivate={p.private} live={live} year={p.year} last={last} schematic={schematicFor(p.tags, tools)}
             cover={cover ? { src: mediaUrl(cover.path), alt: cover.alt || "" } : null}
-            facts={{ club: milestones.find((m) => m.status === "verified" || m.status === "pending")?.community_name ?? myClubs[0]?.name ?? null, signed: verified.length, waiting: milestones.filter((m) => m.status === "pending").length, builders: team.length + 1, started: new Date(p.created_at).toLocaleDateString("en-US", { month: "short", year: "numeric", timeZone: "UTC" }) }} />
+            facts={{ club: p.club?.name ?? milestones.find((m) => m.status === "verified" || m.status === "pending")?.community_name ?? myClubs[0]?.name ?? null, signed: verified.length, waiting: milestones.filter((m) => m.status === "pending").length, builders: team.length + 1, started: new Date(p.created_at).toLocaleDateString("en-US", { month: "short", year: "numeric", timeZone: "UTC" }) }} />
           <div className="p-5 sm:p-7">
+            {p.club && <p className="mb-2 text-sm text-muted">A <Link href={`/c/${p.club.id}`} className="font-medium text-text-2 hover:underline">{p.club.name}</Link> project</p>}
             {p.summary && <p className="text-lg leading-relaxed text-text-2">{p.summary}</p>}
             {p.tags.length > 0 && <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-sm">{p.tags.map((t) => <Link key={t} href={`/projects?topic=${encodeURIComponent(t)}`} className="text-muted transition hover:text-text">#{t}</Link>)}</div>}
             <ActivityStrip weeks={weeks} />
@@ -197,9 +202,9 @@ async function ProjectView({ params, searchParams }: { params: PageProps<"/proje
               {link && <a href={link} target="_blank" rel="noopener noreferrer nofollow" className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-line px-4 text-sm font-medium transition hover:bg-hover"><ExternalLink className="size-4" /> {new URL(link).host.replace(/^www\./, "")}</a>}
               <SendPost projectId={p.id} compact={false} />
               <CopyLink path={`/projects/${p.id}`} label="Share" />
-              {own && p.private && <MakePublic projectId={p.id} />}
+              {editor && p.private && <MakePublic projectId={p.id} />}
               {!role && <ReportLink kind="project" id={p.id} label="this project" className="ml-auto" />}
-              {own && <Link href={`/u/${user.id}#projects`} className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-line px-4 text-sm transition hover:bg-hover"><Pencil className="size-4" /> Edit</Link>}
+              {editor && <Link href={p.club ? `/c/${p.club.id}#projects` : `/u/${user.id}#projects`} className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-line px-4 text-sm transition hover:bg-hover"><Pencil className="size-4" /> Edit</Link>}
             </div>
           </div>
         </section>

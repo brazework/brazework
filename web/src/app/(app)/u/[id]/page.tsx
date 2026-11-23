@@ -89,7 +89,7 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
     own ? Promise.resolve(null) : getRelationship(id),
     getNetworkCounts(id),
     supabase.from("posts").select(await postSelect()).eq("author_id", id).is("community_id", null).order("created_at", { ascending: false }).limit(50),
-    supabase.from("projects").select(stackOn ? "id, title, summary, status, year, tags, private, updated_at, tools" : "id, title, summary, status, year, tags, private, updated_at").eq("owner_id", id).order("created_at", { ascending: false }).limit(100),
+    supabase.from("projects").select(`id, title, summary, status, year, tags, private, updated_at${stackOn ? ", tools" : ""}${f.clubProjects ? ", club:communities(id, name)" : ""}`).eq("owner_id", id).order("created_at", { ascending: false }).limit(100),
     // Milestones (supabase/milestones.sql): others only get verified ones back, the owner gets all of theirs.
     msOn ? supabase.from("milestones").select(await milestoneCols()).eq("owner_id", id).order("achieved_on", { ascending: false }).limit(300) : Promise.resolve({ data: [] }),
     supabase.from("community_members").select(`role, communities(${clubCols})`).eq("uid", id).limit(12),
@@ -104,7 +104,15 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
   const mediaOn = f.media;
 
   const posts = (postsRes.data ?? []) as unknown as Post[];
-  const projectRows = ((projectsRes.data ?? []) as unknown as (Omit<ProjectView, "details" | "link"> & { tools?: string[] })[]).filter((r) => !preview || !r.private);
+  // Club projects they build on (supabase/club-projects.sql): teammates and project admins get them on
+  // their own record, marked "with <club>". They don't run them, so no edit controls here.
+  type Row = Omit<ProjectView, "details" | "link"> & { tools?: string[] };
+  const teamRes = f.clubProjects
+    ? await supabase.from("project_members").select(`role, projects!inner(id, title, summary, status, year, tags, private, updated_at, owner_id, community_id${stackOn ? ", tools" : ""}, club:communities(id, name))`).eq("uid", id).in("role", ["admin", "member"]).not("projects.community_id", "is", null).limit(100)
+    : { data: [] };
+  const teamRows: Row[] = ((teamRes.data ?? []) as unknown as { projects: (Row & { owner_id: string; community_id?: string }) | null }[])
+    .flatMap((r) => (r.projects && r.projects.owner_id !== id ? [{ ...r.projects, canEdit: false }] : []));
+  const projectRows = [...((projectsRes.data ?? []) as unknown as Row[]), ...teamRows].filter((r) => !preview || !r.private);
   const following = ((myFollows.data ?? []) as { target: string }[]).map((r) => r.target).filter((t) => t !== id);
   // Second round: what depends on the first (your likes on these posts, project write-ups, mutual follows).
   const [likesRes, detailsRes, mutualRes, winsRes, replies] = await Promise.all([

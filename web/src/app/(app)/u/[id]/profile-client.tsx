@@ -29,6 +29,10 @@ export type ProjectView = {
   milestones?: Milestone[];
   tools?: string[];
   specs?: { label: string; value: string }[];
+  // A club project (supabase/club-projects.sql): the club it belongs to, shown as "with <club>".
+  club?: { id: string; name: string } | null;
+  // False where the viewer builds on it but doesn't run it (a teammate on a club project).
+  canEdit?: boolean;
 };
 
 const initial: ProjectState = { ok: false, message: "" };
@@ -97,6 +101,7 @@ export function ProjectCard({ project, own, interests, copilot = false, clubs, v
   const [msg, setMsg] = useState("");
   const [pending, start] = useTransition();
   const link = safeLink(project.link);
+  const edit = own && project.canEdit !== false;
   const act = (fn: () => Promise<ProjectState>) => start(async () => { const r = await fn(); setMsg(r.ok ? r.message : r.message); });
 
   return (
@@ -110,6 +115,7 @@ export function ProjectCard({ project, own, interests, copilot = false, clubs, v
         {project.status === "completed" ? <CheckCircle2 className="size-3.5 text-ok" /> : <span className="relative flex size-2"><span className="absolute inset-0 animate-ping rounded-full bg-accent opacity-50" /><span className="relative size-2 rounded-full bg-accent" /></span>}
         {meta(project)}
       </p>
+      {project.club && <p className="mt-1 text-xs text-muted">with <Link href={`/c/${project.club.id}`} className="font-medium text-text-2 hover:underline">{project.club.name}</Link></p>}
       <p className="mt-3 text-sm leading-relaxed text-text-2">{project.summary}</p>
       {project.tags.length > 0 && <div className="mt-3 flex flex-wrap gap-1.5">{project.tags.map((t) => <span key={t} className="rounded-full bg-surface-2 px-2.5 py-0.5 text-xs text-text-2">#{t}</span>)}</div>}
       {!!project.tools?.length && <p className="mt-2 truncate text-xs text-muted"><span className="text-faint">Built with</span> {project.tools.slice(0, 5).join(" · ")}{project.tools.length > 5 ? ` +${project.tools.length - 5}` : ""}</p>}
@@ -131,7 +137,7 @@ export function ProjectCard({ project, own, interests, copilot = false, clubs, v
           </motion.div>
         )}
       </AnimatePresence>
-      {own && (
+      {edit && (
         <div className="mt-auto flex flex-wrap items-center gap-1 pt-4">
           <IconBtn label="Edit" onClick={() => setEditing(true)}><Pencil className="size-4" /></IconBtn>
           <IconBtn label="Share to feed" onClick={() => setSharing((v) => !v)}><Share2 className="size-4" /></IconBtn>
@@ -207,17 +213,18 @@ function ShareBox({ id, title, onDone }: { id: string; title: string; onDone: (m
   );
 }
 
-export function ProjectEditor({ interests, copilot = false, stack = false, specsOn = false }: { interests: string[]; copilot?: boolean; stack?: boolean; specsOn?: boolean }) {
+// club: a new club project (supabase/club-projects.sql), for the club's owners and admins.
+export function ProjectEditor({ interests, copilot = false, stack = false, specsOn = false, club }: { interests: string[]; copilot?: boolean; stack?: boolean; specsOn?: boolean; club?: { id: string; name: string } }) {
   const [open, setOpen] = useState(false);
   return (
     <>
-      <Button onClick={() => setOpen(true)}><Plus className="size-4" /> Add project</Button>
-      {open && <ProjectDialog interests={interests} copilot={copilot} stack={stack} specsOn={specsOn} onClose={() => setOpen(false)} />}
+      <Button onClick={() => setOpen(true)}><Plus className="size-4" /> {club ? "New project" : "Add project"}</Button>
+      {open && <ProjectDialog interests={interests} copilot={copilot} stack={stack} specsOn={specsOn} club={club} onClose={() => setOpen(false)} />}
     </>
   );
 }
 
-function ProjectDialog({ project, interests, onClose, copilot = false, stack = false, specsOn = false }: { project?: ProjectView; interests: string[]; onClose: () => void; copilot?: boolean; stack?: boolean; specsOn?: boolean }) {
+function ProjectDialog({ project, interests, onClose, copilot = false, stack = false, specsOn = false, club }: { project?: ProjectView; interests: string[]; onClose: () => void; copilot?: boolean; stack?: boolean; specsOn?: boolean; club?: { id: string; name: string } }) {
   const formRef = useRef<HTMLFormElement>(null);
   const [details, setDetails] = useState(project?.details ?? "");
   const [tools, setTools] = useState<string[]>(project?.tools ?? []);
@@ -264,7 +271,7 @@ function ProjectDialog({ project, interests, onClose, copilot = false, stack = f
     >
       <form ref={formRef} onSubmit={submitWithoutReset(action)} className="flex flex-col gap-4 p-6">
         <div className="flex items-start justify-between">
-          <h2 className="text-xl font-semibold tracking-tight">{project ? "Edit project" : "Add a project"}</h2>
+          <h2 className="text-xl font-semibold tracking-tight">{project ? "Edit project" : club ? `New ${club.name} project` : "Add a project"}</h2>
           <button type="button" onClick={onClose} aria-label="Close" className="grid size-8 place-items-center rounded-full text-faint hover:bg-hover hover:text-text"><X className="size-4" /></button>
         </div>
         {!project && (
@@ -284,6 +291,8 @@ function ProjectDialog({ project, interests, onClose, copilot = false, stack = f
           </div>
         )}
         <input type="hidden" name="id" value={project?.id ?? ""} />
+        {club && !project && <input type="hidden" name="community_id" value={club.id} />}
+        {club && !project && <p className="-mt-1 text-sm text-muted">It belongs to the club: every owner and admin can edit it and manage its team. Add teammates from the project page once it&apos;s saved.</p>}
         <input type="hidden" name="status" value={status} />
         {tags.map((t) => <input key={t} type="hidden" name="tags" value={t} />)}
         <Field label="Title"><input name="title" defaultValue={project?.title} maxLength={120} className={inputCls} required /></Field>
