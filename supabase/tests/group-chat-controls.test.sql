@@ -30,8 +30,8 @@ select set_config('request.jwt.claim.sub', :'josh', true);
 select public.open_club_chat('rkt') as club \gset
 select public.open_event_chat('gc-event') as event \gset
 select public.create_team_chat('rkt', 'Group controls', array[:'ben', :'maya']::uuid[]) as team \gset
-insert into public.chat_messages (id, chat_id, body) values ('gc-message', :'team', 'Test group chat');
-insert into public.chat_message_reactions (message_id, emoji) values ('gc-message', '👍');
+insert into public.chat_messages (chat_id, body) values (:'team', 'Test group chat') returning id as message \gset
+insert into public.chat_message_reactions (message_id, emoji) values (:'message', '👍');
 
 select group_chat_test.cannot_delete(:'club');
 select group_chat_test.cannot_delete(:'event');
@@ -50,7 +50,7 @@ select set_config('request.jwt.claim.sub', :'maya', true);
 select group_chat_test.cannot_delete(:'team');
 select public.leave_chat(:'team');
 select group_chat_test.ok(not public.can_read_chat(:'team'), 'regular member can leave without deleting the team chat');
-select group_chat_test.ok(not exists(select 1 from public.chat_message_reactions where message_id = 'gc-message'), 'departed member cannot read reactions');
+select group_chat_test.ok(not exists(select 1 from public.chat_message_reactions where message_id = :'message'), 'departed member cannot read reactions');
 
 select set_config('request.jwt.claim.sub', :'josh', true);
 select public.leave_chat(:'team');
@@ -63,7 +63,7 @@ select public.delete_owned_team_chat(:'team');
 reset role;
 select group_chat_test.ok(not exists(select 1 from public.chats where id = :'team'), 'owner deletion removes chat');
 select group_chat_test.ok(not exists(select 1 from public.chat_messages where chat_id = :'team'), 'owner deletion removes messages');
-select group_chat_test.ok(not exists(select 1 from public.chat_message_reactions where message_id = 'gc-message'), 'owner deletion removes reactions');
+select group_chat_test.ok(not exists(select 1 from public.chat_message_reactions where message_id = :'message'), 'owner deletion removes reactions');
 select group_chat_test.ok(not has_function_privilege('anon', 'public.delete_owned_team_chat(text)', 'EXECUTE'), 'anonymous users cannot call delete');
 
 rollback;
