@@ -7,15 +7,18 @@ import { cn, TOPICS } from "@/lib/forge";
 import { MAX_TAGS, hashtagsIn } from "@/lib/hashtags";
 import { editPost } from "@/lib/posts";
 import { ACCEPT_ATTR, MODEL_ACCEPT_ATTR, cleanUrl, githubRepo, kindOfFile, maxBytesFor, sizeLabel } from "@/lib/project-file-types";
-import { uploadAttachments, type PendingFile } from "@/lib/attach-upload";
+import { uploadAttachments, uploadPostAttachments, type PendingFile } from "@/lib/attach-upload";
+import { postAttachments } from "@/lib/post-files";
 
 const MAX = 3000;
 
 // Edit your own post in place: its text and up to 3 topics. Escape cancels, Ctrl/⌘+Enter saves.
-// An update on a project (`projectId`) can also gain files, 3D models and links (FIX-238): they're
-// tied to this update, so they show under it as if posted with it, and in the project's Files.
-// Removing one is on the file itself, under the update (components/projects/project-files.tsx).
-export function EditPost({ postId, body, tags, projectId = null, onCancel, onSaved }: { postId: string; body: string; tags: string[]; projectId?: string | null; onCancel: () => void; onSaved: (next: { body: string; tags: string[] }) => void }) {
+// Any post can gain files, 3D models and links here. On a project update (`projectId`, FIX-238) they're
+// the project's, so they also show in its Files; on any other post, on the feed or in a club, they're the
+// post's own (supabase/post-files.sql, FIX-259; `canAttach` once that step has run). Either way the card
+// shows them straight after saving (`onFiles`), in the same viewers. Removing one is on the file itself
+// (components/projects/project-files.tsx).
+export function EditPost({ postId, body, tags, projectId = null, canAttach = !!projectId, onCancel, onSaved, onFiles }: { postId: string; body: string; tags: string[]; projectId?: string | null; canAttach?: boolean; onCancel: () => void; onSaved: (next: { body: string; tags: string[] }) => void; onFiles?: (files: Awaited<ReturnType<typeof postAttachments>>) => void }) {
   const router = useRouter();
   const [text, setText] = useState(body);
   const [picked, setPicked] = useState<string[]>(tags);
@@ -30,7 +33,7 @@ export function EditPost({ postId, body, tags, projectId = null, onCancel, onSav
   const pickModel = useRef<HTMLInputElement>(null);
   const area = useRef<HTMLTextAreaElement>(null);
   const id = useId();
-  const attach = !!projectId;
+  const attach = !!projectId || canAttach;
   const busy = pending || step !== "";
 
   const add = (list: File[]) => {
@@ -66,10 +69,14 @@ export function EditPost({ postId, body, tags, projectId = null, onCancel, onSav
         const r = await editPost(postId, text, picked).catch(() => ({ ok: false, message: "Couldn't save. Check your connection." }));
         if (!r.ok) { setError(r.message); return; }
       }
-      // Then the new attachments, each tied to this update.
-      if (projectId && (files.length || links.length)) {
-        const failed = await uploadAttachments({ projectId, postId, files, links, onStep: setStep });
+      // Then the new attachments, each tied to this post.
+      if (attach && (files.length || links.length)) {
+        const failed = projectId
+          ? await uploadAttachments({ projectId, postId, files, links, onStep: setStep })
+          : await uploadPostAttachments({ postId, files, links, onStep: setStep });
         setStep("");
+        // The card shows what's attached now, then the page catches up.
+        onFiles?.(await postAttachments(postId).catch(() => []));
         router.refresh();
         if (failed.length) {
           setFiles((f) => f.filter((p) => failed.includes(p.name))); setLinks((l) => l.filter((x) => failed.includes(x)));
@@ -132,11 +139,11 @@ export function EditPost({ postId, body, tags, projectId = null, onCancel, onSav
       {attach && (
         <div className="rounded-2xl border border-dashed border-line px-3 py-2.5">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="mr-1 text-xs text-faint">Add to this update</span>
+            <span className="mr-1 text-xs text-faint">Add to this {projectId ? "update" : "post"}</span>
             <button type="button" disabled={busy} onClick={() => pick.current?.click()} className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-line px-2.5 text-xs font-medium transition hover:bg-hover"><Paperclip className="size-3.5" /> Files</button>
-            <input ref={pick} type="file" multiple accept={ACCEPT_ATTR} aria-label="Attach files to this update" className="hidden" onChange={(e) => { add([...(e.target.files ?? [])]); e.target.value = ""; }} />
+            <input ref={pick} type="file" multiple accept={ACCEPT_ATTR} aria-label={`Attach files to this ${projectId ? "update" : "post"}`} className="hidden" onChange={(e) => { add([...(e.target.files ?? [])]); e.target.value = ""; }} />
             <button type="button" disabled={busy} onClick={() => pickModel.current?.click()} className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-line px-2.5 text-xs font-medium transition hover:bg-hover"><Box className="size-3.5" /> 3D model</button>
-            <input ref={pickModel} type="file" accept={MODEL_ACCEPT_ATTR} aria-label="Add a 3D model to this update" className="hidden" onChange={(e) => { add([...(e.target.files ?? [])]); e.target.value = ""; }} />
+            <input ref={pickModel} type="file" accept={MODEL_ACCEPT_ATTR} aria-label={`Add a 3D model to this ${projectId ? "update" : "post"}`} className="hidden" onChange={(e) => { add([...(e.target.files ?? [])]); e.target.value = ""; }} />
             <button type="button" disabled={busy} onClick={() => setLinkOpen(!linkOpen)} aria-expanded={linkOpen} className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-line px-2.5 text-xs font-medium transition hover:bg-hover"><Link2 className="size-3.5" /> Link</button>
             <span className="ml-auto text-[11px] text-faint">or drop or paste files here</span>
           </div>

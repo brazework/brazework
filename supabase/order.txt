@@ -110,3 +110,4 @@ post-files-only
 owner-club-deletion
 chat-delete
 project-files-view-only
+post-files

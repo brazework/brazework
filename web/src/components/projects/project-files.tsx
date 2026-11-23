@@ -5,13 +5,18 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { ModelViewer } from "@/components/projects/model-viewer";
 import { DocViewer } from "@/components/projects/doc-viewer";
-import { viewableKind, viewUrl } from "@/lib/file-view";
+import { viewableKind, viewUrl, type FileSource } from "@/lib/file-view";
 import { PhotoViewer } from "@/components/media/photo-viewer";
 import { cn, timeAgo } from "@/lib/forge";
 import { extOf, githubRepo, kindOfFile, sizeLabel, type FileKind } from "@/lib/project-file-types";
 import { removeProjectFile } from "@/lib/project-files";
+import { removePostFile } from "@/lib/post-files";
 
-export type ProjectFileItem = { id: number; kind: "file" | "link"; name: string; size: number | null; url: string | null; added_by: string; created_at: string; post_id?: string | null; src?: string | null };
+export type ProjectFileItem = { id: number; kind: "file" | "link"; name: string; size: number | null; url: string | null; added_by: string; created_at: string; post_id?: string | null; src?: string | null; source?: FileSource };
+// Where a file's bytes come from: its signed preview link when the page made one (a project's photos and
+// videos), otherwise the app's viewing route for that kind of file (lib/file-view.ts).
+const srcOf = (it: ProjectFileItem) => it.src ?? viewUrl(it.id, it.source ?? "project");
+const viaRoute = (it: ProjectFileItem) => !it.src;
 
 const ICONS: Record<FileKind, typeof FileText> = { image: FileImage, video: FileVideo, model: Box, pdf: FileText, doc: FileText, sheet: FileSpreadsheet, slides: Presentation, cad: Ruler, code: FileCode2, archive: FileArchive, text: FileText };
 
@@ -23,7 +28,9 @@ const ICONS: Record<FileKind, typeof FileText> = { image: FileImage, video: File
 // shows in the viewer you can turn, and a PDF or text file opens in a reader on the page. Only the
 // Nothing here downloads, for anyone: there are no download buttons, and outside the team Storage
 // won't hand over the original either.
-export function ProjectFiles({ projectId, items, me, ownerId, variant = "folder" }: { projectId: string; items: ProjectFileItem[]; me: string; ownerId: string; team?: boolean; variant?: "folder" | "update" }) {
+// projectId is null for a post that isn't a project update: its files are the post's own (post-files.sql),
+// and ownerId is the post's author.
+export function ProjectFiles({ projectId, items, me, ownerId, variant = "folder" }: { projectId: string | null; items: ProjectFileItem[]; me: string; ownerId: string; variant?: "folder" | "update" }) {
   const router = useRouter();
   const [note, setNote] = useState<string | null>(null);
   const models = items.filter((i) => i.kind === "file" && kindOfFile(i.name) === "model");
@@ -31,18 +38,18 @@ export function ProjectFiles({ projectId, items, me, ownerId, variant = "folder"
   // viewer only fetches the file once it's near the screen, so a long page doesn't load every model (FIX-75).
   const [shown, setShown] = useState<number | null>(models[0]?.id ?? null);
   const featured = models.find((m) => m.id === shown) ?? models[0];
-  const [reading, setReading] = useState<{ id: number; name: string } | null>(null);
+  const [reading, setReading] = useState<{ id: number; name: string; source?: FileSource } | null>(null);
   const media = items.filter((i) => i.kind === "file" && (kindOfFile(i.name) === "image" || kindOfFile(i.name) === "video"));
   const docs = items.filter((i) => i.kind === "file" && !["model", "image", "video"].includes(kindOfFile(i.name) ?? ""));
   const links = items.filter((i) => i.kind === "link");
   // Pictures open in the pop-up viewer (FIX-247), stepping through this list's pictures.
-  const pictures = media.filter((m) => m.src && kindOfFile(m.name) === "image");
+  const pictures = media.filter((m) => kindOfFile(m.name) === "image");
   const [viewing, setViewing] = useState<number | null>(null);
   if (!items.length) return null;
 
   const remove = async (it: ProjectFileItem) => {
     if (!confirm(`Remove "${it.name}" from this project?`)) return;
-    const r = await removeProjectFile(projectId, it.id);
+    const r = it.source === "post" || !projectId ? await removePostFile(it.id) : await removeProjectFile(projectId, it.id);
     if (r.ok) router.refresh(); else setNote(r.message);
   };
   const canRemove = (it: ProjectFileItem) => it.added_by === me || ownerId === me;
@@ -55,7 +62,7 @@ export function ProjectFiles({ projectId, items, me, ownerId, variant = "folder"
       {/* 3D models: one in the viewer, the rest one click away. */}
       {models.length > 0 && (
         <div className={variant === "folder" ? "mt-5" : ""}>
-          {featured && <div onContextMenu={(e) => e.preventDefault()}><ModelViewer key={featured.id} url={viewUrl(featured.id)} name={featured.name} className="aspect-[5/4] sm:aspect-[16/10]" /></div>}
+          {featured && <div onContextMenu={(e) => e.preventDefault()}><ModelViewer key={`${featured.source ?? "project"}-${featured.id}`} url={viewUrl(featured.id, featured.source ?? "project")} name={featured.name} className="aspect-[5/4] sm:aspect-[16/10]" /></div>}
           <div className={cn("flex flex-wrap items-center gap-1.5", featured && "mt-2")}>
             {models.map((m) => (
               <span key={m.id} className={cn("inline-flex items-center gap-1 rounded-full border pr-1 pl-3 text-xs", m.id === featured?.id ? "border-text bg-hover" : "border-line")}>
@@ -71,11 +78,11 @@ export function ProjectFiles({ projectId, items, me, ownerId, variant = "folder"
         <ul className={cn("grid grid-cols-3 gap-2 sm:grid-cols-4", (variant === "folder" || models.length > 0) && "mt-4")}>
           {media.map((m) => (
             <li key={m.id} className="group relative aspect-square overflow-hidden rounded-2xl border border-line bg-surface-2">
-              {m.src && kindOfFile(m.name) === "image" ? (
+              {kindOfFile(m.name) === "image" ? (
                 // A small resized copy through the image optimizer, not the full original (FIX-75).
-                <button type="button" onClick={() => setViewing(pictures.findIndex((p) => p.id === m.id))} aria-label={`Open picture ${pictures.findIndex((p) => p.id === m.id) + 1} of ${pictures.length}`} className="relative size-full"><Image src={m.src} alt={m.name} fill sizes="(min-width: 640px) 160px, 33vw" className="object-cover" /></button>
-              ) : m.src ? (
-                <video src={m.src} controls preload="none" className="size-full bg-black object-cover" aria-label={m.name} />
+                <button type="button" onClick={() => setViewing(pictures.findIndex((p) => p.id === m.id))} aria-label={`Open picture ${pictures.findIndex((p) => p.id === m.id) + 1} of ${pictures.length}`} className="relative size-full"><Image src={srcOf(m)} alt={m.name} fill sizes="(min-width: 640px) 160px, 33vw" unoptimized={viaRoute(m)} className="object-cover" /></button>
+              ) : kindOfFile(m.name) === "video" ? (
+                <video src={srcOf(m)} controls preload="none" className="size-full bg-black object-cover" aria-label={m.name} />
               ) : (
                 <span className="grid size-full place-items-center p-2 text-center text-xs text-muted">{m.name}</span>
               )}
@@ -115,7 +122,7 @@ export function ProjectFiles({ projectId, items, me, ownerId, variant = "folder"
                 <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-surface-2"><Icon className="size-4 text-muted" /></span>
                 {/* Read it on the page when it can be shown. */}
                 {readable ? (
-                  <button type="button" onClick={() => setReading({ id: d.id, name: d.name })} aria-label={`Read ${d.name}`} className="min-w-0 flex-1 text-left">{label}</button>
+                  <button type="button" onClick={() => setReading({ id: d.id, name: d.name, source: d.source })} aria-label={`Read ${d.name}`} className="min-w-0 flex-1 text-left">{label}</button>
                 ) : (
                   <span className="min-w-0 flex-1">{label}</span>
                 )}
@@ -128,9 +135,9 @@ export function ProjectFiles({ projectId, items, me, ownerId, variant = "folder"
       {note && <p role="alert" className="mt-2 text-xs text-danger">{note}</p>}
       <DocViewer file={reading} onClose={() => setReading(null)} />
       <PhotoViewer count={pictures.length} index={viewing} onIndex={setViewing} onClose={() => setViewing(null)}>
-        {viewing !== null && pictures[viewing]?.src && (
+        {viewing !== null && pictures[viewing] && (
           <div className="relative mx-auto h-[min(80dvh,900px)] w-full">
-            <Image src={pictures[viewing].src!} alt={pictures[viewing].name} fill sizes="92vw" className="object-contain" />
+            <Image src={srcOf(pictures[viewing])} alt={pictures[viewing].name} fill sizes="92vw" unoptimized={viaRoute(pictures[viewing])} className="object-contain" />
           </div>
         )}
       </PhotoViewer>
