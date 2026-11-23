@@ -1,9 +1,9 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { SchoolEmailForm } from "./school-email-form";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { PageHeader, Panel, Skeleton } from "@/components/app/page-ui";
-import { Kicker } from "@/components/ui";
 import { dbFeatures } from "@/lib/db-features";
 import { listApiTokens } from "@/lib/api-tokens";
 import { isConnected } from "@/lib/tool-setup";
@@ -17,24 +17,23 @@ export default function SettingsPage() {
   return (
     <div className="mx-auto max-w-2xl lg:max-w-5xl">
       <PageHeader title="Settings" subtitle="Your profile, how Brazework looks, who can reach you, and your account." />
-      <div className="lg:grid lg:grid-cols-[230px_minmax(0,1fr)] lg:gap-8">
-        <div className="pt-6"><SettingsNav /></div>
-        <div>
-          <Suspense fallback={<Skeleton className="mt-6 h-[600px]" />}>
-            <Settings />
-          </Suspense>
-        </div>
-      </div>
+      <Suspense fallback={<Skeleton className="mt-6 h-[600px]" />}>
+        <Settings />
+      </Suspense>
     </div>
   );
 }
 
 function Section({ id, title, desc, children }: { id: string; title: string; desc?: string; children: React.ReactNode }) {
   return (
-    <section id={id} className="mt-6 scroll-mt-24">
-      <Kicker>{title}</Kicker>
-      {desc && <p className="mt-1 text-sm text-muted">{desc}</p>}
-      <Panel className="mt-3 p-6">{children}</Panel>
+    <section id={id} aria-labelledby={`${id}-heading`} className="scroll-mt-[calc(var(--m-top)+6.5rem)] md:scroll-mt-28 lg:scroll-mt-8">
+      <Panel className="p-4 sm:p-6">
+        <header className="mb-5">
+          <h2 id={`${id}-heading`} className="text-lg font-semibold tracking-tight">{title}</h2>
+          {desc && <p className="mt-1 text-sm text-muted">{desc}</p>}
+        </header>
+        {children}
+      </Panel>
     </section>
   );
 }
@@ -78,24 +77,30 @@ async function Settings() {
   });
 
   return (
-    <>
-      <Section id="profile" title="Profile" desc="What people see on your profile and posts."><ProfileSettings profile={profile} gradYear={gradYear} canSwitch={canSwitch} linkedin={linkedin} linkedinPublic={linkedinPublic} /></Section>
-      <Section id="appearance" title="Appearance" desc="Light or dark, and the colour theme."><AppearanceSettings /></Section>
-      {emailOn && <Section id="email" title="Email" desc="What Brazework sends to your inbox. Sign-in emails always come."><EmailSettings weekly={ep.data ? Boolean(ep.data.weekly_digest) : true} alerts={alerts} dailyDrafts={dailyDrafts} /></Section>}
-      <Section id="messaging" title="Messaging and privacy" desc="Who can message you, and whether you show as online."><OnlineStatusSetting /><div className="my-6 border-t border-line" /><MessagingSettings requestsOn={ms.data ? Boolean(ms.data.requests_on) : true} who={(ms.data?.who_can_message as "everyone" | "communities" | "connections") ?? "everyone"} /></Section>
-      <Section id="blocked" title="Blocked people" desc="People who can't message you or see your activity."><BlockedList people={blocked} /></Section>
-      <Section id="ember" title="Ember and your data" desc="What Brazework's AI teammate can see, what it can do, and your chats with it."><EmberSettings saving={saving} chats={chatCount.count ?? 0} memories={memories} /></Section>
-      {mcpOn && <Section id="ai-tools" title="Your tools" desc="Use your Brazework from Claude Code, Cursor, VS Code, Codex and other AI tools."><AiToolsSettings connected={tokens.filter((t) => !t.revoked_at && isConnected(t)).length} total={tokens.filter((t) => !t.revoked_at).length} /></Section>}
-      <Section id="data" title="Your data" desc="Download everything you've put on Brazework, or delete your account."><YourDataSettings /></Section>
-      <Section id="help" title="Help" desc="Tours, what's new, and how to reach us."><HelpSettings /></Section>
-      <Section id="account" title="Account" desc="Your sign-in email, password and session.">
-        <p className="text-sm text-muted">Signed in as <span className="text-text">{user.email}</span></p>
-        {profile.account_type === "student" && <SchoolEmailForm eligible={(await supabase.rpc("student_plus_eligible")).data === true} />}
-        <PasswordForm />
-        <form action="/auth/signout" method="post" className="mt-6 border-t border-line pt-6">
-          <button className="inline-flex h-10 items-center rounded-lg border border-line px-4 text-sm transition hover:bg-hover">Log out</button>
-        </form>
-      </Section>
-    </>
+    <div className="mt-6 grid gap-5 lg:grid-cols-[218px_minmax(0,1fr)] lg:gap-7">
+      <SettingsNav email={emailOn} tools={mcpOn} />
+      <div className="min-w-0 space-y-4">
+        <Section id="profile" title="Profile" desc="What people see on your profile and posts.">
+          <div className="mb-5"><Link href="/profile" className="inline-flex min-h-10 items-center rounded-lg border border-line px-3 text-sm font-medium transition hover:bg-hover">View your profile</Link></div>
+          <ProfileSettings profile={profile} gradYear={gradYear} canSwitch={canSwitch} linkedin={linkedin} linkedinPublic={linkedinPublic} />
+        </Section>
+        <Section id="appearance" title="Appearance" desc="Light or dark, and the colour theme."><AppearanceSettings /></Section>
+        {emailOn && <Section id="email" title="Email" desc="What Brazework sends to your inbox. Sign-in emails always come."><EmailSettings weekly={ep.data ? Boolean(ep.data.weekly_digest) : true} alerts={alerts} dailyDrafts={dailyDrafts} /></Section>}
+        <Section id="messaging" title="Messaging and privacy" desc="Who can message you, and whether you show as online."><OnlineStatusSetting /><div className="my-6 border-t border-line" /><MessagingSettings requestsOn={ms.data ? Boolean(ms.data.requests_on) : true} who={(ms.data?.who_can_message as "everyone" | "communities" | "connections") ?? "everyone"} /></Section>
+        <Section id="blocked" title="Blocked people" desc="People who can't message you or see your activity."><BlockedList people={blocked} /></Section>
+        <Section id="ember" title="Ember and your data" desc="What Brazework's AI teammate can see, what it can do, and your chats with it."><EmberSettings saving={saving} chats={chatCount.count ?? 0} memories={memories} /></Section>
+        {mcpOn && <Section id="ai-tools" title="Your tools" desc="Use your Brazework from Claude Code, Cursor, VS Code, Codex and other AI tools."><AiToolsSettings connected={tokens.filter((t) => !t.revoked_at && isConnected(t)).length} total={tokens.filter((t) => !t.revoked_at).length} /></Section>}
+        <Section id="account" title="Account" desc="Your sign-in email, password and session.">
+          <p className="text-sm text-muted">Signed in as <span className="text-text">{user.email}</span></p>
+          {profile.account_type === "student" && <SchoolEmailForm eligible={(await supabase.rpc("student_plus_eligible")).data === true} />}
+          <PasswordForm />
+          <form action="/auth/signout" method="post" className="mt-6 border-t border-line pt-6">
+            <button className="inline-flex h-10 items-center rounded-lg border border-line px-4 text-sm transition hover:bg-hover">Log out</button>
+          </form>
+        </Section>
+        <Section id="data" title="Your data" desc="Download everything you've put on Brazework, or delete your account."><YourDataSettings /></Section>
+        <Section id="help" title="Help" desc="Tours, what's new, and how to reach us."><HelpSettings /></Section>
+      </div>
+    </div>
   );
 }

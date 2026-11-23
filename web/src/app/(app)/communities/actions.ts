@@ -112,7 +112,7 @@ export async function deleteClub(_prev: Result, form: FormData): Promise<Result>
   const { supabase, user } = await getViewer();
   if (!user) return { ok: false, message: "Log in again." };
 
-  const { error } = await supabase.rpc("admin_delete_club", { p_cid: cid.data, p_name: name });
+  const { error } = await supabase.rpc("delete_owned_club", { p_cid: cid.data, p_name: name });
   if (error) return { ok: false, message: error.code === "42501" || error.code === "P0001" ? error.message : "Couldn't delete this club. Try again." };
 
   revalidateCommunity(cid.data);
