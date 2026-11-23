@@ -1,7 +1,7 @@
 // View-only files (supabase/project-files-view-only.sql): Ben posts a PDF write-up and a 3D model on his
 // project. Cara, who isn't on its team, sees the model in the viewer straight away and reads the PDF in
-// the page, but gets no download button, and opening the file's address in a tab is refused. Ben, the
-// owner, can still download both.
+// the page, but gets no download button, and opening the file's address in a tab is refused. Nobody,
+// not even Ben, gets a download button.
 const fs = require("fs"), os = require("os"), path = require("path"), { execSync } = require("child_process");
 const { BASE, step, browser, as, go, summary } = require("./lib.cjs");
 
@@ -80,11 +80,11 @@ const settled = (v) => v.evaluate((el) => new Promise((ok) => { const t = setInt
       await go(cara, "/projects/p1");
     }, cara);
 
-    await step("the owner can still download the original", async () => {
+    await step("nobody gets a download button, not even the owner", async () => {
       await go(ben, "/projects/p1");
       const box = ben.locator('div[aria-label="Attachments"]', { has: ben.getByText(PDF_NAME) }).first();
-      await box.getByRole("button", { name: `Download ${PDF_NAME}` }).waitFor({ timeout: 20000 });
-      await box.getByRole("button", { name: "Download cube.stl" }).waitFor();
+      await box.getByRole("button", { name: `Read ${PDF_NAME}` }).waitFor({ timeout: 20000 });
+      if (await ben.getByRole("button", { name: /^Download/ }).count()) throw new Error("the owner is offered a download");
     }, ben);
   } finally {
     if (post) psql(`delete from public.project_files where post_id = '${post}'; delete from public.posts where id = '${post}'`);
