@@ -20,22 +20,40 @@ const psql = (sql) => execSync(`docker exec -i ${process.env.E2E_STACK || "forge
     await go(page, "/");
     const who = page.locator("#who");
     for (const h of ["Studying", "Working", "On your own"]) await who.getByRole("heading", { name: h, exact: true }).waitFor();
-    const signed = await who.getByText(/^Verified by /).count();
+    const signed = await who.getByText(/^Signed by /).count();
     if (signed !== 3) throw new Error(`expected 3 signed examples, got ${signed}`);
     await page.locator("#faq").getByRole("button", { name: "I already work. Is this for me?" }).waitFor();
     const text = await page.locator("main").innerText();
     if (/for students and clubs/i.test(text)) throw new Error("the landing page still says it's for students and clubs");
   }, page);
 
-  await step("landing on a phone: the three stages stack and nothing scrolls sideways", async () => {
-    const phone = await (await b.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true })).newPage();
-    await go(phone, "/");
-    await phone.locator("#who").getByRole("heading", { name: "On your own", exact: true }).scrollIntoViewIfNeeded();
-    const wide = await phone.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
-    if (wide > 1) throw new Error(`the page scrolls sideways by ${wide}px`);
-    const tops = await phone.locator("#who li h3").evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().top)));
-    if (!(tops[0] < tops[1] && tops[1] < tops[2])) throw new Error("the stages should stack on a phone: " + tops.join(","));
-    await phone.context().close();
+  await step("landing on a phone: the signer examples swipe inside a page that fits the screen", async () => {
+    const phone = await (await b.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, reducedMotion: "reduce" })).newPage();
+    try {
+      await go(phone, "/");
+      const row = phone.getByRole("list", { name: "Who can sign your work" });
+      const headings = row.getByRole("heading");
+      const boxes = await headings.evaluateAll((els) => els.map((el) => {
+        const { left, top } = el.getBoundingClientRect();
+        return { left, top };
+      }));
+      if (boxes.length !== 3 || !boxes.every((box) => box.top === boxes[0].top) || boxes[0].left >= boxes[1].left || boxes[1].left >= boxes[2].left) {
+        throw new Error("expected three signer examples side by side");
+      }
+      const next = phone.locator("#who").getByRole("button", { name: "Next card" });
+      await hydrated(next);
+      for (const index of [2, 3]) {
+        await next.click();
+        await phone.locator("#who").getByText(`${index} of 3`, { exact: true }).waitFor({ timeout: 5000 });
+      }
+      const last = await headings.last().boundingBox();
+      const bounds = await row.boundingBox();
+      if (last.x < bounds.x - 1 || last.x + last.width > bounds.x + bounds.width + 1) throw new Error("the last signer is not fully reachable");
+      const wide = await phone.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
+      if (wide > 1) throw new Error(`the page scrolls sideways by ${wide}px`);
+    } finally {
+      await phone.context().close();
+    }
   }, page);
 
   await step("sign up as a professional with a work email", async () => {
