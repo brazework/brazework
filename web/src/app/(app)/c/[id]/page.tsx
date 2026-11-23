@@ -4,6 +4,7 @@ import { accentTint } from "@/lib/club-look";
 import { openClubChat } from "@/lib/chats";
 import Link from "next/link";
 import { BuildersThisTerm, termStart } from "./builders";
+import { ClubProjects } from "./club-projects";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { LiveRefresh } from "@/components/app/live-refresh";
@@ -208,6 +209,8 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
         )}
         {study && <StudyLeads cid={c.id} me={user.id} member={!!me} people={leadPeople} />}
         {msOn && <Suspense fallback={null}><BuildersThisTerm cid={c.id} /></Suspense>}
+        {/* The club's own projects (FIX-264): for whoever can see the club, as its posts are. */}
+        {(c.privacy === "public" || me) && <Suspense fallback={null}><ClubProjects cid={c.id} name={c.name} lead={rank(role) >= 4} interests={profile?.interests ?? []} /></Suspense>}
         {typeof sp.chat_error === "string" && <p role="alert" className="mt-4 rounded-2xl border border-danger/30 bg-danger/10 px-4 py-2.5 text-sm text-danger">{sp.chat_error}</p>}
         {sp.joined === "1" && (
           <p className="relative mt-4 flex items-center gap-2 rounded-2xl border border-line bg-surface-2 px-4 py-3 text-sm">

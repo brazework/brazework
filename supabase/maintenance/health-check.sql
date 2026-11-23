@@ -100,7 +100,8 @@ from (values
   (100, 'chat-delete', to_regprocedure('public.chat_delete_ready()') is not null),
   (101, 'project-files-view-only', to_regprocedure('public.project_files_view_only_ready()') is not null),
   (102, 'post-files', to_regprocedure('public.post_files_ready()') is not null),
-  (103, 'group-chat-controls', to_regprocedure('public.group_chat_controls_ready()') is not null)
+  (103, 'group-chat-controls', to_regprocedure('public.group_chat_controls_ready()') is not null),
+  (104, 'club-projects', to_regprocedure('public.club_projects_ready()') is not null)
 ) as s(step, file, present)
 order by step;
 
