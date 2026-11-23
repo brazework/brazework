@@ -88,11 +88,12 @@ async function ProjectView({ params, searchParams }: { params: PageProps<"/proje
   ]);
   const events = (ghEvents.data ?? []) as BuildEvent[];
   const repos = (ghRepos.data ?? []) as { repo_id: number; full_name: string; html_url: string }[];
-  // The files folder: photos, videos and 3D models get a signed link up front for their previews
-  // (the bucket is private). Other files get one when opened.
+  // The files folder: photos and videos get a signed link up front for their previews (the bucket is
+  // private). Documents and 3D models are view-only outside the team (project-files-view-only.sql): the
+  // reader and the 3D viewer fetch them through /api/project-files/<id>, and only builders download.
   type FileRow = Omit<ProjectFileItem, "src"> & { path: string | null };
   const fileRows = (filesRes.data ?? []) as unknown as FileRow[];
-  const previewPaths = fileRows.filter((f) => f.path && ["image", "video", "model"].includes(kindOfFile(f.name) ?? "")).map((f) => f.path!);
+  const previewPaths = fileRows.filter((f) => f.path && ["image", "video"].includes(kindOfFile(f.name) ?? "")).map((f) => f.path!);
   // Reused between renders (lib/signed-urls.ts), so the browser and the image cache keep their copies.
   const srcByPath = previewPaths.length ? await signedUrls(supabase, "project-files", previewPaths) : new Map<string, string>();
   const files: ProjectFileItem[] = fileRows.map(({ path, ...f }) => ({ ...f, src: path ? srcByPath.get(path) ?? null : null }));

@@ -1,29 +1,37 @@
 "use client";
-import { Box, Download, FileArchive, FileCode2, FileImage, FileSpreadsheet, FileText, FileVideo, FolderOpen, GitBranch, Link2, Presentation, Ruler, Trash2 } from "lucide-react";
+import { Box, FileArchive, FileCode2, FileImage, FileSpreadsheet, FileText, FileVideo, FolderOpen, GitBranch, Link2, Presentation, Ruler, Trash2 } from "lucide-react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { ModelViewer } from "@/components/projects/model-viewer";
+import { DocViewer } from "@/components/projects/doc-viewer";
+import { viewableKind, viewUrl } from "@/lib/file-view";
 import { PhotoViewer } from "@/components/media/photo-viewer";
 import { cn, timeAgo } from "@/lib/forge";
 import { extOf, githubRepo, kindOfFile, sizeLabel, type FileKind } from "@/lib/project-file-types";
-import { projectFileLink, removeProjectFile } from "@/lib/project-files";
+import { removeProjectFile } from "@/lib/project-files";
 
 export type ProjectFileItem = { id: number; kind: "file" | "link"; name: string; size: number | null; url: string | null; added_by: string; created_at: string; post_id?: string | null; src?: string | null };
 
 const ICONS: Record<FileKind, typeof FileText> = { image: FileImage, video: FileVideo, model: Box, pdf: FileText, doc: FileText, sheet: FileSpreadsheet, slides: Presentation, cad: Ruler, code: FileCode2, archive: FileArchive, text: FileText };
 
 // Files and links attached to a project's updates. Shown two ways: under each update (just that
-// update's attachments), and as the project's Files (everything, newest first). 3D models open in
-// a viewer you can rotate. Adding happens in "Post an update"; here you open, download or remove.
-export function ProjectFiles({ projectId, items, me, ownerId, variant = "folder" }: { projectId: string; items: ProjectFileItem[]; me: string; ownerId: string; variant?: "folder" | "update" }) {
+// update's attachments), and as the project's Files (everything, newest first). Adding happens in
+// "Post an update"; here you look, and whoever added a file (or the owner) can remove it.
+//
+// Someone else's work is for looking at, not taking (supabase/project-files-view-only.sql): a 3D model
+// shows in the viewer you can turn, and a PDF or text file opens in a reader on the page. Only the
+// Nothing here downloads, for anyone: there are no download buttons, and outside the team Storage
+// won't hand over the original either.
+export function ProjectFiles({ projectId, items, me, ownerId, variant = "folder" }: { projectId: string; items: ProjectFileItem[]; me: string; ownerId: string; team?: boolean; variant?: "folder" | "update" }) {
   const router = useRouter();
   const [note, setNote] = useState<string | null>(null);
   const models = items.filter((i) => i.kind === "file" && kindOfFile(i.name) === "model");
-  // Models open when you tap them (one viewer at a time): a 3D file can be tens of megabytes, so it
-  // isn't downloaded for everyone who scrolls past an update (FIX-75).
-  const [shown, setShown] = useState<number | null>(null);
-  const featured = models.find((m) => m.id === shown);
+  // The first model is in the viewer straight away, like the landing page; the rest are a tap away. The
+  // viewer only fetches the file once it's near the screen, so a long page doesn't load every model (FIX-75).
+  const [shown, setShown] = useState<number | null>(models[0]?.id ?? null);
+  const featured = models.find((m) => m.id === shown) ?? models[0];
+  const [reading, setReading] = useState<{ id: number; name: string } | null>(null);
   const media = items.filter((i) => i.kind === "file" && (kindOfFile(i.name) === "image" || kindOfFile(i.name) === "video"));
   const docs = items.filter((i) => i.kind === "file" && !["model", "image", "video"].includes(kindOfFile(i.name) ?? ""));
   const links = items.filter((i) => i.kind === "link");
@@ -32,13 +40,6 @@ export function ProjectFiles({ projectId, items, me, ownerId, variant = "folder"
   const [viewing, setViewing] = useState<number | null>(null);
   if (!items.length) return null;
 
-  const open = async (it: ProjectFileItem, download = false) => {
-    if (it.src && !download) { window.open(it.src, "_blank", "noopener,noreferrer"); return; }
-    const r = await projectFileLink(projectId, it.id, download);
-    if (!r.ok || !r.url) { setNote(r.message ?? "That file couldn't be opened."); return; }
-    if (download) { const a = document.createElement("a"); a.href = r.url; a.rel = "noopener"; document.body.appendChild(a); a.click(); a.remove(); }
-    else window.open(r.url, "_blank", "noopener,noreferrer");
-  };
   const remove = async (it: ProjectFileItem) => {
     if (!confirm(`Remove "${it.name}" from this project?`)) return;
     const r = await removeProjectFile(projectId, it.id);
@@ -54,12 +55,11 @@ export function ProjectFiles({ projectId, items, me, ownerId, variant = "folder"
       {/* 3D models: one in the viewer, the rest one click away. */}
       {models.length > 0 && (
         <div className={variant === "folder" ? "mt-5" : ""}>
-          {featured?.src && <ModelViewer key={featured.id} url={featured.src} name={featured.name} />}
+          {featured && <div onContextMenu={(e) => e.preventDefault()}><ModelViewer key={featured.id} url={viewUrl(featured.id)} name={featured.name} className="aspect-[5/4] sm:aspect-[16/10]" /></div>}
           <div className={cn("flex flex-wrap items-center gap-1.5", featured && "mt-2")}>
             {models.map((m) => (
               <span key={m.id} className={cn("inline-flex items-center gap-1 rounded-full border pr-1 pl-3 text-xs", m.id === featured?.id ? "border-text bg-hover" : "border-line")}>
-                <button type="button" onClick={() => setShown(m.id === shown ? null : m.id)} aria-pressed={m.id === featured?.id} title={m.id === shown ? "Close the 3D view" : "View in 3D"} className="inline-flex h-7 items-center gap-1.5"><Box className="size-3.5" /> <span className="max-w-48 truncate">{m.name}</span></button>
-                <button type="button" onClick={() => open(m, true)} aria-label={`Download ${m.name}`} title="Download" className="grid size-6 place-items-center rounded-full text-faint hover:text-text"><Download className="size-3.5" /></button>
+                <button type="button" onClick={() => setShown(m.id)} aria-pressed={m.id === featured?.id} title={m.id === featured?.id ? "In the 3D viewer" : "View in 3D"} className="inline-flex h-7 items-center gap-1.5"><Box className="size-3.5" /> <span className="max-w-48 truncate">{m.name}</span></button>
                 <RemoveBtn it={m} className="size-6" />
               </span>
             ))}
@@ -102,14 +102,23 @@ export function ProjectFiles({ projectId, items, me, ownerId, variant = "folder"
           })}
           {docs.map((d) => {
             const Icon = ICONS[kindOfFile(d.name) ?? "text"];
+            const readable = !!viewableKind(d.name);
+            const meta = [extOf(d.name).toUpperCase(), sizeLabel(d.size), variant === "folder" ? timeAgo(d.created_at) : ""].filter(Boolean).join(" · ");
+            const label = (
+              <>
+                <span className={cn("block truncate text-sm font-medium", readable && "hover:underline")}>{d.name}</span>
+                <span suppressHydrationWarning className="block truncate text-xs text-muted">{readable ? meta : `${meta} · No preview for this file type`}</span>
+              </>
+            );
             return (
               <li key={d.id} className="flex items-center gap-3 px-3 py-2.5">
                 <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-surface-2"><Icon className="size-4 text-muted" /></span>
-                <button type="button" onClick={() => open(d, !["pdf", "text"].includes(kindOfFile(d.name) ?? ""))} className="min-w-0 flex-1 text-left">
-                  <span className="block truncate text-sm font-medium hover:underline">{d.name}</span>
-                  <span suppressHydrationWarning className="block truncate text-xs text-muted">{[extOf(d.name).toUpperCase(), sizeLabel(d.size), variant === "folder" ? timeAgo(d.created_at) : ""].filter(Boolean).join(" · ")}</span>
-                </button>
-                <button type="button" onClick={() => open(d, true)} aria-label={`Download ${d.name}`} title="Download" className="grid size-8 shrink-0 place-items-center rounded-full text-faint transition hover:bg-hover hover:text-text"><Download className="size-4" /></button>
+                {/* Read it on the page when it can be shown. */}
+                {readable ? (
+                  <button type="button" onClick={() => setReading({ id: d.id, name: d.name })} aria-label={`Read ${d.name}`} className="min-w-0 flex-1 text-left">{label}</button>
+                ) : (
+                  <span className="min-w-0 flex-1">{label}</span>
+                )}
                 <RemoveBtn it={d} />
               </li>
             );
@@ -117,6 +126,7 @@ export function ProjectFiles({ projectId, items, me, ownerId, variant = "folder"
         </ul>
       )}
       {note && <p role="alert" className="mt-2 text-xs text-danger">{note}</p>}
+      <DocViewer file={reading} onClose={() => setReading(null)} />
       <PhotoViewer count={pictures.length} index={viewing} onIndex={setViewing} onClose={() => setViewing(null)}>
         {viewing !== null && pictures[viewing]?.src && (
           <div className="relative mx-auto h-[min(80dvh,900px)] w-full">

@@ -8,7 +8,7 @@ import { useCallback, useEffect, useRef } from "react";
 // Escape, a click on the dark backdrop, or a swipe down on a phone, and leaves you where you were:
 // the page behind doesn't scroll, and focus goes back to the picture you opened. With more than one
 // picture, arrows (keys, buttons or a sideways swipe) step through them, with "2 of 4".
-export function PhotoViewer({ count, index, onIndex, onClose, label = "Photo viewer", caption, children }: {
+export function PhotoViewer({ count, index, onIndex, onClose, label = "Photo viewer", caption, swipe = true, children }: {
   count: number;
   index: number | null;
   onIndex: (i: number) => void;
@@ -16,6 +16,8 @@ export function PhotoViewer({ count, index, onIndex, onClose, label = "Photo vie
   label?: string;
   /** Alt text or a caption for the current picture, shown under it. */
   caption?: string;
+  /** Swipe down to close, sideways to step. Off for a document, which scrolls. */
+  swipe?: boolean;
   /** The current picture, drawn by the caller. */
   children: React.ReactNode;
 }) {
@@ -83,8 +85,8 @@ export function PhotoViewer({ count, index, onIndex, onClose, label = "Photo vie
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           onClick={onClose}
-          onTouchStart={onTouchStart}
-          onTouchEnd={onTouchEnd}
+          onTouchStart={swipe ? onTouchStart : undefined}
+          onTouchEnd={swipe ? onTouchEnd : undefined}
         >
           <motion.div key={index} initial={{ scale: 0.96, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="w-[min(92vw,1200px)] touch-pinch-zoom" onClick={(e) => e.stopPropagation()}>
             {children}

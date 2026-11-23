@@ -36,7 +36,7 @@ const LATE = `https://docs.google.com/document/d/late-${Date.now() % 100000}`;
       // Under the update itself, after a reload: the model can be opened from there.
       await go(ben, "/projects/p1");
       await ben.locator("article", { hasText: NOTE }).first().waitFor({ timeout: 20000 });
-      await ben.locator('button[title="View in 3D"]').first().waitFor({ timeout: 20000 });
+      await ben.locator("[data-model-viewer]").first().waitFor({ timeout: 20000 });
     }, ben);
 
     await step("evidence added to a signed milestone keeps the signature and says it came later", async () => {
