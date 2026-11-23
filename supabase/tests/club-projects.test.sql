@@ -30,7 +30,12 @@ select t.ok(t.refused($q$insert into public.projects (title, summary, community_
 select t.as_('cara');
 select t.ok(t.refused($q$insert into public.projects (title, summary, community_id) values ('Cara''s', 'x', 'rkt')$q$), 'someone outside the club can''t either');
 select t.as_('maya');
-insert into public.projects (id, title, summary, community_id, private) values ('cp1', 'Club rocket L2', 'The club''s Level 2 build.', 'rkt', true);
+insert into public.projects (title, summary, community_id, private) values ('Club rocket L2', 'The club''s Level 2 build.', 'rkt', true) returning id as cp \gset
+-- A fixed id for the rest of the test (members can't choose one, so it's renamed here).
+reset role;
+update public.projects set id = 'cp1' where id = :'cp';
+set local role authenticated;
+select t.as_('maya');
 select t.ok((select community_id = 'rkt' and owner_id = current_setting('t.maya')::uuid from public.projects where id = 'cp1'), 'a club admin starts one, and it''s the club''s');
 insert into public.project_details (project_id, details, link) values ('cp1', 'Notes', '');
 
