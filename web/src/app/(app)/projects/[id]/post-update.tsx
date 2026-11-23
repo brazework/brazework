@@ -53,10 +53,12 @@ export function PostUpdate({ projectId, title, className, autoFocus = false, att
 
   const submit = async () => {
     setMsg(null);
-    const text = body.trim() || (files.length || links.length ? `Added ${[...files.map((f) => f.name), ...links.map((l) => githubRepo(l) ?? new URL(l).host)].slice(0, 3).join(", ")}${files.length + links.length > 3 ? " and more" : ""}` : "");
-    if (!text) return;
+    // Attaching only attaches (FIX-247): the post holds what was typed, never the files' names.
+    const text = body.trim();
+    const attached = files.length > 0 || links.length > 0;
+    if (!text && !attached) return;
     setStep("Posting…");
-    const r = await shareProject(projectId, text);
+    const r = await shareProject(projectId, text, { attachments: attached });
     if (!r.ok) { setStep(""); setMsg({ ok: false, text: r.message }); return; }
     // The update is up; now its files and links, each tied to it (lib/attach-upload.ts).
     const failed = await uploadAttachments({ projectId, postId: r.postId, files, links, onStep: setStep });

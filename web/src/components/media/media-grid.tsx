@@ -1,11 +1,12 @@
 "use client";
 import { AnimatePresence, motion } from "motion/react";
-import { Captions, ChevronLeft, Film, ChevronRight, ChevronsLeftRight, Crosshair, Flag, Gauge, Maximize, Minimize, Pause, Play, Repeat, Volume2, VolumeX, X } from "lucide-react";
+import { Captions, Film, ChevronsLeftRight, Crosshair, Flag, Gauge, Maximize, Minimize, Pause, Play, Repeat, Volume2, VolumeX, X } from "lucide-react";
 import Image, { getImageProps } from "next/image";
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import { cn } from "@/lib/forge";
 import { mediaUrl, type MediaItem } from "@/lib/media";
 import { Pin, fmtTime } from "./annotate";
+import { PhotoViewer } from "./photo-viewer";
 
 // Photos or a video on a post:
 // - one photo keeps its shape; with callouts it's never cropped, so the pins land where they were put
@@ -345,49 +346,16 @@ function TestRunPlayer({ v }: { v: MediaItem }) {
 
 function Lightbox({ images, index, onClose, onIndex, alt }: { images: MediaItem[]; index: number | null; onClose: () => void; onIndex: (i: number) => void; alt: string }) {
   const [active, setActive] = useState<number | null>(null);
-  const go = useCallback((d: number) => { if (index !== null) { setActive(null); onIndex((index + d + images.length) % images.length); } }, [index, images.length, onIndex]);
-  useEffect(() => {
-    if (index === null) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
-      if (e.key === "ArrowRight") go(1);
-      if (e.key === "ArrowLeft") go(-1);
-    };
-    window.addEventListener("keydown", onKey);
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => { window.removeEventListener("keydown", onKey); document.body.style.overflow = prev; };
-  }, [index, go, onClose]);
-
   const m = index !== null ? images[index] : null;
   return (
-    <AnimatePresence>
+    <PhotoViewer count={images.length} index={index} onIndex={(i) => { setActive(null); onIndex(i); }} onClose={onClose} caption={m?.alt || undefined}>
       {m && (
-        <motion.div
-          role="dialog"
-          aria-modal="true"
-          aria-label="Photo viewer"
-          className="fixed inset-0 z-[80] flex flex-col items-center justify-center bg-black/92 p-4 backdrop-blur-sm"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          onClick={onClose}
-        >
-          <motion.div key={m.path} initial={{ scale: 0.96, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} className="w-[min(92vw,1200px)]" onClick={(e) => e.stopPropagation()}>
-            <PhotoBox m={m} alt={m.alt || alt} sizes="92vw" maxH="78dvh" active={active} onPin={(i) => setActive(active === i ? null : i)} className="rounded-xl" />
-            <div className="mx-auto flex max-w-3xl justify-center"><Legend m={m} active={active} onActive={setActive} dark /></div>
-          </motion.div>
-          <button onClick={onClose} aria-label="Close" className="absolute top-4 right-4 grid size-10 place-items-center rounded-full bg-white/10 text-white hover:bg-white/20"><X className="size-5" /></button>
-          {images.length > 1 && (
-            <>
-              <button onClick={(e) => { e.stopPropagation(); go(-1); }} aria-label="Previous photo" className="absolute top-1/2 left-4 grid size-11 -translate-y-1/2 place-items-center rounded-full bg-white/10 text-white hover:bg-white/20"><ChevronLeft className="size-5" /></button>
-              <button onClick={(e) => { e.stopPropagation(); go(1); }} aria-label="Next photo" className="absolute top-1/2 right-4 grid size-11 -translate-y-1/2 place-items-center rounded-full bg-white/10 text-white hover:bg-white/20"><ChevronRight className="size-5" /></button>
-              <span className="absolute bottom-5 font-mono text-xs text-white/70">{(index ?? 0) + 1} / {images.length}</span>
-            </>
-          )}
-        </motion.div>
+        <>
+          <PhotoBox m={m} alt={m.alt || alt} sizes="92vw" maxH="78dvh" active={active} onPin={(i) => setActive(active === i ? null : i)} className="rounded-xl" />
+          <div className="mx-auto flex max-w-3xl justify-center"><Legend m={m} active={active} onActive={setActive} dark /></div>
+        </>
       )}
-    </AnimatePresence>
+    </PhotoViewer>
   );
 }
 
