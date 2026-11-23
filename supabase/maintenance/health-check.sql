@@ -96,8 +96,9 @@ from (values
   (96, 'linkedin-public', to_regprocedure('public.linkedin_public_ready()') is not null),
   (97, 'student-plus-email', to_regprocedure('public.student_plus_eligible()') is not null),
   (98, 'post-files-only', to_regprocedure('public.post_files_only_ready()') is not null),
-  (99, 'project-files-view-only', to_regprocedure('public.project_files_view_only_ready()') is not null),
-  (100, 'post-files', to_regprocedure('public.post_files_ready()') is not null)
+  (99, 'owner-club-deletion', to_regprocedure('public.owner_club_deletion_ready()') is not null),
+  (100, 'project-files-view-only', to_regprocedure('public.project_files_view_only_ready()') is not null),
+  (101, 'post-files', to_regprocedure('public.post_files_ready()') is not null)
 ) as s(step, file, present)
 order by step;
 

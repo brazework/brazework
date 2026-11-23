@@ -2,6 +2,7 @@
 begin;
 select id as ben from auth.users where email = 'ben@forge.test' \gset
 select id as maya from auth.users where email = 'maya@forge.test' \gset
+select id as josh from auth.users where email = 'josh@forge.test' \gset
 select set_config('request.jwt.claim.sub', :'ben', true);
 
 insert into public.milestones (id, project_id, community_id, title, evidence)
@@ -14,26 +15,52 @@ values ('club-delete-post', 'rkt', :'ben', 'A club post to remove.');
 set local role authenticated;
 do $$
 begin
-  if has_function_privilege('anon', 'public.admin_delete_club(text,text)', 'execute') then
+  if to_regprocedure('public.admin_delete_club(text,text)') is not null
+     or public.club_deletion_ready()
+     or not public.owner_club_deletion_ready() then
+    raise exception 'Only the new owner-only delete path should be available';
+  end if;
+  if has_function_privilege('anon', 'public.delete_owned_club(text,text)', 'execute') then
     raise exception 'Anonymous can execute club deletion';
   end if;
-  begin
-    perform public.admin_delete_club('rkt', 'Rocketry Club');
-    raise exception 'A club owner without platform admin access deleted the club';
-  exception when insufficient_privilege then null;
-  end;
+  if has_table_privilege('authenticated', 'public.communities', 'DELETE') then
+    raise exception 'Direct table deletion bypasses the owner-only RPC';
+  end if;
 end $$;
 
 select set_config('request.jwt.claim.sub', :'maya', true);
 do $$
 begin
+  if not public.is_forge_admin() or public.my_rank('rkt') <> 4 then
+    raise exception 'Expected a platform and club admin who does not own the club';
+  end if;
   begin
-    perform public.admin_delete_club('rkt', 'Wrong club name');
+    perform public.delete_owned_club('rkt', 'Rocketry Club');
+    raise exception 'A non-owner admin deleted the club';
+  exception when insufficient_privilege then null;
+  end;
+end $$;
+
+select set_config('request.jwt.claim.sub', :'josh', true);
+do $$
+begin
+  begin
+    perform public.delete_owned_club('rkt', 'Rocketry Club');
+    raise exception 'A club member deleted the club';
+  exception when insufficient_privilege then null;
+  end;
+end $$;
+
+select set_config('request.jwt.claim.sub', :'ben', true);
+do $$
+begin
+  begin
+    perform public.delete_owned_club('rkt', 'Wrong club name');
     raise exception 'A wrong confirmation deleted the club';
   exception when raise_exception then
     if sqlerrm <> 'Type the exact club name to confirm.' then raise; end if;
   end;
-  perform public.admin_delete_club('rkt', 'Rocketry Club');
+  perform public.delete_owned_club('rkt', 'Rocketry Club');
 end $$;
 reset role;
 
