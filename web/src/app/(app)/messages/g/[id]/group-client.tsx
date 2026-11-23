@@ -108,7 +108,7 @@ export function GroupThread({ msgs, pics = {}, me, myName, chatId, seen = {}, re
               ) : (
                 <div className={cn("flex items-end gap-2", isMine ? "flex-row-reverse" : "flex-row")}>
                   {!isMine && <span className="w-7 shrink-0">{!joinsNext && (isEmber ? <Ember size={28} /> : <Avatar first={m.sender_first} last={m.sender_last} size={28} className="text-[10px]" src={pics[m.sender_id]} />)}</span>}
-                  <div className={cn("flex max-w-[78%] flex-col", isMine ? "items-end" : "items-start")}>
+                  <div className={cn("flex max-w-[78%] flex-col sm:max-w-[min(78%,calc(100%-15rem))]", isMine ? "items-end" : "items-start")}>
                     {!isMine && !joinsPrev && <span className="mb-0.5 px-2 text-[11px] font-medium text-muted">{isEmber ? <>Ember <span className="font-normal text-faint">· asked by {m.sender_first}</span></> : <>{m.sender_first} {m.sender_last}</>}</span>}
                     <div className="group/msg relative">
                     {extras && !isPending && (
