@@ -6,7 +6,6 @@ import { useRouter } from "next/navigation";
 import { Fragment, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import type { Post, PostProject } from "@/lib/forge";
 import { getBrowserClient } from "@/lib/supabase/client";
-import { withAttachments } from "@/lib/post-attachments";
 import { PostCard, type ReplyPreview } from "./post-card";
 import { ProofCard, type Proof } from "./proof-card";
 
@@ -45,9 +44,7 @@ export function FeedList({ first, params, proofs, ranked, slots, end, me, viewer
         p_cursor: pageParam, p_as_of: first.as_of, p_limit: PAGE,
       });
       if (error) throw new Error(error.message);
-      // What's attached to these posts, in one more read (feed_page() doesn't carry it).
-      const page = data as FeedPage;
-      return { ...page, items: await withAttachments(getBrowserClient(), page.items) };
+      return data as FeedPage;
     },
     getNextPageParam: (last) => (params && last.next ? last.next : undefined),
   });

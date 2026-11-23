@@ -1,6 +1,5 @@
 import { goalFirst } from "@/lib/feed-goal";
 import { isGoalKind } from "@/lib/goals";
-import { withAttachments } from "@/lib/post-attachments";
 import type { Metadata } from "next";
 import { SlidersHorizontal } from "lucide-react";
 import Link from "next/link";
@@ -178,8 +177,6 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
         : Promise.resolve({ data: null }),
     ]);
     if (data) first = data as FirstPage;
-    // What's attached to these posts (lib/post-attachments.ts): feed_page() doesn't carry it.
-    first = { ...first, items: await withAttachments(supabase, first.items) };
     const g = goalRow.data as { kind: string; target: string } | null;
     if (g && isGoalKind(g.kind)) first = { ...first, items: goalFirst(first.items, { kind: g.kind, target: g.target ?? "" }, user.id) };
   } else {
