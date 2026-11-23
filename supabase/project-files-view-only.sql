@@ -1,4 +1,4 @@
--- Documents and 3D models are view-only for people outside the project. Run after owner-club-deletion.sql.
+-- Documents and 3D models are view-only for people outside the project. Run after chat-delete.sql.
 -- Additive: one new restrictive policy on storage and a helper function; nothing else changes.
 --
 -- Until now anyone who could read a project could also fetch any of its files' originals (a signed link
