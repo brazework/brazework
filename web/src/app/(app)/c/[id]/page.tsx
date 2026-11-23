@@ -32,7 +32,6 @@ import { StudyLeads } from "./study-leads";
 import { NextUp } from "./next-up";
 import { List, ListRow } from "@/components/app/list";
 import { TitleBlock } from "@/components/app/title-block";
-import { DeleteClubForm } from "./delete-club";
 import { ClubSetup } from "./setup";
 import { clubSetupSteps } from "@/lib/guide";
 import { reusableInvite, setupProgress, type InviteRow } from "@/lib/club-setup";
@@ -63,13 +62,9 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
   const canHost = can(role, "hostEvents");
   const tab = sp.tab === "held" && isMod ? "held" : sp.tab === "about" ? "about" : sp.tab === "events" ? "events" : "posts";
 
-  const [visible, held, canDelete] = await Promise.all([
+  const [visible, held] = await Promise.all([
     supabase.from("posts").select(await postSelect()).eq("community_id", id).eq("status", "visible").order("created_at", { ascending: false }).limit(60),
     isMod ? supabase.from("posts").select(await postSelect()).eq("community_id", id).eq("status", "held").order("created_at", { ascending: false }).limit(100) : Promise.resolve({ data: [] }),
-    tab === "about"
-      ? Promise.all([supabase.rpc("is_forge_admin"), supabase.rpc("club_deletion_ready")])
-        .then(([admin, ready]) => admin.data === true && ready.data === true)
-      : false,
   ]);
   const { clubEvents, media: mediaEnabled, invites: invitesOn, groupChats, videoCaptions: captionsEnabled, clubProfile } = await dbFeatures();
   const { data: evRows } = clubEvents
@@ -300,7 +295,6 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
             {claimsOn && role !== "owner" && (
               <p className="mt-1 text-xs text-faint">Are you this organization&apos;s officer, and someone else started it on Brazework? <Link href={`/c/${c.id}/claim`} className="font-medium text-text-2 underline-offset-2 hover:underline">Claim this club</Link></p>
             )}
-            {canDelete && <DeleteClubForm id={c.id} name={c.name} />}
           </Panel>
         )}
       </div>
