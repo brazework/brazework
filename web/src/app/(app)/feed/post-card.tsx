@@ -8,6 +8,7 @@ import { cardMark, markCard } from "@/lib/card-marks";
 import { Avatar } from "@/components/ui";
 import { POST_KINDS, cn, timeAgo, type Post, type PostProject } from "@/lib/forge";
 import { MediaGrid } from "@/components/media/media-grid";
+import { ProjectFiles, type ProjectFileItem } from "@/components/projects/project-files";
 import { avatarSrc } from "@/lib/media";
 import { addComment, deletePost, toggleSave } from "@/lib/posts";
 import { EditPost } from "./edit-post";
@@ -25,7 +26,8 @@ export type ReplyPreview = { id: string; author_id: string; author_first: string
 // a feed is browsed, not clicked through in bulk (Linear FIX-77). A tap still opens it at once.
 const KIND_DOT: Record<string, string> = { result: "bg-ok", question: "bg-amber-500", project: "bg-sky-500" };
 
-export function PostCard({ post, liked, saved = false, own = false, index, project = null, reason = "", replies = [], viewer }: { post: Post & { community_name?: string | null }; liked: boolean; saved?: boolean; own?: boolean; index: number; project?: PostProject | null; reason?: string; replies?: ReplyPreview[]; viewer?: { id: string; first: string; last: string } }) {
+// showFiles: the card draws what's attached (FIX-259); the project page draws an update's files itself.
+export function PostCard({ post, liked, saved = false, own = false, index, project = null, reason = "", replies = [], viewer, showFiles = true }: { post: Post & { community_name?: string | null }; liked: boolean; saved?: boolean; own?: boolean; index: number; project?: PostProject | null; reason?: string; replies?: ReplyPreview[]; viewer?: { id: string; first: string; last: string }; showFiles?: boolean }) {
   const [, start] = useTransition();
   const [error, setError] = useState("");
   // What you did here this session survives the card scrolling out of the (virtualized) feed and back.
@@ -37,6 +39,12 @@ export function PostCard({ post, liked, saved = false, own = false, index, proje
   const [edited, setEditedState] = useState<{ body: string; tags: string[] } | null>(mark.edited ?? null);
   const setEdited = (e: { body: string; tags: string[] }) => { setEditedState(e); markCard(post.id, { edited: e }); };
   const body = edited?.body ?? post.body;
+  // What's attached: from the page, or (right after Edit added some) fresh from the database.
+  const [freshFiles, setFreshFiles] = useState<ProjectFileItem[] | null>(null);
+  const files: ProjectFileItem[] = freshFiles ?? [
+    ...(post.project_files ?? []).map((f) => ({ ...f, source: "project" as const })),
+    ...(post.post_files ?? []).map((f) => ({ ...f, source: "post" as const })),
+  ];
   const tags = edited?.tags ?? post.tags;
   const inline = new Set(hashtagParts(body).flatMap((p) => (typeof p === "string" ? [] : [p.tag])));
   const extraTags = tags.filter((t) => !inline.has(t));
@@ -171,6 +179,8 @@ export function PostCard({ post, liked, saved = false, own = false, index, proje
           body={body}
           tags={tags}
           projectId={post.project_id ?? null}
+          canAttach={!!post.project_id || Array.isArray(post.post_files)}
+          onFiles={(next) => setFreshFiles(next)}
           onCancel={() => setEditing(false)}
           onSaved={(next) => { setEdited(next); setEditing(false); }}
         />
@@ -185,6 +195,7 @@ export function PostCard({ post, liked, saved = false, own = false, index, proje
         </p>
       )}
       {post.media && post.media.length > 0 && <MediaGrid media={post.media} alt={`Shared by ${post.author_first} ${post.author_last}`} />}
+      {showFiles && files.length > 0 && <div className="mt-4"><ProjectFiles projectId={post.project_id ?? null} items={files} me={own ? post.author_id : viewer?.id ?? ""} ownerId={post.author_id} variant="update" /></div>}
       {project && <BuildStrip project={project} own={own} />}
       <footer className="mt-3 flex items-center gap-0.5 text-sm text-faint">
         <button onClick={() => like(!opt.liked)} aria-pressed={opt.liked} aria-label={opt.liked ? "Unlike" : "Like"} className="tap inline-flex h-9 items-center gap-1.5 rounded-lg px-3 transition hover:bg-hover hover:text-text active:scale-90">

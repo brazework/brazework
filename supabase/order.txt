@@ -108,3 +108,4 @@ linkedin-public
 student-plus-email
 post-files-only
 project-files-view-only
+post-files

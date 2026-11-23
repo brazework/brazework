@@ -83,7 +83,11 @@ export type Post = {
   // [{ id, name }] once supabase/mentions.sql has run.
   mentions?: { id: string; name: string }[];
   author?: { avatar_path?: string } | null;
+  // What's attached (lib/db-features.ts postSelect): a project update's files, or any other post's.
+  project_files?: AttachedFile[] | null;
+  post_files?: AttachedFile[] | null;
 };
+export type AttachedFile = { id: number; kind: "file" | "link"; name: string; size: number | null; url: string | null; added_by: string; created_at: string; post_id?: string | null };
 
 // The project card shown inside a project post (Ian's projectBlock() in public/js/projects.js).
 export type PostProject = {

@@ -44,7 +44,7 @@ export function BuildLogTimeline({ entries, liked, saved, me, projectId, ownerId
             </div>
           ) : (
             <div className="flex flex-col gap-3">
-              <PostCard post={e.post} liked={liked.has(e.post.id)} saved={saved.has(e.post.id)} own={e.post.author_id === me} index={i} replies={replies?.get(e.post.id) ?? []} viewer={viewer} />
+              <PostCard post={e.post} liked={liked.has(e.post.id)} saved={saved.has(e.post.id)} own={e.post.author_id === me} index={i} replies={replies?.get(e.post.id) ?? []} viewer={viewer} showFiles={false} />
               {filesByPost.has(e.post.id) && <ProjectFiles projectId={projectId} items={filesByPost.get(e.post.id)!} me={me} ownerId={ownerId} variant="update" />}
             </div>
           )}
