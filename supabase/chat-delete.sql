@@ -1,4 +1,4 @@
--- Delete a chat (for you). Run after student-plus-email.sql. Additive: one new column and one
+-- Delete a chat (for you). Run after post-files-only.sql. Additive: one new column and one
 -- function; nothing the live app uses changes.
 --
 -- Deleting a direct conversation clears it from your Chats list and empties it on your side: the app
