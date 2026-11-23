@@ -10,7 +10,7 @@ export function SchoolEmailForm({ eligible }: { eligible: boolean }) {
   const [state, action, pending] = useActionState(changeSchoolEmail, { ok: false, message: "" });
   const [email, setEmail] = useState("");
   return (
-    <section id="school-email" className="mt-5 scroll-mt-24 border-t border-line pt-5">
+    <section id="school-email" className="mt-5 scroll-mt-[calc(var(--m-top)+6.5rem)] md:scroll-mt-28 lg:scroll-mt-8 border-t border-line pt-5">
       <h3 className="font-medium">School email</h3>
       {eligible ? (
         <p className="mt-1 text-sm text-muted">Your sign-in email qualifies for student pricing. <Link href="/plus" className="underline underline-offset-4">See Plus</Link></p>

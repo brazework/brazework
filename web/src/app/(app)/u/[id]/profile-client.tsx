@@ -33,34 +33,56 @@ export type ProjectView = {
 
 const initial: ProjectState = { ok: false, message: "" };
 
-export function EditBasics({ headline, bio }: { headline: string; bio: string }) {
-  const [editing, setEditing] = useState(false);
-  const [state, action, pending] = useActionState(updateProfileBasics, initial);
-  const [seen, setSeen] = useState(state);
-  if (state !== seen) {
-    setSeen(state);
-    if (state.ok) setEditing(false);
-  }
+export function EditProfile({ headline, bio }: { headline: string; bio: string }) {
+  const dialog = useRef<HTMLDialogElement>(null);
+  const [saved, setSaved] = useState(false);
+  const [state, action, pending] = useActionState(async (previous: ProjectState, form: FormData) => {
+    const result = await updateProfileBasics(previous, form);
+    if (result.ok) {
+      setSaved(true);
+      dialog.current?.close();
+    }
+    return result;
+  }, initial);
 
-  if (!editing)
-    return (
-      <div className="mt-5">
-        {bio ? <p className="text-[15px] leading-relaxed whitespace-pre-wrap text-text-2">{bio}</p> : <p className="text-sm text-faint">Add a short bio so people know what you work on.</p>}
-        <button onClick={() => setEditing(true)} className="mt-3 inline-flex items-center gap-1.5 text-sm text-muted transition hover:text-text">
-          <Pencil className="size-3.5" /> Edit headline and bio
-        </button>
-      </div>
-    );
   return (
-    <form onSubmit={submitWithoutReset(action)} className="mt-5 flex flex-col gap-4">
-      <Field label="Headline"><input name="headline" defaultValue={headline} maxLength={200} className={inputCls} /></Field>
-      <Field label="Bio"><textarea name="bio" defaultValue={bio} maxLength={2000} rows={5} className={cn(inputCls, "h-auto resize-y py-3 leading-relaxed")} /></Field>
-      {state.message && !state.ok && <p role="alert" className="text-sm text-danger">{state.message}</p>}
-      <div className="flex gap-2">
-        <Button type="submit" disabled={pending}>{pending && <Loader2 className="size-4 animate-spin" />} Save</Button>
-        <Button type="button" variant="ghost" onClick={() => setEditing(false)}>Cancel</Button>
-      </div>
-    </form>
+    <>
+      <button id="edit-profile" type="button" disabled={pending} onClick={() => {
+        const element = dialog.current;
+        element?.querySelector("form")?.reset();
+        setSaved(false);
+        element?.showModal();
+        element?.querySelector<HTMLInputElement>('input[name="headline"]')?.focus();
+      }} className="inline-flex min-h-10 scroll-mt-24 items-center gap-1.5 rounded-lg bg-accent px-3 text-sm font-medium text-on-accent transition hover:opacity-85">
+        <Pencil aria-hidden="true" className="size-4" /> Edit profile
+      </button>
+      <span role="status" className="sr-only">{saved ? "Profile saved." : ""}</span>
+      <dialog ref={dialog} onCancel={(event) => { if (pending) event.preventDefault(); }} onKeyDown={(event) => {
+        if (event.key !== "Escape") return;
+        event.preventDefault();
+        event.stopPropagation();
+        if (!pending) dialog.current?.close();
+      }} aria-labelledby="edit-profile-title" className="m-auto max-h-[calc(100dvh-2rem)] w-[min(32rem,calc(100%-2rem))] overflow-y-auto rounded-2xl border border-line bg-surface p-0 text-text shadow-[var(--shadow)] backdrop:bg-black/60">
+        <form onSubmit={submitWithoutReset(action)} className="flex flex-col gap-4 p-4 sm:p-6">
+          <header className="flex items-start justify-between gap-3">
+            <div>
+              <h2 id="edit-profile-title" className="text-xl font-semibold tracking-tight">Edit profile</h2>
+              <p className="mt-1 text-sm text-muted">Update what people read when they open your profile.</p>
+            </div>
+            <button type="button" aria-label="Close profile editor" onClick={() => dialog.current?.close()} disabled={pending} className="grid size-10 shrink-0 place-items-center rounded-lg text-muted transition hover:bg-hover hover:text-text">
+              <X aria-hidden="true" className="size-5" />
+            </button>
+          </header>
+          <Field label="Headline"><input name="headline" defaultValue={headline} maxLength={200} className={inputCls} /></Field>
+          <Field label="Bio"><textarea name="bio" defaultValue={bio} maxLength={2000} rows={5} className={cn(inputCls, "h-auto resize-y py-3 leading-relaxed")} /></Field>
+          {state.message && !state.ok && <p role="alert" className="text-sm text-danger">{state.message}</p>}
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4">
+            <Link href="/settings#profile" onClick={() => dialog.current?.close()} className="inline-flex min-h-10 items-center text-sm font-medium text-text-2 underline-offset-4 hover:underline">More profile settings</Link>
+            <Button type="submit" disabled={pending}>{pending && <Loader2 className="size-4 animate-spin" />} Save changes</Button>
+          </div>
+        </form>
+      </dialog>
+    </>
   );
 }
 

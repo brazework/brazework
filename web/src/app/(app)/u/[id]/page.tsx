@@ -44,7 +44,7 @@ import { StripSkeleton } from "@/components/app/discover-cards";
 import { CoverBanner, ProfilePhoto } from "@/components/media/profile-media";
 import { schematicFor } from "@/lib/schematic-field";
 import { OnlineLabel, WithPresence } from "@/components/presence/presence";
-import { EditBasics, ProjectEditor, ProjectGrid, type ProjectView } from "./profile-client";
+import { EditProfile, ProjectEditor, ProjectGrid, type ProjectView } from "./profile-client";
 import type { Club, Milestone } from "./milestones";
 import { FirstMilestoneWelcome } from "./welcome";
 
@@ -183,8 +183,8 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
   const skills = [...projectRows.flatMap((x) => x.tools ?? []).reduce((m, t) => m.set(t, (m.get(t) ?? 0) + 1), new Map<string, number>())].sort((a, b) => b[1] - a[1]).slice(0, 12);
   const steps: Step[] = [
     ...(mediaOn ? [{ done: !!p.avatar_path, label: "Add a profile photo", href: "#top" }] : []),
-    { done: !!p.headline, label: "Write a headline", href: "#about" },
-    { done: !!p.bio, label: "Add a short bio", href: "#about" },
+    { done: !!p.headline, label: "Write a headline", href: "#edit-profile" },
+    { done: !!p.bio, label: "Add a short bio", href: "#edit-profile" },
     { done: projects.length > 0, label: "Add a project", href: "#projects" },
     ...(stackOn ? [{ done: projectRows.some((x) => (x.tools ?? []).length > 0), label: "Say what you built with", href: "#projects" }] : []),
     ...(msOn ? [{ done: proof.length > 0, label: "Get a milestone verified", href: "#proof" }] : []),
@@ -211,6 +211,7 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
               <WithPresence id={p.id} dot="size-5 ring-4 top-[4%] bottom-auto"><ProfilePhoto path={p.avatar_path} first={p.first_name} last={p.last_name} editable={mine && mediaOn} userId={user.id} size={88} /></WithPresence>
             </div>
             <div data-tour={mine ? "share" : undefined} className="flex flex-wrap items-center gap-2">
+              {mine && <EditProfile headline={p.headline} bio={p.bio} />}
               <CopyLink path={`/u/${p.id}`} label="Share" />
               <Link href={`/u/${p.id}/resume`} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-line bg-surface px-3.5 text-sm transition hover:bg-hover active:scale-95"><FileText className="size-4" /> Résumé</Link>
               {mine ? (
@@ -291,7 +292,7 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
           ) : null}
 
           <div id="about" className="scroll-mt-24">
-            {mine ? <EditBasics headline={p.headline} bio={p.bio} /> : p.bio && <p className="mt-5 max-w-2xl text-[15px] leading-relaxed whitespace-pre-wrap text-text-2">{p.bio}</p>}
+            {p.bio ? <p className="mt-5 max-w-2xl text-[15px] leading-relaxed whitespace-pre-wrap text-text-2">{p.bio}</p> : mine && <p className="mt-5 text-sm text-muted">Add a short bio so people know what you work on.</p>}
           </div>
         </div>
       </Panel>
