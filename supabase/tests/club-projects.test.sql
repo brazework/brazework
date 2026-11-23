@@ -55,9 +55,9 @@ select t.as_('josh');
 select t.ok(public.can_read_project('cp1'), 'the teammate sees it while it''s private');
 select t.ok(public.am_on_project_team('cp1'), 'the teammate can add files');
 select t.ok(not t.refused($q$insert into public.posts (body, project_id, kind) values ('Nose cone printed', 'cp1', 'project')$q$), 'the teammate posts an update');
-insert into public.project_files (project_id, kind, name, path, size) values ('cp1', 'file', 'nose.stl', 'cp1/nose.stl', 1000);
+insert into public.project_files (project_id, kind, name, path, size) values ('cp1', 'file', 'nose.stl', 'cp1/nose-cone.stl', 1000);
 select t.ok(exists (select 1 from public.project_files where project_id = 'cp1' and name = 'nose.stl'), 'the teammate adds a 3D model, as on a personal project');
-select t.ok(public.project_file_access((select id from public.project_files where path = 'cp1/nose.stl')) = 'download', 'the teammate who added it may open the original');
+select t.ok(public.project_file_access((select id from public.project_files where path = 'cp1/nose-cone.stl')) = 'download', 'the teammate who added it may open the original');
 update public.projects set summary = 'Hijacked' where id = 'cp1';
 select t.ok((select summary from public.projects where id = 'cp1') = 'Level 2 cert flight.', 'a teammate can''t edit the project itself');
 delete from public.projects where id = 'cp1';
@@ -75,7 +75,7 @@ select t.ok((select private from public.projects where id = 'cp1'), 'an outsider
 update public.projects set private = false where id = 'cp1';
 select t.as_('cara');
 select t.ok(public.can_read_project('cp1'), 'once a club admin makes it public, everyone sees it');
-select t.ok(public.project_file_access((select id from public.project_files where path = 'cp1/nose.stl')) = 'view', 'but its 3D model is view-only for them, as on a personal project');
+select t.ok(public.project_file_access((select id from public.project_files where path = 'cp1/nose-cone.stl')) = 'view', 'but its 3D model is view-only for them, as on a personal project');
 select t.ok(not public.am_on_project_team('cp1'), 'and they can''t add files');
 
 -- Personal projects are unchanged: the club's leads get nothing on Ben's own project.
