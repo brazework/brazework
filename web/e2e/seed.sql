@@ -20,8 +20,8 @@ alter table public.milestones enable trigger user;
 insert into public.posts (author_id, body, kind, tags, created_at) select ben, 'Static fire #3 done. 1.2 kN peak, clean shutdown.', 'result', '{Rocketry}'::text[], now() - interval '9 days' from u
  union all select maya, 'Anyone tried Kalman filtering on a cheap IMU? Looking for tips.', 'question', '{Robotics}'::text[], now() - interval '3 hours' from u
  union all select cara, 'Hello Brazework!', 'update', '{}'::text[], now() - interval '1 day' from u;
--- The weekly club activity check needs this post in the current week, even immediately after Monday UTC.
-insert into public.posts (author_id, body, kind, community_id, created_at) select ben, 'Launch day is Saturday. Who is driving?', 'update', 'rkt', now() from u;
+-- Ben's club post counts as this week even in the first hours of a Monday (weeks start Monday 00:00 UTC).
+insert into public.posts (author_id, body, kind, community_id, created_at) select ben, 'Launch day is Saturday. Who is driving?', 'update', 'rkt', greatest(now() - interval '5 hours', date_trunc('week', now())) from u;
 -- A verified company (Cara is its admin) for Find builders; Ben made two verified milestones public.
 insert into public.organizations (type, name, domain) values ('company', 'Acme Aerospace', 'forge.test');
 insert into public.organization_admins (org_id, uid) select id, (select cara from u) from public.organizations where domain = 'forge.test';
