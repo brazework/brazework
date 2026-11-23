@@ -10,6 +10,10 @@ The Linear connection is in `.mcp.json`; the first use asks each person to sign 
 - `/ship` does the safe release path: checks, a commit with the issue ID on a branch, a pull request with auto-merge, watch CI until it merges, report on the issue.
 - `/standup` reports shipped, in progress, next, blocked and CI. `/standup post` also writes each project's weekly update.
 
+## Product Hunt
+
+The Product Hunt connection is in `.mcp.json` too; the first use asks you to sign in to Product Hunt. The launch kit is [docs/product-hunt.md](docs/product-hunt.md). Draft and review only: never publish, schedule, post a comment or change a live listing without the team's go-ahead in chat, for that action.
+
 ## Keep Linear in step (team Forge, key `FIX`)
 
 - Before starting a piece of work, look for its Linear issue. If there isn't one and the work is bigger than a quick fix, create it in the right project with a Type label, an owner and a milestone.
