@@ -39,17 +39,23 @@ export function useReactions(kind: "dm" | "group", me: string, initial: Reaction
   return { reactions: list, toggle, unsend, removed, error, clearError: () => setError("") };
 }
 
-// The toolbar above a message.
+// The toolbar for a message. On a laptop it sits beside the bubble, centred on it, on the side away
+// from the sender, and shows while you hover the bubble (the padding bridges the gap, so moving onto it
+// keeps it open). On a phone, where there's no hover and no room beside, a tap opens it just above.
 export function MessageTools({ mine, canUnsend, open, onReact, onReply, onUnsend }: { mine: boolean; canUnsend: boolean; open: boolean; onReact: (e: string) => void; onReply: () => void; onUnsend: () => void }) {
   const [all, setAll] = useState(false);
   const btn = "grid size-8 place-items-center rounded-full text-base transition hover:bg-hover active:scale-90";
   return (
-    <div role="toolbar" aria-label="Message actions" className={cn("absolute -top-9 z-20 flex items-center gap-0.5 rounded-full border border-line bg-surface p-0.5 shadow-[var(--shadow)] transition", mine ? "right-0" : "left-0", open ? "visible opacity-100" : "invisible opacity-0 group-hover/msg:visible group-hover/msg:opacity-100")}>
+    <div data-message-tools className={cn("absolute z-20 transition-opacity duration-150",
+      "-top-10 sm:top-1/2 sm:-translate-y-1/2", mine ? "right-0 sm:right-full sm:pr-2" : "left-0 sm:left-full sm:pl-2",
+      open ? "visible opacity-100" : "invisible opacity-0 sm:group-hover/msg:visible sm:group-hover/msg:opacity-100 sm:focus-within:visible sm:focus-within:opacity-100")}>
+    <div role="toolbar" aria-label="Message actions" className={cn("flex items-center gap-0.5 border border-line bg-surface p-0.5 shadow-[var(--shadow)]", all ? "w-[13.5rem] flex-wrap justify-center rounded-2xl" : "rounded-full whitespace-nowrap")}>
       {(all ? REACTIONS : REACTIONS.slice(0, 4)).map((e) => <button key={e} type="button" onClick={() => onReact(e)} aria-label={`React ${e}`} className={btn}>{e}</button>)}
       {!all && <button type="button" onClick={() => setAll(true)} aria-label="More reactions" className={cn(btn, "text-faint")}><SmilePlus className="size-4" /></button>}
       <span className="mx-0.5 h-5 w-px bg-line" aria-hidden />
       <button type="button" onClick={onReply} aria-label="Reply" title="Reply" className={cn(btn, "text-muted")}><CornerUpLeft className="size-4" /></button>
       {canUnsend && <button type="button" onClick={onUnsend} aria-label="Unsend" title="Unsend" className={cn(btn, "text-muted hover:text-danger")}><Undo2 className="size-4" /></button>}
+    </div>
     </div>
   );
 }

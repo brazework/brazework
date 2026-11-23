@@ -10,7 +10,7 @@ import { Skeleton } from "@/components/app/page-ui";
 import { Avatar } from "@/components/ui";
 import { OnlineLabel, WithPresence } from "@/components/presence/presence";
 import { getViewer } from "@/lib/supabase/server";
-import { Composer, MarkRead, RequestBar, ThreadScroll, type Msg } from "./thread-client";
+import { Composer, DeleteChat, MarkRead, RequestBar, ThreadScroll, type Msg } from "./thread-client";
 
 export const metadata: Metadata = { title: "Conversation" };
 
@@ -41,7 +41,12 @@ async function Thread({ params }: { params: PageProps<"/messages/[id]">["params"
 
   // Replies and reactions exist once supabase/chat-extras.sql has run.
   const extras = (await dbFeatures()).chatExtras;
-  const { data } = await supabase.from("messages").select(extras ? "id, sender_id, body, created_at, reply_to" : "id, sender_id, body, created_at").eq("conversation_id", id).order("created_at", { ascending: true }).limit(300);
+  // A chat you deleted (supabase/chat-delete.sql) shows only what came after; none before that step.
+  const { data: mine } = await supabase.from("conversation_reads").select("cleared_at").eq("conversation_id", id).eq("user_id", me).maybeSingle();
+  const cleared = (mine as { cleared_at?: string | null } | null)?.cleared_at ?? null;
+  let q = supabase.from("messages").select(extras ? "id, sender_id, body, created_at, reply_to" : "id, sender_id, body, created_at").eq("conversation_id", id);
+  if (cleared) q = q.gt("created_at", cleared);
+  const { data } = await q.order("created_at", { ascending: true }).limit(300);
   const msgs = (data ?? []) as unknown as Msg[];
   const { data: rxRows } = extras && msgs.length ? await supabase.from("message_reactions").select("message_id, user_id, emoji").in("message_id", msgs.map((m) => m.id)) : { data: [] };
   const iSent = msgs.some((m) => m.sender_id === me);
@@ -59,6 +64,7 @@ async function Thread({ params }: { params: PageProps<"/messages/[id]">["params"
             {other.headline && <div className="truncate text-xs text-faint">{other.headline}</div>}
           </div>
         </Link>
+        <DeleteChat cid={id} name={name} />
       </header>
       {requestToMe && <RequestBar cid={id} firstName={other.firstName ?? ""} />}
       <ThreadScroll msgs={msgs} me={me} cid={id} otherName={other.firstName ?? ""} reactions={(rxRows ?? []) as Reaction[]} extras={extras && !requestToMe} myName={profile?.first_name || "You"} />
