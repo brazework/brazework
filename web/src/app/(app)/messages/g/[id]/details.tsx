@@ -1,9 +1,11 @@
 "use client";
 import { emberCreditCost } from "@/lib/ember-credits";
-import { Loader2, Sparkles } from "lucide-react";
-import { useState, useTransition } from "react";
+import { Ellipsis, Loader2, LogOut, Sparkles, Trash2 } from "lucide-react";
+import { useEffect, useRef, useState, useTransition } from "react";
 import { Avatar } from "@/components/ui";
 import { WithPresence, useOnlineCount } from "@/components/presence/presence";
+import { useRouter } from "next/navigation";
+import { deleteGroupChat, leaveGroupChat } from "@/lib/chats";
 import { catchMeUp } from "@/lib/chat-ember";
 
 // "Catch me up": Ember reads the recent chat and tells only you what you missed.
@@ -39,5 +41,61 @@ export function MemberList({ people }: { people: { uid: string; first: string; l
         ))}
       </ul>
     </div>
+  );
+}
+
+export function GroupChatActions({ chatId, kind, canDelete }: { chatId: string; kind: "club" | "event" | "team"; canDelete: boolean }) {
+  const router = useRouter();
+  const menu = useRef<HTMLDetailsElement>(null);
+  const [error, setError] = useState("");
+  const [pending, start] = useTransition();
+
+  useEffect(() => {
+    function dismiss(event: PointerEvent) {
+      if (menu.current?.open && event.target instanceof Node && !menu.current.contains(event.target)) {
+        menu.current.open = false;
+      }
+    }
+    document.addEventListener("pointerdown", dismiss);
+    return () => document.removeEventListener("pointerdown", dismiss);
+  }, []);
+
+  function change(action: "leave" | "delete") {
+    const leaveMessage = kind === "team"
+      ? "Leave this team chat? You’ll lose access to its messages."
+      : kind === "club"
+        ? "Leave this chat? You can rejoin from the club page. Your club membership stays active."
+        : "Leave this chat? You can rejoin from the event page. Your RSVP stays active.";
+    const ownership = canDelete ? " If other members remain, ownership passes to one of them." : "";
+    if (!confirm(action === "delete" ? "Delete this team chat and all of its messages for everyone? This can’t be undone." : leaveMessage + ownership)) return;
+    setError("");
+    start(async () => {
+      try {
+        const result = await (action === "delete" ? deleteGroupChat(chatId) : leaveGroupChat(chatId));
+        if (result.ok) router.replace("/messages?tab=groups");
+        else setError(result.message);
+      } catch {
+        setError(action === "delete" ? "Couldn’t delete this chat. Try again." : "Couldn’t leave this chat. Try again.");
+      }
+    });
+  }
+
+  const item = "flex w-full items-center gap-2 rounded-lg px-2.5 py-2 text-left text-sm hover:bg-hover disabled:opacity-50";
+  return (
+    <details ref={menu} className="relative shrink-0" onKeyDown={(event) => {
+      if (event.key === "Escape" && menu.current?.open) {
+        menu.current.open = false;
+        menu.current.querySelector("summary")?.focus();
+      }
+    }}>
+      <summary aria-label="Chat options" title="Chat options" className="grid size-9 cursor-pointer list-none place-items-center rounded-full text-muted hover:bg-hover hover:text-text [&::-webkit-details-marker]:hidden">
+        <Ellipsis className="size-5" />
+      </summary>
+      <div className="absolute right-0 top-full z-30 mt-2 w-48 rounded-xl border border-line bg-surface p-1.5 shadow-[var(--shadow-float)]">
+        <button type="button" disabled={pending} onClick={() => change("leave")} className={item}><LogOut className="size-4" /> Leave chat</button>
+        {canDelete && <button type="button" disabled={pending} onClick={() => change("delete")} className={`${item} text-danger`}><Trash2 className="size-4" /> Delete group chat</button>}
+        {error && <p role="alert" className="px-2.5 py-1 text-xs text-danger">{error}</p>}
+      </div>
+    </details>
   );
 }

@@ -69,11 +69,20 @@ export async function markChatRead(chatId: string): Promise<void> {
   revalidatePath("/messages");
 }
 
-export async function leaveTeamChat(chatId: string): Promise<void> {
-  if (!ID_RE.test(chatId)) return;
+async function changeGroupChat(chatId: string, rpc: "leave_chat" | "delete_owned_team_chat"): Promise<R> {
+  if (!ID_RE.test(chatId)) return { ok: false, message: "That chat couldn't be found." };
   const { supabase, user } = await getViewer();
-  if (!user) return;
-  await supabase.rpc("leave_chat", { p_chat: chatId });
-  touch();
-  redirect("/messages?tab=groups");
+  if (!user) return { ok: false, message: "Log in again." };
+  const { error } = await supabase.rpc(rpc, { p_chat: chatId });
+  if (error) return { ok: false, message: error.code === "42501" && rpc === "delete_owned_team_chat" ? "Only the team chat owner can delete this chat." : friendlyError(error) };
+  touch(chatId);
+  return { ok: true, message: "" };
+}
+
+export async function leaveGroupChat(chatId: string): Promise<R> {
+  return changeGroupChat(chatId, "leave_chat");
+}
+
+export async function deleteGroupChat(chatId: string): Promise<R> {
+  return changeGroupChat(chatId, "delete_owned_team_chat");
 }

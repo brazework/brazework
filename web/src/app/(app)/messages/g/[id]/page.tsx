@@ -1,15 +1,14 @@
 import { avatarSrc } from "@/lib/media";
-import { ArrowLeft, CalendarDays, Hash, LogOut, Users } from "lucide-react";
+import { ArrowLeft, CalendarDays, Hash, Users } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { MemberFaces, type Face } from "@/components/network/member-faces";
 import { CommunityBadge } from "../../../communities/_components/badge";
-import { leaveTeamChat } from "@/lib/chats";
 import { dbFeatures } from "@/lib/db-features";
 import { getViewer } from "@/lib/supabase/server";
 import { GroupComposer, GroupThread, MarkChatRead, TeamSwitcher, type ClubChatLink, type GroupMsg, type Seen } from "./group-client";
-import { CatchMeUp, MemberList } from "./details";
+import { CatchMeUp, GroupChatActions, MemberList } from "./details";
 import { MessageBody } from "@/components/share/message-body";
 import type { Reaction } from "@/components/chat/message-tools";
 import { copilotEnabled } from "@/lib/copilot";
@@ -23,16 +22,16 @@ export default function GroupChatPage({ params }: PageProps<"/messages/g/[id]">)
   );
 }
 
-type Chat = { id: string; kind: "club" | "event" | "team"; community_id: string | null; event_id: string | null; name: string; communities: { name: string; logo_path?: string | null } | null; events: { title: string } | null };
+type Chat = { id: string; kind: "club" | "event" | "team"; community_id: string | null; event_id: string | null; name: string; created_by: string | null; communities: { name: string; logo_path?: string | null } | null; events: { title: string } | null };
 const ICON = { club: Users, event: CalendarDays, team: Hash } as const;
 
 async function Group({ params }: { params: PageProps<"/messages/g/[id]">["params"] }) {
   const { id } = await params;
   const { supabase, user, profile } = await getViewer();
   if (!user || !profile) redirect("/login");
-  const { groupChats, chatExtras: extras, clubProfile } = await dbFeatures();
+  const { groupChats, chatExtras: extras, clubProfile, groupChatControls } = await dbFeatures();
   if (!groupChats) redirect("/messages");
-  const { data: chat } = await supabase.from("chats").select(`id, kind, community_id, event_id, name, communities(name${clubProfile ? ", logo_path" : ""}), events(title)`).eq("id", id).maybeSingle();
+  const { data: chat } = await supabase.from("chats").select(`id, kind, community_id, event_id, name, created_by, communities(name${clubProfile ? ", logo_path" : ""}), events(title)`).eq("id", id).maybeSingle();
   if (!chat)
     return <div data-thread className="contents"><div className="grid h-full place-items-center p-8 text-center text-sm text-muted">This chat isn&apos;t available to you.<Link href="/messages?tab=groups" className="mt-3 underline">Back to messages</Link></div></div>;
   const c = chat as unknown as Chat;
@@ -101,10 +100,8 @@ async function Group({ params }: { params: PageProps<"/messages/g/[id]">["params
         </Link>
         <MemberFaces faces={people.slice(0, 4)} ids={people.map((p) => p.uid)} total={people.length} size={24} className="hidden sm:flex" />
         {club && <TeamSwitcher communityId={club} current={id} chats={clubChats} members={clubPeople} me={user.id} />}
-        {c.kind === "team" && (
-          <form action={async () => { "use server"; await leaveTeamChat(id); }}>
-            <button aria-label="Leave this team chat" title="Leave chat" className="grid size-8 place-items-center rounded-full text-faint transition hover:bg-hover hover:text-text"><LogOut className="size-4" /></button>
-          </form>
+        {(groupChatControls || c.kind === "team") && (
+          <GroupChatActions key={id} chatId={id} kind={c.kind} canDelete={groupChatControls && c.kind === "team" && c.created_by === user.id} />
         )}
       </header>
       <GroupThread msgs={msgs} pics={pics} me={user.id} myName={profile.first_name} chatId={id} seen={seen} reactions={(rxRows ?? []) as Reaction[]} extras={extras} />

@@ -1,7 +1,7 @@
 "use client";
 import { emberCreditCost } from "@/lib/ember-credits";
 import { bubbleCls, dayPillCls } from "@/components/chat/bubble";
-import { ArrowUp, Check, ChevronDown, Eye, Hash, Loader2, Megaphone, Plus, Search, Users, X } from "lucide-react";
+import { ArrowUp, Check, ChevronDown, Eye, Hash, Loader2, Megaphone, Plus, Search, SmilePlus, Users, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { Avatar } from "@/components/ui";
@@ -9,7 +9,7 @@ import { cn } from "@/lib/forge";
 import { useTimeZone } from "../../../events/local-time";
 import { getBrowserClient } from "@/lib/supabase/client";
 import { createTeamChat, markChatRead, sendChatMessage } from "@/lib/chats";
-import { MessageTools, REPLY, ReactionChips, ReplyBar, ReplyQuote, UNSEND_MS, startReply, useReactions, type Reaction, type ReplyTarget } from "@/components/chat/message-tools";
+import { GroupMessageTools, REPLY, ReactionChips, ReplyBar, ReplyQuote, UNSEND_MS, startReply, useReactions, type Reaction, type ReplyTarget } from "@/components/chat/message-tools";
 import { MessageBody } from "@/components/share/message-body";
 import { Ember } from "@/components/ember/ember";
 import { askEmberInChat } from "@/lib/chat-ember";
@@ -40,6 +40,9 @@ export function GroupThread({ msgs, pics = {}, me, myName, chatId, seen = {}, re
   const end = useRef<HTMLDivElement>(null);
   const rx = useReactions("group", me, reactions);
   const [active, setActive] = useState<string | null>(null);
+  useEffect(() => {
+    if (active) document.getElementById(`group-message-tools-${active}`)?.scrollIntoView({ block: "nearest" });
+  }, [active]);
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => { const t = setInterval(() => setNow(Date.now()), 30_000); return () => clearInterval(t); }, []);
   const [pending, setPending] = useState<GroupMsg[]>([]);
@@ -94,8 +97,17 @@ export function GroupThread({ msgs, pics = {}, me, myName, chatId, seen = {}, re
           const joinsNext = !m.announcement && next && !next.announcement && next.sender_id === m.sender_id && !!next.ember === isEmber && day(next.created_at, tz) === d && Date.parse(next.created_at) - Date.parse(m.created_at) < GROUP_MS;
           const isPending = m.id.startsWith("pending-");
           const s = seen[m.id];
+          const toolsId = `group-message-tools-${m.id}`;
+          const toolsOpen = active === m.id;
+          const canUseTools = extras && !isPending;
+          const closeTools = () => {
+            document.getElementById(`group-message-actions-${m.id}`)?.focus({ preventScroll: true });
+            setActive(null);
+          };
           return (
-            <li key={m.id} className={cn("flex flex-col", joinsPrev ? "mt-0.5" : "mt-3")}>
+            <li key={m.id} className={cn("flex flex-col", joinsPrev ? "mt-0.5" : "mt-3")} onKeyDown={(event) => {
+              if (event.key === "Escape" && toolsOpen) closeTools();
+            }}>
               {showDay && <span className={cn("mb-3 self-center", dayPillCls)}>{d}</span>}
               {m.announcement ? (
                 <div className={cn("glass-card mx-auto w-full max-w-xl rounded-2xl border-l-4 border-l-text p-4", isPending && "opacity-60")}>
@@ -108,28 +120,38 @@ export function GroupThread({ msgs, pics = {}, me, myName, chatId, seen = {}, re
               ) : (
                 <div className={cn("flex items-end gap-2", isMine ? "flex-row-reverse" : "flex-row")}>
                   {!isMine && <span className="w-7 shrink-0">{!joinsNext && (isEmber ? <Ember size={28} /> : <Avatar first={m.sender_first} last={m.sender_last} size={28} className="text-[10px]" src={pics[m.sender_id]} />)}</span>}
-                  <div className={cn("flex max-w-[78%] flex-col sm:max-w-[min(78%,calc(100%-15rem))]", isMine ? "items-end" : "items-start")}>
-                    {!isMine && !joinsPrev && <span className="mb-0.5 px-2 text-[11px] font-medium text-muted">{isEmber ? <>Ember <span className="font-normal text-faint">· asked by {m.sender_first}</span></> : <>{m.sender_first} {m.sender_last}</>}</span>}
-                    <div className="group/msg relative">
-                    {extras && !isPending && (
-                      <MessageTools
-                        mine={isMine}
-                        open={active === m.id}
-                        canUnsend={isMine && now - Date.parse(m.created_at) < UNSEND_MS}
-                        onReact={(e) => { setActive(null); void rx.toggle(m.id, e); }}
-                        onReply={() => { setActive(null); startReply(`g:${chatId}`, { id: m.id, name: nameOf(m), body: m.body.slice(0, 140) }); }}
-                        onUnsend={() => { setActive(null); void rx.unsend(m.id); }}
-                      />
-                    )}
-                    <div onClick={(e) => { if (extras && !(e.target as Element).closest("a,button")) setActive((a) => (a === m.id ? null : m.id)); }} className={bubbleCls({ mine: isMine, joinsPrev: !!joinsPrev, joinsNext: !!joinsNext, pending: isPending })}>
-                      {m.reply_to && (() => { const q = byId.get(m.reply_to!); return <ReplyQuote target={q ? { id: q.id, name: nameOf(q), body: q.body } : null} mine={isMine} />; })()}
-                      <MessageBody body={m.body} mine={isMine} />
+                  <div className={cn("min-w-0 w-fit max-w-[85%]", !isMine && "mr-1")}>
+                    {!isMine && !joinsPrev && <div className="mb-0.5 px-2 text-[11px] font-medium text-muted">{isEmber ? <>Ember <span className="font-normal text-faint">· asked by {m.sender_first}</span></> : <>{m.sender_first} {m.sender_last}</>}</div>}
+                    <div className={cn("group/msg flex min-w-0 items-center gap-1", isMine && "flex-row-reverse")}>
+                      <div className={cn("min-w-0", bubbleCls({ mine: isMine, joinsPrev: !!joinsPrev, joinsNext: !!joinsNext, pending: isPending }))}>
+                        {m.reply_to && (() => { const q = byId.get(m.reply_to!); return <ReplyQuote target={q ? { id: q.id, name: nameOf(q), body: q.body } : null} mine={isMine} />; })()}
+                        <MessageBody body={m.body} mine={isMine} />
+                      </div>
+                      {canUseTools && <button
+                        id={`group-message-actions-${m.id}`}
+                        type="button"
+                        aria-label="Message actions"
+                        title="React or reply"
+                        aria-expanded={toolsOpen}
+                        aria-controls={toolsOpen ? toolsId : undefined}
+                        onClick={() => setActive(toolsOpen ? null : m.id)}
+                        className={cn("grid size-8 shrink-0 place-items-center rounded-full text-muted transition hover:bg-hover hover:text-text focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-accent", toolsOpen ? "bg-hover" : "pointer-fine:opacity-0 pointer-fine:group-hover/msg:opacity-100")}
+                      ><SmilePlus className="size-[17px]" /></button>}
                     </div>
                     <ReactionChips list={rx.reactions.filter((x) => x.message_id === m.id)} me={me} mine={isMine} onToggle={(e) => void rx.toggle(m.id, e)} />
-                    </div>
-                    {!joinsNext && <span className="mt-1 px-2 text-[10px] text-faint">{isPending ? "Sending…" : time(m.created_at, tz)}</span>}
+                    {!joinsNext && <div className={cn("mt-1 px-2 text-[10px] text-faint", isMine && "text-right")}>{isPending ? "Sending…" : time(m.created_at, tz)}</div>}
                   </div>
                 </div>
+              )}
+              {!m.announcement && canUseTools && toolsOpen && (
+                <GroupMessageTools
+                  id={toolsId}
+                  mine={isMine}
+                  canUnsend={isMine && now - Date.parse(m.created_at) < UNSEND_MS}
+                  onReact={(emoji) => { closeTools(); void rx.toggle(m.id, emoji); }}
+                  onReply={() => { closeTools(); startReply(`g:${chatId}`, { id: m.id, name: nameOf(m), body: m.body.slice(0, 140) }); }}
+                  onUnsend={() => { closeTools(); void rx.unsend(m.id); }}
+                />
               )}
             </li>
           );
