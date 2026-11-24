@@ -22,12 +22,12 @@ const supabaseOrigins = supabase ? [supabase.origin, supabase.origin.replace(/^h
 const sentryOrigin = process.env.NEXT_PUBLIC_SENTRY_DSN ? new URL(process.env.NEXT_PUBLIC_SENTRY_DSN).origin : null;
 const csp = [
   "default-src 'self'",
-  `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""}`,
+  `script-src 'self' 'unsafe-inline'${process.env.NODE_ENV === "development" ? " 'unsafe-eval'" : ""} https://va.vercel-scripts.com`,
   "style-src 'self' 'unsafe-inline'",
   `img-src 'self' blob: data: ${supabase?.origin ?? ""}`,
   `media-src 'self' blob: data: ${supabase?.origin ?? ""}`,
   "font-src 'self' data:",
-  `connect-src 'self' ${[...supabaseOrigins, ...(sentryOrigin ? [sentryOrigin] : [])].join(" ")}`,
+  `connect-src 'self' ${[...supabaseOrigins, ...(sentryOrigin ? [sentryOrigin] : []), "https://vitals.vercel-insights.com"].join(" ")}`,
   // The event page embeds a Google map.
   "frame-src https://maps.google.com https://www.google.com",
   "object-src 'none'",
