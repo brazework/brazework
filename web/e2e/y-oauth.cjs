@@ -94,7 +94,8 @@ async function providerNewcomer(email, name) {
     const young = new Date(Date.now() - 16 * 365.25 * 864e5).toISOString().slice(0, 10);
     await p.fill('input[name="birthday"]', young);
     await p.getByRole("button", { name: "Continue" }).click();
-    await p.getByText(/at least 18/).waitFor({ timeout: 15000 });
+    // The error, not the field hint ("Kept private. You must be at least 18 to join."), which is always there.
+    await p.getByText("You must be at least 18 to create an account.").waitFor({ timeout: 15000 });
   }, p);
   await step("a professional finishes sign-up, then onboarding, then lands on the feed", async () => {
     await p.fill('input[name="birthday"]', "1994-03-03");
