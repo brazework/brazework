@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { CalendarDays, Globe, GraduationCap, MessagesSquare, PartyPopper, Settings, UserPlus, BadgeCheck } from "lucide-react";
+import { CalendarDays, FileText, Globe, GraduationCap, MessagesSquare, PartyPopper, PenLine, Settings, UserPlus, BadgeCheck } from "lucide-react";
 import { accentTint } from "@/lib/club-look";
 import { openClubChat } from "@/lib/chats";
 import Link from "next/link";
@@ -128,6 +128,12 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
   const liked = new Set((likes.data ?? []).map((l: { post_id: string }) => l.post_id));
   const saved = new Set((saves.data ?? []).map((l: { post_id: string }) => l.post_id));
 
+  // What waits on this officer, and only that (the To do list below).
+  const todos = [
+    { n: toVerify.count ?? 0, label: "milestones to verify", one: "milestone to verify", href: `/c/${c.id}/manage?tab=verify`, show: msOn },
+    { n: joinReqs.count ?? 0, label: "join requests", one: "join request", href: `/c/${c.id}/manage?tab=requests`, show: can(role, "approve") },
+    { n: (held.data ?? []).length, label: "held posts to review", one: "held post to review", href: `/c/${c.id}?tab=held`, show: isMod },
+  ].filter((t) => officer && t.show && t.n > 0);
   return (
     <>
       <Panel className="overflow-hidden p-0">
@@ -161,6 +167,10 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
             )}
             {rank(role) >= 2 && (
               <Link href={`/c/${c.id}/manage`} className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-line px-4 text-sm transition hover:bg-hover"><Settings className="size-4" /> Manage</Link>
+            )}
+            {/* The core loop, one tap from the club: log what you built, and its officers sign it. */}
+            {me && c.type !== "class" && rank(role) < 2 && msOn && (
+              <Link href="/projects" className="inline-flex h-10 items-center gap-1.5 rounded-lg bg-text px-4 text-sm font-medium text-surface transition active:scale-95"><PenLine className="size-4" /> Get work signed</Link>
             )}
             <JoinButton cid={c.id} privacy={c.privacy} state={me ? "member" : requested ? "requested" : "none"} isOwner={role === "owner"} />
           </div>
@@ -197,16 +207,18 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
           <section aria-label="To do" className="mt-5">
             <h2 className="mb-2 text-sm font-semibold">To do</h2>
             <List label="Officer to-dos">
-              {[
-                { n: toVerify.count ?? 0, label: "milestones to verify", href: `/c/${c.id}/manage?tab=verify`, show: msOn },
-                { n: joinReqs.count ?? 0, label: "join requests", href: `/c/${c.id}/manage?tab=requests`, show: can(role, "approve") },
-                { n: (held.data ?? []).length, label: "held posts to review", href: `/c/${c.id}?tab=held`, show: isMod },
-              ].filter((t) => t.show).map((t) => (
-                <ListRow key={t.label} href={t.href} title={<span className={t.n ? "text-text" : "font-normal text-muted"}>{t.label}</span>}
-                  leading={<span className={t.n ? "grid h-6 min-w-6 place-items-center rounded-full bg-text px-1.5 text-xs font-semibold text-bg tabular-nums" : "grid h-6 min-w-6 place-items-center rounded-full bg-surface-2 px-1.5 text-xs text-faint tabular-nums"}>{t.n}</span>} />
+              {/* Only what waits on you: a row of zeros is noise. Nothing waiting says so in one line. */}
+              {todos.map((t) => (
+                <ListRow key={t.label} href={t.href} title={<span className="text-text">{t.n === 1 ? t.one : t.label}</span>}
+                  leading={<span className="grid h-6 min-w-6 place-items-center rounded-full bg-text px-1.5 text-xs font-semibold text-bg tabular-nums">{t.n}</span>} />
               ))}
+              {!todos.length && <ListRow href={`/c/${c.id}/manage`} leading={<span className="grid size-6 place-items-center"><BadgeCheck className="size-4 text-ok" /></span>}
+                title={<span className="font-normal text-text-2">All caught up: nothing to verify, approve or review</span>} />}
               <ListRow href={nextEvent ? `/events/${nextEvent.id}` : `/c/${c.id}?tab=events`} leading={<span className="grid size-6 place-items-center"><CalendarDays className="size-4 text-faint" /></span>}
                 title={<span className="font-normal text-text-2">{nextEvent ? `Next: ${nextEvent.title}` : "No event planned. Host one"}</span>} />
+              {/* The semester report (manage/report-client.tsx): what the club built, for a dean, an advisor or a sponsor. */}
+              {rank(role) >= 4 && <ListRow href={`/c/${c.id}/manage#report`} leading={<span className="grid size-6 place-items-center"><FileText className="size-4 text-faint" /></span>}
+                title={<span className="font-normal text-text-2">Semester report: share what the club built with your dean or sponsors</span>} />}
             </List>
           </section>
         )}
