@@ -83,8 +83,18 @@ for (const c of commits) {
     `\nNext time, start the commit with an issue ID (\`${TEAM}-123: …\`) to link it instead.\n\n<!-- commit ${c.id} -->`,
   ].filter(Boolean).join("\n");
   const labelIds = [label("Commit"), label(typeFor(subject, files))].filter(Boolean);
-  const { issueCreate } = await gql(`mutation($i: IssueCreateInput!) { issueCreate(input: $i) { success issue { identifier } } }`, {
-    i: { teamId: team.id, title: subject, description, stateId: done, labelIds, projectId: projectFor(files) },
-  });
+  let issueCreate;
+  try {
+    ({ issueCreate } = await gql(`mutation($i: IssueCreateInput!) { issueCreate(input: $i) { success issue { identifier } } }`, {
+      i: { teamId: team.id, title: subject, description, stateId: done, labelIds, projectId: projectFor(files) },
+    }));
+  } catch (e) {
+    // Linear's Free plan stops new issues past its issue cap ("usage limit exceeded"). That shouldn't
+    // fail main's checks or stop the commits after this one being linked and closed, so warn and go on.
+    // Re-run the job once there's room again: it logs each commit only once.
+    if (!/usage limit/i.test(e.message)) throw e;
+    console.log(`::warning title=Linear issue limit::${short(c)} wasn't logged: Linear says "${e.message}" (the Free plan's issue cap). Archive old issues or upgrade, then re-run this job to log it.`);
+    continue;
+  }
   console.log(`${short(c)}: logged as ${issueCreate.issue.identifier}`);
 }
