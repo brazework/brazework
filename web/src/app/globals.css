@@ -470,6 +470,9 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity
    tone, --ember-c the accent that swirls through it.  */
 /* Torch is brazed copper in both themes: the one place the brand colour lives inside the app. */
 :root { --ember-a: #ffd9bf; --ember-b: #9a3f1a; --ember-c: #e8946a; --ember-plasma: 0.9; --ember-fresnel: 0.9; }
+/* The orb itself is black glass with white light (Josh, 2026-11-26: "make the orb black"), the palette it
+   had before as Mono. Set on the orb only, so the copper above stays on the AI chips' edges. */
+.ember { --ember-a: #ffffff; --ember-b: #18181b; --ember-c: #71717a; --ember-plasma: 0.5; --ember-fresnel: 0.55; }
 
 /* Moods are light and motion: idle breathes and drifts, thinking swirls fast and pulses, happy
    brightens and bounces, sleepy dims and slows, surprised flares. */

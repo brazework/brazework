@@ -3,8 +3,9 @@ import { cn } from "@/lib/forge";
 // Torch, Brazework's AI, shown as a glowing glass orb with light moving inside it (Brazework is where
 // sparks fly). It appears wherever the app talks to you: the Ask Torch bar, Torch's page, the sidebar,
 // empty and waiting states. Pure SVG + CSS (no JavaScript), so it renders on the server.
-// The orb is back (2026-11-26, Josh: "the high quality orb"): the black disc with a spark that replaced
-// it earlier that day (#249, #254) is gone. The component keeps its old name (Ember) in code; what
+// The orb is back (2026-11-26, Josh: "the high quality orb", then "make the orb black"): black glass with
+// white light (globals.css sets the colours on .ember). The black disc with a spark that replaced it
+// earlier that day (#249, #254) is gone. The component keeps its old name (Ember) in code; what
 // people call the assistant is set in copy (docs/naming.md).
 //
 // Built like a lit glass sphere, back to front: a two-tone outer glow; a deep base; soft plasma
