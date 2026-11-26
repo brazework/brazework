@@ -10,26 +10,32 @@ export type BenchProject = { id: string; title: string; summary: string; status:
 // Your projects first: where each one stands on the way to proof, and the next thing to do.
 export function Workbench({ projects, interests, copilot, stack, specsOn = false, filesOn = false }: { projects: BenchProject[]; interests: string[]; copilot: boolean; stack: boolean; specsOn?: boolean; filesOn?: boolean }) {
   if (!projects.length) {
+    // No projects yet (redesigned 2026-11-26: clean glass, no grid, dashes or tiles). One clear start,
+    // the three kinds of work people bring, and the two ways in.
     return (
-      <section aria-label="Your projects" className="sheet-grid mt-6 rounded-2xl border border-dashed border-line-strong p-6">
-        <h2 className="text-lg font-semibold tracking-tight">Start your first project</h2>
-        <p className="mt-1 max-w-xl text-sm text-muted">A project is anything you&apos;re building: a robot, a rocket, a model, an experiment, an app. Post updates as you go, and get each milestone signed by someone who saw it.</p>
-        <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
-          {[[Cpu, "Hardware", "A flight computer, a chassis, a test rig. Photos and specs, no repo needed."], [FlaskConical, "Research", "An experiment or model: what you measured and what it showed."], [Wrench, "Software", "An app, a tool or a library. Torch can import it from GitHub."]].map(([Icon, t, d]) => {
+      <section aria-label="Your projects" className="home-glass relative mt-6 overflow-hidden rounded-3xl p-6 sm:p-8">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+          <div className="max-w-xl">
+            <p className="text-xs font-medium tracking-wide text-muted uppercase">Your projects</p>
+            <h2 className="mt-1.5 text-[1.6rem] leading-tight font-semibold tracking-[-0.025em] sm:text-[2rem]">Start your first project</h2>
+            <p className="mt-2 text-[15px] leading-relaxed text-text-2">Anything you&apos;re building counts. Post updates as you go, and get each milestone signed by someone who saw it: that&apos;s what goes on your record.</p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <ProjectEditor interests={interests} copilot={copilot} stack={stack} specsOn={specsOn} />
+            {copilot && <Link href="/copilot?q=Import%20my%20GitHub%20repo%20as%20a%20project" className="inline-flex h-10 items-center gap-1.5 rounded-lg bg-[color-mix(in_oklab,var(--text)_6%,transparent)] px-4 text-sm font-medium transition hover:bg-[color-mix(in_oklab,var(--text)_10%,transparent)]"><GitBranch className="size-4" /> Import from GitHub · {emberCreditCost("ask")}</Link>}
+          </div>
+        </div>
+        <ul className="mt-7 grid grid-cols-1 gap-x-8 gap-y-4 sm:grid-cols-3">
+          {[[Cpu, "Hardware", "A flight computer, a chassis, a test rig. Photos and specs, no repo needed."], [FlaskConical, "Research", "An experiment or a model: what you measured and what it showed."], [Wrench, "Software", "An app, a tool or a library. Torch can import it from GitHub."]].map(([Icon, t, d]) => {
             const I = Icon as typeof Cpu;
             return (
-              <div key={t as string} className="rounded-2xl border border-line bg-surface p-4">
-                <I className="size-5 text-text-2" />
-                <div className="mt-2 text-sm font-semibold">{t as string}</div>
-                <p className="mt-1 text-xs leading-relaxed text-muted">{d as string}</p>
-              </div>
+              <li key={t as string} className="flex gap-3">
+                <I className="mt-0.5 size-5 shrink-0 text-text-2" aria-hidden="true" />
+                <span><span className="block text-sm font-semibold">{t as string}</span><span className="mt-0.5 block text-sm leading-relaxed text-muted">{d as string}</span></span>
+              </li>
             );
           })}
-        </div>
-        <div className="mt-5 flex flex-wrap items-center gap-2">
-          <ProjectEditor interests={interests} copilot={copilot} stack={stack} specsOn={specsOn} />
-          {copilot && <Link href="/copilot?q=Import%20my%20GitHub%20repo%20as%20a%20project" className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-line px-4 text-sm font-medium transition hover:bg-hover"><GitBranch className="size-4" /> Import from GitHub with Torch · {emberCreditCost("ask")}</Link>}
-        </div>
+        </ul>
       </section>
     );
   }

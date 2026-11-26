@@ -250,7 +250,7 @@ async function ProjectView({ params, searchParams }: { params: PageProps<"/proje
           {builder && <PostUpdate projectId={p.id} title={p.title} attach={filesOn} />}
           {log.length > 0 && <BuildLogTimeline entries={log} liked={liked} saved={saved} me={user.id} projectId={p.id} ownerId={p.owner_id} filesByPost={filesByPost} replies={replies} viewer={{ id: user.id, first: viewerProfile?.first_name ?? "", last: viewerProfile?.last_name ?? "" }} />}
           {!log.length && (own ? (
-            <p className="rounded-xl border border-dashed border-line-strong px-4 py-3 text-sm text-muted">
+            <p className="glass-card rounded-xl px-4 py-3 text-sm text-muted">
               Log what you did, what broke and what you learned: a few lines a week adds up to proof. Or let your AI tool do it as you work: <Link href="/settings/tools" className="font-medium text-text underline underline-offset-4">connect Claude Code, Cursor or Codex</Link>.
             </p>
           ) : <p className="text-sm text-muted">No updates yet.</p>)}

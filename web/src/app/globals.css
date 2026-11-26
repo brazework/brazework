@@ -574,13 +574,9 @@ select option { background-color: var(--surface); color: var(--text); }
 
 /* A drawing sheet's grid, in ink at a whisper (docs/design/app.md): behind a project's cover or an
    empty state, once per page at most. It follows the theme: dark ink on light, light ink on dark. */
+/* Formerly a drafting grid; now a plain soft surface (no lines anywhere, 2026-11-26). */
 .sheet-grid {
   background-color: var(--surface-2);
-  background-image:
-    linear-gradient(color-mix(in oklab, var(--text) 6%, transparent) 1px, transparent 1px),
-    linear-gradient(90deg, color-mix(in oklab, var(--text) 6%, transparent) 1px, transparent 1px);
-  background-size: 24px 24px;
-  background-position: -1px -1px;
 }
 
 /* A signature landing (components/app/fresh-seal.tsx): the seal comes down like a stamp, once. */

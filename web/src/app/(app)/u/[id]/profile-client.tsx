@@ -296,7 +296,7 @@ function ProjectDialog({ project, interests, onClose, copilot = false, stack = f
           <button type="button" onClick={onClose} aria-label="Close" className="grid size-8 place-items-center rounded-full text-faint hover:bg-hover hover:text-text"><X className="size-4" /></button>
         </div>
         {!project && (
-          <div className="rounded-2xl border border-dashed border-line-strong bg-surface-2/50 p-3">
+          <div className="glass-card rounded-2xl p-3">
             <label htmlFor="gh-url" className="flex items-center gap-1.5 text-xs font-medium text-muted"><LinkIcon className="size-3.5" /> Start from a link (optional)</label>
             <p className="mt-0.5 text-xs text-faint">A repo, a CAD model, a doc, a video: wherever the work lives.</p>
             <div className="mt-2 flex gap-2">
