@@ -4,7 +4,7 @@ import { cn } from "@/lib/forge";
 import { AUDIENCES, tiersFor, type Audience, type Tier } from "@/lib/pricing";
 import { SwipeControls } from "./swipe-controls";
 
-// The price list (lib/pricing.ts): who it's for, then two tiers each. /pricing shows every audience;
+// The price list (lib/pricing.ts): who it's for, then two or three tiers each. /pricing shows every audience;
 // the landing page passes `only` and shows builders alone (lib/pricing.ts LANDING_AUDIENCES), with
 // links to the rest. Each audience's heading is an anchor (/pricing#pricing-companies).
 // Server-rendered, no state.
@@ -21,7 +21,7 @@ export function PricingTiers({ className, only, swipeOnMobile = false }: { class
           </div>
           {rowId && <SwipeControls rowId={rowId} count={tiers.length} hint="Swipe to compare plans" />}
           <div id={rowId} data-landing-pricing={swipeOnMobile || undefined} className={cn(
-            "grid grid-cols-1 md:grid-cols-2 md:divide-x md:divide-line",
+            "grid grid-cols-1 md:divide-x md:divide-line", tiers.length === 3 ? "md:grid-cols-3" : "md:grid-cols-2",
             swipeOnMobile
               ? "landing-swipe-row mt-2 md:mt-4 md:overflow-hidden md:rounded-[1.25rem] md:border md:border-line md:bg-surface"
               : "mt-4 overflow-hidden rounded-[1.25rem] border border-line bg-surface",

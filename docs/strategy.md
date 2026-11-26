@@ -20,7 +20,16 @@ Accreditation is the strongest pitch: faculty assemble that evidence by hand eve
 
 **Why this is a better model than companies first.** Companies only pay once there's enough verified talent to search, which needs scale we don't have. A school's offices already own budgets for the outcomes above, faculty verification makes the record stronger for students and employers alike, and a school whose classes and semesters live in Brazework renews. The risks are speed (6 to 12 months from first conversation to contract, through budgets, procurement, IT and FERPA review) and cold start (a dashboard with nothing in it sells nothing). So the free student and club side stays the front door, and sponsorships and the hiring plan can bring in cash while pilots run.
 
-**Price.** Per school, never per club or per student: $6,000 a year for the portal with 2 faculty seats, $1,200 per extra seat (`SCHOOL` in `web/src/lib/pricing.ts`). Every school pays, pilots included: a one-semester pilot for one department is $1,500, credited toward the first year (`SCHOOL.pilot`; the number is a first pick to test). A per-club price would give a school a reason to keep clubs off.
+**Price** (`SCHOOL`, `CAMPUS_BANDS` and `TALENT` in `web/src/lib/pricing.ts`; first picks to test). Never per club or per student, and every school pays, pilots included:
+
+| | Price | Why this number |
+|---|---|---|
+| Semester pilot | $1,500, one department, credited toward the first year | Small enough for a chair to approve; real money, so it tests intent |
+| Department | $6,000 a year with 5 faculty seats, $600 per extra seat (10 seats: $9,000) | Under the amount most schools can sign without a formal bid, so a dean or chair can say yes |
+| Campus | $18,000 (up to 5,000 students), $30,000 (up to 15,000), $45,000 (above) a year; every department, unlimited faculty | Banded by enrollment, not by who joins; in line with or below the student-org and assessment tools campuses already buy. Past 25 seats a campus costs less than a department, and the price list says so |
+| Recruiters | Starter $4,800 a year (1 seat); hiring plan $15,000 (2 seats); sponsorships $2,500 per chapter per semester, all to the club, plus a $500 fee | Starter lets smaller and local employers in |
+
+Hosting and AI cost per school is small, so the margin is high (about 90%, *assumption*). Ten department deals and five campuses are about $200,000 a year. A per-club or per-student price would give a school a reason to keep people off.
 
 **The student portal** (the build order below says which pull request does what).
 1. **School email registry.** Students join with their university email; the domain places them in their school automatically (`school_domains` and `is_school_email()` exist; automatic placement doesn't yet). Students at schools that haven't signed up are still grouped by school, so they're there when it does.
@@ -36,8 +45,8 @@ Accreditation is the strongest pitch: faculty assemble that evidence by hand eve
 | Who | Uses | Pays |
 |---|---|---|
 | Students and clubs | Projects, verification, their record | Never |
-| **Universities** (the main customer) | The portal: classes, faculty verification, reports | Every school, pilots included: $1,500 for a one-department semester pilot (credited toward the first year), then the portal and faculty seats |
-| Recruiters | Search by verified work, message students, sponsor clubs | Search seats and sponsorships (`lib/pricing.ts`) |
+| **Universities** (the main customer) | The portal: classes, faculty verification, reports | Every school, pilots included: a $1,500 semester pilot, then a department ($6,000 a year) or the campus (from $18,000) |
+| Recruiters | Search by verified work, message students, sponsor clubs | Starter ($4,800), hiring plan ($15,000), sponsorships |
 | Handshake, LinkedIn, applicant-tracking systems (Greenhouse, Lever) | Read verified work, with each student's consent | Partner access, once a few campuses are live |
 
 The flow: a student joins with their school email and is placed at their school; their classes come from the roster; each project sits under a class or a club; the professor or officer verifies it; it lands at once on the student's record, the school's reports and recruiter search; the student can add it to LinkedIn or Handshake as verified.

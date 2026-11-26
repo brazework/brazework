@@ -85,7 +85,7 @@ const SCHOOL = "University of Hartford";
       await row.click();
       await ben.waitForURL(/\/school$/, { timeout: 15000 });
       await ben.getByRole("heading", { level: 1, name: SCHOOL }).waitFor({ timeout: 15000 });
-      await ben.getByRole("link", { name: /Rocketry Club/ }).waitFor();
+      await ben.locator("main").getByRole("link", { name: /Rocketry Club/ }).waitFor();
       await ben.getByText(`${SCHOOL} isn't on Brazework yet`).waitFor();
       await ben.getByRole("link", { name: /What schools get/ }).waitFor();
       await ben.getByText("Verified class projects").waitFor();

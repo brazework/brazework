@@ -176,7 +176,7 @@ const psql = (sql) => execSync(`docker exec -i forge-e2e-db psql -U postgres -h 
   await step("/pricing is public: schools pay first, students and clubs never, then companies", async () => {
     await go(p3, "/pricing");
     await p3.getByRole("heading", { name: /Schools pay/ }).waitFor({ timeout: 15000 });
-    for (const t of ["Students and clubs", "Companies", "Semester pilot", "$1,500", "$6,000", "Every student and every club included", "Book a pilot", "$15,000"]) await p3.getByText(t, { exact: false }).first().waitFor();
+    for (const t of ["Students and clubs", "Companies", "Semester pilot", "$1,500", "$6,000", "From $18,000", "Every student and every club", "Starter", "Book a pilot", "$15,000"]) await p3.getByText(t, { exact: false }).first().waitFor();
     const order = await p3.locator("h3[id^=pricing-]").evaluateAll((els) => els.map((el) => el.id));
     if (order.join() !== "pricing-schools,pricing-builders,pricing-companies") throw new Error(`price list order: ${order.join()}`);
     if (await p3.getByRole("link", { name: "Get Plus" }).count()) throw new Error("Plus is still on the public price list");

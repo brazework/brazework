@@ -1,11 +1,11 @@
 // What Brazework costs (lib/pricing.ts): one config for /pricing, /schools and /plus. Run: npm test
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { AUDIENCES, PLUS, PLUS_TIER, SALES, SALES_KINDS, SCHOOL_SOON, TIERS, tiersFor } from "@/lib/pricing";
+import { AUDIENCES, CAMPUS_SOON, PLUS, PLUS_TIER, SALES, SALES_KINDS, SCHOOL_SOON, TIERS, tiersFor } from "@/lib/pricing";
 
-test("every audience has two tiers and exactly one primary call to action", () => {
+test("every audience has two or three tiers and exactly one primary call to action", () => {
   for (const a of AUDIENCES) {
-    assert.equal(tiersFor(a.id).length, 2, a.id);
+    assert.ok([2, 3].includes(tiersFor(a.id).length), a.id);
     assert.equal(tiersFor(a.id).filter((t) => t.featured).length, 1, `${a.id}: one primary`);
   }
   for (const t of TIERS) {
@@ -36,17 +36,23 @@ test("the record is free; the paid tier isn't called Pro and its prices come fro
   assert.ok(PLUS_TIER.price.includes(String(PLUS.everyoneYear)) && PLUS_TIER.note.includes(String(PLUS.student)));
 });
 
-test("schools pay for a portal and their faculty seats, never per club, chapter or student", async () => {
-  const { SCHOOL, schoolPrice } = await import("@/lib/pricing");
-  assert.equal(schoolPrice(0), SCHOOL.portal, "the portal alone");
-  assert.equal(schoolPrice(SCHOOL.seatsIncluded), SCHOOL.portal, "the included seats cost nothing extra");
-  assert.equal(schoolPrice(8), SCHOOL.portal + (8 - SCHOOL.seatsIncluded) * SCHOOL.perAdvisor);
-  assert.equal(schoolPrice(8), 13_200);
+test("schools pay by department or campus and by faculty seat, never per club, chapter or student", async () => {
+  const { SCHOOL, CAMPUS_BANDS, departmentPrice, campusPrice, seatsWhereCampusWins } = await import("@/lib/pricing");
+  assert.equal(departmentPrice(0), SCHOOL.department, "the department alone");
+  assert.equal(departmentPrice(SCHOOL.seatsIncluded), SCHOOL.department, "the included seats cost nothing extra");
+  assert.equal(departmentPrice(10), 9_000);
+  assert.equal(campusPrice(4000), 18_000);
+  assert.equal(campusPrice(12000), 30_000);
+  assert.equal(campusPrice(40000), 45_000);
+  // Bands only go up with size, and a big department is told when the campus license is cheaper.
+  for (let i = 1; i < CAMPUS_BANDS.length; i++) assert.ok(CAMPUS_BANDS[i].price > CAMPUS_BANDS[i - 1].price);
+  assert.ok(departmentPrice(seatsWhereCampusWins()) >= campusPrice(1));
   // A price per club would give a school a reason to keep clubs off Brazework.
   for (const t of tiersFor("schools")) assert.ok(!/per (active )?(club|chapter|student)/i.test(`${t.price} ${t.note}`), t.id);
   const school = TIERS.find((t) => t.id === "school")!;
-  assert.ok(school.price.includes("6,000") && school.note.includes("1,200"), "the card shows the portal and the seat price");
-  assert.ok(school.points.some((p) => /every student and every club included/i.test(p)));
+  assert.ok(school.price.includes("6,000") && school.note.includes("600"), "the card shows the department and the seat price");
+  assert.ok(school.points.some((p) => /every student and every club/i.test(p)));
+  assert.ok(TIERS.find((t) => t.id === "campus")!.points.some((p) => /unlimited faculty/i.test(p)));
 });
 
 test("every school pays, pilots included: the pilot is credited toward the first year", async () => {
@@ -55,12 +61,14 @@ test("every school pays, pilots included: the pilot is credited toward the first
   const pilot = TIERS.find((t) => t.id === "pilot")!;
   assert.equal(pilot.price, `$${SCHOOL.pilot.toLocaleString("en-US")}`);
   assert.match(pilot.note, /credited toward your first year/i);
-  assert.ok(SCHOOL.pilot < SCHOOL.portal);
+  assert.ok(SCHOOL.pilot < SCHOOL.department);
 });
 
 test("a school never pays for what isn't built: the portal marks what's coming", () => {
   const school = TIERS.find((t) => t.id === "school")!;
   for (const soon of SCHOOL_SOON) assert.ok(school.points.includes(`${soon} (building with pilot schools)`), soon);
+  const campus = TIERS.find((t) => t.id === "campus")!;
+  for (const soon of CAMPUS_SOON) assert.ok(campus.points.includes(`${soon} (building with pilot schools)`), soon);
   // Nothing on the pilot card is a promise: it's only what's built today.
   const pilot = TIERS.find((t) => t.id === "pilot")!;
   for (const soon of SCHOOL_SOON) assert.ok(!pilot.points.some((p) => p.includes(soon)), soon);
