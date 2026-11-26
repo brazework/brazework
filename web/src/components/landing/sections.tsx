@@ -68,7 +68,7 @@ export function ForSchools() {
 const FOR = [
   { icon: BadgeCheck, who: "Students", body: "Your classes, clubs, projects and deadlines in one place. Your professor or club verifies what you built, and it's yours after you graduate. Free with your school email.", cta: "Start your record", href: "/signup" },
   { icon: Users, who: "Clubs", body: "Officers verify what members build, and your school sees what the club does. Free for every club and member.", cta: "Bring your club", href: "#pilot" },
-  { icon: GraduationCap, who: "Schools", body: "Run your courses on it, starting with the project courses an LMS does worst. Faculty grade and verify in one step, and your offices get the reports.", cta: "What schools get", href: "/schools" },
+  { icon: GraduationCap, who: "Schools", body: "Run your courses on it, beginning with the project courses an LMS does worst. Faculty grade and verify in one step, and your offices get the reports.", cta: "What schools get", href: "/schools" },
 ];
 
 export function Audiences() {
