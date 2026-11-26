@@ -24,7 +24,10 @@ const { BASE, step, browser, as, go, summary } = require("./lib.cjs");
     await go(cara, clubUrl);
     const todo = cara.getByRole("region", { name: "To do" });
     await todo.waitFor({ timeout: 15000 });
-    for (const t of ["milestones to verify", "join requests"]) if (!(await todo.getByText(t).count())) throw new Error(`missing: ${t}`);
+    // Only what waits shows; with nothing waiting it says so, and the next event and the report are there.
+    if (!(await todo.getByText(/to verify|join request|All caught up/).count())) throw new Error("the list says neither what waits nor that nothing does");
+    if (await todo.getByText(/^0$/).count()) throw new Error("the list shows a row of zero");
+    await todo.getByText(/Semester report/).waitFor();
     await go(josh, clubUrl);
     if (await josh.getByRole("region", { name: "To do" }).count()) throw new Error("members shouldn't see the officer to-do list");
   }, cara);
