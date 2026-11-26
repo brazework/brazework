@@ -62,7 +62,7 @@ const psql = (sql) => execSync(`docker exec -i ${process.env.E2E_STACK || "forge
     const text = await page.locator("main").innerText();
     if (/Next: Join your club/.test(text)) throw new Error("Today told a professional to join a club first");
     // Asked about their work, not a semester or a club (lib/front-door.ts firstBuildCopy).
-    await page.getByText(/^What are you working on, /).waitFor();
+    await page.getByLabel(/^What are you working on, /).waitFor();
     const box = await page.getByRole("region", { name: "Your first build" }).innerText();
     if (/semester|club/i.test(box)) throw new Error("the first-build box talks about a semester or a club: " + box.replace(/\s+/g, " ").slice(0, 200));
   }, page);

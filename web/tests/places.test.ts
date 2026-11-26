@@ -3,7 +3,7 @@
 // they can't disagree. Run: npm test
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { MENU_PAGES, PLACES, placeFor, placeTabsFor } from "@/lib/places";
+import { MENU_PAGES, PLACES, phoneTabsFor, placeFor, placeTabsFor, placesFor } from "@/lib/places";
 
 test("five places, in order, on the same routes as before", () => {
   assert.deepEqual(PLACES.map((p) => p.label), ["Home", "Projects", "Clubs", "Record", "Chats"]);
@@ -55,3 +55,14 @@ function tabs(path: string) {
   const t = placeTabsFor(path);
   return t && { place: t.place.id, active: t.active };
 }
+
+test("at a school, School is a place right after Home; on a phone it takes Chats' slot", () => {
+  assert.deepEqual(placesFor(false), PLACES, "everyone else keeps the five");
+  assert.deepEqual(placesFor(true).map((p) => p.label), ["Home", "School", "Projects", "Clubs", "Record", "Chats"]);
+  assert.deepEqual(phoneTabsFor(true).map((p) => p.label), ["Home", "School", "Projects", "Clubs", "Record"]);
+  assert.deepEqual(phoneTabsFor(false).map((p) => p.label), ["Home", "Projects", "Clubs", "Record", "Chats"]);
+  // /school lights School, not Clubs, and Clubs no longer carries a "Your school" tab.
+  assert.equal(placeFor("/school", placesFor(true))?.id, "school");
+  assert.ok(!placesFor(true).find((p) => p.id === "clubs")!.tabs.some((t) => t.id === "school"));
+  assert.equal(placeFor("/school")?.id, "clubs", "without School, /school stays under Clubs");
+});

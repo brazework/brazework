@@ -9,7 +9,7 @@ import { UpdatesButton, UpdatesDialog, startTour } from "@/components/tour/tour-
 import { Avatar, Logo, menuCls, menuItemCls } from "@/components/ui";
 import { MyStatus, WithPresence } from "@/components/presence/presence";
 import { cn } from "@/lib/forge";
-import { MENU_PAGES, PLACES, placeFor, type BadgeKey, type PlaceId } from "@/lib/places";
+import { MENU_PAGES, PLACES, phoneTabsFor, placeFor, placesFor, type BadgeKey, type PlaceId } from "@/lib/places";
 import { NavTile, TILE } from "@/components/app/nav-tile";
 
 export type Badges = Record<BadgeKey, number>;
@@ -19,8 +19,10 @@ export type Badges = Record<BadgeKey, number>;
 // Chats (who's reaching out?). The list itself, and which place a page belongs to, live in
 // lib/places.ts; here they only get their icons. There is no More drawer: every other page sits inside
 // one of the five, a tab away (components/app/place-tabs.tsx), and settings are on your avatar.
-const PLACE_ICON: Record<PlaceId, typeof Sun> = { home: House, projects: FolderGit2, clubs: Users, record: BadgeCheck, inbox: MessageCircle };
+const PLACE_ICON: Record<PlaceId, typeof Sun> = { home: House, school: GraduationCap, projects: FolderGit2, clubs: Users, record: BadgeCheck, inbox: MessageCircle };
 const NAV = PLACES.map((p) => ({ ...p, icon: PLACE_ICON[p.id] }));
+// At a school, School is a place after Home (lib/places.ts placesFor).
+const navFor = (atSchool: boolean) => placesFor(atSchool).map((p) => ({ ...p, icon: PLACE_ICON[p.id] }));
 
 // Phones keep one sheet with every page inside the places (lib/places.ts MENU_PAGES).
 const MENU_ICON: Record<string, typeof Sun> = { "/notifications": Bell, "/school": GraduationCap, "/events": CalendarDays, "/dashboard": LayoutDashboard, "/settings": Settings };
@@ -60,7 +62,8 @@ export const SIDEBAR_COOKIE = "forge-sidebar";
 
 export function Sidebar({ first, last, userId, badges, avatar, initialCollapsed = false, clubs = [], builds = [], school = null, classes = [] }: { first: string; last: string; userId: string; badges: Badges; avatar?: string | null; clubs?: { id: string; name: string; image?: string | null }[]; builds?: { id: string; name: string }[]; initialCollapsed?: boolean; school?: string | null; classes?: { id: string; course: string; name: string }[] }) {
   const path = usePathname();
-  const here = placeFor(path)?.id;
+  const nav = navFor(!!school);
+  const here = placeFor(path, nav)?.id;
   const [collapsed, setCollapsed] = useState(initialCollapsed);
   const toggle = () => {
     const next = !collapsed;
@@ -91,7 +94,7 @@ export function Sidebar({ first, last, userId, badges, avatar, initialCollapsed 
           page (components/ember/ask-bar.tsx). Torch's own page (history, your tools' drafts) is the row
           under the places. */}
       <nav data-tour="menu" aria-label="Main" className={cn("flex shrink-0 flex-col gap-0.5", collapsed ? "mt-6" : "mt-7")}>
-        {NAV.map((n) => {
+        {nav.map((n) => {
           const active = here === n.id;
           const count = n.badge ? badges[n.badge] : 0;
           return (
@@ -156,13 +159,13 @@ export function Sidebar({ first, last, userId, badges, avatar, initialCollapsed 
             const active = path === "/school";
             return (
               <>
-                {!collapsed && <div className={cn(GROUP_LABEL, clubs.length > 0 && "mt-2")}>School</div>}
-                <Link href="/school" title={collapsed ? school : undefined} aria-current={active ? "page" : undefined} data-testid="sidebar-school"
-                  className={cn(ROW, collapsed ? "justify-center px-0" : "px-1.5", active ? "font-medium text-text" : "text-text-2 hover:bg-hover/70 hover:text-text")}>
-                  {active && <motion.span layoutId="club-active" className="nav-pill absolute inset-0 rounded-md" transition={{ type: "spring", stiffness: 400, damping: 34 }} />}
-                  <NavTile icon={GraduationCap} active={active} />
-                  {!collapsed && <span className="relative truncate">{school}</span>}
-                </Link>
+                {/* School is a place above (lib/places.ts); here, its name heads this term's classes. */}
+                {!collapsed && (
+                  <Link href="/school" data-testid="sidebar-school" aria-current={active ? "page" : undefined}
+                    className={cn(GROUP_LABEL, "flex items-center gap-1.5 truncate rounded-md transition hover:text-text", clubs.length > 0 && "mt-2", active && "text-text")}>
+                    <GraduationCap className="size-3.5 shrink-0" aria-hidden="true" /><span className="truncate">{school}</span>
+                  </Link>
+                )}
                 {/* This semester's classes, under the school (supabase/school-portal.sql my_classes). */}
                 {classes.map((c) => {
                   const on = path.startsWith(`/c/${c.id}`);
@@ -243,10 +246,10 @@ function YouMenu({ first, last, userId, avatar, collapsed, path }: { first: stri
 
 // Phones: a slim top bar (logo, create, notifications, menu) plus a bottom tab bar with the same
 // five places as the sidebar.
-const TABS = NAV;
-
-export function MobileBar({ first, last, badges, avatar }: { first: string; last: string; badges: Badges; avatar?: string | null }) {
+export function MobileBar({ first, last, badges, avatar, atSchool = false }: { first: string; last: string; badges: Badges; avatar?: string | null; atSchool?: boolean }) {
   const path = usePathname();
+  // Five slots: at a school, School takes Chats' slot and Chats moves up beside the bell.
+  const TABS = phoneTabsFor(atSchool).map((p) => ({ ...p, icon: PLACE_ICON[p.id] }));
   const [sheet, setSheet] = useState<"more" | "create" | null>(null);
   // Close the sheet when the page changes or Escape is pressed.
   const [lastPath, setLastPath] = useState(path);
@@ -262,7 +265,7 @@ export function MobileBar({ first, last, badges, avatar }: { first: string; last
   }, [sheet]);
   const rest = MENU_PAGES.map((m) => ({ ...m, icon: MENU_ICON[m.href] ?? Settings }));
   const restCount = badges.invites;
-  const here = placeFor(path)?.id;
+  const here = placeFor(path, navFor(atSchool))?.id;
   const tab = (t: (typeof TABS)[number]) => {
     const active = here === t.id;
     const count = t.badge ? badges[t.badge] : 0;
@@ -288,6 +291,12 @@ export function MobileBar({ first, last, badges, avatar }: { first: string; last
           <button type="button" onClick={() => setSheet("create")} aria-expanded={sheet === "create"} aria-label="Log work or create" className="bg-accent-grad mr-1 inline-flex h-9 items-center gap-1 rounded-lg pr-3 pl-2.5 text-sm font-medium text-on-accent transition active:scale-95">
             <Plus className="size-4" strokeWidth={2.4} /> Log
           </button>
+          {atSchool && (
+            <Link href="/messages" aria-label={badges.messages ? `Chats, ${badges.messages} new` : "Chats"} className="relative grid size-10 place-items-center rounded-full text-text-2 transition hover:bg-hover">
+              <MessageCircle className="size-5" />
+              <Count n={badges.messages} className="absolute top-0.5 right-0" />
+            </Link>
+          )}
           <Link href="/notifications" aria-label={badges.notifications ? `Notifications, ${badges.notifications} new` : "Notifications"} className="relative grid size-10 place-items-center rounded-full text-text-2 transition hover:bg-hover">
             <Bell className="size-5" />
             <Count n={badges.notifications} className="absolute top-0.5 right-0" />

@@ -131,8 +131,9 @@ function Group({ label, node, more, children }: { label: string; node: React.Rea
   const id = `home-${label.toLowerCase().replace(/[^a-z]+/g, "-")}`;
   return (
     <section aria-labelledby={id}>
-      <div className="mb-3 flex items-center justify-between gap-3">
-        <h2 id={id} className="flex items-center gap-2 text-sm font-semibold text-text"><span aria-hidden="true" className="grid w-[18px] place-items-center">{node}</span>{label}</h2>
+      {/* A quiet label, not a title (2026-11-26): Home's band and cards carry the weight. */}
+      <div className="mb-2 flex items-center justify-between gap-3 px-1">
+        <h2 id={id} className="flex items-center gap-1.5 text-xs font-medium tracking-wide text-muted uppercase"><span aria-hidden="true" className="grid w-4 place-items-center opacity-70 [&_svg]:size-3.5">{node}</span>{label}</h2>
         {more}
       </div>
       {children}
@@ -150,7 +151,7 @@ function Tile({ children }: { children: React.ReactNode }) {
 function Invite({ cids, working = false }: { cids: number; working?: boolean }) {
   const solo = working && !cids;
   return (
-    <div className="flex flex-wrap items-center gap-x-4 gap-y-3 rounded-xl border border-dashed border-line-strong px-4 py-3.5">
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-3 glass-card rounded-xl px-4 py-3.5">
       <p className="min-w-0 flex-1 basis-56 text-sm text-muted">
         {cids ? "Nothing signed in your clubs yet this week. Log a result and ask an officer who saw it." : solo ? "Work you get signed shows up here. Log a result and ask whoever saw it: a coworker outside the project, a client, a mentor." : "Join your club, and the work its officers sign shows up here, yours included."}
       </p>

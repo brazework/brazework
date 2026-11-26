@@ -219,9 +219,9 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
       <Panel className="relative overflow-hidden rounded-2xl p-0">
         <CoverBanner path={p.cover_path} editable={mine && mediaOn} userId={user.id} schematic={schematicFor([p.field ?? "", ...(p.interests ?? [])], [])} label={[p.field, p.grad_year ? classOf(p.grad_year) : ""].filter(Boolean).join(" · ")} />
         <div className="px-5 pb-5 sm:px-6">
-          <div className="pointer-events-none relative z-10 -mt-14 flex flex-wrap items-end justify-between gap-3 *:pointer-events-auto">
+          <div className="pointer-events-none relative z-10 -mt-10 flex flex-wrap items-end justify-between gap-3 *:pointer-events-auto">
             <div className="inline-flex rounded-full shadow-[0_8px_24px_-8px_rgb(0_0_0/0.45)] ring-4 ring-surface">
-              <WithPresence id={p.id} dot="size-5 ring-4 top-[4%] bottom-auto"><ProfilePhoto path={p.avatar_path} first={p.first_name} last={p.last_name} editable={mine && mediaOn} userId={user.id} size={108} /></WithPresence>
+              <WithPresence id={p.id} dot="size-5 ring-4 top-[4%] bottom-auto"><ProfilePhoto path={p.avatar_path} first={p.first_name} last={p.last_name} editable={mine && mediaOn} userId={user.id} size={80} /></WithPresence>
             </div>
             <div data-tour={mine ? "share" : undefined} className="flex flex-wrap items-center gap-2">
               {mine && <EditProfile headline={p.headline} bio={p.bio} />}
@@ -241,10 +241,10 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
               )}
             </div>
           </div>
-          <div className="mt-3 flex flex-wrap items-center gap-3"><h1 className="text-[1.9rem] leading-tight font-semibold tracking-[-0.03em] sm:text-4xl">{name || "Brazework member"}</h1><OnlineLabel id={p.id} /></div>
-          {p.headline && <p className="mt-1 text-base text-text-2 sm:text-lg">{p.headline}</p>}
+          <div className="mt-2.5 flex flex-wrap items-center gap-3"><h1 className="text-[1.65rem] leading-tight font-semibold tracking-[-0.03em] sm:text-[2rem]">{name || "Brazework member"}</h1><OnlineLabel id={p.id} /></div>
+          {p.headline && <p className="mt-0.5 text-[15px] text-text-2 sm:text-base">{p.headline}</p>}
           {goal && !mine && <div className="mt-2.5"><GoalLine goal={goal} /></div>}
-          <p className="mt-2 flex flex-wrap items-center gap-x-1.5 text-sm text-muted">
+          <p className="mt-1.5 flex flex-wrap items-center gap-x-1.5 text-[13px] text-muted">
             {p.account_type === "student" ? "Student" : "Professional"}
             {p.grad_year && <> · {classOf(p.grad_year)}</>}
             {p.field && <> · {p.field}</>}
@@ -260,7 +260,7 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
 
           {/* The record in one row (profile redesign, Nov 19): signed results lead in the seal's green, then
               projects and posts; yours also says what's waiting and who looked this month. */}
-          <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-3">
+          <div className="mt-3.5 flex flex-wrap items-center gap-x-5 gap-y-2.5 border-t border-line pt-3.5">
             <p className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-muted" aria-label="Record">
               {stats.map((st) => (
                 <a key={st.href} href={st.href} className="inline-flex items-center gap-1.5 transition hover:text-text">

@@ -16,7 +16,7 @@ export function StartChecklist({ steps }: { steps: GuideStep[] }) {
   const next = steps.find((s) => !s.done)!;
   const pct = done / steps.length;
   return (
-    <section aria-label="Get started" className="rounded-2xl border border-line bg-surface p-5">
+    <section aria-label="Get started" className="glass-card rounded-2xl p-5">
       <div className="flex items-center gap-3.5">
         {/* Progress ring */}
         <div className="relative grid size-11 shrink-0 place-items-center" role="progressbar" aria-valuemin={0} aria-valuemax={steps.length} aria-valuenow={done} aria-label={`${done} of ${steps.length} done`}>

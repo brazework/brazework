@@ -30,11 +30,11 @@ export function CoverBanner({ path, editable, userId, schematic, label }: { path
     }
   };
   return (
-    <div className="group relative h-32 overflow-hidden border-b border-line sm:h-48">
+    <div className="group relative h-24 overflow-hidden border-b border-line sm:h-32">
       {path ? <Image src={mediaUrl(path)} alt="" fill sizes="(min-width: 768px) 768px, 100vw" className="object-cover" priority /> : (
         // No photo yet: a dark drafting sheet with the field's drawing on it, drawn in once (globals.css).
         <div className="cover-blueprint absolute inset-0">
-          {schematic && <Schematic id={schematic} className="sch-draw absolute top-1/2 right-[4%] h-[92%] w-auto -translate-y-1/2 text-[#f0a57e] opacity-90 sm:right-[16%] sm:h-[100%]" />}
+          {schematic && <Schematic id={schematic} className="sch-draw absolute top-1/2 right-[4%] h-[96%] w-auto -translate-y-1/2 text-[#f0a57e] opacity-80 sm:right-[18%]" />}
           {label && <p className="absolute top-3.5 left-4 font-mono text-[10px] tracking-[0.14em] text-white/55 uppercase sm:left-6">{label}</p>}
           <span aria-hidden="true" className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/45 to-transparent" />
         </div>

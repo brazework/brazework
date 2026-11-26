@@ -82,7 +82,7 @@ async function SignedInShell() {
       <Sidebar first={profile.first_name} last={profile.last_name} userId={user.id} badges={badges} avatar={avatarSrc(profile)} initialCollapsed={collapsed} clubs={myClubs} builds={myBuilds} school={school} classes={myClasses} />
       <CommandPalette />
       <ReportDialog />
-      <MobileBar first={profile.first_name} last={profile.last_name} badges={badges} avatar={avatarSrc(profile)} />
+      <MobileBar first={profile.first_name} last={profile.last_name} badges={badges} avatar={avatarSrc(profile)} atSchool={!!school} />
       <ThemeChrome />
       <TourMount />
     </>
