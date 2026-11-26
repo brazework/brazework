@@ -16,9 +16,9 @@ export function Organizations() {
   const [state, action, pending] = useActionState<OrgInterestState, FormData>(registerOrgInterest, { ok: false, message: "" });
 
   return (
-    <section id="pilot" className="scroll-mt-20 border-b border-line bg-surface-2/60 pb-12 md:pb-28">
+    <section id="pilot" className="scroll-mt-20 border-b border-line pb-16 md:pb-24">
       <div className="mx-auto max-w-6xl px-5 sm:px-6">
-        <div className="grid grid-cols-1 gap-10 rounded-[1.25rem] border border-line bg-surface p-6 sm:p-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:gap-16">
+        <div className="reveal grid grid-cols-1 gap-10 rounded-[1.25rem] border border-line bg-surface p-6 sm:p-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:gap-16">
           <div>
             <h2 className={H2}>Start a pilot at your school.</h2>
             <ul className="mt-7 flex flex-col gap-3 text-[15px] text-text-2">

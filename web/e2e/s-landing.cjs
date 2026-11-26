@@ -25,7 +25,9 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
     await page.locator("#hero-card").getByText(BUILD).waitFor();
     // The robot arm leads: a class milestone, submitted to its assignment in the course.
     await page.locator("#hero-card").getByText(/ME 482 Robotics · Fall 2026 · Assignment 3: Cycle-time test/).waitFor();
-    await page.locator("#top").getByText("Brazework Courses · with pilot schools").waitFor();
+    await page.locator("#top").getByText("New: Brazework Courses").waitFor();
+    // Courses shipped (#254): the hero no longer labels them as coming.
+    if (await page.locator("#top").getByText(/Courses with pilot schools|grading with pilot schools/).count()) throw new Error("the hero still says Courses are coming");
     const href = await page.locator("#top").getByRole("link", { name: /Get it verified/ }).getAttribute("href");
     if (new URL(href, BASE).searchParams.get("build") !== BUILD) throw new Error(`the button doesn't carry the build: ${href}`);
     if ((await tabs().getByRole("tab").count()) !== 5) throw new Error("expected five views");
@@ -44,7 +46,7 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
     await view("verify").getByText(/27 \/ 30 · seen only by Maya and the course's faculty/).waitFor();
 
     await tabs().getByRole("tab", { name: "School" }).click();
-    await view("school").getByText("ABET SO 1 · Solving complex problems").waitFor();
+    await view("school").getByText("ABET outcome 1 · Solving complex problems").waitFor();
     await view("school").getByText("+1 just now").waitFor({ timeout: 8000 });
     await view("school").getByRole("button", { name: "Export evidence" }).click();
     const report = page.getByRole("dialog", { name: "Sample evidence report" });
@@ -59,11 +61,16 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
     await view("recruiter").getByText("Viewed by Pratt & Whitney").waitFor({ timeout: 8000 });
 
     await tabs().getByRole("tab", { name: "Everywhere" }).click();
+    // Its note, right away: clicks inside the pinned hero can scroll the page, and the page's position picks the view.
+    await page.locator("#top").getByText("Example · Add to LinkedIn, the verify link and the résumé work today").waitFor();
     await view("everywhere").getByRole("button", { name: "Add to LinkedIn" }).click();
     await view("everywhere").getByText("Added to LinkedIn").waitFor();
     await view("everywhere").getByText(/brazework\.com\/v\//).waitFor();
     await view("everywhere").getByText("Grades stay private: only you and your professors see them.").waitFor();
-    await page.locator("#top").getByText("Illustration · Add to LinkedIn, the verify link and résumé work today").waitFor();
+    for (const place of ["LinkedIn", "Résumé", "Handshake, applications"]) await view("everywhere").getByRole("list", { name: "Where it goes" }).getByText(place, { exact: true }).waitFor();
+    // What isn't built says so: Torch's feedback draft.
+    await tabs().getByRole("tab", { name: "Professor" }).click();
+    await view("verify").getByText("Coming soon:").waitFor();
   }, page);
 
   await step("hero: every build draws in 3D in its three views (software ones name theirs), and a club build is verified by its officer", async () => {
@@ -124,8 +131,9 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
     for (const h of ["LinkedIn, Handshake", "Blackboard, Canvas", "Brazework"]) await sec.getByRole("heading", { name: h, exact: true }).waitFor();
     await sec.getByText("The professor, club or sponsor who saw it").waitFor();
     await sec.getByText("Upload a file, get a grade").waitFor();
-    // What isn't built yet says so: peer evaluation, the schedule, outcome tagging, grade passback.
-    if ((await sec.getByText("with pilot schools", { exact: true }).count()) !== 4) throw new Error("the strip should mark the four things still being built");
+    // What isn't built yet says so, in one line: imports, sign-on, LTI (peer evaluation shipped in #260).
+    if (await sec.getByText("with pilot schools", { exact: true }).count()) throw new Error("the strip still marks shipped Courses features as coming");
+    await sec.getByText(/Coming with pilot schools: importing a course/).waitFor();
   }, page);
 
   await step("for schools: the band names each office's outcome, marks what's still being built, and leads to /schools", async () => {
@@ -133,9 +141,10 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
     await band.getByRole("heading", { name: /verified by the people who saw it/ }).waitFor();
     for (const h of ["Accreditation evidence", "Club engagement", "Placement data", "A public showcase"]) await band.getByRole("heading", { name: h, exact: true }).waitFor();
     if ((await band.getByText("With pilot schools").count()) !== 2) throw new Error("the band should mark the two outcomes still being built");
-    // How a school grows on it, with the prices from lib/pricing.ts.
-    const grow = band.getByRole("list", { name: "How a school starts" });
-    for (const t of [/One course, one semester/, /\$1,500 pilot/, /\$6,000 a year/, /From \$18,000 a year/]) await grow.getByText(t).waitFor();
+    // Prices live on /pricing: the band says how a school is priced and links there.
+    await band.getByText(/Priced per school, never per student or club/).waitFor();
+    if ((await band.getByRole("link", { name: "See pricing" }).getAttribute("href")) !== "/pricing") throw new Error("the band doesn't link to /pricing");
+    if (await band.getByText(/\$\d/).count()) throw new Error("the band still lists prices");
     await band.getByRole("link", { name: /See what schools get/ }).click();
     await page.waitForURL(/\/schools$/, { timeout: 15000 });
     await page.getByRole("heading", { level: 1, name: /Your courses, projects and clubs/ }).waitFor();
