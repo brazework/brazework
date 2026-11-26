@@ -74,6 +74,15 @@ async function School() {
   const now = classes.filter((c) => c.term === terms[0]);
   const other = classes.filter((c) => c.term !== terms[0]);
   const teaching = classes.filter((c) => ["owner", "admin", "moderator"].includes(c.role));
+  // A student's own standing in each class: what's verified, and what waits on the professor.
+  const studying = classes.filter((c) => !["owner", "admin", "moderator"].includes(c.role)).map((c) => c.id);
+  const { data: myMs } = studying.length ? await supabase.from("milestones").select("community_id, status").eq("owner_id", user.id).in("community_id", studying).limit(500) : { data: [] };
+  const standing = new Map<string, { verified: number; waiting: number }>();
+  for (const m of (myMs ?? []) as { community_id: string; status: string }[]) {
+    const s = standing.get(m.community_id) ?? { verified: 0, waiting: 0 };
+    if (m.status === "verified") s.verified++; else if (m.status === "pending" || m.status === "disputed") s.waiting++;
+    standing.set(m.community_id, s);
+  }
 
   const [overviewRes, facultyList] = runs
     ? await Promise.all([supabase.rpc("school_overview", { p_domain: domain }), supabase.from("school_faculty").select("email, name, title").eq("domain", domain).order("name").limit(500)])
@@ -153,6 +162,19 @@ async function School() {
                     {teaches && c.waiting > 0 && <span className="shrink-0 rounded-full border border-dashed border-wait px-2 py-0.5 text-xs text-text-2">{c.waiting} to verify</span>}
                   </Link>
                   <p className="mt-2 flex flex-wrap gap-x-3 text-xs text-muted"><span>{Math.max(0, c.member_count - 1)} students</span><span>{c.projects} {c.projects === 1 ? "project" : "projects"}</span>{teaches && <span className="inline-flex items-center gap-1"><Lock className="size-3" aria-hidden="true" /> Private to the class</span>}</p>
+                  {!teaches && (() => {
+                    const st = standing.get(c.id);
+                    return (
+                      <p className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-line pt-2 text-xs">
+                        {st && (st.verified || st.waiting) ? (
+                          <>
+                            <span className="inline-flex items-center gap-1 text-ok"><BadgeCheck className="size-3.5" aria-hidden="true" /> {st.verified} verified</span>
+                            {st.waiting > 0 && <span className="inline-flex items-center gap-1 text-text-2"><span aria-hidden="true" className="block size-3 rounded-full border-2 border-dashed border-wait" /> {st.waiting} waiting for your professor</span>}
+                          </>
+                        ) : <span className="text-muted">Nothing logged yet. Open the class to start your project.</span>}
+                      </p>
+                    );
+                  })()}
                   {teaches && (
                     <details className="mt-2 text-sm">
                       <summary className="cursor-pointer text-muted hover:text-text">Roster</summary>

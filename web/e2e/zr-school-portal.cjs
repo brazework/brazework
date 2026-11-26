@@ -3,7 +3,8 @@
 // 2. Ben, now faculty, starts ME 410 with a roster; Cara is on it.
 // 3. Cara finds the class under Your school (and in the sidebar), and it's private to the class; she can
 //    start a class project there.
-// 4. The admin sees the class in the school's numbers and downloads the evidence export.
+// 4. Ben's class board says how much of the roster has joined and who has no project yet.
+// 5. The admin sees the class in the school's numbers and downloads the evidence export.
 // Everything it makes is removed at the end.
 const { execSync } = require("child_process");
 const { BASE, step, browser, as, go, hydrated, summary } = require("./lib.cjs");
@@ -54,10 +55,24 @@ const COURSE = `ME ${400 + (Date.now() % 90)}`;
       await cara.waitForURL(/\/c\//, { timeout: 15000 });
       await cara.getByText(/Private to the class/).first().waitFor();
       await cara.getByRole("region", { name: "Class projects" }).getByRole("button", { name: /New project/ }).waitFor();
+      // Her own standing in the class leads the page: nothing yet, and where to start.
+      await cara.getByRole("region", { name: "Your work in this class" }).getByText(/not on a project in this class yet/).waitFor();
+      if (await cara.getByRole("region", { name: "Class board" }).count()) throw new Error("a student sees the faculty's class board");
       // Classes never show among clubs.
       await go(cara, "/communities");
       if (await cara.locator("main").getByText(`${COURSE} · Capstone Design`).count()) throw new Error("the class shows in Clubs");
     }, cara);
+
+    await step("the professor's class board: the roster that has joined, and who has no project yet", async () => {
+      await go(ben, "/school");
+      await ben.locator("main").getByRole("link", { name: /Capstone Design/ }).first().click();
+      await ben.waitForURL(/\/c\//, { timeout: 15000 });
+      const board = ben.getByRole("region", { name: "Class board" });
+      await board.getByText(/1 of 2 on the roster have joined/).waitFor({ timeout: 15000 });
+      await board.getByText(/Not on a project yet \(1\)/).waitFor();
+      await board.getByText(/No projects yet/).waitFor();
+      if (await ben.getByRole("region", { name: "To do" }).count()) throw new Error("a class shows the club to-do list");
+    }, ben);
 
     await step("the school's admin sees the class in the numbers and downloads the evidence export", async () => {
       await go(maya, "/school");
