@@ -32,10 +32,18 @@ export function CadStage({ build, mode, callouts, active = true, className, chil
             if (!c) return;
             c.style.transform = `translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, 0)`;
             c.style.opacity = show ? "1" : "0";
-            // Labels lead away from the middle, unless that side has no room (a phone).
+            // Labels lead away from the middle, unless that side has no room. On a stage too narrow
+            // for room on both sides (a phone), toward whichever side has more.
             const room = 190, width = el.clientWidth;
-            const side = x < room ? "r" : x > width - room ? "l" : right ? "r" : "l";
+            const side = width < room * 2 ? (x < width / 2 ? "r" : "l") : x < room ? "r" : x > width - room ? "l" : right ? "r" : "l";
             if (c.dataset.side !== side) c.dataset.side = side;
+            // And never past the stage's edge: the label slides back in (its width is read once).
+            const tag = c.querySelector<HTMLElement>(".cad-tag");
+            if (!tag) return;
+            const w = Number(tag.dataset.w) || (tag.dataset.w = String(tag.offsetWidth), tag.offsetWidth);
+            const pad = 6, start = side === "r" ? x + 34 : x - 34 - w;
+            const shift = Math.min(0, width - pad - (start + w)) + Math.max(0, pad - start);
+            tag.style.transform = shift ? `translateX(${shift.toFixed(1)}px)` : "";
           },
         });
         setState("ready");

@@ -118,7 +118,7 @@ export function Hero() {
               <div role="tablist" aria-label="Follow one project" onKeyDown={onKeyTabs} className="relative grid grid-cols-5 border-b border-line">
                 {tabs.map((v, k) => (
                   <button key={v.id} id={`hero-tab-${v.id}`} type="button" role="tab" aria-selected={view === k} aria-controls={`hero-view-${v.id}`} tabIndex={view === k ? 0 : -1} onClick={() => go(k)}
-                    className={cn("relative flex min-w-0 flex-col items-center gap-0.5 px-1 py-2 text-[11px] leading-tight transition-colors sm:flex-row sm:justify-center sm:gap-1.5 sm:text-[13px]", view === k ? "font-medium text-text" : "text-muted hover:text-text")}>
+                    className={cn("relative flex min-w-0 flex-col items-center gap-0.5 px-0.5 py-2 text-[11px] leading-tight transition-colors max-[380px]:text-[10px] max-[380px]:tracking-tight sm:flex-row sm:justify-center sm:gap-1.5 sm:text-[13px]", view === k ? "font-medium text-text" : "text-muted hover:text-text")}>
                     <span aria-hidden="true" className={cn("grid size-5 shrink-0 place-items-center rounded-full border font-mono text-[10px] transition-colors", view === k ? "border-brand bg-brand text-bg" : k < view ? "border-text-2 text-text-2" : "border-line-strong")}>{k + 1}</span>
                     <span className="max-w-full truncate">{v.tab}</span>
                   </button>
