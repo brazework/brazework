@@ -12,7 +12,8 @@ import { cn } from "@/lib/forge";
 // the phone menu leaves it out. Section links (#top, the hero's product window) point back at the
 // landing page from /schools.
 const LINKS: { href: string; label: string; wide?: boolean; noPhone?: boolean }[] = [
-  { href: "#top", label: "How it works" },
+  { href: "#how", label: "How it works" },
+  { href: "#for", label: "Who it's for" },
   { href: "/schools", label: "For schools" },
   { href: "/pricing", label: "Pricing" },
   { href: "/ai", label: "Connect your AI", wide: true },
