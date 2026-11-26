@@ -1,5 +1,5 @@
 import type { Proposal } from "@/lib/copilot-agent";
-import { MAX_TURN, type CardOutcome, type ThreadTurn } from "@/lib/ember-thread";
+import { MAX_TURN, type CardOutcome, type OfferedChoice, type ThreadTurn } from "@/lib/ember-thread";
 
 // The Ask Torch bar at the top of every signed-in page (components/ember/ask-bar.tsx): which page it's
 // on, when "/" may jump to it, and what an approve card's buttons say there. Pure, so the browser, the
@@ -86,7 +86,7 @@ export function cardSummary(p: Proposal): { title: string; lines: string[]; link
 export const BAR_TURNS = 6;
 
 /** One exchange in the bar: what the member said, Torch's words (follow-up marker removed), its cards. */
-export type BarTurn = { q: string; text: string; cards: CardOutcome[] };
+export type BarTurn = { q: string; text: string; cards: CardOutcome[]; choice?: OfferedChoice };
 
 /**
  * The bar's exchange as history, oldest first. A turn with no answer (it failed, or was stopped before
@@ -95,6 +95,12 @@ export type BarTurn = { q: string; text: string; cards: CardOutcome[] };
 export function barHistory(turns: BarTurn[]): ThreadTurn[] {
   return turns.filter((t) => t.q.trim() && t.text.trim()).slice(-BAR_TURNS).flatMap((t): ThreadTurn[] => [
     { role: "user", content: t.q.slice(0, MAX_TURN) },
-    { role: "assistant", content: t.text.slice(0, MAX_TURN), ...(t.cards.length ? { cards: t.cards } : {}) },
+    { role: "assistant", content: t.text.slice(0, MAX_TURN), ...(t.cards.length ? { cards: t.cards } : {}), ...(t.choice ? { choice: t.choice } : {}) },
   ]);
+}
+
+/** Marks which of the offered answers the member tapped, on the turn that offered them. */
+export function pickedFrom(choice: OfferedChoice | undefined, tapped: string | undefined): OfferedChoice | undefined {
+  if (!choice) return undefined;
+  return tapped && choice.options.includes(tapped) ? { ...choice, picked: tapped } : choice;
 }

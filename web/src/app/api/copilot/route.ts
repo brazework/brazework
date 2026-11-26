@@ -4,7 +4,7 @@ import { COPILOT_MODEL, copilotEnabled, copilotRequest, memberContext, taskPromp
 import { emberSystem, frame, runAgent } from "@/lib/copilot-agent";
 import { pageLine } from "@/lib/copilot-page";
 import { presetInstruction } from "@/lib/copilot-presets";
-import { TOOLS, makeExec } from "@/lib/copilot-tools";
+import { OFFER_CHOICES, TOOLS, makeExec } from "@/lib/copilot-tools";
 import { takeEmberCredits } from "@/lib/ember-quota";
 import { threadMessages } from "@/lib/ember-thread";
 import { viewerFromToken } from "@/lib/supabase/server";
@@ -49,7 +49,7 @@ export async function POST(req: Request) {
       const out = (s: string) => controller.enqueue(enc.encode(s));
       try {
         if (r.task === "ask") {
-          await runAgent({ client, model: COPILOT_MODEL, system, messages, tools: TOOLS, exec: makeExec(ctx.supabase, ctx.userId, (proposal) => out(frame({ proposal }))), maxTokens, signal: abort.signal, emit: (e) => out(e.type === "text" ? e.text : frame({ tool: e.name })) });
+          await runAgent({ client, model: COPILOT_MODEL, system, messages, tools: r.choices ? [...TOOLS, OFFER_CHOICES] : TOOLS, exec: makeExec(ctx.supabase, ctx.userId, (proposal) => out(frame({ proposal })), (choice) => out(frame({ choice }))), maxTokens, signal: abort.signal, emit: (e) => out(e.type === "text" ? e.text : frame({ tool: e.name })) });
         } else {
           const stream = client.messages.stream({ model: COPILOT_MODEL, max_tokens: maxTokens, system, messages }, { signal: abort.signal });
           for await (const ev of stream) if (ev.type === "content_block_delta" && ev.delta.type === "text_delta") out(ev.delta.text);

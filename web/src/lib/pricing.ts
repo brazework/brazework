@@ -7,14 +7,16 @@
 // a place on the waitlist. Never call it "Pro": Pro means pro verification, a professional at a
 // verified company signing a milestone (supabase/pro-verification.sql).
 //
-// What Plus is for (Nov 19): students pay to be found (every company that looked); professionals pay
-// to be recognized at work (the review packet: their signed work, ready for a review or promotion).
+// What Plus is for (founders, 2026-11-26): builders who aren't students (professionals, independent
+// builders) pay to be recognized at work (the review packet: their signed work, ready for a review or
+// promotion) and to see every company that looked. Students never pay: no student price, and checkout
+// refuses a student account (lib/money.ts). Torch credits: 15 a day free, 50 with Plus, no packs.
 
 import { FEATURE_ACCESS } from "@/lib/plans";
 
 // Monthly, and by the year at a third off: review cycles come once or twice a year, so a year is the
 // natural unit for a professional. Yearly checkout needs its Stripe prices (lib/billing.ts plusPriceEnv).
-export const PLUS = { name: "Plus", student: 6, everyone: 12, studentYear: 48, everyoneYear: 96 };
+export const PLUS = { name: "Plus", everyone: 12, everyoneYear: 96 };
 export const SPONSORSHIP = { chapter: 2500, challengePrizes: 5000, serviceFee: 500 };
 export const EMBER_DAILY_LIMIT = { free: 15, plus: 50 } as const;
 export const EMBER_RESET = "Torch credits reset at midnight UTC.";
@@ -57,11 +59,11 @@ export type Tier = {
 };
 
 // Schools first (the realignment of 2026-11-26, docs/strategy.md): the school is the customer;
-// students, clubs and signers never pay; companies come second. Plus isn't on the public price list:
-// students use Brazework free. Its constants stay above for /plus and the app.
+// students, clubs and signers never pay; companies come second. Builders who aren't students can add
+// Plus (on the list since 2026-11-26).
 export const AUDIENCES: { id: Audience; label: string; line: string }[] = [
   { id: "schools", label: "Schools", line: "A portal for your faculty and offices. Never per student or per club." },
-  { id: "builders", label: "Students and clubs", line: "Free, always. The record is the student's, for good." },
+  { id: "builders", label: "Builders", line: "Free, always, for students and clubs. Plus for professionals and independent builders." },
   { id: "companies", label: "Companies", line: "Find students by work their faculty and clubs signed." },
 ];
 
@@ -95,9 +97,22 @@ export const TIERS: Tier[] = [
     cta: { label: "Talk to us", href: "/book?kind=school" },
   },
   {
-    id: "free", audience: "builders", name: "Students", price: "$0", note: "Always, with no ads", featured: true,
-    points: ["Your record: every project, with the people who signed it", "Ask a professor, your club or a coworker to sign", "A share card for every milestone, signed or waiting", `Torch: ${EMBER_DAILY_LIMIT.free} credits a day`, "Keep it all when you graduate: move to a personal email", "Be found by companies, and see who looked"],
+    id: "free", audience: "builders", name: "Free", price: "$0", note: "For students, clubs and anyone building. Always, with no ads", featured: true,
+    points: ["Your record: every project, with the people who signed it", "Ask a professor, your club, a coworker, a client or a mentor to sign", "A share card for every milestone, signed or waiting", `Torch: ${EMBER_DAILY_LIMIT.free} credits a day`, "Keep it all when you graduate: move to a personal email", "Be found by companies, and see who looked"],
     cta: { label: "Start your record", href: "/signup" },
+  },
+  {
+    id: "plus", audience: "builders", name: PLUS.name, price: `$${PLUS.everyoneYear}/yr`,
+    note: `For professionals and independent builders, or $${PLUS.everyone}/mo. Students never pay. Join the waitlist while paid plans are being set up.`,
+    points: [
+      "Everything in Free",
+      // Free while it's a Plus preview (lib/plans.ts), and the card says so: one word there changes both.
+      `Review packets: your signed work over any period, ready for a performance review or a promotion case${FEATURE_ACCESS.reviewPacket === "plus-preview" ? " (free for everyone during launch)" : ""}`,
+      `Torch: ${EMBER_DAILY_LIMIT.plus} credits a day (Free has ${EMBER_DAILY_LIMIT.free}). No packs to buy`,
+      "Every company that looked in the last 90 days, not just this week",
+      ...PLUS_SOON.map((x) => `${x} (coming soon)`),
+    ],
+    cta: { label: "See Plus", href: "/plus" },
   },
   {
     id: "clubs", audience: "builders", name: "Clubs", price: "Free", note: "For every student club and study group",
@@ -121,21 +136,9 @@ export const TIERS: Tier[] = [
   },
 ];
 
-// Plus, for /plus only: it isn't on the public price list (students use Brazework free; the
-// realignment of 2026-11-26). It still sells review packets to professionals from /plus.
-export const PLUS_TIER: Tier = {
-    id: "plus", audience: "builders", name: PLUS.name, price: `$${PLUS.everyoneYear}/yr`,
-    note: `For professionals, or $${PLUS.everyone}/mo. Students with a confirmed school email: $${PLUS.student}/mo or $${PLUS.studentYear}/year. Join the waitlist while paid plans are being set up.`,
-    points: [
-      "Everything in Free",
-      // Free while it's a Plus preview (lib/plans.ts), and the card says so: one word there changes both.
-      `Review packets: your signed work over any period, ready for a performance review or a promotion case${FEATURE_ACCESS.reviewPacket === "plus-preview" ? " (free for everyone during launch)" : ""}`,
-      `More Torch: ${EMBER_DAILY_LIMIT.plus} credits a day total`,
-      "Every company that looked in the last 90 days, not just this week",
-      ...PLUS_SOON.map((x) => `${x} (coming soon)`),
-    ],
-    cta: { label: "Get Plus", href: "/plus" },
-  };
+
+// Plus, as /plus shows it: the same card as on the price list.
+export const PLUS_TIER: Tier = TIERS.find((t) => t.id === "plus")!;
 
 export const tiersFor = (a: Audience) => TIERS.filter((t) => t.audience === a);
 

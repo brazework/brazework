@@ -8,8 +8,6 @@ import { importFromGitHub } from "@/lib/connectors/actions";
 import type { ProjectDraft } from "@/lib/connectors/github";
 import { StackPicker } from "@/components/projects/stack-picker";
 import { AddMilestone, MilestoneLog, type Club, type Milestone } from "./milestones";
-import { Schematic } from "@/components/landing/schematics";
-import { schematicFor } from "@/lib/schematic-field";
 import { cleanLink, workSource, type WorkSource } from "@/lib/work-link";
 import { useActionState, useEffect, useRef, useState, useTransition } from "react";
 import { chipCls } from "@/components/app/page-ui";
@@ -109,10 +107,9 @@ export function ProjectCard({ project, own, interests, copilot = false, clubs, v
 
   return (
     <article className="glass-card group relative flex h-full flex-col overflow-hidden rounded-2xl transition duration-300">
-      {/* A strip of the drafting sheet: the project's field drawing, its status and what's verified, so a
-          recruiter scanning a profile sees what each build is before reading a word. */}
-      <Link href={`/projects/${project.id}`} tabIndex={-1} aria-hidden="true" className="theme-dark cover-blueprint relative block h-20 overflow-hidden border-b border-line">
-        <Schematic id={schematicFor([...project.tags, field ?? ""], project.tools ?? [])} className="absolute top-1/2 right-4 h-[120%] w-auto -translate-y-1/2 text-[#f0a57e] opacity-70 transition duration-500 group-hover:opacity-95" />
+      {/* A soft lit strip with what's verified, so a recruiter scanning a profile sees each build's
+          standing before reading a word. No drawing or grid (the founders' call, 2026-11-26). */}
+      <Link href={`/projects/${project.id}`} tabIndex={-1} aria-hidden="true" className="theme-dark cover-blueprint relative block h-14 overflow-hidden">
         <span className="absolute bottom-2.5 left-4 flex items-center gap-2">
           {verified > 0 && <span className="inline-flex items-center gap-1 rounded-full bg-[#4ccb82]/15 px-2 py-0.5 text-[11px] font-medium text-[#4ccb82] backdrop-blur-sm"><BadgeCheck className="size-3.5" /> {verified} verified</span>}
           {project.private && <span className="inline-flex items-center gap-1 rounded-full border border-white/15 bg-black/30 px-2 py-0.5 text-[11px] text-white/75 backdrop-blur-sm"><Lock className="size-3" /> Private</span>}
@@ -299,7 +296,7 @@ function ProjectDialog({ project, interests, onClose, copilot = false, stack = f
           <button type="button" onClick={onClose} aria-label="Close" className="grid size-8 place-items-center rounded-full text-faint hover:bg-hover hover:text-text"><X className="size-4" /></button>
         </div>
         {!project && (
-          <div className="rounded-2xl border border-dashed border-line-strong bg-surface-2/50 p-3">
+          <div className="glass-card rounded-2xl p-3">
             <label htmlFor="gh-url" className="flex items-center gap-1.5 text-xs font-medium text-muted"><LinkIcon className="size-3.5" /> Start from a link (optional)</label>
             <p className="mt-0.5 text-xs text-faint">A repo, a CAD model, a doc, a video: wherever the work lives.</p>
             <div className="mt-2 flex gap-2">

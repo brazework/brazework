@@ -9,7 +9,7 @@
 // 5. /pricing is public and says the record is free.
 const { execSync } = require("child_process");
 const { step, browser, go, hydrated, summary } = require("./lib.cjs");
-const psql = (sql) => execSync(`docker exec -i forge-e2e-db psql -U postgres -h localhost -d postgres -tA`, { input: sql }).toString().trim();
+const psql = (sql) => execSync(`docker exec -i ${process.env.E2E_STACK || "forge-e2e"}-db psql -U postgres -h localhost -d postgres -tA`, { input: sql }).toString().trim();
 
 (async () => {
   const b = await browser();
@@ -173,13 +173,15 @@ const psql = (sql) => execSync(`docker exec -i forge-e2e-db psql -U postgres -h 
   // 5: pricing.
   const ctx3 = await b.newContext();
   const p3 = await ctx3.newPage(); p3.errs = [];
-  await step("/pricing is public: schools pay first, students and clubs never, then companies", async () => {
+  await step("/pricing is public: schools pay first, then builders (free, and Plus for anyone who isn't a student), then companies", async () => {
     await go(p3, "/pricing");
     await p3.getByRole("heading", { name: /Schools pay/ }).waitFor({ timeout: 15000 });
-    for (const t of ["Students and clubs", "Companies", "Semester pilot", "$1,500", "$6,000", "From $18,000", "Every student and every club", "Starter", "Book a pilot", "$15,000"]) await p3.getByText(t, { exact: false }).first().waitFor();
+    for (const t of ["Builders", "Companies", "Semester pilot", "$1,500", "$6,000", "From $18,000", "Every student and every club", "Starter", "Book a pilot", "$15,000"]) await p3.getByText(t, { exact: false }).first().waitFor();
     const order = await p3.locator("h3[id^=pricing-]").evaluateAll((els) => els.map((el) => el.id));
     if (order.join() !== "pricing-schools,pricing-builders,pricing-companies") throw new Error(`price list order: ${order.join()}`);
-    if (await p3.getByRole("link", { name: "Get Plus" }).count()) throw new Error("Plus is still on the public price list");
+    // Plus is on the list for builders who aren't students; students never pay.
+    if ((await p3.getByRole("link", { name: "See Plus" }).getAttribute("href")) !== "/plus") throw new Error("Plus isn't on the price list");
+    await p3.getByText(/For professionals and independent builders.*Students never pay/).waitFor();
     if (await p3.getByText(/\bPro\b/).count()) throw new Error("the price list says Pro, which means pro verification");
     const allowance = p3.getByText(/Free includes 15 credits a day/);
     await allowance.waitFor();

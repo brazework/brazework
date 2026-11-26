@@ -1,6 +1,5 @@
 "use client";
 import { Camera, ImagePlus, Loader2, Trash2 } from "lucide-react";
-import { Schematic } from "@/components/landing/schematics";
 import Image from "next/image";
 import { useRef, useState, useTransition } from "react";
 import { Avatar } from "@/components/ui";
@@ -10,9 +9,8 @@ import { setProfileMedia } from "@/lib/projects";
 import { UploadError, removeUploaded, uploadMedia } from "@/lib/upload";
 
 // A cover banner, editable on your own profile.
-// `schematic`: the drawing shown until they add a photo (components/landing/schematics.tsx), picked
-// from their field, so a new record looks drawn, not empty.
-export function CoverBanner({ path, editable, userId, schematic, label }: { path?: string; editable: boolean; userId: string; schematic?: string; label?: string }) {
+// Until they add a photo, the banner is a smooth lit surface (no drawing).
+export function CoverBanner({ path, editable, userId, label }: { path?: string; editable: boolean; userId: string; label?: string }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [, start] = useTransition();
@@ -32,9 +30,8 @@ export function CoverBanner({ path, editable, userId, schematic, label }: { path
   return (
     <div className="group relative h-24 overflow-hidden border-b border-line sm:h-32">
       {path ? <Image src={mediaUrl(path)} alt="" fill sizes="(min-width: 768px) 768px, 100vw" className="object-cover" priority /> : (
-        // No photo yet: a dark drafting sheet with the field's drawing on it, drawn in once (globals.css).
+        // No photo yet: a smooth, softly lit surface (globals.css cover-blueprint), no drawing.
         <div className="cover-blueprint absolute inset-0">
-          {schematic && <Schematic id={schematic} className="sch-draw absolute top-1/2 right-[4%] h-[96%] w-auto -translate-y-1/2 text-[#f0a57e] opacity-80 sm:right-[18%]" />}
           {label && <p className="absolute top-3.5 left-4 font-mono text-[10px] tracking-[0.14em] text-white/55 uppercase sm:left-6">{label}</p>}
           <span aria-hidden="true" className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/45 to-transparent" />
         </div>

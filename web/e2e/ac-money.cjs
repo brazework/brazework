@@ -3,14 +3,15 @@
 // 1. /pricing: one primary call to action per audience, and a paid one for each.
 // 2. /book signed out asks to log in and comes back; signed in, a pilot request lands in the admin
 //    queue with the account's email (none typed), and the founders see it on /admin.
-// 3. /plus: the waitlist, while Plus isn't on sale.
+// 3. /plus: the waitlist, while Plus isn't on sale, for a builder who isn't a student; a student is
+//    told students never pay (2026-11-26).
 // 4. Dashboard: companies that looked, 7 days on Free; an older look from a verified company is
 //    counted, not named, in one quiet line that links to Plus (plus-teaser.sql).
 // 5. A public club's page offers "Sponsor this chapter" to visitors, not to its members.
 // 6. Find builders: a verified company's admin can ask for seats in one tap.
 const { execSync } = require("child_process");
 const { step, browser, as, go, summary } = require("./lib.cjs");
-const psql = (sql) => execSync(`docker exec -i forge-e2e-db psql -U postgres -h localhost -d postgres -tA`, { input: sql }).toString().trim();
+const psql = (sql) => execSync(`docker exec -i ${process.env.E2E_STACK || "forge-e2e"}-db psql -U postgres -h localhost -d postgres -tA`, { input: sql }).toString().trim();
 
 (async () => {
   const b = await browser();
@@ -78,17 +79,31 @@ const psql = (sql) => execSync(`docker exec -i forge-e2e-db psql -U postgres -h 
       await go(ben, "/dashboard");
       await ben.getByRole("heading", { name: /Companies that looked/ }).waitFor({ timeout: 15000 });
       await ben.getByText("last 7 days").waitFor();
-      await ben.getByText(/more compan(y|ies) looked in the last 90 days/).waitFor();
-      await ben.getByRole("link", { name: "See who with Plus" }).waitFor();
       if (await ben.getByText("Teaser Test Co").count()) throw new Error("Free named a company it should only count");
+      // Ben is a student, and students never pay: no Plus upsell under who looked.
+      if (await ben.getByRole("link", { name: "See who with Plus" }).count()) throw new Error("a student is offered Plus");
     } finally { psql(unseed); }
   }, ben);
 
-  await step("/plus while it isn't on sale: Ben joins the waitlist", async () => {
+  await step("/plus: a student is told students never pay, with nothing to buy", async () => {
     await go(ben, "/plus");
-    await ben.getByRole("button", { name: "Join the waitlist" }).click();
-    await ben.getByText(/on the Plus waitlist/).waitFor({ timeout: 15000 });
+    await ben.getByText(/Students never pay\. Your record, every signature/).waitFor({ timeout: 15000 });
+    if (await ben.getByRole("button", { name: /Join the waitlist|Get Plus/ }).count()) throw new Error("a student can still sign up for Plus");
   }, ben);
+
+  await step("/plus while it isn't on sale: a builder who isn't a student joins the waitlist", async () => {
+    // Cara, as a professional for this step (restored after), so later journeys see the data they expect.
+    psql("update public.profiles set account_type = 'professional' where id = (select id from auth.users where email = 'cara@forge.test')");
+    try {
+      const pro = await as(b, "cara@forge.test");
+      await go(pro, "/plus");
+      await pro.getByRole("button", { name: "Join the waitlist" }).click();
+      await pro.getByText(/on the Plus waitlist/).waitFor({ timeout: 15000 });
+      await pro.context().close();
+    } finally {
+      psql("update public.profiles set account_type = 'student' where id = (select id from auth.users where email = 'cara@forge.test')");
+    }
+  });
 
   const maya = await as(b, "maya@forge.test");
   await step("the founders see the requests on /admin", async () => {
