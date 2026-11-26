@@ -18,7 +18,7 @@ export const SCHOOL_OUTCOMES = [
 
 export function ForSchools() {
   return (
-    <section id="schools" aria-labelledby="schools-h" className="theme-dark relative isolate scroll-mt-20 overflow-hidden bg-bg py-14 text-text md:py-24">
+    <section id="schools" aria-labelledby="schools-h" className="schools-band relative isolate scroll-mt-20 overflow-hidden border-y border-line py-14 text-text md:py-24">
       <div aria-hidden="true" className="hero-glow pointer-events-none absolute inset-0 -z-10 opacity-70" />
       <div className="mx-auto max-w-6xl px-5 sm:px-6">
         <p className="inline-flex items-center gap-2 font-mono text-xs text-faint"><GraduationCap className="size-3.5" aria-hidden="true" /> For schools</p>

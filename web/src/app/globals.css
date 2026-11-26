@@ -632,14 +632,23 @@ select option { background-color: var(--surface); color: var(--text); }
 .cad-callout[data-side="l"] .cad-tag { right: 34px; }
 /* The landing hero's light (components/landing/hero.tsx): copper from the top right, a cool fill from
    the left, and a fine drawing grid that fades out toward the edges. */
+/* It follows the theme (landing journey, 2026-11-26): drafting paper in light (a softer copper, a
+   blue-grey grid like vellum), the lab at night in dark. */
+.landing { --hero-copper: 13%; --hero-cool: rgba(29, 95, 214, 0.07); --hero-grid: rgba(29, 64, 120, 0.075); --window-rim: rgba(255, 255, 255, 0); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .landing { --hero-copper: 22%; --hero-cool: rgba(110, 168, 255, 0.08); --hero-grid: rgba(255, 255, 255, 0.05); --window-rim: rgba(255, 255, 255, 0.07); } }
+:root[data-theme="dark"] .landing, .landing .theme-dark { --hero-copper: 22%; --hero-cool: rgba(110, 168, 255, 0.08); --hero-grid: rgba(255, 255, 255, 0.05); --window-rim: rgba(255, 255, 255, 0.07); }
 .hero-glow {
   background:
-    radial-gradient(48rem 26rem at 82% -6%, color-mix(in oklab, var(--brand) 22%, transparent), transparent 70%),
-    radial-gradient(40rem 24rem at 0% 30%, rgba(110, 168, 255, 0.08), transparent 70%),
-    linear-gradient(color-mix(in oklab, var(--text) 5%, transparent) 1px, transparent 1px) 0 0 / 32px 32px,
-    linear-gradient(90deg, color-mix(in oklab, var(--text) 5%, transparent) 1px, transparent 1px) 0 0 / 32px 32px;
+    radial-gradient(48rem 26rem at 82% -6%, color-mix(in oklab, var(--brand) var(--hero-copper, 22%), transparent), transparent 70%),
+    radial-gradient(40rem 24rem at 0% 30%, var(--hero-cool, rgba(110, 168, 255, 0.08)), transparent 70%),
+    linear-gradient(var(--hero-grid, rgba(255, 255, 255, 0.05)) 1px, transparent 1px) 0 0 / 32px 32px,
+    linear-gradient(90deg, var(--hero-grid, rgba(255, 255, 255, 0.05)) 1px, transparent 1px) 0 0 / 32px 32px;
   mask-image: radial-gradient(ellipse 90% 80% at 60% 30%, #000 40%, transparent 90%);
 }
+/* The product window's edge: a lit top rim in dark, a clean card on paper. */
+.hero-window { box-shadow: var(--shadow-float), inset 0 1px 0 var(--window-rim, transparent); }
+/* The band for schools: a warm tint of the page, so it stands apart in both themes. */
+.schools-band { background: color-mix(in oklab, var(--brand) 5%, var(--surface-2)); }
 /* The hero's product window (components/landing/hero.tsx): its five views share one body of a fixed
    size, so switching views never moves the page. On a laptop tall enough, the hero pins for a scroll
    run, one stretch per view (hero.tsx RUN is the same query); elsewhere the views are tabs. */

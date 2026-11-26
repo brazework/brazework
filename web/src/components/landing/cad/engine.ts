@@ -101,7 +101,8 @@ export function createLab(host: HTMLElement, opts: { build: BuildId; mode: Mode;
       if (!original.has(m)) original.set(m, m.material);
       const base = original.get(m)!;
       let mat: THREE.Material | THREE.Material[] = base;
-      if (mode === "stress") {
+      // `userData.keep`: a part that reads the same in every view (a planned path, a request in flight).
+      if (mode === "stress" && !m.userData.keep) {
         const f = built.stress.get(m);
         if (f) { if (!stressMats.has(m)) stressMats.set(m, stressMaterial(m, f)); mat = stressMats.get(m)!; }
         else mat = neutral;
@@ -124,6 +125,7 @@ export function createLab(host: HTMLElement, opts: { build: BuildId; mode: Mode;
       const e = m.children.find((c) => (c as THREE.LineSegments).isLineSegments) as THREE.LineSegments | undefined;
       if (e) (e.material as THREE.LineBasicMaterial).clippingPlanes = mode === "section" ? [cut] : null;
     }
+    built.onMode?.(mode);
   }
 
   function disposeBuilt() {
@@ -148,7 +150,7 @@ export function createLab(host: HTMLElement, opts: { build: BuildId; mode: Mode;
     const shells = new Set(built.shells);
     built.root.traverse((o) => {
       const m = o as THREE.Mesh;
-      if (!m.isMesh || (m as unknown as THREE.InstancedMesh).isInstancedMesh) return;
+      if (!m.isMesh || (m as unknown as THREE.InstancedMesh).isInstancedMesh || m.userData.plain) return;
       // A shell gets its own material, so cutting it never cuts a part that shares its finish.
       if (shells.has(m)) m.material = (m.material as THREE.Material).clone();
       const lines = new THREE.LineSegments(new THREE.EdgesGeometry(m.geometry, 28), shells.has(m) ? edgeMat.clone() : edgeMat);

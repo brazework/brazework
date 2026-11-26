@@ -1,4 +1,4 @@
-import { ArrowRight, Box, Check, Download, Eye, FileText, Gauge, Image as ImageIcon, Link2, Scissors, Search, X } from "lucide-react";
+import { ArrowRight, Box, Check, Code2, Download, Eye, FileText, Gauge, Image as ImageIcon, Link2, Scissors, Search, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Seal } from "@/components/app/verified-seal";
 import { cn } from "@/lib/forge";
@@ -41,6 +41,7 @@ const MODES: { id: Mode; label: string; icon: typeof Box }[] = [
 export function StudentView({ ex, title, on, pick, choose, next }: ViewProps & { pick: string; choose: (id: Example["id"]) => void }) {
   const [mode, setMode] = useState<Mode>("render");
   const [lo, hi] = ex.field ?? ["Low", "High"];
+  const names = ex.modes ?? MODES.map((m) => m.label);
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center border-b border-line px-3 py-2">
@@ -58,7 +59,7 @@ export function StudentView({ ex, title, on, pick, choose, next }: ViewProps & {
           {MODES.map((m) => (
             <button key={m.id} type="button" role="radio" aria-checked={mode === m.id} tabIndex={on ? 0 : -1} onClick={() => setMode(m.id)}
               className={cn("inline-flex h-7 items-center gap-1.5 rounded-md px-2.5 text-xs font-medium transition-colors", mode === m.id ? "bg-accent text-on-accent" : "text-muted hover:text-text")}>
-              <m.icon className="size-3.5" aria-hidden="true" /> {m.label}
+              <m.icon className="size-3.5" aria-hidden="true" /> {names[MODES.indexOf(m)]}
             </button>
           ))}
         </div>
@@ -78,7 +79,7 @@ export function StudentView({ ex, title, on, pick, choose, next }: ViewProps & {
         <div className="mt-2.5 flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
           <span className="flex min-w-0 max-w-full items-center gap-3 text-xs text-muted">
             <span className="inline-flex min-w-0 items-center gap-1.5"><FileText className="size-3.5 shrink-0" aria-hidden="true" /><span className="truncate">{ex.proof}</span></span>
-            <span className="inline-flex shrink-0 items-center gap-1.5 max-sm:hidden"><Box className="size-3.5" aria-hidden="true" />3D model</span>
+            <span className="inline-flex shrink-0 items-center gap-1.5 max-sm:hidden">{ex.repo ? <><Code2 className="size-3.5" aria-hidden="true" />GitHub repo</> : <><Box className="size-3.5" aria-hidden="true" />3D model</>}</span>
           </span>
           <button type="button" onClick={next} tabIndex={on ? 0 : -1} className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg bg-accent px-3 text-xs font-semibold text-on-accent transition active:scale-95">
             Ask {ex.signer} to verify <ArrowRight className="size-3.5" aria-hidden="true" />
@@ -104,7 +105,7 @@ export function VerifyView({ ex, title, on, still, verified, verify }: ViewProps
   }, [on, still, verified, ex, verify]);
   const files = [
     { icon: FileText, name: ex.proof, note: "Test data" },
-    { icon: Box, name: ex.model, note: "3D model, opens in the browser" },
+    ex.repo ? { icon: Code2, name: ex.repo, note: "Code, linked from GitHub" } : { icon: Box, name: ex.model, note: "3D model, opens in the browser" },
     { icon: ImageIcon, name: "bench-photo-03.jpg", note: "Photo" },
   ];
   return (
@@ -159,7 +160,7 @@ export function VerifyView({ ex, title, on, still, verified, verify }: ViewProps
 }
 
 // 3. The school: the department's dashboard counts it, files it as accreditation evidence, exports it.
-const ROWS: Record<string, number> = { "ME 410 Capstone · Fall 2026": 24, "CE 331 Structures Lab · Fall 2026": 18, "ECE 455 Embedded Systems · Fall 2026": 21, "ME 482 Robotics · Fall 2026": 16, "Formula SAE": 31, "Aerial Robotics Club": 12, "Rocketry Club": 15 };
+const ROWS: Record<string, number> = { "ME 490 Formula SAE Capstone · Fall 2026": 27, "CS 485 Mobile Robotics · Fall 2026": 14, "CS 489 Machine Learning · Fall 2026": 22, "ACM Club": 19, "ME 410 Capstone · Fall 2026": 24, "CE 331 Structures Lab · Fall 2026": 18, "ECE 455 Embedded Systems · Fall 2026": 21, "ME 482 Robotics · Fall 2026": 16, "Aerial Robotics Club": 12, "Rocketry Club": 15 };
 export function SchoolView({ ex, title, on, still }: ViewProps) {
   const [counted, setCounted] = useState(false);
   const [report, setReport] = useState(false);
@@ -217,7 +218,7 @@ export function SchoolView({ ex, title, on, still }: ViewProps) {
           <table className="mt-3 w-full table-fixed text-left text-[11px]">
             <thead className="text-[#6b6c72]"><tr><th className="w-[44%] pb-1 font-medium">Project</th><th className="pb-1 font-medium">Where</th><th className="pb-1 font-medium max-sm:hidden">Verified by</th></tr></thead>
             <tbody className="divide-y divide-black/10">
-              {[[title, ex.where.replace(" · Fall 2026", ""), ex.signer], ["Wind tunnel drag study, NACA 2412", "ME 345", "Prof. Webb"], ["Water filter for a clinic, field test", "Engineers Without Borders", "L. Grant"], ["Bike frame fatigue test to 50k cycles", "ME 410", "Prof. Alvarez"]].map(([p, w, s], i) => (
+              {[[title, ex.where.replace(" · Fall 2026", ""), ex.signer], ["Wind tunnel drag study, NACA 2412", "ME 345", "Prof. Webb"], ["Water filter for a clinic, field test", "Engineers Without Borders", "L. Grant"], ["Bike frame fatigue test to 50k cycles", "ME 410", "Prof. Sato"]].map(([p, w, s], i) => (
                 <tr key={i} className={i === 0 ? "font-medium" : undefined}><td className="truncate py-1.5 pr-2">{p}</td><td className="truncate py-1.5 pr-2">{w}</td><td className="truncate py-1.5 max-sm:hidden">{s}</td></tr>
               ))}
             </tbody>
