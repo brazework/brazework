@@ -209,6 +209,14 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity
   border: 1px solid var(--border);
 }
 
+/* A step of a stepped form (lib/project-steps.ts) slides in from the side it came from. */
+@keyframes step-in {
+  from { opacity: 0; transform: translateX(14px); }
+}
+.step-in {
+  animation: step-in 0.32s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
 /* Entrance and scroll reveals are pure CSS, so text is visible before (and without) JavaScript. */
 @keyframes rise-in {
   from { opacity: 0; transform: translateY(24px); filter: blur(8px); }

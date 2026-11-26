@@ -29,6 +29,7 @@ export const TOOL_LABEL: Record<string, { doing: string; done: string }> = {
   github_repo: { doing: "Reading the GitHub repo", done: "GitHub" },
   github_user: { doing: "Looking at their GitHub", done: "GitHub" },
   propose_project: { doing: "Drafting a project", done: "a project draft" },
+  propose_club: { doing: "Drafting a club", done: "a club draft" },
   propose_rsvp: { doing: "Saving you a spot", done: "an RSVP" },
   propose_message: { doing: "Drafting a message", done: "a message draft" },
   my_courses: { doing: "Reading your courses", done: "your courses" },
@@ -62,6 +63,8 @@ export type Proposal = { id: string; then?: string } & (
   | { kind: "follow"; person_id: string; name: string; headline: string }
   | { kind: "event"; club_id: string; club_name: string; title: string; description: string; type: string; format: string; location: string; topic: string; starts_at: string; ends_at: string }
   | { kind: "club_post"; club_id: string; club_name: string; body: string; postKind: "update" | "question" | "result" | "project" }
+  // A new club or study group (lib/torch-club.ts), made as the Start a community page makes it.
+  | { kind: "club"; name: string; about: string; field: string; club_type: "field" | "study" | "project"; privacy: "public" | "approval"; topics: string[]; course: string; term: string; meets: string }
   | { kind: "project"; title: string; summary: string; details: string; link: string; tags: string[]; status: "in_progress" | "completed"; year: string; source: string }
   | { kind: "review"; milestone_id: string; club_name: string; member: string; title: string; detail: string; evidence: string; verify: boolean; note: string }
   | { kind: "rsvp"; event_id: string; title: string; starts_at: string; where: string; going: number; cancel?: boolean }

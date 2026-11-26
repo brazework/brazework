@@ -9,6 +9,7 @@ import { validMedia } from "@/lib/media";
 import { STUDY_LIMITS } from "@/lib/study";
 import { STARTER_RULES, reusableInvite, type InviteRow } from "@/lib/club-setup";
 import { getViewer } from "@/lib/supabase/server";
+import { clubForm, cleanClubDraft } from "@/lib/torch-club";
 
 export type Result = { ok: boolean; message: string };
 export type JoinResult = Result & { state?: "member" | "requested" | "none" };
@@ -51,8 +52,9 @@ const studySchema = z.object({
 
 const str = (v: FormDataEntryValue | null) => (typeof v === "string" ? v : "");
 
-// Creates the community with you as owner, in one step (create_community RPC), then opens it.
-export async function createCommunity(_prev: CreateState, form: FormData): Promise<CreateState> {
+// Creates the community with you as owner, in one step (create_community RPC). Shared by the Start a
+// community page (createCommunity, which then opens it) and Torch's card (createClubFromCard).
+async function makeCommunity(form: FormData): Promise<{ ok: false; message: string } | { ok: true; id: string; supabase: Awaited<ReturnType<typeof getViewer>>["supabase"] }> {
   const parsed = createSchema.safeParse({
     name: str(form.get("name")),
     about: str(form.get("about")),
@@ -90,6 +92,14 @@ export async function createCommunity(_prev: CreateState, form: FormData): Promi
     if (sErr) console.error("study group details", sErr.message);
   }
   revalidatePath("/communities");
+  return { ok: true, id, supabase };
+}
+
+// The Start a community page: makes it, asks the school if that was ticked, then opens it.
+export async function createCommunity(_prev: CreateState, form: FormData): Promise<CreateState> {
+  const made = await makeCommunity(form);
+  if (!made.ok) return made;
+  const { id, supabase } = made;
   // "This club operates under a university" (FIX-237): ask the school now. The club exists either way;
   // if the ask is refused (most often: not signed in with an address at that school), Manage → School
   // opens with the reason, so it can be fixed and sent from there.
@@ -103,6 +113,16 @@ export async function createCommunity(_prev: CreateState, form: FormData): Promi
     }
   }
   redirect(`/c/${id}?created=1`);
+}
+
+// Torch's "Start a club" card (lib/torch-club.ts): the same checks and the same insert as the page, but
+// it answers instead of redirecting, so the card can say it's done and link to the new club.
+export async function createClubFromCard(raw: Record<string, unknown>): Promise<Result & { id?: string }> {
+  const d = cleanClubDraft({ ...raw, type: raw.club_type }, Date.now());
+  if ("error" in d) return { ok: false, message: d.error };
+  const made = await makeCommunity(clubForm(d));
+  if (!made.ok) return made;
+  return { ok: true, message: "Created", id: made.id };
 }
 
 export async function deleteClub(_prev: Result, form: FormData): Promise<Result> {
