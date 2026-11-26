@@ -23,8 +23,9 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
     await hydrated(page.locator("#hero-build"));
     await page.locator("#hero-build").fill(BUILD);
     await page.locator("#hero-card").getByText(BUILD).waitFor();
-    // The robot arm leads: a class project its professor verifies.
-    await page.locator("#hero-card").getByText(/ME 482 Robotics · Fall 2026 · Benchtop cobot arm/).waitFor();
+    // The robot arm leads: a class milestone, submitted to its assignment in the course.
+    await page.locator("#hero-card").getByText(/ME 482 Robotics · Fall 2026 · Assignment 3: Cycle-time test/).waitFor();
+    await page.locator("#top").getByText("Brazework Courses · with pilot schools").waitFor();
     const href = await page.locator("#top").getByRole("link", { name: /Get it verified/ }).getAttribute("href");
     if (new URL(href, BASE).searchParams.get("build") !== BUILD) throw new Error(`the button doesn't carry the build: ${href}`);
     if ((await tabs().getByRole("tab").count()) !== 5) throw new Error("expected five views");
@@ -32,12 +33,15 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
   }, page);
 
   await step("hero: the professor verifies it, the school counts it and exports the evidence, a recruiter finds it, it goes everywhere", async () => {
-    await page.locator("#hero-card").getByRole("button", { name: "Ask Prof. Dana Ruiz to verify" }).click();
+    await page.locator("#hero-card").getByRole("button", { name: "Submit to ME 482" }).click();
     await view("verify").getByText(BUILD).waitFor();
     for (const who of ["Maya Chen", "Noah Feld", "Tara Singh"]) await view("verify").getByRole("list", { name: "Teammates" }).getByText(who).waitFor();
-    const button = view("verify").getByRole("button", { name: "Verify as Prof. Dana Ruiz" });
-    if (await button.isVisible()) await button.click().catch(() => {}); // it may verify itself first
+    // Graded against the rubric (each row an ABET outcome) and verified in one step; the grade is private.
+    for (const row of ["Design and method", "Testing and results", "Teamwork"]) await view("verify").getByRole("list", { name: "Rubric" }).getByText(row).waitFor();
+    const button = view("verify").getByRole("button", { name: "Grade and verify" });
+    if (await button.isVisible()) await button.click().catch(() => {}); // it may finish by itself first
     await view("verify").getByRole("status").getByText(/Verified by Prof\. Dana Ruiz, ME 482, Fall 2026/).waitFor({ timeout: 8000 });
+    await view("verify").getByText(/27 \/ 30 · seen only by Maya and the course's faculty/).waitFor();
 
     await tabs().getByRole("tab", { name: "School" }).click();
     await view("school").getByText("ABET SO 1 · Solving complex problems").waitFor();
@@ -58,9 +62,8 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
     await view("everywhere").getByRole("button", { name: "Add to LinkedIn" }).click();
     await view("everywhere").getByText("Added to LinkedIn").waitFor();
     await view("everywhere").getByText(/brazework\.com\/v\//).waitFor();
-    await view("everywhere").getByRole("radio", { name: "Blackboard" }).click();
-    await view("everywhere").getByText(/Blackboard · opened through LTI 1\.3/).waitFor();
-    await page.locator("#top").getByText("Illustration · the verify link and résumé work today").waitFor();
+    await view("everywhere").getByText("Grades stay private: only you and your professors see them.").waitFor();
+    await page.locator("#top").getByText("Illustration · Add to LinkedIn, the verify link and résumé work today").waitFor();
   }, page);
 
   await step("hero: every build draws in 3D in its three views (software ones name theirs), and a club build is verified by its officer", async () => {
@@ -115,10 +118,12 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
     const order = await page.locator("main > section").evaluateAll((els) => els.map((el) => el.id));
     if (order.join(",") !== "top,compare,schools,for,pilot") throw new Error(`the page runs ${order.join(", ")}`);
     const sec = page.locator("#compare");
-    await sec.getByRole("heading", { name: /Run your project courses on Brazework\. Your LMS keeps the gradebook/ }).waitFor();
+    await sec.getByRole("heading", { name: /Everything a course needs, built around what students build/ }).waitFor();
+    // Brazework is the course platform now (docs/strategy.md): the page no longer hands grades to an LMS.
+    if (await page.getByText(/keeps the gradebook|opened through LTI/).count()) throw new Error("the page still says the LMS keeps the grades");
     for (const h of ["LinkedIn, Handshake", "Blackboard, Canvas", "Brazework"]) await sec.getByRole("heading", { name: h, exact: true }).waitFor();
     await sec.getByText("The professor, club or sponsor who saw it").waitFor();
-    await sec.getByText("A group set, one file per assignment").waitFor();
+    await sec.getByText("Upload a file, get a grade").waitFor();
     // What isn't built yet says so: peer evaluation, the schedule, outcome tagging, grade passback.
     if ((await sec.getByText("with pilot schools", { exact: true }).count()) !== 4) throw new Error("the strip should mark the four things still being built");
   }, page);
@@ -128,6 +133,9 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
     await band.getByRole("heading", { name: /verified by the people who saw it/ }).waitFor();
     for (const h of ["Accreditation evidence", "Club engagement", "Placement data", "A public showcase"]) await band.getByRole("heading", { name: h, exact: true }).waitFor();
     if ((await band.getByText("With pilot schools").count()) !== 2) throw new Error("the band should mark the two outcomes still being built");
+    // How a school grows on it, with the prices from lib/pricing.ts.
+    const grow = band.getByRole("list", { name: "How a school starts" });
+    for (const t of [/One course, one semester/, /\$1,500 pilot/, /\$6,000 a year/, /From \$18,000 a year/]) await grow.getByText(t).waitFor();
     await band.getByRole("link", { name: /See what schools get/ }).click();
     await page.waitForURL(/\/schools$/, { timeout: 15000 });
     await page.getByRole("heading", { level: 1, name: /Your courses, projects and clubs/ }).waitFor();

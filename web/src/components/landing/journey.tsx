@@ -1,9 +1,9 @@
-import { ArrowRight, Box, Check, Code2, Download, Eye, FileText, Gauge, Image as ImageIcon, Link2, Scissors, Search, X } from "lucide-react";
+import { ArrowRight, Box, Check, Code2, Download, Eye, FileText, Gauge, Image as ImageIcon, Link2, Lock, Scissors, Search, Sparkles, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Seal } from "@/components/app/verified-seal";
 import { cn } from "@/lib/forge";
 import { CadStage, type Mode } from "./cad-stage";
-import { EXAMPLES, STUDENT, type Example } from "./journey-data";
+import { EXAMPLES, RUBRIC, STUDENT, course, type Example } from "./journey-data";
 
 // Client components, imported by hero.tsx. The five views of the landing hero's product window (components/landing/hero.tsx): one project
 // followed from the student who logs it to everywhere it counts. Each view is a panel the same size,
@@ -73,7 +73,7 @@ export function StudentView({ ex, title, on, pick, choose, next }: ViewProps & {
       <div id="hero-card" aria-live="polite" className="border-t border-line px-4 py-3.5 sm:px-5">
         <p className="flex min-w-0 items-center gap-2 text-[11px] text-faint">
           <span className="shrink-0 rounded-full border border-line px-1.5 py-px font-medium text-text-2">{ex.kind === "class" ? "Class" : "Club"}</span>
-          <span className="truncate font-mono">{ex.where} · {ex.name}</span>
+          <span className="truncate font-mono">{ex.where} · {ex.assignment ?? ex.name}</span>
         </p>
         <p className="mt-1.5 line-clamp-2 min-h-[2.6em] text-[15px] leading-snug font-semibold text-pretty break-words">{title}</p>
         <div className="mt-2.5 flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
@@ -82,7 +82,7 @@ export function StudentView({ ex, title, on, pick, choose, next }: ViewProps & {
             <span className="inline-flex shrink-0 items-center gap-1.5 max-sm:hidden">{ex.repo ? <><Code2 className="size-3.5" aria-hidden="true" />GitHub repo</> : <><Box className="size-3.5" aria-hidden="true" />3D model</>}</span>
           </span>
           <button type="button" onClick={next} tabIndex={on ? 0 : -1} className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg bg-accent px-3 text-xs font-semibold text-on-accent transition active:scale-95">
-            Ask {ex.signer} to verify <ArrowRight className="size-3.5" aria-hidden="true" />
+            {ex.assignment ? `Submit to ${course(ex)}` : `Ask ${ex.signer} to verify`} <ArrowRight className="size-3.5" aria-hidden="true" />
           </button>
         </div>
       </div>
@@ -90,50 +90,69 @@ export function StudentView({ ex, title, on, pick, choose, next }: ViewProps & {
   );
 }
 
-// 2. The professor (or the club officer): the request with its evidence, each teammate's part, the seal.
+// 2. The professor (or the club officer). A class milestone is graded against the rubric, each row an
+// ABET outcome, and grading it verifies it (Brazework Courses, with pilot schools); the grade is
+// private to the student and the course's faculty. A club milestone is verified by an officer.
 export function VerifyView({ ex, title, on, still, verified, verify }: ViewProps & { verified: boolean; verify: () => void }) {
+  const graded = !!ex.assignment;
+  const rows = graded ? RUBRIC : [];
+  const steps = rows.length + ex.team.length;
   const [count, setTicked] = useState(0);
-  const ticked = verified ? ex.team.length : count;
-  // Played: each teammate's part is checked, then the seal comes down. Clicking does it at once, and
-  // with reduced motion it's verified as soon as the view opens. (hero.tsx remounts this per build.)
+  const done = verified ? steps : count;
+  // Played: each rubric row is scored and each teammate's part checked, then the seal comes down.
+  // Clicking does it at once; with reduced motion it's done as soon as the view opens.
   useEffect(() => {
     if (!on || verified) return;
     if (still) { const t = window.setTimeout(verify, 0); return () => window.clearTimeout(t); }
-    const ts = ex.team.map((_, i) => window.setTimeout(() => setTicked((n) => Math.max(n, i + 1)), 700 + i * 380));
-    ts.push(window.setTimeout(verify, 700 + ex.team.length * 380 + 250));
+    const ts = Array.from({ length: steps }, (_, i) => window.setTimeout(() => setTicked((n) => Math.max(n, i + 1)), 600 + i * 300));
+    ts.push(window.setTimeout(verify, 600 + steps * 300 + 250));
     return () => ts.forEach(window.clearTimeout);
-  }, [on, still, verified, ex, verify]);
+  }, [on, still, verified, steps, verify]);
   const files = [
-    { icon: FileText, name: ex.proof, note: "Test data" },
-    ex.repo ? { icon: Code2, name: ex.repo, note: "Code, linked from GitHub" } : { icon: Box, name: ex.model, note: "3D model, opens in the browser" },
-    { icon: ImageIcon, name: "bench-photo-03.jpg", note: "Photo" },
+    { icon: FileText, name: ex.proof },
+    ex.repo ? { icon: Code2, name: ex.repo } : { icon: Box, name: ex.model },
+    { icon: ImageIcon, name: "bench-photo-03.jpg" },
   ];
+  const total = rows.reduce((n, x) => n + x.score, 0);
   return (
-    <div className="flex h-full flex-col gap-3 overflow-hidden p-3 sm:p-4">
+    <div className="flex h-full flex-col gap-2.5 overflow-hidden p-3 sm:gap-3 sm:p-4">
       <div className="flex items-center gap-3">
         <Initials name={STUDENT} />
         <div className="min-w-0 flex-1">
-          <p className="truncate text-sm"><span className="font-semibold">{STUDENT}</span> <span className="text-muted">asks you to verify</span></p>
+          <p className="truncate text-sm"><span className="font-semibold">{STUDENT}</span> <span className="text-muted">{graded ? `submitted ${ex.assignment}` : "asks you to verify"}</span></p>
           <p className={cn(MONO, "truncate")}>{ex.where} · 2 min ago</p>
         </div>
       </div>
       <p className="line-clamp-2 text-[15px] leading-snug font-semibold text-pretty break-words">{title}</p>
-      <ul aria-label="Evidence" className={cn(card, "divide-y divide-line")}>
+      <ul aria-label="Evidence" className="flex flex-wrap gap-1.5">
         {files.map((f, i) => (
-          <li key={f.note} className={cn("flex items-center gap-2.5 px-3 py-2", i === 2 && "max-sm:hidden")}>
-            <f.icon className="size-4 shrink-0 text-muted" aria-hidden="true" />
-            <span className="min-w-0 flex-1 truncate text-[13px]">{f.name}</span>
-            <span className="shrink-0 text-[11px] text-faint max-sm:hidden">{f.note}</span>
+          <li key={f.name} className={cn("inline-flex max-w-full min-w-0 items-center gap-1.5 rounded-md border border-line bg-surface px-2 py-1 text-[12px]", i === 2 && "max-sm:hidden")}>
+            <f.icon className="size-3.5 shrink-0 text-muted" aria-hidden="true" /><span className="truncate">{f.name}</span>
           </li>
         ))}
       </ul>
+      {graded && (
+        <div className={cn(card, "px-3 py-2")}>
+          <p className="flex items-center justify-between gap-2"><span className={MONO}>Rubric</span><span className="font-mono text-[10px] text-faint">ABET outcome</span></p>
+          <ul aria-label="Rubric" className="mt-1 flex flex-col gap-1">
+            {rows.map((x, i) => (
+              <li key={x.row} className="grid grid-cols-[minmax(0,1fr)_2.75rem_3.75rem] items-center gap-2 text-[12.5px]">
+                <span className="truncate">{x.row}</span>
+                <span className="rounded border border-line px-1 text-center font-mono text-[10px] text-text-2">{x.outcome}</span>
+                <span className={cn("text-right font-mono whitespace-nowrap tabular-nums transition-opacity duration-300", done > i ? "opacity-100" : "opacity-25")}>{done > i ? x.score : "–"} / 10</span>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-1.5 flex items-center gap-1.5 border-t border-line pt-1.5 text-[11.5px] text-muted"><Lock className="size-3 shrink-0" aria-hidden="true" /><span className="min-w-0 truncate"><span className="font-semibold text-text tabular-nums">{done >= rows.length ? total : "–"} / 30</span> · seen only by {STUDENT.split(" ")[0]} and the course&apos;s faculty</span></p>
+        </div>
+      )}
       <div className="min-h-0">
         <p className={MONO}>Who did what</p>
-        <ul aria-label="Teammates" className="mt-1.5 flex flex-col gap-1">
+        <ul aria-label="Teammates" className="mt-1 flex flex-col gap-0.5">
           {ex.team.map((t, i) => {
-            const ok = ticked > i;
+            const ok = done > rows.length + i;
             return (
-              <li key={t.name} className="flex items-center gap-2.5 text-[13px]">
+              <li key={t.name} className="flex items-center gap-2.5 text-[12.5px]">
                 <span aria-hidden="true" className={cn("grid size-4 shrink-0 place-items-center rounded border transition-colors duration-300", ok ? "border-ok bg-ok text-bg" : "border-line-strong")}>{ok && <Check className="size-3" strokeWidth={3} />}</span>
                 <span className="shrink-0 font-medium">{t.name}</span>
                 <span className="min-w-0 truncate text-muted">{t.part}</span>
@@ -143,15 +162,16 @@ export function VerifyView({ ex, title, on, still, verified, verify }: ViewProps
           })}
         </ul>
       </div>
+      {graded && <p className="flex items-start gap-1.5 text-[11.5px] leading-snug text-muted max-sm:hidden"><Sparkles className="mt-0.5 size-3 shrink-0 text-brand" aria-hidden="true" /><span className="min-w-0 line-clamp-2">&ldquo;Clear method and a test anyone could repeat. Next time, show the uncertainty on your results.&rdquo; Drafted by Torch, edited and sent by {ex.signer}.</span></p>}
       <div className="mt-auto flex min-h-12 items-center">
         {verified ? (
           <p className="flex min-w-0 items-center gap-2.5 text-sm" role="status">
             <span className={cn("inline-grid", !still && "seal-stamp")}><Seal size={34} /></span>
-            <span className="min-w-0">Verified by <span className="font-semibold">{ex.signer}</span>, {ex.role}<span className="block text-xs text-faint">Their name stays on it, with the evidence.</span></span>
+            <span className="min-w-0">Verified by <span className="font-semibold">{ex.signer}</span>, {ex.role}<span className="block text-xs text-faint">{graded ? "Graded and verified in one step. The grade stays private; the work is on the record." : "Their name stays on it, with the evidence."}</span></span>
           </p>
         ) : (
           <button type="button" onClick={verify} tabIndex={on ? 0 : -1} className="inline-flex h-10 items-center gap-2 rounded-lg bg-accent px-4 text-sm font-semibold text-on-accent transition active:scale-95">
-            <Check className="size-4" aria-hidden="true" /> Verify as {ex.signer}
+            <Check className="size-4" aria-hidden="true" /> {graded ? "Grade and verify" : `Verify as ${ex.signer}`}
           </button>
         )}
       </div>
@@ -279,11 +299,12 @@ export function RecruiterView({ ex, title, on, still }: ViewProps) {
   );
 }
 
-// 5. Everywhere: on LinkedIn and Handshake with the verify link, and inside the course in Canvas or Blackboard.
+// 5. Everywhere: on LinkedIn (built) and Handshake with the verify link, on the résumé, and the student's
+// one place for classes, clubs, deadlines and grades (Brazework Courses, with pilot schools).
 export function EverywhereView({ ex, title, on }: ViewProps) {
   const [added, setAdded] = useState(false);
-  const [lms, setLms] = useState<"Canvas" | "Blackboard">("Canvas");
-  const course = ex.kind === "class" ? ex.where.replace(" · Fall 2026", "") : ex.where;
+  const where = ex.kind === "class" ? course(ex) : ex.where;
+  const due = [[ex.kind === "class" ? `${where} · Assignment 4` : `${where} · Build night`, ex.kind === "class" ? "Thu" : "Wed 7 pm"], ["CS 489 · Quiz 3", "Fri"], ["Robotics Club · Demo day", "Sat"]];
   return (
     <div className="flex h-full flex-col gap-2.5 overflow-hidden p-3 sm:grid sm:grid-cols-2 sm:gap-3 sm:p-4">
       <div className="flex min-h-0 flex-col gap-2.5 sm:gap-3">
@@ -315,23 +336,24 @@ export function EverywhereView({ ex, title, on }: ViewProps) {
       </div>
       <div className={cn(card, "flex min-h-0 flex-1 flex-col overflow-hidden")}>
         <div className="flex items-center justify-between gap-2 border-b border-line px-3 py-2">
-          <p className="truncate text-[12px] font-medium">{course}</p>
-          <div role="radiogroup" aria-label="Course site" className="flex shrink-0 rounded-md border border-line p-0.5">
-            {(["Canvas", "Blackboard"] as const).map((l) => <button key={l} type="button" role="radio" aria-checked={lms === l} tabIndex={on ? 0 : -1} onClick={() => setLms(l)} className={cn("h-6 rounded px-2 text-[11px] font-medium", lms === l ? "bg-raised text-text" : "text-muted")}>{l}</button>)}
-          </div>
+          <p className="truncate text-[12px] font-medium">{STUDENT.split(" ")[0]}&apos;s Brazework</p>
+          <p className="shrink-0 font-mono text-[10px] text-faint">This week</p>
         </div>
-        <div className="grid min-h-0 flex-1 grid-cols-1 sm:grid-cols-[5.5rem_minmax(0,1fr)]">
+        <div className="grid min-h-0 flex-1 grid-cols-1 sm:grid-cols-[5.25rem_minmax(0,1fr)]">
           <ul className="flex flex-col gap-1 border-r border-line p-2 text-[11px] text-muted max-sm:hidden">
-            {["Home", "Modules", "Assignments", "Grades", "Brazework"].map((l) => <li key={l} className={cn("truncate rounded px-1.5 py-1", l === "Brazework" && "bg-raised font-medium text-text")}>{l}</li>)}
+            {["Classes", "Clubs", "Projects", "Record", "Grades"].map((l) => <li key={l} className={cn("flex items-center gap-1 truncate rounded px-1.5 py-1", l === "Classes" && "bg-raised font-medium text-text")}>{l}{l === "Grades" && <Lock className="size-2.5" aria-hidden="true" />}</li>)}
           </ul>
           <div className="flex min-w-0 flex-col gap-2 p-2.5">
-            <p className="text-[11px] text-faint">{lms} · opened through LTI 1.3, no new login</p>
-            {[[title, true], ["Group 4: test plan", false], ["Group 2: design review", false]].map(([t, v], i) => (
-              <div key={i} className={cn("rounded-lg border border-line px-2.5 py-2", !v && "opacity-60", i === 2 && "max-sm:hidden")}>
-                <p className="line-clamp-2 text-[12px] leading-snug font-medium break-words">{t}</p>
-                {v ? <Verified ex={ex} className="mt-1 max-w-full text-[11px]" /> : <p className="mt-1 text-[11px] text-faint">In progress</p>}
-              </div>
-            ))}
+            <p className={MONO}>Due</p>
+            <ul className="flex flex-col gap-1">
+              {due.map(([t, d], i) => <li key={t} className={cn("flex items-center justify-between gap-2 text-[12px]", i === 2 && "max-sm:hidden")}><span className="min-w-0 truncate">{t}</span><span className="shrink-0 font-mono text-[10px] text-faint">{d}</span></li>)}
+            </ul>
+            <p className={cn(MONO, "mt-1")}>On your record</p>
+            <div className="rounded-lg border border-line px-2.5 py-2">
+              <p className="line-clamp-2 text-[12px] leading-snug font-medium break-words">{title}</p>
+              <Verified ex={ex} className="mt-1 max-w-full text-[11px]" />
+            </div>
+            <p className="mt-auto flex items-center gap-1.5 text-[11px] text-muted"><Lock className="size-3 shrink-0" aria-hidden="true" /><span className="min-w-0">Grades stay private: only you and your professors see them.</span></p>
           </div>
         </div>
       </div>

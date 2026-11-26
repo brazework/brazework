@@ -8,10 +8,11 @@ import { useReducedMotion } from "@/lib/use-reduced-motion";
 import { EverywhereView, RecruiterView, SchoolView, StudentView, VerifyView } from "./journey";
 import { EXAMPLES, type Example } from "./journey-data";
 
-// The hero (landing journey, 2026-11-26): the product window. One project followed through five
-// views: the student logs it with its proof under a class or club, the professor (or club officer)
-// verifies it, the school's dashboard counts it, a recruiter finds it, and it goes everywhere the
-// student does. What the visitor types is the milestone in all five, and the button carries it into
+// The hero (landing journey; Brazework Courses since 2026-11-26, docs/strategy.md): the product
+// window. One project followed through five views: the student submits the milestone to its
+// assignment (or logs it under a club), the professor grades it against the rubric and verifies it in
+// one step (a club officer verifies), the school's dashboard counts it, a recruiter finds it, and it
+// goes everywhere the student does. What the visitor types is the milestone in all five, and the button carries it into
 // sign-up (?build=, lib/front-door.ts).
 //
 // The views are tabs to click, and on a laptop the hero also pins and plays them as you scroll
@@ -25,11 +26,11 @@ const subscribe = (f: () => void) => { const m = matchMedia(RUN); m.addEventList
 const usePinned = () => useSyncExternalStore(subscribe, () => matchMedia(RUN).matches, () => false);
 
 const VIEWS = [
-  { id: "student", tab: "Student", say: "Log what you finished, with the file that proves it, under its class or club.", note: "Example build" },
-  { id: "verify", tab: "Professor", say: "Whoever saw the work checks the evidence and each teammate's part. Their name stays on it.", note: "Example" },
-  { id: "school", tab: "School", say: "Your school counts it the moment it's verified: accreditation evidence without the binder.", note: "Illustration · with pilot schools" },
-  { id: "recruiter", tab: "Recruiter", say: "Recruiters search by verified work and see who vouched for it. You see who looked.", note: "Illustration · example data" },
-  { id: "everywhere", tab: "Everywhere", say: "It goes where you do: LinkedIn, Handshake, your résumé, your course site.", note: "Illustration · the verify link and résumé work today" },
+  { id: "student", tab: "Student", say: "The student submits the milestone to its assignment, with the file that proves it.", note: "Example build · Courses with pilot schools" },
+  { id: "verify", tab: "Professor", say: "The professor grades it against the rubric and verifies it in one step. The grade stays private.", note: "Example · grading with pilot schools; verifying works today" },
+  { id: "school", tab: "School", say: "The school counts it the moment it's verified: accreditation evidence, grouped by outcome.", note: "Illustration · with pilot schools" },
+  { id: "recruiter", tab: "Recruiter", say: "Recruiters search by verified work and see who vouched for it. The student sees who looked.", note: "Illustration · example data" },
+  { id: "everywhere", tab: "Everywhere", say: "The work goes on LinkedIn, Handshake and the résumé; classes, clubs and deadlines stay in one place.", note: "Illustration · Add to LinkedIn, the verify link and résumé work today" },
 ] as const;
 
 export function Hero() {
@@ -94,12 +95,12 @@ export function Hero() {
         <div aria-hidden="true" className="hero-glow pointer-events-none absolute inset-0 -z-10" />
         <div className="mx-auto grid w-full max-w-6xl grid-cols-1 items-center gap-10 px-5 sm:px-6 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:gap-12">
           <div className="min-w-0">
-            <p className="inline-flex items-center gap-2 rounded-full border border-line bg-surface/60 px-3 py-1 text-xs text-text-2"><span aria-hidden="true" className="size-1.5 rounded-full bg-brand" /> Free with your school email</p>
-            <h1 id="hero-h" className="mt-5 text-[clamp(2.75rem,6.2vw,4.75rem)] leading-[0.95] font-semibold tracking-[-0.05em]">Prove what<br />you built.</h1>
-            <p className="mt-5 max-w-[30rem] text-lg leading-relaxed text-muted">Log a class or club project, and the professor or club who saw the work verifies it. Your school counts it, recruiters can trust it, and it&apos;s yours for good.</p>
+            <p className="inline-flex items-center gap-2 rounded-full border border-line bg-surface/60 px-3 py-1 text-xs text-text-2"><span aria-hidden="true" className="size-1.5 rounded-full bg-brand" /> Brazework Courses · with pilot schools</p>
+            <h1 id="hero-h" className="mt-5 text-[clamp(2.75rem,6.2vw,4.75rem)] leading-[0.95] font-semibold tracking-[-0.05em]">Teach it.<br />Grade it.<br />Prove it.</h1>
+            <p className="mt-5 max-w-[31rem] text-lg leading-relaxed text-muted">The course platform built around what students build. Grading a milestone verifies it, the grade stays private, and the student keeps the proof for good. Students and clubs never pay.</p>
 
             <div className="mt-8 max-w-[30rem]">
-              <label htmlFor="hero-build" className="text-sm font-medium text-text-2">What did you build?</label>
+              <label htmlFor="hero-build" className="text-sm font-medium text-text-2">A student? What did you build?</label>
               <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
                 <input id="hero-build" value={typed} maxLength={300} autoComplete="off" enterKeyHint="go"
                   onChange={(e) => { setTyped(e.target.value); setVerified(false); if (view !== 0) go(0); }}
@@ -108,7 +109,7 @@ export function Hero() {
                   className="h-12 w-full min-w-0 rounded-xl border border-line-strong bg-surface px-4 text-[16px] transition outline-none placeholder:text-faint focus:border-text focus:shadow-[0_0_0_4px_color-mix(in_oklab,var(--text)_12%,transparent)]" />
                 <Button href={signupHref("", typed)} size="lg" className="h-12 shrink-0 rounded-xl px-5">Get it verified <ArrowRight className="size-4" /></Button>
               </div>
-              <p id="hero-build-hint" className="mt-2.5 text-sm text-faint">Type it, then follow it through all five views. A free account keeps it.</p>
+              <p id="hero-build-hint" className="mt-2.5 text-sm text-faint">Type it and follow it through all five views. Free with your school email.</p>
             </div>
             <p aria-hidden="true" className="hero-scroll-hint mt-10 hidden items-center gap-2 font-mono text-xs text-faint"><ArrowDown className="size-3.5" /> Scroll to follow it from log to LinkedIn</p>
           </div>
@@ -147,7 +148,7 @@ export function Hero() {
                 )}
               </div>
             </div>
-            <p className="mt-3 text-xs text-faint">Example projects and people. The school, recruiter and everywhere views show what&apos;s being built with pilot schools.</p>
+            <p className="mt-3 text-xs text-faint">Example projects and people. Courses, grading, the school&apos;s dashboard and recruiter search are shown as they&apos;re being built with pilot schools.</p>
           </div>
         </div>
       </div>
