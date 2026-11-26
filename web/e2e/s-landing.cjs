@@ -23,7 +23,8 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
     await hydrated(page.locator("#hero-build"));
     await page.locator("#hero-build").fill(BUILD);
     await page.locator("#hero-card").getByText(BUILD).waitFor();
-    await page.locator("#hero-card").getByText(/ME 410 Capstone · Fall 2026/).waitFor();
+    // The robot arm leads: a class project its professor verifies.
+    await page.locator("#hero-card").getByText(/ME 482 Robotics · Fall 2026 · Benchtop cobot arm/).waitFor();
     const href = await page.locator("#top").getByRole("link", { name: /Get it verified/ }).getAttribute("href");
     if (new URL(href, BASE).searchParams.get("build") !== BUILD) throw new Error(`the button doesn't carry the build: ${href}`);
     if ((await tabs().getByRole("tab").count()) !== 5) throw new Error("expected five views");
@@ -31,15 +32,15 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
   }, page);
 
   await step("hero: the professor verifies it, the school counts it and exports the evidence, a recruiter finds it, it goes everywhere", async () => {
-    await page.locator("#hero-card").getByRole("button", { name: "Ask Prof. Alvarez to verify" }).click();
+    await page.locator("#hero-card").getByRole("button", { name: "Ask Prof. Dana Ruiz to verify" }).click();
     await view("verify").getByText(BUILD).waitFor();
-    for (const who of ["Maya Chen", "Sam Ortiz", "Priya Nair"]) await view("verify").getByRole("list", { name: "Teammates" }).getByText(who).waitFor();
-    const button = view("verify").getByRole("button", { name: "Verify as Prof. Alvarez" });
+    for (const who of ["Maya Chen", "Noah Feld", "Tara Singh"]) await view("verify").getByRole("list", { name: "Teammates" }).getByText(who).waitFor();
+    const button = view("verify").getByRole("button", { name: "Verify as Prof. Dana Ruiz" });
     if (await button.isVisible()) await button.click().catch(() => {}); // it may verify itself first
-    await view("verify").getByRole("status").getByText(/Verified by Prof\. Alvarez, ME 410, Fall 2026/).waitFor({ timeout: 8000 });
+    await view("verify").getByRole("status").getByText(/Verified by Prof\. Dana Ruiz, ME 482, Fall 2026/).waitFor({ timeout: 8000 });
 
     await tabs().getByRole("tab", { name: "School" }).click();
-    await view("school").getByText("ABET SO 6 · Experimentation and analysis").waitFor();
+    await view("school").getByText("ABET SO 1 · Solving complex problems").waitFor();
     await view("school").getByText("+1 just now").waitFor({ timeout: 8000 });
     await view("school").getByRole("button", { name: "Export evidence" }).click();
     const report = page.getByRole("dialog", { name: "Sample evidence report" });
@@ -48,9 +49,9 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
     await report.waitFor({ state: "detached" });
 
     await tabs().getByRole("tab", { name: "Recruiter" }).click();
-    await view("recruiter").getByText("drivetrain test, verified").waitFor({ timeout: 8000 });
+    await view("recruiter").getByText("robotics, motion planning, verified").waitFor({ timeout: 8000 });
     await view("recruiter").getByText(BUILD).waitFor();
-    await view("recruiter").getByText(/Verified by Prof\. Alvarez/).first().waitFor();
+    await view("recruiter").getByText(/Verified by Prof\. Dana Ruiz/).first().waitFor();
     await view("recruiter").getByText("Viewed by Pratt & Whitney").waitFor({ timeout: 8000 });
 
     await tabs().getByRole("tab", { name: "Everywhere" }).click();
@@ -62,29 +63,35 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
     await page.locator("#top").getByText("Illustration · the verify link and résumé work today").waitFor();
   }, page);
 
-  await step("hero: every build draws in 3D in Render, Section and Stress, and a club build is verified by its officer", async () => {
+  await step("hero: every build draws in 3D in its three views (software ones name theirs), and a club build is verified by its officer", async () => {
     await go(page, "/");
     await page.waitForFunction(() => ["ready", "failed"].includes(document.querySelector("#cad-stage")?.getAttribute("data-state") ?? ""), null, { timeout: 30000 });
     const drew = (await page.locator("#cad-stage").getAttribute("data-state")) === "ready";
     if (drew && !(await page.locator("#cad-stage canvas").count())) throw new Error("ready, but no canvas");
     const builds = page.getByRole("group", { name: "Example builds" });
-    const chips = ["Gearbox", "Truss bridge", "Circuit board", "Formula SAE", "Drone", "Robot arm", "Rocket avionics"];
-    if ((await builds.getByRole("button").count()) !== chips.length) throw new Error("expected seven example builds");
+    const chips = ["Robot arm", "Formula SAE", "Rover autonomy", "Neural network", "Drone", "Truss bridge", "Circuit board", "Backend cluster", "Gearbox", "Rocket avionics"];
+    const names = { "Rover autonomy": ["Render", "Inside", "Cost map"], "Neural network": ["Render", "Layers", "Activations"], "Backend cluster": ["Render", "Inside", "Load"] };
+    if ((await builds.getByRole("button").count()) !== chips.length) throw new Error("expected ten example builds");
     for (const chip of chips) {
       await builds.getByRole("button", { name: chip, exact: true }).click();
       if ((await builds.getByRole("button", { name: chip, exact: true }).getAttribute("aria-pressed")) !== "true") throw new Error(`${chip} isn't marked as the build`);
-      for (const mode of ["Section", "Stress", "Render"]) {
-        await page.getByRole("radio", { name: mode }).click();
+      const modes = names[chip] ?? ["Render", "Section", "Stress"];
+      for (const k of [1, 2, 0]) {
+        await page.getByRole("radiogroup", { name: "View" }).getByRole("radio", { name: modes[k], exact: true }).click();
         const on = await page.getByRole("radiogroup", { name: "View" }).getByRole("radio", { checked: true }).allInnerTexts();
-        if (on.length !== 1 || !on[0].includes(mode)) throw new Error(`${chip}: after ${mode}, the views marked are ${on.join(", ")}`);
+        if (on.length !== 1 || !on[0].includes(modes[k])) throw new Error(`${chip}: after ${modes[k]}, the views marked are ${on.join(", ")}`);
       }
       if (drew) await page.locator("#cad-stage .cad-callout").first().waitFor({ state: "attached" });
       if (page.errs.length) throw new Error(`${chip}: ${page.errs[0]}`);
     }
-    await builds.getByRole("button", { name: "Formula SAE", exact: true }).click();
-    await page.locator("#hero-card").getByText(/Formula SAE · 2027 car/).waitFor();
+    await builds.getByRole("button", { name: "Drone", exact: true }).click();
+    await page.locator("#hero-card").getByText(/Aerial Robotics Club · 5-inch inspection quad/).waitFor();
     await tabs().getByRole("tab", { name: "Club officer" }).click();
-    await view("verify").getByRole("status").getByText(/Verified by K\. Osei, chief engineer, Formula SAE/).waitFor({ timeout: 8000 });
+    await view("verify").getByRole("status").getByText(/Verified by A\. Novak, president, Aerial Robotics Club/).waitFor({ timeout: 8000 });
+    // A software build's proof is its code, linked from GitHub.
+    await tabs().getByRole("tab", { name: "Student" }).click();
+    await builds.getByRole("button", { name: "Neural network", exact: true }).click();
+    await page.locator("#hero-card").getByText("GitHub repo").waitFor();
   }, page);
 
   await step("hero: on a laptop it pins and plays the views as you scroll, and clicking a view scrolls to it", async () => {
@@ -194,6 +201,19 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
     }
   }, phone);
 
+  // Light and dark: the hero, the band for schools and the nav over the hero follow the visitor's theme.
+  await step("light and dark: the hero and the band for schools follow the visitor's theme", async () => {
+    const look = {};
+    for (const scheme of ["light", "dark"]) {
+      const p = await (await b.newContext({ viewport: { width: 1440, height: 950 }, colorScheme: scheme })).newPage();
+      await p.goto(BASE + "/", { waitUntil: "networkidle" });
+      look[scheme] = await p.evaluate(() => ["top", "schools"].map((id) => getComputedStyle(document.getElementById(id)).backgroundColor).concat(getComputedStyle(document.querySelector("#hero-h")).color));
+      await p.context().close();
+    }
+    for (let i = 0; i < 3; i++) if (look.light[i] === look.dark[i]) throw new Error(`part ${i} looks the same in both themes: ${look.light[i]}`);
+    if (look.light[0] !== "rgb(247, 247, 245)") throw new Error(`the light hero isn't on paper: ${look.light[0]}`);
+  }, page);
+
   // Reduced motion: nothing pins, plays or waits.
   const still = await (await b.newContext({ viewport: { width: 1440, height: 950 }, reducedMotion: "reduce" })).newPage();
   const reducedErrors = [];
@@ -205,7 +225,7 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
     if (Math.abs(run) > 2) throw new Error(`the hero still has a scroll run (${run}px)`);
     const t = still.getByRole("tablist", { name: "Follow one project" });
     await t.getByRole("tab", { name: "Professor" }).click();
-    await still.locator("#hero-view-verify").getByRole("status").getByText(/Verified by Prof\. Alvarez/).waitFor({ timeout: 3000 });
+    await still.locator("#hero-view-verify").getByRole("status").getByText(/Verified by Prof\. Dana Ruiz/).waitFor({ timeout: 3000 });
     await t.getByRole("tab", { name: "Recruiter" }).click();
     await still.locator("#hero-view-recruiter").getByText("Viewed by Pratt & Whitney").waitFor({ timeout: 3000 });
     if (reducedErrors.length) throw new Error(reducedErrors[0]);

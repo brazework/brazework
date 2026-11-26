@@ -11,8 +11,10 @@ import { mergeGeometries } from "three/examples/jsm/utils/BufferGeometryUtils.js
 // - `animate(t)`: how it runs (joints, gears)
 // - `shells`: the parts the section view cuts away, to show what's inside
 // - `stress`: a 0..1 value per mesh for the stress view (higher near the loaded joints and roots)
+// A mesh's `userData.keep` keeps its own material in the stress view; `userData.plain` draws no CAD
+// edge lines on it (a thin tube, a glowing marker).
 
-export type BuildId = "avionics" | "arm" | "gearbox" | "fsae" | "drone" | "bridge" | "pcb";
+export type BuildId = "avionics" | "arm" | "gearbox" | "fsae" | "drone" | "bridge" | "pcb" | "rover" | "nn" | "cluster";
 export type Built = {
   root: THREE.Group;
   anchors: Record<string, THREE.Object3D>;
@@ -29,6 +31,8 @@ export type Built = {
   phi?: number;
   // Where the camera starts around it, for a build that reads from one side (a bridge).
   theta?: number;
+  // For a build whose views mean something other than a cut (software: a cost map, a layer view).
+  onMode?: (mode: "render" | "section" | "stress") => void;
 };
 
 const M = {
@@ -788,6 +792,257 @@ function pcb(): Built {
   return { root, anchors, shells, stress, turn: "sway", cut: [0, 0, -1], phi: 0.92, animate: () => {} };
 }
 
+// ---------- Software, drawn as the system it runs ----------
+// The three views mean what they would to whoever built it: the stress view becomes the system's own
+// heat (a planner's cost map, a network's activations, a cluster's load), and the section view opens
+// the hardware it runs on or the model's layers. Glowing parts (the path, requests in flight) keep
+// their colour in every view (`userData.keep`).
+const glowMat = (color: number, emissive: number, intensity = 0.7) => new THREE.MeshStandardMaterial({ color, emissive, emissiveIntensity: intensity, metalness: 0.1, roughness: 0.4 });
+const keep = <T extends THREE.Object3D>(o: T, plain = true) => { o.userData.keep = true; if (plain) o.userData.plain = true; return o; };
+
+// ---------- Rover autonomy: A* on a cost map, lidar, a loop through a cluttered yard ----------
+function rover(): Built {
+  const root = new THREE.Group();
+  const shells: THREE.Mesh[] = [];
+  const stress = new Map<THREE.Mesh, (p: THREE.Vector3) => number>();
+  // Obstacles: rocks and crates, as [x, z, radius].
+  const obstacles: [number, number, number, "rock" | "crate"][] = [[-0.9, -0.6, 0.32, "rock"], [0.5, -1.05, 0.26, "crate"], [0.85, 0.35, 0.36, "rock"], [-0.35, 0.95, 0.24, "crate"], [-1.55, 0.55, 0.22, "rock"], [1.65, -0.25, 0.2, "crate"], [0.0, -0.05, 0.18, "rock"]];
+  const cost = (p: THREE.Vector3) => {
+    let c = 0;
+    for (const [x, z, r] of obstacles) { const d = Math.hypot(p.x - x, p.z - z) - r; c = Math.max(c, d <= 0 ? 1 : Math.max(0, 1 - d / 0.55) ** 1.6 * 0.92); }
+    return c;
+  };
+  // The yard: a gently uneven patch of ground.
+  const ground = new THREE.PlaneGeometry(4.6, 3.6, 92, 72);
+  ground.rotateX(-Math.PI / 2);
+  const gp = ground.getAttribute("position");
+  for (let i = 0; i < gp.count; i++) { const x = gp.getX(i), z = gp.getZ(i); gp.setY(i, 0.03 * Math.sin(x * 2.1) * Math.cos(z * 1.7) + 0.015 * Math.sin(x * 5 + z * 3)); }
+  ground.computeVertexNormals();
+  const yard = mesh(ground, new THREE.MeshStandardMaterial({ color: 0x8c8577, roughness: 0.95, metalness: 0 }));
+  yard.userData.plain = true;
+  root.add(yard); stress.set(yard, cost);
+  const rock = M.dark(), crate = new THREE.MeshStandardMaterial({ color: 0xa0784a, roughness: 0.8 });
+  for (const [x, z, r, kind] of obstacles) {
+    const g = kind === "rock" ? new THREE.IcosahedronGeometry(r, 1) : new RoundedBoxGeometry(r * 1.5, r * 1.3, r * 1.5, 2, 0.02);
+    if (kind === "rock") { const a = g.getAttribute("position"); for (let i = 0; i < a.count; i++) a.setXYZ(i, a.getX(i) * (1 + 0.15 * Math.sin(i * 1.7)), a.getY(i) * 0.7, a.getZ(i) * (1 + 0.12 * Math.cos(i * 2.3))); g.computeVertexNormals(); }
+    const o = mesh(g, kind === "rock" ? rock : crate, [x, kind === "rock" ? r * 0.45 : r * 0.65, z], [0, x * 3, 0]);
+    root.add(o); stress.set(o, () => 1);
+  }
+  // The planned loop (what A* found, smoothed), its waypoints and the goal.
+  const loop = new THREE.CatmullRomCurve3([[-1.9, -1.2], [-0.25, -0.7], [0.6, -0.45], [1.6, 0.55], [0.2, 1.3], [-0.85, 0.15], [-1.95, -0.25]].map(([x, z]) => new THREE.Vector3(x, 0.05, z)), true, "centripetal");
+  const path = keep(mesh(new THREE.TubeGeometry(loop, 240, 0.022, 12, true), glowMat(0xe58a5c, 0xb8562b, 0.9)));
+  path.castShadow = false; root.add(path);
+  for (let i = 0; i < 10; i++) { const q = loop.getPointAt(i / 10); root.add(keep(mesh(new THREE.CylinderGeometry(0.045, 0.045, 0.012, 24), glowMat(0xffffff, 0xe58a5c, 0.4), [q.x, 0.05, q.z]))); }
+  // The rover: rocker-bogie-ish chassis, its body (opens in section to the computer), the lidar mast.
+  const bot = new THREE.Group(); root.add(bot);
+  const body = mesh(new RoundedBoxGeometry(0.62, 0.17, 0.42, 3, 0.04), M.paint(), [0, 0.27, 0]);
+  bot.add(body); shells.push(body); stress.set(body, () => 0.2);
+  bot.add(mesh(new THREE.BoxGeometry(0.5, 0.02, 0.34), M.fr4(), [0, 0.22, 0]));
+  bot.add(mesh(new THREE.BoxGeometry(0.2, 0.06, 0.16), M.alu(), [0.06, 0.26, 0]));
+  for (let i = 0; i < 6; i++) bot.add(mesh(new THREE.BoxGeometry(0.008, 0.05, 0.16), M.alu(), [-0.03 + i * 0.035, 0.31, 0]));
+  bot.add(mesh(new RoundedBoxGeometry(0.2, 0.07, 0.24, 2, 0.015), M.lipo(), [-0.17, 0.26, 0]));
+  const wheels: THREE.Mesh[] = [];
+  for (const x of [-0.24, 0.24]) for (const z of [-0.26, 0.26]) {
+    const w = mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.08, 32), M.rubber(), [x, 0.1, z], [Math.PI / 2, 0, 0]);
+    bot.add(w); wheels.push(w);
+    bot.add(mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.085, 24), M.anod(), [x, 0.1, z], [Math.PI / 2, 0, 0]));
+  }
+  for (const z of [-0.23, 0.23]) bot.add(mesh(tube([[-0.24, 0.1, z], [0, 0.2, z], [0.24, 0.1, z]], 0.014), M.alu()));
+  bot.add(mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.22, 12), M.alu(), [0.16, 0.46, 0]));
+  const lidar = new THREE.Group(); lidar.position.set(0.16, 0.6, 0); bot.add(lidar);
+  lidar.add(mesh(new THREE.CylinderGeometry(0.055, 0.06, 0.07, 32), M.dark()));
+  lidar.add(mesh(new THREE.CylinderGeometry(0.057, 0.057, 0.02, 32), new THREE.MeshPhysicalMaterial({ color: 0x0b1020, roughness: 0.1, clearcoat: 1 }), [0, 0.01, 0]));
+  bot.add(mesh(new RoundedBoxGeometry(0.06, 0.05, 0.1, 2, 0.01), M.dark(), [0.32, 0.3, 0]));
+  // The lidar's returns: points on whatever it can see, re-drawn as it turns.
+  const N = 900, pts = new Float32Array(N * 3), col = new Float32Array(N * 3);
+  const cloud = new THREE.Points(new THREE.BufferGeometry(), new THREE.PointsMaterial({ size: 0.038, vertexColors: true, transparent: true, opacity: 0.9, depthWrite: false }));
+  cloud.geometry.setAttribute("position", new THREE.BufferAttribute(pts, 3));
+  cloud.geometry.setAttribute("color", new THREE.BufferAttribute(col, 3));
+  root.add(cloud);
+  const ray = new THREE.Raycaster(), hits = root.children.filter((o) => (o as THREE.Mesh).isMesh && o !== yard && o !== path) as THREE.Mesh[];
+  const tint = new THREE.Color(), origin = new THREE.Vector3(), dir = new THREE.Vector3();
+  let next = 0;
+  const scan = (yaw: number, from: THREE.Vector3) => {
+    for (let k = 0; k < 18; k++) {
+      const a = yaw + (k / 18) * 0.5, el = -0.02 - (k % 6) * 0.045;
+      origin.copy(from); dir.set(Math.cos(a), el, Math.sin(a)).normalize();
+      ray.set(origin, dir); ray.far = 2.4;
+      // Rays are cast in the world; the points live in the build's own frame (it's moved to centre it).
+      const hit = ray.intersectObjects(hits, false)[0];
+      const local = root.worldToLocal(origin.clone()), toGround = local.y / -dir.y;
+      // No return within range (a ray that would land past it): nothing to draw.
+      if (!hit && !(toGround > 0 && toGround < 2.4)) continue;
+      const p = hit ? root.worldToLocal(hit.point.clone()) : local.addScaledVector(dir, toGround);
+      const i = next++ % N;
+      pts[i * 3] = p.x; pts[i * 3 + 1] = Math.max(0.02, p.y); pts[i * 3 + 2] = p.z;
+      tint.set(hit ? 0x5eead4 : 0x6ea8ff);
+      col[i * 3] = tint.r; col[i * 3 + 1] = tint.g; col[i * 3 + 2] = tint.b;
+    }
+    cloud.geometry.attributes.position.needsUpdate = true;
+    cloud.geometry.attributes.color.needsUpdate = true;
+  };
+  const place = (u: number) => {
+    const q = loop.getPointAt(u), t = loop.getTangentAt(u);
+    bot.position.set(q.x, 0.01, q.z);
+    bot.rotation.y = Math.atan2(-t.z, t.x);
+  };
+  place(0);
+  root.updateMatrixWorld(true);
+  for (let i = 0; i < 50; i++) scan(i * 0.5, lidar.getWorldPosition(new THREE.Vector3()));
+  const anchors = { path: anchor(root, [1.55, 0.06, 0.6]), lidar: anchor(lidar, [0, 0.05, 0]), cost: anchor(root, [0.85, 0.5, 0.35]) };
+  let last = -1;
+  return {
+    root, anchors, shells, stress, theta: 0.5, phi: 0.95, room: 0.84,
+    onMode: (m) => { body.visible = m !== "section"; cloud.visible = m !== "stress"; },
+    animate: (t) => {
+      const u = (t * 0.035) % 1;
+      place(u);
+      for (const w of wheels) w.rotation.y = -t * 4;
+      lidar.rotation.y = t * 6;
+      if (Math.floor(t * 30) !== last) { last = Math.floor(t * 30); bot.updateMatrixWorld(true); scan(t * 6, lidar.getWorldPosition(origin.clone())); }
+    },
+  };
+}
+
+// ---------- A convolutional network: a weld photo in, crack / porosity / OK out ----------
+function network(): Built {
+  const root = new THREE.Group();
+  const shells: THREE.Mesh[] = [];
+  const stress = new Map<THREE.Mesh, (p: THREE.Vector3) => number>();
+  // The input: an 8 × 8 patch of the photo, a bright weld bead with a dark crack across it.
+  const px = new THREE.InstancedMesh(new THREE.BoxGeometry(0.035, 0.11, 0.11), new THREE.MeshStandardMaterial({ roughness: 0.6 }), 64);
+  const tm = new THREE.Matrix4(), c = new THREE.Color();
+  for (let i = 0; i < 64; i++) {
+    const r = Math.floor(i / 8), k = i % 8, y = (3.5 - r) * 0.125, z = (k - 3.5) * 0.125;
+    tm.makeTranslation(-2.25, 0.9 + y, z); px.setMatrixAt(i, tm);
+    const bead = Math.exp(-((r - 3.5) ** 2) / 5), crack = Math.abs(r - (k * 0.55 + 1.6)) < 0.6 ? 0.55 : 1;
+    c.setRGB(0.18 + 0.7 * bead * crack, 0.16 + 0.6 * bead * crack, 0.15 + 0.45 * bead * crack, THREE.SRGBColorSpace); px.setColorAt(i, c);
+  }
+  root.add(keep(px));
+  // Feature maps: conv 1 (4 maps), conv 2 (8 maps), each a slab, stacked like the diagram in the paper.
+  const slab = new THREE.MeshPhysicalMaterial({ color: 0x3a4250, metalness: 0.2, roughness: 0.35, clearcoat: 0.6, transparent: true, opacity: 0.92 });
+  const act = (phase: number, freq: number) => (p: THREE.Vector3) => clamp01(0.5 + 0.45 * Math.sin(p.y * freq + phase) * Math.cos(p.z * freq * 0.8 + phase * 1.7));
+  const maps: THREE.Mesh[] = [];
+  for (let i = 0; i < 4; i++) { const m = mesh(new RoundedBoxGeometry(0.05, 0.8, 0.8, 2, 0.012), slab, [-1.35 + i * 0.1, 0.9, 0]); root.add(m); maps.push(m); shells.push(m); stress.set(m, act(i * 1.3, 7)); }
+  for (let i = 0; i < 8; i++) { const m = mesh(new RoundedBoxGeometry(0.04, 0.52, 0.52, 2, 0.01), slab, [-0.3 + i * 0.075, 0.9, 0]); root.add(m); maps.push(m); shells.push(m); stress.set(m, act(i * 0.9, 11)); }
+  // Flattened, then a dense layer, then the three classes.
+  const node = new THREE.SphereGeometry(1, 24, 16);
+  const flat: THREE.Vector3[] = [], dense: THREE.Vector3[] = [], out: THREE.Vector3[] = [];
+  const nodeMat = new THREE.MeshStandardMaterial({ color: 0x8d939c, metalness: 0.6, roughness: 0.32 });
+  for (let i = 0; i < 14; i++) { const p = new THREE.Vector3(0.75, 0.9 + (i - 6.5) * 0.085, 0); flat.push(p); const m = mesh(node, nodeMat, [p.x, p.y, p.z]); m.scale.setScalar(0.032); root.add(m); stress.set(m, () => 0.2 + 0.6 * ((i * 7) % 5) / 4); }
+  for (let i = 0; i < 9; i++) { const p = new THREE.Vector3(1.45, 0.9 + (i - 4) * 0.13, 0); dense.push(p); const m = mesh(node, nodeMat, [p.x, p.y, p.z]); m.scale.setScalar(0.045); root.add(m); stress.set(m, () => 0.15 + 0.8 * ((i * 5) % 4) / 3); }
+  const outs: THREE.Mesh[] = [];
+  for (let i = 0; i < 3; i++) { const p = new THREE.Vector3(2.15, 0.9 + (1 - i) * 0.3, 0); out.push(p); const m = mesh(node, i === 0 ? glowMat(0xe58a5c, 0xb8562b, 0.9) : nodeMat, [p.x, p.y, p.z]); m.scale.setScalar(0.075); if (i === 0) keep(m); else stress.set(m, () => (i === 1 ? 0.12 : 0.06)); root.add(m); outs.push(m); }
+  // Connections: receptive fields as pyramids between the maps, all-to-all between dense layers.
+  const seg: number[] = [];
+  const line = (a: THREE.Vector3, b: THREE.Vector3) => seg.push(a.x, a.y, a.z, b.x, b.y, b.z);
+  const v = (x: number, y: number, z: number) => new THREE.Vector3(x, y, z);
+  for (const [cy, cz] of [[0.2, -0.15], [-0.1, 0.2]]) {
+    const apex1 = v(-1.35, 0.9 + cy * 0.8, cz * 0.8);
+    for (const [dy, dz] of [[-1, -1], [-1, 1], [1, -1], [1, 1]]) line(v(-2.23, 0.9 + cy + dy * 0.19, cz + dz * 0.19), apex1);
+    const apex2 = v(-0.3, 0.9 + cy * 0.5, cz * 0.5);
+    for (const [dy, dz] of [[-1, -1], [-1, 1], [1, -1], [1, 1]]) line(v(-1.05, 0.9 + cy * 0.8 + dy * 0.12, cz * 0.8 + dz * 0.12), apex2);
+  }
+  for (const a of flat) for (const b of dense) line(a, b);
+  for (const a of dense) for (const b of out) line(a, b);
+  for (let i = 0; i < 14; i++) line(v(0.25, 0.9 + (i - 6.5) * 0.03, 0), flat[i]);
+  const wires = new THREE.BufferGeometry(); wires.setAttribute("position", new THREE.Float32BufferAttribute(seg, 3));
+  root.add(new THREE.LineSegments(wires, new THREE.LineBasicMaterial({ color: 0x8f9098, transparent: true, opacity: 0.22, depthWrite: false })));
+  // A forward pass: pulses run from the photo to the answer, over and over.
+  const P = 28, pulse = keep(new THREE.InstancedMesh(new THREE.SphereGeometry(0.022, 12, 8), glowMat(0xffd9bf, 0xe58a5c, 1.2), P));
+  root.add(pulse);
+  const lanes = Array.from({ length: P }, (_, i) => ({ y: ((i * 37) % 17) / 17 - 0.5, z: ((i * 23) % 13) / 13 - 0.5, o: i / P, d: (i * 11) % 9, k: i % 3 === 0 ? 0 : (i % 3) }));
+  const at = new THREE.Vector3();
+  const along = (u: number, L: (typeof lanes)[number]) => {
+    const xs = [-2.25, -1.35, -0.3, 0.75, 1.45, 2.15];
+    const seg = Math.min(4, Math.floor(u * 5)), f = u * 5 - seg;
+    const ys = [L.y * 0.8, L.y * 0.6, L.y * 0.4, (L.d - 4.5) * 0.085, (L.d - 4) * 0.13, (1 - L.k) * 0.3];
+    const zs = [L.z * 0.8, L.z * 0.6, L.z * 0.4, 0, 0, 0];
+    return at.set(xs[seg] + (xs[seg + 1] - xs[seg]) * f, 0.9 + ys[seg] + (ys[seg + 1] - ys[seg]) * f, zs[seg] + (zs[seg + 1] - zs[seg]) * f);
+  };
+  const anchors = { input: anchor(root, [-2.25, 1.4, 0.45]), conv: anchor(root, [-1.2, 1.32, 0.4]), output: anchor(outs[0], [0, 1.2, 0]) };
+  return {
+    root, anchors, shells, stress, turn: "sway", theta: 0.75, cut: [0, 0, -1], room: 0.82,
+    animate: (t) => {
+      for (let i = 0; i < P; i++) { const L = lanes[i]; along((t * 0.18 + L.o) % 1, L); tm.makeTranslation(at.x, at.y, at.z); pulse.setMatrixAt(i, tm); }
+      pulse.instanceMatrix.needsUpdate = true;
+      outs[0].scale.setScalar(0.075 * (1 + 0.12 * Math.sin(t * 3)));
+    },
+  };
+}
+
+// ---------- A backend under load: a load balancer, four app servers, Postgres and its replica ----------
+// Requests flow as light along the links; every so often one app server is killed, goes red, and the
+// load balancer routes around it (the milestone is that nothing failed while it did).
+function cluster(): Built {
+  const root = new THREE.Group();
+  const shells: THREE.Mesh[] = [];
+  const stress = new Map<THREE.Mesh, (p: THREE.Vector3) => number>();
+  const chassis = new THREE.MeshStandardMaterial({ color: 0x1c2026, metalness: 0.45, roughness: 0.55 });
+  const bezel = M.dark(), fanMat = M.chip();
+  const leds: { mat: THREE.MeshStandardMaterial; down?: boolean }[] = [];
+  // One rack server: the case (opens in section), a bezel with drive bays and a status light, and the
+  // board, CPU heatsink, memory and fans inside.
+  const server = (at: [number, number, number], w: number, h: number, load: number, down = false) => {
+    const g = new THREE.Group(); g.position.set(...at); root.add(g);
+    const box = mesh(new RoundedBoxGeometry(w, h, 0.62, 2, 0.015), chassis, [0, h / 2, 0]);
+    g.add(box); shells.push(box); stress.set(box, () => load);
+    g.add(mesh(new THREE.BoxGeometry(w - 0.04, 0.012, 0.56), M.fr4(), [0, 0.02, 0]));
+    g.add(mesh(new THREE.BoxGeometry(0.14, h * 0.55, 0.14), M.alu(), [0.02, 0.03 + h * 0.28, -0.02]));
+    for (let i = 0; i < 4; i++) g.add(mesh(new THREE.BoxGeometry(0.012, h * 0.45, 0.2), M.dark(), [-0.16 - i * 0.03, 0.03 + h * 0.23, -0.02]));
+    for (let i = 0; i < 3; i++) g.add(mesh(new THREE.CylinderGeometry(h * 0.32, h * 0.32, 0.03, 24), fanMat, [-w / 2 + 0.12 + i * (w - 0.24) / 2, h / 2, -0.25], [Math.PI / 2, 0, 0]));
+    const face = mesh(new THREE.BoxGeometry(w, h, 0.02), bezel, [0, h / 2, 0.32]);
+    g.add(face); stress.set(face, () => load);
+    for (let i = 0; i < 4; i++) g.add(mesh(new THREE.BoxGeometry(w * 0.13, h * 0.42, 0.012), M.chip(), [-w / 2 + 0.1 + i * w * 0.16, h / 2, 0.335]));
+    const mat = new THREE.MeshStandardMaterial({ color: 0x4ade80, emissive: 0x22c55e, emissiveIntensity: 1, roughness: 0.3 });
+    leds.push({ mat, down });
+    g.add(keep(mesh(new THREE.BoxGeometry(0.035, 0.035, 0.012), mat, [w / 2 - 0.08, h / 2, 0.336])));
+    return g;
+  };
+  const gen = server([-2.15, 0, 0], 0.5, 0.16, 0.3);
+  const lb = server([-1.15, 0, 0], 0.62, 0.16, 0.55);
+  const apps = [-1.05, -0.35, 0.35, 1.05].map((z, i) => server([0.15, 0, z], 0.62, 0.16, 0.62 + 0.08 * (i % 2), i === 2));
+  const db = server([1.35, 0, 0], 0.7, 0.3, 0.88);
+  const rep = server([2.3, 0, 0], 0.7, 0.3, 0.32);
+  const port = (g: THREE.Group, side: number, h = 0.16) => new THREE.Vector3(g.position.x + side * 0.36, h / 2, g.position.z);
+  // Links between them, raised a little, and the requests that run along each one.
+  const links: { curve: THREE.CatmullRomCurve3; app?: number; speed: number }[] = [];
+  const link = (a: THREE.Vector3, b: THREE.Vector3, app?: number, speed = 0.5) => {
+    const mid = a.clone().lerp(b, 0.5); mid.y += 0.22;
+    const curve = new THREE.CatmullRomCurve3([a, mid, b]);
+    const m = mesh(new THREE.TubeGeometry(curve, 40, 0.008, 8, false), new THREE.MeshStandardMaterial({ color: 0x5b6270, roughness: 0.6 }));
+    m.userData.plain = true; root.add(m);
+    links.push({ curve, app, speed });
+  };
+  link(port(gen, 1), port(lb, -1), undefined, 0.7);
+  apps.forEach((g, i) => { link(port(lb, 1), port(g, -1), i); link(port(g, 1), port(db, -1, 0.3), i, 0.4); });
+  link(port(db, 1, 0.3), port(rep, -1, 0.3), undefined, 0.25);
+  const per = 5, req = keep(new THREE.InstancedMesh(new THREE.BoxGeometry(0.04, 0.04, 0.04), glowMat(0xffd9bf, 0xe58a5c, 1.3), links.length * per));
+  root.add(req);
+  const tm = new THREE.Matrix4(), hidden = new THREE.Matrix4().makeScale(0, 0, 0), q = new THREE.Vector3();
+  const anchors = { lb: anchor(lb, [0, 0.17, 0.3]), p99: anchor(apps[1], [0.31, 0.16, 0.3]), db: anchor(db, [0, 0.31, 0.3]) };
+  return {
+    root, anchors, shells, stress, turn: "sway", theta: 0.55, phi: 1.0, cut: [0, 0, -1], room: 0.84,
+    animate: (t) => {
+      const killed = t % 14 > 8 && t % 14 < 11.5;
+      leds.forEach((l, i) => {
+        const off = l.down && killed;
+        l.mat.color.set(off ? 0xf87171 : 0x4ade80); l.mat.emissive.set(off ? 0xdc2626 : 0x22c55e);
+        l.mat.emissiveIntensity = off ? 1.2 : 0.5 + 0.5 * Math.abs(Math.sin(t * (6 + i)));
+      });
+      links.forEach((L, j) => {
+        for (let k = 0; k < per; k++) {
+          const i = j * per + k;
+          if (killed && L.app === 2) { req.setMatrixAt(i, hidden); continue; }
+          L.curve.getPointAt((t * L.speed + k / per) % 1, q);
+          tm.makeTranslation(q.x, q.y, q.z); req.setMatrixAt(i, tm);
+        }
+      });
+      req.instanceMatrix.needsUpdate = true;
+    },
+  };
+}
+
 export function buildModel(id: BuildId): Built {
   switch (id) {
     case "avionics": return avionics();
@@ -797,5 +1052,8 @@ export function buildModel(id: BuildId): Built {
     case "drone": return drone();
     case "bridge": return bridge();
     case "pcb": return pcb();
+    case "rover": return rover();
+    case "nn": return network();
+    case "cluster": return cluster();
   }
 }

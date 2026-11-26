@@ -18,6 +18,7 @@ import { EXAMPLES, type Example } from "./journey-data";
 // (globals.css .hero-run; RUN below is the same query). On a phone, a short screen or with reduced
 // motion it doesn't pin: the views are just tabs, and nothing plays by itself.
 // Examples throughout, and views 3 to 5 say they're illustrations of what's built with pilot schools.
+// It follows the visitor's theme: drafting paper in light, the lab at night in dark (globals.css).
 
 const RUN = "(min-width: 1024px) and (min-height: 700px) and (prefers-reduced-motion: no-preference)";
 const subscribe = (f: () => void) => { const m = matchMedia(RUN); m.addEventListener("change", f); return () => m.removeEventListener("change", f); };
@@ -33,7 +34,7 @@ const VIEWS = [
 
 export function Hero() {
   const [typed, setTyped] = useState("");
-  const [pick, setPick] = useState<Example["id"]>("gearbox");
+  const [pick, setPick] = useState<Example["id"]>("arm");
   const [view, setView] = useState(0);
   const [verified, setVerified] = useState(false);
   const still = useReducedMotion();
@@ -88,7 +89,7 @@ export function Hero() {
   const props = (k: number) => ({ ex, title, on: view === k, still, next: () => go(k + 1) });
 
   return (
-    <section id="top" ref={run} aria-labelledby="hero-h" className="hero-run theme-dark relative isolate overflow-clip bg-bg text-text">
+    <section id="top" ref={run} aria-labelledby="hero-h" className="hero-run relative isolate overflow-clip bg-bg text-text">
       <div className="hero-pin relative isolate flex flex-col justify-center pt-24 pb-12 sm:pt-28 lg:pt-20 lg:pb-6">
         <div aria-hidden="true" className="hero-glow pointer-events-none absolute inset-0 -z-10" />
         <div className="mx-auto grid w-full max-w-6xl grid-cols-1 items-center gap-10 px-5 sm:px-6 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:gap-12">
@@ -114,7 +115,7 @@ export function Hero() {
 
           {/* The product window: five views of one project, the same size, so nothing moves. */}
           <div className="min-w-0">
-            <div className="overflow-hidden rounded-2xl border border-line bg-surface shadow-[var(--shadow-float)]">
+            <div className="hero-window overflow-hidden rounded-2xl border border-line bg-surface">
               <div role="tablist" aria-label="Follow one project" onKeyDown={onKeyTabs} className="relative grid grid-cols-5 border-b border-line">
                 {tabs.map((v, k) => (
                   <button key={v.id} id={`hero-tab-${v.id}`} type="button" role="tab" aria-selected={view === k} aria-controls={`hero-view-${v.id}`} tabIndex={view === k ? 0 : -1} onClick={() => go(k)}

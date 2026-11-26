@@ -1,6 +1,9 @@
 import type { BuildId } from "./cad/models";
 
 // The example projects the landing hero follows from log to LinkedIn (components/landing/hero.tsx).
+// The robot arm leads (a class project its professor verifies); the Formula SAE car is a
+// senior-design capstone; software
+// projects are drawn as the systems they run, with their own names for the three views.
 // Every name, class, number and person here is an example, and the page says so. Each build is a
 // real kind of student project, under a class (verified by its professor) or a club (by an officer).
 
@@ -25,6 +28,10 @@ export type Example = {
   outcome: string;
   // The stress view's scale, where it isn't stress (a board shows heat).
   field?: [string, string];
+  // What the three views are called, where it isn't Render / Section / Stress (software).
+  modes?: [string, string, string];
+  // Software: the code is the proof file the professor opens, linked from GitHub.
+  repo?: string;
 };
 
 const MAYA = "Maya Chen";
@@ -32,11 +39,39 @@ export const STUDENT = MAYA;
 
 export const EXAMPLES: Example[] = [
   {
-    id: "gearbox", chip: "Gearbox", kind: "class", where: "ME 410 Capstone · Fall 2026", name: "5:1 planetary reduction",
-    milestone: "Ran 2 hours at 40 N·m with no slip, case under 50 °C", proof: "dyno-run-2h.mp4", model: "planetary-5to1.step",
-    signer: "Prof. Alvarez", role: "ME 410, Fall 2026", callouts: { ratio: "Carrier · 5:1", tooth: "Module 1.0 · 20° PA", shaft: "40 N·m output" },
-    team: [{ name: MAYA, part: "Gear design, dyno test" }, { name: "Sam Ortiz", part: "Housing, bearings" }, { name: "Priya Nair", part: "Test rig, data logging" }],
-    search: "drivetrain test, verified", major: "Mechanical Engineering", outcome: "SO 6 · Experimentation and analysis",
+    id: "arm", chip: "Robot arm", kind: "class", where: "ME 482 Robotics · Fall 2026", name: "Benchtop cobot arm",
+    milestone: "Cut the pick-and-place cycle from 9.4 to 7.1 seconds", proof: "cycle-test-500-runs.csv", model: "cobot-arm.step",
+    signer: "Prof. Dana Ruiz", role: "ME 482, Fall 2026", callouts: { j2: "J2 · 38 N·m peak", elbow: "Harmonic drive · 100:1", grip: "±0.05 mm · 3 kg" },
+    team: [{ name: MAYA, part: "Trajectory planning" }, { name: "Noah Feld", part: "Gripper, end effector" }, { name: "Tara Singh", part: "Cycle tests" }],
+    search: "robotics, motion planning, verified", major: "Mechanical Engineering", outcome: "SO 1 · Solving complex problems",
+  },
+  {
+    id: "fsae", chip: "Formula SAE", kind: "class", where: "ME 490 Formula SAE Capstone · Fall 2026", name: "2027 car, tube-frame chassis",
+    milestone: "Torsion test: 2,350 N·m per degree, 12% over target, 0.4 kg under weight", proof: "torsion-rig-test.xlsx", model: "fsae-27-frame.step",
+    signer: "Prof. Alvarez", role: "ME 490, Fall 2026", callouts: { hoop: "Main hoop · Ø25.4 × 2.4 mm", sis: "Side impact · 3 tubes", push: "Pushrod · 2.1 kN" },
+    team: [{ name: MAYA, part: "Frame FEA, torsion rig" }, { name: "Diego Silva", part: "Suspension pickups" }, { name: "Hana Kim", part: "Welding, jig" }],
+    search: "chassis FEA, verified", major: "Mechanical Engineering", outcome: "SO 5 · Teamwork",
+  },
+  {
+    id: "rover", chip: "Rover autonomy", kind: "class", where: "CS 485 Mobile Robotics · Fall 2026", name: "A* planner and lidar mapping",
+    milestone: "Planner reached 48 of 50 goals in the cluttered yard, with no collisions", proof: "yard-run-12.mcap", model: "rover-nav", repo: "github.com/mchen/rover-nav",
+    signer: "Prof. Iyer", role: "CS 485, Fall 2026", callouts: { path: "A* path · replans at 10 Hz", lidar: "Lidar · 900 points a turn", cost: "Cost map · 5 cm cells" },
+    team: [{ name: MAYA, part: "Planner, cost map" }, { name: "Noah Feld", part: "Lidar driver, SLAM" }, { name: "Tara Singh", part: "Field tests" }],
+    search: "path planning, ROS, verified", major: "Computer Science", outcome: "SO 1 · Solving complex problems", modes: ["Render", "Inside", "Cost map"], field: ["Free", "Blocked"],
+  },
+  {
+    id: "nn", chip: "Neural network", kind: "class", where: "CS 489 Machine Learning · Fall 2026", name: "Weld-defect classifier",
+    milestone: "Classifier hits 94.1% on 2,000 held-out weld photos, up from 81%", proof: "eval-heldout.ipynb", model: "weld-cnn", repo: "github.com/mchen/weld-cnn",
+    signer: "Prof. Brooks", role: "CS 489, Fall 2026", callouts: { input: "Input · 128 × 128 weld photo", conv: "Conv · 3 × 3, 32 filters", output: "Output · crack 0.91" },
+    team: [{ name: MAYA, part: "Model, training runs" }, { name: "Omar Haddad", part: "Dataset, labeling" }, { name: "Jess Liu", part: "Evaluation" }],
+    search: "computer vision, PyTorch, verified", major: "Computer Science", outcome: "SO 6 · Experimentation and analysis", modes: ["Render", "Layers", "Activations"], field: ["0", "1"],
+  },
+  {
+    id: "drone", chip: "Drone", kind: "club", where: "Aerial Robotics Club", name: "5-inch inspection quad",
+    milestone: "Held position within 0.3 m in 15 km/h wind over 6 test flights", proof: "hover-flights.bbl", model: "quad-5in.step",
+    signer: "A. Novak", role: "president, Aerial Robotics Club", callouts: { arm: "Arm root · 5 mm carbon", motor: "2207 · 1,750 kV", stack: "F7 flight controller" },
+    team: [{ name: MAYA, part: "PID tuning, flight tests" }, { name: "Ravi Shah", part: "Frame, motor mounts" }, { name: "Elle Moore", part: "Video, telemetry" }],
+    search: "flight controls, verified", major: "Aerospace Engineering", outcome: "SO 6 · Experimentation and analysis",
   },
   {
     id: "bridge", chip: "Truss bridge", kind: "class", where: "CE 331 Structures Lab · Fall 2026", name: "Pratt truss, 1:10 scale",
@@ -53,25 +88,18 @@ export const EXAMPLES: Example[] = [
     search: "PCB layout, low power, verified", major: "Electrical Engineering", outcome: "SO 2 · Engineering design", field: ["25 °C", "68 °C"],
   },
   {
-    id: "fsae", chip: "Formula SAE", kind: "club", where: "Formula SAE", name: "2027 car, tube-frame chassis",
-    milestone: "Torsion test: 2,350 N·m per degree, 12% over target, 0.4 kg under weight", proof: "torsion-rig-test.xlsx", model: "fsae-27-frame.step",
-    signer: "K. Osei", role: "chief engineer, Formula SAE", callouts: { hoop: "Main hoop · Ø25.4 × 2.4 mm", sis: "Side impact · 3 tubes", push: "Pushrod · 2.1 kN" },
-    team: [{ name: MAYA, part: "Frame FEA, torsion rig" }, { name: "Diego Silva", part: "Suspension pickups" }, { name: "Hana Kim", part: "Welding, jig" }],
-    search: "chassis FEA, verified", major: "Mechanical Engineering", outcome: "SO 5 · Teamwork",
+    id: "cluster", chip: "Backend cluster", kind: "club", where: "ACM Club", name: "Event check-in backend",
+    milestone: "Held p99 under 120 ms at 5,000 requests a second, and lost none when a server was killed", proof: "k6-load-test.html", model: "checkin-api", repo: "github.com/acm/checkin-api",
+    signer: "R. Patel", role: "president, ACM Club", callouts: { lb: "Load balancer · round robin", p99: "p99 · 118 ms at 5k req/s", db: "Postgres · 1 replica" },
+    team: [{ name: MAYA, part: "API, load tests" }, { name: "Leo Park", part: "Database, replica" }, { name: "Ana Ruiz", part: "Deploys, alerts" }],
+    search: "backend, load testing, verified", major: "Computer Science", outcome: "SO 5 · Teamwork", modes: ["Render", "Inside", "Load"], field: ["Idle", "Saturated"],
   },
   {
-    id: "drone", chip: "Drone", kind: "club", where: "Aerial Robotics Club", name: "5-inch inspection quad",
-    milestone: "Held position within 0.3 m in 15 km/h wind over 6 test flights", proof: "hover-flights.bbl", model: "quad-5in.step",
-    signer: "A. Novak", role: "president, Aerial Robotics Club", callouts: { arm: "Arm root · 5 mm carbon", motor: "2207 · 1,750 kV", stack: "F7 flight controller" },
-    team: [{ name: MAYA, part: "PID tuning, flight tests" }, { name: "Ravi Shah", part: "Frame, motor mounts" }, { name: "Elle Moore", part: "Video, telemetry" }],
-    search: "flight controls, verified", major: "Aerospace Engineering", outcome: "SO 6 · Experimentation and analysis",
-  },
-  {
-    id: "arm", chip: "Robot arm", kind: "class", where: "ME 482 Robotics · Fall 2026", name: "Benchtop cobot arm",
-    milestone: "Cut the pick-and-place cycle from 9.4 to 7.1 seconds", proof: "cycle-test-500-runs.csv", model: "cobot-arm.step",
-    signer: "Prof. Dana Ruiz", role: "ME 482, Fall 2026", callouts: { j2: "J2 · 38 N·m peak", elbow: "Harmonic drive · 100:1", grip: "±0.05 mm · 3 kg" },
-    team: [{ name: MAYA, part: "Trajectory planning" }, { name: "Noah Feld", part: "Gripper, end effector" }, { name: "Tara Singh", part: "Cycle tests" }],
-    search: "robotics, motion planning, verified", major: "Mechanical Engineering", outcome: "SO 1 · Solving complex problems",
+    id: "gearbox", chip: "Gearbox", kind: "class", where: "ME 410 Capstone · Fall 2026", name: "5:1 planetary reduction",
+    milestone: "Ran 2 hours at 40 N·m with no slip, case under 50 °C", proof: "dyno-run-2h.mp4", model: "planetary-5to1.step",
+    signer: "Prof. Sato", role: "ME 410, Fall 2026", callouts: { ratio: "Carrier · 5:1", tooth: "Module 1.0 · 20° PA", shaft: "40 N·m output" },
+    team: [{ name: MAYA, part: "Gear design, dyno test" }, { name: "Sam Ortiz", part: "Housing, bearings" }, { name: "Priya Nair", part: "Test rig, data logging" }],
+    search: "drivetrain test, verified", major: "Mechanical Engineering", outcome: "SO 6 · Experimentation and analysis",
   },
   {
     id: "avionics", chip: "Rocket avionics", kind: "club", where: "Rocketry Club", name: "Dual-deploy flight computer",
