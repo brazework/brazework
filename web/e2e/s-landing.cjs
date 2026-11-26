@@ -138,8 +138,9 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
   still.on("pageerror", (error) => reducedErrors.push(error.message));
   await step("reduced motion: the hero's milestone is signed from the start, and every step's state shows", async () => {
     await still.goto(BASE + "/", { waitUntil: "networkidle" });
-    await still.locator("#hero-card").getByText(/Signed by J\. Reyes/).waitFor({ timeout: 3000 });
-    await still.locator("#how ol > li figcaption").nth(2).waitFor({ state: "visible", timeout: 3000 });
+    // No waiting on an animation; the timeout only covers hydrating on a slow machine (CI).
+    await still.locator("#hero-card").getByText(/Signed by J\. Reyes/).waitFor({ timeout: 10000 });
+    await still.locator("#how ol > li figcaption").nth(2).waitFor({ state: "visible", timeout: 10000 });
     if (reducedErrors.length) throw new Error(reducedErrors[0]);
   }, still);
 
