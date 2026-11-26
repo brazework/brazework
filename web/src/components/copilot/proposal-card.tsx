@@ -11,6 +11,7 @@ import type { Proposal } from "@/lib/copilot-agent";
 import { EVENT_FORMATS, EVENT_TYPES } from "@/lib/events";
 import { cardLabels, cardSummary } from "@/lib/ember-bar";
 import { emberAskToSign } from "@/lib/ember-sign";
+import { outcomeOf, type CardOutcome } from "@/lib/ember-thread";
 import { ALL_TOPICS, cn } from "@/lib/forge";
 import { LINKEDIN_PLACEHOLDER, LINKEDIN_PRIVATE, LINKEDIN_WHY } from "@/lib/linkedin";
 import { addMilestone, reviewMilestone } from "@/lib/milestones";
@@ -57,7 +58,9 @@ const fromLocal = (v: string) => new Date(v).toISOString();
 // runs the app's normal server action (with all its checks) as them; a tool's draft is then marked done.
 // `inline`: in a page (under the Ask Torch bar, or a project's own drafts), the card is a short summary
 // with buttons that say what happens ("Log and send to club", "Edit", "Not now"); Edit opens the fields.
-export function ProposalCard({ p: initial, fromTool, inline = false }: { p: Proposal; fromTool?: { draftId: string; via: string; source: string }; inline?: boolean }) {
+// `onOutcome`: the chat hears what happened to the card (confirmed as the member left it, dismissed, or
+// refused with the server's reason), so Torch knows on its next turn (lib/ember-thread.ts).
+export function ProposalCard({ p: initial, fromTool, inline = false, onOutcome }: { p: Proposal; fromTool?: { draftId: string; via: string; source: string }; inline?: boolean; onOutcome?: (id: string, o: CardOutcome) => void }) {
   const [p, setP] = useState(initial);
   const [state, setState] = useState<"open" | "done" | "dismissed">("open");
   const [msg, setMsg] = useState("");
@@ -82,8 +85,12 @@ export function ProposalCard({ p: initial, fromTool, inline = false }: { p: Prop
     setMsg("");
     // Optimistic: the card shows it's done at once, and goes back with the reason if the server says no.
     setState("done");
+    // The chat hears it at the same moment, so a follow-up asked while the server is still answering
+    // doesn't tell Torch the card is untouched. A refusal below corrects it.
+    onOutcome?.(initial.id, outcomeOf(p, "confirmed"));
     try {
     let r: { ok: boolean; message: string };
+    let heldNote = "";
     if (p.kind === "post") {
       const f = new FormData();
       f.set("body", p.body); f.set("kind", p.postKind); p.tags.forEach((t) => f.append("tags", t)); f.set("media", "[]");
@@ -109,7 +116,7 @@ export function ProposalCard({ p: initial, fromTool, inline = false }: { p: Prop
     } else if (p.kind === "club_post") {
       const res = await postInCommunity(p.club_id, p.body, p.postKind, []);
       // Auto-moderation can hold a post for review; say so instead of "Posted".
-      if (res.ok && res.held) { setHeld(res.message || "Held for a moderator to review before it shows."); }
+      if (res.ok && res.held) { heldNote = res.message || "Held for a moderator to review before it shows."; setHeld(heldNote); }
       r = res;
     } else if (p.kind === "review") {
       r = await reviewMilestone(p.milestone_id, p.verify, p.note);
@@ -138,13 +145,18 @@ export function ProposalCard({ p: initial, fromTool, inline = false }: { p: Prop
       r = await saveEvent({ ok: false, message: "" }, f);
     }
     if (r.ok) {
+      if (heldNote) onOutcome?.(initial.id, outcomeOf(p, "confirmed", "held for a moderator to review before it shows"));
       if (fromTool) await settleDraft(fromTool.draftId);
-    } else { setState("open"); setMsg(r.message || "That didn't work. Check the details and try again."); }
-    } catch { setState("open"); setMsg("That didn't work. Check your connection and try again."); }
+    } else {
+      setState("open"); setMsg(r.message || "That didn't work. Check the details and try again.");
+      onOutcome?.(initial.id, outcomeOf(p, "failed", r.message));
+    }
+    } catch { setState("open"); setMsg("That didn't work. Check your connection and try again."); onOutcome?.(initial.id, outcomeOf(p, "failed", "the connection dropped")); }
   });
   const dismiss = () => start(async () => {
     if (fromTool) await dismissDraft(fromTool.draftId);
     setState("dismissed");
+    onOutcome?.(initial.id, outcomeOf(p, "dismissed"));
   });
 
   if (state === "dismissed") return <p className="mt-2 text-xs text-faint">Dismissed. Nothing was saved.</p>;

@@ -1,4 +1,5 @@
 import type { Proposal } from "@/lib/copilot-agent";
+import { MAX_TURN, type CardOutcome, type ThreadTurn } from "@/lib/ember-thread";
 
 // The Ask Torch bar at the top of every signed-in page (components/ember/ask-bar.tsx): which page it's
 // on, when "/" may jump to it, and what an approve card's buttons say there. Pure, so the browser, the
@@ -69,4 +70,26 @@ export function cardSummary(p: Proposal): { title: string; lines: string[]; link
     case "project_edit": return { title: `Update ${p.project_title}`, lines: [["summary", "details", "link", "specs"].filter((k) => p[k as keyof typeof p] !== undefined).map((k) => (k === "details" ? "write-up" : k)).join(", ")], link: "" };
     default: return null;
   }
+}
+
+// ---------- The bar keeps its thread ----------
+// The bar used to send each question alone, so a follow-up tapped under an answer ("Draft the post")
+// reached Torch with no idea what that answer said. It now sends the exchange it's showing, with what
+// happened to each answer's cards (lib/ember-thread.ts).
+
+/** The most turns the bar sends back: the request allows 12 messages, a question and an answer each. */
+export const BAR_TURNS = 6;
+
+/** One exchange in the bar: what the member said, Torch's words (follow-up marker removed), its cards. */
+export type BarTurn = { q: string; text: string; cards: CardOutcome[] };
+
+/**
+ * The bar's exchange as history, oldest first. A turn with no answer (it failed, or was stopped before
+ * a word came) is left out whole, so questions and answers still alternate.
+ */
+export function barHistory(turns: BarTurn[]): ThreadTurn[] {
+  return turns.filter((t) => t.q.trim() && t.text.trim()).slice(-BAR_TURNS).flatMap((t): ThreadTurn[] => [
+    { role: "user", content: t.q.slice(0, MAX_TURN) },
+    { role: "assistant", content: t.text.slice(0, MAX_TURN), ...(t.cards.length ? { cards: t.cards } : {}) },
+  ]);
 }

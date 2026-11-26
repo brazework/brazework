@@ -3,7 +3,8 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { copilotRequest } from "@/lib/copilot-request";
-import { ASK_PLACEHOLDER, askShortcut, cardLabels, cardSummary, pageContext } from "@/lib/ember-bar";
+import { ASK_PLACEHOLDER, BAR_TURNS, askShortcut, barHistory, cardLabels, cardSummary, pageContext, type BarTurn } from "@/lib/ember-bar";
+import { threadMessages, type CardOutcome } from "@/lib/ember-thread";
 
 test("the bar knows the project, club or event it's on, from the path", () => {
   assert.deepEqual(pageContext("/projects/abc"), { kind: "project", id: "abc" });
@@ -77,3 +78,37 @@ test("the goal card says what confirming does", () => {
   assert.deepEqual(s?.lines, ["You said you want to move into design."]);
 });
 
+
+// ---------- The bar keeps its thread (docs/superpowers/specs/2026-11-26-ember-follow-through-design.md) ----------
+const confirmed: CardOutcome = { kind: "project", label: "Rover", state: "confirmed" };
+const turn = (q: string, text: string, cards: CardOutcome[] = []): BarTurn => ({ q, text, cards });
+
+test("a follow-up in the bar goes to Torch with the exchange above it, oldest first", () => {
+  const h = barHistory([turn("Add my rover", "It's on the card.", [confirmed]), turn("And a post?", "Drafted.")]);
+  assert.deepEqual(h, [
+    { role: "user", content: "Add my rover" },
+    { role: "assistant", content: "It's on the card.", cards: [confirmed] },
+    { role: "user", content: "And a post?" },
+    { role: "assistant", content: "Drafted." },
+  ]);
+  // And Torch reads what happened to the card with the next thing the member says.
+  assert.match(threadMessages(h.slice(0, 2), "now the milestone").at(-1)!.content, /a project "Rover": confirmed/);
+});
+
+test("an exchange that got no answer is left out whole, so turns still alternate", () => {
+  const h = barHistory([turn("first", "Answer one."), turn("this one failed", ""), turn("third", "Answer three.")]);
+  assert.deepEqual(h.map((m) => m.role), ["user", "assistant", "user", "assistant"]);
+  assert.deepEqual(h.map((m) => m.content), ["first", "Answer one.", "third", "Answer three."]);
+  assert.deepEqual(barHistory([]), []);
+});
+
+test("the bar sends back its newest turns, within what the request allows", () => {
+  const many = Array.from({ length: 9 }, (_, i) => turn(`q${i}`, `a${i}`));
+  const h = barHistory(many);
+  assert.equal(h.length, BAR_TURNS * 2);
+  assert.equal(h[0].content, "q3", "the oldest are dropped first");
+  assert.equal(h.at(-1)!.content, "a8");
+  const long = barHistory([turn("q", "x".repeat(9000))]);
+  assert.ok(copilotRequest.safeParse({ task: "ask", input: "next", history: [...h] }).success);
+  assert.ok(copilotRequest.safeParse({ task: "ask", input: "next", history: long }).success, "a very long answer is cut to fit");
+});

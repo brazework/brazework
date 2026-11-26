@@ -35,7 +35,10 @@ export function useReveal(total: number, live: boolean): number {
     };
     raf.current = requestAnimationFrame(tick);
   }, [total]);
-  useEffect(() => () => cancelAnimationFrame(raf.current), []);
+  // Cancelling also clears the handle. In development React mounts, unmounts and mounts again: with the
+  // old handle left in place the loop above thought a frame was still coming, never asked for another,
+  // and a live answer stayed blank under `npm run dev`.
+  useEffect(() => () => { cancelAnimationFrame(raf.current); raf.current = 0; }, []);
   return reduce ? total : Math.min(n, total);
 }
 
