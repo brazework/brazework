@@ -8,6 +8,20 @@ const path = require("path");
 const { step, browser, as, go, summary } = require("./lib.cjs");
 
 const db = `${process.env.E2E_STACK || "forge-e2e"}-db`;
+// A member with nothing logged, made the way the stack makes its test members (local-supabase.sh):
+// in the full suite every seeded member has logged work by the time this spec runs.
+async function newcomer() {
+  const email = `progress-empty-${Date.now() % 1000000}@forge.test`;
+  const anon = fs.readFileSync(path.join(__dirname, ".anon-key"), "utf8").trim();
+  const res = await fetch(`http://localhost:${process.env.E2E_GATEWAY_PORT || 54321}/auth/v1/signup`, {
+    method: "POST", headers: { apikey: anon, "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password: "forge-test-pass-1", data: { accountType: "student", firstName: "Nia", lastName: "Empty", birthday: "2004-01-01" } }),
+  });
+  if (!res.ok) throw new Error(`sign-up for the empty member failed: ${res.status}`);
+  // Past onboarding, as seed.sql sets up the other test members.
+  execSync(`docker exec -i ${db} psql -U postgres -h localhost -d postgres -v ON_ERROR_STOP=1 -q`, { input: `update public.profiles set onboarded = true, field = 'Engineering' where id = (select id from auth.users where email = '${email}');` });
+  return email;
+}
 const psqlFile = (f) => execSync(`docker exec -i ${db} psql -U postgres -h localhost -d postgres -v ON_ERROR_STOP=1 -q`, { input: fs.readFileSync(path.join(__dirname, "fixtures", f)) });
 
 (async () => {
@@ -52,7 +66,7 @@ const psqlFile = (f) => execSync(`docker exec -i ${db} psql -U postgres -h local
       for (const t of ["Go", "Postgres", "k6"]) await cara.getByRole("list", { name: "Tools" }).getByText(t, { exact: true }).waitFor();
     }, cara);
 
-    const josh = await as(b, "josh@forge.test");
+    const josh = await as(b, await newcomer());
     await step("nothing logged yet: the first step, not empty charts", async () => {
       await go(josh, "/dashboard");
       await josh.getByText("Your progress starts with one milestone").waitFor({ timeout: 15000 });
