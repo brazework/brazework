@@ -44,6 +44,15 @@ test("schools pay by department or campus and by faculty seat, never per club, c
   assert.equal(campusPrice(4000), 18_000);
   assert.equal(campusPrice(12000), 30_000);
   assert.equal(campusPrice(40000), 45_000);
+  // Founding schools pay less than list in every band, and the per-student figure is the real division.
+  const { FOUNDING, perStudent } = await import("@/lib/pricing");
+  for (const b of CAMPUS_BANDS) assert.ok(b.list > b.price, `list above founding at ${b.upTo}`);
+  assert.equal(campusPrice(12000, false), 48_000);
+  assert.equal(perStudent(15000), "$2.00");
+  assert.ok(FOUNDING.schools > 0 && FOUNDING.lockYears > 0);
+  const campus = TIERS.find((t) => t.id === "campus")!;
+  assert.match(campus.note, /founding schools, locked for 3 years/);
+  assert.match(campus.note, /List price from \$30,000/);
   // Bands only go up with size, and a big department is told when the campus license is cheaper.
   for (let i = 1; i < CAMPUS_BANDS.length; i++) assert.ok(CAMPUS_BANDS[i].price > CAMPUS_BANDS[i - 1].price);
   assert.ok(departmentPrice(seatsWhereCampusWins()) >= campusPrice(1));

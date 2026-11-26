@@ -6,7 +6,7 @@ import { PricingTiers } from "@/components/landing/pricing";
 import { H2 } from "@/components/landing/sections";
 import { ThemeChrome } from "@/components/theme-chrome";
 import { Logo } from "@/components/ui";
-import { CAMPUS_BANDS, EMBER_DAILY_LIMIT, EMBER_RESET, SCHOOL, SPONSORSHIP, TALENT, departmentPrice, seatsWhereCampusWins } from "@/lib/pricing";
+import { CAMPUS_BANDS, EMBER_DAILY_LIMIT, EMBER_RESET, FOUNDING, SCHOOL, SPONSORSHIP, TALENT, departmentPrice, perStudent, seatsWhereCampusWins } from "@/lib/pricing";
 
 const usd = (n: number) => `$${n.toLocaleString("en-US")}`;
 
@@ -18,7 +18,8 @@ export const metadata: Metadata = {
 // /pricing: the whole price list (lib/pricing.ts), schools first (docs/strategy.md, 2026-11-26), then
 // students and clubs (free), then companies. With the questions people ask about it. Static.
 const QUESTIONS: [string, string][] = [
-  ["What does a school pay?", `Start with a one-semester pilot for one department (${usd(SCHOOL.pilot)}, credited toward the first year). A department is ${usd(SCHOOL.department)} a year with ${SCHOOL.seatsIncluded} faculty seats and ${usd(SCHOOL.perSeat)} for each extra seat: 10 seats is ${usd(departmentPrice(10))}. A whole campus, with every department and unlimited faculty, is ${usd(CAMPUS_BANDS[0].price)} to ${usd(CAMPUS_BANDS[2].price)} a year by enrollment; past ${seatsWhereCampusWins()} seats it costs less than a department. Never per student or per club, so nobody is kept off to save money.`],
+  ["What does a school pay?", `Start with a one-semester pilot for one department (${usd(SCHOOL.pilot)}, credited toward the first year). A department is ${usd(SCHOOL.department)} a year with ${SCHOOL.seatsIncluded} faculty seats and ${usd(SCHOOL.perSeat)} for each extra seat: 10 seats is ${usd(departmentPrice(10))}. A whole campus, with every department and unlimited faculty, is ${usd(CAMPUS_BANDS[0].price)} to ${usd(CAMPUS_BANDS[2].price)} a year by enrollment for founding schools; past ${seatsWhereCampusWins()} seats it costs less than a department. Never per student or per club, so nobody is kept off to save money.`],
+  ["What is a founding school?", `One of the first ${FOUNDING.schools} campuses on Brazework. A founding school pays ${usd(CAMPUS_BANDS[0].price)}, ${usd(CAMPUS_BANDS[1].price)} or ${usd(CAMPUS_BANDS[2].price)} a year by enrollment, and that price is locked for ${FOUNDING.lockYears} years. After those places are taken, the list price is ${usd(CAMPUS_BANDS[0].list)}, ${usd(CAMPUS_BANDS[1].list)} or ${usd(CAMPUS_BANDS[2].list)}. At ${CAMPUS_BANDS[1].upTo.toLocaleString("en-US")} students the founding price is ${perStudent(CAMPUS_BANDS[1].upTo)} a student a year. The founders set a founding school up in person, and its requests shape what's built next.`],
   ["What's in a pilot?", `One department or a few classes, for one semester, for ${usd(SCHOOL.pilot)}. The founders set it up with you: your students and clubs join with their school email, faculty sign the work they saw, and at the end you get a report of what your students built and who signed it. Then you decide on the full campus with your own numbers, and the pilot is credited toward it.`],
   ["What about student privacy?", "Class work stays private to the class by default, and each student chooses what goes on their public record. Grades and teacher notes are never shown. Before any class data comes in, we sign a data agreement with the school (FERPA)."],
   ["Do students ever pay?", "No. A student's record, every signature, their clubs and being found by companies are free for good, with no ads. When they graduate they move the account to a personal email and keep everything."],

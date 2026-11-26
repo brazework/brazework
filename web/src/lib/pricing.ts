@@ -26,15 +26,21 @@ export const EMBER_RESET = "Ember credits reset at midnight UTC.";
 // - Campus: every department and unlimited faculty, by enrollment band (a size, not a count of who
 //   joins), so a school pays the same however many students and clubs come on.
 export const SCHOOL = { pilot: 1500, department: 6000, seatsIncluded: 5, perSeat: 600 };
+// Founding schools (founders, 2026-11-26): the first campuses pay `price`, locked for a few years; `list`
+// is what a campus pays after those places are taken. A reason to sign this semester, and early
+// schools pay no more than before. Keep `list` honest: it's the price later schools are really quoted.
+export const FOUNDING = { schools: 10, lockYears: 3 };
 export const CAMPUS_BANDS = [
-  { upTo: 5000, price: 18000 },
-  { upTo: 15000, price: 30000 },
-  { upTo: Infinity, price: 45000 },
+  { upTo: 5000, price: 18000, list: 30000 },
+  { upTo: 15000, price: 30000, list: 48000 },
+  { upTo: Infinity, price: 45000, list: 72000 },
 ] as const;
 /** A department's yearly price with this many faculty seats (the first few are included). */
 export const departmentPrice = (seats: number) => SCHOOL.department + Math.max(0, Math.ceil(seats) - SCHOOL.seatsIncluded) * SCHOOL.perSeat;
-/** A whole campus's yearly price, by its enrollment. */
-export const campusPrice = (enrollment: number) => CAMPUS_BANDS.find((b) => enrollment <= b.upTo)!.price;
+/** A whole campus's yearly price, by its enrollment: the founding-school price, or the list price. */
+export const campusPrice = (enrollment: number, founding = true) => { const b = CAMPUS_BANDS.find((x) => enrollment <= x.upTo)!; return founding ? b.price : b.list; };
+/** What a campus of this size pays per student per year, in whole dollars and cents ("$2.00"). */
+export const perStudent = (enrollment: number, founding = true) => `$${(campusPrice(enrollment, founding) / enrollment).toFixed(2)}`;
 /** Past this many seats a campus license costs less than a department: say so where it's priced. */
 export const seatsWhereCampusWins = () => Math.ceil((CAMPUS_BANDS[0].price - SCHOOL.department) / SCHOOL.perSeat) + SCHOOL.seatsIncluded;
 // Companies: the hiring plan, a starter seat for a smaller or local employer, and sponsorships.
@@ -61,7 +67,8 @@ export const AUDIENCES: { id: Audience; label: string; line: string }[] = [
 
 // What a school gets that's built today, and what's being built with the pilot schools. Every card
 // marks the second kind, so no school pays for something that isn't there yet.
-export const SCHOOL_SOON = ["Faculty accounts from your own sign-on list", "Class projects by course and semester, verified by faculty", "Accreditation (ABET) evidence export", "Engagement and placement dashboards"];
+// (Faculty lists, class projects and the evidence export shipped with the portal, supabase/school-portal.sql.)
+export const SCHOOL_SOON = ["Deliverable schedules and peer evaluation for project courses", "ABET outcomes ticked at verification, export grouped by outcome", "Placement data: which employers viewed and contacted your students"];
 
 // What the campus license adds that's still being built, marked the same way.
 export const CAMPUS_SOON = ["Student life, career center and admissions views", "Single sign-on", "Blackboard, Canvas or Moodle connection (LTI)"];
@@ -75,12 +82,12 @@ export const TIERS: Tier[] = [
   },
   {
     id: "school", audience: "schools", name: "Department", price: usd(SCHOOL.department), note: `Per year, with ${SCHOOL.seatsIncluded} faculty seats. ${usd(SCHOOL.perSeat)} per extra seat.`, featured: true,
-    points: ["Every student and every club in the department included", "Faculty and advisors verify the work they saw", "Your school's public showcase of what students build", "Club and semester reports for your chair and dean", ...SCHOOL_SOON.map((x) => `${x} (building with pilot schools)`)],
+    points: ["Every student and every club in the department included", "Classes by course and semester, with rosters from a CSV", "Faculty from your own list verify class projects", "Evidence export for accreditation: every verified milestone", "Your school's numbers: students, classes, verified work, active clubs", ...SCHOOL_SOON.map((x) => `${x} (building with pilot schools)`)],
     cta: { label: "Book a call", href: "/book?kind=school" },
   },
   {
-    id: "campus", audience: "schools", name: "Campus", price: `From ${usd(CAMPUS_BANDS[0].price)}`, note: `Per year, by enrollment: ${usd(CAMPUS_BANDS[0].price)} up to ${CAMPUS_BANDS[0].upTo.toLocaleString("en-US")} students, ${usd(CAMPUS_BANDS[1].price)} up to ${CAMPUS_BANDS[1].upTo.toLocaleString("en-US")}, ${usd(CAMPUS_BANDS[2].price)} above.`,
-    points: ["Every department, unlimited faculty seats", "Every club on campus, verified as yours", "A data agreement for student privacy (FERPA)", ...CAMPUS_SOON.map((x) => `${x} (building with pilot schools)`)],
+    id: "campus", audience: "schools", name: "Campus", price: `From ${usd(CAMPUS_BANDS[0].price)}`, note: `Per year for the first ${FOUNDING.schools} founding schools, locked for ${FOUNDING.lockYears} years: ${usd(CAMPUS_BANDS[0].price)} up to ${CAMPUS_BANDS[0].upTo.toLocaleString("en-US")} students, ${usd(CAMPUS_BANDS[1].price)} up to ${CAMPUS_BANDS[1].upTo.toLocaleString("en-US")}, ${usd(CAMPUS_BANDS[2].price)} above. List price from ${usd(CAMPUS_BANDS[0].list)}.`,
+    points: ["Every department, unlimited faculty seats", `At ${CAMPUS_BANDS[1].upTo.toLocaleString("en-US")} students, ${perStudent(CAMPUS_BANDS[1].upTo)} a student a year`, "Every club on campus, verified as yours", "A data agreement for student privacy (FERPA)", ...CAMPUS_SOON.map((x) => `${x} (building with pilot schools)`)],
     cta: { label: "Talk to us", href: "/book?kind=school" },
   },
   {
