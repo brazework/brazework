@@ -35,7 +35,9 @@ export const TOOL_LABEL: Record<string, { doing: string; done: string }> = {
 
 // Something Copilot prepared for the member to confirm. Copilot never saves anything itself:
 // the card shows this, the member edits or confirms, and the app's normal server action runs.
-export type Proposal = { id: string } & (
+// `then`: what Torch will do next once this card is confirmed, in the member's words ("log the milestone on
+// it"), when the card is one step of a job they asked for (the spec's part 3).
+export type Proposal = { id: string; then?: string } & (
   // What the member is working toward (supabase/goals.sql). visible starts false: the member chooses on the card.
   | { kind: "goal"; goal_kind: GoalKind; target: string; title: string; why: string }
   // Something to carry over to the next chat (supabase/ember-memory.sql). Saved only when confirmed.

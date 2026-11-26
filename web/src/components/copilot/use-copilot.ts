@@ -17,7 +17,9 @@ export function useCopilot() {
   const [remaining, setRemaining] = useState<number | null>(null);
   const abort = useRef<AbortController | null>(null);
 
-  const run = async (req: CopilotRequest, onText: OnText) => {
+  // `onRefused`: a free follow turn wasn't given (none left today); the page offers it for a credit
+  // instead, so it isn't shown as an error.
+  const run = async (req: CopilotRequest, onText: OnText, { onRefused }: { onRefused?: () => void } = {}) => {
     abort.current?.abort();
     const ctrl = new AbortController();
     abort.current = ctrl;
@@ -37,6 +39,7 @@ export function useCopilot() {
       const res = await fetch("/api/copilot", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(req), signal: ctrl.signal });
       if (!res.ok || !res.body) {
         const j = await res.json().catch(() => ({}));
+        if (res.status === 429 && (j as { follow?: string }).follow === "refused" && onRefused) { onRefused(); return null; }
         setError((j as { message?: string }).message ?? "Torch couldn't answer. Try again.");
         return null;
       }

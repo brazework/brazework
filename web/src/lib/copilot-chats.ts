@@ -11,7 +11,8 @@ import { getViewer } from "@/lib/supabase/server";
 // still tells Torch which were confirmed. A label and a state, never a live card.
 // `choice`: the answers Torch offered as buttons, and which was tapped; a chat opened again can still
 // answer the last one.
-export type SavedMsg = { role: "user" | "assistant"; content: string; tools?: string[]; cards?: string[]; outcomes?: CardOutcome[]; choice?: OfferedChoice };
+// `follow`: a turn where Torch carried on by itself after a yes; it has no words when a card set it going.
+export type SavedMsg = { role: "user" | "assistant"; content: string; tools?: string[]; cards?: string[]; outcomes?: CardOutcome[]; choice?: OfferedChoice; follow?: boolean };
 export type ChatSummary = { id: string; title: string; updated_at: string };
 
 const ID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -20,11 +21,12 @@ const KEEP_DAYS = 180;
 function clean(msgs: unknown): SavedMsg[] {
   if (!Array.isArray(msgs)) return [];
   return msgs.slice(-80).flatMap((m): SavedMsg[] => {
-    if (!m || (m.role !== "user" && m.role !== "assistant") || typeof m.content !== "string" || !m.content.trim()) return [];
+    const follow = m?.role === "user" && m.follow === true;
+    if (!m || (m.role !== "user" && m.role !== "assistant") || typeof m.content !== "string" || (!m.content.trim() && !follow)) return [];
     const strs = (v: unknown, n: number) => (Array.isArray(v) ? v.filter((x): x is string => typeof x === "string").map((x) => x.slice(0, 60)).slice(0, n) : []);
     const outcomes = cardOutcome.array().max(MAX_CARDS).safeParse(m.outcomes);
     const choice = m.role === "assistant" ? offeredChoice.safeParse(m.choice) : null;
-    return [{ role: m.role, content: m.content.slice(0, 6000), tools: strs(m.tools, 20), cards: strs(m.cards, 10), ...(outcomes.success && outcomes.data.length ? { outcomes: outcomes.data } : {}), ...(choice?.success ? { choice: choice.data } : {}) }];
+    return [{ role: m.role, content: m.content.slice(0, 6000), tools: strs(m.tools, 20), cards: strs(m.cards, 10), ...(outcomes.success && outcomes.data.length ? { outcomes: outcomes.data } : {}), ...(choice?.success ? { choice: choice.data } : {}), ...(follow ? { follow: true } : {}) }];
   });
 }
 

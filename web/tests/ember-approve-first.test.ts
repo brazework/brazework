@@ -114,3 +114,18 @@ test("offering answers as buttons never writes: it only hands the buttons to the
   assert.deepEqual(writes, []);
   assert.match(String(OFFER_CHOICES.description), /Nothing is saved/);
 });
+
+test("a card's next step is kept only where the page carries on, and still nothing is written", async () => {
+  const args = { body: "Static fire went clean", kind: "result", then: "post it in the club too" };
+  for (const carryOn of [true, false]) {
+    const { db, writes } = readOnlyDb();
+    const cards: Proposal[] = [];
+    await makeExec(db, ME, (p) => cards.push(p), () => {}, { carryOn })("propose_post", args);
+    assert.equal(cards.length, 1);
+    assert.equal(cards[0].then, carryOn ? "post it in the club too" : undefined);
+    assert.deepEqual(writes, []);
+  }
+  for (const t of TOOLS.filter((t) => t.name.startsWith("propose_"))) {
+    assert.ok((t.input_schema.properties as Record<string, unknown>).then, `${t.name} can say what comes next`);
+  }
+});

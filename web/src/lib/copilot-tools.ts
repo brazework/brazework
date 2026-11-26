@@ -3,7 +3,7 @@ import type Anthropic from "@anthropic-ai/sdk";
 import { can, rank } from "@/lib/communities";
 import { EVENT_FORMATS, EVENT_TYPES } from "@/lib/events";
 import type { Choice, Proposal } from "@/lib/copilot-agent";
-import { MAX_OPTION, MAX_OPTIONS, MIN_OPTIONS, cleanOptions } from "@/lib/ember-thread";
+import { MAX_OPTION, MAX_OPTIONS, MIN_OPTIONS, cleanOptions, cleanThen } from "@/lib/ember-thread";
 import { dbFeatures } from "@/lib/db-features";
 import { newestFirst } from "@/lib/ember-record";
 import { ALL_TOPICS, requestTime } from "@/lib/forge";
@@ -164,6 +164,11 @@ export const TOOLS: Anthropic.Tool[] = [
   },
 ];
 
+// Every card can say what Torch does next once it's confirmed (the spec's part 3). makeExec keeps it only
+// where the page can carry on; elsewhere it's dropped and the card is as before.
+const THEN_PROP = { then: { type: "string", description: "Only when your instructions say you can carry a job through: the next step, in a few of the member's words, for after they confirm this card (\"log the milestone on it\"). Leave it out on the last step." } };
+for (const t of TOOLS) if (t.name.startsWith("propose_")) Object.assign((t.input_schema.properties ??= {}) as Record<string, unknown>, THEN_PROP);
+
 // Offered only where the page can show buttons (the Ask Torch bar and Torch's page send `choices`;
 // app/api/copilot/route.ts). Elsewhere, and in group chats, Torch asks in words.
 export const OFFER_CHOICES: Anthropic.Tool = {
@@ -183,9 +188,12 @@ const SIGNERS = ["professor", "ta", "pi", "manager", "mentor", "other"];
 const clean = (v: unknown, max = 60) => (typeof v === "string" ? v.replace(/[^\p{L}\p{N} '&.+#-]/gu, " ").replace(/\s+/g, " ").trim().slice(0, max) : "");
 const snip = (s: string | null | undefined, n = 140) => (s ?? "").replace(/\s+/g, " ").trim().slice(0, n);
 
-export function makeExec(db: DB, userId: string, onProposal: (p: Proposal) => void = () => {}, onChoice: (c: Choice) => void = () => {}) {
+// `carryOn`: the page can carry on after a yes, so a card keeps the next step Torch gave it.
+export function makeExec(db: DB, userId: string, onProposal: (p: Proposal) => void = () => {}, onChoice: (c: Choice) => void = () => {}, { carryOn = false }: { carryOn?: boolean } = {}) {
   return async (name: string, input: unknown): Promise<unknown> => {
     const a = (input ?? {}) as Record<string, unknown>;
+    const then = carryOn ? cleanThen(a.then) : "";
+    const propose = (p: Proposal) => onProposal(then ? { ...p, then } : p);
     switch (name) {
       case "search_clubs": {
         const q = clean(a.query), field = clean(a.field);
@@ -301,7 +309,7 @@ export function makeExec(db: DB, userId: string, onProposal: (p: Proposal) => vo
         if (!body) return { error: "The post is empty." };
         const kind = (["update", "question", "result", "project"] as const).find((k) => k === a.kind) ?? "update";
         const tags = (Array.isArray(a.tags) ? a.tags : []).filter((t): t is string => typeof t === "string" && ALL_TOPICS.includes(t)).slice(0, 3);
-        onProposal({ id: pid(), kind: "post", body, postKind: kind, tags });
+        propose({ id: pid(), kind: "post", body, postKind: kind, tags });
         return SHOWN;
       }
       case "propose_milestone": {
@@ -319,7 +327,7 @@ export function makeExec(db: DB, userId: string, onProposal: (p: Proposal) => vo
         const evidence = typeof a.evidence === "string" ? a.evidence.trim() : "";
         if (!/^https:\/\/\S{4,290}$/i.test(evidence)) return { error: "A milestone needs evidence: ask the member for an https link to a photo, video, file, commit or the club event. Don't make one up." };
         const day = typeof a.achieved_on === "string" && /^\d{4}-\d{2}-\d{2}$/.test(a.achieved_on) ? a.achieved_on : new Date(requestTime()).toISOString().slice(0, 10);
-        onProposal({ id: pid(), kind: "milestone", project_id: projectId, project_title: proj.data.title, club_id: clubId, club_name: club.name, title, evidence, detail: typeof a.detail === "string" ? a.detail.trim().slice(0, 600) : "", achieved_on: day });
+        propose({ id: pid(), kind: "milestone", project_id: projectId, project_title: proj.data.title, club_id: clubId, club_name: club.name, title, evidence, detail: typeof a.detail === "string" ? a.detail.trim().slice(0, 600) : "", achieved_on: day });
         return SHOWN;
       }
       case "my_record": {
@@ -366,7 +374,7 @@ export function makeExec(db: DB, userId: string, onProposal: (p: Proposal) => vo
       case "propose_memory": {
         const fact = typeof a.fact === "string" ? a.fact.trim().replace(/\s+/g, " ").slice(0, 200) : "";
         if (!fact) return { error: "Say what to remember, in one short sentence." };
-        onProposal({ id: pid(), kind: "memory", body: fact });
+        propose({ id: pid(), kind: "memory", body: fact });
         return SHOWN;
       }
       case "propose_goal": {
@@ -374,7 +382,7 @@ export function makeExec(db: DB, userId: string, onProposal: (p: Proposal) => vo
         if (!isGoalKind(kind)) return { error: "Pick one of: internship, job, grad, research, competition, funding." };
         const target = typeof a.target === "string" ? a.target.trim().replace(/[<>]/g, "").slice(0, 80) : "";
         const why = typeof a.why === "string" ? a.why.trim().slice(0, 240) : "";
-        onProposal({ id: pid(), kind: "goal", goal_kind: kind, target, title: goalTitle({ kind, target }), why });
+        propose({ id: pid(), kind: "goal", goal_kind: kind, target, title: goalTitle({ kind, target }), why });
         return SHOWN;
       }
       case "propose_project_edit": {
@@ -391,7 +399,7 @@ export function makeExec(db: DB, userId: string, onProposal: (p: Proposal) => vo
         const summary = text(a.summary, 600), details = text(a.details, 5000), link = text(a.link, 300);
         if (link !== undefined && !/^https:\/\/\S{4,290}$/i.test(link)) return { error: "The link has to be an https address." };
         if (summary === undefined && details === undefined && link === undefined) return { error: "Say what should change: the summary, the write-up or the link." };
-        onProposal({ id: pid(), kind: "project_edit", project_id: projectId, project_title: proj.title, ...(summary !== undefined && { summary }), ...(details !== undefined && { details }), ...(link !== undefined && { link }), before: { summary: proj.summary ?? "", details: now?.details ?? "", link: now?.link ?? "", specs: [] } });
+        propose({ id: pid(), kind: "project_edit", project_id: projectId, project_title: proj.title, ...(summary !== undefined && { summary }), ...(details !== undefined && { details }), ...(link !== undefined && { link }), before: { summary: proj.summary ?? "", details: now?.details ?? "", link: now?.link ?? "", specs: [] } });
         return SHOWN;
       }
       case "propose_signature": {
@@ -407,7 +415,7 @@ export function makeExec(db: DB, userId: string, onProposal: (p: Proposal) => vo
           if (!row?.id) return { error: "That isn't one of the member's milestones." };
           if (row.status !== "draft" && row.status !== "pending") return { error: "That milestone isn't waiting for proof, so nobody needs to be asked." };
           const { data: proj } = await db.from("projects").select("title").eq("id", row.project_id).maybeSingle();
-          onProposal({ id: pid(), kind: "signature", milestone_id: row.id, project_id: row.project_id, project_title: (proj as { title?: string } | null)?.title ?? "your project", title: row.title, evidence: row.evidence ?? "", detail: row.detail ?? "", achieved_on: row.achieved_on ?? "", email, relationship });
+          propose({ id: pid(), kind: "signature", milestone_id: row.id, project_id: row.project_id, project_title: (proj as { title?: string } | null)?.title ?? "your project", title: row.title, evidence: row.evidence ?? "", detail: row.detail ?? "", achieved_on: row.achieved_on ?? "", email, relationship });
           return SHOWN;
         }
         const projectId = String(a.project_id ?? "");
@@ -419,7 +427,7 @@ export function makeExec(db: DB, userId: string, onProposal: (p: Proposal) => vo
         const evidence = typeof a.evidence === "string" ? a.evidence.trim() : "";
         if (!/^https:\/\/\S{4,290}$/i.test(evidence)) return { error: "A milestone needs evidence: ask the member for an https link to a pull request, commit, doc, photo, video or file. Don't make one up." };
         const day = typeof a.achieved_on === "string" && /^\d{4}-\d{2}-\d{2}$/.test(a.achieved_on) ? a.achieved_on : new Date(requestTime()).toISOString().slice(0, 10);
-        onProposal({ id: pid(), kind: "signature", milestone_id: "", project_id: projectId, project_title: (proj as { title: string }).title, title, evidence, detail: typeof a.detail === "string" ? a.detail.trim().slice(0, 600) : "", achieved_on: day, email, relationship });
+        propose({ id: pid(), kind: "signature", milestone_id: "", project_id: projectId, project_title: (proj as { title: string }).title, title, evidence, detail: typeof a.detail === "string" ? a.detail.trim().slice(0, 600) : "", achieved_on: day, email, relationship });
         return SHOWN;
       }
       case "propose_join_club": {
@@ -431,7 +439,7 @@ export function makeExec(db: DB, userId: string, onProposal: (p: Proposal) => vo
         ]);
         if (!c.data) return { error: "No club with that id." };
         if (mem.data) return { error: "The member is already in this club." };
-        onProposal({ id: pid(), kind: "join", club_id: clubId, club_name: c.data.name, privacy: c.data.privacy === "approval" ? "approval" : "public" });
+        propose({ id: pid(), kind: "join", club_id: clubId, club_name: c.data.name, privacy: c.data.privacy === "approval" ? "approval" : "public" });
         return SHOWN;
       }
       case "propose_rsvp": {
@@ -444,7 +452,7 @@ export function makeExec(db: DB, userId: string, onProposal: (p: Proposal) => vo
         if (!ev.data || ev.data.status !== "published") return { error: "No upcoming event with that id." };
         if (Date.parse(ev.data.starts_at) < requestTime()) return { error: "That event has already started." };
         if (mine.data) return { error: "The member is already going." };
-        onProposal({ id: pid(), kind: "rsvp", event_id: eventId, title: ev.data.title, starts_at: ev.data.starts_at, where: ev.data.format === "Online" ? "Online" : ev.data.location ?? "", going: ev.data.rsvp_count ?? 0 });
+        propose({ id: pid(), kind: "rsvp", event_id: eventId, title: ev.data.title, starts_at: ev.data.starts_at, where: ev.data.format === "Online" ? "Online" : ev.data.location ?? "", going: ev.data.rsvp_count ?? 0 });
         return SHOWN;
       }
       case "propose_message": {
@@ -454,7 +462,7 @@ export function makeExec(db: DB, userId: string, onProposal: (p: Proposal) => vo
         if (!body) return { error: "Write the message to propose." };
         const person = await db.from("profiles").select("first_name, last_name, headline").eq("id", personId).maybeSingle();
         if (!person.data) return { error: "No member with that id." };
-        onProposal({ id: pid(), kind: "message", person_id: personId, name: `${person.data.first_name} ${person.data.last_name}`.trim(), headline: person.data.headline ?? "", body });
+        propose({ id: pid(), kind: "message", person_id: personId, name: `${person.data.first_name} ${person.data.last_name}`.trim(), headline: person.data.headline ?? "", body });
         return SHOWN;
       }
       case "propose_follow": {
@@ -466,7 +474,7 @@ export function makeExec(db: DB, userId: string, onProposal: (p: Proposal) => vo
         ]);
         if (!person.data) return { error: "No member with that id." };
         if (already.data) return { error: "The member already follows them." };
-        onProposal({ id: pid(), kind: "follow", person_id: personId, name: `${person.data.first_name} ${person.data.last_name}`.trim(), headline: person.data.headline ?? "" });
+        propose({ id: pid(), kind: "follow", person_id: personId, name: `${person.data.first_name} ${person.data.last_name}`.trim(), headline: person.data.headline ?? "" });
         return SHOWN;
       }
       case "propose_event": {
@@ -484,7 +492,7 @@ export function makeExec(db: DB, userId: string, onProposal: (p: Proposal) => vo
         const end = Number.isNaN(endRaw.getTime()) || endRaw <= start ? new Date(start.getTime() + 2 * 3600e3) : endRaw;
         const topics = ((c.data?.topics ?? []) as string[]).filter((t) => ALL_TOPICS.includes(t));
         const topic = typeof a.topic === "string" && ALL_TOPICS.includes(a.topic) ? a.topic : topics[0] ?? "";
-        onProposal({
+        propose({
           id: pid(), kind: "event", club_id: clubId, club_name: c.data?.name ?? "your club",
           title: typeof a.title === "string" ? a.title.trim().slice(0, 120) : "", description: typeof a.description === "string" ? a.description.trim().slice(0, 2000) : "",
           type: (EVENT_TYPES as readonly string[]).includes(String(a.type)) ? String(a.type) : "Workshop",
@@ -518,7 +526,7 @@ export function makeExec(db: DB, userId: string, onProposal: (p: Proposal) => vo
         const club = (m as unknown as { communities: { name: string } | null } | null)?.communities;
         if (!club) return { error: "The member isn't in that club, so they can't post there." };
         const kind = (["update", "question", "result", "project"] as const).find((k) => k === a.kind) ?? "update";
-        onProposal({ id: pid(), kind: "club_post", club_id: clubId, club_name: club.name, body, postKind: kind });
+        propose({ id: pid(), kind: "club_post", club_id: clubId, club_name: club.name, body, postKind: kind });
         return SHOWN;
       }
       case "propose_review": {
@@ -536,7 +544,7 @@ export function makeExec(db: DB, userId: string, onProposal: (p: Proposal) => vo
         if (!m || rank(m.role) < 3) return { error: "Only the club's moderators, admins and owner can review milestones." };
         const verify = a.verify === true;
         const note = typeof a.note === "string" ? a.note.trim().slice(0, 300) : "";
-        onProposal({ id: pid(), kind: "review", milestone_id: id, club_name: q.community_name, member: q.owner ? `${q.owner.first_name} ${q.owner.last_name}`.trim() : "A member", title: q.title, detail: q.detail, evidence: q.evidence, verify, note });
+        propose({ id: pid(), kind: "review", milestone_id: id, club_name: q.community_name, member: q.owner ? `${q.owner.first_name} ${q.owner.last_name}`.trim() : "A member", title: q.title, detail: q.detail, evidence: q.evidence, verify, note });
         return SHOWN;
       }
       case "github_repo": {
@@ -560,7 +568,7 @@ export function makeExec(db: DB, userId: string, onProposal: (p: Proposal) => vo
         const status = a.status === "completed" ? "completed" : "in_progress";
         const year = status === "completed" && typeof a.year === "string" && /^\d{4}$/.test(a.year) ? a.year : "";
         const tags = (Array.isArray(a.tags) ? a.tags : []).filter((t): t is string => typeof t === "string" && ALL_TOPICS.includes(t)).slice(0, 3);
-        onProposal({ id: pid(), kind: "project", title, summary, details: typeof a.details === "string" ? a.details.trim().slice(0, 5000) : "", link, tags, status, year, source: link.includes("github.com") ? "GitHub" : "" });
+        propose({ id: pid(), kind: "project", title, summary, details: typeof a.details === "string" ? a.details.trim().slice(0, 5000) : "", link, tags, status, year, source: link.includes("github.com") ? "GitHub" : "" });
         return SHOWN;
       }
       case "offer_choices": {

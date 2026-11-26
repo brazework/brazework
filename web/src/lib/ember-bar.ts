@@ -81,15 +81,16 @@ export function cardSummary(p: Proposal): { title: string; lines: string[]; link
 export const BAR_TURNS = 6;
 
 /** One exchange in the bar: what the member said, Torch's words (follow-up marker removed), its cards. */
-export type BarTurn = { q: string; text: string; cards: CardOutcome[]; choice?: OfferedChoice };
+// `follow`: Torch carried on by itself after a yes; `q` is empty when a confirmed card set it going.
+export type BarTurn = { q: string; text: string; cards: CardOutcome[]; choice?: OfferedChoice; follow?: boolean };
 
 /**
  * The bar's exchange as history, oldest first. A turn with no answer (it failed, or was stopped before
  * a word came) is left out whole, so questions and answers still alternate.
  */
 export function barHistory(turns: BarTurn[]): ThreadTurn[] {
-  return turns.filter((t) => t.q.trim() && t.text.trim()).slice(-BAR_TURNS).flatMap((t): ThreadTurn[] => [
-    { role: "user", content: t.q.slice(0, MAX_TURN) },
+  return turns.filter((t) => (t.q.trim() || t.follow) && t.text.trim()).slice(-BAR_TURNS).flatMap((t): ThreadTurn[] => [
+    { role: "user", content: t.q.slice(0, MAX_TURN), ...(t.follow ? { follow: true } : {}) },
     { role: "assistant", content: t.text.slice(0, MAX_TURN), ...(t.cards.length ? { cards: t.cards } : {}), ...(t.choice ? { choice: t.choice } : {}) },
   ]);
 }
@@ -98,4 +99,16 @@ export function barHistory(turns: BarTurn[]): ThreadTurn[] {
 export function pickedFrom(choice: OfferedChoice | undefined, tapped: string | undefined): OfferedChoice | undefined {
   if (!choice) return undefined;
   return tapped && choice.options.includes(tapped) ? { ...choice, picked: tapped } : choice;
+}
+
+/** The next steps Torch gave on the cards the member confirmed: what "Carry on" would do. */
+export function carryOnSteps(cards: CardOutcome[]): string[] {
+  return cards.filter((c) => c.state === "confirmed" && c.then).map((c) => c.then!).slice(0, 3);
+}
+
+/** Free follow turns left, as the page guesses it for its labels (the database decides). */
+export const FOLLOWS_PER_ASK = 3;
+export function followsAfter(left: number, follow: boolean, refused: boolean): number {
+  if (refused) return 0;
+  return follow ? Math.max(0, left - 1) : FOLLOWS_PER_ASK;
 }
