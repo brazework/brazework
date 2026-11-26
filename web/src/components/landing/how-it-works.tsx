@@ -80,7 +80,6 @@ export function HowItWorks() {
 
         <div className="mt-10 flex flex-wrap items-center gap-x-5 gap-y-3">
           <Button href="/signup" size="lg" className="h-12 rounded-xl px-5">Create your free account</Button>
-          <a href="#app" className="text-[15px] font-medium underline decoration-line-strong underline-offset-4 hover:decoration-text">Or try the app first, right here</a>
         </div>
         <p className="mt-4 text-xs text-faint">An example, to show how an entry reads at each step.</p>
       </div>

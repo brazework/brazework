@@ -11,12 +11,9 @@ import { cn } from "@/lib/forge";
 // the phone menu leaves it out.
 const LINKS: { href: string; label: string; wide?: boolean; noPhone?: boolean }[] = [
   { href: "#how", label: "How it works" },
-  { href: "#app", label: "The app" },
-  { href: "#ember", label: "Ember" },
-  { href: "#clubs", label: "Clubs" },
-  { href: "#companies", label: "Companies" },
-  { href: "#pricing", label: "Pricing" },
-  { href: "#faq", label: "Questions", wide: true, noPhone: true },
+  { href: "#for", label: "Who it's for" },
+  { href: "/pricing", label: "Pricing" },
+  { href: "/ai", label: "Connect your AI", wide: true },
 ];
 
 export function Nav() {
@@ -28,7 +25,7 @@ export function Nav() {
   // the screen. The sections between two links (who signs, why, the 3D build) count as the one above.
   const [here, setHere] = useState("");
   useEffect(() => {
-    const marks = LINKS.map((l) => document.getElementById(l.href.slice(1))).filter((el): el is HTMLElement => !!el);
+    const marks = LINKS.filter((l) => l.href.startsWith("#")).map((l) => document.getElementById(l.href.slice(1))).filter((el): el is HTMLElement => !!el);
     let frame = 0;
     const read = () => {
       frame = 0;
@@ -56,7 +53,7 @@ export function Nav() {
         aria-label="Main"
         className={cn(
           "relative flex w-full max-w-6xl flex-wrap items-center gap-x-3 gap-y-0 rounded-2xl sm:gap-x-6 px-4 py-2.5 transition-all duration-500",
-          scrolled || open ? "glass shadow-[var(--shadow-float)]" : "border border-transparent",
+          scrolled || open ? "glass shadow-[var(--shadow-float)]" : "theme-dark border border-transparent bg-transparent",
         )}
       >
         {/* How far down the page you've read: a hairline along the bar's lower edge, once it floats. */}
