@@ -683,7 +683,7 @@ select option { background-color: var(--surface); color: var(--text); }
 @media (min-width: 640px) { .hero-body { height: 33rem; } }
 @media (min-width: 1024px) { .hero-body { height: clamp(26rem, calc(100svh - 16rem), 35rem); } }
 @media (min-width: 1024px) and (min-height: 700px) and (prefers-reduced-motion: no-preference) {
-  .hero-run { height: calc(100svh + 90svh); }
+  .hero-run { height: calc(100svh + 80svh); }
   .hero-pin { position: sticky; top: 0; height: 100svh; }
   .hero-scroll-hint { display: inline-flex; }
 }
