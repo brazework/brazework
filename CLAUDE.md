@@ -18,7 +18,7 @@ The Product Hunt connection is in `.mcp.json` too; the first use asks you to sig
 
 - Before starting a piece of work, look for its Linear issue. If there isn't one and the work is bigger than a quick fix, create it in the right project with a Type label, an owner and a milestone.
 - Start commit subjects with the issue ID (`FIX-30: Lighthouse budget in CI`). Add a `Fixes FIX-30` line when the commit finishes it.
-- Commits with no issue ID are logged in Linear as Done issues by `.github/workflows/linear-sync.yml`, so nothing goes untracked. A linked commit still reads better than an auto-logged one.
+- Commits with no issue ID are logged in Linear by `.github/workflows/linear-sync.yml`, as comments on that week's "Shipped without an issue" issue (one issue a week, to stay under the Free plan's 250-issue cap), so nothing goes untracked. A linked commit still reads better than an auto-logged one.
 - When an issue's plan changes, update the issue (a comment or the description), not just the code.
 
 ## Ground rules
