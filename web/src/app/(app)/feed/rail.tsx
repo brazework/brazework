@@ -6,14 +6,14 @@ import { requestTime } from "@/lib/forge";
 import { getViewer } from "@/lib/supabase/server";
 import { RailCard } from "@/components/app/rail-card";
 import { MessageDock } from "@/components/messages/dock";
-import { YourWeekCard } from "./streak";
+import { ThisWeekCard } from "./streak";
 import { TrendingNews } from "./trending-news";
 import { newsPool, pickNews, type NewsPick } from "@/lib/news";
 import { ConnectAgentCard } from "./connect-agent";
 import { Suspense } from "react";
 
-// The feed's right rail (wide screens), redesign 2026-11: your week, what's coming up, your messages,
-// then trending and news. Challenges and Brazework's own updates are a tab away, so Home stays calm.
+// The feed's right rail (wide screens), redesign 2026-11 (top card 2026-11-26): this week (what the
+// band above the feed doesn't say), what's coming up, your messages, then trending and news. Challenges and Brazework's own updates are a tab away, so Home stays calm.
 export async function FeedRail() {
   const { supabase, user, profile } = await getViewer();
   if (!user || !profile) return null;
@@ -36,7 +36,7 @@ export async function FeedRail() {
   const news = pickNews(pool, profile.interests ?? [], profile.field ?? "", 6, now);
   const events = ((ev.data ?? []) as unknown as Parameters<typeof withHost>[0][]).map(withHost) as HostedEvent[];
   const goingSet = new Set((going.data ?? []).map((g) => g.event_id as string));
-  return <RailView top={<><Suspense fallback={<div className="h-40 shimmer rounded-xl" aria-hidden="true" />}><YourWeekCard /></Suspense>{(tokens.count ?? 1) === 0 && <ConnectAgentCard />}</>} events={events} going={goingSet} trending={trending} news={news} hasInterests={(profile.interests ?? []).length > 0} />;
+  return <RailView top={<><Suspense fallback={<div className="h-40 shimmer rounded-xl" aria-hidden="true" />}><ThisWeekCard /></Suspense>{(tokens.count ?? 1) === 0 && <ConnectAgentCard />}</>} events={events} going={goingSet} trending={trending} news={news} hasInterests={(profile.interests ?? []).length > 0} />;
 }
 
 

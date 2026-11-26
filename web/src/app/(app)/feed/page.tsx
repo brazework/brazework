@@ -21,7 +21,7 @@ import { cookies } from "next/headers";
 import { DISMISS_PREFIX } from "@/lib/dismiss";
 import { Composer } from "./composer";
 import { FeedHeader, TABS, type TabId } from "./header";
-import { NextStep } from "./next-step";
+import { HomeBand } from "./home-band";
 import { HomeStream, StreamSkeleton } from "./stream";
 import type { ReplyPreview } from "./post-card";
 import type { Proof } from "./proof-card";
@@ -331,13 +331,15 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
             </div>
           </details>}
         hero={<>
-          <HomeGreeting first={profile.first_name} />
+          {/* The top of Home (home-band.tsx): where your record stands, the one next thing, your places. */}
+          <Suspense fallback={<div className="h-[22rem] shimmer rounded-2xl sm:h-64" aria-hidden="true" />}><HomeBand first={profile.first_name} field={profile.field ?? ""} interests={interests} /></Suspense>
           {/* Home, top to bottom (section redesign, Nov 2026): the one next step, then one stream in the
               order you'd act on it (what your tools noticed, what needs you, what your clubs shipped,
               your goal), then the log-work box and the posts. Your builds live on Projects, not here. */}
           {noProjects && <FirstBuild first={profile.first_name} chapter={chapter?.name} student={profile.account_type !== "professional"} />}
           {/* When the checklist's next step is the project, the card above already asks it, so the checklist waits. */}
-          {startOpen && !(noProjects && nextStep === "project") ? <StartChecklist steps={guide?.loop ?? []} /> : noProjects ? null : <><Suspense fallback={<div className="h-14 shimmer rounded-2xl" aria-hidden="true" />}><NextStep /></Suspense></>}
+          {/* The next step is the band's button now; the first-five-minutes checklist still shows for new members. */}
+          {startOpen && !(noProjects && nextStep === "project") && <StartChecklist steps={guide?.loop ?? []} />}
           <Suspense fallback={<StreamSkeleton />}><HomeStream /></Suspense>
           {/* The next event this week, as one line (wide screens have it in the rail). */}
           {discover && <div className="xl:hidden"><Suspense fallback={null}><NextUp /></Suspense></div>}
@@ -359,14 +361,6 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
 }
 
 // The top of Home (redesign 2026-11): who it's for, in one line, before anything asks for attention.
-function HomeGreeting({ first }: { first: string }) {
-  return (
-    <div className="pt-1 pb-1">
-      <h1 className="text-[1.625rem] leading-tight font-semibold tracking-[-0.02em] sm:text-[1.875rem]">Welcome back, {first}</h1>
-      <p className="mt-1 text-[15px] text-muted">What needs you, what you&apos;re building, and what your clubs shipped.</p>
-    </div>
-  );
-}
 
 // The bottom of the feed: somewhere useful to go next.
 function FeedEnd({ tab }: { tab: TabId }) {

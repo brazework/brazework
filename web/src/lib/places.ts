@@ -8,7 +8,7 @@ import { onPage } from "@/lib/nav-match";
 // Every page lives inside one of them. This is the single list the sidebar, the phone tab bar and the
 // place tabs read, so "you are here" can't disagree between them. Pure, and tested (tests/places.test.ts).
 
-export type PlaceId = "home" | "projects" | "clubs" | "record" | "inbox";
+export type PlaceId = "home" | "school" | "projects" | "clubs" | "record" | "inbox";
 // `signing`: results members have asked your clubs to sign, when you're one of their officers.
 export type BadgeKey = "notifications" | "messages" | "invites" | "signing";
 // `tour`: a tour anchor (data-tour) that moved onto this tab when the More drawer went away.
@@ -47,9 +47,25 @@ export const PLACES: Place[] = [
   { id: "inbox", label: "Chats", href: "/messages", badge: "messages", match: ["/messages"], tabs: [] },
 ];
 
-// Which place lights up for this path (null for pages outside the five, like Torch's own page).
-export function placeFor(path: string): Place | null {
-  return PLACES.find((p) => p.match.some((m) => onPage(path, m))) ?? null;
+// School (the student portal, 2026-11-26): a place of its own for anyone placed at a school by their
+// email (students, faculty, the school's admins), right after Home. Everyone else keeps the five.
+export const SCHOOL_PLACE: Place = { id: "school", label: "School", href: "/school", match: ["/school"], tabs: [] };
+
+/** The places this member sees: School after Home when they're at a school. Clubs then drops its
+ * "Your school" tab, since School is a place. */
+export function placesFor(atSchool: boolean): Place[] {
+  if (!atSchool) return PLACES;
+  return [PLACES[0], SCHOOL_PLACE, ...PLACES.slice(1).map((p) => (p.id === "clubs" ? { ...p, match: p.match.filter((m) => m !== "/school"), tabs: p.tabs.filter((t) => t.id !== "school") } : p))];
+}
+
+/** The phone's tab bar: five slots. At a school, School takes Chats' slot and Chats moves to the top bar. */
+export function phoneTabsFor(atSchool: boolean): Place[] {
+  return atSchool ? placesFor(true).filter((p) => p.id !== "inbox") : PLACES;
+}
+
+// Which place lights up for this path (null for pages outside them, like Torch's own page).
+export function placeFor(path: string, places: Place[] = PLACES): Place | null {
+  return places.find((p) => p.match.some((m) => onPage(path, m))) ?? null;
 }
 
 // The tab row for this page, if it has one: only a place's own top pages, never a detail page under
