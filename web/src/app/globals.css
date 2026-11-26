@@ -410,26 +410,23 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity
   backdrop-filter: blur(20px) saturate(1.5);
   -webkit-backdrop-filter: blur(20px) saturate(1.5);
 }
-/* The default banner on a profile and a club (2026-11-26): a dark drafting sheet in both themes, lit in
-   copper (or the club's accent, --cover-tint) from the top right, with a fine grid. The field's line
-   drawing sits on it (components/media/profile-media.tsx). */
+/* The default banner on a profile, a club and a project (2026-11-26): a smooth dark surface in both
+   themes, lit in copper (or the club's accent, --cover-tint) from the top right. No grid and no line
+   drawings anywhere on a banner (the founders' call): a photo, or this light. */
 .cover-blueprint {
   --cover-tint: #e8946a;
   color: #ededef;
   background:
     radial-gradient(70% 170% at 88% -15%, color-mix(in oklab, var(--cover-tint) 44%, transparent), transparent 60%),
     radial-gradient(55% 150% at -5% 115%, rgb(91 124 250 / 0.2), transparent 62%),
-    linear-gradient(rgb(255 255 255 / 0.055) 1px, transparent 1px) 0 0 / 28px 28px,
-    linear-gradient(90deg, rgb(255 255 255 / 0.055) 1px, transparent 1px) 0 0 / 28px 28px,
-    linear-gradient(180deg, #14151a, #0b0c0e);
+    radial-gradient(40% 90% at 55% 120%, color-mix(in oklab, var(--cover-tint) 14%, transparent), transparent 70%),
+    linear-gradient(180deg, #16171c, #0b0c0e);
 }
-/* A profile with no cover yet: a faint engineering grid under a soft light, in the theme's own colours. */
+/* A profile with no cover yet: a soft light in the theme's own colours (no grid, no lines). */
 .cover-empty {
   background:
     radial-gradient(520px 220px at 18% 0%, color-mix(in oklab, var(--text) 12%, transparent), transparent 70%),
     radial-gradient(420px 200px at 95% 110%, color-mix(in oklab, var(--accent) 14%, transparent), transparent 70%),
-    linear-gradient(color-mix(in oklab, var(--text) 7%, transparent) 1px, transparent 1px) 0 0 / 24px 24px,
-    linear-gradient(90deg, color-mix(in oklab, var(--text) 7%, transparent) 1px, transparent 1px) 0 0 / 24px 24px,
     var(--surface-2);
 }
 /* How bright a glass edge catches the light: strong on light pages, a hint on dark ones. */
@@ -570,13 +567,9 @@ select option { background-color: var(--surface); color: var(--text); }
 
 /* A drawing sheet's grid, in ink at a whisper (docs/design/app.md): behind a project's cover or an
    empty state, once per page at most. It follows the theme: dark ink on light, light ink on dark. */
+/* Formerly a drafting grid; now a plain soft surface (no lines anywhere, 2026-11-26). */
 .sheet-grid {
   background-color: var(--surface-2);
-  background-image:
-    linear-gradient(color-mix(in oklab, var(--text) 6%, transparent) 1px, transparent 1px),
-    linear-gradient(90deg, color-mix(in oklab, var(--text) 6%, transparent) 1px, transparent 1px);
-  background-size: 24px 24px;
-  background-position: -1px -1px;
 }
 
 /* A signature landing (components/app/fresh-seal.tsx): the seal comes down like a stamp, once. */

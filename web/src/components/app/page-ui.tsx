@@ -33,7 +33,8 @@ export function Panel({ className, children }: { className?: string; children: R
 // first action. Left-aligned, so it reads as a start, not a dead end. Torch waits beside it.
 export function EmptyState({ icon, title, body, action, mood = "idle" }: { icon?: React.ReactNode; title: string; body?: React.ReactNode; action?: React.ReactNode; mood?: EmberMood }) {
   return (
-    <div className="sheet-grid flex flex-col items-start gap-4 rounded-xl border border-dashed border-line-strong px-5 py-6 sm:flex-row sm:items-center sm:px-6">
+    // Clean glass (2026-11-26, the founders' call: no grid or dashed lines anywhere).
+    <div className="glass-card flex flex-col items-start gap-4 rounded-2xl px-5 py-6 sm:flex-row sm:items-center sm:px-6">
       <div className="relative shrink-0">
         <Ember size={52} mood={mood} />
         {icon && <span className="absolute -right-1.5 -bottom-1 grid size-6 place-items-center rounded-full border-2 border-surface-2 bg-text text-surface [&_svg]:size-3">{icon}</span>}
