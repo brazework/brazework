@@ -5,7 +5,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "Brazework",
     short_name: "Brazework",
-    description: "The record of your work, signed by the people who saw it.",
+    description: "Your work, signed by the people who saw it.",
     start_url: "/feed",
     scope: "/",
     display: "standalone",
