@@ -8,8 +8,7 @@ import { EXAMPLES, RUBRIC, STUDENT, course, type Example } from "./journey-data"
 // Client components, imported by hero.tsx. The five views of the landing hero's product window (components/landing/hero.tsx): one project
 // followed from the student who logs it to everywhere it counts. Each view is a panel the same size,
 // so switching never moves the page. What the visitor typed is the milestone in every one of them.
-// Views 3 to 5 show what's being built with pilot schools, and each one says so in the window's
-// footer (hero.tsx VIEWS).
+// Each view's footer note (hero.tsx VIEWS) says what's example data and what's still coming.
 
 export type ViewProps = { ex: Example; title: string; on: boolean; still: boolean; next: () => void };
 const MONO = "font-mono text-[11px] text-faint";
@@ -91,8 +90,9 @@ export function StudentView({ ex, title, on, pick, choose, next }: ViewProps & {
 }
 
 // 2. The professor (or the club officer). A class milestone is graded against the rubric, each row an
-// ABET outcome, and grading it verifies it (Brazework Courses, with pilot schools); the grade is
-// private to the student and the course's faculty. A club milestone is verified by an officer.
+// ABET outcome, and grading it verifies it (Brazework Courses, live since #254); the grade is private
+// to the student and the course's faculty. Torch's feedback draft is marked as coming. A club
+// milestone is verified by an officer.
 export function VerifyView({ ex, title, on, still, verified, verify }: ViewProps & { verified: boolean; verify: () => void }) {
   const graded = !!ex.assignment;
   const rows = graded ? RUBRIC : [];
@@ -136,9 +136,9 @@ export function VerifyView({ ex, title, on, still, verified, verify }: ViewProps
           <p className="flex items-center justify-between gap-2"><span className={MONO}>Rubric</span><span className="font-mono text-[10px] text-faint">ABET outcome</span></p>
           <ul aria-label="Rubric" className="mt-1 flex flex-col gap-1">
             {rows.map((x, i) => (
-              <li key={x.row} className="grid grid-cols-[minmax(0,1fr)_2.75rem_3.75rem] items-center gap-2 text-[12.5px]">
+              <li key={x.row} className="grid grid-cols-[minmax(0,1fr)_3.75rem_3.75rem] items-center gap-2 text-[12.5px]">
                 <span className="truncate">{x.row}</span>
-                <span className="rounded border border-line px-1 text-center font-mono text-[10px] text-text-2">{x.outcome}</span>
+                <span className="rounded border border-line px-1 text-center font-mono text-[10px] whitespace-nowrap text-text-2">{x.outcome}</span>
                 <span className={cn("text-right font-mono whitespace-nowrap tabular-nums transition-opacity duration-300", done > i ? "opacity-100" : "opacity-25")}>{done > i ? x.score : "–"} / 10</span>
               </li>
             ))}
@@ -162,7 +162,7 @@ export function VerifyView({ ex, title, on, still, verified, verify }: ViewProps
           })}
         </ul>
       </div>
-      {graded && <p className="flex items-start gap-1.5 text-[11.5px] leading-snug text-muted max-sm:hidden"><Sparkles className="mt-0.5 size-3 shrink-0 text-brand" aria-hidden="true" /><span className="min-w-0 line-clamp-2">&ldquo;Clear method and a test anyone could repeat. Next time, show the uncertainty on your results.&rdquo; Drafted by Torch, edited and sent by {ex.signer}.</span></p>}
+      {graded && <p className="flex items-start gap-1.5 text-[11.5px] leading-snug text-muted max-sm:hidden"><Sparkles className="mt-0.5 size-3 shrink-0 text-brand" aria-hidden="true" /><span className="min-w-0 line-clamp-2"><span className="font-medium text-text-2">Coming soon:</span> Torch drafts feedback like &ldquo;Clear method and a test anyone could repeat&rdquo; for {ex.signer} to edit and send.</span></p>}
       <div className="mt-auto flex min-h-12 items-center">
         {verified ? (
           <p className="flex min-w-0 items-center gap-2.5 text-sm" role="status">
@@ -216,7 +216,7 @@ export function SchoolView({ ex, title, on, still }: ViewProps) {
         </ul>
       </div>
       <div className={cn(card, "px-3 py-2.5")}>
-        <p className="flex items-center justify-between gap-2"><span className="truncate text-[12px] font-medium">ABET {ex.outcome}</span><span className="shrink-0 font-mono text-[10px] text-faint">Evidence</span></p>
+        <p className="flex items-center justify-between gap-2"><span className="truncate text-[12px] font-medium">ABET outcome {ex.outcome}</span><span className="shrink-0 font-mono text-[10px] text-faint">Evidence</span></p>
         <p className={cn("mt-1.5 flex min-w-0 items-center gap-2 text-[12px] transition-opacity duration-500", counted ? "opacity-100" : "opacity-0")}>
           <Seal size={14} /><span className="min-w-0 truncate">{title}</span>
         </p>
@@ -230,7 +230,7 @@ export function SchoolView({ ex, title, on, still }: ViewProps) {
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <p className="font-mono text-[10px] text-[#6b6c72]">Sample report</p>
-              <p className="mt-1 text-[15px] leading-snug font-semibold">ABET {ex.outcome}: evidence</p>
+              <p className="mt-1 text-[15px] leading-snug font-semibold">ABET outcome {ex.outcome}: evidence</p>
               <p className="text-[12px] text-[#55565c]">School of Engineering · Fall 2026 · 25 projects · 6 faculty</p>
             </div>
             <button type="button" onClick={() => setReport(false)} aria-label="Close the report" className="grid size-8 shrink-0 place-items-center rounded-lg hover:bg-black/5"><X className="size-4" /></button>
@@ -299,64 +299,49 @@ export function RecruiterView({ ex, title, on, still }: ViewProps) {
   );
 }
 
-// 5. Everywhere: on LinkedIn (built) and Handshake with the verify link, on the résumé, and the student's
-// one place for classes, clubs, deadlines and grades (Brazework Courses, with pilot schools).
+// 5. Everywhere: the verified work as one card, and the three places it goes from there: LinkedIn
+// (Add to LinkedIn, built), the résumé (built), and anywhere else by its verify link (Handshake, an
+// application). One idea per tile, so the view reads at a glance; the tiles arrive one after another.
 export function EverywhereView({ ex, title, on }: ViewProps) {
   const [added, setAdded] = useState(false);
-  const where = ex.kind === "class" ? course(ex) : ex.where;
-  const due = [[ex.kind === "class" ? `${where} · Assignment 4` : `${where} · Build night`, ex.kind === "class" ? "Thu" : "Wed 7 pm"], ["CS 489 · Quiz 3", "Fri"], ["Robotics Club · Demo day", "Sat"]];
+  const [copied, setCopied] = useState(false);
+  const rise = (i: number) => ({ transitionDelay: on ? `${120 + i * 90}ms` : "0ms" });
+  const tile = cn(card, "flex flex-col p-3.5 transition-[opacity,translate] duration-500 ease-out", on ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0");
   return (
-    <div className="flex h-full flex-col gap-2.5 overflow-hidden p-3 sm:grid sm:grid-cols-2 sm:gap-3 sm:p-4">
-      <div className="flex min-h-0 flex-col gap-2.5 sm:gap-3">
-        <div className={cn(card, "p-3")}>
-          <p className={MONO}>LinkedIn · Licenses &amp; certifications</p>
-          <div className="mt-2 flex gap-2.5">
-            <Seal size={28} />
-            <div className="min-w-0">
-              <p className="line-clamp-2 text-[13px] leading-snug font-semibold break-words">{title}</p>
-              <p className="truncate text-[11px] text-muted">Brazework · verified by {ex.signer}</p>
-            </div>
+    <div className="flex h-full flex-col justify-center gap-3 overflow-hidden p-4 sm:gap-4 sm:p-6">
+      <div className="mx-auto w-full max-w-md rounded-2xl border border-line bg-surface p-4 shadow-[var(--shadow)] sm:p-5">
+        <div className="flex gap-3">
+          <Seal size={34} />
+          <div className="min-w-0">
+            <p className="line-clamp-2 text-[15px] leading-snug font-semibold break-words">{title}</p>
+            <Verified ex={ex} className="mt-1 max-w-full" />
           </div>
-          <button type="button" onClick={() => setAdded(true)} tabIndex={on ? 0 : -1} className={cn("mt-2.5 inline-flex h-8 items-center gap-1.5 rounded-lg px-3 text-[12px] font-semibold transition", added ? "border border-ok/60 text-ok" : "bg-accent text-on-accent")}>
+        </div>
+        <div className="mt-3 flex items-center gap-2 border-t border-line pt-3">
+          <Link2 className="size-3.5 shrink-0 text-muted" aria-hidden="true" />
+          <span className="min-w-0 flex-1 truncate font-mono text-[12px] text-text-2">brazework.com/v/8f2k4q</span>
+          <button type="button" onClick={() => setCopied(true)} tabIndex={on ? 0 : -1} className="h-7 shrink-0 rounded-md border border-line-strong px-2 text-[11px] font-medium transition hover:bg-hover">{copied ? "Copied" : "Copy link"}</button>
+        </div>
+      </div>
+      <ul aria-label="Where it goes" className="grid grid-cols-1 gap-2.5 sm:grid-cols-3 sm:gap-3">
+        <li className={tile} style={rise(0)}>
+          <p className={MONO}>LinkedIn</p>
+          <p className="mt-1 text-[13px] leading-snug text-text-2">Under Licenses &amp; certifications, with the verify link.</p>
+          <button type="button" onClick={() => setAdded(true)} tabIndex={on ? 0 : -1} className={cn("mt-auto inline-flex h-8 items-center justify-center gap-1.5 rounded-lg px-3 pt-0 text-[12px] font-semibold transition max-sm:mt-2.5 sm:mt-3", added ? "border border-ok/60 text-ok" : "bg-accent text-on-accent")}>
             {added ? <><Check className="size-3.5" aria-hidden="true" /> Added to LinkedIn</> : "Add to LinkedIn"}
           </button>
-        </div>
-        <div className={cn(card, "p-3")}>
-          <p className={MONO}>Handshake · Projects</p>
-          <p className="mt-1.5 truncate text-[13px] font-semibold">{ex.name}</p>
-          <p className="mt-1 inline-flex max-w-full items-center gap-1.5 text-[12px] text-text-2"><Link2 className="size-3.5 shrink-0" aria-hidden="true" /><span className="truncate font-mono">brazework.com/v/8f2k4q</span></p>
-          <p className="mt-1 text-[11px] text-faint">Anyone can open it to see who verified it and the evidence.</p>
-        </div>
-        <div className={cn(card, "flex-1 p-3 max-sm:hidden")}>
-          <p className={MONO}>Your résumé · PDF</p>
-          <p className="mt-1.5 text-[13px] font-semibold">Verified projects</p>
-          <p className="mt-1 line-clamp-2 text-[12px] leading-snug text-muted">{ex.name}: {title}</p>
-          <p className="mt-1 truncate text-[11px] text-faint">{ex.where} · verified by {ex.signer}</p>
-        </div>
-      </div>
-      <div className={cn(card, "flex min-h-0 flex-1 flex-col overflow-hidden")}>
-        <div className="flex items-center justify-between gap-2 border-b border-line px-3 py-2">
-          <p className="truncate text-[12px] font-medium">{STUDENT.split(" ")[0]}&apos;s Brazework</p>
-          <p className="shrink-0 font-mono text-[10px] text-faint">This week</p>
-        </div>
-        <div className="grid min-h-0 flex-1 grid-cols-1 sm:grid-cols-[5.25rem_minmax(0,1fr)]">
-          <ul className="flex flex-col gap-1 border-r border-line p-2 text-[11px] text-muted max-sm:hidden">
-            {["Classes", "Clubs", "Projects", "Record", "Grades"].map((l) => <li key={l} className={cn("flex items-center gap-1 truncate rounded px-1.5 py-1", l === "Classes" && "bg-raised font-medium text-text")}>{l}{l === "Grades" && <Lock className="size-2.5" aria-hidden="true" />}</li>)}
-          </ul>
-          <div className="flex min-w-0 flex-col gap-2 p-2.5">
-            <p className={MONO}>Due</p>
-            <ul className="flex flex-col gap-1">
-              {due.map(([t, d], i) => <li key={t} className={cn("flex items-center justify-between gap-2 text-[12px]", i === 2 && "max-sm:hidden")}><span className="min-w-0 truncate">{t}</span><span className="shrink-0 font-mono text-[10px] text-faint">{d}</span></li>)}
-            </ul>
-            <p className={cn(MONO, "mt-1")}>On your record</p>
-            <div className="rounded-lg border border-line px-2.5 py-2">
-              <p className="line-clamp-2 text-[12px] leading-snug font-medium break-words">{title}</p>
-              <Verified ex={ex} className="mt-1 max-w-full text-[11px]" />
-            </div>
-            <p className="mt-auto flex items-center gap-1.5 text-[11px] text-muted"><Lock className="size-3 shrink-0" aria-hidden="true" /><span className="min-w-0">Grades stay private: only you and your professors see them.</span></p>
-          </div>
-        </div>
-      </div>
+        </li>
+        <li className={tile} style={rise(1)}>
+          <p className={MONO}>Résumé</p>
+          <p className="mt-1 text-[13px] leading-snug text-text-2">A Verified projects section, as a PDF.</p>
+          <p className="mt-auto truncate pt-2.5 text-[11px] text-faint">{ex.name} · {ex.signer}</p>
+        </li>
+        <li className={cn(tile, "max-sm:hidden")} style={rise(2)}>
+          <p className={MONO}>Handshake, applications</p>
+          <p className="mt-1 text-[13px] leading-snug text-text-2">Paste the link. Anyone can check who verified it.</p>
+        </li>
+      </ul>
+      <p className="flex items-center justify-center gap-1.5 text-center text-[11px] text-muted"><Lock className="size-3 shrink-0" aria-hidden="true" />Grades stay private: only you and your professors see them.</p>
     </div>
   );
 }

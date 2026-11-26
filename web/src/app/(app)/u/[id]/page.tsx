@@ -351,7 +351,7 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
             />
           </section>
           {mine ? (hideStrength ? null : <ProfileStrength steps={steps} />) : <SharedContext clubs={sharedClubs} mutual={mutual} mutualCount={mutualCount} />}
-          {mine && f.goals && record && <GoalCard goal={goal} record={record} profileId={p.id} />}
+          {mine && f.goals && record && <GoalCard goal={goal} record={record} profileId={p.id} accountType={p.account_type} />}
 
           {/* Proof without revealing (redacted-proof.sql): private signed work, as one line each. */}
           {f.redactedProof && <Suspense fallback={null}><ConfidentialWork member={p.id} mine={mine} /></Suspense>}

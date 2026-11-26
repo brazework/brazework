@@ -54,6 +54,27 @@ export function nextStep(g: Pick<Goal, "kind" | "target">, r: Record_): Next {
   return { text: `${r.looked} ${r.looked === 1 ? "person" : "people"} looked this month. Keep the log going weekly and answer your Requests.`, href: "/messages", action: "Open Requests" };
 }
 
+// The goal setup (components/app/goal-card.tsx, Nov 26): each goal says what it means in one line, offers
+// a few fields it could be in (each reads after "in": "a summer internship in robotics"), and, when it's
+// visible, which "Open to" it adds to the profile (supabase/goals.sql, goal_open_to).
+export const GOAL_HELP: Record<GoalKind, { line: string; examples: string[]; openTo?: string }> = {
+  internship: { line: "A summer or term role while you study", examples: ["power electronics", "robotics", "embedded systems"], openTo: "internships" },
+  job: { line: "A full-time role, first or next", examples: ["backend engineering", "mechanical design", "data science"], openTo: "full-time roles" },
+  grad: { line: "A master's, PhD or professional program", examples: ["robotics", "materials science", "bioengineering"] },
+  research: { line: "A place in a lab, with a PI who can sign your work", examples: ["applied ML", "battery materials", "CRISPR"], openTo: "research" },
+  competition: { line: "Placing at a competition with your team", examples: ["Formula SAE", "robotics", "rocketry"] },
+  funding: { line: "A grant, prize or investment for what you build", examples: ["climate hardware", "medical devices", "open-source tools"] },
+};
+
+/** The goals in the order that fits a student or someone who already works, with the label that fits them. */
+export function goalChoices(type: "student" | "professional" | null | undefined): { kind: GoalKind; label: string }[] {
+  const order: GoalKind[] = type === "professional"
+    ? ["job", "funding", "grad", "research", "competition", "internship"]
+    : ["internship", "job", "research", "grad", "competition", "funding"];
+  const label = (k: GoalKind) => (k === "job" ? (type === "professional" ? "Next role" : "First job") : GOAL_KINDS[k].label);
+  return order.map((kind) => ({ kind, label: label(kind) }));
+}
+
 // Sign-up asks where you're headed (Josh, 22 Nov: the app is set up around your field and your goal),
 // on "About you" (app/onboarding/finish-signup-form.tsx). The goals that fit a student or someone who
 // already works, most likely first, each with an example of what it's in. Optional: skipping it is fine.
