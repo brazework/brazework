@@ -53,7 +53,26 @@ Hosting and AI cost per school is small, so the margin is high (about 90%, *assu
 
 The flow: a student joins with their school email and is placed at their school; their classes come from the roster; each project sits under a class or a club; the professor or officer verifies it; it lands at once on the student's record, the school's reports and recruiter search; the student can add it to LinkedIn or Handshake as verified.
 
-**Blackboard, Canvas, Moodle: win the project course.** An LMS is built for readings, quizzes and a gradebook, and no school will swap it out. It is bad at project courses (capstones, design and lab courses, and club builds), and that is where Brazework wins outright: "run your project courses on Brazework." A professor runs the whole course here and the LMS only keeps the final grade.
+**Brazework Courses: the one-stop shop (founders' decision, 2026-11-26).** Brazework becomes the school's course platform as well as its project record: everything a course needs (modules, assignments, submissions, grading, a gradebook, announcements, discussions, a calendar), built around the projects and the verified record that no LMS has. The aim is to replace Blackboard, Canvas and Moodle for the courses a school moves over, starting with project, design and lab courses, then any course. This supersedes "plug in, don't replace" below; LTI stays, the other way round (other tools plug into Brazework), plus importing Canvas and Blackboard courses.
+
+What beats them, in one line each:
+- **The work is the record.** A submission can be a project milestone with its evidence; when faculty grade it they also verify it, and the student keeps the verified work after the course (an LMS archives the shell).
+- **Projects and teams are first-class:** groups, deliverable schedules, peer evaluation, CAD, test files and video in place.
+- **Accreditation built in:** rubric rows map to ABET outcomes, so the evidence export is grouped by outcome as faculty grade.
+- **Torch for faculty:** drafts rubrics, feedback and announcements for the professor to approve; never grades on its own.
+- **One place for the student:** classes, clubs, projects, deadlines and grades together, on a phone as well as a laptop.
+- **Industry in the loop:** sponsors and mentors review capstone work by email.
+
+Grades live on Brazework now, privately: a grade is seen by the student and the course's faculty, counted in aggregate for the school's admins, and never shown on a profile or to anyone else. The course and its data are covered by the school's data agreement (FERPA).
+
+**Courses, in phases (each shippable):**
+- *A. The course core (built 2026-11-26: `supabase/courses.sql`, the class's Course page):* modules with pages, files and links; assignments (due date, points, individual or group, a rubric; submit files, links, text or a project milestone); grading with rubric scores and feedback, released when the professor chooses; a gradebook; announcements; each student's calendar of what's due.
+- *B. Running a course:* quizzes with automatic marking, attendance, late and extension rules (including accommodations), peer evaluation, ABET outcomes on rubric rows, grade export for the registrar, discussion threads per module.
+- *C. What a campus needs to switch:* single sign-on (SAML), roster sync from the student information system, importing a Canvas or Blackboard course (Common Cartridge), LTI so publisher tools plug in, an accessibility audit (WCAG 2.1 AA, a VPAT), and the mobile app.
+
+Honest risk: an LMS is a campus-wide decision with procurement, accessibility and integration requirements, and incumbents have years of features. Win it course by course: a professor moves one project course in a semester, the department sees it work, then the school. Phase C is what a campus-wide switch needs, so it isn't optional for the big contracts.
+
+**Earlier position (superseded 2026-11-26 by Brazework Courses above): win the project course.** An LMS is built for readings, quizzes and a gradebook, and no school will swap it out. It is bad at project courses (capstones, design and lab courses, and club builds), and that is where Brazework wins outright: "run your project courses on Brazework." A professor runs the whole course here and the LMS only keeps the final grade.
 
 | In a project course | Blackboard / Canvas | Brazework |
 |---|---|---|

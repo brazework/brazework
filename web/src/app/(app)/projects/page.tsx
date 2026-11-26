@@ -122,21 +122,23 @@ async function Explore({ searchParams }: { searchParams: PageProps<"/projects">[
 
   return (
     <>
-      <PageHeader tour="projects" title="Projects" subtitle="Log what you did today, get it signed, and see what people across Brazework are building." />
+      {/* The search sits in the header (2026-11-26): the first thing on Projects, not under the start card. */}
+      <PageHeader tour="projects" title="Projects" subtitle="Log what you did today, get it signed, and see what people across Brazework are building." actions={
+        <form action="/projects" role="search" className="relative w-full sm:w-80">
+          {topic && <input type="hidden" name="topic" value={topic} />}
+          {tool && <input type="hidden" name="tool" value={tool} />}
+          {status && <input type="hidden" name="status" value={status} />}
+          {verifiedOnly && <input type="hidden" name="verified" value="1" />}
+          <Search className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-faint" />
+          <label htmlFor="pq" className="sr-only">Search projects</label>
+          <input id="pq" name="q" defaultValue={q} placeholder="Search projects: rover, PCB, CRISPR…" className="glass-card h-11 w-full rounded-xl border pr-4 pl-11 text-[15px] outline-none transition placeholder:text-faint hover:border-line-strong focus:border-line-strong focus:ring-[3px] focus:ring-text/8" />
+        </form>
+      } />
       {!q && !topic && !tool && !status && !verifiedOnly && !mine && <Workbench projects={bench} interests={profile.interests ?? []} copilot={copilot} stack={stackOn} specsOn={specsOn} filesOn={filesOn} />}
       {!q && !topic && !tool && !status && !verifiedOnly && !mine && shared.length > 0 && <SharedWithYou rows={shared} />}
       {/* Spotlight moved here from Today (redesign stage 1): standout builds sit with the rest of Explore. */}
       {!q && !topic && !tool && !status && !verifiedOnly && !mine && <div className="mt-6 empty:hidden"><Suspense fallback={<StripSkeleton w={280} h={250} />}><SpotlightStrip /></Suspense></div>}
-      <form action="/projects" className="relative mt-6">
-        {topic && <input type="hidden" name="topic" value={topic} />}
-        {tool && <input type="hidden" name="tool" value={tool} />}
-        {status && <input type="hidden" name="status" value={status} />}
-        {verifiedOnly && <input type="hidden" name="verified" value="1" />}
-        <Search className="pointer-events-none absolute top-1/2 left-4 size-4 -translate-y-1/2 text-faint" />
-        <label htmlFor="pq" className="sr-only">Search projects</label>
-        <input id="pq" name="q" defaultValue={q} placeholder="Search projects: rover, PCB, CRISPR, flight computer…" className="h-12 w-full rounded-lg border border-line bg-surface pr-4 pl-11 text-[15px] outline-none transition placeholder:text-faint hover:border-line-strong focus:border-line-strong focus:ring-[3px] focus:ring-text/8" />
-      </form>
-      <div className="no-scrollbar -mx-1 mt-4 flex gap-1.5 overflow-x-auto px-1 pb-1">
+      <div className="no-scrollbar -mx-1 mt-6 flex gap-1.5 overflow-x-auto px-1 pb-1">
         <Link href={href({ verified: verifiedOnly ? "" : "1" })} className={chip(verifiedOnly)}><span className="inline-flex items-center gap-1"><BadgeCheck className="size-3.5" /> Club-verified</span></Link>
         <Link href={href({ status: status === "in_progress" ? "" : "in_progress" })} className={chip(status === "in_progress")}>In progress</Link>
         <Link href={href({ status: status === "completed" ? "" : "completed" })} className={chip(status === "completed")}>Completed</Link>
