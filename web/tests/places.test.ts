@@ -31,10 +31,11 @@ test("a path lights up exactly one place, by whole path segments", () => {
 test("the tab row shows on a place's own pages, never on detail pages", () => {
   assert.deepEqual(tabs("/events"), { place: "clubs", active: "events" });
   assert.deepEqual(tabs("/communities"), { place: "clubs", active: "clubs" });
-  assert.deepEqual(tabs("/network"), { place: "record", active: "connections" });
+  assert.equal(placeTabsFor("/network"), null, "Connections is off the navigation (2026-11-26)");
+  assert.deepEqual(tabs("/school"), { place: "clubs", active: "school" });
   assert.deepEqual(tabs("/dashboard"), { place: "record", active: "analytics" });
   assert.deepEqual(tabs("/feed"), { place: "home", active: "home" });
-  assert.deepEqual(tabs("/saved"), { place: "home", active: "saved" });
+  assert.equal(placeFor("/saved")?.id, "home", "Saved still answers old links, inside Home");
   assert.equal(placeTabsFor("/events/e1"), null);
   assert.equal(placeTabsFor("/c/abc"), null);
   assert.equal(placeTabsFor("/projects"), null, "Projects has no tabs until stage 2");
@@ -42,8 +43,11 @@ test("the tab row shows on a place's own pages, never on detail pages", () => {
   assert.equal(placeTabsFor("/u/someone"), null, "the profile page decides for itself (own profile only)");
 });
 
-test("every page the More drawer used to list still has a home", () => {
-  assert.equal(MENU_PAGES.length, 8);
+test("the phone menu lists only what the realigned app needs, each inside a place", () => {
+  assert.deepEqual(MENU_PAGES.map((m) => m.href), ["/notifications", "/school", "/events", "/dashboard", "/settings"]);
+  // Off the navigation since 2026-11-26: no tab or menu points at them.
+  const linked = [...PLACES.flatMap((p) => p.tabs.map((t) => t.href)), ...MENU_PAGES.map((m) => m.href)];
+  for (const gone of ["/challenges", "/saved", "/network", "/pro"]) assert.ok(!linked.includes(gone), gone);
   for (const m of MENU_PAGES) assert.ok(placeFor(m.href), `${m.href} belongs to a place`);
 });
 

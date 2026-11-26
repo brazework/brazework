@@ -9,7 +9,7 @@ import { cn } from "@/lib/forge";
 import { H2 } from "./sections";
 import { SwipeControls } from "./swipe-controls";
 
-// How it works, straight after the hero (Linear FIX-218): the whole product in three steps, for the
+// How it works, straight after the hero (Linear FIX-218; class wording since 2026-11-26): the whole product in three steps, for the
 // visitor who won't watch the hero's demo play. One example entry is shown three times, once per
 // step: logged with its proof, waiting for a signature (dashed amber), signed (the green seal). It is
 // the same picture as the launch film, and the same colours the app uses for those states.
@@ -20,11 +20,11 @@ import { SwipeControls } from "./swipe-controls";
 // state under each step and the ink on its number change. With reduced motion, and before the page's
 // script runs, all three are simply shown.
 
-const WORK = "Cut the pick-and-place cycle from 9.4 to 7.1 seconds";
+const WORK = "Ran 2 hours at 40 N·m with no slip, case under 50 °C";
 const STEPS = [
-  { title: "Log what you finished", body: "One sentence, plus a link or a file that shows it: a pull request, a test log, a photo." },
-  { title: "Ask someone who saw it", body: "Your coworker, professor, client or club gets one email and signs in under a minute. They don't need an account." },
-  { title: "It's on your record", body: "With their name on it. Share it, put it on a résumé, and keep it when you graduate or change jobs." },
+  { title: "Log what you finished", body: "One sentence, plus the file that shows it: a test log, a CAD model, a photo. Under its class or its club." },
+  { title: "Your professor or club signs", body: "Whoever saw the work gets one email and signs in under a minute: your professor, your club's officers, later a coworker." },
+  { title: "It counts, and it's yours", body: "Your school sees it in its reports. You keep it on your record, with their name, the class and the semester, after you graduate." },
 ];
 // Where along the line each step sits (the start of its column).
 const AT = [0.02, 0.36, 0.7];
@@ -49,7 +49,7 @@ export function HowItWorks() {
     <section id="how" aria-labelledby="how-h" className="scroll-mt-20 border-y border-line bg-surface-2/60 py-12 md:py-24">
       <div className="mx-auto max-w-6xl px-5 sm:px-6">
         <h2 id="how-h" className={H2}>Log it. Get it signed. Keep it.</h2>
-        <p className="mt-5 max-w-[36rem] text-lg leading-relaxed text-muted">That&apos;s the whole idea, whether you&apos;re in school or at work. It takes a few minutes, and it&apos;s free for everyone who builds.</p>
+        <p className="mt-5 max-w-[36rem] text-lg leading-relaxed text-muted">A few minutes for you, under a minute for whoever signs. Free for every student and every club.</p>
 
         <SwipeControls rowId="landing-steps" count={STEPS.length} hint="Swipe through the steps" />
         <div className="relative mt-2 md:mt-12">
@@ -67,9 +67,9 @@ export function HowItWorks() {
                     <p className="text-sm leading-snug font-medium">{WORK}</p>
                     {/* Kept in the layout while it waits, so nothing below moves when it appears. */}
                     <figcaption className={cn("mt-2.5 flex min-h-9 items-center gap-2 text-xs leading-snug text-muted transition-opacity duration-300", !on && "md:invisible md:opacity-0")}>
-                      {i === 0 && <><FileText className="size-4 shrink-0" aria-hidden="true" /><span>Logged, with <span className="font-medium text-text-2">cycle-test-log.csv</span> as proof</span></>}
-                      {i === 1 && <><span aria-hidden="true" className="block size-4 shrink-0 rounded-full border-2 border-dashed border-wait" /><span>Waiting for <span className="font-medium text-text-2">Dana R.</span>, engineering coworker</span></>}
-                      {i === 2 && <><Seal size={18} /><span>Signed by <span className="font-medium text-text-2">Dana R.</span>, coworker at Voltline</span></>}
+                      {i === 0 && <><FileText className="size-4 shrink-0" aria-hidden="true" /><span>Logged under ME 410, with <span className="font-medium text-text-2">dyno-run-2h.mp4</span></span></>}
+                      {i === 1 && <><span aria-hidden="true" className="block size-4 shrink-0 rounded-full border-2 border-dashed border-wait" /><span>Waiting for <span className="font-medium text-text-2">Prof. Alvarez</span>, ME 410</span></>}
+                      {i === 2 && <><Seal size={18} /><span>Signed by <span className="font-medium text-text-2">Prof. Alvarez</span>, ME 410 · Fall 2026</span></>}
                     </figcaption>
                   </figure>
                 </li>

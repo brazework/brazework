@@ -16,10 +16,11 @@ const psql = (sql) => execSync(`docker exec -i forge-e2e-db psql -U postgres -h 
   const b = await browser();
   const guest = await (await b.newContext()).newPage(); guest.errs = [];
 
-  await step("/pricing: builders, companies and schools each have a paid path and one primary button", async () => {
+  await step("/pricing: schools and companies each have a paid path; students and clubs start free", async () => {
     await go(guest, "/pricing");
-    for (const label of ["Log your first build", "Get Plus", "Book a pilot", "Sponsor a chapter", "Bring your club", "Book a demo"]) await guest.getByRole("link", { name: label }).first().waitFor({ timeout: 10000 });
+    for (const label of ["Start a pilot", "Book a call", "Start your record", "Bring your club", "Book a pilot", "Sponsor a chapter"]) await guest.getByRole("link", { name: label }).first().waitFor({ timeout: 10000 });
     if ((await guest.getByRole("link", { name: "Book a pilot" }).first().getAttribute("href")) !== "/book?kind=talent") throw new Error("Book a pilot goes to the wrong place");
+    if ((await guest.getByRole("link", { name: "Start a pilot" }).first().getAttribute("href")) !== "/book?kind=school") throw new Error("Start a pilot goes to the wrong place");
   }, guest);
 
   await step("/book signed out asks to log in, and the link comes back to the same request", async () => {

@@ -23,28 +23,25 @@ export const PLACES: Place[] = [
     tabs: [
       { id: "home", label: "Home", href: "/feed" },
       { id: "notifications", label: "Notifications", href: "/notifications", badge: "notifications", tour: "bell" },
-      { id: "saved", label: "Saved", href: "/saved" },
     ],
   },
   // One page today (the workbench above Explore); it gets its own tabs when stage 2 splits it.
   { id: "projects", label: "Projects", href: "/projects", match: ["/projects"], tabs: [] },
   {
     id: "clubs", label: "Clubs", href: "/communities", badge: "signing",
-    match: ["/communities", "/c", "/events", "/org", "/challenges", "/chapters"],
+    match: ["/communities", "/c", "/events", "/school", "/org", "/challenges", "/chapters"],
     tabs: [
       { id: "clubs", label: "Clubs", href: "/communities" },
+      { id: "school", label: "Your school", href: "/school" },
       { id: "events", label: "Events", href: "/events" },
-      { id: "challenges", label: "Challenges", href: "/challenges" },
     ],
   },
   {
-    id: "record", label: "Record", href: "/profile", badge: "invites",
+    id: "record", label: "Record", href: "/profile",
     match: ["/profile", "/u", "/dashboard", "/analytics", "/network", "/settings", "/pro"],
     tabs: [
       { id: "profile", label: "Profile", href: "/profile" },
-      { id: "connections", label: "Connections", href: "/network", badge: "invites" },
       { id: "analytics", label: "Analytics", href: "/dashboard" },
-      { id: "pro", label: "Pro reviews", href: "/pro" },
     ],
   },
   { id: "inbox", label: "Chats", href: "/messages", badge: "messages", match: ["/messages"], tabs: [] },
@@ -67,15 +64,14 @@ export function placeTabsFor(path: string): { place: Place; active: string } | n
   return null;
 }
 
-// The pages the old More drawer listed. Each now lives inside a place (a tab, or the avatar menu);
-// the phone's Menu sheet still lists them all, so nothing is more than a tap away on a small screen.
+// The pages inside the places that the phone's Menu sheet lists, so nothing is more than a tap away
+// on a small screen. Since the school-first realignment (2026-11-26, docs/strategy.md) Challenges,
+// Saved, Connections and Pro reviews are off the navigation: their pages still answer old links and
+// emails, and live under their place, but nothing in the app points at them.
 export const MENU_PAGES: { href: string; label: string; badge?: BadgeKey }[] = [
   { href: "/notifications", label: "Notifications", badge: "notifications" },
+  { href: "/school", label: "Your school" },
   { href: "/events", label: "Events" },
-  { href: "/challenges", label: "Challenges" },
-  { href: "/pro", label: "Pro reviews" },
-  { href: "/saved", label: "Saved" },
-  { href: "/network", label: "Connections", badge: "invites" },
   { href: "/dashboard", label: "Analytics" },
   { href: "/settings", label: "Settings" },
 ];

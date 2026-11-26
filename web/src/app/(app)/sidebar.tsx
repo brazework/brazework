@@ -1,6 +1,6 @@
 "use client";
 import { AnimatePresence, motion } from "motion/react";
-import { BadgeCheck, Bell, Bookmark, CalendarDays, Compass, FolderGit2, House, MessageCircle, LayoutDashboard, LogOut, Network, PanelLeftClose, PanelLeftOpen, PenLine, Plus, Settings, Sparkles, Sun, Trophy, UserRound, Users, X } from "lucide-react";
+import { BadgeCheck, Bell, CalendarDays, Compass, FolderGit2, GraduationCap, House, MessageCircle, LayoutDashboard, LogOut, PanelLeftClose, PanelLeftOpen, PenLine, Plus, Settings, Sparkles, Sun, UserRound, Users, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -23,7 +23,7 @@ const PLACE_ICON: Record<PlaceId, typeof Sun> = { home: House, projects: FolderG
 const NAV = PLACES.map((p) => ({ ...p, icon: PLACE_ICON[p.id] }));
 
 // Phones keep one sheet with every page inside the places (lib/places.ts MENU_PAGES).
-const MENU_ICON: Record<string, typeof Sun> = { "/notifications": Bell, "/events": CalendarDays, "/challenges": Trophy, "/pro": BadgeCheck, "/saved": Bookmark, "/network": Network, "/dashboard": LayoutDashboard, "/settings": Settings };
+const MENU_ICON: Record<string, typeof Sun> = { "/notifications": Bell, "/school": GraduationCap, "/events": CalendarDays, "/dashboard": LayoutDashboard, "/settings": Settings };
 
 // One row, one tile, one group card for every part of the sidebar, so the icons line up and match.
 const ROW = "group relative flex items-center gap-2.5 rounded-md py-1 text-sm transition";
@@ -58,7 +58,7 @@ export function SidebarSkeleton() {
 // Remembered in a cookie (not localStorage) so the server draws it at the right width: no jump on load.
 export const SIDEBAR_COOKIE = "forge-sidebar";
 
-export function Sidebar({ first, last, userId, badges, avatar, initialCollapsed = false, clubs = [], builds = [] }: { first: string; last: string; userId: string; badges: Badges; avatar?: string | null; clubs?: { id: string; name: string; image?: string | null }[]; builds?: { id: string; name: string }[]; initialCollapsed?: boolean }) {
+export function Sidebar({ first, last, userId, badges, avatar, initialCollapsed = false, clubs = [], builds = [], school = null }: { first: string; last: string; userId: string; badges: Badges; avatar?: string | null; clubs?: { id: string; name: string; image?: string | null }[]; builds?: { id: string; name: string }[]; initialCollapsed?: boolean; school?: string | null }) {
   const path = usePathname();
   const here = placeFor(path)?.id;
   const [collapsed, setCollapsed] = useState(initialCollapsed);
@@ -136,10 +136,11 @@ export function Sidebar({ first, last, userId, badges, avatar, initialCollapsed 
           })}
         </div>
       )}
-      {/* Your clubs, one click away. */}
-      {clubs.length > 0 && (
+      {/* Your clubs, one click away, and under them your school (docs/strategy.md, 2026-11-26): its
+          page, its verified clubs and, with the portal, your classes this semester. */}
+      {(clubs.length > 0 || school) && (
         <div aria-label="Your clubs" role="group" className={cn("mt-5 flex flex-col gap-0.5", collapsed ? "items-center border-t border-line pt-4" : GROUP)}>
-          {!collapsed && <div className={GROUP_LABEL}>Clubs</div>}
+          {!collapsed && clubs.length > 0 && <div className={GROUP_LABEL}>Clubs</div>}
           {clubs.map((c) => {
             const active = path.startsWith(`/c/${c.id}`);
             return (
@@ -151,6 +152,20 @@ export function Sidebar({ first, last, userId, badges, avatar, initialCollapsed 
               </Link>
             );
           })}
+          {school && (() => {
+            const active = path === "/school";
+            return (
+              <>
+                {!collapsed && <div className={cn(GROUP_LABEL, clubs.length > 0 && "mt-2")}>School</div>}
+                <Link href="/school" title={collapsed ? school : undefined} aria-current={active ? "page" : undefined} data-testid="sidebar-school"
+                  className={cn(ROW, collapsed ? "justify-center px-0" : "px-1.5", active ? "font-medium text-text" : "text-text-2 hover:bg-hover/70 hover:text-text")}>
+                  {active && <motion.span layoutId="club-active" className="nav-pill absolute inset-0 rounded-md" transition={{ type: "spring", stiffness: 400, damping: 34 }} />}
+                  <NavTile icon={GraduationCap} active={active} />
+                  {!collapsed && <span className="relative truncate">{school}</span>}
+                </Link>
+              </>
+            );
+          })()}
         </div>
       )}
       </div>

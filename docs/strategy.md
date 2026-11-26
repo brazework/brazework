@@ -1,6 +1,73 @@
-# Brazework: strategy to YC and to revenue (updated 2026-11-15)
+# Brazework: strategy to YC and to revenue (updated 2026-11-26: schools first)
 
 Builds on [positioning.md](positioning.md) (market research, with sources). Numbers marked *assumption* are hypotheses to test, not facts.
+
+## The realignment (2026-11-26): the school is the customer
+
+Brazework is sold to schools as the tool they use to run and track student projects, in class and in clubs. **Schools pay; students, clubs and the people who sign stay free.** Employers can pay too, but they come second and never drive the product.
+
+**Why a school pays.** A school pays for what it is measured on. A place for students to post projects won't get a budget line (Handshake taught career centers to expect student software for free). Brazework earns one as the tool faculty use to assign, follow and verify project work, and by showing the school its outcomes:
+
+| What the school gets | Who buys it | What Brazework uses |
+|---|---|---|
+| Accreditation evidence (ABET student outcomes: design, teamwork, solving real problems) | Engineering dean, department chairs | Class and club projects, milestones, teammates, files and 3D models, faculty verification |
+| Club and engagement reporting | Student life / engagement office | Club pages, club projects, activity and membership numbers |
+| Job placement data | Career center | Employer views, contacts and hires of the school's students |
+| A public showcase of student work | Admissions, marketing, advancement | Public projects, clubs and the school's page |
+| A record of class projects by course and semester | Provost, registrar, faculty | The student portal (below) |
+
+Accreditation is the strongest pitch: faculty assemble that evidence by hand every cycle, and the buyer (the engineering dean) has the budget.
+
+**Why this is a better model than companies first.** Companies only pay once there's enough verified talent to search, which needs scale we don't have. A school's offices already own budgets for the outcomes above, faculty verification makes the record stronger for students and employers alike, and a school whose classes and semesters live in Brazework renews. The risks are speed (6 to 12 months from first conversation to contract, through budgets, procurement, IT and FERPA review) and cold start (a dashboard with nothing in it sells nothing). So the free student and club side stays the front door, and sponsorships and the hiring plan can bring in cash while pilots run.
+
+**Price** (`SCHOOL`, `CAMPUS_BANDS` and `TALENT` in `web/src/lib/pricing.ts`; first picks to test). Never per club or per student, and every school pays, pilots included:
+
+| | Price | Why this number |
+|---|---|---|
+| Semester pilot | $1,500, one department, credited toward the first year | Small enough for a chair to approve; real money, so it tests intent |
+| Department | $6,000 a year with 5 faculty seats, $600 per extra seat (10 seats: $9,000) | Under the amount most schools can sign without a formal bid, so a dean or chair can say yes |
+| Campus | $18,000 (up to 5,000 students), $30,000 (up to 15,000), $45,000 (above) a year; every department, unlimited faculty | Banded by enrollment, not by who joins; in line with or below the student-org and assessment tools campuses already buy. Past 25 seats a campus costs less than a department, and the price list says so |
+| Recruiters | Starter $4,800 a year (1 seat); hiring plan $15,000 (2 seats); sponsorships $2,500 per chapter per semester, all to the club, plus a $500 fee | Starter lets smaller and local employers in |
+
+Hosting and AI cost per school is small, so the margin is high (about 90%, *assumption*). Ten department deals and five campuses are about $200,000 a year. A per-club or per-student price would give a school a reason to keep people off.
+
+**The student portal** (the build order below says which pull request does what).
+1. **School email registry.** Students join with their university email; the domain places them in their school automatically (`school_domains` and `is_school_email()` exist; automatic placement doesn't yet). Students at schools that haven't signed up are still grouped by school, so they're there when it does.
+2. **Your school in the sidebar**, under Clubs: the school's page, its verified clubs and, later, the student's classes this semester. (Shipped as a first step on 2026-11-26: the school's page and clubs, or an invitation to bring the school.)
+3. **Faculty sign-on.** Faculty accounts come only from the school's own list, not from anyone with a school email, because only faculty verify class projects.
+4. **Class projects with faculty verification.** A teacher creates a project and assigns a group, or a student lists their project under a class they take. The teacher sees every project in the class and verifies the work and each student's part. Each class project shows on every group member's profile with the class and semester.
+5. **Classes and semesters from course records**, starting with a CSV upload of classes and rosters each semester, then integrations (Banner, Colleague, Workday Student; Canvas, Blackboard, Moodle) as each school's IT approves them.
+6. **School reports:** accreditation evidence export, engagement dashboard, placement data, branded showcase.
+7. **Student to professional.** At graduation the student moves the account to a personal email (both addresses confirmed); every project and verification stays theirs, and the school's records still show where and when the work was done.
+
+**One record, three kinds of buyer.** Every surface reads the same verified-work record, so nothing is bolted on:
+
+| Who | Uses | Pays |
+|---|---|---|
+| Students and clubs | Projects, verification, their record | Never |
+| **Universities** (the main customer) | The portal: classes, faculty verification, reports | Every school, pilots included: a $1,500 semester pilot, then a department ($6,000 a year) or the campus (from $18,000) |
+| Recruiters | Search by verified work, message students, sponsor clubs | Starter ($4,800), hiring plan ($15,000), sponsorships |
+| Handshake, LinkedIn, applicant-tracking systems (Greenhouse, Lever) | Read verified work, with each student's consent | Partner access, once a few campuses are live |
+
+The flow: a student joins with their school email and is placed at their school; their classes come from the roster; each project sits under a class or a club; the professor or officer verifies it; it lands at once on the student's record, the school's reports and recruiter search; the student can add it to LinkedIn or Handshake as verified.
+
+**Blackboard, Canvas, Moodle: plug in, don't replace.** An LMS keeps assignments, grades and course content, and no school will swap it for a startup's. Brazework is the project layer an LMS does badly (teams, milestones, CAD and test files, verification, a record that outlives the course). Integration is **LTI 1.3**, the standard all of them support: a teacher adds Brazework to a course, students click in with no new login, and the roster comes across (Names and Role Provisioning). No grade passback: grades never live on Brazework. Build it once a paying school's IT asks; until then a CSV roster each semester.
+
+**Partners and LinkedIn, in two steps.** Now, with no partnership: an "Add to LinkedIn" button on every verified project (LinkedIn's public add-to-profile link for a certification, pointing at its `/v/<id>` verify page), and the verify page itself, which anyone (a recruiter, a Handshake or LinkedIn viewer) opens to see who signed and with what evidence. Later: a Verified Work API that Handshake, LinkedIn or an applicant-tracking system licenses, read-only and per student consent. That is the network for YC: they have the profiles; Brazework holds the proof.
+
+**Build order (one pull request each, every step working on its own):**
+1. School-first site, `/schools`, the paid pilot, the trimmed navigation and Your school (2026-11-26).
+2. Students placed in their school automatically from their email domain, including domains not registered yet (grouped by domain from day one).
+3. Faculty accounts from the school's own uploaded list; only they verify class projects.
+4. Classes and semesters from a CSV upload; class projects (teacher-assigned groups, or a student lists their project under a class); faculty verification of the work and each student's part; private to the class by default.
+5. The school dashboard: engagement, verified work by class and department, the accreditation (ABET) evidence export, placement.
+6. Student to professional: move the account to a personal email, both addresses confirmed, everything kept.
+7. "Add to LinkedIn" on verified work, a partners page, then the Verified Work API.
+8. LTI 1.3 for Blackboard, Canvas, Moodle and D2L, when a paying school asks.
+
+**To settle before building classes.** FERPA: a data agreement with each school; class projects private to the class by default; the student chooses what goes public; grades and teacher notes never public. Faculty proof: from the school's sign-on list only. Email change: confirm both addresses so nobody takes over a record.
+
+**Go-to-market.** One campus first: the University of Hartford (162 student organizations already listed). A paid pilot for one department or a few classes for a semester gets real use and a first reference customer; use the pilot's numbers to sell the full campus.
 
 ## The one-pager
 
@@ -10,7 +77,7 @@ Builds on [positioning.md](positioning.md) (market research, with sources). Numb
 | **Product** | The record of your work, signed by the people who saw it. **Clubs run on it** (members, events, chat, announcements, with Ember, the AI agent, doing the busywork). **Members post projects** (photos, video with callouts, specs, the tools). **Club officers, who saw the work happen, verify each milestone** with its evidence, and their name stays on it. **Companies find people by that proof** and sponsor the clubs behind it. |
 | **Why us, why it's defensible** | Verification is a social act only the club can perform, so the trust graph is ours: who vouched, when, with what evidence. Each verified milestone makes a profile more valuable to its owner and the whole network more useful to companies, and a club's history carries across officer turnover. Competitors either have the audience without the proof (LinkedIn, Handshake) or the admin without the careers outcome (Presence, Engage). |
 | **The habit** | A weekly loop that pays off: post what you built, get it verified, see who looked (Your week, the digest, "viewed by 3 companies"). Officers come back every Monday for Ember's brief. Clubs live on it, so it's where the chapter actually happens. |
-| **Business model** | Free forever for the people who build, students and working professionals alike, and for clubs (the supply side and the trust). Companies pay first: chapter sponsorships ($2,500 per chapter per semester, all of it to the club, plus a separate $500 service fee; Brazework takes no cut) and a hiring plan for verified-work search ($15,000 a year: 2 search and messaging seats; sponsorships separate). Then universities (a $6,000 portal with 2 advisor seats, plus $1,200 per extra advisor; never per club) and national organizations (a network license). |
+| **Business model** | *(Superseded 2026-11-26: schools are the main customer, see the realignment above; the employer prices below still stand as the second line.)* Free forever for the people who build, students and working professionals alike, and for clubs (the supply side and the trust). Companies pay first: chapter sponsorships ($2,500 per chapter per semester, all of it to the club, plus a separate $500 service fee; Brazework takes no cut) and a hiring plan for verified-work search ($15,000 a year: 2 search and messaging seats; sponsorships separate). Then universities (a $6,000 portal with 2 advisor seats, plus $1,200 per extra advisor; never per club) and national organizations (a network license). |
 | **Go-to-market** | Atomic network: one club of 30–100 people, useful on day one. Design partner: NSBE @ UHart, then the other engineering clubs, then nearby campuses through officer-to-officer intros, then national organizations (NSBE, SHPE, SWE) once 20+ chapters are live. First sponsors: Connecticut employers that already recruit at NSBE (Pratt & Whitney, Collins, Electric Boat, Sikorsky). |
 | **What we'll show YC** | 40%+ of a pilot club's members active weekly for 8 weeks; 15+ verified milestones in the first month; organizations growing 5–10% a week; companies messaging members; one paid sponsor pilot or signed LOI. |
 | **Where we are (Nov 2026)** | The full loop is built and tested (84 end-to-end checks): club, projects, verification with evidence and revocation, company search, sponsored challenges, Ember. Live in production on the new name; the pilot with the UHart chapter is next. |
@@ -38,7 +105,7 @@ Free, always: **members and student organizations.** That's the supply side and 
 | Customer | What they buy | Budget it replaces | First price to test (*assumption*) |
 |---|---|---|---|
 | **Companies** (first revenue) | Chapter sponsorships with real ROI reporting; search by verified work; events beside the organizations they support | Diversity and campus recruiting spend that already flows to NSBE, SHPE and SWE (conference booths, chapter sponsorships) | $2,500 per chapter per semester, all of it to the club, plus a separate $500 service fee; challenge prizes from $5,000 plus a $500 service fee; hiring plan $15,000 a year (2 search and messaging seats; sponsorships separate) |
-| **Universities** | A showcase of the school's STEM work for prospective students: its verified clubs and what they're building. Plus every student organization on one platform, and outcomes: verified projects, events, employer connections | Student-org management platforms. UHart already lists its organizations, including NSBE, on Presence ([hartford.presence.io](https://hartford.presence.io/organization/national-society-of-black-engineers)) | $6,000 a year for the portal with 2 advisor seats, plus $1,200 per extra advisor (about $13k for a campus with 8 advisors). Never per club: a per-club price would give a school a reason to keep clubs off. The first 10 schools get a free semester |
+| **Universities** | A showcase of the school's STEM work for prospective students: its verified clubs and what they're building. Plus every student organization on one platform, and outcomes: verified projects, events, employer connections | Student-org management platforms. UHart already lists its organizations, including NSBE, on Presence ([hartford.presence.io](https://hartford.presence.io/organization/national-society-of-black-engineers)) | $6,000 a year for the portal with 2 advisor seats, plus $1,200 per extra advisor (about $13k for a campus with 8 advisors). Never per club: a per-club price would give a school a reason to keep clubs off. Pilots are paid too ($1,500 for a semester, credited toward the first year) |
 | **National organizations** (NSBE, SHPE, SWE, IEEE, ASME…) | Chapter health across the network, member engagement, sponsor reporting | Chapter management tools and spreadsheets | Network license, priced per active chapter |
 | **Later: AI labs and the expert market** | Access to verified STEM experts (with consent) | The market Handshake and Mercor proved: Handshake's AI-training work is about $1B of its ~$1.15B run rate | Marketplace take rate |
 
@@ -150,6 +217,8 @@ Don't say "NSBE partner" publicly until NSBE agrees; say "built with student cha
 
 ## 8. Product priorities to support this
 
+*Re-ordered 2026-11-26: the student portal steps in the realignment above come first; the list below is the earlier, company-first order.*
+
 1. **Ember for officers:** meeting planning, recaps, RSVP follow-ups, member engagement check, sponsor report.
 2. **Sponsor report:** a semester summary per organization, shareable.
 3. **Company side:** search by verified work, sponsor pages, sponsorship checkout.
@@ -165,4 +234,7 @@ Don't say "NSBE partner" publicly until NSBE agrees; say "built with student cha
 | Members don't come back weekly | Events, chat and announcements live on Brazework, so it's where the chapter actually happens |
 | Implying an NSBE partnership too early | Say "built with student chapters at UHart" until NSBE agrees; then pursue a formal pilot |
 | Universities already pay for Presence or Engage | Don't compete on admin; win on career outcomes and AI, and start with organizations, not IT procurement |
+| School sales take 6 to 12 months | Start with one department's paid pilot ($1,500, credited toward the first year); sponsorships and the hiring plan bring cash meanwhile |
+| Class records are FERPA-protected | A data agreement per school; class projects private by default; grades and teacher notes never public |
+| A school dashboard is empty without students | Students and clubs stay free and are the front door; sell to a school only once its students are on Brazework |
 | Verification gamed | Only officers verify; Brazework records who verified; reports and blocking; later, evidence requirements per milestone |
