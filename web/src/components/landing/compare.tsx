@@ -18,11 +18,11 @@ const COLS: { id: string; name: string; cells: Cell[] }[] = [
   { id: "brazework", name: "Brazework", cells: [{ text: "Project courses and club projects" }, { text: "Each member's part, and peer evaluation", pilot: true }, { text: "Milestones against the professor's schedule", pilot: true }, { text: "The professor, club or sponsor who saw it" }, { text: "ABET outcomes ticked as work is verified", pilot: true }, { text: "The student's for good. The final grade goes back to your LMS", pilot: true }] },
 ];
 // On a phone the other two columns keep three rows (what it's for, who confirms it, after); Brazework keeps all six.
-const GRID = "md:grid md:grid-rows-[3.25rem_repeat(6,minmax(3.25rem,auto))]";
+const GRID = "md:grid md:grid-rows-[3rem_repeat(6,minmax(3rem,auto))]";
 
 export function Compare() {
   return (
-    <section id="compare" aria-labelledby="compare-h" className="scroll-mt-20 border-b border-line py-14 md:py-20">
+    <section id="compare" aria-labelledby="compare-h" className="scroll-mt-20 border-b border-line py-14 md:py-16">
       <div className="mx-auto max-w-6xl px-5 sm:px-6">
         <h2 id="compare-h" className={cn(H2, "max-w-[24ch]")}>Run your project courses on Brazework. Your LMS keeps the gradebook.</h2>
         <p className="mt-4 max-w-[40rem] text-lg leading-relaxed text-muted">Profiles say it. Courses grade it. Brazework proves it, and plugs into what your school already runs.</p>
