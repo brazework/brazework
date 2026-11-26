@@ -28,7 +28,7 @@ export function nextStep(tool: string, data: unknown, origin: string): { next: s
     case "request_signature":
       return null; // Says its own next step (the email went out, and to whom).
   }
-  // Actions shared with Ember (supabase/tool-actions.sql): drafted, or done with the member's yes.
+  // Actions shared with Torch (supabase/tool-actions.sql): drafted, or done with the member's yes.
   if ((tool === "draft_event" || tool === "draft_announcement") && d.drafted === true && d.duplicate !== true)
     return { next: "Waiting as a card in the member's Brazework drafts. They check it there and publish it to the club; nothing goes out before that.", open: site(origin, "/drafts") };
   if (tool === "draft_reply" && d.drafted === true && d.duplicate !== true)
@@ -36,7 +36,7 @@ export function nextStep(tool: string, data: unknown, origin: string): { next: s
   if (d.drafted === true) {
     return d.duplicate === true
       ? { next: "This was drafted before (same source_key), so nothing new was added. It's still in the member's Brazework drafts.", open: site(origin, "/drafts") }
-      : { next: "Waiting as a card in the member's Brazework drafts (and on Ember's page). They can edit it there, then confirm or dismiss it. Nothing happens before that.", open: site(origin, "/drafts") };
+      : { next: "Waiting as a card in the member's Brazework drafts (and on Torch's page). They can edit it there, then confirm or dismiss it. Nothing happens before that.", open: site(origin, "/drafts") };
   }
   const url = str(d.url) ? (str(d.url).startsWith("http") ? str(d.url) : site(origin, str(d.url))) : undefined;
   switch (tool) {

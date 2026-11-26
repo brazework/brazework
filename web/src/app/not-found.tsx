@@ -9,7 +9,7 @@ export default function NotFound() {
       <ThemeToggle className="absolute top-5 right-5" />
       <div className="flex flex-col items-center">
         <Logo />
-        <Ember size={112} mood="surprised" className="mt-10" label="Ember looking surprised" />
+        <Ember size={112} mood="surprised" className="mt-10" label="Torch looking surprised" />
         <p className="mt-4 font-mono text-sm tracking-[0.2em] text-accent">404</p>
         <h1 className="mt-3 text-5xl font-semibold tracking-tight">
           Nothing <span className="text-shine">built here.</span>

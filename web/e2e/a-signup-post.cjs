@@ -214,7 +214,7 @@ const { BASE, step, browser, as, go, closeTour, hydrated, summary } = require(".
     page.on("request", (r) => { if (r.url().includes("/storage/v1/upload/resumable")) resumable.push(r.method()); });
     await go(page, "/feed");
     // Home streams its stream above the composer, so wait for the composer itself to hydrate before
-    // picking the file (go() only waits for the first input on the page, the Ask Ember bar).
+    // picking the file (go() only waits for the first input on the page, the Ask Torch bar).
     await hydrated(page.locator("#create-box"));
     await page.locator('input[type="file"][accept^="video"]').first().setInputFiles(file);
     const text = `Static fire clip ${Date.now() % 100000}`;

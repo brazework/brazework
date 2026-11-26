@@ -87,8 +87,8 @@ export function Sidebar({ first, last, userId, badges, avatar, initialCollapsed 
           </button>
         </div>
       </div>
-      {/* No buttons above the places: logging work and asking Ember happen in the Ask Ember bar on every
-          page (components/ember/ask-bar.tsx). Ember's own page (history, your tools' drafts) is the row
+      {/* No buttons above the places: logging work and asking Torch happen in the Ask Torch bar on every
+          page (components/ember/ask-bar.tsx). Torch's own page (history, your tools' drafts) is the row
           under the places. */}
       <nav data-tour="menu" aria-label="Main" className={cn("flex shrink-0 flex-col gap-0.5", collapsed ? "mt-6" : "mt-7")}>
         {NAV.map((n) => {
@@ -110,11 +110,11 @@ export function Sidebar({ first, last, userId, badges, avatar, initialCollapsed 
             </Link>
           );
         })}
-        <Link href="/copilot" aria-current={path.startsWith("/copilot") ? "page" : undefined} aria-label="Ask Ember" title={collapsed ? "Ember" : undefined}
+        <Link href="/copilot" aria-current={path.startsWith("/copilot") ? "page" : undefined} aria-label="Ask Torch" title={collapsed ? "Torch" : undefined}
           className={cn(ROW, "mt-1", collapsed ? "justify-center px-0" : "px-2", path.startsWith("/copilot") ? "font-medium text-text" : "text-text-2 hover:bg-hover/60 hover:text-text")}>
           {path.startsWith("/copilot") && <motion.span layoutId="nav-active" className="nav-pill absolute inset-0 rounded-md" transition={{ type: "spring", stiffness: 400, damping: 34 }} />}
           <NavTile ember active={path.startsWith("/copilot")} />
-          {!collapsed && <span className="relative">Ember</span>}
+          {!collapsed && <span className="relative">Torch</span>}
         </Link>
       </nav>
       {/* Your clubs scroll on short screens, so the five places are always whole. */}
@@ -270,7 +270,7 @@ export function MobileBar({ first, last, badges, avatar }: { first: string; last
       <Link key={t.href} href={t.href} aria-current={active ? "page" : undefined} aria-label={count ? `${t.label}, ${count} ${t.badge === "signing" ? "to sign" : "new"}` : t.label} className={cn("relative flex h-14 flex-col items-center justify-center gap-0.5 rounded-xl text-[10px] font-medium transition active:scale-90", active ? "text-text" : "text-faint")}>
         {active && <motion.span layoutId="tab-pill" className="absolute inset-0.5 rounded-xl bg-hover" transition={{ type: "spring", stiffness: 500, damping: 38 }} />}
         <span className="relative">
-          <t.icon className="size-[22px]" strokeWidth={active ? 2.2 : 1.8} />
+          <t.icon className="icon-duo size-[22px]" strokeWidth={active ? 2.2 : 1.8} />
           <Count n={count} className="absolute -top-1.5 -right-2.5" />
         </span>
         <span className="relative">{t.label}</span>
@@ -348,7 +348,7 @@ export function MobileBar({ first, last, badges, avatar }: { first: string; last
 
 const CREATE = [
   { href: "/feed#composer", label: "Log work", body: "An update, result or question", icon: PenLine },
-  { href: "/copilot", label: "Ask Ember", body: "Your AI teammate does the busywork", icon: Sparkles },
+  { href: "/copilot", label: "Ask Torch", body: "Your AI teammate does the busywork", icon: Sparkles },
   { href: "/profile#projects", label: "Add a project", body: "Show what you built", icon: FolderGit2 },
   { href: "/events", label: "Events", body: "Find one, or host for your club", icon: CalendarDays },
 ];

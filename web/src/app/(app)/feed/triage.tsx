@@ -22,7 +22,7 @@ export async function DraftTriage({ node }: { node?: React.ReactNode } = {}) {
     supabase.from("community_members").select("role, communities(id, name)").eq("uid", user.id).in("role", MEMBER_ROLES).limit(50),
     supabase.from("email_prefs").select("daily_drafts").eq("user_id", user.id).maybeSingle(),
   ]);
-  // Triage decides posts and milestones; the other kinds (a project, an RSVP, a reply from Ember and
+  // Triage decides posts and milestones; the other kinds (a project, an RSVP, a reply from Torch and
   // the tools) wait on /drafts, where each has its own card. One line here says they're waiting.
   const list = (drafts.data ?? []) as TriageDraft[];
   const total = drafts.count ?? list.length;

@@ -1,12 +1,12 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { headers } from "next/headers";
 
-// How Ember reaches Claude (Linear FIX-15). Server-only.
+// How Torch reaches Claude (Linear FIX-15). Server-only.
 //   direct      an Anthropic API key is set (ANTHROPIC_API_KEY): straight to Anthropic.
 //   gateway     EMBER_VIA_GATEWAY=1 on Vercel: through Vercel AI Gateway, billed to the Vercel team,
 //               signed in with the deployment's own short-lived OIDC token, so there is no key to
 //               keep (or with an AI Gateway key in AI_GATEWAY_API_KEY where one is set, e.g. locally).
-//   off         neither: Ember stays switched off.
+//   off         neither: Torch stays switched off.
 // The gateway takes the same Anthropic Messages API at its own address, with models named by
 // provider ("anthropic/claude-sonnet-5").
 

@@ -30,7 +30,7 @@ export function VerifyInbox({ data }: { data: VerifyInboxData }) {
   return (
     <section aria-label="Signatures waiting on you">
       <div className="mb-2 flex items-baseline justify-between gap-3">
-        <h3 className="text-sm font-medium text-text">Sign what you saw <span className="font-normal text-muted">· members asked {club.name}</span></h3>
+        <h3 className="text-sm font-medium text-text">Sign what you saw <span className="font-normal text-muted">· asked of {club.name}</span></h3>
         <Link href={`/c/${club.id}/manage?tab=verify`} className="shrink-0 text-xs text-muted underline-offset-4 transition hover:text-text hover:underline">{items.length > SHOWN ? "See all" : "Past reviews"}</Link>
       </div>
       <VerifyQueue items={items.slice(0, SHOWN)} />

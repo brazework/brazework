@@ -138,7 +138,7 @@ export const TOOLS: Anthropic.Tool[] = [
   },
   {
     name: "verify_queue",
-    description: "Milestones members asked the club to verify, oldest first, with their details and evidence links (for the club's moderators and up). Read-only: Ember never verifies; officers review each one themselves in the club's Verify tab.",
+    description: "Milestones members asked the club to verify, oldest first, with their details and evidence links (for the club's moderators and up). Read-only: Torch never verifies; officers review each one themselves in the club's Verify tab.",
     input_schema: { type: "object", properties: { club_id: { type: "string" } }, required: ["club_id"] },
   },
   {
@@ -513,8 +513,8 @@ export function makeExec(db: DB, userId: string, onProposal: (p: Proposal) => vo
         return SHOWN;
       }
       case "propose_review": {
-        // Verification is a person checking evidence; Ember never prepares or makes that decision.
-        if (true as boolean) return { error: "Ember doesn't verify milestones. Officers review each one in the club's Verify tab." };
+        // Verification is a person checking evidence; Torch never prepares or makes that decision.
+        if (true as boolean) return { error: "Torch doesn't verify milestones. Officers review each one in the club's Verify tab." };
         const id = String(a.milestone_id ?? "");
         if (!ID_RE.test(id)) return { error: "Use a milestone_id from verify_queue." };
         if (!(await dbFeatures()).milestones) return { error: "Milestones aren't switched on yet." };

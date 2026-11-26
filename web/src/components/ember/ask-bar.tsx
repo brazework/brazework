@@ -14,10 +14,10 @@ import type { Proposal, Segment } from "@/lib/copilot-agent";
 import { splitNext } from "@/lib/copilot-text";
 import { pageContext } from "@/lib/ember-bar";
 
-// The Ask Ember bar, at the top of every signed-in page (the flow redesign,
+// The Ask Torch bar, at the top of every signed-in page (the flow redesign,
 // docs/superpowers/specs/2026-11-19-app-flow-redesign-design.md). One bar: type to search people and
-// clubs as before, or press Enter to ask Ember, or tell it what you did. It knows the page it's on (a
-// project, club or event), and Ember's answer opens out of the bar itself, with its approve cards right
+// clubs as before, or press Enter to ask Torch, or tell it what you did. It knows the page it's on (a
+// project, club or event), and Torch's answer opens out of the bar itself, with its approve cards right
 // there, not on another screen. Nothing is saved until the member presses a card's button.
 
 type Answer = { q: string; text: string; tools: string[]; proposals: Proposal[]; segments: Segment[] };
@@ -41,7 +41,7 @@ export function AskBar() {
   };
   const close = () => { stop(); setA(EMPTY); };
 
-  // Ember's own page has its composer: a second box to ask in would only compete with it.
+  // Torch's own page has its composer: a second box to ask in would only compete with it.
   if (path.startsWith("/copilot")) return null;
   return (
     <div>
@@ -51,7 +51,7 @@ export function AskBar() {
   );
 }
 
-// Ember's answer, hanging from the bar as one piece: what you said as a quiet line, Ember's reply
+// Torch's answer, hanging from the bar as one piece: what you said as a quiet line, Torch's reply
 // beside its mark, the cards to approve, and its suggested next questions, one tap to ask.
 function AskAnswer({ a, busy, error, remaining, onAsk, onClose }: { a: Answer; busy: boolean; error: string; remaining: number | null; onAsk: (q: string) => void; onClose: () => void }) {
   const reduce = useReducedMotion();
@@ -61,7 +61,7 @@ function AskAnswer({ a, busy, error, remaining, onAsk, onClose }: { a: Answer; b
     <AnimatePresence initial={false}>
       {a.q && (
         <motion.section
-          aria-label="Ember's answer"
+          aria-label="Torch's answer"
           initial={reduce ? { opacity: 0 } : { height: 0, opacity: 0 }}
           animate={reduce ? { opacity: 1 } : { height: "auto", opacity: 1 }}
           exit={reduce ? { opacity: 0 } : { height: 0, opacity: 0 }}
@@ -70,7 +70,7 @@ function AskAnswer({ a, busy, error, remaining, onAsk, onClose }: { a: Answer; b
         >
           <div className="flex items-start gap-3 border-t border-dashed border-line px-3 pt-3 pb-1 sm:px-4">
             <p className="min-w-0 flex-1 truncate pt-0.5 text-sm text-muted" title={a.q}>{a.q}</p>
-            <button type="button" onClick={onClose} aria-label="Close Ember's answer" className="-mt-0.5 -mr-1 grid size-8 shrink-0 place-items-center rounded-md text-faint transition hover:bg-hover hover:text-text"><X className="size-4" /></button>
+            <button type="button" onClick={onClose} aria-label="Close Torch's answer" className="-mt-0.5 -mr-1 grid size-8 shrink-0 place-items-center rounded-md text-faint transition hover:bg-hover hover:text-text"><X className="size-4" /></button>
           </div>
           <div className="flex gap-3 px-3 pb-4 sm:px-4" aria-live="polite" aria-busy={busy}>
             <Ember size={28} mood={thinking ? "thinking" : error ? "sleepy" : "idle"} className="mt-0.5" />
@@ -88,7 +88,7 @@ function AskAnswer({ a, busy, error, remaining, onAsk, onClose }: { a: Answer; b
           </div>
           {(!busy || remaining !== null) && (
             <div className="flex items-center gap-3 border-t border-line px-3 py-2 text-xs sm:px-4">
-              <Link href="/copilot" className="font-medium text-text-2 underline-offset-4 hover:text-text hover:underline">Keep going on Ember&apos;s page</Link>
+              <Link href="/copilot" className="font-medium text-text-2 underline-offset-4 hover:text-text hover:underline">Keep going on Torch&apos;s page</Link>
               {remaining !== null && <span className="ml-auto text-faint">{remaining} credits left today</span>}
             </div>
           )}

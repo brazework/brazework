@@ -43,7 +43,7 @@ async function Settings() {
   if (!user || !profile) redirect("/login");
   const { copilotChats: saving, mcp: mcpOn, gradYear: gradYearOn, accountType: canSwitch, linkedinRequired: linkedinOn } = await dbFeatures();
   const tokens = mcpOn ? await listApiTokens() : [];
-  // What Ember remembers (supabase/ember-memory.sql): listed in the Ember section, each with Forget.
+  // What Torch remembers (supabase/ember-memory.sql): listed in the Torch section, each with Forget.
   const memories = (await dbFeatures()).emberMemory ? (((await supabase.from("ember_memories").select("id, body, created_at").order("created_at", { ascending: false }).limit(50)).data ?? []) as { id: string; body: string; created_at: string }[]) : undefined;
   const [ms, blocks, chatCount, ep, gy, ea] = await Promise.all([
     supabase.from("message_settings").select("requests_on, who_can_message").eq("user_id", user.id).maybeSingle(),
@@ -88,7 +88,7 @@ async function Settings() {
         {emailOn && <Section id="email" title="Email" desc="What Brazework sends to your inbox. Sign-in emails always come."><EmailSettings weekly={ep.data ? Boolean(ep.data.weekly_digest) : true} alerts={alerts} dailyDrafts={dailyDrafts} /></Section>}
         <Section id="messaging" title="Messaging and privacy" desc="Who can message you, and whether you show as online."><OnlineStatusSetting /><div className="my-6 border-t border-line" /><MessagingSettings requestsOn={ms.data ? Boolean(ms.data.requests_on) : true} who={(ms.data?.who_can_message as "everyone" | "communities" | "connections") ?? "everyone"} /></Section>
         <Section id="blocked" title="Blocked people" desc="People who can't message you or see your activity."><BlockedList people={blocked} /></Section>
-        <Section id="ember" title="Ember and your data" desc="What Brazework's AI teammate can see, what it can do, and your chats with it."><EmberSettings saving={saving} chats={chatCount.count ?? 0} memories={memories} /></Section>
+        <Section id="ember" title="Torch and your data" desc="What Brazework's AI teammate can see, what it can do, and your chats with it."><EmberSettings saving={saving} chats={chatCount.count ?? 0} memories={memories} /></Section>
         {mcpOn && <Section id="ai-tools" title="Your tools" desc="Use your Brazework from Claude Code, Cursor, VS Code, Codex and other AI tools."><AiToolsSettings connected={tokens.filter((t) => !t.revoked_at && isConnected(t)).length} total={tokens.filter((t) => !t.revoked_at).length} /></Section>}
         <Section id="account" title="Account" desc="Your sign-in email, password and session.">
           <p className="text-sm text-muted">Signed in as <span className="text-text">{user.email}</span></p>

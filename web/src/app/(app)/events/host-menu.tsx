@@ -9,7 +9,7 @@ import { menuCls, menuItemCls } from "@/components/ui";
 import { cn } from "@/lib/forge";
 
 // "Host an event": straight to the right place. Club officers host from their club's Events tab,
-// organization admins from /org, and Ember can draft the whole thing for an officer to approve.
+// organization admins from /org, and Torch can draft the whole thing for an officer to approve.
 export function HostMenu({ clubs, orgAdmin }: { clubs: { id: string; name: string }[]; orgAdmin: boolean }) {
   const [open, setOpen] = useState(false);
   const [pos, setPos] = useState({ top: 0, right: 0 });
@@ -65,7 +65,7 @@ export function HostMenu({ clubs, orgAdmin }: { clubs: { id: string; name: strin
             {clubs.length > 0 && (
               <Link role="menuitem" href={`/copilot?q=${encodeURIComponent(`Plan our next ${clubs[0].name} event: suggest a date, a title and a description`)}`} className={item} onClick={() => setOpen(false)}>
                 <Sparkles className="size-4 shrink-0 text-text-2" />
-                <span className="min-w-0 flex-1"><span className="block">Plan it with Ember</span><span className="block text-xs text-faint">{emberCreditCost("ask")} · Ember drafts it, you approve</span></span>
+                <span className="min-w-0 flex-1"><span className="block">Plan it with Torch</span><span className="block text-xs text-faint">{emberCreditCost("ask")} · Torch drafts it, you approve</span></span>
               </Link>
             )}
             <Link role="menuitem" href="/org" className={item} onClick={() => setOpen(false)}>

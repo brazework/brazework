@@ -1,10 +1,10 @@
 import type { Proposal } from "@/lib/copilot-agent";
 
-// The Ask Ember bar at the top of every signed-in page (components/ember/ask-bar.tsx): which page it's
+// The Ask Torch bar at the top of every signed-in page (components/ember/ask-bar.tsx): which page it's
 // on, when "/" may jump to it, and what an approve card's buttons say there. Pure, so the browser, the
 // server and tests share it (tests/ember-bar.test.ts).
 
-export const ASK_PLACEHOLDER = "Ask Ember, or tell it what you did…";
+export const ASK_PLACEHOLDER = "Ask Torch, or tell it what you did…";
 
 export type PageKind = "project" | "club" | "event";
 export type PageRef = { kind: PageKind; id: string };
@@ -15,9 +15,9 @@ export const PAGE_ID = /^[A-Za-z0-9_-]{1,64}$/;
 const ROOTS: Record<string, PageKind> = { projects: "project", c: "club", events: "event" };
 
 /**
- * The project, club or event a path is about, so Ember can act on it ("I got the PID loop stable" on a
+ * The project, club or event a path is about, so Torch can act on it ("I got the PID loop stable" on a
  * project page drafts into that project). Only the id leaves the browser; the server looks the title up
- * as the member, so an id they can't read tells Ember nothing.
+ * as the member, so an id they can't read tells Torch nothing.
  */
 export function pageContext(path: string): PageRef | null {
   const [root, id] = path.replace(/[?#].*$/, "").split("/").filter(Boolean);
@@ -40,7 +40,7 @@ export function askShortcut(e: KeyLike): boolean {
 
 /**
  * What a card's buttons say. In the page under the bar a card is short (Edit opens its fields) and its
- * buttons say what happens; on Ember's page and /drafts it stays as it was.
+ * buttons say what happens; on Torch's page and /drafts it stays as it was.
  */
 export function cardLabels(kind: string, inline: boolean): { confirm: string; edit: string | null; dismiss: string } {
   // Asking a person to sign sends an email, so its button says so everywhere.

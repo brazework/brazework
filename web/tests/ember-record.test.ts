@@ -1,4 +1,4 @@
-// What Ember knows about a record and the steps a new chat opens with (lib/ember-record.ts,
+// What Torch knows about a record and the steps a new chat opens with (lib/ember-record.ts,
 // Linear FIX-216). The steps come from the record, never the model, so they can be pinned here.
 // Run: npm test
 import assert from "node:assert/strict";
@@ -63,7 +63,7 @@ test("a record in order offers nothing, and there are never more than three", ()
   assert.ok(nextSteps(busy).length <= 3);
 });
 
-test("Ember is told what is waiting, on whom, and the id to act on", () => {
+test("Torch is told what is waiting, on whom, and the id to act on", () => {
   const text = recordLines(rec({ proven: 3, repos: ["acme/kiosk"], needsLinkedin: true, unlogged: { project_id: "p1", count: 2 }, open: [
     open({ asked: [{ email: "sam@northwind.example", days: 6 }] }), open({ id: "m2", title: "Second", club: true }), open({ id: "m3", title: "Third" }),
   ] })).join("\n");
@@ -83,7 +83,7 @@ test("a long list is cut, and says how many more", () => {
   assert.match(recordLines(rec({ open: many })).join("\n"), /and 3 more/);
 });
 
-// Ember as a career guide: the goal leads the steps and what Ember is told (lib/goals.ts).
+// Torch as a career guide: the goal leads the steps and what Torch is told (lib/goals.ts).
 test("a goal leads the steps: where they're going and how far along", () => {
   const r = rec({ goal: { kind: "internship", target: "power electronics" }, proven: 1, open: [open()] });
   const steps = nextSteps(r);

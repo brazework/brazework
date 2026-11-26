@@ -22,5 +22,5 @@ Needs Docker and Google Chrome. Takes a few minutes (most of it is `next build`)
   four test members (`josh|maya|ben|cara@forge.test`, password `forge-test-pass-1`) and `seed.sql`.
 - Failure screenshots land in `e2e/.results/`.
 - `gateway.cjs` also stands in for Storage: uploads to the `media` bucket follow `media.sql`'s rules (a valid token, your own folder, the bucket's file types, up to 50 MB, no overwrites) and are served back from `e2e/.media/`.
-- Not covered locally: live updates (no Realtime service), and Ember
+- Not covered locally: live updates (no Realtime service), and Jig
   answers (no Anthropic key).

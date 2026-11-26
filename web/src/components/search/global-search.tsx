@@ -18,9 +18,9 @@ import { searchForge, type CommunityHit, type PersonHit, type SearchResults } fr
 
 // The search bar at the top of every signed-in page: people, communities, projects, events and posts
 // as you type, with Connect and Join right in the results, and a hand-off to Copilot for questions. Enter (or "See all results") opens /search.
-// Press "/" anywhere to jump to it. Inside the Ask Ember bar (components/ember/ask-bar.tsx) it gets
-// `onAsk`: then Enter, and the "Ask Ember" row, ask Ember right here instead of opening a page.
-// `joined`: Ember's answer hangs from the bar (ask-bar.tsx), so the bar's lower corners square off.
+// Press "/" anywhere to jump to it. Inside the Ask Torch bar (components/ember/ask-bar.tsx) it gets
+// `onAsk`: then Enter, and the "Ask Torch" row, ask Torch right here instead of opening a page.
+// `joined`: Torch's answer hangs from the bar (ask-bar.tsx), so the bar's lower corners square off.
 export function GlobalSearch({ onAsk, asking = false, joined = false }: { onAsk?: (text: string) => void; asking?: boolean; joined?: boolean } = {}) {
   const router = useRouter();
   const path = usePathname();
@@ -81,7 +81,7 @@ export function GlobalSearch({ onAsk, asking = false, joined = false }: { onAsk?
   const askInside = (
     <>
       <span className="bg-accent-grad grid size-9 shrink-0 place-items-center rounded-xl text-on-accent"><Sparkles className="size-4" /></span>
-      <span className="min-w-0"><span className="block truncate font-medium">Ask Ember: &ldquo;{query}&rdquo;</span><span className="block text-xs text-faint">{onAsk ? `${emberCreditCost("ask")} · Answers or drafts for you to approve` : `${emberCreditCost("ask")} · Answers with clubs, events and people from Brazework`}</span></span>
+      <span className="min-w-0"><span className="block truncate font-medium">Ask Torch: &ldquo;{query}&rdquo;</span><span className="block text-xs text-faint">{onAsk ? `${emberCreditCost("ask")} · Answers or drafts for you to approve` : `${emberCreditCost("ask")} · Answers with clubs, events and people from Brazework`}</span></span>
       {onAsk && <kbd className="ml-auto hidden font-mono text-[10px] text-faint sm:block" aria-hidden="true">↵</kbd>}
     </>
   );
@@ -95,14 +95,14 @@ export function GlobalSearch({ onAsk, asking = false, joined = false }: { onAsk?
     <div ref={box} className="relative" onKeyDown={onKeyDown}>
       <form
         role="search"
-        aria-label={onAsk ? "Ask Ember or search Brazework" : "Search Brazework"}
+        aria-label={onAsk ? "Ask Torch or search Brazework" : "Search Brazework"}
         onSubmit={(e) => { e.preventDefault(); if (!query) return; if (onAsk) askHere(); else { setOpen(false); router.push(`/search?q=${encodeURIComponent(query)}`); } }}
         className={cn("flex h-10 items-center gap-2.5 rounded-lg border border-line bg-surface px-3 transition hover:border-line-strong focus-within:border-line-strong focus-within:ring-[3px] focus-within:ring-text/8", joined && "rounded-b-none")}
       >
-        {/* The Ember bar (redesign stage 1): one bar to search, jump anywhere or ask Ember. Typing searches
-            right here; the button at the end (or ⌘K) opens the palette, the way into Ember. */}
+        {/* The Torch bar (redesign stage 1): one bar to search, jump anywhere or ask Torch. Typing searches
+            right here; the button at the end (or ⌘K) opens the palette, the way into Torch. */}
         {loading || asking ? <Loader2 className="size-[18px] shrink-0 animate-spin text-faint" /> : <span className="grid size-[18px] shrink-0 place-items-center" aria-hidden="true"><Ember size={18} /></span>}
-        <label htmlFor="forge-search" className="sr-only">{onAsk ? "Ask Ember or search Brazework" : "Search Brazework"}</label>
+        <label htmlFor="forge-search" className="sr-only">{onAsk ? "Ask Torch or search Brazework" : "Search Brazework"}</label>
         <input
           ref={input}
           id="forge-search"
@@ -111,7 +111,7 @@ export function GlobalSearch({ onAsk, asking = false, joined = false }: { onAsk?
           value={q}
           onChange={(e) => { setQ(e.target.value); setOpen(true); }}
           onFocus={() => setOpen(true)}
-          placeholder={onAsk ? ASK_PLACEHOLDER : "Ask Ember, search, or jump anywhere"}
+          placeholder={onAsk ? ASK_PLACEHOLDER : "Ask Torch, search, or jump anywhere"}
           autoComplete="off"
           aria-controls={showPanel ? listId : undefined}
           className="min-w-0 flex-1 bg-transparent text-[15px] outline-none placeholder:text-faint [&::-webkit-search-cancel-button]:hidden"
@@ -119,9 +119,9 @@ export function GlobalSearch({ onAsk, asking = false, joined = false }: { onAsk?
         {q ? (
           <button type="button" onClick={() => { setQ(""); input.current?.focus(); }} aria-label="Clear search" className="grid size-7 place-items-center rounded-full text-faint hover:bg-hover hover:text-text"><X className="size-4" /></button>
         ) : (
-          <button type="button" onClick={() => window.dispatchEvent(new Event("forge:palette"))} aria-label={onAsk ? "Jump anywhere (Command K)" : "Ask Ember, or jump anywhere (Command K)"}
+          <button type="button" onClick={() => window.dispatchEvent(new Event("forge:palette"))} aria-label={onAsk ? "Jump anywhere (Command K)" : "Ask Torch, or jump anywhere (Command K)"}
             className="hidden shrink-0 items-center gap-1.5 rounded-md px-1.5 py-1 text-xs text-muted transition hover:bg-hover hover:text-text sm:inline-flex">
-            {onAsk ? "Jump" : "Ask Ember"} <kbd className="rounded border border-line px-1 py-px font-mono text-[10px] text-faint" aria-hidden="true">⌘K</kbd>
+            {onAsk ? "Jump" : "Ask Torch"} <kbd className="rounded border border-line px-1 py-px font-mono text-[10px] text-faint" aria-hidden="true">⌘K</kbd>
           </button>
         )}
       </form>

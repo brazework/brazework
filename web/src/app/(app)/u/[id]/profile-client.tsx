@@ -333,7 +333,7 @@ function ProjectDialog({ project, interests, onClose, copilot = false, stack = f
             {ai.busy ? (
               <button type="button" onClick={ai.stop} className="h-8 rounded-lg border border-line px-3 text-xs">Stop</button>
             ) : (
-              <button type="button" onClick={writeUp} className="bg-text inline-flex h-8 items-center gap-1.5 rounded-lg px-3 text-xs font-medium text-surface"><Sparkles className="size-3.5" /> {details.trim() ? "Polish it with Ember" : "Write it with Ember"} · {emberCreditCost("writeup")}</button>
+              <button type="button" onClick={writeUp} className="bg-text inline-flex h-8 items-center gap-1.5 rounded-lg px-3 text-xs font-medium text-surface"><Sparkles className="size-3.5" /> {details.trim() ? "Polish it with Torch" : "Write it with Torch"} · {emberCreditCost("writeup")}</button>
             )}
             <span className="text-xs text-faint">Uses your title, summary and notes. Check every fact before saving.</span>
             {ai.error && <p role="alert" className="w-full text-xs text-danger">{ai.error}</p>}

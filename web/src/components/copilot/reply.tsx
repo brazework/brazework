@@ -6,7 +6,7 @@ import { ProposalCard } from "@/components/copilot/proposal-card";
 import Link from "next/link";
 import { splitNext } from "@/lib/copilot-text";
 
-// Ember's answer as it streams (redesign 2026-11). Three things keep it smooth:
+// Torch's answer as it streams (redesign 2026-11). Three things keep it smooth:
 // - Order: text and cards render in the order they arrived, so a card never gets pushed down by
 //   words arriving above it.
 // - Pace: the network delivers text in bursts. useReveal shows it at an even pace that catches up
@@ -63,7 +63,7 @@ export function EmberReply({ text, proposals = [], segments, live, inline = fals
       if (budget <= 0 && i > 0) break;
       const part = s.text.slice(0, Math.max(0, budget));
       budget -= s.text.length;
-      // Rich turns Brazework links into links and hides Ember's trailing "next" marker.
+      // Rich turns Brazework links into links and hides Torch's trailing "next" marker.
       out.push(<Rich key={`t${i}`} text={part} />);
       if (budget < 0) break;
     } else {

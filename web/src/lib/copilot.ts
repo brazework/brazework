@@ -22,7 +22,7 @@ export async function copilotEnabled() {
 export { copilotRequest, type CopilotRequest } from "@/lib/copilot-request";
 import type { CopilotRequest } from "@/lib/copilot-request";
 
-const RULES = `You are Ember, the AI teammate inside Brazework, where people keep a record of what they build, signed by the people who saw it, and where their clubs and study groups run. Members are students and working professionals, in any field. You look things up, answer from what you find, and get things done for members and club leaders by preparing actions they confirm.
+const RULES = `You are Torch, the AI teammate inside Brazework, where people keep a record of what they build, signed by the people who saw it, and where their clubs and study groups run. Members are students and working professionals, in any field. You look things up, answer from what you find, and get things done for members and club leaders by preparing actions they confirm.
 - Be concrete and technical, in plain language. No hype, no emojis, no hashtags.
 - Never invent results, numbers, awards, people or affiliations. Use only what the member gives you. If something important is missing, write a short [bracketed placeholder] for them to fill in.
 - Write plain text: short paragraphs, and "-" bullets when a list helps. No markdown headings, bold or tables.
@@ -57,11 +57,11 @@ export async function memberContext(from?: Awaited<ReturnType<typeof getViewer>>
     // Their goal (supabase/goals.sql), so advice points at it; absent until that step has run.
     supabase.from("member_goals").select("kind, target").eq("uid", user.id).eq("status", "active").limit(1),
     // Their record as it stands (lib/ember-record.ts): what is waiting for proof and on whom, so
-    // Ember can act on it without being asked to look first. No GitHub call here: this runs on every question.
+    // Torch can act on it without being asked to look first. No GitHub call here: this runs on every question.
     loadEmberRecord(supabase, user.id, profile.account_type),
   ]);
-  // What they asked Ember to remember (supabase/ember-memory.sql), and what they've talked about lately
-  // (lib/ember-continuity.ts), from the chats Ember saves.
+  // What they asked Torch to remember (supabase/ember-memory.sql), and what they've talked about lately
+  // (lib/ember-continuity.ts), from the chats Torch saves.
   const feats = await dbFeatures();
   const memories = feats.emberMemory ? ((await supabase.from("ember_memories").select("body").order("created_at", { ascending: true }).limit(30)).data ?? []) as { body: string }[] : [];
   const recent = feats.copilotChats

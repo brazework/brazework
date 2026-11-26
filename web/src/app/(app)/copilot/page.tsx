@@ -14,7 +14,7 @@ import { getViewer } from "@/lib/supabase/server";
 import { draftToProposal, isCardKind, type ToolDraftRow } from "@/lib/tool-actions";
 import { CopilotChat, CopilotSoon, type FromTools } from "./copilot-client";
 
-export const metadata: Metadata = { title: "Ember" };
+export const metadata: Metadata = { title: "Torch" };
 
 export default function CopilotPage({ searchParams }: PageProps<"/copilot">) {
   return (
@@ -44,7 +44,7 @@ async function Copilot({ searchParams }: { searchParams: PageProps<"/copilot">["
   return <CopilotChat first={profile.first_name} field={profile.field} student={profile.account_type !== "professional"} initial={chat ? "" : q} initialPreset={chat ? null : preset} chats={chats} chat={chat} saving={saving} steps={steps} fromTools={await fromTools(supabase)} />;
 }
 
-// What your AI tools drafted for you (supabase/tool-actions.sql), as Ember cards.
+// What your AI tools drafted for you (supabase/tool-actions.sql), as Torch cards.
 async function fromTools(supabase: Awaited<ReturnType<typeof getViewer>>["supabase"]): Promise<FromTools | null> {
   if (!(await dbFeatures()).toolActions) return null;
   const { data } = await supabase.from("tool_drafts").select("id, kind, via, source, created_at, payload").eq("status", "waiting").order("created_at", { ascending: false }).limit(30);

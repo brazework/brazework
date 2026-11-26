@@ -2,7 +2,7 @@ import { test } from "node:test";
 import assert from "node:assert/strict";
 import { frame, parseStream, type Proposal } from "../src/lib/copilot-agent";
 
-// Ember's reply renders in the order it arrived (components/copilot/reply.tsx): text, the card, then
+// Torch's reply renders in the order it arrived (components/copilot/reply.tsx): text, the card, then
 // the text after it, so a card is never pushed down by words arriving above it (redesign 2026-11).
 const post: Proposal = { id: "p1", kind: "post", body: "Flight computer v2 is alive.", postKind: "result", tags: ["avionics"] };
 

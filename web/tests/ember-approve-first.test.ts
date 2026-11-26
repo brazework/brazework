@@ -1,7 +1,7 @@
-// Ember's hard rules, tested on the real tool code with a database that refuses every write:
-//  - Ember never writes: propose_* tools only hand a draft card to the UI; the member taps Approve,
+// Torch's hard rules, tested on the real tool code with a database that refuses every write:
+//  - Torch never writes: propose_* tools only hand a draft card to the UI; the member taps Approve,
 //    and the app's normal server action (with its own checks) does the saving.
-//  - Ember never verifies a milestone: no review tool is offered, and calling one is refused.
+//  - Torch never verifies a milestone: no review tool is offered, and calling one is refused.
 //  - Milestone drafts need real evidence (an https link the member gave), never invented.
 // Run: npm test
 import assert from "node:assert/strict";
@@ -41,7 +41,7 @@ function readOnlyDb() {
 
 const proposeTools = TOOLS.map((t) => t.name).filter((n) => n.startsWith("propose_"));
 
-test("Ember is never offered a way to verify a milestone", () => {
+test("Torch is never offered a way to verify a milestone", () => {
   assert.ok(!TOOLS.some((t) => t.name === "propose_review"), "propose_review must not be offered");
   for (const t of TOOLS) assert.doesNotMatch(String(t.description), /verify-or-decline/i);
 });

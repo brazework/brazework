@@ -1,9 +1,9 @@
 import type { Proposal, Spec } from "@/lib/copilot-agent";
 import { ALL_TOPICS } from "@/lib/forge";
 
-// One set of actions behind AI tools (MCP) and Ember (supabase/tool-actions.sql, docs/mcp-workflows.md).
-// A tool's draft is stored with the same kind as an Ember card and shown as that card, on /drafts and
-// on Ember's page: Confirm runs the app's own action, exactly as when Ember proposed it. Pure, so the
+// One set of actions behind AI tools (MCP) and Torch (supabase/tool-actions.sql, docs/mcp-workflows.md).
+// A tool's draft is stored with the same kind as a Torch card and shown as that card, on /drafts and
+// on Torch's page: Confirm runs the app's own action, exactly as when Torch proposed it. Pure, so the
 // server, the pages and tests share it (tests/tool-actions.test.ts).
 
 /** Kinds a tool can leave as a draft. post and milestone keep their own card (drafts/draft-card.tsx). */
@@ -20,7 +20,7 @@ const has = (p: Record<string, unknown>, k: string) => Object.prototype.hasOwnPr
 /** Only the app's topics, at most 3: the project form refuses anything else. */
 export const appTopics = (tags: unknown): string[] => (Array.isArray(tags) ? tags.filter((t): t is string => typeof t === "string" && ALL_TOPICS.includes(t)).slice(0, 3) : []);
 
-/** A tool's draft as the Ember card that confirms it, or null for kinds with their own card. */
+/** A tool's draft as the Torch card that confirms it, or null for kinds with their own card. */
 export function draftToProposal(d: Pick<ToolDraftRow, "id" | "kind" | "payload">): Proposal | null {
   const p = d.payload ?? {};
   const id = `draft-${d.id}`;

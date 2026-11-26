@@ -14,5 +14,5 @@ export function emberCreditCost(action: EmberAction): string {
   return cost === 1 ? "1 credit" : `${cost} credits`;
 }
 
-export const EMBER_UNAVAILABLE = "Ember isn't available right now. Try again in a minute.";
-export const EMBER_INSUFFICIENT = "Not enough Ember credits for this action. Credits reset at midnight UTC.";
+export const EMBER_UNAVAILABLE = "Torch isn't available right now. Try again in a minute.";
+export const EMBER_INSUFFICIENT = "Not enough Torch credits for this action. Credits reset at midnight UTC.";

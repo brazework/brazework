@@ -16,7 +16,7 @@ const GROUPS = [
     { id: "blocked", label: "Blocked people", icon: Ban },
   ] },
   { label: "Tools", sections: [
-    { id: "ember", label: "Ember and your data", icon: Sparkles },
+    { id: "ember", label: "Torch and your data", icon: Sparkles },
     { id: "ai-tools", label: "Your tools", icon: Plug },
   ] },
   { label: "Account and support", sections: [

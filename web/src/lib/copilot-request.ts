@@ -13,7 +13,7 @@ export const copilotRequest = z.object({
   history: z.array(z.object({ role: z.enum(["user", "assistant"]), content: z.string().max(6000) })).max(12).optional(),
   // A one-tap action's instructions (lib/copilot-presets.ts): added server side, never shown in the chat.
   preset: presetSchema.optional(),
-  // The page the Ask Ember bar was used on (lib/ember-bar.ts pageContext): only the id; the server
+  // The page the Ask Torch bar was used on (lib/ember-bar.ts pageContext): only the id; the server
   // reads the rest as the member (lib/copilot-page.ts).
   page: z.object({ kind: z.enum(["project", "club", "event"]), id: z.string().regex(PAGE_ID) }).optional(),
 });

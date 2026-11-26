@@ -1,4 +1,4 @@
-// Ember picks up where you left off (lib/ember-continuity.ts, Linear FIX-233): from the chats Ember
+// Torch picks up where you left off (lib/ember-continuity.ts, Linear FIX-233): from the chats Torch
 // already saves, never anything new. Run: npm test
 import assert from "node:assert/strict";
 import { test } from "node:test";
@@ -8,7 +8,7 @@ const now = Date.parse("2026-11-21T22:00:00Z");
 const DAY = 864e5;
 const chat = (id: string, title: string, daysAgo: number): RecentChat => ({ id, title, updated_at: new Date(now - daysAgo * DAY).toISOString() });
 
-test("Ember is told their recent chats, newest first, by title and when", () => {
+test("Torch is told their recent chats, newest first, by title and when", () => {
   const lines = recentChatLines([chat("a", "Plan my health tech applications", 0), chat("b", "Ask Dana to sign the kiosk result", 1), chat("c", "Résumé bullets", 4)], now);
   assert.equal(lines.length, 1);
   assert.match(lines[0], /"Plan my health tech applications" \(today\); "Ask Dana to sign the kiosk result" \(yesterday\); "Résumé bullets" \(4 days ago\)/);

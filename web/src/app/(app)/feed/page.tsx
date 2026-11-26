@@ -184,7 +184,7 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
   }
 
   const discover = (tab === "for-you" || tab === "latest") && !tag && !kind;
-  // The create box: whether Ember is on, your next guide step, and a club you run (for its weekly update).
+  // The create box: whether Torch is on, your next guide step, and a club you run (for its weekly update).
   const [copilotOn, guide] = await extrasP;
   const hideStart = (await cookies()).has(`${DISMISS_PREFIX}feed-start`);
   // New members get the first-five-minutes checklist; once it's done (or hidden), the weekly loop.

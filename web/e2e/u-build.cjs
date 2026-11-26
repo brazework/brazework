@@ -1,7 +1,7 @@
 // The Projects page and the sidebar (app/(app)/projects, app/(app)/sidebar.tsx). A build's card is all
 // the member's own: no stock picture, twelve weeks of their updates, where it stands, and a box to
 // log today's progress without leaving the page; logging leads straight to asking for a signature.
-// The sidebar lists your projects, has Ember, and tells an officer how many results are waiting to be signed.
+// The sidebar lists your projects, has Torch, and tells an officer how many results are waiting to be signed.
 const { execSync } = require("child_process");
 const { step, browser, as, go, summary } = require("./lib.cjs");
 const psql = (sql) => execSync("docker exec -i forge-e2e-db psql -U postgres -h localhost -d postgres -v ON_ERROR_STOP=1 -qtA", { input: sql }).toString().trim();
@@ -43,10 +43,10 @@ const clean = () => psql(`delete from public.posts where body = '${NOTE}'; alter
     if (accept !== ".stl,.obj,.glb,.gltf,.3mf") throw new Error(`the 3D picker accepts "${accept}"`);
   }, ben);
 
-  await step("sidebar: your projects one click away, and Ember has an entry", async () => {
+  await step("sidebar: your projects one click away, and Torch has an entry", async () => {
     const side = ben.getByRole("complementary", { name: "Sidebar" });
     await side.getByRole("group", { name: "Your projects" }).getByRole("link", { name: "Liquid engine test stand" }).waitFor();
-    await side.getByRole("link", { name: "Ask Ember" }).click();
+    await side.getByRole("link", { name: "Ask Torch" }).click();
     await ben.waitForURL(/\/copilot/, { timeout: 15000 });
     await go(ben, "/projects");
     await ben.getByRole("complementary", { name: "Sidebar" }).getByRole("group", { name: "Your projects" }).getByRole("link", { name: "Recovery avionics" }).click();

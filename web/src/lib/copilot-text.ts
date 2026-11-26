@@ -1,4 +1,4 @@
-// Ember ends an answer with a line of follow-ups the member can tap: <<next: a | b | c>>.
+// Torch ends an answer with a line of follow-ups the member can tap: <<next: a | b | c>>.
 // splitNext() takes it off the text (also mid-stream, so the marker never flashes on screen).
 
 export function splitNext(raw: string): { text: string; next: string[] } {

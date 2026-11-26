@@ -21,7 +21,7 @@ import { deleteAllChats, deleteChat, loadChat, rateAnswer, saveChat, type ChatSu
 
 type Msg = { role: "user" | "assistant"; content: string; tools?: string[]; proposals?: Proposal[]; segments?: Segment[]; cards?: string[]; next?: string[] };
 
-// What a card Ember prepared is called once the chat is saved (saved chats keep a label, never a
+// What a card Torch prepared is called once the chat is saved (saved chats keep a label, never a
 // live card that could be confirmed twice).
 const CARD_LABEL: Record<Proposal["kind"], string> = { goal: "a goal", memory: "something to remember", post: "a post", milestone: "a milestone to verify", signature: "an ask to sign", join: "joining a club", follow: "a follow", event: "a club event", club_post: "a club post", project: "a project", review: "a milestone review", rsvp: "an RSVP", message: "a message", project_edit: "a project update", teammate: "a teammate", invite: "a club invite" };
 const toSaved = (m: Msg): SavedMsg => ({ role: m.role, content: m.content, tools: m.tools, cards: [...(m.cards ?? []), ...(m.proposals ?? []).map((p) => CARD_LABEL[p.kind])] });
@@ -35,7 +35,7 @@ function Hero({ title, sub, mood = "idle" }: { title: string; sub: string; mood?
   return (
     <header className="flex flex-col items-center pt-2 text-center sm:pt-8">
       <motion.div initial={{ opacity: 0, scale: 0.85 }} animate={{ opacity: 1, scale: 1 }} transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}>
-        <Ember size={72} mood={mood} label="Ember, your Brazework assistant" />
+        <Ember size={72} mood={mood} label="Torch, your Brazework assistant" />
       </motion.div>
       <h1 className="mt-4 text-[1.7rem] leading-tight font-semibold tracking-tight sm:text-4xl">{title}</h1>
       <p className="mt-2 max-w-md text-[15px] text-muted">{sub}</p>
@@ -53,7 +53,7 @@ const CAPS = [
 export function CopilotSoon() {
   return (
     <>
-      <Hero title="Ember is almost here" sub="Your AI teammate on Brazework. It looks things up, then gets things done with your OK:" mood="sleepy" />
+      <Hero title="Torch is almost here" sub="Your AI teammate on Brazework. It looks things up, then gets things done with your OK:" mood="sleepy" />
       <div className="mt-8 grid grid-cols-1 gap-3 sm:grid-cols-3">
         {CAPS.map((c, i) => (
           <motion.div key={c.title} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.15 + i * 0.08 }} className="glass-card rounded-3xl p-5">
@@ -101,7 +101,7 @@ export function Lookups({ tools, live }: { tools?: string[]; live: boolean }) {
 
 
 // What a new chat opens with: up to three steps from the member's own record (lib/ember-record.ts).
-// They come from the database, not the model. One tap asks Ember, or opens the page that does it.
+// They come from the database, not the model. One tap asks Torch, or opens the page that does it.
 function NextSteps({ steps, busy, onAsk }: { steps: NextStep[]; busy: boolean; onAsk: (s: Extract<NextStep, { text: string }>) => void }) {
   const row = "flex w-full items-center gap-3 px-4 py-3 text-left transition hover:bg-hover disabled:opacity-50";
   return (
@@ -198,7 +198,7 @@ export function CopilotChat({ first, field, student = true, initial = "", initia
     await deleteChat(id);
   };
   const removeAll = async () => {
-    if (!confirm("Delete all your Ember chats? This can't be undone.")) return;
+    if (!confirm("Delete all your Torch chats? This can't be undone.")) return;
     const r = await deleteAllChats();
     if (r.ok) { setList([]); newChat(); }
   };
@@ -221,7 +221,7 @@ export function CopilotChat({ first, field, student = true, initial = "", initia
       historyCollapsed ? "[--ember-rail:2.75rem]" : "[--ember-rail:clamp(14rem,19vw,20rem)]",
     )}>
       {rail && (
-        <aside aria-label="Ember chat history" className="sticky top-6 hidden h-[calc(100dvh-3rem)] min-w-0 flex-col gap-3 self-start xl:flex">
+        <aside aria-label="Torch chat history" className="sticky top-6 hidden h-[calc(100dvh-3rem)] min-w-0 flex-col gap-3 self-start xl:flex">
           <button
             type="button"
             aria-expanded={!historyCollapsed}
@@ -247,7 +247,7 @@ export function CopilotChat({ first, field, student = true, initial = "", initia
           <>
             {/* A new chat: the greeting and the box, a little above the middle of the page. */}
             <div className="flex flex-1 flex-col justify-center pb-[8vh]">
-              <Hero title={emberGreeting(first)} sub="Say what you did or what you need. Ember looks it up on Brazework and prepares each step as a card you approve." mood={busy ? "thinking" : "idle"} />
+              <Hero title={emberGreeting(first)} sub="Say what you did or what you need. Torch looks it up on Brazework and prepares each step as a card you approve." mood={busy ? "thinking" : "idle"} />
               {composer}
               {steps.length > 0 && <NextSteps steps={steps} busy={busy} onAsk={(s) => {
                 // A step that starts a sentence waits in the box for the member to finish it.
@@ -259,7 +259,7 @@ export function CopilotChat({ first, field, student = true, initial = "", initia
         ) : (
           <div className="glass sticky top-[var(--m-top)] z-20 flex items-center gap-3 rounded-2xl px-3 py-2 md:top-3">
             <Ember size={30} mood={busy ? "thinking" : "happy"} />
-            <span className="min-w-0 truncate text-sm font-medium">{list.find((c) => c.id === chatId)?.title ?? "Ember"}</span>
+            <span className="min-w-0 truncate text-sm font-medium">{list.find((c) => c.id === chatId)?.title ?? "Torch"}</span>
             <button type="button" onClick={newChat} className="ml-auto inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium text-muted transition hover:bg-hover hover:text-text"><Plus className="size-3.5" /> New chat</button>
           </div>
         )}
@@ -298,7 +298,7 @@ export function CopilotChat({ first, field, student = true, initial = "", initia
               );
             })}
           </AnimatePresence>
-          {/* Next steps Ember suggests, one tap to ask. */}
+          {/* Next steps Torch suggests, one tap to ask. */}
           {!busy && lastAnswer?.role === "assistant" && lastAnswer.next?.length ? (
             <div className="flex flex-wrap gap-2 pl-11">
               {lastAnswer.next.map((n) => (
@@ -331,7 +331,7 @@ function ChatRail({ list, current, opening, onOpen, onNew, onDelete, onDeleteAll
             <button type="button" onClick={() => onDelete(c.id)} aria-label={`Delete chat: ${c.title}`} className="absolute top-1/2 right-1.5 grid size-7 -translate-y-1/2 place-items-center rounded-full text-faint opacity-0 transition group-hover:opacity-100 hover:bg-surface-2 hover:text-text focus-visible:opacity-100"><Trash2 className="size-3.5" /></button>
           </li>
         ))}
-        {!list.length && <li className="px-3 py-2 text-xs leading-relaxed text-muted">Your chats with Ember show up here. Only you can see them.</li>}
+        {!list.length && <li className="px-3 py-2 text-xs leading-relaxed text-muted">Your chats with Torch show up here. Only you can see them.</li>}
       </ul>
       <div className="mt-3 border-t border-line pt-3 text-[11px] leading-relaxed text-faint">
         Private to you. Kept 180 days after you last use them.
@@ -355,7 +355,7 @@ function Rate({ question, answer, tools }: { question: string; answer: string; t
     setPending(false);
     if (r.ok) setState("sent");
   };
-  if (state === "sent") return <span className="inline-flex items-center gap-1 px-2 py-1 text-xs text-faint"><Check className="size-3.5" /> Thanks, that helps Ember improve</span>;
+  if (state === "sent") return <span className="inline-flex items-center gap-1 px-2 py-1 text-xs text-faint"><Check className="size-3.5" /> Thanks, that helps Torch improve</span>;
   return (
     <>
       <button type="button" disabled={pending} onClick={() => void send("up")} aria-label="Good answer" className="grid size-7 place-items-center rounded-full text-faint transition hover:bg-hover hover:text-text"><ThumbsUp className="size-3.5" /></button>
@@ -384,7 +384,7 @@ function CopyButton({ text }: { text: string }) {
   );
 }
 
-// Drafts your AI tools left over MCP (supabase/tool-actions.sql), as the same cards Ember prepares:
+// Drafts your AI tools left over MCP (supabase/tool-actions.sql), as the same cards Torch prepares:
 // Claude drafts it, you confirm it here or on /drafts. Posts and milestones keep their own page.
 export type FromTools = { cards: { draftId: string; via: string; source: string; p: Proposal }[]; others: number };
 function FromYourTools({ cards, others }: FromTools) {

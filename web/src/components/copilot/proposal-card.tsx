@@ -28,7 +28,7 @@ import { RELATIONSHIPS } from "@/lib/vouch-email";
 
 const field = "w-full rounded-xl border border-line bg-surface px-3 py-2 text-sm outline-none focus:border-line-strong";
 const HEAD = {
-  memory: { icon: Bookmark, title: "Remember this", done: "Remembered", href: "/settings#ember", go: "See what Ember remembers" },
+  memory: { icon: Bookmark, title: "Remember this", done: "Remembered", href: "/settings#ember", go: "See what Torch remembers" },
   goal: { icon: Target, title: "Set your goal", done: "Goal set", href: "/feed", go: "See your path on Home" },
   post: { icon: Megaphone, title: "Post to the feed", done: "Posted", href: "/feed?tab=latest", go: "See it in the feed" },
   milestone: { icon: Flag, title: "Ask your club to verify", done: "Sent to the club", href: "/profile#projects", go: "See your projects" },
@@ -53,9 +53,9 @@ const toLocal = (iso: string) => { const d = new Date(iso); return new Date(d.ge
 const fromLocal = (v: string) => new Date(v).toISOString();
 
 // A draft Copilot prepared, or one an AI tool left over MCP (fromTool: the same card, from /drafts and
-// Ember's page; supabase/tool-actions.sql). Nothing is saved until the member presses Confirm, which
+// Torch's page; supabase/tool-actions.sql). Nothing is saved until the member presses Confirm, which
 // runs the app's normal server action (with all its checks) as them; a tool's draft is then marked done.
-// `inline`: in a page (under the Ask Ember bar, or a project's own drafts), the card is a short summary
+// `inline`: in a page (under the Ask Torch bar, or a project's own drafts), the card is a short summary
 // with buttons that say what happens ("Log and send to club", "Edit", "Not now"); Edit opens the fields.
 export function ProposalCard({ p: initial, fromTool, inline = false }: { p: Proposal; fromTool?: { draftId: string; via: string; source: string }; inline?: boolean }) {
   const [p, setP] = useState(initial);
@@ -154,7 +154,7 @@ export function ProposalCard({ p: initial, fromTool, inline = false }: { p: Prop
       <div className="flex items-center gap-2">
         <span className={cn("grid size-7 place-items-center rounded-lg", state === "done" ? "bg-ok text-white" : "bg-accent-grad text-on-accent")}>{state === "done" ? <Check className="size-4" /> : <h.icon className="size-4" />}</span>
         <span className="font-semibold text-text">{p.kind === "rsvp" && p.cancel ? (state === "done" ? "You're not going" : "Take back your RSVP") : state === "done" ? (held ? "Sent for review" : h.done) : h.title}</span>
-        {state === "open" && <span className="ml-auto inline-flex items-center gap-1 text-[11px] text-faint"><Sparkles className="size-3" /> Drafted by {fromTool ? fromTool.via : "Ember"} · not saved yet</span>}
+        {state === "open" && <span className="ml-auto inline-flex items-center gap-1 text-[11px] text-faint"><Sparkles className="size-3" /> Drafted by {fromTool ? fromTool.via : "Torch"} · not saved yet</span>}
       </div>
 
       {state === "done" ? (
@@ -248,7 +248,7 @@ export function ProposalCard({ p: initial, fromTool, inline = false }: { p: Prop
           {p.kind === "memory" && (
             <div className="space-y-1">
               <p className="text-text-2">&ldquo;{p.body}&rdquo;</p>
-              <p className="text-xs text-muted">Ember will use this in your next chats. Only you can see it, and you can forget it any time in Settings.</p>
+              <p className="text-xs text-muted">Torch will use this in your next chats. Only you can see it, and you can forget it any time in Settings.</p>
             </div>
           )}
           {p.kind === "goal" && (

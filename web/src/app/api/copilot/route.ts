@@ -24,10 +24,10 @@ export async function POST(req: Request) {
   // The web sends its session cookie; the iPhone app sends its Supabase access token instead.
   const token = (req.headers.get("authorization") ?? "").match(/^Bearer\s+(\S+)$/i)?.[1];
   const viewer = token ? await viewerFromToken(token) : undefined;
-  if (token && !viewer) return json(401, "Log in again to ask Ember.");
+  if (token && !viewer) return json(401, "Log in again to ask Torch.");
   const ctx = await memberContext(viewer ?? undefined);
-  if (!ctx) return json(401, "Log in again to ask Ember.");
-  if (!(await copilotEnabled())) return json(503, "Ember isn't switched on here yet.");
+  if (!ctx) return json(401, "Log in again to ask Torch.");
+  if (!(await copilotEnabled())) return json(503, "Torch isn't switched on here yet.");
 
   const credits = await takeEmberCredits(ctx.supabase, r.task);
   if (!credits.ok) return json(credits.status, credits.message);
@@ -54,7 +54,7 @@ export async function POST(req: Request) {
         }
         controller.close();
       } catch {
-        if (!abort.signal.aborted) { out("\n\n[Ember stopped early. Try again.]"); controller.close(); }
+        if (!abort.signal.aborted) { out("\n\n[Torch stopped early. Try again.]"); controller.close(); }
       }
     },
     cancel() { abort.abort(); },

@@ -2,7 +2,7 @@ import { BadgeCheck, CheckCircle2, Clock, Lock } from "lucide-react";
 import Image from "next/image";
 import { Schematic } from "@/components/landing/schematics";
 import { TitleBlock } from "@/components/app/title-block";
-import { timeAgo } from "@/lib/forge";
+import { cn, timeAgo } from "@/lib/forge";
 
 // The top of a project page, drawn as an engineering drawing sheet (the flow redesign): a faint grid,
 // the work itself (its newest photo, or a line drawing for its field), the title set in ink, and in the
@@ -18,11 +18,13 @@ export function ProjectCover({ title, isPrivate, live, year, last, cover, schema
 }) {
   const ago = last ? timeAgo(new Date(last).toISOString()) : "";
   return (
-    <div className="sheet-grid relative grid gap-5 border-b border-line p-5 sm:grid-cols-[minmax(0,1fr)_minmax(0,38%)] sm:gap-7 sm:p-7">
+    // The same dark drafting sheet as a profile's and a club's banner (globals.css cover-blueprint), in
+    // both themes; theme-dark gives everything on it the dark tokens.
+    <div className="theme-dark cover-blueprint relative grid gap-5 border-b border-line p-5 text-text sm:grid-cols-[minmax(0,1fr)_minmax(0,38%)] sm:gap-7 sm:p-7">
       {/* The work: its newest photo, framed like a figure on the sheet, or the line drawing for its field. */}
-      <figure className="relative aspect-[16/10] overflow-hidden rounded-xl border border-line bg-surface sm:col-start-2 sm:row-start-1 sm:aspect-[4/3] sm:self-center">
+      <figure className={cn("relative aspect-[16/10] overflow-hidden rounded-xl sm:col-start-2 sm:row-start-1 sm:aspect-[4/3] sm:self-center", cover ? "border border-line bg-surface shadow-[0_18px_40px_-18px_rgb(0_0_0/0.7)]" : "border border-white/10 bg-white/[0.03]")}>
         {cover ? <Image src={cover.src} alt={cover.alt} fill priority sizes="(min-width: 1280px) 340px, (min-width: 640px) 38vw, 100vw" className="object-cover" />
-          : <Schematic id={schematic} className="absolute top-1/2 left-1/2 w-[78%] -translate-x-1/2 -translate-y-1/2 text-text/55" />}
+          : <Schematic id={schematic} className="sch-draw absolute top-1/2 left-1/2 w-[80%] -translate-x-1/2 -translate-y-1/2 text-[#f0a57e] opacity-90" />}
       </figure>
       <div className="flex min-w-0 flex-col justify-center sm:col-start-1 sm:row-start-1">
         <p className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted">
