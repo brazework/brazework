@@ -8,8 +8,7 @@ import { EXAMPLES, RUBRIC, STUDENT, course, type Example } from "./journey-data"
 // Client components, imported by hero.tsx. The five views of the landing hero's product window (components/landing/hero.tsx): one project
 // followed from the student who logs it to everywhere it counts. Each view is a panel the same size,
 // so switching never moves the page. What the visitor typed is the milestone in every one of them.
-// Views 3 to 5 show what's being built with pilot schools, and each one says so in the window's
-// footer (hero.tsx VIEWS).
+// Each view's footer note (hero.tsx VIEWS) says what's example data and what's still coming.
 
 export type ViewProps = { ex: Example; title: string; on: boolean; still: boolean; next: () => void };
 const MONO = "font-mono text-[11px] text-faint";
@@ -91,8 +90,9 @@ export function StudentView({ ex, title, on, pick, choose, next }: ViewProps & {
 }
 
 // 2. The professor (or the club officer). A class milestone is graded against the rubric, each row an
-// ABET outcome, and grading it verifies it (Brazework Courses, with pilot schools); the grade is
-// private to the student and the course's faculty. A club milestone is verified by an officer.
+// ABET outcome, and grading it verifies it (Brazework Courses, live since #254); the grade is private
+// to the student and the course's faculty. Torch's feedback draft is marked as coming. A club
+// milestone is verified by an officer.
 export function VerifyView({ ex, title, on, still, verified, verify }: ViewProps & { verified: boolean; verify: () => void }) {
   const graded = !!ex.assignment;
   const rows = graded ? RUBRIC : [];
@@ -136,9 +136,9 @@ export function VerifyView({ ex, title, on, still, verified, verify }: ViewProps
           <p className="flex items-center justify-between gap-2"><span className={MONO}>Rubric</span><span className="font-mono text-[10px] text-faint">ABET outcome</span></p>
           <ul aria-label="Rubric" className="mt-1 flex flex-col gap-1">
             {rows.map((x, i) => (
-              <li key={x.row} className="grid grid-cols-[minmax(0,1fr)_2.75rem_3.75rem] items-center gap-2 text-[12.5px]">
+              <li key={x.row} className="grid grid-cols-[minmax(0,1fr)_3.75rem_3.75rem] items-center gap-2 text-[12.5px]">
                 <span className="truncate">{x.row}</span>
-                <span className="rounded border border-line px-1 text-center font-mono text-[10px] text-text-2">{x.outcome}</span>
+                <span className="rounded border border-line px-1 text-center font-mono text-[10px] whitespace-nowrap text-text-2">{x.outcome}</span>
                 <span className={cn("text-right font-mono whitespace-nowrap tabular-nums transition-opacity duration-300", done > i ? "opacity-100" : "opacity-25")}>{done > i ? x.score : "–"} / 10</span>
               </li>
             ))}
@@ -162,7 +162,7 @@ export function VerifyView({ ex, title, on, still, verified, verify }: ViewProps
           })}
         </ul>
       </div>
-      {graded && <p className="flex items-start gap-1.5 text-[11.5px] leading-snug text-muted max-sm:hidden"><Sparkles className="mt-0.5 size-3 shrink-0 text-brand" aria-hidden="true" /><span className="min-w-0 line-clamp-2">&ldquo;Clear method and a test anyone could repeat. Next time, show the uncertainty on your results.&rdquo; Drafted by Torch, edited and sent by {ex.signer}.</span></p>}
+      {graded && <p className="flex items-start gap-1.5 text-[11.5px] leading-snug text-muted max-sm:hidden"><Sparkles className="mt-0.5 size-3 shrink-0 text-brand" aria-hidden="true" /><span className="min-w-0 line-clamp-2"><span className="font-medium text-text-2">Coming soon:</span> Torch drafts feedback like &ldquo;Clear method and a test anyone could repeat&rdquo; for {ex.signer} to edit and send.</span></p>}
       <div className="mt-auto flex min-h-12 items-center">
         {verified ? (
           <p className="flex min-w-0 items-center gap-2.5 text-sm" role="status">
@@ -216,7 +216,7 @@ export function SchoolView({ ex, title, on, still }: ViewProps) {
         </ul>
       </div>
       <div className={cn(card, "px-3 py-2.5")}>
-        <p className="flex items-center justify-between gap-2"><span className="truncate text-[12px] font-medium">ABET {ex.outcome}</span><span className="shrink-0 font-mono text-[10px] text-faint">Evidence</span></p>
+        <p className="flex items-center justify-between gap-2"><span className="truncate text-[12px] font-medium">ABET outcome {ex.outcome}</span><span className="shrink-0 font-mono text-[10px] text-faint">Evidence</span></p>
         <p className={cn("mt-1.5 flex min-w-0 items-center gap-2 text-[12px] transition-opacity duration-500", counted ? "opacity-100" : "opacity-0")}>
           <Seal size={14} /><span className="min-w-0 truncate">{title}</span>
         </p>
@@ -230,7 +230,7 @@ export function SchoolView({ ex, title, on, still }: ViewProps) {
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
               <p className="font-mono text-[10px] text-[#6b6c72]">Sample report</p>
-              <p className="mt-1 text-[15px] leading-snug font-semibold">ABET {ex.outcome}: evidence</p>
+              <p className="mt-1 text-[15px] leading-snug font-semibold">ABET outcome {ex.outcome}: evidence</p>
               <p className="text-[12px] text-[#55565c]">School of Engineering · Fall 2026 · 25 projects · 6 faculty</p>
             </div>
             <button type="button" onClick={() => setReport(false)} aria-label="Close the report" className="grid size-8 shrink-0 place-items-center rounded-lg hover:bg-black/5"><X className="size-4" /></button>
@@ -300,7 +300,7 @@ export function RecruiterView({ ex, title, on, still }: ViewProps) {
 }
 
 // 5. Everywhere: on LinkedIn (built) and Handshake with the verify link, on the résumé, and the student's
-// one place for classes, clubs, deadlines and grades (Brazework Courses, with pilot schools).
+// one place for classes, clubs, deadlines and grades (Brazework Courses).
 export function EverywhereView({ ex, title, on }: ViewProps) {
   const [added, setAdded] = useState(false);
   const where = ex.kind === "class" ? course(ex) : ex.where;

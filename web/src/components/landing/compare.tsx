@@ -14,7 +14,7 @@ const ROWS = ["Built for", "Assignments", "Projects and teams", "Who confirms it
 const COLS: { id: string; name: string; cells: Cell[] }[] = [
   { id: "profiles", name: "LinkedIn, Handshake", cells: [{ text: "Listing what you say you did" }, { text: "None" }, { text: "One person's claim" }, { text: "Nobody: it's self-reported" }, { text: "Not counted" }, { text: "Still unverified" }] },
   { id: "lms", name: "Blackboard, Canvas", cells: [{ text: "Readings, quizzes, a gradebook" }, { text: "Upload a file, get a grade" }, { text: "A group set" }, { text: "A grade, inside the course" }, { text: "ABET evidence gathered by hand" }, { text: "The course is archived" }] },
-  { id: "brazework", name: "Brazework", cells: [{ text: "Courses built around projects", pilot: true }, { text: "Submit the milestone with its evidence; grading it verifies it", pilot: true }, { text: "Teams with each member's part, and peer evaluation", pilot: true }, { text: "The professor, club or sponsor who saw it" }, { text: "ABET outcomes on the rubric, exported by outcome", pilot: true }, { text: "The verified work is the student's for good" }] },
+  { id: "brazework", name: "Brazework", cells: [{ text: "Courses built around projects" }, { text: "Hand in the milestone with its evidence; grading it verifies it" }, { text: "Teams with each member's part" }, { text: "The professor, club or sponsor who saw it" }, { text: "ABET outcomes on each rubric row" }, { text: "The verified work is the student's for good" }] },
 ];
 // On a phone the other two columns keep three rows (what it's for, who confirms it, after); Brazework keeps all six.
 const GRID = "md:grid md:grid-rows-[3rem_repeat(6,minmax(3rem,auto))]";
@@ -52,7 +52,7 @@ export function Compare() {
             );
           })}
         </div>
-        <p className="mt-5 max-w-[46rem] text-sm leading-relaxed text-muted">Move course by course: import a course from Canvas or Blackboard, sign in with your school&apos;s single sign-on, and keep publisher tools through LTI (with pilot schools). Every verified project already has a link anyone on LinkedIn or Handshake can open to see who verified it.</p>
+        <p className="mt-5 max-w-[46rem] text-sm leading-relaxed text-muted">Move course by course. Coming with pilot schools: peer evaluation, importing a course from Canvas or Blackboard, your school&apos;s single sign-on, and publisher tools through LTI. Every verified project already has a link anyone on LinkedIn or Handshake can open to see who verified it.</p>
       </div>
     </section>
   );

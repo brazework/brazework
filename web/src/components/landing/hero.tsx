@@ -18,7 +18,8 @@ import { EXAMPLES, type Example } from "./journey-data";
 // The views are tabs to click, and on a laptop the hero also pins and plays them as you scroll
 // (globals.css .hero-run; RUN below is the same query). On a phone, a short screen or with reduced
 // motion it doesn't pin: the views are just tabs, and nothing plays by itself.
-// Examples throughout, and views 3 to 5 say they're illustrations of what's built with pilot schools.
+// Examples throughout. Courses, grading and the gradebook are live (#254); each view's note says what
+// is example data and what is still coming (Torch's feedback drafts).
 // It follows the visitor's theme: drafting paper in light, the lab at night in dark (globals.css).
 
 const RUN = "(min-width: 1024px) and (min-height: 700px) and (prefers-reduced-motion: no-preference)";
@@ -26,11 +27,11 @@ const subscribe = (f: () => void) => { const m = matchMedia(RUN); m.addEventList
 const usePinned = () => useSyncExternalStore(subscribe, () => matchMedia(RUN).matches, () => false);
 
 const VIEWS = [
-  { id: "student", tab: "Student", say: "The student submits the milestone to its assignment, with the file that proves it.", note: "Example build · Courses with pilot schools" },
-  { id: "verify", tab: "Professor", say: "The professor grades it against the rubric and verifies it in one step. The grade stays private.", note: "Example · grading with pilot schools; verifying works today" },
-  { id: "school", tab: "School", say: "The school counts it the moment it's verified: accreditation evidence, grouped by outcome.", note: "Illustration · with pilot schools" },
+  { id: "student", tab: "Student", say: "The student hands in the milestone for the assignment, with the file that proves it.", note: "Example project" },
+  { id: "verify", tab: "Professor", say: "The professor grades it with the rubric, and the same click verifies it. Only the student and the course's faculty see the grade.", note: "Example · Torch's feedback draft is coming soon" },
+  { id: "school", tab: "School", say: "The school counts it the moment it's verified, and exports the evidence for accreditation.", note: "Example data" },
   { id: "recruiter", tab: "Recruiter", say: "Recruiters search by verified work and see who vouched for it. The student sees who looked.", note: "Illustration · example data" },
-  { id: "everywhere", tab: "Everywhere", say: "The work goes on LinkedIn, Handshake and the résumé; classes, clubs and deadlines stay in one place.", note: "Illustration · Add to LinkedIn, the verify link and résumé work today" },
+  { id: "everywhere", tab: "Everywhere", say: "The work goes on LinkedIn and the résumé; classes, clubs and deadlines stay in one place.", note: "Example · Add to LinkedIn, the verify link and the résumé work today" },
 ] as const;
 
 export function Hero() {
@@ -95,7 +96,7 @@ export function Hero() {
         <div aria-hidden="true" className="hero-glow pointer-events-none absolute inset-0 -z-10" />
         <div className="mx-auto grid w-full max-w-6xl grid-cols-1 items-center gap-10 px-5 sm:px-6 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:gap-12">
           <div className="min-w-0">
-            <p className="inline-flex items-center gap-2 rounded-full border border-line bg-surface/60 px-3 py-1 text-xs text-text-2"><span aria-hidden="true" className="size-1.5 rounded-full bg-brand" /> Brazework Courses · with pilot schools</p>
+            <p className="inline-flex items-center gap-2 rounded-full border border-line bg-surface/60 px-3 py-1 text-xs text-text-2"><span aria-hidden="true" className="size-1.5 rounded-full bg-brand" /> New: Brazework Courses</p>
             <h1 id="hero-h" className="mt-5 text-[clamp(2.75rem,6.2vw,4.75rem)] leading-[0.95] font-semibold tracking-[-0.05em]">Teach it.<br />Grade it.<br />Prove it.</h1>
             <p className="mt-5 max-w-[31rem] text-lg leading-relaxed text-muted">The course platform built around what students build. Grading a milestone verifies it, the grade stays private, and the student keeps the proof for good. Students and clubs never pay.</p>
 
@@ -109,7 +110,7 @@ export function Hero() {
                   className="h-12 w-full min-w-0 rounded-xl border border-line-strong bg-surface px-4 text-[16px] transition outline-none placeholder:text-faint focus:border-text focus:shadow-[0_0_0_4px_color-mix(in_oklab,var(--text)_12%,transparent)]" />
                 <Button href={signupHref("", typed)} size="lg" className="h-12 shrink-0 rounded-xl px-5">Get it verified <ArrowRight className="size-4" /></Button>
               </div>
-              <p id="hero-build-hint" className="mt-2.5 text-sm text-faint">Type it and follow it through all five views. Free with your school email.</p>
+              <p id="hero-build-hint" className="mt-2.5 text-sm text-faint">Type it, then follow it from student to professor to school. Free with your school email.</p>
             </div>
             <p aria-hidden="true" className="hero-scroll-hint mt-10 hidden items-center gap-2 font-mono text-xs text-faint"><ArrowDown className="size-3.5" /> Scroll to follow it from log to LinkedIn</p>
           </div>
@@ -148,7 +149,7 @@ export function Hero() {
                 )}
               </div>
             </div>
-            <p className="mt-3 text-xs text-faint">Example projects and people. Courses, grading, the school&apos;s dashboard and recruiter search are shown as they&apos;re being built with pilot schools.</p>
+            <p className="mt-3 text-xs text-faint">Example projects and people. Courses, grading and the gradebook work today; the school and recruiter views use example data.</p>
           </div>
         </div>
       </div>
