@@ -70,6 +70,7 @@ export function cardSummary(p: Proposal): { title: string; lines: string[]; link
     case "signature": return p.email ? { title: p.title, lines: [`On ${p.project_title}, for ${p.email} to sign`, ...(p.detail ? [cut(p.detail)] : [])], link: p.evidence } : null;
     case "post": return { title: cut(p.body), lines: p.tags.length ? [p.tags.map((t) => `#${t}`).join(" ")] : [], link: "" };
     case "club_post": return { title: cut(p.body), lines: [`In ${p.club_name}. Only the club sees it.`], link: "" };
+    case "club": return { title: `Start ${p.name}`, lines: [cut(p.about), [p.club_type === "study" ? `Study group${p.course ? ` for ${p.course}` : ""}${p.term ? ` · ${p.term}` : ""}` : p.club_type === "project" ? "Project team" : "Field community", p.privacy === "approval" ? "you approve who joins" : "anyone can join"].join(" · ")], link: "" };
     case "project": return { title: p.title, lines: p.summary ? [cut(p.summary)] : [], link: p.link };
     case "message": return { title: cut(p.body), lines: [`To ${p.name}`], link: "" };
     case "event": return { title: p.title, lines: [`For ${p.club_name}${p.location ? ` · ${p.location}` : ""}`], link: "" };

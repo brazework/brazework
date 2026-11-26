@@ -4,7 +4,7 @@ import { ArrowRight, BadgeCheck, CalendarCheck, CalendarClock, CalendarPlus, Che
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import { createPost } from "@/app/(app)/feed/actions";
-import { joinCommunity, postInCommunity } from "@/app/(app)/communities/actions";
+import { createClubFromCard, joinCommunity, postInCommunity } from "@/app/(app)/communities/actions";
 import { saveEvent } from "@/app/(app)/org/actions";
 import { Celebrate } from "@/components/app/celebrate";
 import type { Proposal } from "@/lib/copilot-agent";
@@ -37,6 +37,7 @@ const HEAD = {
   milestone: { icon: Flag, title: "Ask your club to verify", done: "Sent to the club", href: "/profile#projects", go: "See your projects" },
   signature: { icon: PenLine, title: "Ask them to sign", done: "Asked", href: "/profile#projects", go: "See your projects" },
   join: { icon: Users, title: "Join a club", done: "Done", href: "", go: "Open the club" },
+  club: { icon: Users, title: "Start a club", done: "Your club is live", href: "/communities", go: "Open your club" },
   follow: { icon: UserPlus, title: "Follow", done: "Following", href: "", go: "Open their profile" },
   event: { icon: CalendarPlus, title: "Host a club event", done: "Published", href: "", go: "See the club's events" },
   club_post: { icon: Megaphone, title: "Post in your club", done: "Posted", href: "", go: "See it in the club" },
@@ -74,6 +75,8 @@ export function ProposalCard({ p: initial, fromTool, inline = false, onOutcome }
   const [state, setState] = useState<"open" | "done" | "dismissed">("open");
   const [msg, setMsg] = useState("");
   const [held, setHeld] = useState("");
+  // The club a "Start a club" card made, so Done links to it.
+  const [madeClub, setMadeClub] = useState("");
   const [cid, setCid] = useState("");
   // The signature card: what the server said when it sent the ask, and the LinkedIn link a working
   // account adds first (the field shows only once the server asks for it).
@@ -87,7 +90,7 @@ export function ProposalCard({ p: initial, fromTool, inline = false, onOutcome }
   const h = HEAD[p.kind];
   const labels = cardLabels(p.kind, inline);
   const short = inline && !editing ? cardSummary(p) : null;
-  const href = p.kind === "join" || p.kind === "club_post" || p.kind === "invite" ? `/c/${p.club_id}` : p.kind === "follow" ? `/u/${p.person_id}` : p.kind === "event" ? `/c/${p.club_id}?tab=events` : p.kind === "review" ? "/communities" : p.kind === "rsvp" ? `/events/${p.event_id}` : p.kind === "message" && cid ? `/messages/${cid}` : p.kind === "project_edit" || p.kind === "teammate" ? `/projects/${p.project_id}` : p.kind === "quiz" || p.kind === "assignment" ? `/c/${p.class_id}/course?tab=assignments` : p.kind === "announcement" ? `/c/${p.class_id}/course?tab=announcements` : p.kind === "attendance" ? `/c/${p.class_id}/course?tab=attendance` : p.kind === "extension" ? `/c/${p.class_id}/course/a/${p.assignment_id}` : h.href;
+  const href = p.kind === "club" ? (madeClub ? `/c/${madeClub}` : h.href) : p.kind === "join" || p.kind === "club_post" || p.kind === "invite" ? `/c/${p.club_id}` : p.kind === "follow" ? `/u/${p.person_id}` : p.kind === "event" ? `/c/${p.club_id}?tab=events` : p.kind === "review" ? "/communities" : p.kind === "rsvp" ? `/events/${p.event_id}` : p.kind === "message" && cid ? `/messages/${cid}` : p.kind === "project_edit" || p.kind === "teammate" ? `/projects/${p.project_id}` : p.kind === "quiz" || p.kind === "assignment" ? `/c/${p.class_id}/course?tab=assignments` : p.kind === "announcement" ? `/c/${p.class_id}/course?tab=announcements` : p.kind === "attendance" ? `/c/${p.class_id}/course?tab=attendance` : p.kind === "extension" ? `/c/${p.class_id}/course/a/${p.assignment_id}` : h.href;
   const set = (patch: Partial<Proposal>) => setP((cur) => ({ ...cur, ...patch }) as Proposal);
 
   const confirm = () => start(async () => {
@@ -112,6 +115,10 @@ export function ProposalCard({ p: initial, fromTool, inline = false, onOutcome }
       const res = await emberAskToSign({ milestone_id: p.milestone_id, project_id: p.project_id, title: p.title, evidence: p.evidence, detail: p.detail, achieved_on: p.achieved_on, email: p.email, relationship: p.relationship, linkedin });
       if (res.linkedin) setAskLinkedin(true);
       if (res.ok) setNote(res.message);
+      r = res;
+    } else if (p.kind === "club") {
+      const res = await createClubFromCard(p);
+      if (res.ok && res.id) setMadeClub(res.id);
       r = res;
     } else if (p.kind === "join") {
       r = await joinCommunity(p.club_id);
@@ -273,6 +280,31 @@ export function ProposalCard({ p: initial, fromTool, inline = false, onOutcome }
                 ))}
               </div>
               <input aria-label="Note to the member" value={p.note} onChange={(e) => set({ note: e.target.value })} maxLength={300} placeholder={p.verify ? "Note (optional)" : "Why? They'll see this."} className={field} />
+            </>
+          )}
+          {p.kind === "club" && (
+            <>
+              <div role="radiogroup" aria-label="Kind of club" className="inline-flex flex-wrap gap-1 self-start rounded-full bg-surface-2 p-1">
+                {([["field", "Field community"], ["project", "Project team"], ["study", "Study group"]] as const).map(([k, label]) => (
+                  <button key={k} type="button" role="radio" aria-checked={p.club_type === k} onClick={() => set({ club_type: k })} className="rounded-full px-3 py-1 text-xs text-muted transition aria-checked:bg-surface aria-checked:text-text aria-checked:shadow-sm">{label}</button>
+                ))}
+              </div>
+              <input aria-label="Club name" value={p.name} onChange={(e) => set({ name: e.target.value })} maxLength={60} className={field} />
+              <textarea aria-label="What it's for" value={p.about} onChange={(e) => set({ about: e.target.value })} maxLength={500} rows={2} className={cn(field, "resize-none")} />
+              {p.club_type === "study" && (
+                <div className="grid grid-cols-2 gap-2">
+                  <input aria-label="Course" value={p.course} onChange={(e) => set({ course: e.target.value })} maxLength={20} placeholder="Course, like CHEM 201" className={field} />
+                  <input aria-label="Term" value={p.term} onChange={(e) => set({ term: e.target.value })} maxLength={24} placeholder="Term" className={field} />
+                  <input aria-label="When and where you meet" value={p.meets} onChange={(e) => set({ meets: e.target.value })} maxLength={80} placeholder="When and where you meet (optional)" className={cn(field, "col-span-2")} />
+                </div>
+              )}
+              <div role="radiogroup" aria-label="Who can join" className="inline-flex gap-1 self-start rounded-full bg-surface-2 p-1">
+                {([["public", "Anyone can join"], ["approval", "I approve who joins"]] as const).map(([k, label]) => (
+                  <button key={k} type="button" role="radio" aria-checked={p.privacy === k} onClick={() => set({ privacy: k })} className="rounded-full px-3 py-1 text-xs text-muted transition aria-checked:bg-surface aria-checked:text-text aria-checked:shadow-sm">{label}</button>
+                ))}
+              </div>
+              <div className="flex flex-wrap gap-1.5 text-xs text-muted"><span className="rounded-full bg-surface-2 px-2 py-0.5">{p.field}</span>{p.topics.map((t) => <span key={t} className="rounded-full bg-surface-2 px-2 py-0.5">#{t}</span>)}</div>
+              <p className="text-[11px] text-faint">You&apos;ll own it. Rules, a cover, invites and the rest are in Manage once it&apos;s made.</p>
             </>
           )}
           {p.kind === "join" && <p className="text-text-2"><b className="font-medium">{p.club_name}</b> · {p.privacy === "public" ? "open to join" : "the club approves new members, so this sends a request"}</p>}

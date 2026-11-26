@@ -73,6 +73,10 @@ async function saved(page, path, text) {
     await josh.getByRole("button", { name: "Add project" }).first().click();
     await josh.fill('input[name="title"]', title);
     await josh.fill('textarea[name="summary"]', "A small open-loop wind tunnel for testing fin shapes.");
+    // Adding a project goes in steps (lib/project-steps.ts): the specs are on the last one.
+    const dialog = josh.locator("dialog[open]");
+    await dialog.getByRole("button", { name: "Next" }).click();
+    await dialog.getByRole("button", { name: "Next" }).click();
     await josh.locator('input[name="spec_label"]').first().fill("Test section");
     await josh.locator('input[name="spec_value"]').first().fill("30 × 30 cm");
     await josh.getByRole("button", { name: "Add project" }).last().click();

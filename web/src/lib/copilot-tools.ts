@@ -10,6 +10,7 @@ import { ALL_TOPICS, requestTime } from "@/lib/forge";
 import { loadClubReport } from "@/lib/club-report";
 import { GitHubError, fetchRepo, fetchUser, matchTopics, parseRepo, parseUser } from "@/lib/connectors/github";
 import { loadGuide } from "@/lib/guide";
+import { cleanClubDraft } from "@/lib/torch-club";
 import { buildBuilders, rankBuilders, type Person, type VerifiedRow } from "@/lib/talent";
 import type { createClient } from "@/lib/supabase/server";
 
@@ -197,6 +198,11 @@ export const TOOLS: Anthropic.Tool[] = [
     name: "github_user",
     description: "A public GitHub profile and their most recently pushed repositories (not forks).",
     input_schema: { type: "object", properties: { username: { type: "string" } }, required: ["username"] },
+  },
+  {
+    name: "propose_club",
+    description: "Prepare starting a new club, project team or study group with the member as its owner, when they ask to start or create one. name 3-60 chars; about (what it's for) <= 500; type: field (a community around a field), project (a team building something) or study (a study group for one course: course like CHEM 201 is required, term defaults to this one, meets is when and where); field from the member's field or \"Any field\"; up to 3 topics; privacy public (anyone joins) or approval (they approve who joins). Ask for the course if a study group has none. It is NOT created until they confirm.",
+    input_schema: { type: "object", properties: { name: { type: "string" }, about: { type: "string" }, type: { type: "string", enum: ["field", "project", "study"] }, field: { type: "string" }, topics: { type: "array", items: { type: "string" } }, privacy: { type: "string", enum: ["public", "approval"] }, course: { type: "string" }, term: { type: "string" }, meets: { type: "string" } }, required: ["name", "about", "type"] },
   },
   {
     name: "propose_project",
@@ -718,6 +724,12 @@ export function makeExec(db: DB, userId: string, onProposal: (p: Proposal) => vo
         const u = parseUser(String(a.username ?? ""));
         if (!u) return { error: "Give a GitHub username." };
         try { return await fetchUser(u); } catch (e) { return { error: e instanceof GitHubError ? e.message : "GitHub lookup failed." }; }
+      }
+      case "propose_club": {
+        const d = cleanClubDraft(a, Date.now());
+        if ("error" in d) return d;
+        propose({ id: pid(), kind: "club", ...d });
+        return SHOWN;
       }
       case "propose_project": {
         const title = typeof a.title === "string" ? a.title.trim().slice(0, 120) : "";
