@@ -72,7 +72,7 @@ To build:
 - ✅ Ember in the ⌘K command palette and sidebar (type a request, it opens Ember with it); contextual entry points on Events ("Plan it with Ember") and Projects (GitHub import).
 - ✅ Tests proving Ember can't write without an Approve tap and can never verify (web/tests, `npm test`).
 - 🟡 Torch (the assistant, renamed from Ember) follows a job through ([spec](superpowers/specs/2026-11-26-ember-follow-through-design.md)). ✅ Torch hears what happened to its cards (confirmed, dismissed, refused), the Ask Torch bar keeps its thread and saves it from the second turn, and an answer cut off for length says so (`lib/ember-thread.ts`; tests `ember-thread`, `ember-agent`, `ember-bar`). ✅ Choice buttons: Torch asks with 2 to 4 answers to tap, in the bar and on its page (`offer_choices`). ✅ Carrying on after a yes: a confirmed card's next step, or a tapped answer, sets Torch going by itself, free up to 3 times after each ask (`supabase/ember-follow.sql`, step 107).
-- ✅ Torch's numbers on `/admin` (`supabase/ember-card-counts.sql`, step 108): members using Torch, questions, free follow-ups, and cards prepared, confirmed, dismissed and refused, for the last 7 days against the 7 before. Counts only, never what anyone said, never one member's numbers.
+- ✅ Torch's numbers on `/admin` (`supabase/ember-card-counts.sql`, step 109): members using Torch, questions, free follow-ups, and cards prepared, confirmed, dismissed and refused, for the last 7 days against the 7 before. Counts only, never what anyone said, never one member's numbers.
 
 ## Phase 7: trust and safety
 

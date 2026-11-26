@@ -58,7 +58,7 @@ async function Admin() {
     supabase.from("club_claims").select("id, community_id, role_title, evidence, created_at, communities(name, owner_name), profiles!club_claims_claimant_fkey(first_name, last_name)").eq("status", "open").order("created_at", { ascending: true }).limit(50),
     // The launch numbers (step 92). Until it runs, this errors and the panel stays hidden.
     supabase.rpc("admin_launch_metrics"),
-    // Torch's numbers (step 108). Until it runs, this errors and the panel stays hidden.
+    // Torch's numbers (step 109). Until it runs, this errors and the panel stays hidden.
     supabase.rpc("admin_torch_metrics")
   ]);
   type Claim = { id: number; community_id: string; role_title: string; evidence: string; created_at: string; communities: { name: string; owner_name: string } | null; profiles: { first_name: string; last_name: string } | null };

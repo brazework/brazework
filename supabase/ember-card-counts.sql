@@ -1,4 +1,4 @@
--- Step 108: how Torch is doing, in numbers only (Josh, 26 Nov 2026: "measure first"). For each member
+-- Step 109: how Torch is doing, in numbers only (Josh, 26 Nov 2026: "measure first"). For each member
 -- and day: questions asked, free follow-ups used, cards Torch prepared, cards confirmed, dismissed or
 -- refused, and sets of answer buttons offered. Never what anyone said or what a card held.
 --
