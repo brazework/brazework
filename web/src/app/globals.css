@@ -254,16 +254,16 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity
   background: linear-gradient(var(--surface), var(--surface)) padding-box, linear-gradient(var(--border), var(--border)) border-box;
   &:hover, &:focus-within { background: linear-gradient(var(--surface), var(--surface)) padding-box, linear-gradient(var(--border-strong), var(--border-strong)) border-box; }
 }
-/* The app's backdrop: the theme's glow from the top corners, fixed while content scrolls. */
-/* The app's ground (glass, 2026-11-26): the page colour under two soft, still lights (copper from the top
-   left, a cool tone from the bottom right), fixed so they don't move as you scroll. They are what the
-   glass sidebar frosts over; the page itself stays calm. */
+/* The app's ground (2026-11-26, Josh: "cleaner and high quality, I don't really like the dark blue and
+   orange"): the theme's own page colour with one soft, neutral light from the top, fixed while content
+   scrolls. No coloured lights: inside the app, colour means proof (the verified green) and Torch. The
+   glass sidebar and cards still have something to catch: the light, and their own bright top edge. */
+:root { --ground-light: rgba(255, 255, 255, 0.85); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --ground-light: rgba(255, 255, 255, 0.05); } }
+:root[data-theme="dark"] { --ground-light: rgba(255, 255, 255, 0.05); }
 @utility app-backdrop {
   background-color: var(--bg);
-  background-image:
-    radial-gradient(1000px 620px at -6% -10%, color-mix(in oklab, var(--brand) 30%, transparent), transparent 68%),
-    radial-gradient(760px 560px at 64% 34%, color-mix(in oklab, #9b7cf0 13%, transparent), transparent 70%),
-    radial-gradient(900px 620px at 106% 108%, color-mix(in oklab, #5b7cfa 26%, transparent), transparent 68%);
+  background-image: radial-gradient(1200px 640px at 50% -14%, var(--ground-light), transparent 70%);
   background-attachment: fixed;
 }
 
@@ -410,18 +410,21 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity
   backdrop-filter: blur(20px) saturate(1.5);
   -webkit-backdrop-filter: blur(20px) saturate(1.5);
 }
-/* The default banner on a profile, a club and a project (2026-11-26): a smooth dark surface in both
-   themes, lit in copper (or the club's accent, --cover-tint) from the top right. No grid and no line
-   drawings anywhere on a banner (the founders' call): a photo, or this light. */
+/* The default banner on a profile, a club and a project: a smooth graphite surface in both themes, with
+   a soft white light from the top right (2026-11-26: no copper or blue, like the page ground). A club
+   that picked an accent colour (--cover-tint, set on the club page) gets its colour in that light,
+   a little stronger. No grid and no line drawings anywhere on a banner (the founders' call): a photo, or
+   this light. */
 .cover-blueprint {
-  --cover-tint: #e8946a;
+  --cover-tint: #ffffff;
+  --cover-strength: 13%;
   color: #ededef;
   background:
-    radial-gradient(70% 170% at 88% -15%, color-mix(in oklab, var(--cover-tint) 44%, transparent), transparent 60%),
-    radial-gradient(55% 150% at -5% 115%, rgb(91 124 250 / 0.2), transparent 62%),
-    radial-gradient(40% 90% at 55% 120%, color-mix(in oklab, var(--cover-tint) 14%, transparent), transparent 70%),
-    linear-gradient(180deg, #16171c, #0b0c0e);
+    radial-gradient(70% 170% at 88% -15%, color-mix(in oklab, var(--cover-tint) var(--cover-strength), transparent), transparent 60%),
+    radial-gradient(40% 90% at 55% 120%, color-mix(in oklab, var(--cover-tint) 5%, transparent), transparent 70%),
+    linear-gradient(180deg, #1b1c20, #0d0e10);
 }
+.cover-blueprint[style*="--cover-tint"] { --cover-strength: 30%; }
 /* A profile with no cover yet: a soft light in the theme's own colours (no grid, no lines). */
 .cover-empty {
   background:
