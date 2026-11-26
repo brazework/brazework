@@ -1,11 +1,9 @@
 import { ArrowRight, BadgeCheck, BarChart3, Briefcase, ClipboardCheck, GraduationCap, Landmark, Users } from "lucide-react";
 import Link from "next/link";
-import { CAMPUS_BANDS, SCHOOL } from "@/lib/pricing";
 
 // The landing page's short sections (redesign 2026-11; schools first since 2026-11-26, see
 // docs/strategy.md; Brazework Courses since 2026-11-26). The hero does the showing; ForSchools is the
-// one band that speaks to the school that pays (and to anyone weighing the business: how a school
-// grows from one course to the campus), and /schools says the rest. Audiences says who it's for and where each starts.
+// one band that speaks to the school that pays; /schools says the rest and /pricing has the prices. Audiences says who it's for and where each starts.
 
 export const H2 = "text-[clamp(2rem,4.4vw,3.25rem)] leading-[1.03] font-semibold tracking-[-0.04em] text-balance";
 
@@ -18,22 +16,15 @@ export const SCHOOL_OUTCOMES = [
   { icon: Landmark, office: "Admissions", title: "A public showcase", body: "Your verified clubs and what your students are building right now, for prospective students and donors.", soon: false },
 ];
 
-const usd = (n: number) => "$" + n.toLocaleString("en-US");
-const GROW = [
-  { step: "One course, one semester", price: "A " + usd(SCHOOL.pilot) + " pilot, credited to year one" },
-  { step: "The department", price: usd(SCHOOL.department) + " a year" },
-  { step: "The campus", price: "From " + usd(CAMPUS_BANDS[0].price) + " a year, every department" },
-];
-
 export function ForSchools() {
   return (
-    <section id="schools" aria-labelledby="schools-h" className="schools-band relative isolate scroll-mt-20 overflow-hidden border-y border-line py-14 text-text md:py-20">
+    <section id="schools" aria-labelledby="schools-h" className="schools-band relative isolate scroll-mt-20 overflow-hidden border-y border-line py-16 text-text md:py-24">
       <div aria-hidden="true" className="hero-glow pointer-events-none absolute inset-0 -z-10 opacity-70" />
       <div className="mx-auto max-w-6xl px-5 sm:px-6">
         <p className="inline-flex items-center gap-2 font-mono text-xs text-faint"><GraduationCap className="size-3.5" aria-hidden="true" /> For schools</p>
         <h2 id="schools-h" className={`${H2} mt-4 max-w-[22ch]`}>Your students&apos; project work, verified by the people who saw it.</h2>
         <p className="mt-5 max-w-[40rem] text-lg leading-relaxed text-muted">Brazework is where your project courses run and your clubs build. Faculty grade and verify in one step, each office gets the evidence it&apos;s measured on, and students and clubs never pay.</p>
-        <ul className="mt-8 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-line bg-line md:mt-10 lg:grid-cols-4">
+        <ul className="reveal mt-8 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-line bg-line md:mt-10 lg:grid-cols-4">
           {SCHOOL_OUTCOMES.map((o) => (
             <li key={o.title} className="flex flex-col bg-surface p-4 sm:p-6">
               <span className="flex items-center justify-between gap-3">
@@ -46,19 +37,12 @@ export function ForSchools() {
             </li>
           ))}
         </ul>
-        {/* How a school grows on it: one course, then the department, then the campus. */}
-        <ol aria-label="How a school starts" className="mt-6 grid grid-cols-1 gap-2 sm:grid-cols-3 md:mt-8">
-          {GROW.map((g, i) => (
-            <li key={g.step} className="flex items-baseline gap-3 rounded-xl border border-line bg-surface/70 px-4 py-3">
-              <span className="font-mono text-[11px] text-faint">{i + 1}</span>
-              <span className="min-w-0"><span className="block text-[15px] font-semibold tracking-tight">{g.step}</span><span className="block text-sm text-muted">{g.price}</span></span>
-            </li>
-          ))}
-        </ol>
-        <p className="mt-4 max-w-[46rem] text-sm leading-relaxed text-muted"><BarChart3 className="mr-1.5 inline size-4 align-[-3px]" aria-hidden="true" />Every course that moves adds verified work to the record, which is what students keep, schools report and employers search. Never priced per student or per club.</p>
-        <div className="mt-6 flex flex-wrap items-center gap-3">
-          <Link href="/schools" className="inline-flex h-11 items-center gap-1.5 rounded-lg bg-accent px-5 text-[15px] font-medium text-on-accent transition hover:opacity-90">See what schools get <ArrowRight className="size-4" aria-hidden="true" /></Link>
-          <Link href="#pilot" className="inline-flex h-11 items-center rounded-lg border border-line-strong px-5 text-[15px] transition hover:bg-hover">Start a pilot</Link>
+        <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-4">
+          <div className="flex flex-wrap items-center gap-3">
+            <Link href="/schools" className="inline-flex h-11 items-center gap-1.5 rounded-lg bg-accent px-5 text-[15px] font-medium text-on-accent transition hover:opacity-90">See what schools get <ArrowRight className="size-4" aria-hidden="true" /></Link>
+            <Link href="#pilot" className="inline-flex h-11 items-center rounded-lg border border-line-strong px-5 text-[15px] transition hover:bg-hover">Start a pilot</Link>
+          </div>
+          <p className="text-sm text-muted"><BarChart3 className="mr-1.5 inline size-4 align-[-3px]" aria-hidden="true" />Priced per school, never per student or club. <Link href="/pricing" className="font-medium text-text underline-offset-4 hover:underline">See pricing</Link></p>
         </div>
       </div>
     </section>
@@ -73,12 +57,12 @@ const FOR = [
 
 export function Audiences() {
   return (
-    <section id="for" aria-labelledby="for-h" className="scroll-mt-20 py-14 md:py-20">
+    <section id="for" aria-labelledby="for-h" className="scroll-mt-20 py-16 md:py-24">
       <div className="mx-auto max-w-6xl px-5 sm:px-6">
         <h2 id="for-h" className={H2}>Who it&apos;s for</h2>
-        <ul className="mt-8 grid grid-cols-1 gap-4 md:mt-10 md:grid-cols-3">
+        <ul className="reveal mt-8 grid grid-cols-1 gap-4 md:mt-10 md:grid-cols-3">
           {FOR.map((f) => (
-            <li key={f.who} className="flex flex-col rounded-2xl border border-line bg-surface p-5 md:p-6">
+            <li key={f.who} className="flex flex-col rounded-2xl border border-line bg-surface p-5 transition duration-300 hover:border-line-strong hover:bg-hover md:p-6">
               <span className="flex items-center gap-3 md:block">
                 <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-surface-2 text-text-2"><f.icon className="size-5" aria-hidden="true" /></span>
                 <h3 className="text-xl font-semibold tracking-tight md:mt-5">{f.who}</h3>

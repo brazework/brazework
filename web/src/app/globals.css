@@ -669,6 +669,14 @@ select option { background-color: var(--surface); color: var(--text); }
 }
 /* The product window's edge: a lit top rim in dark, a clean card on paper. */
 .hero-window { box-shadow: var(--shadow-float), inset 0 1px 0 var(--window-rim, transparent); }
+/* Landing sections rise in as they arrive (scroll-driven, on the compositor: no script, no layout
+   shift). Browsers without scroll timelines, and reduced motion, show them as they are. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .landing .reveal { animation: landing-rise linear both; animation-timeline: view(); animation-range: entry 0% entry 55%; }
+  }
+}
+@keyframes landing-rise { from { opacity: 0; transform: translateY(28px); } }
 /* The band for schools: a warm tint of the page, so it stands apart in both themes. */
 .schools-band { background: color-mix(in oklab, var(--brand) 5%, var(--surface-2)); }
 /* The hero's product window (components/landing/hero.tsx): its five views share one body of a fixed
