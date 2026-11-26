@@ -148,3 +148,15 @@ test("Carry on offers the next steps of confirmed cards only; free follow-ups ar
   assert.equal(followsAfter(2, true, true), 0, "a refused follow means none are left");
   assert.equal(FOLLOWS_PER_ASK, 3);
 });
+
+// A card hands a question to the Ask Torch bar (the goal card's "Do it with Torch").
+import { TORCH_ASK, askTorch } from "@/lib/ember-bar";
+test("askTorch sends the trimmed question to the bar as one event, and nothing when it's empty", () => {
+  const got: string[] = [];
+  const g = globalThis as unknown as { window?: EventTarget };
+  const had = g.window; g.window = new EventTarget();
+  g.window.addEventListener(TORCH_ASK, (e) => got.push((e as CustomEvent<string>).detail));
+  askTorch("  Plan my week  "); askTorch("   ");
+  g.window = had;
+  assert.deepEqual(got, ["Plan my week"]);
+});

@@ -1,13 +1,14 @@
 "use client";
 import { emberCreditCost } from "@/lib/ember-credits";
-import { ArrowRight, Check, Flag, Flame, Loader2, MoreHorizontal, PartyPopper, Search, BadgeCheck, Hammer } from "lucide-react";
+import { ArrowRight, Check, Flag, Flame, Loader2, MoreHorizontal, PartyPopper, Search, BadgeCheck, Hammer, Sparkles, CalendarCheck } from "lucide-react";
 import Link from "next/link";
 import { useState, useSyncExternalStore, useTransition } from "react";
 import { CopyLink } from "@/components/app/copy-link";
 import { Button, inputCls } from "@/components/ui";
 import { cn } from "@/lib/forge";
 import { dropGoal, reachGoal, setGoal } from "@/lib/goal-actions";
-import { GOAL_KINDS, goalPath, goalTitle, isGoalKind, type Goal, type GoalKind, type Record_ } from "@/lib/goals";
+import { askTorch } from "@/lib/ember-bar";
+import { GOAL_KINDS, goalPath, goalTitle, isGoalKind, torchGoalFrom, torchNext, torchWeek, type Goal, type GoalKind, type Record_ } from "@/lib/goals";
 
 // Your goal (Linear FIX-95), on your profile and Home: pick what you're working toward, see your path
 // to it (built from your real record), the one next step, and close it when you get there. A goal
@@ -28,6 +29,7 @@ function GoalPicker({ current, reached, onDone, compact }: { current: Goal | nul
   const suggested = useSyncExternalStore(() => () => {}, () => { try { return localStorage.getItem(SUGGESTED); } catch { return null; } }, () => null);
   const kind = picked ?? (!current && isGoalKind(suggested) ? suggested : null);
   const [target, setTarget] = useState(current?.target ?? "");
+  const [words, setWords] = useState("");
   const [visible, setVisible] = useState(current?.visible ?? true);
   const [msg, setMsg] = useState("");
   const [pending, start] = useTransition();
@@ -44,7 +46,13 @@ function GoalPicker({ current, reached, onDone, compact }: { current: Goal | nul
         </p>
       )}
       <h2 className="flex items-center gap-2 font-semibold"><Flag className="size-4" /> {current ? "Change your goal" : reached ? "What's next?" : "What are you working toward?"}</h2>
-      <p className="mt-1 text-sm text-muted">Pick one. Your path to it, and the next step, come from what&apos;s on your record.</p>
+      <p className="mt-1 text-sm text-muted">Say it in your own words and Torch sets it up from your record, or pick one.</p>
+      <form className="mt-3 flex gap-2" onSubmit={(e) => { e.preventDefault(); const a = torchGoalFrom(words); if (a) { askTorch(a.prompt); setWords(""); } }}>
+        <label className="sr-only" htmlFor="goal-words">Where are you headed?</label>
+        <input id="goal-words" value={words} onChange={(e) => setWords(e.target.value)} maxLength={200} placeholder="e.g. a summer internship at a robotics startup" className={cn(inputCls, "min-w-0 flex-1")} />
+        <Button type="submit" disabled={!torchGoalFrom(words)} aria-label={`Ask Torch to set it up, ${emberCreditCost("ask")}`}><Sparkles className="size-4" /> Ask Torch</Button>
+      </form>
+      <p className="mt-1.5 text-xs text-faint">Torch drafts the goal as a card you approve · {emberCreditCost("ask")}</p>
       <div role="radiogroup" aria-label="Goal" className="mt-3 flex flex-wrap gap-1.5">
         {(Object.keys(GOAL_KINDS) as GoalKind[]).map((k) => (
           <button key={k} type="button" role="radio" aria-checked={kind === k} onClick={() => setKind(k)}
@@ -75,6 +83,7 @@ function GoalPicker({ current, reached, onDone, compact }: { current: Goal | nul
 
 function GoalPath({ goal, record, profileId, onChange, compact }: { goal: Goal; record: Record_; profileId: string; onChange: () => void; compact: boolean }) {
   const { steps, done, next } = goalPath(goal, record);
+  const torch = torchNext(goal, record), week = torchWeek(goal);
   const [menu, setMenu] = useState(false);
   const [reaching, setReaching] = useState(false);
   const [note, setNote] = useState("");
@@ -129,10 +138,19 @@ function GoalPath({ goal, record, profileId, onChange, compact }: { goal: Goal; 
           </ol>
           <div className="mt-3 rounded-xl bg-[color-mix(in_oklab,#f28c28_10%,transparent)] px-3 py-2.5 text-[13px] leading-snug">
             <p className="flex items-start gap-2"><Flame className="mt-0.5 size-4 shrink-0 text-[#f28c28]" /><span><b className="font-semibold text-[#c2410c] dark:text-[#f28c28]">Next step:</b> <span className="text-text-2">{next.text}</span></span></p>
-            <div className="mt-2 flex flex-wrap items-center gap-3 pl-6">
-              {next.href === "share" ? <CopyLink path={`/u/${profileId}`} label={next.action} /> : <Link href={next.href} className="inline-flex items-center gap-1 text-sm font-medium hover:underline">{next.action} <ArrowRight className="size-3.5" /></Link>}
-              <Link href={`/copilot?q=${encodeURIComponent(`Help me plan my next step toward ${goalTitle(goal)}.`)}`} className="text-sm text-muted hover:text-text hover:underline">Ask Torch · {emberCreditCost("ask")}</Link>
+            {/* Torch does it: the ask opens in the Ask Torch bar, with cards to approve (FIX-95, 26 Nov). */}
+            <div className="mt-2.5 flex flex-wrap items-center gap-2 pl-6">
+              <button type="button" onClick={() => askTorch(torch.prompt)} className="inline-flex h-8 items-center gap-1.5 rounded-lg bg-text px-3 text-sm font-medium text-bg transition hover:opacity-90 active:scale-95">
+                <Sparkles className="size-3.5" /> {torch.label}
+              </button>
+              {next.href === "share" ? <CopyLink path={`/u/${profileId}`} label={next.action} /> : <Link href={next.href} className="inline-flex items-center gap-1 text-sm font-medium text-text-2 hover:text-text hover:underline">{next.action} <ArrowRight className="size-3.5" /></Link>}
             </div>
+            <p className="mt-1.5 pl-6 text-xs text-faint">Torch drafts it; nothing happens until you approve · {emberCreditCost("ask")}</p>
+          </div>
+          <div className="mt-2 flex justify-end">
+            <button type="button" onClick={() => askTorch(week.prompt)} className="inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-medium text-muted transition hover:bg-hover hover:text-text">
+              <CalendarCheck className="size-3.5" /> {week.label}
+            </button>
           </div>
         </>
       )}
