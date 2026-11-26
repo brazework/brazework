@@ -17,14 +17,24 @@ import { LinkCards } from "@/components/copilot/link-cards";
 import { forgeLinks, splitNext } from "@/lib/copilot-text";
 import { emberActions, emberGreeting, type EmberAction } from "@/lib/ember-actions";
 import type { NextStep } from "@/lib/ember-record";
+import { CARD_LABEL, MAX_TURN, cardsOf, savedCards, type CardOutcome, type ThreadTurn } from "@/lib/ember-thread";
 import { deleteAllChats, deleteChat, loadChat, rateAnswer, saveChat, type ChatSummary, type SavedMsg } from "@/lib/copilot-chats";
 
-type Msg = { role: "user" | "assistant"; content: string; tools?: string[]; proposals?: Proposal[]; segments?: Segment[]; cards?: string[]; next?: string[] };
+// `outcomes`: a saved chat's cards and what happened to them (a live answer has `proposals` instead).
+type Msg = { role: "user" | "assistant"; content: string; tools?: string[]; proposals?: Proposal[]; segments?: Segment[]; cards?: string[]; next?: string[]; outcomes?: CardOutcome[] };
+// What happened to each card on screen, by the card's id (lib/ember-thread.ts).
+type Done = Record<string, CardOutcome>;
+const cardsFor = (m: Msg, done: Done): CardOutcome[] => (m.proposals?.length ? cardsOf(m.proposals, done) : m.outcomes ?? []);
+// The chat so far as Torch gets it: the words of each turn, and what became of each answer's cards.
+const toHistory = (msgs: Msg[], done: Done): ThreadTurn[] => msgs.slice(-10).map((m) => {
+  const cards = m.role === "assistant" ? cardsFor(m, done) : [];
+  return { role: m.role, content: m.content.slice(0, MAX_TURN), ...(cards.length ? { cards } : {}) };
+});
 
 // What a card Torch prepared is called once the chat is saved (saved chats keep a label, never a
 // live card that could be confirmed twice).
-const CARD_LABEL: Record<Proposal["kind"], string> = { goal: "a goal", memory: "something to remember", post: "a post", milestone: "a milestone to verify", signature: "an ask to sign", join: "joining a club", follow: "a follow", event: "a club event", club_post: "a club post", project: "a project", review: "a milestone review", rsvp: "an RSVP", message: "a message", project_edit: "a project update", teammate: "a teammate", invite: "a club invite" };
-const toSaved = (m: Msg): SavedMsg => ({ role: m.role, content: m.content, tools: m.tools, cards: [...(m.cards ?? []), ...(m.proposals ?? []).map((p) => CARD_LABEL[p.kind])] });
+// (CARD_LABEL lives in lib/ember-thread.ts, shared with the note Torch reads.)
+const toSaved = (done: Done) => (m: Msg): SavedMsg => ({ role: m.role, content: m.content, tools: m.tools, cards: [...(m.cards ?? []), ...(m.proposals ?? []).map((p) => CARD_LABEL[p.kind])], outcomes: cardsFor(m, done) });
 const ago = (iso: string) => {
   const d = (Date.now() - new Date(iso).getTime()) / 86400000;
   return d < 1 ? "Today" : d < 2 ? "Yesterday" : d < 7 ? `${Math.floor(d)} days ago` : new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
@@ -138,6 +148,12 @@ export function CopilotChat({ first, field, student = true, initial = "", initia
   const [showHistory, setShowHistory] = useState(false);
   const [historyCollapsed, setHistoryCollapsed] = useState(false);
   const [input, setInput] = useState("");
+  // What happened to each card (confirmed, dismissed, refused), so Torch knows on its next turn and a
+  // saved chat remembers. Kept apart from `msgs`: a card can be confirmed while a new answer streams.
+  const [done, setDone] = useState<Done>({});
+  const doneNow = useRef(done);
+  useEffect(() => { doneNow.current = done; }, [done]);
+  const onOutcome = (id: string, o: CardOutcome) => setDone((d) => ({ ...d, [id]: o }));
   // Follows the answer down as it grows, only while you're at the bottom: scroll up to read and it
   // stays put (redesign 2026-11; it used to start a smooth scroll on every streamed chunk).
   const thread = useRef<HTMLDivElement>(null);
@@ -154,7 +170,7 @@ export function CopilotChat({ first, field, student = true, initial = "", initia
     setMsgs([...before, asked, last]);
     setInput("");
     follow();
-    const out = await run({ task: "ask", input: q, preset, history: before.slice(-10).map(({ role, content }) => ({ role, content })) }, (full, tools, proposals, segments) => {
+    const out = await run({ task: "ask", input: q, preset, history: toHistory(before, doneNow.current) }, (full, tools, proposals, segments) => {
       const { text: body, next } = splitNext(full);
       last = { role: "assistant", content: body, tools, proposals, segments, next };
       setMsgs([...before, asked, last]);
@@ -162,12 +178,19 @@ export function CopilotChat({ first, field, student = true, initial = "", initia
     if (out === null && !last.content) { setMsgs(before); return; }
     if (!saving || !last.content) return;
     // Keep the chat (only you can see it). The URL follows, so a refresh brings it back.
-    const r = await saveChat(chatId, [...before, asked, last].map(toSaved)).catch(() => null);
+    const r = await saveChat(chatId, [...before, asked, last].map(toSaved(doneNow.current))).catch(() => null);
     if (!r?.id) return;
     const id = r.id;
     if (id !== chatId) { setChatId(id); window.history.replaceState(null, "", `/copilot?chat=${id}`); }
     setList((l) => [{ id, title: r.title, updated_at: new Date().toISOString() }, ...l.filter((c) => c.id !== id)]);
   };
+  // A card answered after the chat was saved: save again, so opening the chat later still knows.
+  // (While an answer is streaming, the save at its end carries it.)
+  useEffect(() => {
+    if (!saving || !chatId || busy || !Object.keys(done).length) return;
+    void saveChat(chatId, msgs.map(toSaved(done))).catch(() => null);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [done]);
   // Arrived from search with a question (/copilot?q=…): ask it once.
   const askedInitial = useRef(false);
   useEffect(() => {
@@ -280,10 +303,10 @@ export function CopilotChat({ first, field, student = true, initial = "", initia
                         <div className="glass-card rounded-2xl rounded-tl-md px-4 py-3 text-[15px] leading-relaxed whitespace-pre-wrap text-text-2">
                           <Lookups tools={m.tools} live={live} />
                           {m.content || m.proposals?.length
-                            ? <EmberReply text={m.content} proposals={m.proposals} segments={m.segments} live={live} />
+                            ? <EmberReply text={m.content} proposals={m.proposals} segments={m.segments} live={live} cardProps={{ onOutcome }} />
                             : live && !m.tools?.length ? <Thinking /> : null}
                           {!live && m.content && <LinkCards paths={forgeLinks(m.content)} />}
-                          {!m.proposals?.length && m.cards?.length ? <p className="mt-3 text-xs text-faint">Drafted for you: {m.cards.join(", ")}</p> : null}
+                          {!m.proposals?.length && m.cards?.length ? <p className="mt-3 text-xs text-faint">Drafted for you: {m.outcomes?.length ? savedCards(m.outcomes) : m.cards.join(", ")}</p> : null}
                         </div>
                         {m.content && !live && (
                           <div className="relative mt-1.5 ml-2 flex items-center gap-0.5">

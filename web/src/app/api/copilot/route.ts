@@ -6,6 +6,7 @@ import { pageLine } from "@/lib/copilot-page";
 import { presetInstruction } from "@/lib/copilot-presets";
 import { TOOLS, makeExec } from "@/lib/copilot-tools";
 import { takeEmberCredits } from "@/lib/ember-quota";
+import { threadMessages } from "@/lib/ember-thread";
 import { viewerFromToken } from "@/lib/supabase/server";
 
 // POST /api/copilot: streams Copilot's reply as plain text, so it types out live in the UI.
@@ -33,7 +34,8 @@ export async function POST(req: Request) {
   if (!credits.ok) return json(credits.status, credits.message);
 
   const { instructions, maxTokens } = taskPrompt(r);
-  const messages: Anthropic.MessageParam[] = [...(r.history ?? []), { role: "user", content: r.input }];
+  // What happened to the cards of each earlier answer goes in with the turn after it (lib/ember-thread.ts).
+  const messages: Anthropic.MessageParam[] = threadMessages(r.history ?? [], r.input);
   const client = await claudeClient();
   // Asked from the bar on a project, club or event page: what that page is, read as the member.
   const here = r.task === "ask" ? await pageLine(ctx.supabase, ctx.userId, r.page) : "";

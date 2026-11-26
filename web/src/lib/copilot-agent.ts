@@ -26,7 +26,6 @@ export const TOOL_LABEL: Record<string, { doing: string; done: string }> = {
   club_report: { doing: "Reading this week's club report", done: "the club report" },
   verify_queue: { doing: "Checking the verification queue", done: "the verify queue" },
   propose_club_post: { doing: "Drafting a club post", done: "a club post draft" },
-  propose_review: { doing: "Preparing a review", done: "a review draft" },
   github_repo: { doing: "Reading the GitHub repo", done: "GitHub" },
   github_user: { doing: "Looking at their GitHub", done: "GitHub" },
   propose_project: { doing: "Drafting a project", done: "a project draft" },
@@ -76,6 +75,13 @@ export function emberSystem(rules: string, rest: string): Anthropic.TextBlockPar
   return rest.trim() ? [fixed, { type: "text", text: rest }] : [fixed];
 }
 
+// Rounds of tools in one answer: enough to read GitHub, read the record and prepare a card or two.
+export const MAX_ROUNDS = 6;
+// What the member reads when an answer is cut off. Said out loud: the loop used to return without a
+// word, so an answer cut off mid-card would read as a card that never came.
+export const OUT_OF_ROOM = "[Torch ran out of room on that one. Ask for it in smaller pieces.]";
+export const OUT_OF_ROUNDS = "[Torch reached its lookup limit for one answer. Try a narrower question.]";
+
 export async function runAgent(opts: {
   client: Anthropic;
   model: string;
@@ -88,7 +94,7 @@ export async function runAgent(opts: {
   maxTokens?: number;
   signal?: AbortSignal;
 }) {
-  const { client, model, system, tools, exec, emit, maxRounds = 4, maxTokens = 1000, signal } = opts;
+  const { client, model, system, tools, exec, emit, maxRounds = MAX_ROUNDS, maxTokens = 1000, signal } = opts;
   const messages = [...opts.messages];
   // What Claude writes before a tool and after it are separate thoughts, but they arrive as one run
   // of text ("…on the card.I've put together…"). The first text after a tool starts a new paragraph,
@@ -113,6 +119,8 @@ export async function runAgent(opts: {
       if (ev.type === "content_block_delta" && ev.delta.type === "text_delta") say(ev.delta.text);
     }
     const final = await stream.finalMessage();
+    // Out of tokens mid-answer or mid-card: a half-written card can't be shown, so say what happened.
+    if (final.stop_reason === "max_tokens") { emit({ type: "text", text: `\n\n${OUT_OF_ROOM}` }); return; }
     if (final.stop_reason !== "tool_use") return;
     afterTool = true;
     const uses = final.content.filter((b): b is Anthropic.ToolUseBlock => b.type === "tool_use");
@@ -130,7 +138,7 @@ export async function runAgent(opts: {
     }
     messages.push({ role: "user", content: results });
   }
-  emit({ type: "text", text: "\n\n[Copilot reached its lookup limit for one answer. Try a narrower question.]" });
+  emit({ type: "text", text: `\n\n${OUT_OF_ROUNDS}` });
 }
 
 // The text stream carries status events between record separators (\u001E), which never appear in
