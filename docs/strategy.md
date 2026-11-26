@@ -67,7 +67,7 @@ Grades live on Brazework now, privately: a grade is seen by the student and the 
 
 **Courses, in phases (each shippable):**
 - *A. The course core (built 2026-11-26: `supabase/courses.sql`, the class's Course page):* modules with pages, files and links; assignments (due date, points, individual or group, a rubric; submit files, links, text or a project milestone); grading with rubric scores and feedback, released when the professor chooses; a gradebook; announcements; each student's calendar of what's due.
-- *B. Running a course:* quizzes with automatic marking, attendance, late and extension rules (including accommodations), peer evaluation, ABET outcomes on rubric rows, grade export for the registrar, discussion threads per module.
+- *B. Running a course (built 2026-11-26: `supabase/courses-b.sql`):* quizzes with automatic marking and a hidden answer key, attendance with check-in codes, extensions and accommodations, peer evaluation, ABET outcome attainment for the course and the school (aggregates only, with a CSV for the self-study), grade export for the registrar. Still to come: discussion threads per module.
 - *C. What a campus needs to switch:* single sign-on (SAML), roster sync from the student information system, importing a Canvas or Blackboard course (Common Cartridge), LTI so publisher tools plug in, an accessibility audit (WCAG 2.1 AA, a VPAT), and the mobile app.
 
 Honest risk: an LMS is a campus-wide decision with procurement, accessibility and integration requirements, and incumbents have years of features. Win it course by course: a professor moves one project course in a semester, the department sees it work, then the school. Phase C is what a campus-wide switch needs, so it isn't optional for the big contracts.
