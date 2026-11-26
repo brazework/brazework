@@ -39,12 +39,10 @@ const psql = (sql) => execSync(`docker exec -i forge-e2e-db psql -U postgres -h 
   await step("a visitor from Product Hunt is welcomed on the landing page", async () => {
     await go(page, "/?ref=producthunt");
     await page.getByRole("status", { name: "Welcome from Product Hunt" }).waitFor({ timeout: 15000 });
-    // Product Hunt's crowd ships software: the hero starts on the engineer's story (lib/launch.ts).
-    await page.getByRole("group", { name: "Ways people use Brazework" }).getByRole("button", { name: /^Software/, pressed: true }).waitFor({ timeout: 15000 });
     const box = page.locator("#hero-build");
     await hydrated(box);
     await box.fill(BUILD);
-    await page.getByRole("link", { name: /Log your first result/ }).first().click();
+    await page.locator("#top").getByRole("link", { name: /Get it signed/ }).click();
     await page.waitForURL((u) => u.pathname === "/signup", { timeout: 20000 });
     await page.getByRole("status", { name: "Welcome from Product Hunt" }).waitFor({ timeout: 15000 });
   }, page);
@@ -187,9 +185,7 @@ const psql = (sql) => execSync(`docker exec -i forge-e2e-db psql -U postgres -h 
       if (!details.includes(text)) throw new Error(`Ember pricing is missing ${text}`);
     }
   }, p3);
-  await step("the landing page shows both Ember balances and Plus explains the waitlist", async () => {
-    await go(p3, "/");
-    await p3.getByText(/15 Ember credits a day on Free and 50 on active Plus/).waitFor();
+  await step("Plus explains the waitlist and its Ember balance", async () => {
     await go(p3, "/plus");
     await p3.getByText(/Plus also includes 50 Ember credits a day/).waitFor();
     await p3.getByRole("link", { name: "Log in to join the waitlist" }).waitFor();

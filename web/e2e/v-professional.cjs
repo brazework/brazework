@@ -1,7 +1,7 @@
 // Someone who already works (Linear FIX-120). Brazework is for anyone who builds, so a professional
 // with no club isn't sent to "Find your club" or told to "Join your club": after onboarding they
 // land on Today, start with what they're building, and the next steps send them to a person who saw
-// it. The landing page says who signs for a student, an employee and someone on their own. Home asks
+// it. Home asks
 // what they're working on (no semester), and Settings lets anyone switch Studying ↔ Working.
 // The LinkedIn profile link (Linear FIX-214) is optional (supabase/linkedin-optional.sql, step 87):
 // offered in About you and Settings, never asked for where they ask, removable, kept private.
@@ -15,46 +15,6 @@ const psql = (sql) => execSync(`docker exec -i ${process.env.E2E_STACK || "forge
   const ctx = await b.newContext({ viewport: { width: 1440, height: 950 } });
   const page = await ctx.newPage(); page.errs = []; page.on("pageerror", (e) => page.errs.push(e.message));
   const email = `pat${Date.now() % 100000}@voltline.test`;
-
-  await step("landing: one record for someone studying, working and on their own, each with who signed", async () => {
-    await go(page, "/");
-    const who = page.locator("#who");
-    for (const h of ["Studying", "Working", "On your own"]) await who.getByRole("heading", { name: h, exact: true }).waitFor();
-    const signed = await who.getByText(/^Signed by /).count();
-    if (signed !== 3) throw new Error(`expected 3 signed examples, got ${signed}`);
-    await page.locator("#faq").getByRole("button", { name: "I already work. Is this for me?" }).waitFor();
-    const text = await page.locator("main").innerText();
-    if (/for students and clubs/i.test(text)) throw new Error("the landing page still says it's for students and clubs");
-  }, page);
-
-  await step("landing on a phone: the signer examples swipe inside a page that fits the screen", async () => {
-    const phone = await (await b.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true, reducedMotion: "reduce" })).newPage();
-    try {
-      await go(phone, "/");
-      const row = phone.getByRole("list", { name: "Who can sign your work" });
-      const headings = row.getByRole("heading");
-      const boxes = await headings.evaluateAll((els) => els.map((el) => {
-        const { left, top } = el.getBoundingClientRect();
-        return { left, top };
-      }));
-      if (boxes.length !== 3 || !boxes.every((box) => box.top === boxes[0].top) || boxes[0].left >= boxes[1].left || boxes[1].left >= boxes[2].left) {
-        throw new Error("expected three signer examples side by side");
-      }
-      const next = phone.locator("#who").getByRole("button", { name: "Next card" });
-      await hydrated(next);
-      for (const index of [2, 3]) {
-        await next.click();
-        await phone.locator("#who").getByText(`${index} of 3`, { exact: true }).waitFor({ timeout: 5000 });
-      }
-      const last = await headings.last().boundingBox();
-      const bounds = await row.boundingBox();
-      if (last.x < bounds.x - 1 || last.x + last.width > bounds.x + bounds.width + 1) throw new Error("the last signer is not fully reachable");
-      const wide = await phone.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
-      if (wide > 1) throw new Error(`the page scrolls sideways by ${wide}px`);
-    } finally {
-      await phone.context().close();
-    }
-  }, page);
 
   await step("sign up as a professional with a work email", async () => {
     await go(page, "/signup");

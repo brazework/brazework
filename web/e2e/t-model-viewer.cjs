@@ -1,5 +1,5 @@
-// The 3D viewer (components/projects/model-viewer.tsx, Linear FIX-98), and the landing page's CAD lab,
-// which loads nothing until it nears the screen. In the app, a member attaches a 3D
+// The 3D viewer (components/projects/model-viewer.tsx, Linear FIX-98). (The landing page's CAD hero is
+// checked in s-landing.cjs.) In the app, a member attaches a 3D
 // file to a project, opens it there, and opens it from the project's Build card. Where the browser
 // can't start WebGL (some CI machines) the viewer says so and still shows the model's size, so the
 // size is what every step checks; the controls are checked when the picture is there.
@@ -12,42 +12,6 @@ const settled = (v) => v.evaluate((el) => new Promise((ok) => { const t = setInt
 (async () => {
   const b = await browser();
   psql(`delete from public.project_files where name = 'cube.stl'; delete from public.posts where body = '${NOTE}';`);
-
-  const page = await (await b.newContext({ viewport: { width: 1440, height: 950 } })).newPage();
-  page.errs = []; page.on("pageerror", (e) => page.errs.push(e.message));
-  // The landing page's CAD lab (components/landing/cad-lab.tsx, redesign 2026-11) replaced the example
-  // viewer there; the viewer itself is checked on a project page below.
-  await step("landing: the CAD lab loads nothing until it's near the screen, then draws the build (or says it can't) beside its spec sheet", async () => {
-    await go(page, "/");
-    const lab = page.locator("#builds"), stage = lab.locator("#cad-stage");
-    if ((await stage.getAttribute("data-state")) !== "waiting") throw new Error("the lab started before it was near the screen");
-    if (await stage.locator("canvas").count()) throw new Error("a 3D canvas exists before the lab was scrolled to");
-    await stage.scrollIntoViewIfNeeded();
-    await page.waitForFunction(() => ["ready", "failed"].includes(document.querySelector("#cad-stage")?.getAttribute("data-state") ?? ""), null, { timeout: 30000 });
-    const state = await stage.getAttribute("data-state");
-    if (state === "failed") await stage.getByText(/can't draw 3D/).waitFor();
-    else if (!(await stage.locator("canvas").count())) throw new Error("ready, but no canvas");
-    const sheet = lab.getByRole("complementary", { name: "Spec sheet" });
-    await sheet.getByRole("heading", { name: "Dual-deploy flight computer" }).waitFor();
-    await sheet.getByText(/Signed by/).waitFor();
-    if (page.errs.length) throw new Error(page.errs[0]);
-  }, page);
-
-  await step("landing: each build has its own spec sheet and signed result, and the view is one of Render, Section or Stress", async () => {
-    const lab = page.locator("#builds"), sheet = lab.getByRole("complementary", { name: "Spec sheet" });
-    for (const [tab, name] of [["6-axis arm", "Benchtop cobot arm"], ["Planetary gearbox", "5:1 planetary reduction"], ["Avionics bay", "Dual-deploy flight computer"]]) {
-      await lab.getByRole("tab", { name: tab }).click();
-      if ((await lab.getByRole("tab", { name: tab }).getAttribute("aria-selected")) !== "true") throw new Error(`${tab} isn't marked as the build`);
-      await sheet.getByRole("heading", { name }).waitFor();
-      await sheet.getByText(/Signed by/).waitFor();
-    }
-    for (const mode of ["Section", "Stress", "Render"]) {
-      await lab.getByRole("radio", { name: mode }).click();
-      const on = await lab.getByRole("radiogroup", { name: "View" }).getByRole("radio", { checked: true }).allInnerTexts();
-      if (on.length !== 1 || !on[0].includes(mode)) throw new Error(`after ${mode}, the views marked are ${on.join(", ")}`);
-    }
-    if (page.errs.length) throw new Error(page.errs[0]);
-  }, page);
 
   const ben = await as(b, "ben@forge.test");
   await step("a member attaches a 3D model to a project and opens it there, with its size", async () => {
