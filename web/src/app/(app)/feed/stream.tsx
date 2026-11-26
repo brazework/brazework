@@ -122,7 +122,9 @@ export async function HomeStream() {
             <span className="shrink-0 rounded-lg border border-line px-3 py-1.5 text-xs font-medium transition group-open/goal:hidden hover:border-line-strong">Set a goal</span>
             <span className="hidden shrink-0 text-xs text-muted group-open/goal:inline">Close</span>
           </summary>
-          <div className="border-t border-line p-2 sm:p-3"><GoalCard compact goal={goal} record={record} profileId={user.id} accountType={profile?.account_type} /></div>
+          {/* display:none until opened: newer browsers keep a closed <details>'s content laid out (only
+              unpainted), and its tiles would still count for layout and hit-testing checks. */}
+          <div className="hidden border-t border-line p-2 group-open/goal:block sm:p-3"><GoalCard compact goal={goal} record={record} profileId={user.id} accountType={profile?.account_type} /></div>
         </details>
       ))}
     </div>
