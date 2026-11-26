@@ -285,7 +285,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity
   &:hover::before { opacity: 0; }
 }
 
-/* Progress bars that drive auto-advancing pickers (the hero's fields, the how-it-works steps):
+/* Progress bars that drive auto-advancing pickers:
    when the bar finishes, onAnimationEnd moves to the next item. */
 @keyframes progress-fill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 /* The record timeline's lanes draw in once, left to right (components/profile/record-timeline.tsx). */
@@ -639,4 +639,15 @@ select option { background-color: var(--surface); color: var(--text); }
     linear-gradient(color-mix(in oklab, var(--text) 5%, transparent) 1px, transparent 1px) 0 0 / 32px 32px,
     linear-gradient(90deg, color-mix(in oklab, var(--text) 5%, transparent) 1px, transparent 1px) 0 0 / 32px 32px;
   mask-image: radial-gradient(ellipse 90% 80% at 60% 30%, #000 40%, transparent 90%);
+}
+/* The hero's product window (components/landing/hero.tsx): its five views share one body of a fixed
+   size, so switching views never moves the page. On a laptop tall enough, the hero pins for a scroll
+   run, one stretch per view (hero.tsx RUN is the same query); elsewhere the views are tabs. */
+.hero-body { height: 36rem; }
+@media (min-width: 640px) { .hero-body { height: 33rem; } }
+@media (min-width: 1024px) { .hero-body { height: clamp(26rem, calc(100svh - 16rem), 35rem); } }
+@media (min-width: 1024px) and (min-height: 700px) and (prefers-reduced-motion: no-preference) {
+  .hero-run { height: calc(100svh + 90svh); }
+  .hero-pin { position: sticky; top: 0; height: 100svh; }
+  .hero-scroll-hint { display: inline-flex; }
 }
