@@ -6,7 +6,7 @@ day (`docs/naming.md`). Code identifiers and file names still say `ember` and `c
 Date: 2026-11-26 · Status: **approved by Josh in conversation** ("Approve, start PR 1"), after he
 asked how Torch could be "proactive and not just read but actually do things in an interactive way".
 He decided the cost of a follow turn the same day ("Yes, free and capped", section 4). The first pull
-request (sections 1, 5 and 6) is built; sections 2 to 4 are not. No Linear issue yet: Linear wasn't
+request (sections 1, 5 and 6), the second (section 2) and the third (sections 3 and 4) are built. No Linear issue yet: Linear wasn't
 signed in when this was written, so the issues in Delivery still need creating.
 
 This is step 1 of four. Steps 2 to 4 (acting on small things without a tap, speaking first, more tools
@@ -90,9 +90,9 @@ a job:
 
 ### 2. Torch asks with buttons
 
-- A new tool, `offer_choices`: `{ options: 2 to 4 strings of at most 60 characters, hint?: string }`.
-  Torch writes its question as text, then calls the tool. `makeExec` sends a `{ choice: { id, options,
-  hint } }` frame and saves nothing.
+- A new tool, `offer_choices`: `{ options: 2 to 4 strings of at most 60 characters }`. Torch writes its
+  question as text, then calls the tool. `makeExec` sends a `{ choice: { id, options } }` frame and saves
+  nothing. (The `hint` first planned here was dropped: the question is already in Torch's words.)
 - `runAgent` ends the turn after `offer_choices` (a new `endsTurn` list) instead of spending another
   round on a closing sentence.
 - When to use it, in the instructions: Torch needs one answer to go on, and the answers are things it
@@ -105,7 +105,13 @@ a job:
 - Tapping one shows it as the member's message and sends a follow turn (below). The pick rides in the
   history as `choice: { options, picked }`, and the server writes it into the note:
   `[You offered: Rocketry Club | A person who saw it. They picked: Rocketry Club]`.
-- An installed iPhone build skips the frame and shows the question as text; the member types the
+- The tool is offered only where the buttons can show: the Ask Torch bar and Torch's page send
+  `choices: true`, and the instructions about it go only with those. The feed's box, the club report's
+  one-tap update, group chats and the iPhone app don't get it, so Torch asks there in words, as before.
+  (Built this way instead of letting those places skip the frame: a question with nowhere to tap
+  would have stranded the member.)
+- A reopened chat whose last answer offered buttons shows them again, so the question can still be
+  answered with a tap.
   answer, as now.
 
 ### 3. Torch carries on after a yes
@@ -167,6 +173,19 @@ Found while building the first pull request: under `npm run dev` a live answer s
 mounts a component twice in development, and the reveal loop in `components/copilot/reply.tsx` kept
 its cancelled frame handle, so it never asked for another frame. Production wasn't affected. Fixed in
 the same pull request.
+
+### Built differently in the third pull request
+
+- A follow turn is checked before anything is spent: the last answer must have a confirmed card with a
+  next step (and the turn has no words), or have offered answers with this one tapped. Anything else is
+  refused (400). The database still caps how many there are.
+- `then` is kept only where the page can carry on (the same `choices` say-so as the buttons); anywhere
+  else it's dropped and the card is as before. The instructions about it go only with those pages too.
+- A choice tap is a free follow turn while the page thinks some are left (it counts 3 after each ask,
+  for its labels only), and a normal ask otherwise. A refused follow puts the page back as it was and
+  offers the same step for a credit; nothing is spent.
+- A card reports "confirmed" twice: at the tap (so a question asked meanwhile is right) and once the
+  server has said yes. Only the second sets a follow going.
 
 ## Rules
 

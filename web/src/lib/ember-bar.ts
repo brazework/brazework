@@ -1,5 +1,5 @@
 import type { Proposal } from "@/lib/copilot-agent";
-import { MAX_TURN, type CardOutcome, type ThreadTurn } from "@/lib/ember-thread";
+import { MAX_TURN, type CardOutcome, type OfferedChoice, type ThreadTurn } from "@/lib/ember-thread";
 
 // The Ask Torch bar at the top of every signed-in page (components/ember/ask-bar.tsx): which page it's
 // on, when "/" may jump to it, and what an approve card's buttons say there. Pure, so the browser, the
@@ -68,6 +68,11 @@ export function cardSummary(p: Proposal): { title: string; lines: string[]; link
     case "memory": return { title: `Remember: ${cut(p.body, 120)}`, lines: ["Carries over to your next chats. Forget it any time in Settings."], link: "" };
     case "goal": return { title: `Work toward ${p.title}`, lines: p.why ? [cut(p.why)] : [], link: "" };
     case "project_edit": return { title: `Update ${p.project_title}`, lines: [["summary", "details", "link", "specs"].filter((k) => p[k as keyof typeof p] !== undefined).map((k) => (k === "details" ? "write-up" : k)).join(", ")], link: "" };
+    case "quiz": return { title: p.title, lines: [`${p.questions.length} ${p.questions.length === 1 ? "question" : "questions"} · ${p.questions.reduce((t, q) => t + q.points, 0)} points · ${p.class_name}`, p.publish ? "Posts to the class when you confirm" : "Saved as a draft when you confirm"], link: "" };
+    case "assignment": return { title: p.title, lines: [`${p.points} points${p.rubric.length ? ` · ${p.rubric.length}-row rubric` : ""} · ${p.class_name}`, p.publish ? "Posts to the class when you confirm" : "Saved as a draft when you confirm"], link: "" };
+    case "announcement": return { title: p.title, lines: [cut(p.body), `To everyone in ${p.class_name}`], link: "" };
+    case "extension": return { title: `Extend ${p.assignment_title} for ${p.name}`, lines: [`New due date: ${new Date(p.due_at).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}`], link: "" };
+    case "attendance": return { title: `Take attendance${p.title ? `: ${p.title}` : ""}`, lines: [`${p.class_name} · check-in open ${p.minutes} minutes`], link: "" };
     default: return null;
   }
 }
@@ -81,15 +86,34 @@ export function cardSummary(p: Proposal): { title: string; lines: string[]; link
 export const BAR_TURNS = 6;
 
 /** One exchange in the bar: what the member said, Torch's words (follow-up marker removed), its cards. */
-export type BarTurn = { q: string; text: string; cards: CardOutcome[] };
+// `follow`: Torch carried on by itself after a yes; `q` is empty when a confirmed card set it going.
+export type BarTurn = { q: string; text: string; cards: CardOutcome[]; choice?: OfferedChoice; follow?: boolean };
 
 /**
  * The bar's exchange as history, oldest first. A turn with no answer (it failed, or was stopped before
  * a word came) is left out whole, so questions and answers still alternate.
  */
 export function barHistory(turns: BarTurn[]): ThreadTurn[] {
-  return turns.filter((t) => t.q.trim() && t.text.trim()).slice(-BAR_TURNS).flatMap((t): ThreadTurn[] => [
-    { role: "user", content: t.q.slice(0, MAX_TURN) },
-    { role: "assistant", content: t.text.slice(0, MAX_TURN), ...(t.cards.length ? { cards: t.cards } : {}) },
+  return turns.filter((t) => (t.q.trim() || t.follow) && t.text.trim()).slice(-BAR_TURNS).flatMap((t): ThreadTurn[] => [
+    { role: "user", content: t.q.slice(0, MAX_TURN), ...(t.follow ? { follow: true } : {}) },
+    { role: "assistant", content: t.text.slice(0, MAX_TURN), ...(t.cards.length ? { cards: t.cards } : {}), ...(t.choice ? { choice: t.choice } : {}) },
   ]);
+}
+
+/** Marks which of the offered answers the member tapped, on the turn that offered them. */
+export function pickedFrom(choice: OfferedChoice | undefined, tapped: string | undefined): OfferedChoice | undefined {
+  if (!choice) return undefined;
+  return tapped && choice.options.includes(tapped) ? { ...choice, picked: tapped } : choice;
+}
+
+/** The next steps Torch gave on the cards the member confirmed: what "Carry on" would do. */
+export function carryOnSteps(cards: CardOutcome[]): string[] {
+  return cards.filter((c) => c.state === "confirmed" && c.then).map((c) => c.then!).slice(0, 3);
+}
+
+/** Free follow turns left, as the page guesses it for its labels (the database decides). */
+export const FOLLOWS_PER_ASK = 3;
+export function followsAfter(left: number, follow: boolean, refused: boolean): number {
+  if (refused) return 0;
+  return follow ? Math.max(0, left - 1) : FOLLOWS_PER_ASK;
 }

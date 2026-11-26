@@ -410,26 +410,23 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity
   backdrop-filter: blur(20px) saturate(1.5);
   -webkit-backdrop-filter: blur(20px) saturate(1.5);
 }
-/* The default banner on a profile and a club (2026-11-26): a dark drafting sheet in both themes, lit in
-   copper (or the club's accent, --cover-tint) from the top right, with a fine grid. The field's line
-   drawing sits on it (components/media/profile-media.tsx). */
+/* The default banner on a profile, a club and a project (2026-11-26): a smooth dark surface in both
+   themes, lit in copper (or the club's accent, --cover-tint) from the top right. No grid and no line
+   drawings anywhere on a banner (the founders' call): a photo, or this light. */
 .cover-blueprint {
   --cover-tint: #e8946a;
   color: #ededef;
   background:
     radial-gradient(70% 170% at 88% -15%, color-mix(in oklab, var(--cover-tint) 44%, transparent), transparent 60%),
     radial-gradient(55% 150% at -5% 115%, rgb(91 124 250 / 0.2), transparent 62%),
-    linear-gradient(rgb(255 255 255 / 0.055) 1px, transparent 1px) 0 0 / 28px 28px,
-    linear-gradient(90deg, rgb(255 255 255 / 0.055) 1px, transparent 1px) 0 0 / 28px 28px,
-    linear-gradient(180deg, #14151a, #0b0c0e);
+    radial-gradient(40% 90% at 55% 120%, color-mix(in oklab, var(--cover-tint) 14%, transparent), transparent 70%),
+    linear-gradient(180deg, #16171c, #0b0c0e);
 }
-/* A profile with no cover yet: a faint engineering grid under a soft light, in the theme's own colours. */
+/* A profile with no cover yet: a soft light in the theme's own colours (no grid, no lines). */
 .cover-empty {
   background:
     radial-gradient(520px 220px at 18% 0%, color-mix(in oklab, var(--text) 12%, transparent), transparent 70%),
     radial-gradient(420px 200px at 95% 110%, color-mix(in oklab, var(--accent) 14%, transparent), transparent 70%),
-    linear-gradient(color-mix(in oklab, var(--text) 7%, transparent) 1px, transparent 1px) 0 0 / 24px 24px,
-    linear-gradient(90deg, color-mix(in oklab, var(--text) 7%, transparent) 1px, transparent 1px) 0 0 / 24px 24px,
     var(--surface-2);
 }
 /* How bright a glass edge catches the light: strong on light pages, a hint on dark ones. */
@@ -470,12 +467,9 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity
    tone, --ember-c the accent that swirls through it.  */
 /* Torch is brazed copper in both themes: the one place the brand colour lives inside the app. */
 :root { --ember-a: #ffd9bf; --ember-b: #9a3f1a; --ember-c: #e8946a; --ember-plasma: 0.9; --ember-fresnel: 0.9; }
-/* The assistant's mark (components/ember/ember.tsx): ink with the page's colour cut out of it, so it
-   is black on light pages and white on dark ones, like a primary button. */
-:root { --mark-hi: #4a4c55; --mark: #18191d; --mark-lo: #050506; --mark-on: #ffffff; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --mark-hi: #ffffff; --mark: #e4e4e8; --mark-lo: #a9aab2; --mark-on: #0b0c0e; } }
-:root[data-theme="dark"] { --mark-hi: #ffffff; --mark: #e4e4e8; --mark-lo: #a9aab2; --mark-on: #0b0c0e; }
-.theme-dark { --mark-hi: #ffffff; --mark: #e4e4e8; --mark-lo: #a9aab2; --mark-on: #0b0c0e; }
+/* The orb itself is black glass with white light (Josh, 2026-11-26: "make the orb black"), the palette it
+   had before as Mono. Set on the orb only, so the copper above stays on the AI chips' edges. */
+.ember { --ember-a: #ffffff; --ember-b: #18181b; --ember-c: #71717a; --ember-plasma: 0.5; --ember-fresnel: 0.55; }
 
 /* Moods are light and motion: idle breathes and drifts, thinking swirls fast and pulses, happy
    brightens and bounces, sleepy dims and slows, surprised flares. */
@@ -489,10 +483,6 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity
 .ember .ember-glow { animation: ember-breathe 3.6s ease-in-out infinite; }
 .ember .ember-glow-out { animation: ember-breathe 3.6s ease-in-out 1.8s infinite; }
 /* The spark at Torch's centre: it breathes; while Torch thinks, it turns. */
-@keyframes ember-twinkle { 50% { transform: scale(0.88) rotate(6deg); opacity: 0.9; } }
-.ember .ember-spark { transform-box: view-box; transform-origin: 32px 32px; animation: ember-twinkle 3.6s ease-in-out infinite; }
-.ember-thinking .ember-spark { animation: ember-spin 2.2s linear infinite; }
-.ember-sleepy .ember-spark { animation-duration: 7s; opacity: 0.8; }
 .ember .ember-band-1 { animation: ember-spin 6s linear infinite; }
 .ember .ember-band-2 { animation: ember-spin 8.5s linear infinite reverse; }
 .ember .ember-core { animation: ember-pulse 3.6s ease-in-out infinite; }
@@ -577,13 +567,9 @@ select option { background-color: var(--surface); color: var(--text); }
 
 /* A drawing sheet's grid, in ink at a whisper (docs/design/app.md): behind a project's cover or an
    empty state, once per page at most. It follows the theme: dark ink on light, light ink on dark. */
+/* Formerly a drafting grid; now a plain soft surface (no lines anywhere, 2026-11-26). */
 .sheet-grid {
   background-color: var(--surface-2);
-  background-image:
-    linear-gradient(color-mix(in oklab, var(--text) 6%, transparent) 1px, transparent 1px),
-    linear-gradient(90deg, color-mix(in oklab, var(--text) 6%, transparent) 1px, transparent 1px);
-  background-size: 24px 24px;
-  background-position: -1px -1px;
 }
 
 /* A signature landing (components/app/fresh-seal.tsx): the seal comes down like a stamp, once. */

@@ -1,17 +1,19 @@
 import { Building2 } from "lucide-react";
 import Link from "next/link";
-import type { createClient } from "@/lib/supabase/server";
+import { getViewer, type createClient } from "@/lib/supabase/server";
 import { PLUS } from "@/lib/pricing";
 
 // Companies that looked at your profile (supabase/money.sql my_company_viewers()): the last 7 days on
 // Free, 90 with Plus. The database decides the window, so the limit isn't only in the page. Named by
 // company, never by person. On Free, `hidden` is the real number of other verified companies from the
 // last 90 days (plus-teaser.sql): one quiet line says so and links to Plus. With nothing hidden, no line.
+// Students never pay (2026-11-26), so a student isn't offered Plus: no line.
 export async function WhoLooked({ supabase }: { supabase: Awaited<ReturnType<typeof createClient>> }) {
   const { data, error } = await supabase.rpc("my_company_viewers", { p_days: 90 });
   if (error || !data) return null;
   const r = data as { days: number; plus: boolean; companies: { name: string; at: string }[]; hidden?: number };
-  const hidden = r.plus ? 0 : (r.hidden ?? 0);
+  const { profile } = await getViewer();
+  const hidden = r.plus || profile?.account_type === "student" ? 0 : (r.hidden ?? 0);
   const day = (ts: string) => new Date(ts).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
   return (
     <section aria-labelledby="who-looked" className="mt-8 rounded-2xl border border-line bg-surface p-5">

@@ -1,6 +1,6 @@
 "use client";
 import { AnimatePresence, motion } from "motion/react";
-import { ArrowRight, BadgeCheck, CalendarCheck, CalendarPlus, Check, ExternalLink, Flag, Loader2, Megaphone, MessageSquare, PenLine, PencilLine, Sparkles, Target, Bookmark, UserPlus, Users, X } from "lucide-react";
+import { ArrowRight, BadgeCheck, CalendarCheck, CalendarClock, CalendarPlus, Check, ClipboardList, DoorOpen, ExternalLink, Flag, ListChecks, Loader2, Megaphone, MessageSquare, PenLine, PencilLine, Sparkles, Target, Bookmark, UserPlus, Users, X } from "lucide-react";
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import { createPost } from "@/app/(app)/feed/actions";
@@ -26,6 +26,8 @@ import { setGoal } from "@/lib/goal-actions";
 import { rememberThis } from "@/lib/ember-memory";
 import { GOAL_KINDS } from "@/lib/goals";
 import { RELATIONSHIPS } from "@/lib/vouch-email";
+import { torchAnnouncement, torchAssignment, torchAttendance, torchExtension, torchQuiz } from "@/lib/courses";
+import { ABET_OUTCOMES } from "@/lib/course-math";
 
 const field = "w-full rounded-xl border border-line bg-surface px-3 py-2 text-sm outline-none focus:border-line-strong";
 const HEAD = {
@@ -45,6 +47,11 @@ const HEAD = {
   project_edit: { icon: PencilLine, title: "Update a project", done: "Saved", href: "", go: "Open the project" },
   teammate: { icon: UserPlus, title: "Add a teammate", done: "Added", href: "", go: "Open the project" },
   invite: { icon: Users, title: "Accept a club invite", done: "You're in", href: "", go: "Open the club" },
+  quiz: { icon: ListChecks, title: "Add a quiz", done: "Quiz saved", href: "", go: "Open the course" },
+  assignment: { icon: ClipboardList, title: "Add an assignment", done: "Assignment saved", href: "", go: "Open the course" },
+  announcement: { icon: Megaphone, title: "Announce to the class", done: "Announced", href: "", go: "Open the announcements" },
+  extension: { icon: CalendarClock, title: "Give an extension", done: "Extension given", href: "", go: "Open the assignment" },
+  attendance: { icon: DoorOpen, title: "Take attendance", done: "Check-in is open", href: "", go: "Show the code" },
 } as const;
 // Shown under a field a card changes: what's there now.
 const was = (v: string) => <span className="block text-[11px] text-faint">Now: {v ? (v.length > 140 ? `${v.slice(0, 140)}…` : v) : "empty"}</span>;
@@ -59,8 +66,10 @@ const fromLocal = (v: string) => new Date(v).toISOString();
 // `inline`: in a page (under the Ask Torch bar, or a project's own drafts), the card is a short summary
 // with buttons that say what happens ("Log and send to club", "Edit", "Not now"); Edit opens the fields.
 // `onOutcome`: the chat hears what happened to the card (confirmed as the member left it, dismissed, or
-// refused with the server's reason), so Torch knows on its next turn (lib/ember-thread.ts).
-export function ProposalCard({ p: initial, fromTool, inline = false, onOutcome }: { p: Proposal; fromTool?: { draftId: string; via: string; source: string }; inline?: boolean; onOutcome?: (id: string, o: CardOutcome) => void }) {
+// refused with the server's reason), so Torch knows on its next turn (lib/ember-thread.ts). `settled` is
+// false for the optimistic "confirmed" at the tap and true once the server has answered: only then may
+// the page carry on to the card's next step.
+export function ProposalCard({ p: initial, fromTool, inline = false, onOutcome }: { p: Proposal; fromTool?: { draftId: string; via: string; source: string }; inline?: boolean; onOutcome?: (id: string, o: CardOutcome, settled: boolean) => void }) {
   const [p, setP] = useState(initial);
   const [state, setState] = useState<"open" | "done" | "dismissed">("open");
   const [msg, setMsg] = useState("");
@@ -78,7 +87,7 @@ export function ProposalCard({ p: initial, fromTool, inline = false, onOutcome }
   const h = HEAD[p.kind];
   const labels = cardLabels(p.kind, inline);
   const short = inline && !editing ? cardSummary(p) : null;
-  const href = p.kind === "join" || p.kind === "club_post" || p.kind === "invite" ? `/c/${p.club_id}` : p.kind === "follow" ? `/u/${p.person_id}` : p.kind === "event" ? `/c/${p.club_id}?tab=events` : p.kind === "review" ? "/communities" : p.kind === "rsvp" ? `/events/${p.event_id}` : p.kind === "message" && cid ? `/messages/${cid}` : p.kind === "project_edit" || p.kind === "teammate" ? `/projects/${p.project_id}` : h.href;
+  const href = p.kind === "join" || p.kind === "club_post" || p.kind === "invite" ? `/c/${p.club_id}` : p.kind === "follow" ? `/u/${p.person_id}` : p.kind === "event" ? `/c/${p.club_id}?tab=events` : p.kind === "review" ? "/communities" : p.kind === "rsvp" ? `/events/${p.event_id}` : p.kind === "message" && cid ? `/messages/${cid}` : p.kind === "project_edit" || p.kind === "teammate" ? `/projects/${p.project_id}` : p.kind === "quiz" || p.kind === "assignment" ? `/c/${p.class_id}/course?tab=assignments` : p.kind === "announcement" ? `/c/${p.class_id}/course?tab=announcements` : p.kind === "attendance" ? `/c/${p.class_id}/course?tab=attendance` : p.kind === "extension" ? `/c/${p.class_id}/course/a/${p.assignment_id}` : h.href;
   const set = (patch: Partial<Proposal>) => setP((cur) => ({ ...cur, ...patch }) as Proposal);
 
   const confirm = () => start(async () => {
@@ -87,7 +96,7 @@ export function ProposalCard({ p: initial, fromTool, inline = false, onOutcome }
     setState("done");
     // The chat hears it at the same moment, so a follow-up asked while the server is still answering
     // doesn't tell Torch the card is untouched. A refusal below corrects it.
-    onOutcome?.(initial.id, outcomeOf(p, "confirmed"));
+    onOutcome?.(initial.id, outcomeOf(p, "confirmed"), false);
     try {
     let r: { ok: boolean; message: string };
     let heldNote = "";
@@ -138,6 +147,16 @@ export function ProposalCard({ p: initial, fromTool, inline = false, onOutcome }
       const res = acc.ok ? await messagePerson(p.person_id, p.body) : { ...acc, cid: undefined };
       if (res.cid) setCid(res.cid);
       r = res;
+    } else if (p.kind === "quiz") {
+      r = await torchQuiz(p);
+    } else if (p.kind === "assignment") {
+      r = await torchAssignment(p);
+    } else if (p.kind === "announcement") {
+      r = await torchAnnouncement(p);
+    } else if (p.kind === "extension") {
+      r = await torchExtension(p);
+    } else if (p.kind === "attendance") {
+      r = await torchAttendance(p);
     } else {
       const f = new FormData();
       for (const k of ["title", "description", "type", "format", "location", "topic", "starts_at", "ends_at"] as const) f.set(k, String(p[k]));
@@ -145,18 +164,18 @@ export function ProposalCard({ p: initial, fromTool, inline = false, onOutcome }
       r = await saveEvent({ ok: false, message: "" }, f);
     }
     if (r.ok) {
-      if (heldNote) onOutcome?.(initial.id, outcomeOf(p, "confirmed", "held for a moderator to review before it shows"));
+      onOutcome?.(initial.id, outcomeOf(p, "confirmed", heldNote ? "held for a moderator to review before it shows" : ""), true);
       if (fromTool) await settleDraft(fromTool.draftId);
     } else {
       setState("open"); setMsg(r.message || "That didn't work. Check the details and try again.");
-      onOutcome?.(initial.id, outcomeOf(p, "failed", r.message));
+      onOutcome?.(initial.id, outcomeOf(p, "failed", r.message), true);
     }
-    } catch { setState("open"); setMsg("That didn't work. Check your connection and try again."); onOutcome?.(initial.id, outcomeOf(p, "failed", "the connection dropped")); }
+    } catch { setState("open"); setMsg("That didn't work. Check your connection and try again."); onOutcome?.(initial.id, outcomeOf(p, "failed", "the connection dropped"), true); }
   });
   const dismiss = () => start(async () => {
     if (fromTool) await dismissDraft(fromTool.draftId);
     setState("dismissed");
-    onOutcome?.(initial.id, outcomeOf(p, "dismissed"));
+    onOutcome?.(initial.id, outcomeOf(p, "dismissed"), true);
   });
 
   if (state === "dismissed") return <p className="mt-2 text-xs text-faint">Dismissed. Nothing was saved.</p>;
@@ -299,6 +318,46 @@ export function ProposalCard({ p: initial, fromTool, inline = false, onOutcome }
             </>
           )}
           {p.kind === "invite" && <p className="text-text-2">Join <b className="font-medium">{p.club_name}</b> with the invite link you were sent.</p>}
+          {p.kind === "quiz" && (
+            <div className="flex flex-col gap-2">
+              <p className="text-text-2"><b className="font-medium text-text">{p.title}</b> · {p.class_name} · {p.questions.reduce((t, q) => t + q.points, 0)} points{p.closes_at ? ` · closes ${new Date(p.closes_at).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}` : ""}</p>
+              <ol className="flex flex-col gap-2">
+                {p.questions.map((q, i) => (
+                  <li key={q.id} className="rounded-xl bg-[color-mix(in_oklab,var(--text)_4%,transparent)] px-3 py-2">
+                    <p className="text-text"><span className="mr-1.5 font-mono text-[11px] text-faint">{i + 1}</span>{q.prompt} <span className="text-[11px] text-faint">{q.points} pt{q.points === 1 ? "" : "s"}</span></p>
+                    {(q.type === "choice" || q.type === "multi") && (
+                      <ul className="mt-1 flex flex-col gap-0.5 text-xs">
+                        {(q.options ?? []).map((o, k) => { const right = Array.isArray(q.answer) ? q.answer.includes(k) : q.answer === k; return <li key={k} className={right ? "font-medium text-ok" : "text-text-2"}>{right ? "✓ " : "· "}{o}</li>; })}
+                      </ul>
+                    )}
+                    {q.type === "number" && <p className="mt-1 text-xs font-medium text-ok">Answer {String(q.answer)}{q.tolerance ? ` ± ${q.tolerance}` : ""}</p>}
+                    {q.type === "short" && <p className="mt-1 text-xs text-muted">Short answer: you score it.</p>}
+                  </li>
+                ))}
+              </ol>
+              <p className="text-xs text-muted">{p.publish ? "Confirm posts it to the class and tells them." : "Confirm saves it as a draft; publish it from the course when you're ready."} Answers stay hidden from students.</p>
+            </div>
+          )}
+          {p.kind === "assignment" && (
+            <div className="flex flex-col gap-2">
+              <p className="text-text-2"><b className="font-medium text-text">{p.title}</b> · {p.class_name} · {p.points} points{p.due_at ? ` · due ${new Date(p.due_at).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}` : ""}{p.group_work ? " · group work" : ""}{p.peer_eval ? " · peer evaluation" : ""}</p>
+              {p.instructions && <p className="whitespace-pre-line text-text-2">{p.instructions.length > 600 ? `${p.instructions.slice(0, 600)}…` : p.instructions}</p>}
+              {p.rubric.length > 0 && (
+                <ul className="flex flex-col gap-0.5 rounded-xl bg-[color-mix(in_oklab,var(--text)_4%,transparent)] px-3 py-2 text-xs">
+                  {p.rubric.map((r, i) => <li key={i} className="flex justify-between gap-3"><span>{r.criterion}{r.outcome && <span className="ml-1.5 text-faint">{ABET_OUTCOMES.find((o) => o.id === r.outcome)?.label ?? `ABET ${r.outcome}`}</span>}</span><span className="tabular-nums">{r.points}</span></li>)}
+                </ul>
+              )}
+              <p className="text-xs text-muted">Hand in: {p.submit_as.join(", ")}. {p.publish ? "Confirm posts it to the class and tells them." : "Confirm saves it as a draft."}</p>
+            </div>
+          )}
+          {p.kind === "announcement" && (
+            <div className="flex flex-col gap-1.5">
+              <label className="flex flex-col gap-1"><span className="text-xs text-muted">Title</span><input value={p.title} maxLength={160} onChange={(e) => set({ title: e.target.value })} className={field} /></label>
+              <label className="flex flex-col gap-1"><span className="text-xs text-muted">Message to everyone in {p.class_name}</span><textarea value={p.body} rows={4} maxLength={10000} onChange={(e) => set({ body: e.target.value })} className={field} /></label>
+            </div>
+          )}
+          {p.kind === "extension" && <p className="text-text-2">Move <b className="font-medium text-text">{p.assignment_title}</b> for <b className="font-medium text-text">{p.name}</b> to <b className="font-medium text-text">{new Date(p.due_at).toLocaleString("en-US", { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</b>. Only you and they see it.</p>}
+          {p.kind === "attendance" && <p className="text-text-2">Open check-in for <b className="font-medium text-text">{p.class_name}</b>{p.title ? <> · {p.title}</> : null} for {p.minutes} minutes. You get a code to put on the screen; students check in with it.</p>}
           {p.kind === "teammate" && <p className="text-text-2">Add <b className="font-medium">{p.name}</b>{p.headline && <span className="text-muted"> · {p.headline}</span>} to <b className="font-medium">{p.project_title}</b> as {p.role === "viewer" ? "a viewer (sees it, changes nothing)" : "a teammate (posts updates, logs milestones)"}.</p>}
           {p.kind === "follow" && <p className="text-text-2"><b className="font-medium">{p.name}</b>{p.headline && <span className="text-muted"> · {p.headline}</span>}</p>}
           {p.kind === "event" && (
@@ -318,6 +377,8 @@ export function ProposalCard({ p: initial, fromTool, inline = false, onOutcome }
           )}
           </>}
           <AnimatePresence>{msg && <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} role="alert" className="text-xs text-danger">{msg}</motion.p>}</AnimatePresence>
+          {/* What Torch does once this is confirmed (the spec's part 3): it carries on by itself. */}
+          {p.then && <p className="text-xs text-muted"><span className="font-medium text-text-2">Then:</span> {p.then}</p>}
           <div className="flex items-center gap-2">
             <button type="button" onClick={confirm} disabled={pending} className="bg-accent-grad inline-flex h-9 items-center gap-1.5 rounded-lg px-4 text-sm font-medium text-on-accent transition active:scale-95 disabled:opacity-50">
               {pending ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />} {labels.confirm}

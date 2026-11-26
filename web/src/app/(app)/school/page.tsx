@@ -11,6 +11,8 @@ import { termsAround } from "@/lib/school-roster";
 import { dueText } from "@/lib/course-math";
 import { getViewer } from "@/lib/supabase/server";
 import { CreateClassForm, FacultyForm, RemoveFaculty, RosterForm } from "./portal-forms";
+import { CheckInForm } from "../c/[id]/course/course-client";
+import { ABET_OUTCOMES } from "@/lib/course-math";
 
 export const metadata: Metadata = { title: "Your school" };
 
@@ -36,7 +38,7 @@ type Club = { id: string; name: string; member_count: number; verified_at: strin
 type Klass = { id: string; name: string; course: string; term: string; role: string; member_count: number; projects: number; waiting: number };
 type Overview = { students: number; faculty: number; classes: number; class_projects: number; verified_in_classes: number; verified_in_clubs: number; clubs: number; active_clubs: number; by_class: { id: string; name: string; term: string; members: number; projects: number; verified: number }[] };
 type Faculty = { email: string; name: string; title: string };
-type Due = { id: string; community_id: string; course: string; class_name: string; title: string; due_at: string | null; points: number; group_work: boolean; submitted_at: string | null; graded: boolean };
+type Due = { kind?: string; id: string; community_id: string; course: string; class_name: string; title: string; due_at: string | null; points: number; group_work: boolean; submitted_at: string | null; graded: boolean };
 type CourseRow = { id: string; name: string; term: string; students: number; assignments: number; submissions: number; graded: number };
 
 async function School() {
@@ -58,7 +60,7 @@ async function School() {
 
   const domain = mine.domain;
   const name = mine.school || domain;
-  const { schoolLinks, schoolPortal, courses } = await dbFeatures();
+  const { schoolLinks, schoolPortal, courses, coursesB } = await dbFeatures();
   // Join any class whose roster has your email before reading your classes.
   if (schoolPortal) await supabase.rpc("sync_my_classes");
   const [org, clubsRes, classesRes, facultyRes, runsRes, dueRes] = await Promise.all([
@@ -92,9 +94,10 @@ async function School() {
     standing.set(m.community_id, s);
   }
 
-  const [overviewRes, facultyList, coursesRes] = runs
-    ? await Promise.all([supabase.rpc("school_overview", { p_domain: domain }), supabase.from("school_faculty").select("email, name, title").eq("domain", domain).order("name").limit(500), courses ? supabase.rpc("school_courses", { p_domain: domain }) : Promise.resolve({ data: [] })])
-    : [{ data: null }, { data: [] }, { data: [] }];
+  const [overviewRes, facultyList, coursesRes, outcomesRes] = runs
+    ? await Promise.all([supabase.rpc("school_overview", { p_domain: domain }), supabase.from("school_faculty").select("email, name, title").eq("domain", domain).order("name").limit(500), courses ? supabase.rpc("school_courses", { p_domain: domain }) : Promise.resolve({ data: [] }), coursesB ? supabase.rpc("school_outcomes", { p_domain: domain }) : Promise.resolve({ data: [] })])
+    : [{ data: null }, { data: [] }, { data: [] }, { data: [] }];
+  const outcomeRows = (outcomesRes.data ?? []) as { outcome: string; course: string; term: string; students: number; average: number; meeting: number }[];
   const courseRows = ((coursesRes.data ?? []) as CourseRow[]).filter((c) => c.assignments > 0);
   const overview = overviewRes.data as Overview | null;
   const faculty = (facultyList.data ?? []) as Faculty[];
@@ -159,11 +162,30 @@ async function School() {
               <p className="mt-2 text-xs text-faint">Counts only. Grades stay private to each student and their class&apos;s staff.</p>
             </div>
           )}
+          {coursesB && (
+            <div className="mt-6">
+              <div className="flex flex-wrap items-baseline justify-between gap-3">
+                <h3 className="text-sm font-semibold">Evidence by ABET outcome</h3>
+                <a href="/school/outcomes" className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-line px-3 text-sm transition hover:border-line-strong hover:bg-hover"><Download className="size-4" aria-hidden="true" /> Export outcomes (CSV)</a>
+              </div>
+              {outcomeRows.length ? (
+                <div className="mt-2 overflow-x-auto rounded-xl border border-line">
+                  <table className="w-full min-w-[560px] text-sm">
+                    <thead className="bg-surface-2 text-left text-xs text-muted"><tr><th className="px-4 py-2.5 font-medium">Outcome</th><th className="px-4 py-2.5 font-medium">Course</th><th className="px-4 py-2.5 text-right font-medium">Assessed</th><th className="px-4 py-2.5 text-right font-medium">Average</th><th className="px-4 py-2.5 text-right font-medium">Meeting</th></tr></thead>
+                    <tbody>{outcomeRows.map((o) => <tr key={`${o.outcome}|${o.course}|${o.term}`} className="border-t border-line"><td className="px-4 py-2.5 font-medium">{ABET_OUTCOMES.find((x) => x.id === o.outcome)?.label ?? o.outcome}</td><td className="px-4 py-2.5 text-muted">{o.course} · {o.term}</td><td className="px-4 py-2.5 text-right tabular-nums">{o.students}</td><td className="px-4 py-2.5 text-right tabular-nums">{o.average}%</td><td className="px-4 py-2.5 text-right tabular-nums">{o.meeting}%</td></tr>)}</tbody>
+                  </table>
+                </div>
+              ) : <p className="mt-2 text-sm text-muted">When faculty tag rubric rows with an ABET outcome and release grades, attainment by outcome and course shows here: the table your self-study needs.</p>}
+              <p className="mt-2 text-xs text-faint">Aggregates only, for courses with 3 or more students assessed. Never a student&apos;s name or grade.</p>
+            </div>
+          )}
         </section>
       )}
 
       {/* Classes: yours this term, then the rest. Faculty start them here. (A school admin who teaches
           nothing doesn't need an empty list.) */}
+      {coursesB && classes.some((c) => !["owner", "admin", "moderator"].includes(c.role)) && <div className="mt-8"><CheckInForm /></div>}
+
       {dueNext.length > 0 && (
         <section className="mt-8" aria-labelledby="school-due">
           <h2 id="school-due"><Kicker>Due next</Kicker></h2>
@@ -176,7 +198,7 @@ async function School() {
                     <ClipboardList className="size-4 shrink-0 text-text-2" aria-hidden="true" />
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-sm font-medium group-hover:underline">{d.title}</span>
-                      <span className="block truncate text-xs text-muted">{d.course}{d.group_work ? " · Group work" : ""} · {d.points} points</span>
+                      <span className="block truncate text-xs text-muted">{d.course}{d.kind === "quiz" ? " · Quiz" : ""}{d.group_work ? " · Group work" : ""} · {d.points} points</span>
                     </span>
                     <span suppressHydrationWarning className={cn("shrink-0 text-xs font-medium", late ? "text-danger" : "text-text-2")}>{late ? "Missing" : dueText(d.due_at, nowMs)}</span>
                   </Link>

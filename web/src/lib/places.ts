@@ -41,7 +41,7 @@ export const PLACES: Place[] = [
     match: ["/profile", "/u", "/dashboard", "/analytics", "/network", "/settings", "/pro"],
     tabs: [
       { id: "profile", label: "Profile", href: "/profile" },
-      { id: "analytics", label: "Analytics", href: "/dashboard" },
+      { id: "analytics", label: "Progress", href: "/dashboard" },
     ],
   },
   { id: "inbox", label: "Chats", href: "/messages", badge: "messages", match: ["/messages"], tabs: [] },
@@ -88,6 +88,6 @@ export const MENU_PAGES: { href: string; label: string; badge?: BadgeKey }[] = [
   { href: "/notifications", label: "Notifications", badge: "notifications" },
   { href: "/school", label: "Your school" },
   { href: "/events", label: "Events" },
-  { href: "/dashboard", label: "Analytics" },
+  { href: "/dashboard", label: "Progress" },
   { href: "/settings", label: "Settings" },
 ];

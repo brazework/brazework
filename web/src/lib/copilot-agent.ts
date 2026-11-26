@@ -31,11 +31,24 @@ export const TOOL_LABEL: Record<string, { doing: string; done: string }> = {
   propose_project: { doing: "Drafting a project", done: "a project draft" },
   propose_rsvp: { doing: "Saving you a spot", done: "an RSVP" },
   propose_message: { doing: "Drafting a message", done: "a message draft" },
+  my_courses: { doing: "Reading your courses", done: "your courses" },
+  course_roster: { doing: "Reading the class", done: "the class" },
+  propose_quiz: { doing: "Writing a quiz", done: "a quiz draft" },
+  propose_assignment: { doing: "Drafting an assignment", done: "an assignment draft" },
+  propose_announcement: { doing: "Drafting an announcement", done: "an announcement draft" },
+  propose_extension: { doing: "Preparing an extension", done: "an extension" },
+  propose_attendance: { doing: "Preparing attendance", done: "a check-in" },
 };
+
+// A quiz question as Torch writes it (the answers go to the database's hidden key, courses-b.sql).
+export type TorchQuestion = { id: string; prompt: string; type: "choice" | "multi" | "number" | "short"; options?: string[]; answer?: number | number[] | null; tolerance?: number; points: number };
+export type TorchRubricRow = { criterion: string; points: number; outcome?: string };
 
 // Something Copilot prepared for the member to confirm. Copilot never saves anything itself:
 // the card shows this, the member edits or confirms, and the app's normal server action runs.
-export type Proposal = { id: string } & (
+// `then`: what Torch will do next once this card is confirmed, in the member's words ("log the milestone on
+// it"), when the card is one step of a job they asked for (the spec's part 3).
+export type Proposal = { id: string; then?: string } & (
   // What the member is working toward (supabase/goals.sql). visible starts false: the member chooses on the card.
   | { kind: "goal"; goal_kind: GoalKind; target: string; title: string; why: string }
   // Something to carry over to the next chat (supabase/ember-memory.sql). Saved only when confirmed.
@@ -57,8 +70,23 @@ export type Proposal = { id: string } & (
   | { kind: "project_edit"; project_id: string; project_title: string; summary?: string; details?: string; link?: string; specs?: Spec[]; before: { summary: string; details: string; link: string; specs: Spec[] } }
   | { kind: "invite"; code: string; club_id: string; club_name: string }
   | { kind: "teammate"; project_id: string; project_title: string; person_id: string; name: string; headline: string; role: "member" | "viewer" }
+  // Brazework Courses, for a class's staff (supabase/courses.sql, courses-b.sql). Torch drafts; the
+  // professor confirms on the card. It never grades or releases a grade.
+  | { kind: "quiz"; class_id: string; class_name: string; title: string; instructions: string; closes_at: string; questions: TorchQuestion[]; show_score: boolean; publish: boolean }
+  | { kind: "assignment"; class_id: string; class_name: string; title: string; instructions: string; due_at: string; points: number; rubric: TorchRubricRow[]; submit_as: string[]; group_work: boolean; peer_eval: boolean; publish: boolean }
+  | { kind: "announcement"; class_id: string; class_name: string; title: string; body: string }
+  | { kind: "extension"; class_id: string; assignment_id: string; assignment_title: string; person_id: string; name: string; due_at: string }
+  | { kind: "attendance"; class_id: string; class_name: string; title: string; minutes: number }
 );
 export type Spec = { label: string; value: string };
+
+// Answers Torch offers the member to tap (offer_choices; lib/ember-thread.ts). Shown as buttons under the
+// answer, never saved as anything.
+export type Choice = { id: string; options: string[] };
+
+// Tools that hand the turn to the member: they aren't announced as a lookup ("Checking…"), and once one
+// has worked the answer ends there instead of spending another round on a closing sentence.
+export const ASKS_MEMBER = ["offer_choices"];
 
 export type AgentEvent = { type: "text"; text: string } | { type: "tool"; name: string };
 
@@ -93,8 +121,9 @@ export async function runAgent(opts: {
   maxRounds?: number;
   maxTokens?: number;
   signal?: AbortSignal;
+  endsTurn?: string[];
 }) {
-  const { client, model, system, tools, exec, emit, maxRounds = MAX_ROUNDS, maxTokens = 1000, signal } = opts;
+  const { client, model, system, tools, exec, emit, maxRounds = MAX_ROUNDS, maxTokens = 1000, signal, endsTurn = ASKS_MEMBER } = opts;
   const messages = [...opts.messages];
   // What Claude writes before a tool and after it are separate thoughts, but they arrive as one run
   // of text ("…on the card.I've put together…"). The first text after a tool starts a new paragraph,
@@ -126,8 +155,10 @@ export async function runAgent(opts: {
     const uses = final.content.filter((b): b is Anthropic.ToolUseBlock => b.type === "tool_use");
     messages.push({ role: "assistant", content: final.content });
     const results: Anthropic.ToolResultBlockParam[] = [];
+    let handedOver = false;
     for (const u of uses) {
-      emit({ type: "tool", name: u.name });
+      const asks = endsTurn.includes(u.name);
+      if (!asks) emit({ type: "tool", name: u.name });
       let out: unknown;
       try {
         out = await exec(u.name, u.input);
@@ -135,7 +166,10 @@ export async function runAgent(opts: {
         out = { error: "That lookup failed. Answer without it, and say so." };
       }
       results.push({ type: "tool_result", tool_use_id: u.id, content: JSON.stringify(out).slice(0, 8000) });
+      // A refused offer (bad answers) goes back to Torch like any error, and it carries on.
+      if (asks && !(out && typeof out === "object" && "error" in out)) handedOver = true;
     }
+    if (handedOver) return;
     messages.push({ role: "user", content: results });
   }
   emit({ type: "text", text: `\n\n${OUT_OF_ROUNDS}` });
@@ -144,17 +178,18 @@ export async function runAgent(opts: {
 // The text stream carries status events between record separators (\u001E), which never appear in
 // normal text: "\u001E{"tool":"search_clubs"}\u001E". parseStream splits them back out.
 export const RS = "\u001E";
-export const frame = (e: { tool: string } | { proposal: Proposal }) => `${RS}${JSON.stringify(e)}${RS}`;
+export const frame = (e: { tool: string } | { proposal: Proposal } | { choice: Choice }) => `${RS}${JSON.stringify(e)}${RS}`;
 // What an answer is made of, in the order it arrived: text, then the card Torch prepared, then the
 // text after it. Rendering in this order means a card never gets pushed down by words arriving above it.
 export type Segment = { type: "text"; text: string } | { type: "proposal"; proposal: Proposal };
 
-export function parseStream(raw: string): { text: string; tools: string[]; proposals: Proposal[]; segments: Segment[] } {
+export function parseStream(raw: string): { text: string; tools: string[]; proposals: Proposal[]; segments: Segment[]; choice: Choice | null } {
   const parts = raw.split(RS);
   let text = "";
   const tools: string[] = [];
   const proposals: Proposal[] = [];
   const segments: Segment[] = [];
+  let choice: Choice | null = null;
   const addText = (t: string) => {
     if (!t) return;
     const last = segments[segments.length - 1];
@@ -164,10 +199,12 @@ export function parseStream(raw: string): { text: string; tools: string[]; propo
   parts.forEach((p, i) => {
     if (i % 2 === 0) { text += p; addText(p); return; }
     try {
-      const e = JSON.parse(p) as { tool?: string; proposal?: Proposal };
+      const e = JSON.parse(p) as { tool?: string; proposal?: Proposal; choice?: Choice };
       if (e.tool) tools.push(e.tool);
+      // One set of answers per message: if Torch offered twice, the last stands.
+      if (e.choice && Array.isArray(e.choice.options)) choice = e.choice;
       if (e.proposal) { proposals.push(e.proposal); segments.push({ type: "proposal", proposal: e.proposal }); }
     } catch { /* a frame still arriving */ }
   });
-  return { text, tools, proposals, segments };
+  return { text, tools, proposals, segments, choice };
 }

@@ -30,3 +30,13 @@ test("text around a lookup frame stays one segment", () => {
   const { segments } = parseStream(`Checking${frame({ tool: "search_clubs" })} your clubs.`);
   assert.deepEqual(segments, [{ type: "text", text: "Checking your clubs." }]);
 });
+
+test("answers Torch offered come out of the stream, and the last offer stands", () => {
+  const first = { id: "c1", options: ["Yes", "No"] };
+  const second = { id: "c2", options: ["Rocketry Club", "A person"] };
+  const { text, choice, segments } = parseStream(`Who saw it?${frame({ choice: first })}${frame({ choice: second })}`);
+  assert.equal(text, "Who saw it?");
+  assert.deepEqual(choice, second);
+  assert.deepEqual(segments, [{ type: "text", text: "Who saw it?" }], "the buttons go under the answer, not into it");
+  assert.equal(parseStream("No buttons here.").choice, null);
+});

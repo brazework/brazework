@@ -75,3 +75,25 @@ test("an ask has room for the longest card Torch can prepare", () => {
 test("the notices are Torch's, in brackets like its other system lines", () => {
   for (const s of [OUT_OF_ROOM, OUT_OF_ROUNDS]) assert.match(s, /^\[Torch .*\]$/);
 });
+
+test("offering answers ends the message: no lookup line, no closing round", async () => {
+  const { client, sent } = mock((n) => (n === 1
+    ? { text: "Which club saw it?", stop_reason: "tool_use", content: [{ type: "text", text: "Which club saw it?" }, { type: "tool_use", id: "c1", name: "offer_choices", input: { options: ["Rocketry Club", "A person"] } }] }
+    : { text: "This round should never happen.", stop_reason: "end_turn", content: [] }));
+  let text = "";
+  const tools: string[] = [];
+  await runAgent({ client, model: "m", system: "s", messages: [{ role: "user", content: "hi" }], tools: [], exec: async () => ({ shown_to_member: true }), emit: (e) => { if (e.type === "text") text += e.text; else tools.push(e.name); } });
+  assert.equal(sent.length, 1);
+  assert.equal(text, "Which club saw it?");
+  assert.deepEqual(tools, [], "it isn't shown as a lookup");
+});
+
+test("a refused offer goes back to Torch, which carries on in words", async () => {
+  const { client, sent } = mock((n) => (n === 1
+    ? { stop_reason: "tool_use", content: [{ type: "tool_use", id: "c1", name: "offer_choices", input: { options: ["Only one"] } }] }
+    : { text: "Which club saw it?", stop_reason: "end_turn", content: [] }));
+  let text = "";
+  await runAgent({ client, model: "m", system: "s", messages: [{ role: "user", content: "hi" }], tools: [], exec: async () => ({ error: "Offer 2 to 4" }), emit: (e) => { if (e.type === "text") text += e.text; } });
+  assert.equal(sent.length, 2);
+  assert.ok(text.endsWith("Which club saw it?"));
+});

@@ -20,9 +20,9 @@ export function BenchCard({ p, attach = false }: { p: BenchProject; attach?: boo
   // Just logged from this card: the next thing is to ask someone to sign it.
   const [logged, setLogged] = useState(false);
   const logId = `log-${p.id}`;
-  const step = nextBuildStep(p), path = buildPath(p), active = activeWeeks(p.weeks), peak = Math.max(1, ...p.weeks);
+  const step = nextBuildStep(p), path = buildPath(p), active = activeWeeks(p.weeks);
   return (
-    <li className="flex flex-col rounded-2xl border border-line bg-surface p-4 sm:p-5">
+    <li className="glass-card flex flex-col rounded-2xl p-5">
       {/* What it is. */}
       <div className="flex items-start gap-3">
         {p.cover && (
@@ -41,25 +41,18 @@ export function BenchCard({ p, attach = false }: { p: BenchProject; attach?: boo
         <Link href={`/projects/${p.id}`} aria-label={`Open ${p.title}`} title="Open the project page" className="-mt-1 -mr-1 grid size-8 shrink-0 place-items-center rounded-lg text-muted transition hover:bg-hover hover:text-text"><ArrowUpRight className="size-4" /></Link>
       </div>
 
-      {/* How steadily: one bar a week for twelve weeks, the newest on the right. */}
-      <div className="mt-4 flex items-end gap-3">
-        <div role="img" aria-label={active ? `Updates in ${active} of the last 12 weeks` : "No updates in the last 12 weeks"} className="flex h-7 shrink-0 items-end gap-[3px]">
-          {p.weeks.map((n, i) => <span key={i} className={cn("w-2 rounded-[2px]", n ? "bg-text" : "bg-line-strong")} style={{ height: n ? `${Math.max(30, (n / peak) * 100)}%` : "3px" }} />)}
-        </div>
-        <p className="text-xs leading-tight text-muted">{active ? `Active ${active} of 12 weeks` : "Nothing logged in 12 weeks"}<span suppressHydrationWarning className="block text-faint">Updated {timeAgo(p.updated_at)}</span></p>
+      {/* Where it stands, in one quiet line (2026-11-26, the founders' call: clean glass, no boxes or
+          dashed bars): logged, asked, signed, then how steadily you've worked on it. */}
+      <div className="mt-4 flex flex-wrap items-center gap-x-4 gap-y-1.5 text-xs">
+        <ol aria-label="Where this build stands" className="flex items-center gap-3">
+          {path.map((s) => (
+            <li key={s.id} title={s.note} className={cn("inline-flex items-center gap-1 font-medium", !s.done ? "text-faint" : s.id === "signed" ? "text-ok" : "text-text-2")}>
+              {s.done ? <Check className="size-3.5" aria-hidden="true" /> : <span className="size-1.5 rounded-full bg-current opacity-60" aria-hidden="true" />}<span>{s.label}</span>
+            </li>
+          ))}
+        </ol>
+        <span suppressHydrationWarning className="text-muted">{active ? `Active ${active} of 12 weeks` : "Quiet for 12 weeks"} · updated {timeAgo(p.updated_at)}</span>
       </div>
-
-      {/* Where it stands: logged, asked, signed. */}
-      <ol aria-label="Where this build stands" className="mt-4 grid grid-cols-3 divide-x divide-line-strong overflow-hidden rounded-lg border border-line-strong">
-        {path.map((s) => (
-          <li key={s.id} className="min-w-0 px-2.5 py-2">
-            <span className={cn("flex items-center gap-1.5 text-xs font-medium", !s.done ? "text-muted" : s.id === "signed" ? "text-ok" : "text-text")}>
-              {s.done ? <Check className="size-3.5" /> : <span className="size-3.5 rounded-full border border-line-strong" aria-hidden="true" />} {s.label}
-            </span>
-            <span className="mt-0.5 block text-[11px] text-faint tabular-nums">{s.note}</span>
-          </li>
-        ))}
-      </ol>
 
       {/* Log today's progress, right here. */}
       <PostUpdate compact projectId={p.id} title={p.title} attach={attach} onPosted={() => setLogged(true)} className="mt-4" />
@@ -78,12 +71,12 @@ export function BenchCard({ p, attach = false }: { p: BenchProject; attach?: boo
       )}
 
       <div className="mt-3 flex flex-wrap items-center gap-2">
-        <Link href={`/projects/${p.id}#milestones`} className={cn("inline-flex h-9 items-center gap-1.5 rounded-lg px-3.5 text-xs font-medium transition", step.kind === "verify" ? "bg-text text-surface hover:opacity-90" : "border border-line hover:bg-hover")}>
+        <Link href={`/projects/${p.id}#milestones`} className={cn("inline-flex h-9 items-center gap-1.5 rounded-lg px-3.5 text-xs font-medium transition", step.kind === "verify" ? "bg-text text-surface hover:opacity-90" : "bg-[color-mix(in_oklab,var(--text)_6%,transparent)] hover:bg-[color-mix(in_oklab,var(--text)_10%,transparent)]")}>
           <ShieldCheck className="size-3.5" /> {step.kind === "verify" ? "Get it signed" : p.verified ? "Milestones" : "Add a milestone"}
         </Link>
-        {p.verified > 0 && <Link href="/profile" className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-line px-3.5 text-xs font-medium transition hover:bg-hover"><BadgeCheck className="size-3.5" /> On your record</Link>}
+        {p.verified > 0 && <Link href="/profile" className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[color-mix(in_oklab,var(--text)_6%,transparent)] px-3.5 text-xs font-medium transition hover:bg-[color-mix(in_oklab,var(--text)_10%,transparent)]"><BadgeCheck className="size-3.5" /> On your record</Link>}
         {p.model && (
-          <button type="button" onClick={() => setIn3d(!in3d)} aria-expanded={in3d} title={p.model.name} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-line px-3.5 text-xs font-medium transition hover:bg-hover">
+          <button type="button" onClick={() => setIn3d(!in3d)} aria-expanded={in3d} title={p.model.name} className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-[color-mix(in_oklab,var(--text)_6%,transparent)] px-3.5 text-xs font-medium transition hover:bg-[color-mix(in_oklab,var(--text)_10%,transparent)]">
             {in3d ? <X className="size-3.5" /> : <Box className="size-3.5" />} {in3d ? "Close 3D" : "View in 3D"}
           </button>
         )}
@@ -98,7 +91,7 @@ export function BenchCard({ p, attach = false }: { p: BenchProject; attach?: boo
       <AnimatePresence initial={false}>
         {open && (
           <motion.div id={logId} initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }} className="overflow-hidden">
-            <section aria-label={`Updates on ${p.title}`} className="mt-4 border-t border-line pt-4">
+            <section aria-label={`Updates on ${p.title}`} className="mt-4 pt-1">
               {p.log.length === 0 ? (
                 <p className="text-xs text-muted">No updates yet. Log the first one above: what you built, tested or learned.</p>
               ) : (

@@ -35,11 +35,11 @@ const LMS: [string, string, string, boolean][] = [
   ["Teams", "A group set", "Teams with roles, one hand-in per group, and each member's part on record", false],
   ["Progress", "One file per assignment", "Milestones against your deliverable schedule: proposal, design review, prototype, final", true],
   ["Evidence", "Files in a course shell", "CAD you can turn, test logs and video, with who verified it", false],
-  ["Teamwork", "A separate peer-evaluation tool, if you buy one", "Peer evaluation built in: each teammate rates contribution", true],
-  ["Accreditation", "Assembled by hand each cycle", "Rubric rows carry ABET outcomes as faculty grade; the export groups the evidence by outcome", true],
+  ["Teamwork", "A separate peer-evaluation tool, if you buy one", "Peer evaluation built in: each teammate rates contribution, and only faculty see it", false],
+  ["Accreditation", "Assembled by hand each cycle", "Rubric rows carry ABET outcomes as faculty grade; attainment by outcome and course is a download for the self-study", false],
   ["Industry sponsors", "Can't see the course", "Sign off results by email, no account needed", false],
   ["After the course", "The shell is archived", "The verified work stays on the student's record", false],
-  ["Quizzes and attendance", "Built in", "Quizzes with automatic marking, attendance, extensions and accommodations", true],
+  ["Quizzes and attendance", "Built in", "Quizzes marked the moment they're handed in, attendance by check-in code, extensions and accommodations that move each student's due dates", false],
   ["Switching", "Years of course shells", "Import a Canvas or Blackboard course, single sign-on, roster sync from your student system", true],
 ];
 

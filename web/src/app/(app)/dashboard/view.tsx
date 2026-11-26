@@ -25,7 +25,8 @@ export type Result = {
 };
 
 // The dashboard itself, from loaded data (also renders sample data in previews).
-export function DashboardView({ r, range, likes, comments, follows, views, reports, userId }: { r: Result; range: Range; likes: Point[]; comments: Point[]; follows: Point[]; views: Point[]; reports: { id: string; report: ClubReport }[]; userId: string }) {
+// `bare`: inside the dashboard's Reach view, under the page's own header and tabs (page.tsx).
+export function DashboardView({ r, range, likes, comments, follows, views, reports, userId, bare = false }: { r: Result; range: Range; likes: Point[]; comments: Point[]; follows: Point[]; views: Point[]; reports: { id: string; report: ClubReport }[]; userId: string; bare?: boolean }) {
   const tabs = <Tabs active={range} tabs={RANGES.map(([id, label]) => ({ id, label, href: `/dashboard?range=${id}` }))} />;
   const label = RANGES.find(([k]) => k === range)?.[1] ?? "";
   const delta = (k: keyof Figures) => {
@@ -44,12 +45,16 @@ export function DashboardView({ r, range, likes, comments, follows, views, repor
 
   return (
     <>
-      <PageHeader
-        title="Analytics"
-        subtitle={<span className="inline-flex items-center gap-1.5"><Lock className="size-3.5" /> Only you can see this. How your work is landing on Brazework.</span>}
-        actions={<Link href={`/u/${userId}`} className="text-sm text-muted hover:text-text">Your profile</Link>}
-      />
-      <div className="mt-6">{tabs}</div>
+      {!bare && (
+        <>
+          <PageHeader
+            title="Analytics"
+            subtitle={<span className="inline-flex items-center gap-1.5"><Lock className="size-3.5" /> Only you can see this. How your work is landing on Brazework.</span>}
+            actions={<Link href={`/u/${userId}`} className="text-sm text-muted hover:text-text">Your profile</Link>}
+          />
+          <div className="mt-6">{tabs}</div>
+        </>
+      )}
 
       <ul className="mt-6 grid grid-cols-2 gap-3 xl:grid-cols-4">
         {tiles.map((t) => {

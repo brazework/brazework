@@ -14,14 +14,11 @@ export function ActivityStrip({ weeks }: { weeks: number[] }) {
   const max = Math.max(1, ...weeks);
   const active = weeks.filter((n) => n > 0).length;
   return (
-    <figure className="mt-5">
-      <div className="flex h-7 items-end gap-[3px]" role="img" aria-label={`Active ${active} of the last ${weeks.length} weeks`}>
-        {weeks.map((n, i) => (
-          <span key={i} className={cn("flex-1 rounded-[2px]", n ? "bg-ok/70" : "bg-line")} style={{ height: n ? `${Math.max(35, (n / max) * 100)}%` : "14%" }} title={`${n} ${n === 1 ? "entry" : "entries"}, ${weeks.length - 1 - i === 0 ? "this week" : `${weeks.length - 1 - i} ${weeks.length - 1 - i === 1 ? "week" : "weeks"} ago`}`} />
-        ))}
-      </div>
-      <figcaption className="mt-1.5 flex justify-between text-[11px] text-faint"><span>12 weeks ago</span><span>Active {active} of {weeks.length} weeks</span><span>This week</span></figcaption>
-    </figure>
+    // How steadily, in words (2026-11-26: no bar strip, no lines). The busiest week, when there was one.
+    <p className="mt-4 flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-muted">
+      <span className={cn("size-2 rounded-full", active ? "bg-ok" : "bg-faint")} aria-hidden="true" />
+      <span><span className="font-medium text-text-2">{active ? `Active ${active} of the last ${weeks.length} weeks` : `Quiet for ${weeks.length} weeks`}</span>{max > 1 ? ` · busiest week ${max} entries` : ""}</span>
+    </p>
   );
 }
 

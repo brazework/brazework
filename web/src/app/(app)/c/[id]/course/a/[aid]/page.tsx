@@ -6,18 +6,19 @@ import { Suspense } from "react";
 import { PageHeader, Skeleton } from "@/components/app/page-ui";
 import { ABET_OUTCOMES, dueText, isLate, type RubricRow } from "@/lib/course-math";
 import { rank } from "@/lib/communities";
-import { requestTime, timeAgo } from "@/lib/forge";
+import { cn, requestTime, timeAgo } from "@/lib/forge";
+import { dbFeatures } from "@/lib/db-features";
 import { signedUrls } from "@/lib/signed-urls";
 import { loadCommunity } from "../../../data";
-import { Fold, GradeForm, PublishToggle, ReleaseButton, RemoveButton, SubmitForm, type Handin } from "../../course-client";
+import { ExtensionForm, PeerReviewForm, QuizForm, type QuizQuestion, Fold, GradeForm, PublishToggle, ReleaseButton, RemoveButton, SubmitForm, type Handin } from "../../course-client";
 
 // One assignment (supabase/courses.sql). A student reads it, hands in their work (or their group's),
 // and sees their grade and feedback once it's released. Staff see every hand-in (and who hasn't),
 // grade each student or group against the rubric, verify a milestone as they grade it, and release.
 export const metadata: Metadata = { title: "Assignment" };
 
-type Assignment = { id: string; community_id: string; title: string; instructions: string; due_at: string | null; points: number; group_work: boolean; submit_as: string[]; rubric: RubricRow[]; published: boolean };
-type Submission = { id: string; uid: string; project_id: string | null; body: string; url: string | null; file_path: string | null; file_name: string | null; milestone_id: string | null; submitted_at: string };
+type Assignment = { id: string; community_id: string; title: string; instructions: string; due_at: string | null; points: number; group_work: boolean; submit_as: string[]; rubric: RubricRow[]; published: boolean; kind?: "assignment" | "quiz"; quiz?: QuizQuestion[]; peer_eval?: boolean; show_score?: boolean };
+type Submission = { answers?: Record<string, unknown> | null; id: string; uid: string; project_id: string | null; body: string; url: string | null; file_path: string | null; file_name: string | null; milestone_id: string | null; submitted_at: string };
 type Grade = { uid: string; score: number | null; rubric_scores: Record<string, number>; feedback: string; released: boolean; graded_at: string };
 type Milestone = { id: string; title: string; status: string; project_id: string };
 
@@ -51,22 +52,68 @@ function HandinView({ s, fileHref, milestone }: { s: Submission; fileHref?: stri
   );
 }
 
+// A quiz's answers, beside the key for staff (right in green, wrong in red); without the key for the student.
+function QuizAnswers({ questions, answers, answerKey }: { questions: QuizQuestion[]; answers: Record<string, unknown>; answerKey?: Record<string, unknown> | null }) {
+  const shown = (q: QuizQuestion, v: unknown) => {
+    if (v === undefined || v === null || v === "") return "No answer";
+    if (q.type === "choice") return q.options?.[v as number] ?? String(v);
+    if (q.type === "multi") return ((v as number[]) ?? []).map((i) => q.options?.[i] ?? i).join(", ");
+    return String(v);
+  };
+  const right = (q: QuizQuestion, v: unknown): boolean | null => {
+    if (!answerKey || q.type === "short") return null;
+    const k = answerKey[q.id];
+    if (k === undefined) return null;
+    if (q.type === "choice") return v === k;
+    if (q.type === "multi") return JSON.stringify([...((v as number[]) ?? [])].sort()) === JSON.stringify([...((k as number[]) ?? [])].sort());
+    const kk = k as { value: number; tolerance: number };
+    return typeof v === "number" && Math.abs(v - kk.value) <= (kk.tolerance ?? 0);
+  };
+  return (
+    <ol className="mt-3 flex flex-col gap-2.5 text-sm">
+      {questions.map((q, i) => {
+        const v = answers[q.id], ok = right(q, v);
+        return (
+          <li key={q.id} className="flex gap-2.5">
+            <span className="w-4 shrink-0 font-mono text-xs leading-5 text-faint">{i + 1}</span>
+            <span className="min-w-0">
+              <span className="block text-text-2">{q.prompt}</span>
+              <span className={cn("mt-0.5 block font-medium", ok === true ? "text-ok" : ok === false ? "text-danger" : "text-text")}>{shown(q, v)}{ok === false && answerKey && <span className="font-normal text-muted"> · right: {shown(q, q.type === "number" ? (answerKey[q.id] as { value: number }).value : answerKey[q.id])}</span>}{q.type === "short" && answerKey && <span className="font-normal text-muted"> · you score this</span>}</span>
+            </span>
+          </li>
+        );
+      })}
+    </ol>
+  );
+}
+
 async function AssignmentView({ params }: { params: PageProps<"/c/[id]/course/a/[aid]">["params"] }) {
   const { id, aid } = await params;
   const { supabase, user, community: c, me } = await loadCommunity(id);
   if (!c || c.type !== "class") notFound();
   if (!me) redirect(`/c/${id}`);
-  const { data } = await supabase.from("assignments").select("id, community_id, title, instructions, due_at, points, group_work, submit_as, rubric, published").eq("id", aid).eq("community_id", id).maybeSingle();
+  const { coursesB } = await dbFeatures();
+  const { data } = await supabase.from("assignments").select(`id, community_id, title, instructions, due_at, points, group_work, submit_as, rubric, published${coursesB ? ", kind, quiz, peer_eval, show_score" : ""}`).eq("id", aid).eq("community_id", id).maybeSingle();
   if (!data) notFound();
-  const a = data as Assignment;
+  const a = data as unknown as Assignment;
+  const quiz = a.kind === "quiz";
   const staff = rank(me.role) >= 3;
   const now = requestTime();
+  // Your own due date when you're a student: an extension, or the due date plus your accommodation's days.
+  let myDue = a.due_at;
+  if (!staff && coursesB && a.due_at) {
+    const [ext, acc] = await Promise.all([
+      supabase.from("assignment_extensions").select("due_at").eq("assignment_id", aid).eq("uid", user.id).maybeSingle(),
+      supabase.from("course_accommodations").select("extra_days").eq("community_id", id).eq("uid", user.id).maybeSingle(),
+    ]);
+    myDue = (ext.data as { due_at: string } | null)?.due_at ?? new Date(new Date(a.due_at).getTime() + ((acc.data as { extra_days: number } | null)?.extra_days ?? 0) * 86_400_000).toISOString();
+  }
 
   const [subs, grs] = await Promise.all([
-    supabase.from("submissions").select("id, uid, project_id, body, url, file_path, file_name, milestone_id, submitted_at").eq("assignment_id", aid).order("submitted_at", { ascending: false }).limit(2000),
+    supabase.from("submissions").select(`id, uid, project_id, body, url, file_path, file_name, milestone_id, submitted_at${coursesB ? ", answers" : ""}`).eq("assignment_id", aid).order("submitted_at", { ascending: false }).limit(2000),
     supabase.from("grades").select("uid, score, rubric_scores, feedback, released, graded_at").eq("assignment_id", aid).limit(2000),
   ]);
-  const submissions = (subs.data ?? []) as Submission[];
+  const submissions = (subs.data ?? []) as unknown as Submission[];
   const grades = (grs.data ?? []) as Grade[];
   const msIds = [...new Set(submissions.map((s) => s.milestone_id).filter(Boolean) as string[])];
   const [msRes, files] = await Promise.all([
@@ -77,15 +124,15 @@ async function AssignmentView({ params }: { params: PageProps<"/c/[id]/course/a/
 
   const header = (
     <PageHeader title={a.title} back={{ href: `/c/${id}/course?tab=assignments`, label: c.course ? `${c.course} course` : "Course" }}
-      subtitle={<span suppressHydrationWarning className="inline-flex flex-wrap items-center gap-x-1.5"><CalendarClock className="size-4" aria-hidden="true" /> {[dueText(a.due_at, now), a.due_at ? new Date(a.due_at).toLocaleString("en-US", { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : null, `${a.points} points`, a.group_work ? "Group work" : null].filter(Boolean).join(" · ")}</span>}
+      subtitle={<span suppressHydrationWarning className="inline-flex flex-wrap items-center gap-x-1.5"><CalendarClock className="size-4" aria-hidden="true" /> {[quiz ? (myDue && new Date(myDue).getTime() < now ? "Closed" : myDue ? dueText(myDue, now).replace(/^Due/, "Closes") : "Open") : dueText(myDue, now), myDue ? new Date(myDue).toLocaleString("en-US", { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }) : null, myDue && a.due_at && new Date(myDue).getTime() !== new Date(a.due_at).getTime() ? "your extended date" : null, quiz ? `Quiz · ${a.quiz?.length ?? 0} questions` : null, `${a.points} points`, a.group_work ? "Group work" : null, a.peer_eval ? "Peer evaluation" : null].filter(Boolean).join(" · ")}</span>}
       actions={staff ? <span className="flex items-center gap-1"><PublishToggle table="assignments" id={a.id} cid={id} published={a.published} /><RemoveButton table="assignments" id={a.id} cid={id} what="this assignment and its grades" /></span> : undefined} />
   );
 
   const brief = (
     <section aria-label="Instructions" className="glass-card rounded-2xl p-5">
       <h2 className="flex items-center gap-2 text-sm font-semibold"><FileText className="size-4 text-text-2" aria-hidden="true" /> Instructions</h2>
-      {a.instructions ? <div className="mt-2 flex flex-col gap-2 text-[15px] leading-relaxed text-text-2">{a.instructions.split(/\n{2,}/).map((p, k) => <p key={k} className="whitespace-pre-line">{p}</p>)}</div> : <p className="mt-2 text-sm text-muted">No instructions.</p>}
-      <p className="mt-3 text-xs text-muted">Hand in: {a.submit_as.map((k) => ({ file: "a file", link: "a link", text: "text", milestone: "a project milestone" })[k] ?? k).join(", ")}{a.group_work ? " · one per project group" : ""}</p>
+      {a.instructions ? <div className="mt-2 flex flex-col gap-2 text-[15px] leading-relaxed text-text-2">{a.instructions.split(/\n{2,}/).map((p, k) => <p key={k} className="whitespace-pre-line">{p}</p>)}</div> : <p className="mt-2 text-sm text-muted">{quiz ? (staff ? "Students get one attempt, before it closes. Choice and number questions are marked the moment they hand in; you score short answers." : "One attempt. Choice and number questions are marked the moment you hand in; short answers by your professor.") : "No instructions."}</p>}
+      {!quiz && <p className="mt-3 text-xs text-muted">Hand in: {a.submit_as.map((k) => ({ file: "a file", link: "a link", text: "text", milestone: "a project milestone" })[k] ?? k).join(", ")}{a.group_work ? " · one per project group" : ""}</p>}
       {a.rubric.length > 0 && (
         <div className="mt-4 overflow-x-auto rounded-lg border border-line">
           <table className="w-full text-sm">
@@ -110,6 +157,12 @@ async function AssignmentView({ params }: { params: PageProps<"/c/[id]/course/a/
     const myProjects = ((projs.data ?? []) as { id: string; title: string; owner_id: string }[]).filter((p) => p.owner_id === user.id || onTeam.has(p.id));
     const mineProjectIds = new Set(myProjects.map((p) => p.id));
     const myMilestones = ((myMs.data ?? []) as (Milestone & { owner_id: string })[]).filter((m) => m.owner_id === user.id || mineProjectIds.has(m.project_id));
+    const closed = !!myDue && new Date(myDue).getTime() < now;
+    const [matesRes, givenRes] = a.group_work && a.peer_eval
+      ? await Promise.all([supabase.rpc("my_teammates", { p_aid: aid }), supabase.from("peer_reviews").select("reviewee, score, comment").eq("assignment_id", aid).eq("reviewer", user.id)])
+      : [{ data: [] }, { data: [] }];
+    const mates = ((matesRes.data ?? []) as { uid: string; first_name: string; last_name: string }[]).map((m) => ({ uid: m.uid, name: `${m.first_name} ${m.last_name}`.trim() }));
+    const given = Object.fromEntries(((givenRes.data ?? []) as { reviewee: string; score: number; comment: string }[]).map((r) => [r.reviewee, { score: r.score, comment: r.comment }]));
     const handin: Handin | null = mine ? { body: mine.body, url: mine.url, file_name: mine.file_name, file_href: mine.file_path ? files.get(mine.file_path) ?? null : null, milestone_id: mine.milestone_id, project_id: mine.project_id, submitted_at: mine.submitted_at } : null;
     return (
       <>
@@ -131,18 +184,32 @@ async function AssignmentView({ params }: { params: PageProps<"/c/[id]/course/a/
             </section>
           )}
           {brief}
+          {quiz ? (
+            mine ? (
+              <section aria-label="Your answers" className="glass-card rounded-2xl p-5">
+                <div className="flex flex-wrap items-baseline justify-between gap-2">
+                  <h2 className="font-semibold tracking-tight">Your answers</h2>
+                  {g && g.score != null ? <p className="text-sm font-semibold tabular-nums">Scored {g.score} of {a.points}</p> : <p suppressHydrationWarning className="text-xs text-muted">Handed in {timeAgo(mine.submitted_at)} · your score comes when your professor releases it</p>}
+                </div>
+                <QuizAnswers questions={a.quiz ?? []} answers={mine.answers ?? {}} />
+              </section>
+            ) : closed ? <p className="glass-card rounded-2xl p-5 text-sm text-muted">This quiz closed. Ask your professor if you need an extension.</p>
+              : <QuizForm cid={id} aid={aid} questions={a.quiz ?? []} />
+          ) : (
           <section aria-label="Your work" className="flex flex-col gap-3">
             {mine && (
               <div className="glass-card rounded-2xl p-5">
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
                   <h2 className="font-semibold tracking-tight">{a.group_work ? "Your group's work" : "Your work"}</h2>
-                  <p suppressHydrationWarning className={`text-xs ${isLate(mine.submitted_at, a.due_at) ? "text-danger" : "text-muted"}`}>Handed in {timeAgo(mine.submitted_at)}{isLate(mine.submitted_at, a.due_at) ? ", after the due date" : ""}</p>
+                  <p suppressHydrationWarning className={`text-xs ${isLate(mine.submitted_at, myDue) ? "text-danger" : "text-muted"}`}>Handed in {timeAgo(mine.submitted_at)}{isLate(mine.submitted_at, myDue) ? ", after the due date" : ""}</p>
                 </div>
                 <div className="mt-3"><HandinView s={mine} fileHref={mine.file_path ? files.get(mine.file_path) : undefined} milestone={mine.milestone_id ? milestones.get(mine.milestone_id) : undefined} /></div>
               </div>
             )}
             <SubmitForm cid={id} aid={aid} uid={user.id} submitAs={a.submit_as} groupWork={a.group_work} projects={myProjects.map((p) => ({ id: p.id, title: p.title }))} milestones={myMilestones.map((m) => ({ id: m.id, title: m.title, status: m.status }))} current={handin} locked={!!g} />
           </section>
+          )}
+          {mates.length > 0 && <PeerReviewForm cid={id} aid={aid} mates={mates} given={given} />}
         </div>
       </>
     );
@@ -170,6 +237,20 @@ async function AssignmentView({ params }: { params: PageProps<"/c/[id]/course/a/
     const uids = (a.group_work && s.project_id ? teams.get(s.project_id) ?? [s.uid] : [s.uid]).filter((u) => nameOf.has(u));
     return { s, uids: uids.length ? uids : [s.uid] };
   });
+  const [extRes, accRes, keyRes, peerRes] = coursesB
+    ? await Promise.all([
+        supabase.from("assignment_extensions").select("uid, due_at").eq("assignment_id", aid),
+        supabase.from("course_accommodations").select("uid, extra_days").eq("community_id", id),
+        quiz ? supabase.from("quiz_keys").select("key").eq("assignment_id", aid).maybeSingle() : Promise.resolve({ data: null }),
+        a.peer_eval ? supabase.from("peer_reviews").select("reviewer, reviewee, score, comment").eq("assignment_id", aid) : Promise.resolve({ data: [] }),
+      ])
+    : [{ data: [] }, { data: [] }, { data: null }, { data: [] }];
+  const extensions = new Map(((extRes.data ?? []) as { uid: string; due_at: string }[]).map((e) => [e.uid, e.due_at]));
+  const extraDays = new Map(((accRes.data ?? []) as { uid: string; extra_days: number }[]).map((e) => [e.uid, e.extra_days]));
+  const dueOf = (u: string) => extensions.get(u) ?? (a.due_at ? new Date(new Date(a.due_at).getTime() + (extraDays.get(u) ?? 0) * 86_400_000).toISOString() : null);
+  const key = ((keyRes.data as { key: Record<string, unknown> } | null)?.key ?? null);
+  const peers = (peerRes.data ?? []) as { reviewer: string; reviewee: string; score: number; comment: string }[];
+  const peerLine = (u: string) => { const got = peers.filter((p) => p.reviewee === u); return got.length ? { avg: Math.round((got.reduce((t, p) => t + p.score, 0) / got.length) * 10) / 10, n: got.length, comments: got.filter((p) => p.comment).map((p) => p.comment) } : null; };
   const covered = new Set(rows.flatMap((r) => r.uids));
   const missing = students.filter((x) => !covered.has(x.uid));
   const unreleased = grades.filter((g) => !g.released).length;
@@ -188,6 +269,14 @@ async function AssignmentView({ params }: { params: PageProps<"/c/[id]/course/a/
           <ReleaseButton cid={id} aid={aid} waiting={unreleased} />
         </section>
         {brief}
+        {quiz && key && (
+          <section aria-label="Questions and answers" className="glass-card rounded-2xl p-5">
+            <h2 className="text-sm font-semibold">Questions and answers</h2>
+            <p className="mt-0.5 text-xs text-muted">Only you and your teaching assistants see the answers.</p>
+            <QuizAnswers questions={a.quiz ?? []} answerKey={key}
+              answers={Object.fromEntries((a.quiz ?? []).filter((q) => q.type !== "short").map((q) => [q.id, q.type === "number" ? (key[q.id] as { value: number } | undefined)?.value : key[q.id]]))} />
+          </section>
+        )}
         <section aria-label="Hand-ins" className="flex flex-col gap-3">
           <h2 className="text-sm font-semibold">Hand-ins</h2>
           {rows.length === 0 && <p className="rounded-xl border border-dashed border-line-strong px-4 py-4 text-sm text-muted">Nothing handed in yet.</p>}
@@ -200,11 +289,19 @@ async function AssignmentView({ params }: { params: PageProps<"/c/[id]/course/a/
                 <div className="flex flex-wrap items-baseline justify-between gap-2">
                   <h3 className="flex items-center gap-1.5 font-semibold">{uids.length > 1 && <Users className="size-4 text-text-2" aria-hidden="true" />}{who}</h3>
                   <p suppressHydrationWarning className="text-xs text-muted">
-                    <span className={isLate(s.submitted_at, a.due_at) ? "text-danger" : ""}>{isLate(s.submitted_at, a.due_at) ? "Late · " : ""}{timeAgo(s.submitted_at)}</span>
+                    <span className={isLate(s.submitted_at, dueOf(s.uid)) ? "text-danger" : ""}>{isLate(s.submitted_at, dueOf(s.uid)) ? "Late · " : ""}{timeAgo(s.submitted_at)}</span>
                     {g && <span className="ml-2 font-medium text-text">{g.score ?? "–"} / {a.points}{g.released ? "" : " · not released"}</span>}
                   </p>
                 </div>
-                <div className="mt-3"><HandinView s={s} fileHref={s.file_path ? files.get(s.file_path) : undefined} milestone={ms} /></div>
+                <div className="mt-3">{quiz ? <QuizAnswers questions={a.quiz ?? []} answers={s.answers ?? {}} answerKey={key} /> : <HandinView s={s} fileHref={s.file_path ? files.get(s.file_path) : undefined} milestone={ms} />}</div>
+                {a.peer_eval && (
+                  <ul aria-label="Peer ratings" className="mt-3 flex flex-col gap-1 text-sm">
+                    {uids.map((u) => { const pl = peerLine(u); return (
+                      <li key={u} className="flex flex-wrap items-baseline gap-x-2"><span className="font-medium">{nameOf.get(u) ?? "A student"}</span>
+                        {pl ? <><span className="text-text-2 tabular-nums">rated {pl.avg} of 5 by {pl.n} {pl.n === 1 ? "teammate" : "teammates"}</span>{pl.comments.length > 0 && <span className="text-muted">“{pl.comments.join("” “")}”</span>}</> : <span className="text-muted">no peer ratings yet</span>}</li>
+                    ); })}
+                  </ul>
+                )}
                 <Fold className="mt-4 border-t border-line pt-3" label={g ? "Change the grade" : "Grade"} openAtFirst={!g}>
                   <div className="mt-3"><GradeForm cid={id} aid={aid} uids={uids} who={who} rubric={a.rubric} points={a.points} current={g} milestoneId={ms && ms.status !== "verified" ? ms.id : null} /></div>
                 </Fold>
@@ -212,6 +309,18 @@ async function AssignmentView({ params }: { params: PageProps<"/c/[id]/course/a/
             );
           })}
         </section>
+        {coursesB && a.due_at && students.length > 0 && (
+          <section aria-label="Extensions" className="glass-card rounded-2xl p-5">
+            <h2 className="text-sm font-semibold">Extensions</h2>
+            {extensions.size > 0 && (
+              <ul className="mt-2 flex flex-col gap-1 text-sm text-text-2">
+                {[...extensions].map(([u, d]) => <li key={u} suppressHydrationWarning><span className="font-medium text-text">{nameOf.get(u) ?? "A student"}</span> · due {new Date(d).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</li>)}
+              </ul>
+            )}
+            {extraDays.size > 0 && <p className="mt-1 text-xs text-muted">Accommodations already add days for {[...extraDays.keys()].map((u) => nameOf.get(u) ?? "a student").join(", ")}.</p>}
+            <div className="mt-3"><ExtensionForm cid={id} aid={aid} students={students} /></div>
+          </section>
+        )}
         {missing.length > 0 && (
           <section aria-label="Not handed in" className="glass-card rounded-2xl p-5">
             <h2 className="text-sm font-semibold">Not handed in ({missing.length})</h2>
@@ -221,7 +330,7 @@ async function AssignmentView({ params }: { params: PageProps<"/c/[id]/course/a/
                 return (
                   <li key={x.uid} className="py-2.5">
                     <details>
-                      <summary className="flex cursor-pointer items-center justify-between gap-3 text-sm"><span className="font-medium">{x.name}</span><span className="text-xs text-muted">{g ? `${g.score ?? "–"} / ${a.points}${g.released ? "" : " · not released"}` : a.due_at && new Date(a.due_at).getTime() < now ? "Missing" : "Not yet"}</span></summary>
+                      <summary className="flex cursor-pointer items-center justify-between gap-3 text-sm"><span className="font-medium">{x.name}</span><span className="text-xs text-muted">{g ? `${g.score ?? "–"} / ${a.points}${g.released ? "" : " · not released"}` : dueOf(x.uid) && new Date(dueOf(x.uid)!).getTime() < now ? "Missing" : "Not yet"}</span></summary>
                       <div className="mt-3"><GradeForm cid={id} aid={aid} uids={[x.uid]} who={x.name} rubric={a.rubric} points={a.points} current={g} milestoneId={null} /></div>
                     </details>
                   </li>

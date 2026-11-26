@@ -365,7 +365,7 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
 // The bottom of the feed: somewhere useful to go next.
 function FeedEnd({ tab }: { tab: TabId }) {
   return (
-    <div className="mt-4 rounded-2xl border border-dashed border-line-strong p-6 text-center">
+    <div className="glass-card mt-4 rounded-2xl p-6 text-center">
       <p className="font-medium">You&apos;re all caught up</p>
       <p className="mt-1 text-sm text-muted">Keep the momentum: help someone, or show what you built.</p>
       <div className="mt-4 flex flex-wrap justify-center gap-2">

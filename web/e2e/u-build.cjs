@@ -20,7 +20,7 @@ const clean = () => psql(`delete from public.posts where body = '${NOTE}'; alter
     await ben.getByRole("heading", { name: "Projects", level: 1 }).waitFor({ timeout: 15000 });
     await card.getByRole("list", { name: "Where this build stands" }).waitFor();
     for (const s of ["Logged", "Asked", "Signed"]) await card.getByRole("list", { name: "Where this build stands" }).getByText(s, { exact: true }).waitFor();
-    await card.getByRole("img", { name: /of the last 12 weeks|last 12 weeks/ }).waitFor();
+    await card.getByText(/Active \d+ of 12 weeks|Quiet for 12 weeks/).waitFor();
     if (await builds.locator("canvas").count()) throw new Error("a stock drawing is still on the build cards");
     await card.getByRole("link", { name: "On your record" }).waitFor();
   }, ben);

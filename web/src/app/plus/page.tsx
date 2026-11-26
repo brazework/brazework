@@ -5,7 +5,7 @@ import { Suspense } from "react";
 import { Footer } from "@/components/landing/closing";
 import { ThemeChrome } from "@/components/theme-chrome";
 import { Logo } from "@/components/ui";
-import { PLUS_STUDENT_ANNUAL_PRICE_ENV, plusOnSale, plusPriceEnv, plusYearlyOnSale } from "@/lib/billing";
+import { plusOnSale, plusYearlyOnSale } from "@/lib/billing";
 import { dbFeatures } from "@/lib/db-features";
 import { EMBER_DAILY_LIMIT, PLUS, PLUS_SOON, PLUS_TIER } from "@/lib/pricing";
 import { getViewer } from "@/lib/supabase/server";
@@ -45,11 +45,9 @@ async function Plus({ searchParams }: { searchParams: PageProps<"/plus">["search
   const { supabase, user, profile } = await getViewer();
   const has = user && (await dbFeatures()).money ? Boolean((await supabase.rpc("has_plus")).data) : false;
   const onSale = plusOnSale();
+  // Students never pay (founders, 2026-11-26): Plus is for professionals and independent builders.
   const studying = profile?.account_type === "student";
-  const student = studying && (await supabase.rpc("student_plus_eligible")).data === true;
-  const yearly = onSale && (student
-    ? plusPriceEnv({ student, yearly: true }) === PLUS_STUDENT_ANNUAL_PRICE_ENV
-    : plusYearlyOnSale());
+  const yearly = onSale && plusYearlyOnSale();
   const tier = PLUS_TIER;
   return (
     <>
@@ -64,11 +62,13 @@ async function Plus({ searchParams }: { searchParams: PageProps<"/plus">["search
         <div className="mt-8">
           {has ? (
             <p role="status" className="flex items-start gap-2 text-[15px]"><Check className="mt-0.5 size-4 shrink-0 text-ok" /> {welcome ? "Welcome to Plus. It's on your account now." : "You have Plus."} <Link href="/dashboard" className="font-medium underline-offset-4 hover:underline">See who looked</Link></p>
+          ) : studying ? (
+            <p role="status" className="flex items-start gap-2 text-[15px]"><Check className="mt-0.5 size-4 shrink-0 text-ok" /> Students never pay. Your record, every signature, your clubs and being found are free for good. Plus is for professionals and independent builders.</p>
           ) : user ? (
             yearly ? (
               <div className="flex flex-wrap gap-3">
-                <PlusButton yearly label={`Get ${PLUS.name} for a year, $${student ? PLUS.studentYear : PLUS.everyoneYear}`} />
-                <PlusButton quiet label={`Monthly, $${student ? PLUS.student : PLUS.everyone}/mo`} />
+                <PlusButton yearly label={`Get ${PLUS.name} for a year, $${PLUS.everyoneYear}`} />
+                <PlusButton quiet label={`Monthly, $${PLUS.everyone}/mo`} />
               </div>
             ) : (
               <PlusButton label={onSale ? `Get ${PLUS.name}` : "Join the waitlist"} />
@@ -76,11 +76,8 @@ async function Plus({ searchParams }: { searchParams: PageProps<"/plus">["search
           ) : (
             <Link href="/login?next=/plus" className="inline-flex h-11 items-center rounded-lg bg-accent px-5 text-[15px] font-medium text-on-accent hover:opacity-90">{onSale ? `Log in to get ${PLUS.name}` : "Log in to join the waitlist"}</Link>
           )}
-          {!has && studying && !student && (
-            <p className="mt-3 text-sm text-muted">Student pricing requires a confirmed school email. <Link href="/settings#school-email" className="font-medium text-text underline underline-offset-4">Switch to your school email</Link></p>
-          )}
-          {!has && !onSale && <p className="mt-3 text-sm text-muted">{PLUS.name} opens soon. Join the waitlist and we&apos;ll email you, at the launch price.</p>}
-          {!has && onSale && <p className="mt-3 text-sm text-muted">Cancel anytime, from Settings. Your record stays yours either way.</p>}
+          {!has && !studying && !onSale && <p className="mt-3 text-sm text-muted">{PLUS.name} opens soon. Join the waitlist and we&apos;ll email you, at the launch price.</p>}
+          {!has && !studying && onSale && <p className="mt-3 text-sm text-muted">Cancel anytime, from Settings. Your record stays yours either way.</p>}
         </div>
       </section>
 
