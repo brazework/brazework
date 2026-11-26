@@ -42,7 +42,6 @@ import { PostCard } from "../../feed/post-card";
 import { PeopleStrip } from "../../feed/discover";
 import { StripSkeleton } from "@/components/app/discover-cards";
 import { CoverBanner, ProfilePhoto } from "@/components/media/profile-media";
-import { schematicFor } from "@/lib/schematic-field";
 import { OnlineLabel, WithPresence } from "@/components/presence/presence";
 import { EditProfile, ProjectEditor, ProjectGrid, type ProjectView } from "./profile-client";
 import type { Club, Milestone } from "./milestones";
@@ -217,7 +216,7 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
         </p>
       )}
       <Panel className="relative overflow-hidden rounded-2xl p-0">
-        <CoverBanner path={p.cover_path} editable={mine && mediaOn} userId={user.id} schematic={schematicFor([p.field ?? "", ...(p.interests ?? [])], [])} label={[p.field, p.grad_year ? classOf(p.grad_year) : ""].filter(Boolean).join(" · ")} />
+        <CoverBanner path={p.cover_path} editable={mine && mediaOn} userId={user.id} label={[p.field, p.grad_year ? classOf(p.grad_year) : ""].filter(Boolean).join(" · ")} />
         <div className="px-5 pb-5 sm:px-6">
           <div className="pointer-events-none relative z-10 -mt-10 flex flex-wrap items-end justify-between gap-3 *:pointer-events-auto">
             <div className="inline-flex rounded-full shadow-[0_8px_24px_-8px_rgb(0_0_0/0.45)] ring-4 ring-surface">

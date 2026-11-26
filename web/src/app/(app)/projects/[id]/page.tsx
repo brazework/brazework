@@ -3,7 +3,6 @@ import { ProjectSignoff } from "./signoff";
 import type { Metadata } from "next";
 import { ReportLink } from "@/components/report/report-dialog";
 import { ArrowLeft, BadgeCheck, ChevronDown, ExternalLink, Images, Megaphone, Pencil, Play } from "lucide-react";
-import { schematicFor } from "@/lib/schematic-field";
 import { MediaGrid } from "@/components/media/media-grid";
 import { signedUrls } from "@/lib/signed-urls";
 import { mediaUrl, type MediaItem } from "@/lib/media";
@@ -186,7 +185,7 @@ async function ProjectView({ params, searchParams }: { params: PageProps<"/proje
       <div className="flex min-w-0 flex-col gap-6">
         <section aria-label="Project" className="glass-card overflow-hidden rounded-2xl">
           {/* The drawing sheet: the work, the title, and the title block with where it stands. */}
-          <ProjectCover title={p.title} isPrivate={p.private} live={live} year={p.year} last={last} schematic={schematicFor(p.tags, tools)}
+          <ProjectCover title={p.title} isPrivate={p.private} live={live} year={p.year} last={last}
             cover={cover ? { src: mediaUrl(cover.path), alt: cover.alt || "" } : null}
             facts={{ club: p.club?.name ?? milestones.find((m) => m.status === "verified" || m.status === "pending")?.community_name ?? myClubs[0]?.name ?? null, signed: verified.length, waiting: milestones.filter((m) => m.status === "pending").length, builders: team.length + 1, started: new Date(p.created_at).toLocaleDateString("en-US", { month: "short", year: "numeric", timeZone: "UTC" }) }} />
           <div className="p-5 sm:p-7">
