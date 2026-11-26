@@ -10,7 +10,7 @@ import type { Lab, Mode } from "./cad/engine";
 // hero works the same. `data-state` (waiting, ready, failed) is what the tests read.
 export type { BuildId, Mode };
 
-export function CadStage({ build, mode, callouts, className, children }: { build: BuildId; mode: Mode; callouts: Record<string, string>; className?: string; children?: React.ReactNode }) {
+export function CadStage({ build, mode, callouts, active = true, className, children }: { build: BuildId; mode: Mode; callouts: Record<string, string>; active?: boolean; className?: string; children?: React.ReactNode }) {
   const [state, setState] = useState<"waiting" | "ready" | "failed">("waiting");
   const host = useRef<HTMLDivElement>(null);
   const lab = useRef<Lab | null>(null);
@@ -57,6 +57,8 @@ export function CadStage({ build, mode, callouts, className, children }: { build
   }, []);
   useEffect(() => { lab.current?.setBuild(build); }, [build]);
   useEffect(() => { lab.current?.setMode(mode); }, [mode]);
+  // Parked while another view of the hero is showing: no frames drawn for nobody.
+  useEffect(() => { lab.current?.setActive(active); }, [active, state]);
 
   return (
     <div id="cad-stage" data-state={state} className={cn("cad-sheet relative overflow-hidden", className)}>

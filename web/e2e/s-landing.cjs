@@ -1,9 +1,11 @@
-// The landing page (redesign 2026-11; schools first since 2026-11-26): short, with the product to
-// play with in the hero. Signed out, on a laptop and a phone: typing a build puts it on the milestone
-// card and carries it into sign-up; the example signs itself, a class project waits for its professor,
-// and Sign signs it; the 3D view is one of three; how it works; the band for schools and /schools;
-// who it's for and where each starts; the pilot form; the page stays short; with reduced motion,
-// nothing waits on an animation.
+// The landing page (schools first and the landing journey since 2026-11-26): short, with the product
+// window as the hero. Signed out, on a laptop and a phone: typing a build makes it the milestone and
+// carries it into sign-up; the five views follow it (the professor verifies, the school counts it and
+// exports the evidence, a recruiter finds it, it goes to LinkedIn and opens inside the course); a club
+// build is verified by its officer; every build draws in 3D in Render, Section and Stress; on a laptop
+// the views play as you scroll; what the others can't show; the band for schools and /schools; who
+// it's for and where each starts; the pilot form; the page stays short; with reduced motion, nothing
+// pins or waits on an animation.
 const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
 
 (async () => {
@@ -11,59 +13,112 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
   const ctx = await b.newContext({ viewport: { width: 1440, height: 950 } });
   const page = await ctx.newPage();
   page.errs = []; page.on("pageerror", (e) => page.errs.push(e.message));
+  const BUILD = "Thrust stand calibrated to 0.4 percent";
+  const tabs = () => page.getByRole("tablist", { name: "Follow one project" });
+  const selected = async () => (await tabs().getByRole("tab", { selected: true }).innerText()).replace(/^\d\s*/, "").trim();
+  const view = (id) => page.locator(`#hero-view-${id}`);
 
-  await step("hero: the example milestone signs itself, and what you type lands on the card and goes with you to sign-up", async () => {
+  await step("hero: what you type is the milestone in the product window, and it goes with you to sign-up", async () => {
     await go(page, "/");
-    const card = page.locator("#hero-card");
-    await card.getByText(/Signed by J\. Reyes/).waitFor({ timeout: 10000 });
     await hydrated(page.locator("#hero-build"));
-    await page.locator("#hero-build").fill("Thrust stand calibrated to 0.4 percent");
-    await card.getByText("Thrust stand calibrated to 0.4 percent").waitFor();
-    await card.getByText(/Waiting for J\. Reyes/).waitFor();
-    const href = await page.locator("#top").getByRole("link", { name: /Get it signed/ }).getAttribute("href");
-    if (new URL(href, BASE).searchParams.get("build") !== "Thrust stand calibrated to 0.4 percent") throw new Error(`the button doesn't carry the build: ${href}`);
+    await page.locator("#hero-build").fill(BUILD);
+    await page.locator("#hero-card").getByText(BUILD).waitFor();
+    await page.locator("#hero-card").getByText(/ME 410 Capstone · Fall 2026/).waitFor();
+    const href = await page.locator("#top").getByRole("link", { name: /Get it verified/ }).getAttribute("href");
+    if (new URL(href, BASE).searchParams.get("build") !== BUILD) throw new Error(`the button doesn't carry the build: ${href}`);
+    if ((await tabs().getByRole("tab").count()) !== 5) throw new Error("expected five views");
+    if ((await selected()) !== "Student") throw new Error(`the hero opens on ${await selected()}`);
   }, page);
 
-  await step("hero: a class project waits for its professor, and Sign signs it with the class and semester", async () => {
-    const builds = page.getByRole("group", { name: "Example builds" });
-    await builds.getByRole("button", { name: "Robot arm" }).click();
-    if ((await builds.getByRole("button", { name: "Robot arm" }).getAttribute("aria-pressed")) !== "true") throw new Error("Robot arm isn't marked as the build");
-    const card = page.locator("#hero-card");
-    await card.getByText(/Class project · ME 482 Robotics · Fall 2026/).waitFor();
-    await card.getByRole("button", { name: "Sign as Prof. Dana Ruiz" }).click();
-    await card.getByText(/Signed by Prof\. Dana Ruiz, ME 482, Fall 2026/).waitFor();
+  await step("hero: the professor verifies it, the school counts it and exports the evidence, a recruiter finds it, it goes everywhere", async () => {
+    await page.locator("#hero-card").getByRole("button", { name: "Ask Prof. Alvarez to verify" }).click();
+    await view("verify").getByText(BUILD).waitFor();
+    for (const who of ["Maya Chen", "Sam Ortiz", "Priya Nair"]) await view("verify").getByRole("list", { name: "Teammates" }).getByText(who).waitFor();
+    const button = view("verify").getByRole("button", { name: "Verify as Prof. Alvarez" });
+    if (await button.isVisible()) await button.click().catch(() => {}); // it may verify itself first
+    await view("verify").getByRole("status").getByText(/Verified by Prof\. Alvarez, ME 410, Fall 2026/).waitFor({ timeout: 8000 });
+
+    await tabs().getByRole("tab", { name: "School" }).click();
+    await view("school").getByText("ABET SO 6 · Experimentation and analysis").waitFor();
+    await view("school").getByText("+1 just now").waitFor({ timeout: 8000 });
+    await view("school").getByRole("button", { name: "Export evidence" }).click();
+    const report = page.getByRole("dialog", { name: "Sample evidence report" });
+    await report.getByText(BUILD).waitFor();
+    await report.getByRole("button", { name: "Close the report" }).click();
+    await report.waitFor({ state: "detached" });
+
+    await tabs().getByRole("tab", { name: "Recruiter" }).click();
+    await view("recruiter").getByText("drivetrain test, verified").waitFor({ timeout: 8000 });
+    await view("recruiter").getByText(BUILD).waitFor();
+    await view("recruiter").getByText(/Verified by Prof\. Alvarez/).first().waitFor();
+    await view("recruiter").getByText("Viewed by Pratt & Whitney").waitFor({ timeout: 8000 });
+
+    await tabs().getByRole("tab", { name: "Everywhere" }).click();
+    await view("everywhere").getByRole("button", { name: "Add to LinkedIn" }).click();
+    await view("everywhere").getByText("Added to LinkedIn").waitFor();
+    await view("everywhere").getByText(/brazework\.com\/v\//).waitFor();
+    await view("everywhere").getByRole("radio", { name: "Blackboard" }).click();
+    await view("everywhere").getByText(/Blackboard · opened through LTI 1\.3/).waitFor();
+    await page.locator("#top").getByText("Illustration · the verify link and résumé work today").waitFor();
   }, page);
 
-  await step("hero: the 3D build draws (or says it can't), and its view is one of Render, Section or Stress", async () => {
-    await page.waitForFunction(() => ["ready", "failed"].includes(document.querySelector("#cad-stage")?.getAttribute("data-state") ?? ""), null, { timeout: 30000 });
-    if ((await page.locator("#cad-stage").getAttribute("data-state")) === "ready" && !(await page.locator("#cad-stage canvas").count())) throw new Error("ready, but no canvas");
-    for (const mode of ["Section", "Stress", "Render"]) {
-      await page.getByRole("radio", { name: mode }).click();
-      const on = await page.getByRole("radiogroup", { name: "View" }).getByRole("radio", { checked: true }).allInnerTexts();
-      if (on.length !== 1 || !on[0].includes(mode)) throw new Error(`after ${mode}, the views marked are ${on.join(", ")}`);
-    }
-  }, page);
-
-  await step("how it works: three steps straight after the hero; the signed state shows once you scroll to it, and the nav says where you are", async () => {
-    const how = page.locator("#how");
-    await how.getByRole("heading", { name: "Log it. Get it signed. Keep it." }).waitFor();
-    const order = await page.locator("main > section").evaluateAll((els) => els.map((el) => el.id));
-    if (order[0] !== "top" || order[1] !== "how") throw new Error(`the page starts ${order.slice(0, 3).join(", ")}`);
-    const states = how.locator("ol > li figcaption");
-    if ((await states.count()) !== 3) throw new Error("expected three steps");
-    // At the top of the page the line hasn't reached any step yet.
-    await states.nth(2).waitFor({ state: "hidden" });
-    await states.nth(2).scrollIntoViewIfNeeded();
-    await page.mouse.wheel(0, 300);
-    await states.nth(2).waitFor({ state: "visible", timeout: 10000 });
-    if (!/Signed by Prof\. Alvarez, ME 410/.test(await states.nth(2).innerText())) throw new Error("the third step isn't the signed one");
-    await page.locator('header a[aria-current="location"]').filter({ hasText: "How it works" }).waitFor();
+  await step("hero: every build draws in 3D in Render, Section and Stress, and a club build is verified by its officer", async () => {
     await go(page, "/");
+    await page.waitForFunction(() => ["ready", "failed"].includes(document.querySelector("#cad-stage")?.getAttribute("data-state") ?? ""), null, { timeout: 30000 });
+    const drew = (await page.locator("#cad-stage").getAttribute("data-state")) === "ready";
+    if (drew && !(await page.locator("#cad-stage canvas").count())) throw new Error("ready, but no canvas");
+    const builds = page.getByRole("group", { name: "Example builds" });
+    const chips = ["Gearbox", "Truss bridge", "Circuit board", "Formula SAE", "Drone", "Robot arm", "Rocket avionics"];
+    if ((await builds.getByRole("button").count()) !== chips.length) throw new Error("expected seven example builds");
+    for (const chip of chips) {
+      await builds.getByRole("button", { name: chip, exact: true }).click();
+      if ((await builds.getByRole("button", { name: chip, exact: true }).getAttribute("aria-pressed")) !== "true") throw new Error(`${chip} isn't marked as the build`);
+      for (const mode of ["Section", "Stress", "Render"]) {
+        await page.getByRole("radio", { name: mode }).click();
+        const on = await page.getByRole("radiogroup", { name: "View" }).getByRole("radio", { checked: true }).allInnerTexts();
+        if (on.length !== 1 || !on[0].includes(mode)) throw new Error(`${chip}: after ${mode}, the views marked are ${on.join(", ")}`);
+      }
+      if (drew) await page.locator("#cad-stage .cad-callout").first().waitFor({ state: "attached" });
+      if (page.errs.length) throw new Error(`${chip}: ${page.errs[0]}`);
+    }
+    await builds.getByRole("button", { name: "Formula SAE", exact: true }).click();
+    await page.locator("#hero-card").getByText(/Formula SAE · 2027 car/).waitFor();
+    await tabs().getByRole("tab", { name: "Club officer" }).click();
+    await view("verify").getByRole("status").getByText(/Verified by K\. Osei, chief engineer, Formula SAE/).waitFor({ timeout: 8000 });
+  }, page);
+
+  await step("hero: on a laptop it pins and plays the views as you scroll, and clicking a view scrolls to it", async () => {
+    await go(page, "/");
+    await hydrated(page.locator("#hero-build"));
+    const run = await page.evaluate(() => { const el = document.getElementById("top"); return { top: el.offsetTop, length: el.offsetHeight - innerHeight }; });
+    if (run.length < 400) throw new Error(`the hero has no scroll run (${run.length}px)`);
+    for (const [p, name] of [[0.5, "School"], [0.99, "Everywhere"], [0.05, "Student"]]) {
+      await page.evaluate((y) => window.scrollTo(0, y), Math.round(run.top + run.length * p));
+      await page.waitForFunction((n) => document.querySelector('[role="tab"][aria-selected="true"]')?.textContent?.includes(n), name, { timeout: 5000 });
+      const box = await tabs().boundingBox();
+      if (!box || box.y < 0 || box.y > 950) throw new Error(`at ${p} of the run the window isn't on screen (${box && box.y})`);
+    }
+    await tabs().getByRole("tab", { name: "Recruiter" }).click();
+    await page.waitForFunction((r) => Math.abs(scrollY - (r.top + (r.length * 3.5) / 5)) < 40, run, { timeout: 5000 });
+    if ((await selected()) !== "Recruiter") throw new Error(`after scrolling to Recruiter, ${await selected()} is selected`);
+  }, page);
+
+  await step("what the others can't do: profiles, the course site and Brazework, straight after the hero, with what's still being built marked", async () => {
+    await go(page, "/");
+    const order = await page.locator("main > section").evaluateAll((els) => els.map((el) => el.id));
+    if (order.join(",") !== "top,compare,schools,for,pilot") throw new Error(`the page runs ${order.join(", ")}`);
+    const sec = page.locator("#compare");
+    await sec.getByRole("heading", { name: /Run your project courses on Brazework\. Your LMS keeps the gradebook/ }).waitFor();
+    for (const h of ["LinkedIn, Handshake", "Blackboard, Canvas", "Brazework"]) await sec.getByRole("heading", { name: h, exact: true }).waitFor();
+    await sec.getByText("The professor, club or sponsor who saw it").waitFor();
+    await sec.getByText("A group set, one file per assignment").waitFor();
+    // What isn't built yet says so: peer evaluation, the schedule, outcome tagging, grade passback.
+    if ((await sec.getByText("with pilot schools", { exact: true }).count()) !== 4) throw new Error("the strip should mark the four things still being built");
   }, page);
 
   await step("for schools: the band names each office's outcome, marks what's still being built, and leads to /schools", async () => {
     const band = page.locator("#schools");
-    await band.getByRole("heading", { name: /verified and counted/ }).waitFor();
+    await band.getByRole("heading", { name: /verified by the people who saw it/ }).waitFor();
     for (const h of ["Accreditation evidence", "Club engagement", "Placement data", "A public showcase"]) await band.getByRole("heading", { name: h, exact: true }).waitFor();
     if ((await band.getByText("With pilot schools").count()) !== 2) throw new Error("the band should mark the two outcomes still being built");
     await band.getByRole("link", { name: /See what schools get/ }).click();
@@ -121,43 +176,38 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
 
   await step("the page raised no errors", async () => { if (page.errs.length) throw new Error(page.errs[0]); }, page);
 
-  // A phone: the build box is full size, the hero keeps its height while you play with it, nothing scrolls sideways.
+  // A phone: the build box is full size, the window keeps its height through every view, nothing scrolls sideways.
   const phone = await (await b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 2, isMobile: true, hasTouch: true })).newPage();
-  await step("phone: the build box is a full-size field, the hero holds its height, and nothing scrolls sideways", async () => {
+  await step("phone: the build box is a full-size field, the hero holds its height through all five views, and nothing scrolls sideways", async () => {
     await go(phone, "/");
     const box = await phone.locator("#hero-build").boundingBox();
     if (!box || box.height < 44) throw new Error(`the build box is ${box && Math.round(box.height)}px tall`);
     const hero = phone.locator("#top");
     const before = Math.round((await hero.boundingBox()).height);
-    await phone.getByRole("group", { name: "Example builds" }).getByRole("button", { name: "Gearbox" }).click();
-    await phone.locator("#hero-card").getByRole("button", { name: /Sign as/ }).click();
-    await phone.locator("#hero-card").getByText(/Signed by Prof\. Alvarez/).waitFor();
-    const after = Math.round((await hero.boundingBox()).height);
-    if (Math.abs(after - before) > 2) throw new Error(`the hero changed height: ${before} to ${after}px`);
-    if (await phone.evaluate(() => document.documentElement.scrollWidth > innerWidth)) throw new Error("phone has horizontal overflow");
-  }, phone);
-
-  await step("phone: the steps swipe sideways without making the page wider", async () => {
-    const how = phone.locator("#how");
-    const next = how.getByRole("button", { name: "Next card" });
-    await hydrated(next);
-    for (const value of ["2 of 3", "3 of 3"]) {
-      await next.click();
-      await how.getByText(value, { exact: true }).waitFor({ timeout: 5000 });
+    await phone.getByRole("group", { name: "Example builds" }).getByRole("button", { name: "Drone" }).click();
+    for (const name of ["Club officer", "School", "Recruiter", "Everywhere"]) {
+      await phone.getByRole("tablist", { name: "Follow one project" }).getByRole("tab", { name }).click();
+      if (name === "Club officer") await phone.locator("#hero-view-verify").getByRole("status").getByText(/Verified by A\. Novak, president, Aerial Robotics Club/).waitFor({ timeout: 8000 });
+      const after = Math.round((await hero.boundingBox()).height);
+      if (Math.abs(after - before) > 2) throw new Error(`the hero changed height on ${name}: ${before} to ${after}px`);
+      if (await phone.evaluate(() => document.documentElement.scrollWidth > innerWidth)) throw new Error(`phone has horizontal overflow on ${name}`);
     }
-    if (!(await next.isDisabled())) throw new Error("the last card still allows moving forward");
-    if (await phone.evaluate(() => document.documentElement.scrollWidth > innerWidth)) throw new Error("the page overflows sideways");
   }, phone);
 
-  // Reduced motion: everything is simply there.
+  // Reduced motion: nothing pins, plays or waits.
   const still = await (await b.newContext({ viewport: { width: 1440, height: 950 }, reducedMotion: "reduce" })).newPage();
   const reducedErrors = [];
   still.on("pageerror", (error) => reducedErrors.push(error.message));
-  await step("reduced motion: the hero's milestone is signed from the start, and every step's state shows", async () => {
+  await step("reduced motion: the hero doesn't pin, and each view shows its end state as soon as it opens", async () => {
     await still.goto(BASE + "/", { waitUntil: "networkidle" });
-    // No waiting on an animation; the timeout only covers hydrating on a slow machine (CI).
-    await still.locator("#hero-card").getByText(/Signed by J\. Reyes/).waitFor({ timeout: 10000 });
-    await still.locator("#how ol > li figcaption").nth(2).waitFor({ state: "visible", timeout: 10000 });
+    await hydrated(still.locator("#hero-build"));
+    const run = await still.evaluate(() => { const el = document.getElementById("top"); return el.offsetHeight - el.firstElementChild.offsetHeight; });
+    if (Math.abs(run) > 2) throw new Error(`the hero still has a scroll run (${run}px)`);
+    const t = still.getByRole("tablist", { name: "Follow one project" });
+    await t.getByRole("tab", { name: "Professor" }).click();
+    await still.locator("#hero-view-verify").getByRole("status").getByText(/Verified by Prof\. Alvarez/).waitFor({ timeout: 3000 });
+    await t.getByRole("tab", { name: "Recruiter" }).click();
+    await still.locator("#hero-view-recruiter").getByText("Viewed by Pratt & Whitney").waitFor({ timeout: 3000 });
     if (reducedErrors.length) throw new Error(reducedErrors[0]);
   }, still);
 

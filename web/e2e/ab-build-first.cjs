@@ -42,7 +42,7 @@ const psql = (sql) => execSync(`docker exec -i forge-e2e-db psql -U postgres -h 
     const box = page.locator("#hero-build");
     await hydrated(box);
     await box.fill(BUILD);
-    await page.locator("#top").getByRole("link", { name: /Get it signed/ }).click();
+    await page.locator("#top").getByRole("link", { name: /Get it verified/ }).click();
     await page.waitForURL((u) => u.pathname === "/signup", { timeout: 20000 });
     await page.getByRole("status", { name: "Welcome from Product Hunt" }).waitFor({ timeout: 15000 });
   }, page);

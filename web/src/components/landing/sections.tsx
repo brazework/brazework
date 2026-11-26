@@ -22,7 +22,7 @@ export function ForSchools() {
       <div aria-hidden="true" className="hero-glow pointer-events-none absolute inset-0 -z-10 opacity-70" />
       <div className="mx-auto max-w-6xl px-5 sm:px-6">
         <p className="inline-flex items-center gap-2 font-mono text-xs text-faint"><GraduationCap className="size-3.5" aria-hidden="true" /> For schools</p>
-        <h2 id="schools-h" className={`${H2} mt-4 max-w-[18ch]`}>Your students&apos; work, verified and counted.</h2>
+        <h2 id="schools-h" className={`${H2} mt-4 max-w-[22ch]`}>Your students&apos; project work, verified by the people who saw it.</h2>
         <p className="mt-5 max-w-[38rem] text-lg leading-relaxed text-muted">Brazework is your school&apos;s portal for project work, in class and in clubs. Faculty verify what they saw, and each office gets the evidence it&apos;s measured on. Students and clubs never pay.</p>
         <ul className="mt-8 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-line bg-line md:mt-10 lg:grid-cols-4">
           {SCHOOL_OUTCOMES.map((o) => (

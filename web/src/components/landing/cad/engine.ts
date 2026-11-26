@@ -8,10 +8,10 @@ import { buildModel, type BuildId, type Built } from "./models";
 //   stress   an FEA-style map, blue (low) to red (high), from each part's load
 // It draws only while it's on screen and the tab is visible, turns slowly unless the visitor drags
 // it, and stands still under reduced motion. Callout positions go back to the page every frame.
-// Loaded on demand (cad-lab.tsx), so pages without the lab never download three.js.
+// Loaded on demand (cad-stage.tsx), so pages without the lab never download three.js.
 
 export type Mode = "render" | "section" | "stress";
-export type Lab = { setBuild(id: BuildId): void; setMode(m: Mode): void; setDark(dark: boolean): void; dispose(): void };
+export type Lab = { setBuild(id: BuildId): void; setMode(m: Mode): void; setDark(dark: boolean): void; setActive(on: boolean): void; dispose(): void };
 export type Place = (id: string, x: number, y: number, show: boolean, right: boolean) => void;
 
 // Turbo, the perceptual rainbow used in FEA post-processing (Mikhailov, 2019), as a polynomial fit.
@@ -157,7 +157,9 @@ export function createLab(host: HTMLElement, opts: { build: BuildId; mode: Mode;
     });
     cut.normal.set(...(built.cut ?? [0, 0, -1])).normalize();
     sway = built.turn === "sway";
+    if (built.theta !== undefined) { theta = built.theta; swayT = 0; }
     theta0 = theta;
+    phi = built.phi ?? 1.18;
     pivot.add(built.root);
     built.animate(0);
     built.root.updateMatrixWorld(true);
@@ -220,7 +222,8 @@ export function createLab(host: HTMLElement, opts: { build: BuildId; mode: Mode;
   }
 
   // ---- The loop: only while visible ----
-  let raf = 0, last = performance.now(), t = 0, onScreen = false, idleUntil = 0;
+  // `active`: the page can park the stage (it sits behind another view) without tearing it down.
+  let raf = 0, last = performance.now(), t = 0, onScreen = false, idleUntil = 0, active = true;
   const still = opts.still;
   function loop(now: number) {
     raf = 0;
@@ -236,9 +239,9 @@ export function createLab(host: HTMLElement, opts: { build: BuildId; mode: Mode;
       opts.onTime?.(t);
     }
     frame();
-    if (onScreen && !document.hidden && (!still || now < idleUntil)) raf = requestAnimationFrame(loop);
+    if (onScreen && active && !document.hidden && (!still || now < idleUntil)) raf = requestAnimationFrame(loop);
   }
-  function wake() { idleUntil = performance.now() + 600; if (!raf && onScreen) { last = performance.now(); raf = requestAnimationFrame(loop); } }
+  function wake() { idleUntil = performance.now() + 600; if (!raf && onScreen && active) { last = performance.now(); raf = requestAnimationFrame(loop); } }
   const io = new IntersectionObserver(([e]) => { onScreen = e.isIntersecting; if (onScreen) wake(); }, { rootMargin: "100px" });
   io.observe(host);
   const onVis = () => { if (!document.hidden) wake(); };
@@ -250,6 +253,7 @@ export function createLab(host: HTMLElement, opts: { build: BuildId; mode: Mode;
   return {
     setBuild: (id) => { setBuild(id); wake(); },
     setMode: (m) => { mode = m; applyMode(); frame(); wake(); },
+    setActive: (on) => { active = on; if (on) wake(); },
     setDark: (dark) => { edgeColor = new THREE.Color(dark ? 0x000000 : 0x0f1012); edgeMat.color = edgeColor; frame(); },
     dispose: () => {
       cancelAnimationFrame(raf);

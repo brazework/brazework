@@ -9,9 +9,10 @@ import { Button, Logo } from "@/components/ui";
 import { cn } from "@/lib/forge";
 
 // `wide`: only in the bar on a wide screen. `noPhone`: a section a phone doesn't show (app/page.tsx), so
-// the phone menu leaves it out. Section links (#how) point back at the landing page from /schools.
+// the phone menu leaves it out. Section links (#top, the hero's product window) point back at the
+// landing page from /schools.
 const LINKS: { href: string; label: string; wide?: boolean; noPhone?: boolean }[] = [
-  { href: "#how", label: "How it works" },
+  { href: "#top", label: "How it works" },
   { href: "/schools", label: "For schools" },
   { href: "/pricing", label: "Pricing" },
   { href: "/ai", label: "Connect your AI", wide: true },
@@ -25,8 +26,7 @@ export function Nav() {
   const to = (href: string) => (href.startsWith("#") && path !== "/" ? `/${href}` : href);
   const current = (href: string) => here === href || path === href;
   useMotionValueEvent(scrollY, "change", (v) => setScrolled(v > 24));
-  // Where you are on the page: the last linked section whose top has passed a third of the way down
-  // the screen. The sections between two links (who signs, why, the 3D build) count as the one above.
+  // Where you are on the page: the linked section that a line a third of the way down the screen is in.
   const [here, setHere] = useState("");
   useEffect(() => {
     const marks = LINKS.filter((l) => l.href.startsWith("#")).map((l) => document.getElementById(l.href.slice(1))).filter((el): el is HTMLElement => !!el);
@@ -34,7 +34,8 @@ export function Nav() {
     const read = () => {
       frame = 0;
       const line = window.innerHeight / 3;
-      const past = marks.filter((el) => el.getBoundingClientRect().top <= line);
+      // Only while you're in it: the hero (#top) is a long scroll run, then other sections follow.
+      const past = marks.filter((el) => { const r = el.getBoundingClientRect(); return r.top <= line && r.bottom > line; });
       setHere(past.length ? `#${past[past.length - 1].id}` : "");
     };
     const onScroll = () => { if (!frame) frame = requestAnimationFrame(read); };
