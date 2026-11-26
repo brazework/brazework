@@ -1,9 +1,10 @@
 "use client";
 import { useRef, useState } from "react";
 import type { CopilotRequest } from "@/lib/copilot";
-import { parseStream, type Proposal, type Segment } from "@/lib/copilot-agent";
+import { parseStream, type Choice, type Proposal, type Segment } from "@/lib/copilot-agent";
 
-export type OnText = (full: string, tools: string[], proposals: Proposal[], segments: Segment[]) => void;
+// `choice`: answers Torch offered as buttons, when the request said the page can show them.
+export type OnText = (full: string, tools: string[], proposals: Proposal[], segments: Segment[], choice: Choice | null) => void;
 
 // Calls /api/copilot and hands back the text as it streams in, plus which lookups Copilot ran
 // (tool frames are split out of the stream by parseStream) and the answer in arrival order.
@@ -30,7 +31,7 @@ export function useCopilot() {
       if (ctrl.signal.aborted) return;
       const parsed = parseStream(raw);
       full = parsed.text;
-      onText(full, parsed.tools, parsed.proposals, parsed.segments);
+      onText(full, parsed.tools, parsed.proposals, parsed.segments, parsed.choice);
     };
     try {
       const res = await fetch("/api/copilot", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(req), signal: ctrl.signal });
