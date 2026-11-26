@@ -147,7 +147,12 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
   const projects: ProjectView[] = projectRows.map((r) => ({ ...r, details: details.get(r.id)?.details ?? null, link: details.get(r.id)?.link ?? null, specs: details.get(r.id)?.specs ?? [], milestones: msOn && (own || !r.private) ? ms.filter((m) => m.project_id === r.id) : undefined }));
   // Proof shows work on public projects (and your own private ones, to you), like the feed and résumé.
   const titles = new Map(projectRows.filter((r) => mine || !r.private).map((r) => [r.id, r.title]));
-  const proofBase: ProofItem[] = ms.filter((m) => m.status === "verified" && titles.has(m.project_id)).map((m) => ({ id: m.id, title: m.title, detail: m.detail, achieved_on: m.achieved_on, community_id: m.community_id, community_name: m.community_name, reviewer_name: m.reviewer_name, vouched_by: m.vouched_by, project: { id: m.project_id, title: titles.get(m.project_id)! } }));
+  // Work verified in a class (supabase/school-portal.sql) says its term too: "ME 410 · Capstone Design · Fall 2026".
+  const signedIn = [...new Set(ms.filter((m) => m.status === "verified" && m.community_id).map((m) => m.community_id as string))];
+  const { data: classRows } = signedIn.length && f.schoolPortal ? await supabase.from("communities").select("id, term").eq("type", "class").in("id", signedIn) : { data: [] };
+  const termOf = new Map(((classRows ?? []) as { id: string; term: string }[]).filter((c) => c.term).map((c) => [c.id, c.term]));
+  const where = (m: { community_id: string | null; community_name: string }) => (m.community_id && termOf.has(m.community_id) ? `${m.community_name} · ${termOf.get(m.community_id)}` : m.community_name);
+  const proofBase: ProofItem[] = ms.filter((m) => m.status === "verified" && titles.has(m.project_id)).map((m) => ({ id: m.id, title: m.title, detail: m.detail, achieved_on: m.achieved_on, community_id: m.community_id, community_name: where(m), reviewer_name: m.reviewer_name, vouched_by: m.vouched_by, project: { id: m.project_id, title: titles.get(m.project_id)! } }));
   // Pro sign-offs (supabase/pro-verification.sql): an engineer's name, title, employer and note. Work
   // they signed comes first: Pro-verified, then club-verified (Linear FIX-72).
   type ProRow = { milestone_id: string; reviewer_name: string; reviewer_title: string; employer_name: string; note: string; created_at: string };
@@ -212,11 +217,11 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
         </p>
       )}
       <Panel className="relative overflow-hidden rounded-2xl p-0">
-        <CoverBanner path={p.cover_path} editable={mine && mediaOn} userId={user.id} schematic={schematicFor([p.field ?? "", ...(p.interests ?? [])], [])} />
+        <CoverBanner path={p.cover_path} editable={mine && mediaOn} userId={user.id} schematic={schematicFor([p.field ?? "", ...(p.interests ?? [])], [])} label={[p.field, p.grad_year ? classOf(p.grad_year) : ""].filter(Boolean).join(" · ")} />
         <div className="px-5 pb-5 sm:px-6">
-          <div className="pointer-events-none relative z-10 -mt-11 flex flex-wrap items-end justify-between gap-3 *:pointer-events-auto">
-            <div className="inline-flex rounded-full">
-              <WithPresence id={p.id} dot="size-5 ring-4 top-[4%] bottom-auto"><ProfilePhoto path={p.avatar_path} first={p.first_name} last={p.last_name} editable={mine && mediaOn} userId={user.id} size={88} /></WithPresence>
+          <div className="pointer-events-none relative z-10 -mt-14 flex flex-wrap items-end justify-between gap-3 *:pointer-events-auto">
+            <div className="inline-flex rounded-full shadow-[0_8px_24px_-8px_rgb(0_0_0/0.45)] ring-4 ring-surface">
+              <WithPresence id={p.id} dot="size-5 ring-4 top-[4%] bottom-auto"><ProfilePhoto path={p.avatar_path} first={p.first_name} last={p.last_name} editable={mine && mediaOn} userId={user.id} size={108} /></WithPresence>
             </div>
             <div data-tour={mine ? "share" : undefined} className="flex flex-wrap items-center gap-2">
               {mine && <EditProfile headline={p.headline} bio={p.bio} />}
@@ -236,7 +241,7 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
               )}
             </div>
           </div>
-          <div className="mt-3 flex flex-wrap items-center gap-3"><h1 className="text-[1.75rem] leading-tight font-semibold tracking-[-0.02em] sm:text-3xl">{name || "Brazework member"}</h1><OnlineLabel id={p.id} /></div>
+          <div className="mt-3 flex flex-wrap items-center gap-3"><h1 className="text-[1.9rem] leading-tight font-semibold tracking-[-0.03em] sm:text-4xl">{name || "Brazework member"}</h1><OnlineLabel id={p.id} /></div>
           {p.headline && <p className="mt-1 text-base text-text-2 sm:text-lg">{p.headline}</p>}
           {goal && !mine && <div className="mt-2.5"><GoalLine goal={goal} /></div>}
           <p className="mt-2 flex flex-wrap items-center gap-x-1.5 text-sm text-muted">

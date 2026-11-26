@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { CalendarDays, FileText, Globe, GraduationCap, MessagesSquare, PartyPopper, PenLine, Settings, UserPlus, BadgeCheck } from "lucide-react";
-import { accentTint } from "@/lib/club-look";
+import { accentOf } from "@/lib/club-look";
+import { schematicFor } from "@/lib/schematic-field";
+import { Schematic } from "@/components/landing/schematics";
 import { openClubChat } from "@/lib/chats";
 import Link from "next/link";
 import { BuildersThisTerm, termStart } from "./builders";
@@ -137,11 +139,14 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
   return (
     <>
       <Panel className="overflow-hidden p-0">
-        <div className="relative h-24 overflow-hidden border-b border-line sm:h-36">
+        <div className="relative h-28 overflow-hidden border-b border-line sm:h-44">
           {c.cover_path ? (
             <Image src={mediaUrl(c.cover_path)} alt="" fill sizes="(min-width: 768px) 768px, 100vw" className="object-cover" priority />
           ) : (
-            <div className="cover-empty absolute inset-0" style={{ backgroundImage: accentTint(c.accent) }} />
+            <div className="cover-blueprint absolute inset-0" style={c.accent ? ({ "--cover-tint": accentOf(c.accent).swatch } as React.CSSProperties) : undefined}>
+              {/* The club's field, drawn on the sheet (lib/schematic-field.ts), as on a member's profile. */}
+              <Schematic id={schematicFor([c.field ?? "", ...(c.topics ?? [])], [])} className="sch-draw absolute top-1/2 right-[4%] h-[92%] w-auto -translate-y-1/2 text-white/70 sm:right-[14%] sm:h-full" />
+            </div>
           )}
           <div className="absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-black/25 to-transparent" aria-hidden="true" />
         </div>

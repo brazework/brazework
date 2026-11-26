@@ -12,7 +12,7 @@ import { UploadError, removeUploaded, uploadMedia } from "@/lib/upload";
 // A cover banner, editable on your own profile.
 // `schematic`: the drawing shown until they add a photo (components/landing/schematics.tsx), picked
 // from their field, so a new record looks drawn, not empty.
-export function CoverBanner({ path, editable, userId, schematic }: { path?: string; editable: boolean; userId: string; schematic?: string }) {
+export function CoverBanner({ path, editable, userId, schematic, label }: { path?: string; editable: boolean; userId: string; schematic?: string; label?: string }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [, start] = useTransition();
@@ -30,17 +30,20 @@ export function CoverBanner({ path, editable, userId, schematic }: { path?: stri
     }
   };
   return (
-    <div className="group relative h-24 overflow-hidden border-b border-line sm:h-36">
+    <div className="group relative h-32 overflow-hidden border-b border-line sm:h-48">
       {path ? <Image src={mediaUrl(path)} alt="" fill sizes="(min-width: 768px) 768px, 100vw" className="object-cover" priority /> : (
-        <div className="cover-empty absolute inset-0">
-          {schematic && <Schematic id={schematic} className="absolute top-1/2 right-[6%] h-[78%] w-auto -translate-y-1/2 text-text/45 sm:right-[18%]" />}
+        // No photo yet: a dark drafting sheet with the field's drawing on it, drawn in once (globals.css).
+        <div className="cover-blueprint absolute inset-0">
+          {schematic && <Schematic id={schematic} className="sch-draw absolute top-1/2 right-[4%] h-[92%] w-auto -translate-y-1/2 text-[#f0a57e] opacity-90 sm:right-[16%] sm:h-[100%]" />}
+          {label && <p className="absolute top-3.5 left-4 font-mono text-[10px] tracking-[0.14em] text-white/55 uppercase sm:left-6">{label}</p>}
+          <span aria-hidden="true" className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/45 to-transparent" />
         </div>
       )}
       {editable && (
         <>
           <input ref={input} type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={(e) => { const f = e.target.files?.[0]; e.target.value = ""; if (f) void pick(f); }} />
           <div className="absolute top-3 right-3 z-20 flex gap-2">
-            <button type="button" onClick={() => input.current?.click()} disabled={busy} className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-bg/75 px-3 text-xs font-medium text-text shadow-sm backdrop-blur transition hover:bg-bg active:scale-95">
+            <button type="button" onClick={() => input.current?.click()} disabled={busy} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-white/15 bg-black/45 px-3 text-xs font-medium text-white shadow-sm backdrop-blur transition hover:bg-black/65 active:scale-95">
               {busy ? <Loader2 className="size-4 animate-spin" /> : <ImagePlus className="size-4" />} {path ? "Change cover" : "Add a cover"}
             </button>
             {path && !busy && (

@@ -2,10 +2,10 @@
 import { ExternalLink, QrCode as QrIcon, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { QrCode } from "@/components/qr-code";
-import { verifyUrl } from "@/lib/verify-public";
+import { linkedinAddUrl, verifyUrl } from "@/lib/verify-public";
 
 // Résumé verify link (supabase/verify-links.sql): the public page for one signed milestone and its QR
-// code, to put on a résumé. The page is public while the milestone and its project are; it says so if
+// code, to put on a résumé, and LinkedIn's add-to-profile link for it (lib/verify-public.ts). The page is public while the milestone and its project are; it says so if
 // the signature is ever revoked.
 export function VerifyLinkButton({ id, title }: { id: string; title: string }) {
   const [open, setOpen] = useState(false);
@@ -54,6 +54,9 @@ function VerifyLinkDialog({ id, title, onClose }: { id: string; title: string; o
           <button type="button" onClick={downloadQr} className={btn}>Download QR</button>
           <a href={`/v/${encodeURIComponent(id)}`} target="_blank" rel="noopener noreferrer" className={btn}><ExternalLink className="size-4" />Open the page</a>
         </div>
+        {/* LinkedIn's add-to-profile form opens filled in; you save it there yourself. */}
+        <a href={linkedinAddUrl(typeof window === "undefined" ? "" : window.location.origin, id, title)} target="_blank" rel="noopener noreferrer" className={`${btn} bg-accent text-on-accent hover:bg-accent hover:opacity-90`}>Add to LinkedIn</a>
+        <p className="-mt-2 text-xs text-faint">Opens LinkedIn with this milestone and its verify link filled in, under Licenses &amp; certifications. You save it there.</p>
       </div>
     </dialog>
   );
