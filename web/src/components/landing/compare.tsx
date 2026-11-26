@@ -21,11 +21,11 @@ const GRID = "md:grid md:grid-rows-[3rem_repeat(6,minmax(3rem,auto))]";
 
 export function Compare() {
   return (
-    <section id="compare" aria-labelledby="compare-h" className="scroll-mt-20 border-b border-line py-14 md:py-16">
+    <section id="compare" aria-labelledby="compare-h" className="scroll-mt-20 py-16 md:py-24">
       <div className="mx-auto max-w-6xl px-5 sm:px-6">
         <h2 id="compare-h" className={cn(H2, "max-w-[24ch]")}>Everything a course needs, built around what students build.</h2>
         <p className="mt-4 max-w-[42rem] text-lg leading-relaxed text-muted">An LMS grades a file and archives the course. A profile lists what you say. Brazework runs the course, verifies the work as it&apos;s graded, and the student keeps the proof.</p>
-        <div className="mt-8 grid grid-cols-1 gap-3 md:mt-10 md:grid-cols-[8.5rem_repeat(3,minmax(0,1fr))] md:gap-0 md:overflow-hidden md:rounded-2xl md:border md:border-line">
+        <div className="reveal mt-8 grid grid-cols-1 gap-3 md:mt-10 md:grid-cols-[8.5rem_repeat(3,minmax(0,1fr))] md:gap-0 md:overflow-hidden md:rounded-2xl md:border md:border-line">
           <div aria-hidden="true" className={cn("hidden md:border-r md:border-line md:bg-surface-2/60", GRID)}>
             <span />
             {ROWS.map((r) => <span key={r} className="flex items-center border-t border-line px-4 font-mono text-[11px] text-faint">{r}</span>)}

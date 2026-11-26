@@ -65,6 +65,7 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
     await view("everywhere").getByText("Added to LinkedIn").waitFor();
     await view("everywhere").getByText(/brazework\.com\/v\//).waitFor();
     await view("everywhere").getByText("Grades stay private: only you and your professors see them.").waitFor();
+    for (const place of ["LinkedIn", "Résumé", "Handshake, applications"]) await view("everywhere").getByRole("list", { name: "Where it goes" }).getByText(place, { exact: true }).waitFor();
     await page.locator("#top").getByText("Example · Add to LinkedIn, the verify link and the résumé work today").waitFor();
     // What isn't built says so: Torch's feedback draft.
     await tabs().getByRole("tab", { name: "Professor" }).click();
@@ -139,9 +140,10 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
     await band.getByRole("heading", { name: /verified by the people who saw it/ }).waitFor();
     for (const h of ["Accreditation evidence", "Club engagement", "Placement data", "A public showcase"]) await band.getByRole("heading", { name: h, exact: true }).waitFor();
     if ((await band.getByText("With pilot schools").count()) !== 2) throw new Error("the band should mark the two outcomes still being built");
-    // How a school grows on it, with the prices from lib/pricing.ts.
-    const grow = band.getByRole("list", { name: "How a school starts" });
-    for (const t of [/One course, one semester/, /\$1,500 pilot/, /\$6,000 a year/, /From \$18,000 a year/]) await grow.getByText(t).waitFor();
+    // Prices live on /pricing: the band says how a school is priced and links there.
+    await band.getByText(/Priced per school, never per student or club/).waitFor();
+    if ((await band.getByRole("link", { name: "See pricing" }).getAttribute("href")) !== "/pricing") throw new Error("the band doesn't link to /pricing");
+    if (await band.getByText(/\$\d/).count()) throw new Error("the band still lists prices");
     await band.getByRole("link", { name: /See what schools get/ }).click();
     await page.waitForURL(/\/schools$/, { timeout: 15000 });
     await page.getByRole("heading", { level: 1, name: /Your courses, projects and clubs/ }).waitFor();

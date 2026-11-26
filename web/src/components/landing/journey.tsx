@@ -299,64 +299,49 @@ export function RecruiterView({ ex, title, on, still }: ViewProps) {
   );
 }
 
-// 5. Everywhere: on LinkedIn (built) and Handshake with the verify link, on the résumé, and the student's
-// one place for classes, clubs, deadlines and grades (Brazework Courses).
+// 5. Everywhere: the verified work as one card, and the three places it goes from there: LinkedIn
+// (Add to LinkedIn, built), the résumé (built), and anywhere else by its verify link (Handshake, an
+// application). One idea per tile, so the view reads at a glance; the tiles arrive one after another.
 export function EverywhereView({ ex, title, on }: ViewProps) {
   const [added, setAdded] = useState(false);
-  const where = ex.kind === "class" ? course(ex) : ex.where;
-  const due = [[ex.kind === "class" ? `${where} · Assignment 4` : `${where} · Build night`, ex.kind === "class" ? "Thu" : "Wed 7 pm"], ["CS 489 · Quiz 3", "Fri"], ["Robotics Club · Demo day", "Sat"]];
+  const [copied, setCopied] = useState(false);
+  const rise = (i: number) => ({ transitionDelay: on ? `${120 + i * 90}ms` : "0ms" });
+  const tile = cn(card, "flex flex-col p-3.5 transition-[opacity,translate] duration-500 ease-out", on ? "translate-y-0 opacity-100" : "translate-y-2 opacity-0");
   return (
-    <div className="flex h-full flex-col gap-2.5 overflow-hidden p-3 sm:grid sm:grid-cols-2 sm:gap-3 sm:p-4">
-      <div className="flex min-h-0 flex-col gap-2.5 sm:gap-3">
-        <div className={cn(card, "p-3")}>
-          <p className={MONO}>LinkedIn · Licenses &amp; certifications</p>
-          <div className="mt-2 flex gap-2.5">
-            <Seal size={28} />
-            <div className="min-w-0">
-              <p className="line-clamp-2 text-[13px] leading-snug font-semibold break-words">{title}</p>
-              <p className="truncate text-[11px] text-muted">Brazework · verified by {ex.signer}</p>
-            </div>
+    <div className="flex h-full flex-col justify-center gap-3 overflow-hidden p-4 sm:gap-4 sm:p-6">
+      <div className="mx-auto w-full max-w-md rounded-2xl border border-line bg-surface p-4 shadow-[var(--shadow)] sm:p-5">
+        <div className="flex gap-3">
+          <Seal size={34} />
+          <div className="min-w-0">
+            <p className="line-clamp-2 text-[15px] leading-snug font-semibold break-words">{title}</p>
+            <Verified ex={ex} className="mt-1 max-w-full" />
           </div>
-          <button type="button" onClick={() => setAdded(true)} tabIndex={on ? 0 : -1} className={cn("mt-2.5 inline-flex h-8 items-center gap-1.5 rounded-lg px-3 text-[12px] font-semibold transition", added ? "border border-ok/60 text-ok" : "bg-accent text-on-accent")}>
+        </div>
+        <div className="mt-3 flex items-center gap-2 border-t border-line pt-3">
+          <Link2 className="size-3.5 shrink-0 text-muted" aria-hidden="true" />
+          <span className="min-w-0 flex-1 truncate font-mono text-[12px] text-text-2">brazework.com/v/8f2k4q</span>
+          <button type="button" onClick={() => setCopied(true)} tabIndex={on ? 0 : -1} className="h-7 shrink-0 rounded-md border border-line-strong px-2 text-[11px] font-medium transition hover:bg-hover">{copied ? "Copied" : "Copy link"}</button>
+        </div>
+      </div>
+      <ul aria-label="Where it goes" className="grid grid-cols-1 gap-2.5 sm:grid-cols-3 sm:gap-3">
+        <li className={tile} style={rise(0)}>
+          <p className={MONO}>LinkedIn</p>
+          <p className="mt-1 text-[13px] leading-snug text-text-2">Under Licenses &amp; certifications, with the verify link.</p>
+          <button type="button" onClick={() => setAdded(true)} tabIndex={on ? 0 : -1} className={cn("mt-auto inline-flex h-8 items-center justify-center gap-1.5 rounded-lg px-3 pt-0 text-[12px] font-semibold transition max-sm:mt-2.5 sm:mt-3", added ? "border border-ok/60 text-ok" : "bg-accent text-on-accent")}>
             {added ? <><Check className="size-3.5" aria-hidden="true" /> Added to LinkedIn</> : "Add to LinkedIn"}
           </button>
-        </div>
-        <div className={cn(card, "p-3")}>
-          <p className={MONO}>Handshake · Projects</p>
-          <p className="mt-1.5 truncate text-[13px] font-semibold">{ex.name}</p>
-          <p className="mt-1 inline-flex max-w-full items-center gap-1.5 text-[12px] text-text-2"><Link2 className="size-3.5 shrink-0" aria-hidden="true" /><span className="truncate font-mono">brazework.com/v/8f2k4q</span></p>
-          <p className="mt-1 text-[11px] text-faint">Anyone can open it to see who verified it and the evidence.</p>
-        </div>
-        <div className={cn(card, "flex-1 p-3 max-sm:hidden")}>
-          <p className={MONO}>Your résumé · PDF</p>
-          <p className="mt-1.5 text-[13px] font-semibold">Verified projects</p>
-          <p className="mt-1 line-clamp-2 text-[12px] leading-snug text-muted">{ex.name}: {title}</p>
-          <p className="mt-1 truncate text-[11px] text-faint">{ex.where} · verified by {ex.signer}</p>
-        </div>
-      </div>
-      <div className={cn(card, "flex min-h-0 flex-1 flex-col overflow-hidden")}>
-        <div className="flex items-center justify-between gap-2 border-b border-line px-3 py-2">
-          <p className="truncate text-[12px] font-medium">{STUDENT.split(" ")[0]}&apos;s Brazework</p>
-          <p className="shrink-0 font-mono text-[10px] text-faint">This week</p>
-        </div>
-        <div className="grid min-h-0 flex-1 grid-cols-1 sm:grid-cols-[5.25rem_minmax(0,1fr)]">
-          <ul className="flex flex-col gap-1 border-r border-line p-2 text-[11px] text-muted max-sm:hidden">
-            {["Classes", "Clubs", "Projects", "Record", "Grades"].map((l) => <li key={l} className={cn("flex items-center gap-1 truncate rounded px-1.5 py-1", l === "Classes" && "bg-raised font-medium text-text")}>{l}{l === "Grades" && <Lock className="size-2.5" aria-hidden="true" />}</li>)}
-          </ul>
-          <div className="flex min-w-0 flex-col gap-2 p-2.5">
-            <p className={MONO}>Due</p>
-            <ul className="flex flex-col gap-1">
-              {due.map(([t, d], i) => <li key={t} className={cn("flex items-center justify-between gap-2 text-[12px]", i === 2 && "max-sm:hidden")}><span className="min-w-0 truncate">{t}</span><span className="shrink-0 font-mono text-[10px] text-faint">{d}</span></li>)}
-            </ul>
-            <p className={cn(MONO, "mt-1")}>On your record</p>
-            <div className="rounded-lg border border-line px-2.5 py-2">
-              <p className="line-clamp-2 text-[12px] leading-snug font-medium break-words">{title}</p>
-              <Verified ex={ex} className="mt-1 max-w-full text-[11px]" />
-            </div>
-            <p className="mt-auto flex items-center gap-1.5 text-[11px] text-muted"><Lock className="size-3 shrink-0" aria-hidden="true" /><span className="min-w-0">Grades stay private: only you and your professors see them.</span></p>
-          </div>
-        </div>
-      </div>
+        </li>
+        <li className={tile} style={rise(1)}>
+          <p className={MONO}>Résumé</p>
+          <p className="mt-1 text-[13px] leading-snug text-text-2">A Verified projects section, as a PDF.</p>
+          <p className="mt-auto truncate pt-2.5 text-[11px] text-faint">{ex.name} · {ex.signer}</p>
+        </li>
+        <li className={cn(tile, "max-sm:hidden")} style={rise(2)}>
+          <p className={MONO}>Handshake, applications</p>
+          <p className="mt-1 text-[13px] leading-snug text-text-2">Paste the link. Anyone can check who verified it.</p>
+        </li>
+      </ul>
+      <p className="flex items-center justify-center gap-1.5 text-center text-[11px] text-muted"><Lock className="size-3 shrink-0" aria-hidden="true" />Grades stay private: only you and your professors see them.</p>
     </div>
   );
 }

@@ -31,7 +31,7 @@ const VIEWS = [
   { id: "verify", tab: "Professor", say: "The professor grades it with the rubric, and the same click verifies it. Only the student and the course's faculty see the grade.", note: "Example · Torch's feedback draft is coming soon" },
   { id: "school", tab: "School", say: "The school counts it the moment it's verified, and exports the evidence for accreditation.", note: "Example data" },
   { id: "recruiter", tab: "Recruiter", say: "Recruiters search by verified work and see who vouched for it. The student sees who looked.", note: "Illustration · example data" },
-  { id: "everywhere", tab: "Everywhere", say: "The work goes on LinkedIn and the résumé; classes, clubs and deadlines stay in one place.", note: "Example · Add to LinkedIn, the verify link and the résumé work today" },
+  { id: "everywhere", tab: "Everywhere", say: "The verified work goes where the student does: LinkedIn, the résumé, any application.", note: "Example · Add to LinkedIn, the verify link and the résumé work today" },
 ] as const;
 
 export function Hero() {
@@ -43,6 +43,9 @@ export function Hero() {
   const pinned = usePinned();
   const run = useRef<HTMLElement>(null);
   const quietUntil = useRef(0);
+  // The progress line under the tabs: written straight to the element on scroll (no re-render), so it
+  // follows the page continuously while the view changes only at each stretch.
+  const line = useRef<HTMLSpanElement>(null);
   const ex = EXAMPLES.find((e) => e.id === pick)!;
   const build = cleanBuild(typed);
   const title = build || ex.milestone;
@@ -55,9 +58,11 @@ export function Hero() {
     const read = () => {
       frame = 0;
       const el = run.current;
-      if (!el || performance.now() < quietUntil.current) return;
+      if (!el) return;
       const length = el.offsetHeight - innerHeight;
       const p = length > 0 ? Math.min(1, Math.max(0, -el.getBoundingClientRect().top / length)) : 0;
+      if (line.current) line.current.style.transform = `scaleX(${Math.max(0.2, p)})`;
+      if (performance.now() < quietUntil.current) return;
       setView(Math.min(VIEWS.length - 1, Math.floor(p * VIEWS.length)));
     };
     const onScroll = () => { if (!frame) frame = requestAnimationFrame(read); };
@@ -126,12 +131,12 @@ export function Hero() {
                     <span className="max-w-full truncate">{v.tab}</span>
                   </button>
                 ))}
-                <span aria-hidden="true" className="absolute bottom-[-1px] left-0 h-0.5 bg-brand transition-[width] duration-500" style={{ width: `${((view + 1) / VIEWS.length) * 100}%` }} />
+                <span ref={line} aria-hidden="true" className={cn("absolute right-0 bottom-[-1px] left-0 h-0.5 origin-left bg-brand will-change-transform", !pinned && "transition-transform duration-500 ease-out")} style={pinned ? undefined : { transform: `scaleX(${(view + 1) / VIEWS.length})` }} />
               </div>
               <div className="hero-body relative">
                 {tabs.map((v, k) => (
                   <div key={v.id} id={`hero-view-${v.id}`} role="tabpanel" aria-labelledby={`hero-tab-${v.id}`} inert={view !== k}
-                    className={cn("absolute inset-0 transition-opacity duration-300", view === k ? "visible opacity-100" : "invisible opacity-0")}>
+                    className={cn("absolute inset-0 transition-[opacity,translate,visibility] duration-[420ms] ease-[cubic-bezier(0.2,0.8,0.2,1)] motion-reduce:transition-none", view === k ? "visible translate-y-0 opacity-100" : "invisible translate-y-1.5 opacity-0")}>
                     {k === 0 && <StudentView {...props(0)} pick={pick} choose={choose} />}
                     {k === 1 && <VerifyView key={ex.id} {...props(1)} verified={verified} verify={verify} />}
                     {k === 2 && <SchoolView key={ex.id} {...props(2)} />}
