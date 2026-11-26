@@ -1,8 +1,8 @@
-import { Flag, GitMerge, MessageSquare, Sparkles, UserPlus } from "lucide-react";
+import { GitMerge, MessageSquare, Sparkles, UserPlus } from "lucide-react";
 import Link from "next/link";
 import { List, ListRow } from "@/components/app/list";
 import { Seal } from "@/components/app/verified-seal";
-import { GoalCard } from "@/components/app/goal-card";
+import { GoalCard, GoalMark } from "@/components/app/goal-card";
 import { Ember } from "@/components/ember/ember";
 import { Avatar } from "@/components/ui";
 import { dbFeatures } from "@/lib/db-features";
@@ -107,8 +107,8 @@ export async function HomeStream() {
       </Group>}
 
       {record && (
-        <Group label="Where you're headed" node={<Flag className="size-3.5 text-muted" />}>
-          <GoalCard compact goal={goal} record={record} profileId={user.id} />
+        <Group label="Where you're headed" node={<GoalMark />}>
+          <GoalCard compact goal={goal} record={record} profileId={user.id} accountType={profile?.account_type} />
         </Group>
       )}
     </div>

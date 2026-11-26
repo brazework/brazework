@@ -91,3 +91,16 @@ test("a goal in your own words: trimmed, capped, and nothing to send when it's e
   assert.match(a!.prompt, /goal card for me to approve/);
   assert.equal(torchGoalFrom("x".repeat(500))!.prompt.match(/"(x+)"/)![1].length, 200);
 });
+test("the setup orders the goals for who you are, and every goal says what it means", async () => {
+  const { goalChoices, GOAL_HELP, GOAL_KINDS } = await import("../src/lib/goals");
+  const student = goalChoices("student"), pro = goalChoices("professional");
+  assert.equal(student[0].kind, "internship");
+  assert.equal(student.find((c) => c.kind === "job")?.label, "First job");
+  assert.deepEqual(pro.slice(0, 2).map((c) => c.kind), ["job", "funding"]);
+  assert.equal(pro[0].label, "Next role");
+  for (const list of [student, pro, goalChoices(null)]) assert.deepEqual([...list.map((c) => c.kind)].sort(), Object.keys(GOAL_KINDS).sort());
+  for (const k of Object.keys(GOAL_KINDS) as (keyof typeof GOAL_KINDS)[]) {
+    assert.ok(GOAL_HELP[k].line.length > 0 && GOAL_HELP[k].examples.length >= 3);
+    for (const ex of GOAL_HELP[k].examples) assert.ok(ex.length <= 80 && !/[<>]/.test(ex));
+  }
+});
