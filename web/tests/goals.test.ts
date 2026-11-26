@@ -58,3 +58,17 @@ test("sign-up's goal is read safely: nothing picked, a kind that doesn't fit, or
   assert.deepEqual(signupGoalFrom("job", "<script>", "professional"), { kind: "job", target: "" });
   assert.deepEqual(signupGoalFrom("grad", "x".repeat(81), "student"), { kind: "grad", target: "" });
 });
+
+test("the setup orders the goals for who you are, and every goal says what it means", async () => {
+  const { goalChoices, GOAL_HELP, GOAL_KINDS } = await import("../src/lib/goals");
+  const student = goalChoices("student"), pro = goalChoices("professional");
+  assert.equal(student[0].kind, "internship");
+  assert.equal(student.find((c) => c.kind === "job")?.label, "First job");
+  assert.deepEqual(pro.slice(0, 2).map((c) => c.kind), ["job", "funding"]);
+  assert.equal(pro[0].label, "Next role");
+  for (const list of [student, pro, goalChoices(null)]) assert.deepEqual([...list.map((c) => c.kind)].sort(), Object.keys(GOAL_KINDS).sort());
+  for (const k of Object.keys(GOAL_KINDS) as (keyof typeof GOAL_KINDS)[]) {
+    assert.ok(GOAL_HELP[k].line.length > 0 && GOAL_HELP[k].examples.length >= 3);
+    for (const ex of GOAL_HELP[k].examples) assert.ok(ex.length <= 80 && !/[<>]/.test(ex));
+  }
+});
