@@ -331,6 +331,7 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
             </div>
           </details>}
         hero={<>
+          <HomeGreeting first={profile.first_name} />
           {/* Home, top to bottom (section redesign, Nov 2026): the one next step, then one stream in the
               order you'd act on it (what your tools noticed, what needs you, what your clubs shipped,
               your goal), then the log-work box and the posts. Your builds live on Projects, not here. */}
@@ -348,7 +349,7 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
           <Link href={href({ kind: "", tag: "", sort: "" })} className="text-muted hover:text-text">Clear</Link>
         </div>
       )}
-      <div className="mt-6 flex flex-col gap-4">
+      <div className="mt-5 flex flex-col gap-4 sm:mt-6">
         {first.items.length === 0 && <EmptyState title={emptyTitle} body={emptyBody} action={emptyAction} />}
         <FeedList first={first} params={params} proofs={proofs} ranked={tab === "for-you" && sort === "best"} me={user.id} viewer={viewer} slots={{}}
           end={first.items.length > 0 ? <FeedEnd tab={tab} /> : null} />
@@ -357,10 +358,20 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
   );
 }
 
+// The top of Home (redesign 2026-11): who it's for, in one line, before anything asks for attention.
+function HomeGreeting({ first }: { first: string }) {
+  return (
+    <div className="pt-1 pb-1">
+      <h1 className="text-[1.625rem] leading-tight font-semibold tracking-[-0.02em] sm:text-[1.875rem]">Welcome back, {first}</h1>
+      <p className="mt-1 text-[15px] text-muted">What needs you, what you&apos;re building, and what your clubs shipped.</p>
+    </div>
+  );
+}
+
 // The bottom of the feed: somewhere useful to go next.
 function FeedEnd({ tab }: { tab: TabId }) {
   return (
-    <div className="glass-card mt-2 rounded-3xl p-6 text-center">
+    <div className="mt-4 rounded-2xl border border-dashed border-line-strong p-6 text-center">
       <p className="font-medium">You&apos;re all caught up</p>
       <p className="mt-1 text-sm text-muted">Keep the momentum: help someone, or show what you built.</p>
       <div className="mt-4 flex flex-wrap justify-center gap-2">

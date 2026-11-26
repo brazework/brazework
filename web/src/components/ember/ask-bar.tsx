@@ -5,12 +5,12 @@ import { X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Lookups, Rich } from "@/app/(app)/copilot/copilot-client";
-import { ProposalCard } from "@/components/copilot/proposal-card";
+import { Lookups } from "@/app/(app)/copilot/copilot-client";
+import { EmberReply, Thinking } from "@/components/copilot/reply";
 import { useCopilot } from "@/components/copilot/use-copilot";
 import { Ember } from "@/components/ember/ember";
 import { GlobalSearch } from "@/components/search/global-search";
-import type { Proposal } from "@/lib/copilot-agent";
+import type { Proposal, Segment } from "@/lib/copilot-agent";
 import { splitNext } from "@/lib/copilot-text";
 import { pageContext } from "@/lib/ember-bar";
 
@@ -20,8 +20,8 @@ import { pageContext } from "@/lib/ember-bar";
 // project, club or event), and Ember's answer opens out of the bar itself, with its approve cards right
 // there, not on another screen. Nothing is saved until the member presses a card's button.
 
-type Answer = { q: string; text: string; tools: string[]; proposals: Proposal[] };
-const EMPTY: Answer = { q: "", text: "", tools: [], proposals: [] };
+type Answer = { q: string; text: string; tools: string[]; proposals: Proposal[]; segments: Segment[] };
+const EMPTY: Answer = { q: "", text: "", tools: [], proposals: [], segments: [] };
 
 export function AskBar() {
   const path = usePathname();
@@ -37,7 +37,7 @@ export function AskBar() {
     const q = text.trim();
     if (!q) return;
     setA({ ...EMPTY, q });
-    run({ task: "ask", input: q, page: pageContext(path) ?? undefined }, (full, tools, proposals) => setA({ q, text: full, tools, proposals }));
+    run({ task: "ask", input: q, page: pageContext(path) ?? undefined }, (full, tools, proposals, segments) => setA({ q, text: full, tools, proposals, segments }));
   };
   const close = () => { stop(); setA(EMPTY); };
 
@@ -76,9 +76,8 @@ function AskAnswer({ a, busy, error, remaining, onAsk, onClose }: { a: Answer; b
             <Ember size={28} mood={thinking ? "thinking" : error ? "sleepy" : "idle"} className="mt-0.5" />
             <div className="min-w-0 flex-1 text-[15px] leading-relaxed whitespace-pre-wrap text-text">
               <Lookups tools={a.tools} live={busy} />
-              {thinking && <p className="text-sm text-muted">Looking at this page…</p>}
-              {text && <Rich text={text} />}
-              {a.proposals.map((p) => <ProposalCard key={p.id} p={p} inline />)}
+              {thinking && <p className="flex items-center gap-2 text-sm text-muted"><Thinking label="Looking at this page" /> Looking at this page…</p>}
+              {(a.text || a.proposals.length > 0) && <EmberReply text={a.text} proposals={a.proposals} segments={a.segments} live={busy} inline />}
               {error && <p role="alert" className="text-sm text-text-2">{error}</p>}
               {!busy && next.length > 0 && (
                 <div className="mt-3 flex flex-wrap gap-1.5 whitespace-normal">

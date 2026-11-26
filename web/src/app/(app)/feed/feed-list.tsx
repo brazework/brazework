@@ -126,7 +126,7 @@ export function FeedList({ first, params, proofs, ranked, slots, end, me, viewer
     <>
       <div ref={listRef} data-feed-list style={{ height: v.getTotalSize(), position: "relative" }}>
         {items.map((it) => (
-          <div key={it.key} data-index={it.index} ref={v.measureElement} className="absolute top-0 left-0 w-full pb-4" style={{ transform: `translateY(${it.start - v.options.scrollMargin}px)` }}>
+          <div key={it.key} data-index={it.index} ref={v.measureElement} className="absolute top-0 left-0 w-full pb-5 sm:pb-4" style={{ transform: `translateY(${it.start - v.options.scrollMargin}px)` }}>
             {rows[it.index]?.node}
           </div>
         ))}

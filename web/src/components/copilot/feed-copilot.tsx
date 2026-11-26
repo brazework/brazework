@@ -3,16 +3,16 @@ import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { ArrowRight, BadgeCheck, CalendarDays, Compass, GitBranch, Megaphone, RotateCcw } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Lookups, Rich } from "@/app/(app)/copilot/copilot-client";
-import { ProposalCard } from "@/components/copilot/proposal-card";
-import type { Proposal } from "@/lib/copilot-agent";
+import { Lookups } from "@/app/(app)/copilot/copilot-client";
+import { EmberReply, Thinking } from "@/components/copilot/reply";
+import type { Proposal, Segment } from "@/lib/copilot-agent";
 import { clubUpdateAsk, clubUpdatePreset, type Preset } from "@/lib/copilot-presets";
 
 // Pieces of "Ask Ember" in the feed's create box (feed/composer.tsx): example prompts typed into
 // the placeholder, the one-tap actions, and the answer area with lookups and confirm cards.
 
 export type EmberAction = { icon: typeof Compass; label: string; ask?: string; prefill?: string; preset?: Preset; href: string };
-export type EmberAnswerState = { q: string; text: string; tools: string[]; proposals: Proposal[] };
+export type EmberAnswerState = { q: string; text: string; tools: string[]; proposals: Proposal[]; segments?: Segment[] };
 
 // Short enough to fit on one line on a phone.
 const EXAMPLES = ["Which robotics clubs fit me?", "Import github.com/you/rover…", "What's on this week for me?", "What should I build next?", "Prep me for the career fair"];
@@ -52,8 +52,7 @@ export function EmberAnswer({ a, busy, error, remaining, onClear }: { a: EmberAn
             <p className="text-xs text-muted">You asked: <span className="text-text-2">{a.q}</span></p>
             <div className="mt-2 text-[15px] leading-relaxed whitespace-pre-wrap text-text-2">
               <Lookups tools={a.tools} live={busy} />
-              {a.text ? <Rich text={a.text} /> : !a.tools.length && busy && <span className="inline-flex gap-1" aria-label="Thinking">{[0, 1, 2].map((d) => <motion.span key={d} className="size-2 rounded-full bg-accent" animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 1, repeat: Infinity, delay: d * 0.15 }} />)}</span>}
-              {a.proposals.map((p) => <ProposalCard key={p.id} p={p} />)}
+              {a.text || a.proposals.length ? <EmberReply text={a.text} proposals={a.proposals} segments={a.segments} live={busy} /> : !a.tools.length && busy && <Thinking />}
             </div>
             {error && <p role="alert" className="mt-2 text-sm text-danger">{error}</p>}
             <div className="mt-3 flex items-center gap-3 text-xs">

@@ -119,65 +119,37 @@ function applyTheme(c: Choice) {
   } catch {}
 }
 
-// App-wide themes (html[data-skin], saved as localStorage "forge-skin"). Mono = no attribute.
-const SKINS = [
-  { id: "mono", label: "Mono", bg: "#0b0b0d", card: "#18181b", grad: "linear-gradient(135deg, #fafafa, #a1a1aa)" },
-  { id: "fire", label: "Brazework Fire", bg: "#120a07", card: "#21150e", grad: "linear-gradient(135deg, #ffd166, #ff8a3d 45%, #ff4d4d)" },
-  { id: "blueprint", label: "Blueprint", bg: "#0a1c35", card: "#112d52", grad: "linear-gradient(135deg, #a5d8ff, #7cc4ff 50%, #5b9dff)" },
-  { id: "aurora", label: "Aurora", bg: "#0b0a1a", card: "#171433", grad: "linear-gradient(135deg, #22d3ee, #818cf8 50%, #e879f9)" },
-  { id: "emerald", label: "Emerald", bg: "#06140f", card: "#0e241b", grad: "linear-gradient(135deg, #d9f99d, #34d399 50%, #22d3ee)" },
-] as const;
-type Skin = (typeof SKINS)[number]["id"];
-const readSkin = (): Skin => (SKINS.find((k) => k.id === document.documentElement.dataset.skin)?.id ?? "mono");
-const subSkin = (cb: () => void) => {
-  const mo = new MutationObserver(cb);
-  mo.observe(document.documentElement, { attributes: true, attributeFilter: ["data-skin"] });
-  return () => mo.disconnect();
-};
-function applySkin(k: Skin) {
-  const root = document.documentElement;
-  try {
-    if (k === "mono") { root.removeAttribute("data-skin"); localStorage.removeItem("forge-skin"); }
-    else { root.setAttribute("data-skin", k); localStorage.setItem("forge-skin", k); }
-  } catch {}
-}
-
+// One Brazework theme, in light and dark (redesign 2026-11). The colour skins (Blueprint, Fire,
+// Aurora, Emerald) are gone: colour in the app means proof, so the chrome stays ink on paper.
 // Same storage as the header toggle: html[data-theme] + localStorage "forge-theme"; System clears both.
 export function AppearanceSettings() {
   const choice = useSyncExternalStore(sub, read, () => "system" as Choice);
-  const skin = useSyncExternalStore(subSkin, readSkin, () => "mono" as Skin);
-  const opts: [Choice, string, typeof Sun][] = [["light", "Light", Sun], ["dark", "Dark", Moon], ["system", "System", Monitor]];
+  const opts: [Choice, string, typeof Sun, string][] = [
+    ["system", "System", Monitor, "Follows your device"],
+    ["light", "Light", Sun, "Paper and ink"],
+    ["dark", "Dark", Moon, "Graphite"],
+  ];
   return (
-    <div className="flex flex-col gap-6">
-      <div role="radiogroup" aria-label="Theme" className="grid grid-cols-3 gap-2">
-        {opts.map(([id, label, Icon]) => (
-          <button key={id} role="radio" aria-checked={choice === id} onClick={() => applyTheme(id)} className="flex flex-col items-center gap-2 rounded-2xl border border-line p-4 text-sm text-muted transition hover:text-text aria-checked:border-text aria-checked:text-text">
-            <Icon className="size-5" /> {label}
-          </button>
-        ))}
-      </div>
-      <div>
-        <div className="mb-3 text-sm font-medium text-text-2">Theme</div>
-        <div role="radiogroup" aria-label="Theme" className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          {SKINS.map((k) => (
-            <button key={k.id} role="radio" aria-checked={skin === k.id} onClick={() => applySkin(k.id)} className="group overflow-hidden rounded-2xl border border-line text-left transition aria-checked:border-transparent aria-checked:ring-2 aria-checked:ring-[var(--accent)]">
-              {/* A tiny preview of the theme: its background, a card and its gradient. */}
-              <div className="relative h-20 p-2.5" style={{ background: k.bg }}>
-                <div className="h-full rounded-lg p-2" style={{ background: k.card }}>
-                  <div className="h-1.5 w-1/2 rounded-full bg-white/30" />
-                  <div className="mt-1.5 h-1.5 w-3/4 rounded-full bg-white/15" />
-                  <div className="mt-2.5 h-3.5 w-12 rounded-full" style={{ background: k.grad }} />
-                </div>
-              </div>
-              <div className="flex items-center justify-between px-3 py-2 text-xs font-medium">
-                {k.label}
-                {skin === k.id && <Check className="size-3.5" />}
-              </div>
-            </button>
-          ))}
-        </div>
-        <p className="mt-3 text-xs text-faint">Themes change the whole app, in light and dark. Saved on this device.</p>
-      </div>
+    <div role="radiogroup" aria-label="Theme" className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+      {opts.map(([id, label, Icon, hint]) => (
+        <button key={id} role="radio" aria-checked={choice === id} onClick={() => applyTheme(id)}
+          className="group overflow-hidden rounded-xl border border-line bg-surface text-left transition hover:border-line-strong aria-checked:border-text aria-checked:ring-1 aria-checked:ring-text">
+          {/* A small preview of the theme: page, sidebar, a card and a primary button. */}
+          <div aria-hidden="true" className="flex h-20 gap-1.5 p-2.5" style={{ background: id === "dark" ? "#0b0c0e" : id === "light" ? "#f7f7f5" : "linear-gradient(90deg, #f7f7f5 50%, #0b0c0e 50%)" }}>
+            <div className="w-1/4 rounded-md" style={{ background: id === "dark" ? "#17181c" : "#efefec", opacity: id === "system" ? 0.9 : 1 }} />
+            <div className="flex-1 rounded-md p-2" style={{ background: id === "dark" ? "#131418" : "#ffffff", boxShadow: "0 0 0 1px rgba(127,127,127,0.18)" }}>
+              <div className="h-1.5 w-2/3 rounded-full" style={{ background: id === "dark" ? "#3a3b42" : "#d4d4cf" }} />
+              <div className="mt-1.5 h-1.5 w-1/2 rounded-full" style={{ background: id === "dark" ? "#2a2b31" : "#e5e5e1" }} />
+              <div className="mt-2.5 h-3 w-10 rounded-full" style={{ background: id === "dark" ? "#f4f4f5" : "#0f1012" }} />
+            </div>
+          </div>
+          <div className="flex items-center gap-2 px-3 py-2.5 text-sm">
+            <Icon className="size-4 text-muted" />
+            <span className="font-medium">{label}</span>
+            <span className="ml-auto text-xs text-faint">{choice === id ? <Check className="size-3.5 text-text" /> : hint}</span>
+          </div>
+        </button>
+      ))}
     </div>
   );
 }

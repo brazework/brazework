@@ -21,8 +21,8 @@ it, who signed it and what's still waiting.
   (`--text`) for emphasis. Colour is only ever proof, one colour per kind, the same everywhere (the
   counts on a record, its timeline, each entry): green (`--ok`) for signed by a person, blue
   (`--info`) for backed by GitHub, dashed amber (`--wait`) for waiting to be signed. Waiting is
-  always dashed, so it never reads as the solid gold Pro seal. No other accent colors (no orange
-  flames, no purple).
+  always dashed, so it never reads as the solid gold Pro seal. The one brand colour, brazed copper
+  (`--brand`), belongs to Ember and the landing page only, never to a status.
 - **A record is never blank.** A profile with no cover photo shows the drawing for its field
   (`components/landing/schematics.tsx`), in ink on the sheet grid.
 - **Motion only for state changes.** Something opens, is confirmed, moves. No entrance animations on
@@ -39,7 +39,11 @@ it, who signed it and what's still waiting.
 - Page titles: `PageHeader` (28–32px, semibold, tight tracking). Section titles: 18px semibold.
   Body 15px. Small print 12–13px in `text-muted`; never smaller than 12px.
 - Color tokens: `--bg`, `--surface`, `--surface-2`, `--border` (`border-line`), `--border-strong`
-  (`border-line-strong`), `--text`, `--text-2`, `--muted`, `--faint`, `--ok`. Each has a dark value.
+  (`border-line-strong`), `--text`, `--text-2`, `--muted`, `--faint`, `--ok`, `--brand`. Each has a dark value.
+- One theme, light and dark (redesign 2026-11): paper and ink, or graphite. The colour skins
+  (Blueprint, Fire, Aurora, Emerald) were removed; Settings → Appearance is System, Light or Dark, and
+  an old saved skin is cleared on the next visit. `.theme-dark` forces the dark tokens inside one band
+  (the landing page's CAD lab).
 
 ## The pieces (`web/src/components/app`)
 

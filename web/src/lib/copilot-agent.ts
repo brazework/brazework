@@ -137,18 +137,29 @@ export async function runAgent(opts: {
 // normal text: "\u001E{"tool":"search_clubs"}\u001E". parseStream splits them back out.
 export const RS = "\u001E";
 export const frame = (e: { tool: string } | { proposal: Proposal }) => `${RS}${JSON.stringify(e)}${RS}`;
-export function parseStream(raw: string): { text: string; tools: string[]; proposals: Proposal[] } {
+// What an answer is made of, in the order it arrived: text, then the card Ember prepared, then the
+// text after it. Rendering in this order means a card never gets pushed down by words arriving above it.
+export type Segment = { type: "text"; text: string } | { type: "proposal"; proposal: Proposal };
+
+export function parseStream(raw: string): { text: string; tools: string[]; proposals: Proposal[]; segments: Segment[] } {
   const parts = raw.split(RS);
   let text = "";
   const tools: string[] = [];
   const proposals: Proposal[] = [];
+  const segments: Segment[] = [];
+  const addText = (t: string) => {
+    if (!t) return;
+    const last = segments[segments.length - 1];
+    if (last?.type === "text") last.text += t;
+    else segments.push({ type: "text", text: t });
+  };
   parts.forEach((p, i) => {
-    if (i % 2 === 0) { text += p; return; }
+    if (i % 2 === 0) { text += p; addText(p); return; }
     try {
       const e = JSON.parse(p) as { tool?: string; proposal?: Proposal };
       if (e.tool) tools.push(e.tool);
-      if (e.proposal) proposals.push(e.proposal);
+      if (e.proposal) { proposals.push(e.proposal); segments.push({ type: "proposal", proposal: e.proposal }); }
     } catch { /* a frame still arriving */ }
   });
-  return { text, tools, proposals };
+  return { text, tools, proposals, segments };
 }

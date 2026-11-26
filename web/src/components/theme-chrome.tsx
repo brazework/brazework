@@ -1,22 +1,17 @@
 "use client";
 import { useEffect } from "react";
 
-const SKIN_KEY = "forge-skin";
-const SKINS = /^(blueprint|fire|aurora|emerald)$/;
-
 // Keeps the phone's chrome (the strip behind the notch / Dynamic Island, and the theme-color Safari
-// and the installed app tint with) the same color as the page. The landing page is always plain
-// Brazework (no color theme); the app uses the member's chosen theme.
+// and the installed app tint with) the same color as the page, in light and dark. Brazework has one
+// theme (redesign 2026-11): the old colour skins are cleared from this device the first time it runs.
 export function ThemeChrome({ landing = false }: { landing?: boolean }) {
   useEffect(() => {
     const d = document.documentElement;
-    let saved: string | null = null;
-    try { saved = localStorage.getItem(SKIN_KEY); } catch {}
-    if (landing) delete d.dataset.skin;
-    else if (saved && SKINS.test(saved) && d.dataset.skin !== saved) d.dataset.skin = saved;
+    delete d.dataset.skin;
+    try { localStorage.removeItem("forge-skin"); } catch {}
 
     const paint = () => {
-      const bg = getComputedStyle(d).getPropertyValue("--bg").trim() || getComputedStyle(document.body).backgroundColor;
+      const bg = getComputedStyle(landing ? document.body : d).getPropertyValue("--bg").trim() || getComputedStyle(document.body).backgroundColor;
       let metas = [...document.querySelectorAll<HTMLMetaElement>('meta[name="theme-color"]')];
       if (!metas.length) { const m = document.createElement("meta"); m.name = "theme-color"; document.head.appendChild(m); metas = [m]; }
       // One value for every media variant, so the tint follows Brazework's theme, not just the OS setting.
@@ -24,13 +19,12 @@ export function ThemeChrome({ landing = false }: { landing?: boolean }) {
     };
     paint();
     const mo = new MutationObserver(paint);
-    mo.observe(d, { attributes: true, attributeFilter: ["data-theme", "data-skin", "class"] });
+    mo.observe(d, { attributes: true, attributeFilter: ["data-theme", "class"] });
     const mq = matchMedia("(prefers-color-scheme: dark)");
     mq.addEventListener("change", paint);
     return () => {
       mo.disconnect();
       mq.removeEventListener("change", paint);
-      if (landing && saved && SKINS.test(saved)) d.dataset.skin = saved;
     };
   }, [landing]);
 

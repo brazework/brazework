@@ -7,7 +7,9 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useCopilot } from "@/components/copilot/use-copilot";
 import { cn } from "@/lib/forge";
-import { TOOL_LABEL, type Proposal } from "@/lib/copilot-agent";
+import { TOOL_LABEL, type Proposal, type Segment } from "@/lib/copilot-agent";
+import { EmberReply, Thinking } from "@/components/copilot/reply";
+import { useStickToBottom } from "@/components/copilot/stick-to-bottom";
 import { Ember } from "@/components/ember/ember";
 import { EmberComposer, type ComposerAction } from "@/components/copilot/composer";
 import { ProposalCard } from "@/components/copilot/proposal-card";
@@ -17,7 +19,7 @@ import { emberActions, emberGreeting, type EmberAction } from "@/lib/ember-actio
 import type { NextStep } from "@/lib/ember-record";
 import { deleteAllChats, deleteChat, loadChat, rateAnswer, saveChat, type ChatSummary, type SavedMsg } from "@/lib/copilot-chats";
 
-type Msg = { role: "user" | "assistant"; content: string; tools?: string[]; proposals?: Proposal[]; cards?: string[]; next?: string[] };
+type Msg = { role: "user" | "assistant"; content: string; tools?: string[]; proposals?: Proposal[]; segments?: Segment[]; cards?: string[]; next?: string[] };
 
 // What a card Ember prepared is called once the chat is saved (saved chats keep a label, never a
 // live card that could be confirmed twice).
@@ -74,12 +76,8 @@ export function CopilotSoon() {
   );
 }
 
-// Links Copilot gives (/c/…, /events/…, /u/…) become real links; everything else stays text.
-export function Rich({ text: raw }: { text: string }) {
-  const text = splitNext(raw).text;
-  const parts = text.split(/(\/(?:c|events|u)\/[A-Za-z0-9-]+)/g);
-  return <>{parts.map((p, i) => (/^\/(c|events|u)\//.test(p) ? <Link key={i} href={p} className="font-medium text-accent underline underline-offset-4">{p.startsWith("/c/") ? "Open club" : p.startsWith("/events/") ? "Open event" : "Open profile"} →</Link> : <span key={i}>{p}</span>))}</>;
-}
+// Rich moved next to EmberReply (components/copilot/reply.tsx); kept here for its importers.
+export { Rich } from "@/components/copilot/reply";
 
 // Which lookups Copilot ran for an answer: a live chip while it works, then "Checked: …".
 export function Lookups({ tools, live }: { tools?: string[]; live: boolean }) {
@@ -140,8 +138,10 @@ export function CopilotChat({ first, field, student = true, initial = "", initia
   const [showHistory, setShowHistory] = useState(false);
   const [historyCollapsed, setHistoryCollapsed] = useState(false);
   const [input, setInput] = useState("");
-  const end = useRef<HTMLDivElement>(null);
-  useEffect(() => { if (msgs.length) end.current?.scrollIntoView({ behavior: "smooth", block: "end" }); }, [msgs]);
+  // Follows the answer down as it grows, only while you're at the bottom: scroll up to read and it
+  // stays put (redesign 2026-11; it used to start a smooth scroll on every streamed chunk).
+  const thread = useRef<HTMLDivElement>(null);
+  const follow = useStickToBottom(thread, msgs.length > 0);
 
   const actions: ComposerAction[] = emberActions({ field, student }).map((a) => ({ ...a, icon: ACTION_ICON[a.id] }));
 
@@ -153,9 +153,10 @@ export function CopilotChat({ first, field, student = true, initial = "", initia
     let last: Msg = { role: "assistant", content: "" };
     setMsgs([...before, asked, last]);
     setInput("");
-    const out = await run({ task: "ask", input: q, preset, history: before.slice(-10).map(({ role, content }) => ({ role, content })) }, (full, tools, proposals) => {
+    follow();
+    const out = await run({ task: "ask", input: q, preset, history: before.slice(-10).map(({ role, content }) => ({ role, content })) }, (full, tools, proposals, segments) => {
       const { text: body, next } = splitNext(full);
-      last = { role: "assistant", content: body, tools, proposals, next };
+      last = { role: "assistant", content: body, tools, proposals, segments, next };
       setMsgs([...before, asked, last]);
     });
     if (out === null && !last.content) { setMsgs(before); return; }
@@ -262,7 +263,7 @@ export function CopilotChat({ first, field, student = true, initial = "", initia
             <button type="button" onClick={newChat} className="ml-auto inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-medium text-muted transition hover:bg-hover hover:text-text"><Plus className="size-3.5" /> New chat</button>
           </div>
         )}
-        <div className={cn("flex flex-col gap-5", !empty && "mt-6 flex-1")}>
+        <div ref={thread} className={cn("flex flex-col gap-5", !empty && "mt-6 flex-1")}>
           <AnimatePresence initial={false}>
             {msgs.map((m, i) => {
               const live = busy && i === msgs.length - 1;
@@ -272,14 +273,16 @@ export function CopilotChat({ first, field, student = true, initial = "", initia
                   {m.role === "user" ? (
                     <p className="bg-accent-grad max-w-[85%] rounded-3xl rounded-br-md px-4 py-2.5 text-[15px] whitespace-pre-wrap text-on-accent">{m.content}</p>
                   ) : (
-                    <div className="flex max-w-[94%] min-w-0 gap-3">
+                    <div className="flex w-full min-w-0 gap-3">
                       <Ember size={32} mood={live ? "thinking" : "idle"} className="mt-0.5" />
-                      <div className="min-w-0">
-                        <div className="glass-card rounded-3xl rounded-tl-md px-4 py-3 text-[15px] leading-relaxed whitespace-pre-wrap text-text-2">
+                      <div className="min-w-0 flex-1">
+                        {/* Full width from the first word, so the reply never reflows sideways as it grows. */}
+                        <div className="glass-card rounded-2xl rounded-tl-md px-4 py-3 text-[15px] leading-relaxed whitespace-pre-wrap text-text-2">
                           <Lookups tools={m.tools} live={live} />
-                          {m.content ? <Rich text={m.content} /> : m.tools?.length ? null : <span className="inline-flex gap-1" aria-label="Thinking">{[0, 1, 2].map((d) => <motion.span key={d} className="size-2 rounded-full bg-accent" animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 1, repeat: Infinity, delay: d * 0.15 }} />)}</span>}
+                          {m.content || m.proposals?.length
+                            ? <EmberReply text={m.content} proposals={m.proposals} segments={m.segments} live={live} />
+                            : live && !m.tools?.length ? <Thinking /> : null}
                           {!live && m.content && <LinkCards paths={forgeLinks(m.content)} />}
-                          {m.proposals?.map((p) => <ProposalCard key={p.id} p={p} />)}
                           {!m.proposals?.length && m.cards?.length ? <p className="mt-3 text-xs text-faint">Drafted for you: {m.cards.join(", ")}</p> : null}
                         </div>
                         {m.content && !live && (
@@ -305,7 +308,6 @@ export function CopilotChat({ first, field, student = true, initial = "", initia
               ))}
             </div>
           ) : null}
-          <div ref={end} />
         </div>
         {error && <p role="alert" className="mt-3 text-sm text-danger">{error}</p>}
         {!empty && composer}
