@@ -88,8 +88,8 @@ export async function ThisWeekCard() {
       </div>
       {/* The last eight weeks: a filled bar for each week you showed work. */}
       <div className="mt-3" aria-label={`Showed work in ${l.recent.filter(Boolean).length} of the last ${l.recent.length} weeks`} role="img">
-        <div className="flex h-8 items-end gap-1">
-          {l.recent.map((on, i) => <span key={i} className={cn("flex-1 rounded-sm transition-colors", on ? "h-full bg-[var(--brand)]" : "h-2 bg-line")} />)}
+        <div className="flex gap-1">
+          {l.recent.map((on, i) => <span key={i} className={cn("h-1.5 flex-1 rounded-full transition-colors", on ? "bg-[var(--brand)]" : "bg-line")} />)}
         </div>
         <div className="mt-1 flex justify-between font-mono text-[10px] text-faint"><span>8 weeks ago</span><span>now</span></div>
       </div>

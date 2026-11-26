@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { ArrowRight, BadgeCheck, BookOpen, ClipboardCheck, Download, GraduationCap, Lock, ShieldCheck, Users } from "lucide-react";
+import { ArrowRight, BadgeCheck, BookOpen, ClipboardCheck, ClipboardList, Download, GraduationCap, Lock, ShieldCheck, Users } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
@@ -8,6 +8,7 @@ import { Kicker } from "@/components/ui";
 import { dbFeatures } from "@/lib/db-features";
 import { cn, requestTime } from "@/lib/forge";
 import { termsAround } from "@/lib/school-roster";
+import { dueText } from "@/lib/course-math";
 import { getViewer } from "@/lib/supabase/server";
 import { CreateClassForm, FacultyForm, RemoveFaculty, RosterForm } from "./portal-forms";
 
@@ -35,6 +36,8 @@ type Club = { id: string; name: string; member_count: number; verified_at: strin
 type Klass = { id: string; name: string; course: string; term: string; role: string; member_count: number; projects: number; waiting: number };
 type Overview = { students: number; faculty: number; classes: number; class_projects: number; verified_in_classes: number; verified_in_clubs: number; clubs: number; active_clubs: number; by_class: { id: string; name: string; term: string; members: number; projects: number; verified: number }[] };
 type Faculty = { email: string; name: string; title: string };
+type Due = { id: string; community_id: string; course: string; class_name: string; title: string; due_at: string | null; points: number; group_work: boolean; submitted_at: string | null; graded: boolean };
+type CourseRow = { id: string; name: string; term: string; students: number; assignments: number; submissions: number; graded: number };
 
 async function School() {
   const { supabase, user } = await getViewer();
@@ -55,15 +58,16 @@ async function School() {
 
   const domain = mine.domain;
   const name = mine.school || domain;
-  const { schoolLinks, schoolPortal } = await dbFeatures();
+  const { schoolLinks, schoolPortal, courses } = await dbFeatures();
   // Join any class whose roster has your email before reading your classes.
   if (schoolPortal) await supabase.rpc("sync_my_classes");
-  const [org, clubsRes, classesRes, facultyRes, runsRes] = await Promise.all([
+  const [org, clubsRes, classesRes, facultyRes, runsRes, dueRes] = await Promise.all([
     schoolLinks ? supabase.from("organizations").select("official").eq("type", "school").eq("domain", domain).maybeSingle() : Promise.resolve({ data: null }),
     schoolLinks ? supabase.rpc("school_clubs", { p_domain: domain }) : Promise.resolve({ data: [] }),
     schoolPortal ? supabase.rpc("my_classes") : Promise.resolve({ data: [] }),
     schoolPortal ? supabase.rpc("is_faculty", { p_domain: domain }) : Promise.resolve({ data: false }),
     schoolPortal ? supabase.rpc("runs_school", { p_domain: domain }) : Promise.resolve({ data: false }),
+    courses ? supabase.rpc("my_due", { p_days: 14 }) : Promise.resolve({ data: [] }),
   ]);
   const official = (org.data as { official?: boolean } | null)?.official === true;
   const clubs = (clubsRes.data ?? []) as Club[];
@@ -72,6 +76,10 @@ async function School() {
   const runs = runsRes.data === true;
   const terms = termsAround(new Date(requestTime()));
   const now = classes.filter((c) => c.term === terms[0]);
+  // What's due across your classes (Brazework Courses): not handed in yet, soonest first, then missing.
+  const nowMs = requestTime();
+  const due = ((dueRes.data ?? []) as Due[]).filter((d) => !d.submitted_at && !d.graded);
+  const dueNext = [...due.filter((d) => !d.due_at || new Date(d.due_at).getTime() >= nowMs), ...due.filter((d) => d.due_at && new Date(d.due_at).getTime() < nowMs)].slice(0, 6);
   const other = classes.filter((c) => c.term !== terms[0]);
   const teaching = classes.filter((c) => ["owner", "admin", "moderator"].includes(c.role));
   // A student's own standing in each class: what's verified, and what waits on the professor.
@@ -84,9 +92,10 @@ async function School() {
     standing.set(m.community_id, s);
   }
 
-  const [overviewRes, facultyList] = runs
-    ? await Promise.all([supabase.rpc("school_overview", { p_domain: domain }), supabase.from("school_faculty").select("email, name, title").eq("domain", domain).order("name").limit(500)])
-    : [{ data: null }, { data: [] }];
+  const [overviewRes, facultyList, coursesRes] = runs
+    ? await Promise.all([supabase.rpc("school_overview", { p_domain: domain }), supabase.from("school_faculty").select("email, name, title").eq("domain", domain).order("name").limit(500), courses ? supabase.rpc("school_courses", { p_domain: domain }) : Promise.resolve({ data: [] })])
+    : [{ data: null }, { data: [] }, { data: [] }];
+  const courseRows = ((coursesRes.data ?? []) as CourseRow[]).filter((c) => c.assignments > 0);
   const overview = overviewRes.data as Overview | null;
   const faculty = (facultyList.data ?? []) as Faculty[];
 
@@ -138,11 +147,46 @@ async function School() {
             </div>
           )}
           <p className="mt-2 text-xs text-faint">The export lists every verified milestone in your classes and verified clubs: the student, the class or club, the term, who verified it and the evidence. For accreditation (ABET) and your reports.</p>
+          {courseRows.length > 0 && (
+            <div className="mt-6">
+              <h3 className="text-sm font-semibold">Courses run on Brazework</h3>
+              <div className="mt-2 overflow-x-auto rounded-xl border border-line">
+                <table className="w-full min-w-[520px] text-sm">
+                  <thead className="bg-surface-2 text-left text-xs text-muted"><tr><th className="px-4 py-2.5 font-medium">Course</th><th className="px-4 py-2.5 font-medium">Term</th><th className="px-4 py-2.5 text-right font-medium">Students</th><th className="px-4 py-2.5 text-right font-medium">Assignments</th><th className="px-4 py-2.5 text-right font-medium">Handed in</th><th className="px-4 py-2.5 text-right font-medium">Grades released</th></tr></thead>
+                  <tbody>{courseRows.map((c) => <tr key={c.id} className="border-t border-line"><td className="px-4 py-2.5 font-medium">{c.name}</td><td className="px-4 py-2.5 text-muted">{c.term}</td><td className="px-4 py-2.5 text-right tabular-nums">{c.students}</td><td className="px-4 py-2.5 text-right tabular-nums">{c.assignments}</td><td className="px-4 py-2.5 text-right tabular-nums">{c.submissions}</td><td className="px-4 py-2.5 text-right tabular-nums">{c.graded}</td></tr>)}</tbody>
+                </table>
+              </div>
+              <p className="mt-2 text-xs text-faint">Counts only. Grades stay private to each student and their class&apos;s staff.</p>
+            </div>
+          )}
         </section>
       )}
 
       {/* Classes: yours this term, then the rest. Faculty start them here. (A school admin who teaches
           nothing doesn't need an empty list.) */}
+      {dueNext.length > 0 && (
+        <section className="mt-8" aria-labelledby="school-due">
+          <h2 id="school-due"><Kicker>Due next</Kicker></h2>
+          <ul className="glass-card mt-3 divide-y divide-[color-mix(in_oklab,var(--border)_70%,transparent)] rounded-2xl px-5">
+            {dueNext.map((d) => {
+              const late = d.due_at && new Date(d.due_at).getTime() < nowMs;
+              return (
+                <li key={d.id}>
+                  <Link href={`/c/${d.community_id}/course/a/${d.id}`} className="group flex items-center gap-3 py-3">
+                    <ClipboardList className="size-4 shrink-0 text-text-2" aria-hidden="true" />
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-medium group-hover:underline">{d.title}</span>
+                      <span className="block truncate text-xs text-muted">{d.course}{d.group_work ? " · Group work" : ""} · {d.points} points</span>
+                    </span>
+                    <span suppressHydrationWarning className={cn("shrink-0 text-xs font-medium", late ? "text-danger" : "text-text-2")}>{late ? "Missing" : dueText(d.due_at, nowMs)}</span>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        </section>
+      )}
+
       {(isFaculty || classes.length > 0 || !runs) && <section className="mt-8" aria-labelledby="school-classes">
         <div className="flex flex-wrap items-baseline justify-between gap-3">
           <h2 id="school-classes"><Kicker>{isFaculty ? "Your classes" : `This semester · ${terms[0]}`}</Kicker></h2>
@@ -161,6 +205,7 @@ async function School() {
                     </span>
                     {teaches && c.waiting > 0 && <span className="shrink-0 rounded-full border border-dashed border-wait px-2 py-0.5 text-xs text-text-2">{c.waiting} to verify</span>}
                   </Link>
+                  {courses && <Link href={`/c/${c.id}/course`} className="mt-2 inline-flex items-center gap-1 text-sm font-medium text-text-2 hover:text-text"><ClipboardList className="size-3.5" aria-hidden="true" /> {teaches ? "Course and gradebook" : "Course and grades"} <ArrowRight className="size-3.5" aria-hidden="true" /></Link>}
                   <p className="mt-2 flex flex-wrap gap-x-3 text-xs text-muted"><span>{Math.max(0, c.member_count - 1)} students</span><span>{c.projects} {c.projects === 1 ? "project" : "projects"}</span>{teaches && <span className="inline-flex items-center gap-1"><Lock className="size-3" aria-hidden="true" /> Private to the class</span>}</p>
                   {!teaches && (() => {
                     const st = standing.get(c.id);
@@ -241,7 +286,7 @@ async function School() {
           <h2 id="school-soon"><Kicker>When your school joins</Kicker></h2>
           <ul className="mt-3 grid grid-cols-1 gap-px overflow-hidden rounded-xl border border-line bg-line sm:grid-cols-3">
             {[
-              { icon: BookOpen, title: "Your classes", body: "This semester's classes, each with its projects and groups." },
+              { icon: BookOpen, title: "Your classes", body: "Each class's course in one place: modules, assignments, due dates and grades, with its projects and groups." },
               { icon: ClipboardCheck, title: "Verified class projects", body: "Your professor verifies the work and each person's part, by class and term." },
               { icon: Users, title: "Yours after graduation", body: "Move to a personal email when you graduate and keep every project and signature." },
             ].map((x) => (
@@ -255,7 +300,7 @@ async function School() {
         </section>
       )}
 
-      <p className={cn("mt-10 inline-flex items-center gap-1.5 text-xs text-faint")}><ShieldCheck className="size-3.5" aria-hidden="true" /> Class work stays private to the class unless you share it. Grades never live on Brazework.</p>
+      <p className={cn("mt-10 inline-flex items-center gap-1.5 text-xs text-faint")}><ShieldCheck className="size-3.5" aria-hidden="true" /> Class work stays private to the class unless you share it. A grade is seen only by its student and the class&apos;s staff, never on a profile.</p>
     </>
   );
 }

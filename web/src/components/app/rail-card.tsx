@@ -41,7 +41,7 @@ export function RailCard({ id, title, icon, href, linkLabel = "See all", summary
     <section aria-labelledby={`rail-${id}-title`} className={cn("glass-card rounded-3xl p-4", className)}>
       <div className="flex items-center gap-2">
         <button type="button" onClick={() => setFolded(!folded)} aria-expanded={!folded} aria-controls={body} className="group -m-1 flex min-w-0 flex-1 items-center gap-2 rounded-xl p-1 text-left">
-          <span className="grid size-7 shrink-0 place-items-center rounded-lg bg-accent-grad text-on-accent">{icon}</span>
+          <span className="grid size-5 shrink-0 place-items-center text-text-2 [&_svg]:size-4">{icon}</span>
           <span className="min-w-0">
             <h2 id={`rail-${id}-title`} className="flex items-center gap-1.5 text-sm font-semibold">
               {title}
