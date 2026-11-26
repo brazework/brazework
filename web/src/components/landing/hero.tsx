@@ -66,10 +66,14 @@ export function Hero() {
       setView(Math.min(VIEWS.length - 1, Math.floor(p * VIEWS.length)));
     };
     const onScroll = () => { if (!frame) frame = requestAnimationFrame(read); };
+    // A click's smooth scroll is over when the browser says so (slow machines take longer than the
+    // fallback below): from then on the page's position picks the view again.
+    const onEnd = () => { quietUntil.current = 0; onScroll(); };
     read();
     addEventListener("scroll", onScroll, { passive: true });
+    addEventListener("scrollend", onEnd);
     addEventListener("resize", onScroll);
-    return () => { cancelAnimationFrame(frame); removeEventListener("scroll", onScroll); removeEventListener("resize", onScroll); };
+    return () => { cancelAnimationFrame(frame); removeEventListener("scroll", onScroll); removeEventListener("scrollend", onEnd); removeEventListener("resize", onScroll); };
   }, [pinned]);
 
   // Clicking a view: show it, and when pinned, scroll to its stretch so the page and the view agree.
@@ -79,7 +83,8 @@ export function Hero() {
     if (!pinned || !el) return;
     const length = el.offsetHeight - innerHeight;
     const top = el.getBoundingClientRect().top + scrollY;
-    quietUntil.current = performance.now() + 900;
+    // Quiet until the smooth scroll ends (scrollend, above), at most 2 s where that event isn't sent.
+    quietUntil.current = performance.now() + 2000;
     scrollTo({ top: top + (length * (k + 0.5)) / VIEWS.length, behavior: "smooth" });
   }, [pinned]);
   const choose = (id: Example["id"]) => { setPick(id); setVerified(false); };

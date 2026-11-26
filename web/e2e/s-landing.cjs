@@ -61,12 +61,13 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
     await view("recruiter").getByText("Viewed by Pratt & Whitney").waitFor({ timeout: 8000 });
 
     await tabs().getByRole("tab", { name: "Everywhere" }).click();
+    // Its note, right away: clicks inside the pinned hero can scroll the page, and the page's position picks the view.
+    await page.locator("#top").getByText("Example · Add to LinkedIn, the verify link and the résumé work today").waitFor();
     await view("everywhere").getByRole("button", { name: "Add to LinkedIn" }).click();
     await view("everywhere").getByText("Added to LinkedIn").waitFor();
     await view("everywhere").getByText(/brazework\.com\/v\//).waitFor();
     await view("everywhere").getByText("Grades stay private: only you and your professors see them.").waitFor();
     for (const place of ["LinkedIn", "Résumé", "Handshake, applications"]) await view("everywhere").getByRole("list", { name: "Where it goes" }).getByText(place, { exact: true }).waitFor();
-    await page.locator("#top").getByText("Example · Add to LinkedIn, the verify link and the résumé work today").waitFor();
     // What isn't built says so: Torch's feedback draft.
     await tabs().getByRole("tab", { name: "Professor" }).click();
     await view("verify").getByText("Coming soon:").waitFor();
