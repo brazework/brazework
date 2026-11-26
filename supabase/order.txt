@@ -117,3 +117,4 @@ school-portal
 courses
 ember-follow
 courses-b
+ember-card-counts
