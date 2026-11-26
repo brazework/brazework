@@ -8,7 +8,8 @@ import { useReducedMotion } from "@/lib/use-reduced-motion";
 import { EverywhereView, RecruiterView, SchoolView, StudentView, VerifyView } from "./journey";
 import { EXAMPLES, type Example } from "./journey-data";
 
-// The hero (landing journey; Brazework Courses since 2026-11-26, docs/strategy.md): the product
+// The hero (landing journey; Brazework Courses since 2026-11-26, docs/strategy.md; for students and
+// professionals alike since the page was tied together the same day): the product
 // window. One project followed through five views: the student submits the milestone to its
 // assignment (or logs it under a club), the professor grades it against the rubric and verifies it in
 // one step (a club officer verifies), the school's dashboard counts it, a recruiter finds it, and it
@@ -107,11 +108,11 @@ export function Hero() {
         <div className="mx-auto grid w-full max-w-6xl grid-cols-1 items-center gap-10 px-5 sm:px-6 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:gap-12">
           <div className="min-w-0">
             <p className="inline-flex items-center gap-2 rounded-full border border-line bg-surface/60 px-3 py-1 text-xs text-text-2"><span aria-hidden="true" className="size-1.5 rounded-full bg-brand" /> New: Brazework Courses</p>
-            <h1 id="hero-h" className="mt-5 text-[clamp(2.75rem,6.2vw,4.75rem)] leading-[0.95] font-semibold tracking-[-0.05em]">Teach it.<br />Grade it.<br />Prove it.</h1>
-            <p className="mt-5 max-w-[31rem] text-lg leading-relaxed text-muted">The course platform built around what students build. Grading a milestone verifies it, the grade stays private, and the student keeps the proof for good. Students and clubs never pay.</p>
+            <h1 id="hero-h" className="mt-5 text-[clamp(2.75rem,6.2vw,4.75rem)] leading-[0.95] font-semibold tracking-[-0.05em]">Build it.<br />Prove it.<br /><span className="text-brand">Own it.</span></h1>
+            <p className="mt-5 max-w-[31rem] text-lg leading-relaxed text-muted">A record of the work you&apos;ve really done, each piece signed by the person who saw it: your professor, your club or your coworker. Free for students and professionals. Schools run their project courses on it.</p>
 
             <div className="mt-8 max-w-[30rem]">
-              <label htmlFor="hero-build" className="text-sm font-medium text-text-2">A student? What did you build?</label>
+              <label htmlFor="hero-build" className="text-sm font-medium text-text-2">What did you build?</label>
               <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
                 <input id="hero-build" value={typed} maxLength={300} autoComplete="off" enterKeyHint="go"
                   onChange={(e) => { setTyped(e.target.value); setVerified(false); if (view !== 0) go(0); }}
@@ -120,7 +121,7 @@ export function Hero() {
                   className="h-12 w-full min-w-0 rounded-xl border border-line-strong bg-surface px-4 text-[16px] transition outline-none placeholder:text-faint focus:border-text focus:shadow-[0_0_0_4px_color-mix(in_oklab,var(--text)_12%,transparent)]" />
                 <Button href={signupHref("", typed)} size="lg" className="h-12 shrink-0 rounded-xl px-5">Get it verified <ArrowRight className="size-4" /></Button>
               </div>
-              <p id="hero-build-hint" className="mt-2.5 text-sm text-faint">Type it, then follow it from student to professor to school. Free with your school email.</p>
+              <p id="hero-build-hint" className="mt-2.5 text-sm text-faint">Type it, then follow it from you to the person who signs it, and everywhere it goes.</p>
             </div>
             <p aria-hidden="true" className="hero-scroll-hint mt-10 hidden items-center gap-2 font-mono text-xs text-faint"><ArrowDown className="size-3.5" /> Scroll to follow it from log to LinkedIn</p>
           </div>

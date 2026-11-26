@@ -123,7 +123,7 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
   await step("what the others can't do: profiles, the course site and Brazework, straight after the hero, with what's still being built marked", async () => {
     await go(page, "/");
     const order = await page.locator("main > section").evaluateAll((els) => els.map((el) => el.id));
-    if (order.join(",") !== "top,compare,schools,for,pilot") throw new Error(`the page runs ${order.join(", ")}`);
+    if (order.join(",") !== "top,how,for,schools,compare,faq,pilot") throw new Error(`the page runs ${order.join(", ")}`);
     const sec = page.locator("#compare");
     await sec.getByRole("heading", { name: /Everything a course needs, built around what students build/ }).waitFor();
     // Brazework is the course platform now (docs/strategy.md): the page no longer hands grades to an LMS.
@@ -155,22 +155,41 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
     await go(page, "/");
   }, page);
 
-  await step("who it's for: students, clubs and schools, each with where to start; companies get a line", async () => {
+  await step("how it works: three steps that are the same for everyone, and Torch does the busywork", async () => {
+    const sec = page.locator("#how");
+    for (const h of ["Log what you built", "Someone who saw it signs it", "It's yours for good"]) await sec.getByRole("heading", { name: h, exact: true }).waitFor();
+    for (const who of ["Your professor", "Your club", "Your coworker", "A client"]) await sec.getByText(who, { exact: true }).waitFor();
+    await sec.getByText(/nothing is saved until you say yes/).waitFor();
+    if ((await sec.getByRole("link", { name: /Use it from Claude or ChatGPT/ }).getAttribute("href")) !== "/ai") throw new Error("the Torch line doesn't link to /ai");
+  }, page);
+
+  await step("who it's for: students, professionals, clubs and schools, each with where to start; companies get a line", async () => {
     const sec = page.locator("#for");
-    for (const h of ["Students", "Clubs", "Schools"]) await sec.getByRole("heading", { name: h, exact: true }).waitFor();
+    for (const h of ["Students", "Professionals", "Clubs", "Schools"]) await sec.getByRole("heading", { name: h, exact: true }).waitFor();
+    // Professionals start from the "Next job" goal, so sign-up and the app begin where they are.
+    if ((await sec.getByRole("link", { name: /Start as a professional/ }).getAttribute("href")) !== "/signup?goal=job") throw new Error("the professionals card doesn't start sign-up for work");
     await sec.getByRole("link", { name: /Bring your club/ }).click();
     await page.locator("#pilot").getByRole("heading", { name: /Start a pilot at your school/ }).waitFor();
     if ((await page.locator("#pilot").getByRole("button", { name: "School or department", pressed: true }).count()) !== 1) throw new Error("the pilot form doesn't start on School");
     await go(page, "/");
-    await page.locator("#for").getByRole("link", { name: /Find students by signed work/ }).click();
+    await page.locator("#for").getByRole("link", { name: /Find people by signed work/ }).click();
     await page.waitForURL(/\/pricing#pricing-companies$/, { timeout: 15000 });
     await page.getByText("$15,000").first().waitFor();
     await go(page, "/");
   }, page);
 
-  await step("the page is short: a few screens on a laptop", async () => {
+  await step("plain answers: someone who already works finds theirs, and the answers open and close", async () => {
+    const sec = page.locator("#faq");
+    const q = sec.getByText("I already have a job. Is this for me?", { exact: true });
+    await q.click();
+    await sec.getByText(/coworker, tech lead or client signs it/).waitFor();
+    await sec.getByText("What does Torch do?", { exact: true }).click();
+    await sec.getByText(/It never signs anything/).waitFor();
+  }, page);
+
+  await step("the page stays short: the hero's scroll run plus a few screens on a laptop", async () => {
     const h = await page.evaluate(() => document.documentElement.scrollHeight);
-    if (h > 950 * 5) throw new Error(`the page is ${h}px tall, more than five screens`);
+    if (h > 950 * 8) throw new Error(`the page is ${h}px tall, more than eight screens`);
   }, page);
 
   await step("the AI guide: a signed-out visitor follows the footer to /ai and finds the setup, what to ask, the rules and all 20 fields", async () => {
