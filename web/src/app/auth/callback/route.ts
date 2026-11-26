@@ -24,6 +24,6 @@ export async function GET(request: NextRequest) {
   }
   // Opened in a different browser than the one that asked: the link can't sign them in here.
   if (oauth) return NextResponse.redirect(`${origin}/${from}?oauth=expired`);
-  if (changingEmail) return NextResponse.redirect(`${origin}/settings#school-email`);
+  if (changingEmail) return NextResponse.redirect(`${origin}${next.startsWith("/settings") ? next : "/settings#school-email"}`);
   return NextResponse.redirect(`${origin}/login?${next === "/reset" ? "reset=expired" : "confirmed=1"}`);
 }
