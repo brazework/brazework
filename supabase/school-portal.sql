@@ -27,6 +27,15 @@
 alter table public.communities drop constraint if exists communities_type_check;
 alter table public.communities add constraint communities_type_check check (type in ('field', 'study', 'project', 'school', 'class'));
 create index if not exists communities_class_idx on public.communities (school_domain, term) where type = 'class';
+-- Club names are unique across Brazework; class names aren't (every school has an "ME 410 · Capstone
+-- Design", and a course can have sections). The same professor can't start the same class twice in a
+-- term (create_class says so).
+do $$ begin
+  if exists (select 1 from pg_indexes where indexname = 'communities_name_lower_idx' and indexdef not like '%WHERE%') then
+    drop index public.communities_name_lower_idx;
+  end if;
+end $$;
+create unique index if not exists communities_name_lower_idx on public.communities (name_lower) where type <> 'class';
 
 -- Nobody turns a club into a class or a class into a club (type is otherwise editable by owners).
 create or replace function public.communities_class_guard() returns trigger
@@ -111,6 +120,8 @@ grant select on public.school_faculty to authenticated;
 drop policy if exists "the school reads its faculty" on public.school_faculty;
 create policy "the school reads its faculty" on public.school_faculty for select to authenticated
   using (public.runs_school(domain) or email = public.my_confirmed_email());
+drop policy if exists "members only" on public.school_faculty;
+create policy "members only" on public.school_faculty as restrictive for select to authenticated using ((select public.is_member()));
 
 -- Are you faculty at this school? (Signed in with a confirmed email on its list.)
 create or replace function public.is_faculty(p_domain text) returns boolean
@@ -161,23 +172,28 @@ grant select on public.class_roster to authenticated;
 drop policy if exists "faculty read their roster" on public.class_roster;
 create policy "faculty read their roster" on public.class_roster for select to authenticated
   using (public.my_rank(community_id) >= 3 or email = public.my_confirmed_email());
+drop policy if exists "members only" on public.class_roster;
+create policy "members only" on public.class_roster as restrictive for select to authenticated using ((select public.is_member()));
 
 -- Faculty start a class at their school: "ME 410", "Capstone Design", "Fall 2026". You own it.
 create or replace function public.create_class(p_course text, p_title text, p_term text, p_about text default '') returns text
 language plpgsql security definer set search_path = public as $$
-declare me public.profiles; s jsonb; d text; cid text; course text := upper(btrim(coalesce(p_course, ''))); title text := btrim(coalesce(p_title, '')); term text := btrim(coalesce(p_term, ''));
+declare me public.profiles; s jsonb; d text; cid text; v_course text := upper(btrim(coalesce(p_course, ''))); v_title text := btrim(coalesce(p_title, '')); v_term text := btrim(coalesce(p_term, ''));
 begin
   select * into me from public.profiles where id = auth.uid();
   if me.id is null then raise exception 'Sign in first.' using errcode = '42501'; end if;
   s := public.my_school(); d := s->>'domain';
   if d is null then raise exception 'Sign in with your school email to start a class.' using errcode = 'P0001'; end if;
   if not public.is_faculty(d) then raise exception 'Only faculty on your school''s list can start a class. Ask your school''s Brazework admin to add you.' using errcode = '42501'; end if;
-  if course !~ '^[A-Z]{2,6}[ -]?[0-9]{2,4}[A-Z]?$' then raise exception 'Give the course code, like ME 410.' using errcode = 'P0001'; end if;
-  if char_length(title) not between 2 and 44 then raise exception 'Give the class a name, up to 44 characters.' using errcode = 'P0001'; end if;
-  if term !~ '^(Fall|Spring|Summer|Winter) 20[0-9]{2}$' then raise exception 'Give the term, like Fall 2026.' using errcode = 'P0001'; end if;
+  if v_course !~ '^[A-Z]{2,6}[ -]?[0-9]{2,4}[A-Z]?$' then raise exception 'Give the course code, like ME 410.' using errcode = 'P0001'; end if;
+  if char_length(v_title) not between 2 and 44 then raise exception 'Give the class a name, up to 44 characters.' using errcode = 'P0001'; end if;
+  if v_term !~ '^(Fall|Spring|Summer|Winter) 20[0-9]{2}$' then raise exception 'Give the term, like Fall 2026.' using errcode = 'P0001'; end if;
+  if exists (select 1 from public.communities c where c.type = 'class' and c.owner_id = me.id and c.school_domain = d and c.term = v_term and c.name_lower = lower(left(v_course || ' · ' || v_title, 60))) then
+    raise exception 'You already have this class this term.' using errcode = 'P0001';
+  end if;
   insert into public.communities (name, about, field, type, privacy, topics, rules, owner_id, owner_name, school_domain, course, term)
-  values (left(course || ' · ' || title, 60), left(coalesce(p_about, ''), 500), '', 'class', 'approval', '{}', '', me.id,
-          trim(me.first_name || ' ' || me.last_name), d, course, term)
+  values (left(v_course || ' · ' || v_title, 60), left(coalesce(p_about, ''), 500), '', 'class', 'approval', '{}', '', me.id,
+          trim(me.first_name || ' ' || me.last_name), d, v_course, v_term)
   returning id into cid;
   insert into public.community_members (community_id, uid, role) values (cid, me.id, 'owner');
   return cid;

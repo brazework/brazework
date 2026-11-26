@@ -44,6 +44,9 @@ do $$ declare c text := (select id from t_class); begin
   if (select type || '|' || privacy || '|' || course from public.communities where id = c) <> 'class|approval|ME 410' then raise exception 'FAILED: the class is not a private class'; end if;
   if public.set_class_roster(c, array['BEN@uportal.edu', 'new.student@uportal.edu', 'not an email']) <> 2 then raise exception 'FAILED: roster count'; end if;
   if not exists (select 1 from public.community_members where community_id = c and uid = (select ben from t_ids) and role = 'member') then raise exception 'FAILED: Ben did not join from the roster'; end if;
+  -- The same professor can't start the same class twice in a term.
+  begin perform public.create_class('ME 410', 'Capstone Design', 'Fall 2026'); raise exception 'FAILED: a duplicate class';
+  exception when raise_exception then if sqlerrm like 'FAILED%' then raise; end if; end;
   -- A club owner can't turn the class into a club.
   begin update public.communities set type = 'field' where id = c; raise exception 'FAILED: the class became a club';
   exception when insufficient_privilege then null; end;
@@ -57,7 +60,7 @@ do $$ declare c text := (select id from t_class); p text; m text; begin
   insert into public.projects (title, summary, community_id, private) values ('Planetary gearbox', 'A 5:1 planetary reduction for ME 410.', c, true) returning id into p;
   insert into public.milestones (project_id, community_id, title, evidence) values (p, c, 'Ran 2 hours at 40 N·m', 'https://example.com/dyno') returning id into m;
   insert into t_m values (p, m);
-  if (select count(*) from public.my_classes()) <> 1 then raise exception 'FAILED: my_classes'; end if;
+  if (select count(*) from public.my_classes() m where m.id = c and m.role = 'member') <> 1 then raise exception 'FAILED: my_classes'; end if;
   begin perform public.set_class_roster(c, array['x@uportal.edu']); raise exception 'FAILED: a student changed the roster';
   exception when insufficient_privilege then null; end;
 end $$;
