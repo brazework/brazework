@@ -332,7 +332,7 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
           </details>}
         hero={<>
           {/* The top of Home (home-band.tsx): where your record stands, the one next thing, your places. */}
-          <Suspense fallback={<div className="h-[22rem] shimmer rounded-2xl sm:h-64" aria-hidden="true" />}><HomeBand first={profile.first_name} /></Suspense>
+          <Suspense fallback={<div className="h-[22rem] shimmer rounded-2xl sm:h-64" aria-hidden="true" />}><HomeBand first={profile.first_name} quiet={noProjects} /></Suspense>
           {/* Home, top to bottom (section redesign, Nov 2026): the one next step, then one stream in the
               order you'd act on it (what your tools noticed, what needs you, what your clubs shipped,
               your goal), then the log-work box and the posts. Your builds live on Projects, not here. */}
@@ -343,6 +343,15 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
           <Suspense fallback={<StreamSkeleton />}><HomeStream /></Suspense>
           {/* The next event this week, as one line (wide screens have it in the rail). */}
           {discover && <div className="xl:hidden"><Suspense fallback={null}><NextUp /></Suspense></div>}
+          {/* Home has two halves (redesign 2026-11-26): yours above, the community below, with the
+              composer opening it, so it's clear what's yours and what everyone's sharing. */}
+          <div className="flex items-end justify-between gap-3 border-t border-line pt-7 sm:pt-8">
+            <div className="min-w-0">
+              <h2 className="text-xl font-semibold tracking-[-0.02em]">Community</h2>
+              <p className="mt-0.5 text-sm text-muted">What your clubs and the people you follow are building.</p>
+            </div>
+            <Link href="/communities" className="shrink-0 text-sm text-muted underline-offset-4 transition hover:text-text hover:underline">Your clubs</Link>
+          </div>
           <div id="composer" data-tour="composer" className="scroll-mt-24"><Composer first={profile.first_name} last={profile.last_name} interests={interests} userId={user.id} mediaEnabled={mediaEnabled} captionsEnabled={captionsEnabled} avatarSrc={avatarSrc(profile)} copilot={copilotOn} mentionsEnabled={mentionsEnabled} club={ledClub} next={null} projects={(myProjects ?? []) as { id: string; title: string }[]} clubs={composeClubs} defaultShareTo={chapter?.id} initialProject={typeof sp.project === "string" ? sp.project : undefined} /></div>
         </>} />
       {(tag || kind) && (

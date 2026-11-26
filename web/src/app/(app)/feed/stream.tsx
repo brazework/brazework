@@ -54,11 +54,12 @@ export async function HomeStream() {
   const nRequests = requests.count ?? 0, nInvites = invites.count ?? 0;
   const ships = ((shipped.data ?? []) as unknown as Shipped[]).filter((m) => m.project && !m.project.private && m.owner).slice(0, SHIPPED_SHOWN);
   const needsYou = nRequests > 0 || nInvites > 0 || !!verify;
-  // From the record already loaded for your goal (no extra query); unknown counts as "no projects yet".
-  const hasProjects = (record?.projects ?? 0) > 0;
+  // Your goal shows in full once it's set; until then it's one row that opens the picker (Home asks
+  // one thing at a time: the band or the first-build box asks for the work).
+  const goalSet = goal?.status === "active" || goal?.status === "met";
 
   return (
-    <div aria-label="Your day" role="group" className="flex flex-col gap-8">
+    <div aria-label="Your day" role="group" className="flex flex-col gap-7">
       {/* Once daily-triage.sql has run, the drafts are decided right here, a tap each (triage.tsx). */}
       {f.dailyTriage && <DraftTriage node={<Ember size={18} />} />}
       {toolDrafts.length > 0 && (
@@ -91,7 +92,7 @@ export async function HomeStream() {
       {/* What was signed this week. With nothing signed yet it says how to get there, but only for a
           member whose next step above isn't already saying it (less clutter, Nov 21): someone with
           projects is shown "ask someone who saw it" there, so the empty box would repeat it. */}
-      {(ships.length > 0 || !hasProjects) && <Group label={profile?.account_type === "professional" && !cids.length ? "Signed this week" : "Your clubs shipped this week"} node={<Seal size={18} />}
+      {(ships.length > 0 || (!cids.length && profile?.account_type !== "professional")) && <Group label={profile?.account_type === "professional" && !cids.length ? "Signed this week" : "Your clubs shipped this week"} node={<Seal size={18} />}
         more={ships.length ? <Link href="/communities" className={moreCls}>Your clubs</Link> : null}>
         {ships.length ? (
           <List label="Signed this week in your clubs">
@@ -106,11 +107,26 @@ export async function HomeStream() {
         )}
       </Group>}
 
-      {record && (
+      {record && (goalSet ? (
         <Group label="Where you're headed" node={<GoalMark />}>
           <GoalCard compact goal={goal} record={record} profileId={user.id} accountType={profile?.account_type} />
         </Group>
-      )}
+      ) : (
+        <details className="group/goal glass-card rounded-2xl">
+          <summary className="flex cursor-pointer list-none items-center gap-3 px-4 py-3.5 [&::-webkit-details-marker]:hidden sm:px-5">
+            <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-surface-2 text-text-2"><GoalMark className="size-4" /></span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-[15px] font-semibold tracking-tight">Where are you headed?</span>
+              <span className="block text-sm text-muted">Pick a goal, and your next steps come from your real work.</span>
+            </span>
+            <span className="shrink-0 rounded-lg border border-line px-3 py-1.5 text-xs font-medium transition group-open/goal:hidden hover:border-line-strong">Set a goal</span>
+            <span className="hidden shrink-0 text-xs text-muted group-open/goal:inline">Close</span>
+          </summary>
+          {/* display:none until opened: newer browsers keep a closed <details>'s content laid out (only
+              unpainted), and its tiles would still count for layout and hit-testing checks. */}
+          <div className="hidden border-t border-line p-2 group-open/goal:block sm:p-3"><GoalCard compact goal={goal} record={record} profileId={user.id} accountType={profile?.account_type} /></div>
+        </details>
+      ))}
     </div>
   );
 }
@@ -131,9 +147,9 @@ function Group({ label, node, more, children }: { label: string; node: React.Rea
   const id = `home-${label.toLowerCase().replace(/[^a-z]+/g, "-")}`;
   return (
     <section aria-labelledby={id}>
-      {/* A quiet label, not a title (2026-11-26): Home's band and cards carry the weight. */}
+      {/* A clear section title (2026-11-26, Home redesign): each group says what it's for. */}
       <div className="mb-2 flex items-center justify-between gap-3 px-1">
-        <h2 id={id} className="flex items-center gap-1.5 text-xs font-medium tracking-wide text-muted uppercase"><span aria-hidden="true" className="grid w-4 place-items-center opacity-70 [&_svg]:size-3.5">{node}</span>{label}</h2>
+        <h2 id={id} className="flex items-center gap-2 text-[15px] font-semibold tracking-tight text-text"><span aria-hidden="true" className="grid w-4 place-items-center text-muted [&_svg]:size-4">{node}</span>{label}</h2>
         {more}
       </div>
       {children}
