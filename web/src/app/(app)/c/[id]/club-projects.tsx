@@ -7,14 +7,16 @@ import { ProjectEditor, ProjectGrid, type ProjectView } from "../../u/[id]/profi
 // The club's own projects (Linear FIX-264, supabase/club-projects.sql). Every owner and admin of the
 // club starts and runs them; their teammates build on them like on a personal project. A private one
 // shows its card only, like on a profile. Nothing shows to a member until there's one.
-export async function ClubProjects({ cid, name, lead, interests }: { cid: string; name: string; lead: boolean; interests: string[] }) {
+// A class (supabase/school-portal.sql) is the same, except any student in it starts a class project.
+export async function ClubProjects({ cid, name, lead, interests, isClass = false, member = false }: { cid: string; name: string; lead: boolean; interests: string[]; isClass?: boolean; member?: boolean }) {
+  const starts = lead || (isClass && member);
   const f = await dbFeatures();
   if (!f.clubProjects) return null;
   const { supabase } = await getViewer();
   const { data } = await supabase.from("projects").select(`id, title, summary, status, year, tags, private, updated_at${f.projectTools ? ", tools" : ""}`)
     .eq("community_id", cid).order("created_at", { ascending: false }).limit(60);
   const rows = (data ?? []) as unknown as Omit<ProjectView, "details" | "link">[];
-  if (!rows.length && !lead) return null;
+  if (!rows.length && !starts) return null;
   // The write-up and link, where this viewer may read them (row-level security hides a private one's).
   const { data: det } = rows.length
     ? await supabase.from("project_details").select("project_id, details, link").in("project_id", rows.map((r) => r.id))
@@ -23,14 +25,16 @@ export async function ClubProjects({ cid, name, lead, interests }: { cid: string
   const projects: ProjectView[] = rows.map((r) => ({ ...r, details: details.get(r.id)?.details ?? null, link: details.get(r.id)?.link ?? null }));
 
   return (
-    <section id="projects" aria-label="Club projects" className="mt-6 scroll-mt-24">
+    <section id="projects" aria-label={isClass ? "Class projects" : "Club projects"} className="mt-6 scroll-mt-24">
       <div className="mb-3 flex items-center justify-between gap-3">
         <h2 className="text-lg font-semibold tracking-tight">Projects</h2>
-        {lead && <ProjectEditor interests={interests} stack={f.projectTools} specsOn={false} club={{ id: cid, name }} />}
+        {starts && <ProjectEditor interests={interests} stack={f.projectTools} specsOn={false} club={{ id: cid, name, isClass }} />}
       </div>
       {projects.length > 0
         ? <ProjectGrid projects={projects} own={lead} interests={interests} stack={f.projectTools} />
-        : <EmptyState icon={<FolderGit2 className="size-6" />} title="No club projects yet" body="Start one for the club, then add the members building it from the project page. Their work shows on their profiles too." />}
+        : isClass
+          ? <EmptyState icon={<FolderGit2 className="size-6" />} title="No class projects yet" body="Start your group's project here. Log milestones with their proof, and your professor verifies them. It shows on your record with the class and the term." />
+          : <EmptyState icon={<FolderGit2 className="size-6" />} title="No club projects yet" body="Start one for the club, then add the members building it from the project page. Their work shows on their profiles too." />}
     </section>
   );
 }

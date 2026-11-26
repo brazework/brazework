@@ -214,7 +214,7 @@ function ShareBox({ id, title, onDone }: { id: string; title: string; onDone: (m
 }
 
 // club: a new club project (supabase/club-projects.sql), for the club's owners and admins.
-export function ProjectEditor({ interests, copilot = false, stack = false, specsOn = false, club }: { interests: string[]; copilot?: boolean; stack?: boolean; specsOn?: boolean; club?: { id: string; name: string } }) {
+export function ProjectEditor({ interests, copilot = false, stack = false, specsOn = false, club }: { interests: string[]; copilot?: boolean; stack?: boolean; specsOn?: boolean; club?: { id: string; name: string; isClass?: boolean } }) {
   const [open, setOpen] = useState(false);
   return (
     <>
@@ -224,7 +224,7 @@ export function ProjectEditor({ interests, copilot = false, stack = false, specs
   );
 }
 
-function ProjectDialog({ project, interests, onClose, copilot = false, stack = false, specsOn = false, club }: { project?: ProjectView; interests: string[]; onClose: () => void; copilot?: boolean; stack?: boolean; specsOn?: boolean; club?: { id: string; name: string } }) {
+function ProjectDialog({ project, interests, onClose, copilot = false, stack = false, specsOn = false, club }: { project?: ProjectView; interests: string[]; onClose: () => void; copilot?: boolean; stack?: boolean; specsOn?: boolean; club?: { id: string; name: string; isClass?: boolean } }) {
   const formRef = useRef<HTMLFormElement>(null);
   const [details, setDetails] = useState(project?.details ?? "");
   const [tools, setTools] = useState<string[]>(project?.tools ?? []);
@@ -292,7 +292,7 @@ function ProjectDialog({ project, interests, onClose, copilot = false, stack = f
         )}
         <input type="hidden" name="id" value={project?.id ?? ""} />
         {club && !project && <input type="hidden" name="community_id" value={club.id} />}
-        {club && !project && <p className="-mt-1 text-sm text-muted">It belongs to the club: every owner and admin can edit it and manage its team. Add teammates from the project page once it&apos;s saved.</p>}
+        {club && !project && <p className="-mt-1 text-sm text-muted">{club.isClass ? "It's part of the class: your professor sees it and verifies its milestones, by class and term. It starts private. Add your group from the project page once it's saved." : <>It belongs to the club: every owner and admin can edit it and manage its team. Add teammates from the project page once it&apos;s saved.</>}</p>}
         <input type="hidden" name="status" value={status} />
         {tags.map((t) => <input key={t} type="hidden" name="tags" value={t} />)}
         <Field label="Title"><input name="title" defaultValue={project?.title} maxLength={120} className={inputCls} required /></Field>
@@ -343,7 +343,7 @@ function ProjectDialog({ project, interests, onClose, copilot = false, stack = f
         <Field label="Link"><input name="link" type="url" defaultValue={project?.link ?? ""} placeholder="https://github.com/…" maxLength={300} className={inputCls} /></Field>
         {specsOn && <SpecsEditor initial={project?.specs ?? []} />}
         <label className="flex items-start gap-3 rounded-2xl border border-line p-4 text-sm">
-          <input type="checkbox" name="private" defaultChecked={project?.private} className="mt-0.5 size-4 accent-[var(--text)]" />
+          <input type="checkbox" name="private" defaultChecked={project ? project.private : !!club?.isClass} className="mt-0.5 size-4 accent-[var(--text)]" />
           <span><span className="font-medium">Keep the write-up and link private</span><span className="block text-faint">Others see only the card.</span></span>
         </label>
         {state.message && !state.ok && <p role="alert" className="text-sm text-danger">{state.message}</p>}

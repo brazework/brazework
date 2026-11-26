@@ -43,8 +43,8 @@ function Count({ n, className }: { n: number; className?: string }) {
 
 export function SidebarSkeleton() {
   return (
-    <aside className="sticky top-0 hidden h-dvh w-[248px] shrink-0 md:block" aria-busy="true">
-      <div className="flex h-full flex-col border-r border-line bg-surface-2/70 p-3">
+    <aside className="sticky top-0 hidden h-dvh w-[260px] shrink-0 p-2 md:block" aria-busy="true">
+      <div className="glass-panel flex h-full flex-col rounded-2xl p-3">
       <div className="px-2 pt-2"><Logo /></div>
       <div className="mt-10 flex flex-col gap-2">
         {NAV.map((n) => <div key={n.label} className="h-10 animate-pulse rounded-xl bg-surface/60" />)}
@@ -58,7 +58,7 @@ export function SidebarSkeleton() {
 // Remembered in a cookie (not localStorage) so the server draws it at the right width: no jump on load.
 export const SIDEBAR_COOKIE = "forge-sidebar";
 
-export function Sidebar({ first, last, userId, badges, avatar, initialCollapsed = false, clubs = [], builds = [], school = null }: { first: string; last: string; userId: string; badges: Badges; avatar?: string | null; clubs?: { id: string; name: string; image?: string | null }[]; builds?: { id: string; name: string }[]; initialCollapsed?: boolean; school?: string | null }) {
+export function Sidebar({ first, last, userId, badges, avatar, initialCollapsed = false, clubs = [], builds = [], school = null, classes = [] }: { first: string; last: string; userId: string; badges: Badges; avatar?: string | null; clubs?: { id: string; name: string; image?: string | null }[]; builds?: { id: string; name: string }[]; initialCollapsed?: boolean; school?: string | null; classes?: { id: string; course: string; name: string }[] }) {
   const path = usePathname();
   const here = placeFor(path)?.id;
   const [collapsed, setCollapsed] = useState(initialCollapsed);
@@ -68,9 +68,9 @@ export function Sidebar({ first, last, userId, badges, avatar, initialCollapsed 
     document.cookie = `${SIDEBAR_COOKIE}=${next ? "collapsed" : "open"}; path=/; max-age=31536000; samesite=lax`;
   };
   return (
-    <motion.aside layoutRoot aria-label="Sidebar" className={cn("sticky top-0 isolate z-30 hidden h-dvh shrink-0 transition-[width] duration-300 ease-out motion-reduce:transition-none md:block", collapsed ? "w-16" : "w-[248px]")}>
-      {/* A flush, calm column (redesign 2026-11): a hairline edge on a soft tint, no floating glass. */}
-      <div className="flex h-full flex-col border-r border-line bg-surface-2 px-2 py-3">
+    <motion.aside layoutRoot aria-label="Sidebar" className={cn("sticky top-0 isolate z-30 hidden h-dvh shrink-0 transition-[width] duration-300 ease-out motion-reduce:transition-none md:block", collapsed ? "w-[76px]" : "w-[260px]")}>
+      {/* A floating glass panel (2026-11-26) over the app's soft lights (globals.css glass-panel). */}
+      <div className="glass-panel m-2 flex h-[calc(100dvh-1rem)] flex-col rounded-2xl px-2 py-3">
       <div className={cn("flex items-center gap-1", collapsed ? "flex-col" : "justify-between pr-1 pl-2")}>
         <Link href="/feed" aria-label="Brazework feed" className={cn(collapsed && "mb-2")}><Logo withWord={!collapsed} /></Link>
         <div className={cn("flex items-center gap-1", collapsed && "flex-col")}>
@@ -163,6 +163,18 @@ export function Sidebar({ first, last, userId, badges, avatar, initialCollapsed 
                   <NavTile icon={GraduationCap} active={active} />
                   {!collapsed && <span className="relative truncate">{school}</span>}
                 </Link>
+                {/* This semester's classes, under the school (supabase/school-portal.sql my_classes). */}
+                {classes.map((c) => {
+                  const on = path.startsWith(`/c/${c.id}`);
+                  return (
+                    <Link key={c.id} href={`/c/${c.id}`} title={collapsed ? c.name : undefined} aria-current={on ? "page" : undefined}
+                      className={cn(ROW, collapsed ? "justify-center px-0" : "pr-1.5 pl-3", on ? "font-medium text-text" : "text-text-2 hover:bg-hover/70 hover:text-text")}>
+                      {on && <motion.span layoutId="club-active" className="nav-pill absolute inset-0 rounded-md" transition={{ type: "spring", stiffness: 400, damping: 34 }} />}
+                      {collapsed ? <NavTile letter={c.course} active={on} /> : <span className="relative w-14 shrink-0 font-mono text-[11px] text-faint">{c.course}</span>}
+                      {!collapsed && <span className="relative truncate">{c.name.replace(/^[^·]+·\s*/, "")}</span>}
+                    </Link>
+                  );
+                })}
               </>
             );
           })()}

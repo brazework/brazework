@@ -92,7 +92,7 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
     supabase.from("projects").select(`id, title, summary, status, year, tags, private, updated_at${stackOn ? ", tools" : ""}${f.clubProjects ? ", club:communities(id, name)" : ""}`).eq("owner_id", id).order("created_at", { ascending: false }).limit(100),
     // Milestones (supabase/milestones.sql): others only get verified ones back, the owner gets all of theirs.
     msOn ? supabase.from("milestones").select(await milestoneCols()).eq("owner_id", id).order("achieved_on", { ascending: false }).limit(300) : Promise.resolve({ data: [] }),
-    supabase.from("community_members").select(`role, communities(${clubCols})`).eq("uid", id).limit(12),
+    supabase.from("community_members").select(`role, communities!inner(${clubCols})`).eq("uid", id).neq("communities.type", "class").limit(12),
     supabase.from("follows").select("follower, follower_info").eq("target", id).order("created_at", { ascending: false }).limit(5),
     supabase.from("community_members").select("communities(id, name)").eq("uid", user.id).limit(50),
     own ? Promise.resolve({ data: [] }) : supabase.from("follows").select("target").eq("follower", user.id).limit(500),

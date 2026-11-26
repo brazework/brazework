@@ -27,6 +27,19 @@ const HOW = [
   { n: "4", title: "Faculty verify, your offices see it", body: "A professor confirms the work and each student's part. It counts in your reports, and it stays on the student's record after they graduate." },
 ];
 
+// Where an LMS falls short in a project course, and what Brazework does there. The fourth field marks
+// what's being built with the pilot schools (docs/strategy.md build step 7).
+const LMS: [string, string, string, boolean][] = [
+  ["Teams", "A group set", "Teams with roles, and each member's part on record", false],
+  ["Progress", "One file per assignment", "Milestones against your deliverable schedule: proposal, design review, prototype, final", true],
+  ["Evidence", "Files in a course shell", "CAD you can turn, test logs and video, with who verified it", false],
+  ["Teamwork", "A separate peer-evaluation tool, if you buy one", "Peer evaluation built in: each teammate rates contribution", true],
+  ["Accreditation", "Assembled by hand each cycle", "Faculty tick the ABET outcomes a milestone shows; the export is grouped by outcome", true],
+  ["Industry sponsors", "Can't see the course", "Sign off results by email, no account needed", false],
+  ["After the course", "The shell is archived", "The verified work stays on the student's record", false],
+  ["Grades", "The gradebook", "Stay in your LMS: the final grade goes back through LTI", true],
+];
+
 const PILOT = [
   "One department or a few classes, for one semester",
   "Set up with you by the founders, in person where we can",
@@ -51,7 +64,7 @@ export default function SchoolsPage() {
               <Link href="/book?kind=school" className="inline-flex h-12 items-center gap-1.5 rounded-xl bg-accent px-5 text-[15px] font-medium text-on-accent transition hover:opacity-90">Start a pilot <ArrowRight className="size-4" aria-hidden="true" /></Link>
               <Link href="#price" className="inline-flex h-12 items-center rounded-xl border border-line-strong px-5 text-[15px] transition hover:bg-hover">See the price</Link>
             </div>
-            <p className="mt-4 text-sm text-faint">Works beside Blackboard, Canvas or Moodle: grades stay there, project work lives here.</p>
+            <p className="mt-4 text-sm text-faint">Run your project courses here. Blackboard, Canvas or Moodle keeps the gradebook.</p>
           </div>
         </section>
 
@@ -86,6 +99,27 @@ export default function SchoolsPage() {
                 </li>
               ))}
             </ol>
+          </div>
+        </section>
+
+        <section aria-labelledby="lms-h" className="py-14 md:py-24">
+          <div className="mx-auto max-w-6xl px-5 sm:px-6">
+            <h2 id="lms-h" className={H2}>Better than your LMS at project courses</h2>
+            <p className="mt-5 max-w-[42rem] text-lg leading-relaxed text-muted">Blackboard and Canvas are built for readings, quizzes and a gradebook. Capstones, design and lab courses need teams, milestones, real engineering files and someone to confirm the work. Keep your LMS for grades; run the project course here.</p>
+            <div className="mt-8 overflow-x-auto rounded-2xl border border-line bg-surface">
+              <table className="w-full min-w-[640px] text-left text-[15px]">
+                <thead className="bg-surface-2 text-sm text-muted"><tr><th className="px-5 py-3 font-medium">In a project course</th><th className="px-5 py-3 font-medium">Blackboard or Canvas</th><th className="px-5 py-3 font-medium text-text">Brazework</th></tr></thead>
+                <tbody>
+                  {LMS.map(([what, lms, us, soon]) => (
+                    <tr key={what} className="border-t border-line align-top">
+                      <td className="px-5 py-3.5 font-medium">{what}</td>
+                      <td className="px-5 py-3.5 text-muted">{lms}</td>
+                      <td className="px-5 py-3.5 text-text-2">{us}{soon && <span className="ml-2 rounded-full border border-line px-2 py-0.5 font-mono text-[11px] whitespace-nowrap text-faint">With pilot schools</span>}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         </section>
 

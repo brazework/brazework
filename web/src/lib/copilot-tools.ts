@@ -180,7 +180,7 @@ export function makeExec(db: DB, userId: string, onProposal: (p: Proposal) => vo
     switch (name) {
       case "search_clubs": {
         const q = clean(a.query), field = clean(a.field);
-        let req = db.from("communities").select("id, name, field, type, privacy, member_count, about, topics").order("member_count", { ascending: false }).limit(8);
+        let req = db.from("communities").select("id, name, field, type, privacy, member_count, about, topics").neq("type", "class").order("member_count", { ascending: false }).limit(8);
         if (q) req = req.or(`name.ilike.*${q}*,about.ilike.*${q}*`);
         if (field) req = req.ilike("field", `%${field}%`);
         const { data, error } = await req;

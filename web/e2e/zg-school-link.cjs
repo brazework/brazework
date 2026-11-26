@@ -78,7 +78,8 @@ const SCHOOL = "University of Hartford";
     }, ben);
 
     await step("Your school: the sidebar names it under Clubs, and its page lists the verified club and what's coming", async () => {
-      psql("insert into public.school_domains (domain, school) values ('hartford.edu', 'University of Hartford') on conflict (domain) do nothing");
+      // The domain may already be listed with no name (a confirmed student's sign-up lists it, school-portal.sql).
+      psql("insert into public.school_domains (domain, school) values ('hartford.edu', 'University of Hartford') on conflict (domain) do update set school = excluded.school");
       await go(ben, "/feed");
       const row = ben.getByTestId("sidebar-school");
       await row.getByText(SCHOOL).waitFor({ timeout: 15000 });
@@ -94,7 +95,7 @@ const SCHOOL = "University of Hartford";
   } finally {
     setBen("ben@forge.test");
     psql("delete from public.club_school_links where community_id = 'rkt'");
-    psql("delete from public.school_domains where domain = 'hartford.edu' and school = 'University of Hartford'");
+    psql("delete from public.school_domains where domain = 'hartford.edu'");
   }
 
   await b.close();
