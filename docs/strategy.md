@@ -26,8 +26,10 @@ Accreditation is the strongest pitch: faculty assemble that evidence by hand eve
 |---|---|---|
 | Semester pilot | $1,500, one department, credited toward the first year | Small enough for a chair to approve; real money, so it tests intent |
 | Department | $6,000 a year with 5 faculty seats, $600 per extra seat (10 seats: $9,000) | Under the amount most schools can sign without a formal bid, so a dean or chair can say yes |
-| Campus | $18,000 (up to 5,000 students), $30,000 (up to 15,000), $45,000 (above) a year; every department, unlimited faculty | Banded by enrollment, not by who joins; in line with or below the student-org and assessment tools campuses already buy. Past 25 seats a campus costs less than a department, and the price list says so |
+| Campus | Founding schools (the first 10, locked for 3 years): $18,000 (up to 5,000 students), $30,000 (up to 15,000), $45,000 (above) a year. List price after that: $30,000 / $48,000 / $72,000. Every department, unlimited faculty | Banded by enrollment, not by who joins; in line with or below the student-org and assessment tools campuses already buy. Past 25 seats a campus costs less than a department, and the price list says so |
 | Recruiters | Starter $4,800 a year (1 seat); hiring plan $15,000 (2 seats); sponsorships $2,500 per chapter per semester, all to the club, plus a $500 fee | Starter lets smaller and local employers in |
+
+**Speed over price.** Raising prices doesn't close deals sooner; time-to-close is the limit. So: sell what a chair or one hiring manager can approve in weeks (department pilots, recruiter Starter seats) before campus licenses; get clubs and one professor's class using it before the dean meeting, so the pitch is the school's own numbers; and give a dean a reason to sign this semester (the founding-school price lock, `FOUNDING`). Say the campus price per student ($2 a student a year at 15,000 students).
 
 Hosting and AI cost per school is small, so the margin is high (about 90%, *assumption*). Ten department deals and five campuses are about $200,000 a year. A per-club or per-student price would give a school a reason to keep people off.
 

@@ -5,7 +5,7 @@ import { Footer } from "@/components/landing/closing";
 import { Nav } from "@/components/landing/nav";
 import { H2, SCHOOL_OUTCOMES } from "@/components/landing/sections";
 import { ThemeChrome } from "@/components/theme-chrome";
-import { CAMPUS_BANDS, SCHOOL, SCHOOL_SOON } from "@/lib/pricing";
+import { CAMPUS_BANDS, FOUNDING, SCHOOL, SCHOOL_SOON, perStudent } from "@/lib/pricing";
 
 export const metadata: Metadata = {
   title: "For schools",
@@ -139,8 +139,9 @@ export default function SchoolsPage() {
               <p className="text-sm font-medium text-muted">Department</p>
               <p className="mt-2 text-4xl font-semibold tracking-tight">{usd(SCHOOL.department)}<span className="text-lg font-normal text-muted"> / year</span></p>
               <p className="mt-1 text-sm text-muted">With {SCHOOL.seatsIncluded} faculty seats, {usd(SCHOOL.perSeat)} per extra seat. A whole campus, every department and unlimited faculty: {usd(CAMPUS_BANDS[0].price)} to {usd(CAMPUS_BANDS[2].price)} a year by enrollment.</p>
+              <p className="mt-3 rounded-lg border border-line bg-surface-2 px-3 py-2.5 text-sm text-text-2"><span className="font-medium text-text">Founding schools:</span> the first {FOUNDING.schools} campuses keep that price for {FOUNDING.lockYears} years (list price from {usd(CAMPUS_BANDS[0].list)}). At {CAMPUS_BANDS[1].upTo.toLocaleString("en-US")} students that&apos;s {perStudent(CAMPUS_BANDS[1].upTo)} a student a year.</p>
               <ul className="mt-6 flex flex-1 flex-col gap-2.5 text-[15px] text-text-2">
-                {["Every student and every club included, never priced per head", "Your official school account and its verified clubs", "Faculty and advisors verify the work they saw", "Semester reports for clubs, student life and your dean"].map((x) => <li key={x} className="flex gap-2.5"><Check className="mt-1 size-4 shrink-0 text-ok" aria-hidden="true" />{x}</li>)}
+                {["Every student and every club included, never priced per head", "Classes by course and semester, rosters from a CSV", "Faculty from your own list verify class projects", "Evidence export for accreditation, and your school's numbers", "Your official school account and its verified clubs"].map((x) => <li key={x} className="flex gap-2.5"><Check className="mt-1 size-4 shrink-0 text-ok" aria-hidden="true" />{x}</li>)}
                 {SCHOOL_SOON.map((x) => <li key={x} className="flex gap-2.5 text-muted"><span aria-hidden="true" className="mt-1.5 block size-3 shrink-0 rounded-full border-2 border-dashed border-wait" />{x} <span className="sr-only">(building with pilot schools)</span></li>)}
               </ul>
               <p className="mt-4 text-xs text-faint">Dashed: being built with our pilot schools.</p>
