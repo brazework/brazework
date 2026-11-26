@@ -1,5 +1,5 @@
 "use client";
-import { ArrowRight, Loader2, Rocket } from "lucide-react";
+import { ArrowRight, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState, useSyncExternalStore, useTransition } from "react";
 import { BUILD_KEY, cleanBuild, firstBuildCopy } from "@/lib/front-door";
@@ -24,21 +24,21 @@ export function FirstBuild({ first, chapter, student = true }: { first: string; 
   const router = useRouter();
   const forget = () => { try { localStorage.removeItem(BUILD_KEY); } catch {} };
   return (
-    <section aria-label="Your first build" className="glass-card relative mb-4 overflow-hidden rounded-2xl p-5 sm:p-7">
-      <div aria-hidden className="cover-empty pointer-events-none absolute inset-0 opacity-70 [mask-image:linear-gradient(to_bottom,black,transparent_80%)]" />
-      <form className="relative" onSubmit={(e) => { e.preventDefault(); setError(""); start(async () => { const r = await startProject(text); if (r.ok) { forget(); router.refresh(); } else setError(r.message); }); }}>
-        <span className="grid size-11 place-items-center rounded-2xl bg-text text-surface"><Rocket className="size-5" /></span>
-        <label htmlFor="first-build" className="mt-4 block text-[1.45rem] leading-tight font-semibold tracking-tight sm:text-[1.75rem]">{copy.ask}</label>
-        <p className="mt-1.5 text-[15px] text-muted">{carried ? "This is what you typed on the way in. Change it, or start as it is. " : "One line is enough. "}{copy.why}</p>
-        <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+    // One clean row (2026-11-26): the question is the box's placeholder (and its label, for screen
+    // readers), the button beside it, and one quiet line under it. No icon or heading.
+    <section aria-label="Your first build" className="glass-card mb-4 rounded-2xl p-3 sm:p-3.5">
+      <form onSubmit={(e) => { e.preventDefault(); setError(""); start(async () => { const r = await startProject(text); if (r.ok) { forget(); router.refresh(); } else setError(r.message); }); }}>
+        <label htmlFor="first-build" className="sr-only">{copy.ask}</label>
+        <div className="flex flex-col gap-2 sm:flex-row">
           <input id="first-build" value={text} onChange={(e) => setText(e.target.value)} maxLength={300} autoComplete="off"
-            placeholder={copy.example}
-            className="h-12 min-w-0 shrink-0 rounded-2xl border sm:flex-1 sm:shrink border-line bg-surface px-4 text-[16px] transition outline-none placeholder:text-faint focus:border-line-strong focus:shadow-[0_0_0_4px_color-mix(in_oklab,var(--accent)_9%,transparent)]" />
-          <button type="submit" disabled={pending || text.trim().length < 3} className="inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-2xl bg-text px-5 text-sm font-semibold text-surface transition hover:opacity-90 active:scale-[0.98] disabled:opacity-40">
+            placeholder={copy.ask.replace(/, [^?]+\?$/, "?")}
+            className="h-12 min-w-0 shrink-0 rounded-xl border border-line bg-surface px-4 text-[16px] transition outline-none placeholder:text-muted focus:border-line-strong focus:shadow-[0_0_0_4px_color-mix(in_oklab,var(--accent)_9%,transparent)] sm:flex-1 sm:shrink" />
+          <button type="submit" disabled={pending || text.trim().length < 3} className="inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-xl bg-text px-5 text-sm font-semibold text-surface transition hover:opacity-90 active:scale-[0.98] disabled:opacity-40">
             {pending ? <Loader2 className="size-4 animate-spin" /> : null} Start my build <ArrowRight className="size-4" />
           </button>
         </div>
-        {error && <p role="alert" className="mt-2 text-sm text-danger">{error}</p>}
+        <p className="mt-2 px-1 text-[13px] text-muted">{carried ? "What you typed on the way in. Change it, or start as it is." : <>For example: {copy.example}. {copy.why}</>}</p>
+        {error && <p role="alert" className="mt-1.5 px-1 text-sm text-danger">{error}</p>}
       </form>
     </section>
   );
