@@ -102,3 +102,32 @@ export function signupGoalFrom(kind: unknown, target: unknown, type: "student" |
   const t = typeof target === "string" ? target.replace(/\s+/g, " ").trim() : "";
   return { kind, target: t.length <= 80 && !/[<>]/.test(t) ? t : "" };
 }
+
+// Torch does the next step (Josh, 26 Nov: "integrate with Torch to actually do it"). Each is what the
+// goal card sends to the Ask Torch bar (lib/ember-bar.ts askTorch): plain words a member could have
+// typed, specific to where they are on the path, ending in cards they approve. Torch's own rules still
+// hold: it drafts, the member confirms, and it never invents work or signatures.
+export type TorchAsk = { label: string; prompt: string };
+
+/** The one next step, done with Torch. */
+export function torchNext(g: Pick<Goal, "kind" | "target">, r: Record_): TorchAsk {
+  const k = GOAL_KINDS[g.kind], title = goalTitle(g);
+  if (r.projects === 0) return { label: "Add it with Torch", prompt: `I'm working toward ${title}. Help me put the project I'm building on my record: ask me what it is and what it's built with, then draft it as a project for me to approve.` };
+  if (r.waiting > 0) return { label: "Nudge them with Torch", prompt: `I'm working toward ${title}. ${r.waiting === 1 ? "One of my milestones is" : `${r.waiting} of my milestones are`} still waiting to be signed. Look at what's waiting and draft a short, friendly nudge to whoever can sign each one.` };
+  if (r.signed < k.target) return { label: "Find my next milestone", prompt: `I'm working toward ${title}. Look at my projects and recent work and suggest the next result worth getting signed. Draft it as a milestone, and tell me who should sign it (${k.signers}).` };
+  if (r.looked === 0) return { label: "Find who to send it to", prompt: `I'm working toward ${title}, and my record has ${r.signed} signed results. Find ${k.looking}${g.target ? ` in ${g.target}` : ""} on Brazework worth sending my record to, and draft a short message to the best one.` };
+  return { label: "What should I do next?", prompt: `I'm working toward ${title}. ${r.looked} ${r.looked === 1 ? "person" : "people"} looked at my record this month. What's the best thing I can do this week? Draft it if it's something you can prepare.` };
+}
+
+/** A plan for the week, from the record. */
+export const torchWeek = (g: Pick<Goal, "kind" | "target">): TorchAsk => ({
+  label: "Plan my week",
+  prompt: `Plan my week toward ${goalTitle(g)}: three concrete things, from what's on my record, most important first. Prepare whatever you can as cards for me to approve.`,
+});
+
+/** A goal in the member's own words: Torch drafts it as a goal card. Null when there's nothing to send. */
+export function torchGoalFrom(words: string): TorchAsk | null {
+  const w = words.replace(/\s+/g, " ").trim().slice(0, 200);
+  if (w.length < 3) return null;
+  return { label: "Ask Torch", prompt: `Here's where I'm headed: "${w}". Turn it into my goal on Brazework and draft it as a goal card for me to approve, then tell me the first step from what's on my record.` };
+}

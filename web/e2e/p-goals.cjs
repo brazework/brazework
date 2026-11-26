@@ -8,7 +8,8 @@ const ben = psql("select id from auth.users where email = 'ben@forge.test'");
 
 (async () => {
   const b = await browser();
-  psql(`update public.member_goals set status = 'dropped' where uid = '${ben}' and status = 'active';`);
+  // A goal reached in an earlier run would make the card ask "What's next?"; start from none.
+  psql(`update public.member_goals set status = 'dropped' where uid = '${ben}' and status in ('active', 'met');`);
   const page = await as(b, "ben@forge.test");
 
   await step("Ben sets a goal on his profile and sees his path", async () => {
@@ -23,9 +24,32 @@ const ben = psql("select id from auth.users where email = 'ben@forge.test'");
     await card.getByRole("button", { name: "Set my goal" }).click();
     await page.getByText("a summer internship in power electronics").first().waitFor({ timeout: 15000 });
     await page.getByText("Next step", { exact: true }).first().waitFor();
-    if (!(await page.getByRole("link", { name: "Ask Torch" }).first().isVisible())) throw new Error("Ask Torch link missing");
     const row = psql(`select kind || '|' || target || '|' || ('internships' = any (p.open_to)) from public.member_goals g join public.profiles p on p.id = g.uid where g.uid = '${ben}' and g.status = 'active'`);
     if (row !== "internship|power electronics|true") throw new Error("goal row: " + row);
+  }, page);
+
+  await step("Torch does the next step: the button hands it to the Ask Torch bar, about this goal", async () => {
+    const card = page.getByRole("region", { name: "Your goal" }).first();
+    const torch = card.getByRole("button", { name: /^(Add it with Torch|Nudge them with Torch|Find my next milestone|Find who to send it to|What should I do next\?)$/ });
+    await torch.waitFor({ timeout: 10000 });
+    await card.getByText("nothing happens until you approve").waitFor();
+    await torch.click();
+    const answer = page.getByRole("region", { name: "Torch's answer" });
+    await answer.getByText(/working toward a summer internship in power electronics/).first().waitFor({ timeout: 15000 });
+    await answer.getByRole("button", { name: "Close Torch's answer" }).click();
+    await card.getByRole("button", { name: "Plan my week" }).waitFor();
+  }, page);
+
+  await step("a goal in your own words goes to Torch to set up", async () => {
+    await page.getByRole("region", { name: "Your goal" }).first().getByRole("button", { name: "Edit goal" }).click();
+    const card = page.getByRole("region", { name: "Your goal" }).first();
+    await card.getByRole("button", { name: "All goals" }).click();
+    const send = card.getByRole("button", { name: /^Ask Torch to set it up/ });
+    if (await send.isEnabled()) throw new Error("an empty goal can be sent to Torch");
+    await card.getByLabel("Where are you headed?").fill("a summer internship at a robotics startup");
+    await send.click();
+    await page.getByRole("region", { name: "Torch's answer" }).getByText(/a summer internship at a robotics startup/).first().waitFor({ timeout: 15000 });
+    await page.getByRole("region", { name: "Torch's answer" }).getByRole("button", { name: "Close Torch's answer" }).click();
   }, page);
 
   await step("the goal is on Home too", async () => {

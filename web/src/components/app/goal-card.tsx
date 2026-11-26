@@ -1,13 +1,14 @@
 "use client";
 import { emberCreditCost } from "@/lib/ember-credits";
-import { ArrowRight, Briefcase, Building2, Check, ChevronLeft, Eye, FlaskConical, GraduationCap, HandCoins, Loader2, Lock, MoreHorizontal, PartyPopper, Pencil, Trophy } from "lucide-react";
+import { ArrowRight, Briefcase, Building2, CalendarCheck, Check, ChevronLeft, Eye, FlaskConical, GraduationCap, HandCoins, Loader2, Lock, MoreHorizontal, PartyPopper, Pencil, Sparkles, Trophy } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useId, useRef, useState, useSyncExternalStore, useTransition } from "react";
 import { CopyLink } from "@/components/app/copy-link";
 import { Button, inputCls, menuCls, menuItemCls } from "@/components/ui";
 import { cn } from "@/lib/forge";
+import { askTorch } from "@/lib/ember-bar";
 import { dropGoal, reachGoal, setGoal } from "@/lib/goal-actions";
-import { GOAL_HELP, GOAL_KINDS, goalChoices, goalPath, goalTitle, isGoalKind, type Goal, type GoalKind, type Record_ } from "@/lib/goals";
+import { GOAL_HELP, GOAL_KINDS, goalChoices, goalPath, goalTitle, isGoalKind, torchGoalFrom, torchNext, torchWeek, type Goal, type GoalKind, type Record_ } from "@/lib/goals";
 
 // Your goal (Linear FIX-95), on your profile and Home: pick what you're working toward, see your path
 // to it (built from your real record), the one next step, and close it when you get there. A goal
@@ -17,6 +18,8 @@ import { GOAL_HELP, GOAL_KINDS, goalChoices, goalPath, goalTitle, isGoalKind, ty
 // the same card. 1. the goals as tiles, each saying what it means, in the order that fits a student or
 // someone who works. 2. one sentence to finish ("I'm working toward a summer internship in …") with a
 // few examples, who can see it, and how it will read on your profile. Edit reopens step 2, filled in.
+// Torch (FIX-95, #265) sits on top of it: say it in your own words on step 1 and Torch drafts the goal
+// as a card you approve; on the path, the next step's main button hands it to Torch.
 // No flags (Josh: "i dont like the flag"): the goal's mark is a dot in a ring (GoalMark).
 const SUGGESTED = "brazework-goal";
 type AccountType = "student" | "professional" | null | undefined;
@@ -42,6 +45,7 @@ function GoalSetup({ current, reached, accountType, onDone, compact }: { current
   const [kind, setKind] = useState<GoalKind | null>(current?.kind ?? null);
   const [step, setStep] = useState<1 | 2>(current ? 2 : 1);
   const [target, setTarget] = useState(current?.target ?? "");
+  const [words, setWords] = useState("");
   const [visible, setVisible] = useState(current?.visible ?? true);
   const [msg, setMsg] = useState("");
   const [pending, start] = useTransition();
@@ -81,8 +85,17 @@ function GoalSetup({ current, reached, accountType, onDone, compact }: { current
           <h2 className="text-[15px] font-semibold tracking-tight">{current ? "Change your goal" : reached ? "What's next?" : "What are you working toward?"}</h2>
           <span className="shrink-0 text-xs text-faint">Step 1 of 2</span>
         </div>
-        <p className="mt-1 text-sm text-muted">Pick one. Brazework builds your path from your signed record and shows the one next step. You can change it any time.</p>
-        <ul className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3">
+        <p className="mt-1 text-sm text-muted">Say it in your own words and Torch sets it up from your record, or pick one below. You can change it any time.</p>
+        <form className="mt-4" onSubmit={(e) => { e.preventDefault(); const a = torchGoalFrom(words); if (a) { askTorch(a.prompt); setWords(""); } }}>
+          <label className="sr-only" htmlFor={`${id}-words`}>Where are you headed?</label>
+          <div className="flex gap-2">
+            <input id={`${id}-words`} value={words} onChange={(e) => setWords(e.target.value)} maxLength={200} autoComplete="off" placeholder="e.g. a summer internship at a robotics startup" aria-describedby={`${id}-words-note`} className={cn(inputCls, "min-w-0 flex-1")} />
+            <Button type="submit" disabled={!torchGoalFrom(words)} aria-label={`Ask Torch to set it up, ${emberCreditCost("ask")}`}><Sparkles className="size-4" /><span className="hidden sm:inline">Ask Torch</span></Button>
+          </div>
+          <p id={`${id}-words-note`} className="mt-1.5 text-xs text-faint">Torch drafts the goal as a card you approve · {emberCreditCost("ask")}</p>
+        </form>
+        <p className="mt-4 flex items-center gap-3 text-xs text-faint" aria-hidden="true"><span className="h-px flex-1 bg-[var(--border)]" />or pick one<span className="h-px flex-1 bg-[var(--border)]" /></p>
+        <ul className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
           {choices.map(({ kind: k, label }) => {
             const Icon = GOAL_ICON[k];
             const on = k === (kind ?? hint);
@@ -181,6 +194,7 @@ function Choice({ name, checked, onChange, icon, title, body }: { name: string; 
 
 function GoalPath({ goal, record, profileId, onEdit, returnFocus, compact }: { goal: Goal; record: Record_; profileId: string; onEdit: () => void; returnFocus: boolean; compact: boolean }) {
   const { steps, done, next } = goalPath(goal, record);
+  const torch = torchNext(goal, record), week = torchWeek(goal);
   const [menu, setMenu] = useState(false);
   const [reaching, setReaching] = useState(false);
   const [note, setNote] = useState("");
@@ -246,16 +260,27 @@ function GoalPath({ goal, record, profileId, onEdit, returnFocus, compact }: { g
               </li>
             ))}
           </ol>
-          <div className="mt-4 flex flex-col gap-3 rounded-xl border border-line bg-surface-2/60 p-3.5 sm:flex-row sm:items-center sm:gap-4">
-            <div className="min-w-0 flex-1">
-              <p className="text-[11px] font-medium tracking-wide text-muted uppercase">Next step</p>
-              <p className="mt-0.5 text-sm leading-snug text-text-2">{next.text}</p>
+          <div className="mt-4 rounded-xl border border-line bg-surface-2/60 p-3.5">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
+              <div className="min-w-0 flex-1">
+                <p className="text-[11px] font-medium tracking-wide text-muted uppercase">Next step</p>
+                <p className="mt-0.5 text-sm leading-snug text-text-2">{next.text}</p>
+              </div>
+              {/* Torch does it: the ask opens in the Ask Torch bar, with cards to approve (FIX-95). The way to do it yourself stays beside it. */}
+              <div className="flex shrink-0 flex-wrap items-center gap-2">
+                <button type="button" onClick={() => askTorch(torch.prompt)} className={cn("inline-flex h-8 items-center gap-1.5 rounded-lg bg-text px-3 text-xs font-semibold text-bg transition hover:opacity-90 active:scale-95", focusCls)}>
+                  <Sparkles className="size-3.5" /> {torch.label}
+                </button>
+                {next.href === "share"
+                  ? <CopyLink path={`/u/${profileId}`} label={next.action} className="h-8 px-3 text-xs font-medium" />
+                  : <Link href={href} className={cn("inline-flex h-8 items-center gap-1 rounded-lg border border-line bg-surface px-3 text-xs font-medium text-text-2 transition hover:border-line-strong hover:text-text", focusCls)}>{next.action} <ArrowRight className="size-3.5" /></Link>}
+              </div>
             </div>
-            <div className="flex shrink-0 flex-wrap items-center gap-3">
-              {next.href === "share"
-                ? <CopyLink path={`/u/${profileId}`} label={next.action} className="h-8 px-3 text-xs font-semibold" />
-                : <Link href={href} className={cn("inline-flex h-8 items-center gap-1.5 rounded-lg bg-text px-3 text-xs font-semibold text-bg transition hover:opacity-90", focusCls)}>{next.action} <ArrowRight className="size-3.5" /></Link>}
-              <Link href={`/copilot?q=${encodeURIComponent(`Help me plan my next step toward ${goalTitle(goal)}.`)}`} className="text-xs text-muted underline-offset-4 hover:text-text hover:underline">Ask Torch · {emberCreditCost("ask")}</Link>
+            <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-line pt-2.5">
+              <p className="text-xs text-faint">Torch drafts it; nothing happens until you approve · {emberCreditCost("ask")}</p>
+              <button type="button" onClick={() => askTorch(week.prompt)} className={cn("-my-1 inline-flex items-center gap-1.5 rounded-lg px-2 py-1 text-xs font-medium text-muted transition hover:bg-hover hover:text-text", focusCls)}>
+                <CalendarCheck className="size-3.5" /> {week.label}
+              </button>
             </div>
           </div>
         </>

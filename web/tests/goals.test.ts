@@ -59,6 +59,38 @@ test("sign-up's goal is read safely: nothing picked, a kind that doesn't fit, or
   assert.deepEqual(signupGoalFrom("grad", "x".repeat(81), "student"), { kind: "grad", target: "" });
 });
 
+// Torch does the next step (26 Nov): each ask is about this goal and where the member is on the path,
+// and asks for cards to approve rather than doing anything by itself.
+import { torchGoalFrom, torchNext, torchWeek } from "../src/lib/goals";
+
+test("Torch's next step follows the path: project, then waiting, then the next milestone, then who to send it to", () => {
+  const at = (r: { projects: number; signed: number; waiting: number; looked: number }) => torchNext(g, r);
+  assert.equal(at({ projects: 0, signed: 0, waiting: 0, looked: 0 }).label, "Add it with Torch");
+  assert.equal(at({ projects: 1, signed: 0, waiting: 2, looked: 0 }).label, "Nudge them with Torch");
+  assert.match(at({ projects: 1, signed: 0, waiting: 2, looked: 0 }).prompt, /2 of my milestones are still waiting/);
+  assert.equal(at({ projects: 1, signed: 1, waiting: 0, looked: 0 }).label, "Find my next milestone");
+  assert.match(at({ projects: 1, signed: 1, waiting: 0, looked: 0 }).prompt, /your club or a mentor/);
+  assert.equal(at({ projects: 2, signed: 3, waiting: 0, looked: 0 }).label, "Find who to send it to");
+  assert.match(at({ projects: 2, signed: 3, waiting: 0, looked: 0 }).prompt, /companies hiring interns in power electronics/);
+  assert.equal(at({ projects: 2, signed: 3, waiting: 0, looked: 4 }).label, "What should I do next?");
+});
+
+test("every Torch ask names the goal and asks for something to approve, never to act on its own", () => {
+  const all = [0, 1].flatMap((p) => [0, 2].flatMap((w) => [0, 3].map((s) => torchNext(g, { projects: p, signed: s, waiting: w, looked: 0 })))).concat(torchWeek(g));
+  for (const a of all) {
+    assert.match(a.prompt, /a summer internship in power electronics/);
+    assert.match(a.prompt, /draft|Draft|Prepare|approve/);
+  }
+});
+
+test("a goal in your own words: trimmed, capped, and nothing to send when it's empty", () => {
+  assert.equal(torchGoalFrom("  "), null);
+  assert.equal(torchGoalFrom("ok"), null);
+  const a = torchGoalFrom("  a summer   internship at a robotics startup ");
+  assert.match(a!.prompt, /"a summer internship at a robotics startup"/);
+  assert.match(a!.prompt, /goal card for me to approve/);
+  assert.equal(torchGoalFrom("x".repeat(500))!.prompt.match(/"(x+)"/)![1].length, 200);
+});
 test("the setup orders the goals for who you are, and every goal says what it means", async () => {
   const { goalChoices, GOAL_HELP, GOAL_KINDS } = await import("../src/lib/goals");
   const student = goalChoices("student"), pro = goalChoices("professional");

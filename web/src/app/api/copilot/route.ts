@@ -47,6 +47,15 @@ export async function POST(req: Request) {
   // The rules first, cached; then what's particular to this member and this request.
   const system = emberSystem(ctx.rules, `${ctx.about}\n\n${instructions}${r.preset ? `\n\n${presetInstruction(r.preset)}` : ""}${here ? `\n\n${here}` : ""}`);
   const abort = new AbortController();
+  // Torch's numbers (supabase/ember-card-counts.sql): how many cards and sets of answer buttons this answer
+  // prepared, counted once it ends. Numbers only; best-effort.
+  let prepared = 0, offered = 0;
+  const count = async () => {
+    try {
+      if (prepared) await ctx.supabase.rpc("ember_note", { p_what: "prepared", p_n: prepared });
+      if (offered) await ctx.supabase.rpc("ember_note", { p_what: "choices", p_n: offered });
+    } catch { /* counting never gets in the way */ }
+  };
 
   const body = new ReadableStream<Uint8Array>({
     async start(controller) {
@@ -54,7 +63,7 @@ export async function POST(req: Request) {
       const out = (s: string) => controller.enqueue(enc.encode(s));
       try {
         if (r.task === "ask") {
-          await runAgent({ client, model: COPILOT_MODEL, system, messages, tools: r.choices ? [...TOOLS, OFFER_CHOICES] : TOOLS, exec: makeExec(ctx.supabase, ctx.userId, (proposal) => out(frame({ proposal })), (choice) => out(frame({ choice })), { carryOn: !!r.choices }), maxTokens, signal: abort.signal, emit: (e) => out(e.type === "text" ? e.text : frame({ tool: e.name })) });
+          await runAgent({ client, model: COPILOT_MODEL, system, messages, tools: r.choices ? [...TOOLS, OFFER_CHOICES] : TOOLS, exec: makeExec(ctx.supabase, ctx.userId, (proposal) => { prepared++; out(frame({ proposal })); }, (choice) => { offered++; out(frame({ choice })); }, { carryOn: !!r.choices }), maxTokens, signal: abort.signal, emit: (e) => out(e.type === "text" ? e.text : frame({ tool: e.name })) });
         } else {
           const stream = client.messages.stream({ model: COPILOT_MODEL, max_tokens: maxTokens, system, messages }, { signal: abort.signal });
           for await (const ev of stream) if (ev.type === "content_block_delta" && ev.delta.type === "text_delta") out(ev.delta.text);
@@ -62,6 +71,9 @@ export async function POST(req: Request) {
         controller.close();
       } catch {
         if (!abort.signal.aborted) { out("\n\n[Torch stopped early. Try again.]"); controller.close(); }
+      } finally {
+        // Cards shown before a stop still count as prepared.
+        await count();
       }
     },
     cancel() { abort.abort(); },
