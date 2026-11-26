@@ -131,7 +131,7 @@ function GoalPath({ goal, record, profileId, onChange, compact }: { goal: Goal; 
             <p className="flex items-start gap-2"><Flame className="mt-0.5 size-4 shrink-0 text-[#f28c28]" /><span><b className="font-semibold text-[#c2410c] dark:text-[#f28c28]">Next step:</b> <span className="text-text-2">{next.text}</span></span></p>
             <div className="mt-2 flex flex-wrap items-center gap-3 pl-6">
               {next.href === "share" ? <CopyLink path={`/u/${profileId}`} label={next.action} /> : <Link href={next.href} className="inline-flex items-center gap-1 text-sm font-medium hover:underline">{next.action} <ArrowRight className="size-3.5" /></Link>}
-              <Link href={`/copilot?q=${encodeURIComponent(`Help me plan my next step toward ${goalTitle(goal)}.`)}`} className="text-sm text-muted hover:text-text hover:underline">Ask Jig · {emberCreditCost("ask")}</Link>
+              <Link href={`/copilot?q=${encodeURIComponent(`Help me plan my next step toward ${goalTitle(goal)}.`)}`} className="text-sm text-muted hover:text-text hover:underline">Ask Torch · {emberCreditCost("ask")}</Link>
             </div>
           </div>
         </>

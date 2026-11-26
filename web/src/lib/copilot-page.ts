@@ -1,8 +1,8 @@
 import type { createClient } from "@/lib/supabase/server";
 import type { PageRef } from "@/lib/ember-bar";
 
-// The page the member asked Jig from (the Ask Jig bar sends its id; lib/ember-bar.ts pageContext),
-// as one paragraph for Jig's instructions. Read with the member's own client, so row-level security
+// The page the member asked Torch from (the Ask Torch bar sends its id; lib/ember-bar.ts pageContext),
+// as one paragraph for Torch's instructions. Read with the member's own client, so row-level security
 // decides: a project, club or event they can't see adds nothing.
 
 type DB = Awaited<ReturnType<typeof createClient>>;

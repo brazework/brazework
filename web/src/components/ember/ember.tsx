@@ -8,7 +8,7 @@ import { cn } from "@/lib/forge";
 // CSS (no JavaScript), so it renders on the server.
 //
 // Moods are motion only (globals.css): the spark breathes when idle, turns while thinking, rests
-// when sleepy. The component keeps its old name (Jig) in code; what people call it is set in copy.
+// when sleepy. The component keeps its old name (Torch) in code; what people call it is set in copy.
 
 export type EmberMood = "idle" | "thinking" | "happy" | "sleepy" | "surprised";
 

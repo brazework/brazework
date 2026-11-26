@@ -6,7 +6,7 @@ import { Ember } from "@/components/ember/ember";
 import { reportError } from "@/lib/sentry";
 
 // A section that failed to load (redesign 2026-11): the error stays inside the page, under the
-// sidebar and the Ask Jig bar, so the rest of the app is still one click away. A deploy that
+// sidebar and the Ask Torch bar, so the rest of the app is still one click away. A deploy that
 // replaced this tab's scripts reloads once, as the root error page does.
 const isStaleDeploy = (e: Error) => e.name === "ChunkLoadError" || /Failed to load chunk|Loading chunk [\w-]+ failed|Failed to fetch dynamically imported module/i.test(e.message);
 

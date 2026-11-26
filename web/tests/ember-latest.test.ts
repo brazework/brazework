@@ -1,5 +1,5 @@
-// "Help me ask someone who saw my latest milestone to sign it" is Jig's own button, but on production
-// Jig answered "I don't have dates to tell which is latest" and guessed. A waiting milestone now
+// "Help me ask someone who saw my latest milestone to sign it" is Torch's own button, but on production
+// Torch answered "I don't have dates to tell which is latest" and guessed. A waiting milestone now
 // carries the day it happened, and the list is newest first by that day (lib/ember-record.ts).
 // Run: npm test
 import assert from "node:assert/strict";
@@ -20,7 +20,7 @@ test("two from the same day keep the order they came in, and one with no day goe
   assert.deepEqual(newestFirst(rows).map((r) => r.id), ["a", "b", "undated"]);
 });
 
-test("Jig is told each waiting milestone's day, and that the list runs newest first", () => {
+test("Torch is told each waiting milestone's day, and that the list runs newest first", () => {
   const line = recordLines(rec({ open: [open({ id: "m2", title: "Offline mode", on: "2026-11-20" }), open({})] })).find((l) => l.startsWith("Waiting for proof")) ?? "";
   assert.match(line, /newest first/);
   assert.match(line, /"Offline mode" \(2026-11-20; milestone id m2;/);

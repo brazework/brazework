@@ -23,7 +23,7 @@ type Input = { builder: boolean; milestones: M[]; drafts: { id: string; title: s
 /**
  * The one step for a builder of this project (null for visitors). Without a goal, in order: a milestone
  * waiting to be signed (ask the people who can sign it), no milestone yet (log the first), a draft from
- * Jig or a tool (send it), something signed (share it). With a goal (lib/goals.ts), the goal's own
+ * Torch or a tool (send it), something signed (share it). With a goal (lib/goals.ts), the goal's own
  * next step chooses. `signers`: club id → the officers who could sign there (lib/signers.ts).
  */
 export function nextStep(i: Input): NextStep | null {

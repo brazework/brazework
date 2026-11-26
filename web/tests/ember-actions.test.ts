@@ -1,4 +1,4 @@
-// Jig's composer actions (lib/ember-actions.ts): the same eight for everyone, worded for who's asking;
+// Torch's composer actions (lib/ember-actions.ts): the same eight for everyone, worded for who's asking;
 // the ones that start a sentence say how to finish it. Run: npm test
 import assert from "node:assert/strict";
 import { test } from "node:test";
@@ -11,7 +11,7 @@ test("someone who works is never sent to a club to get work signed", () => {
   assert.match(emberActions({ field: "Software", student: true }).find((a) => a.id === "sign")!.text, /verified by my club/);
 });
 
-test("Jig writes from the record: a review for someone who works, résumé bullets for a student, and the story for both", () => {
+test("Torch writes from the record: a review for someone who works, résumé bullets for a student, and the story for both", () => {
   const pro = emberActions({ student: false }), stu = emberActions({ student: true });
   assert.equal(pro.find((a) => a.id === "review")?.label, "Prep my review");
   assert.match(pro.find((a) => a.id === "review")!.text, /from my signed work/);

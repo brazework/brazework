@@ -5,7 +5,7 @@ import { cn } from "@/lib/forge";
 
 // The one icon tile the sidebar uses everywhere (main places, your clubs, More, the top buttons):
 // 32px, the same radius. Only the current page's tile is filled (the accent, with a glow); the rest
-// are plain glyphs that lift on hover, so the eye lands on where you are. Copilot shows the Jig
+// are plain glyphs that lift on hover, so the eye lands on where you are. Copilot shows the Torch
 // orb; a club shows its logo (or cover) cropped square, else its first letter in a hairline square.
 export const TILE = "relative grid size-7 shrink-0 place-items-center rounded-md transition duration-200";
 

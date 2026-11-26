@@ -40,7 +40,7 @@ function instructions(s: { canDraft: boolean; canPost: boolean }) {
   const playbooks = `For the tools people in each field use and the moments worth recording, read ${PLAYBOOK_INDEX_URI}; the prompts shipped, result, week, ask_signature and setup run the common workflows, club_week helps club officers, and career_fair gets the member ready for a career fair.`;
   const acts = "add a project (create_project), update one (update_project), add a teammate from their clubs (add_teammate), RSVP to events (rsvp_event), join a club (join_club), accept an invite (accept_invite) and follow someone (follow_person)";
   if (s.canPost) return `${ABOUT} ${reads} They can also post a build update (post_update), log a milestone (log_milestone), ask someone to sign one (request_signature), ${acts} as the member, or leave any of these as drafts for them to approve in Brazework (draft_post, draft_milestone, or draft: true). Before each one, show the member exactly what you'll add (the words, the project, the proof) and wait for their yes in the chat; then do it and give them the link. If they say "later" or aren't sure, leave it as a draft. Write in their voice. ${playbooks} Results include links to open in Brazework, and a next step.`;
-  if (s.canDraft) return `${ABOUT} ${reads} This token can't post: it leaves drafts that the member edits and approves in Brazework (draft_post, draft_milestone; and ${acts}, which wait as cards in their drafts and on Jig's page), so nothing happens without them. Write in their voice, with specifics. ${playbooks} Results include links to open in Brazework, and a next step.`;
+  if (s.canDraft) return `${ABOUT} ${reads} This token can't post: it leaves drafts that the member edits and approves in Brazework (draft_post, draft_milestone; and ${acts}, which wait as cards in their drafts and on Torch's page), so nothing happens without them. Write in their voice, with specifics. ${playbooks} Results include links to open in Brazework, and a next step.`;
   return `${ABOUT} ${reads} ${playbooks} Results include links to open in Brazework.`;
 }
 // Read before writing: my_inbox, then draft_reply. Messages are always drafts the member sends.
@@ -130,7 +130,7 @@ export async function POST(req: Request) {
       const input = (msg.params?.arguments ?? {}) as Record<string, unknown>;
       if (tool.name === "search" && String(input.query ?? "").trim().length < 2) return toolError(msg.id, "Give at least 2 characters to search for.");
       if (tool.name === "request_signature") return requestSignature(msg.id, hash, tool.args(input));
-      // Actions shared with Jig (lib/tool-actions.ts): done with a token that posts, else drafted.
+      // Actions shared with Torch (lib/tool-actions.ts): done with a token that posts, else drafted.
       const { data, error } = tool.act
         ? await db.rpc("mcp_act", { p_hash: hash, p_kind: tool.act, p_payload: actionPayload(tool.act, input), p_draft: tool.draftOnly === true || !can.canPost || input.draft === true, ...sourceArgs(input) })
         : await db.rpc(tool.rpc, { p_hash: hash, ...tool.args(input) });

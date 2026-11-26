@@ -2,7 +2,7 @@
 
 /* Brazework design tokens (redesign 2026-11): one theme, light and dark. Use these, never fixed colours.
    Light is paper and ink; dark is graphite. Primary actions are ink (--accent). The one brand colour,
-   brazed copper (--brand), is for Jig and the landing page only: in the app, colour means proof
+   brazed copper (--brand), is for Torch and the landing page only: in the app, colour means proof
    (--ok signed, --info GitHub, dashed --wait waiting, --pro gold). Every text colour stays at 4.5:1
    or better on --bg, --surface and --raised (the accessibility scan checks).
    Theme = the visitor's system setting, unless they pick one (html[data-theme], set before paint in layout.tsx). */
@@ -354,7 +354,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity
     conic-gradient(from var(--ai-angle), var(--brand), color-mix(in oklab, var(--brand) 10%, transparent) 25%, var(--border-strong) 50%, color-mix(in oklab, var(--brand) 10%, transparent) 75%, var(--brand)) border-box;
   animation: ai-sweep 8s linear infinite;
 }
-/* An AI action chip (Polish with Jig): the same Jig gradient as .ai-border, as a still hairline. */
+/* An AI action chip (Polish with Torch): the same Torch gradient as .ai-border, as a still hairline. */
 .ai-chip {
   border: 1px solid transparent;
   background:
@@ -384,7 +384,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity
   margin-inline: auto;
   max-width: 42rem;
 }
-/* Phones show the row too: the Ask Jig bar is on every page (components/ember/ask-bar.tsx). */
+/* Phones show the row too: the Ask Torch bar is on every page (components/ember/ask-bar.tsx). */
 @media (width >= 80rem) { .feed-frame, main:has(.feed-frame) .search-row, main:has(.feed-frame) .place-row { max-width: 72rem; grid-template-columns: minmax(0, 1fr) 300px; } }
 @media (width >= 96rem) { .feed-frame, main:has(.feed-frame) .search-row, main:has(.feed-frame) .place-row { max-width: 80rem; grid-template-columns: minmax(0, 1fr) 340px; } }
 @media (width >= 112.5rem) { .feed-frame, main:has(.feed-frame) .search-row, main:has(.feed-frame) .place-row { max-width: 1520px; grid-template-columns: minmax(0, 1fr) 380px; } }
@@ -456,10 +456,10 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity
   box-shadow: inset 0 1px 0 var(--glass-hi), 0 0 0 1px color-mix(in oklab, var(--border) 80%, transparent);
 }
 
-/* ---------- Jig, Brazework's AI (components/ember/ember.tsx) ----------
+/* ---------- Torch, Brazework's AI (components/ember/ember.tsx) ----------
    A glowing glass orb with light swirling inside. --ember-a is its bright tone, --ember-b its deep
    tone, --ember-c the accent that swirls through it.  */
-/* Jig is brazed copper in both themes: the one place the brand colour lives inside the app. */
+/* Torch is brazed copper in both themes: the one place the brand colour lives inside the app. */
 :root { --ember-a: #ffd9bf; --ember-b: #9a3f1a; --ember-c: #e8946a; --ember-plasma: 0.9; --ember-fresnel: 0.9; }
 /* The assistant's mark (components/ember/ember.tsx): ink with the page's colour cut out of it, so it
    is black on light pages and white on dark ones, like a primary button. */
@@ -479,7 +479,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity
 .ember .ember-glow, .ember .ember-glow-out, .ember .ember-core, .ember .ember-body, .ember [class^="ember-swirl"], .ember [class^="ember-band"] { transform-box: view-box; transform-origin: 32px 32px; }
 .ember .ember-glow { animation: ember-breathe 3.6s ease-in-out infinite; }
 .ember .ember-glow-out { animation: ember-breathe 3.6s ease-in-out 1.8s infinite; }
-/* The spark at Jig's centre: it breathes; while Jig thinks, it turns. */
+/* The spark at Torch's centre: it breathes; while Torch thinks, it turns. */
 @keyframes ember-twinkle { 50% { transform: scale(0.88) rotate(6deg); opacity: 0.9; } }
 .ember .ember-spark { transform-box: view-box; transform-origin: 32px 32px; animation: ember-twinkle 3.6s ease-in-out infinite; }
 .ember-thinking .ember-spark { animation: ember-spin 2.2s linear infinite; }
@@ -586,7 +586,7 @@ select option { background-color: var(--surface); color: var(--text); }
 .seal-stamp { animation: seal-stamp 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both; transform-origin: center; }
 @media (prefers-reduced-motion: reduce) { .seal-stamp { animation: none; } }
 
-/* Jig's reply as it streams (components/copilot/reply.tsx): a caret at the end of the words, and
+/* Torch's reply as it streams (components/copilot/reply.tsx): a caret at the end of the words, and
    the three waiting dots. Opacity only, so nothing around them moves. */
 .ember-caret {
   display: inline-block;

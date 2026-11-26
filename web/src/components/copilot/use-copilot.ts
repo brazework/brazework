@@ -36,7 +36,7 @@ export function useCopilot() {
       const res = await fetch("/api/copilot", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(req), signal: ctrl.signal });
       if (!res.ok || !res.body) {
         const j = await res.json().catch(() => ({}));
-        setError((j as { message?: string }).message ?? "Jig couldn't answer. Try again.");
+        setError((j as { message?: string }).message ?? "Torch couldn't answer. Try again.");
         return null;
       }
       const left = res.headers.get("X-Copilot-Remaining");
@@ -54,7 +54,7 @@ export function useCopilot() {
       return full;
     } catch (e) {
       if (frame) cancelAnimationFrame(frame);
-      if ((e as Error).name !== "AbortError") setError("Jig couldn't answer. Check your connection.");
+      if ((e as Error).name !== "AbortError") setError("Torch couldn't answer. Check your connection.");
       return null;
     } finally {
       if (abort.current === ctrl) setBusy(false);

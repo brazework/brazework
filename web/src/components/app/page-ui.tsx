@@ -30,7 +30,7 @@ export function Panel({ className, children }: { className?: string; children: R
 }
 
 // An empty list (docs/design/app.md): on the drawing-sheet grid, it says what goes here and offers the
-// first action. Left-aligned, so it reads as a start, not a dead end. Jig waits beside it.
+// first action. Left-aligned, so it reads as a start, not a dead end. Torch waits beside it.
 export function EmptyState({ icon, title, body, action, mood = "idle" }: { icon?: React.ReactNode; title: string; body?: React.ReactNode; action?: React.ReactNode; mood?: EmberMood }) {
   return (
     <div className="sheet-grid flex flex-col items-start gap-4 rounded-xl border border-dashed border-line-strong px-5 py-6 sm:flex-row sm:items-center sm:px-6">

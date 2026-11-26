@@ -79,7 +79,7 @@ export async function projectPreview(projectId: string): Promise<{ id: string; t
   return { id: data.id, title: data.title, summary: String(data.summary).slice(0, 180), owner: `${o?.first_name ?? ""} ${o?.last_name ?? ""}`.trim(), status: data.status === "completed" ? "Completed" : "In progress" };
 }
 
-// What a club looks like as a card (in Jig's answers).
+// What a club looks like as a card (in Torch's answers).
 export async function clubPreview(clubId: string): Promise<{ id: string; name: string; about: string; members: number; privacy: string; logo: string | null; accent: string | null } | null> {
   if (!/^[A-Za-z0-9-]{1,64}$/.test(clubId)) return null;
   const { supabase, user } = await getViewer();
@@ -91,7 +91,7 @@ export async function clubPreview(clubId: string): Promise<{ id: string; name: s
   return { id: c.id, name: c.name, about: (c.tagline || c.about || "").slice(0, 160), members: c.member_count ?? 0, privacy: c.privacy, logo: c.logo_path || null, accent: c.accent || null };
 }
 
-// What a person looks like as a card (in Jig's answers).
+// What a person looks like as a card (in Torch's answers).
 export async function personPreview(personId: string): Promise<{ id: string; first: string; last: string; headline: string; avatar: string | null } | null> {
   if (!/^[0-9a-f-]{36}$/i.test(personId)) return null;
   const { supabase, user } = await getViewer();

@@ -51,7 +51,7 @@ export function GroupThread({ msgs, pics = {}, me, myName, chatId, seen = {}, re
   const mine = new Set(msgs.filter((m) => m.sender_id === me).slice(-20).map((m) => m.body));
   const all = [...msgs, ...pending.filter((p) => !mine.has(p.body))].filter((m) => !rx.removed.has(m.id));
   const byId = new Map(all.map((m) => [m.id, m]));
-  const nameOf = (m: GroupMsg) => (m.ember ? "Jig" : m.sender_id === me ? "You" : `${m.sender_first} ${m.sender_last}`.trim());
+  const nameOf = (m: GroupMsg) => (m.ember ? "Torch" : m.sender_id === me ? "You" : `${m.sender_first} ${m.sender_last}`.trim());
 
   useEffect(() => {
     const onSent = (e: Event) => { const d = (e as CustomEvent<{ id: string; body: string; announcement: boolean }>).detail; if (d.id === chatId) setPending((p) => [...p, { id: `pending-${Date.now()}`, sender_id: me, sender_first: myName, sender_last: "", body: d.body, announcement: d.announcement, created_at: new Date().toISOString() }]); };
@@ -121,7 +121,7 @@ export function GroupThread({ msgs, pics = {}, me, myName, chatId, seen = {}, re
                 <div className={cn("flex items-end gap-2", isMine ? "flex-row-reverse" : "flex-row")}>
                   {!isMine && <span className="w-7 shrink-0">{!joinsNext && (isEmber ? <Ember size={28} /> : <Avatar first={m.sender_first} last={m.sender_last} size={28} className="text-[10px]" src={pics[m.sender_id]} />)}</span>}
                   <div className={cn("min-w-0 w-fit max-w-[85%]", !isMine && "mr-1")}>
-                    {!isMine && !joinsPrev && <div className="mb-0.5 px-2 text-[11px] font-medium text-muted">{isEmber ? <>Jig <span className="font-normal text-faint">· asked by {m.sender_first}</span></> : <>{m.sender_first} {m.sender_last}</>}</div>}
+                    {!isMine && !joinsPrev && <div className="mb-0.5 px-2 text-[11px] font-medium text-muted">{isEmber ? <>Torch <span className="font-normal text-faint">· asked by {m.sender_first}</span></> : <>{m.sender_first} {m.sender_last}</>}</div>}
                     <div className={cn("group/msg flex min-w-0 items-center gap-1", isMine && "flex-row-reverse")}>
                       <div className={cn("min-w-0", bubbleCls({ mine: isMine, joinsPrev: !!joinsPrev, joinsNext: !!joinsNext, pending: isPending }))}>
                         {m.reply_to && (() => { const q = byId.get(m.reply_to!); return <ReplyQuote target={q ? { id: q.id, name: nameOf(q), body: q.body } : null} mine={isMine} />; })()}
@@ -159,7 +159,7 @@ export function GroupThread({ msgs, pics = {}, me, myName, chatId, seen = {}, re
       </ol>
       {rx.error && <p role="alert" className="mt-2 text-center text-xs text-danger" onClick={rx.clearError}>{rx.error}</p>}
       {emberBusy && (
-        <div className="mt-3 flex items-center gap-2 text-xs text-muted"><Ember size={28} mood="thinking" /> Jig is thinking…</div>
+        <div className="mt-3 flex items-center gap-2 text-xs text-muted"><Ember size={28} mood="thinking" /> Torch is thinking…</div>
       )}
       {typers.length > 0 && (
         <div className="mt-3 flex items-center gap-2 text-xs text-muted">
@@ -202,14 +202,14 @@ export function GroupComposer({ chatId, canAnnounce = false, placeholder = "Writ
       } catch {
         return fail("Couldn't send. Check your connection and try again.");
       }
-      // "@Jig …": once the question is in the chat, Jig answers the group.
+      // "@Torch …": once the question is in the chat, Torch answers the group.
       if (ember && /^@ember\b/i.test(text)) {
         window.dispatchEvent(new CustomEvent(EMBER, { detail: { id: chatId, on: true } }));
         try {
           const a = await askEmberInChat(chatId, text);
           if (!a.ok) setError(a.message);
         } catch {
-          setError("Jig couldn't answer. Try again.");
+          setError("Torch couldn't answer. Try again.");
         } finally {
           window.dispatchEvent(new CustomEvent(EMBER, { detail: { id: chatId, on: false } }));
         }
@@ -220,9 +220,9 @@ export function GroupComposer({ chatId, canAnnounce = false, placeholder = "Writ
     <form onSubmit={(e) => { e.preventDefault(); send(); }} className="border-t border-line p-3">
       {error && <p role="alert" className="mb-2 px-1 text-xs text-danger">{error}</p>}
       {ember && !body && (
-        <button type="button" onClick={() => { setBody("@Jig "); ref.current?.focus(); }} className="mb-2 mr-3 inline-flex items-center gap-1.5 rounded-full border border-line px-2.5 py-1 text-xs text-text-2 transition hover:bg-hover"><Ember size={16} /> Ask Jig · {emberCreditCost("group_ask")}</button>
+        <button type="button" onClick={() => { setBody("@Torch "); ref.current?.focus(); }} className="mb-2 mr-3 inline-flex items-center gap-1.5 rounded-full border border-line px-2.5 py-1 text-xs text-text-2 transition hover:bg-hover"><Ember size={16} /> Ask Torch · {emberCreditCost("group_ask")}</button>
       )}
-      {ember && /^@ember\b/i.test(body.trim()) && <p className="mb-2 px-1 text-xs text-muted">{emberCreditCost("group_ask")} to ask Jig</p>}
+      {ember && /^@ember\b/i.test(body.trim()) && <p className="mb-2 px-1 text-xs text-muted">{emberCreditCost("group_ask")} to ask Torch</p>}
       {canAnnounce && (
         <label className="mb-2 inline-flex cursor-pointer items-center gap-2 px-1 text-xs text-muted">
           <input type="checkbox" checked={announce} onChange={(e) => setAnnounce(e.target.checked)} className="size-3.5 accent-[var(--text)]" />

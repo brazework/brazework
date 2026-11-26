@@ -20,7 +20,7 @@ export async function GET() {
     q("follows", (b) => b.select("target, created_at").eq("follower", me)),
     q("saved", (b) => b.select("post_id, saved_at").eq("user_id", me)),
     q("notifications", (b) => b.select("kind, snippet, created_at, read").eq("user_id", me).order("created_at", { ascending: false }).limit(500)),
-    // What you asked Jig to remember (supabase/ember-memory.sql); none before that step.
+    // What you asked Torch to remember (supabase/ember-memory.sql); none before that step.
     q("ember_memories", (b) => b.select("body, created_at").eq("user_id", me).order("created_at")),
   ]);
   // Your LinkedIn profile link, if you gave one (supabase/linkedin-required.sql). It is private, so

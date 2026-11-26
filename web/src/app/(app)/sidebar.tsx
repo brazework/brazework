@@ -87,8 +87,8 @@ export function Sidebar({ first, last, userId, badges, avatar, initialCollapsed 
           </button>
         </div>
       </div>
-      {/* No buttons above the places: logging work and asking Jig happen in the Ask Jig bar on every
-          page (components/ember/ask-bar.tsx). Jig's own page (history, your tools' drafts) is the row
+      {/* No buttons above the places: logging work and asking Torch happen in the Ask Torch bar on every
+          page (components/ember/ask-bar.tsx). Torch's own page (history, your tools' drafts) is the row
           under the places. */}
       <nav data-tour="menu" aria-label="Main" className={cn("flex shrink-0 flex-col gap-0.5", collapsed ? "mt-6" : "mt-7")}>
         {NAV.map((n) => {
@@ -110,11 +110,11 @@ export function Sidebar({ first, last, userId, badges, avatar, initialCollapsed 
             </Link>
           );
         })}
-        <Link href="/copilot" aria-current={path.startsWith("/copilot") ? "page" : undefined} aria-label="Ask Jig" title={collapsed ? "Jig" : undefined}
+        <Link href="/copilot" aria-current={path.startsWith("/copilot") ? "page" : undefined} aria-label="Ask Torch" title={collapsed ? "Torch" : undefined}
           className={cn(ROW, "mt-1", collapsed ? "justify-center px-0" : "px-2", path.startsWith("/copilot") ? "font-medium text-text" : "text-text-2 hover:bg-hover/60 hover:text-text")}>
           {path.startsWith("/copilot") && <motion.span layoutId="nav-active" className="nav-pill absolute inset-0 rounded-md" transition={{ type: "spring", stiffness: 400, damping: 34 }} />}
           <NavTile ember active={path.startsWith("/copilot")} />
-          {!collapsed && <span className="relative">Jig</span>}
+          {!collapsed && <span className="relative">Torch</span>}
         </Link>
       </nav>
       {/* Your clubs scroll on short screens, so the five places are always whole. */}
@@ -348,7 +348,7 @@ export function MobileBar({ first, last, badges, avatar }: { first: string; last
 
 const CREATE = [
   { href: "/feed#composer", label: "Log work", body: "An update, result or question", icon: PenLine },
-  { href: "/copilot", label: "Ask Jig", body: "Your AI teammate does the busywork", icon: Sparkles },
+  { href: "/copilot", label: "Ask Torch", body: "Your AI teammate does the busywork", icon: Sparkles },
   { href: "/profile#projects", label: "Add a project", body: "Show what you built", icon: FolderGit2 },
   { href: "/events", label: "Events", body: "Find one, or host for your club", icon: CalendarDays },
 ];

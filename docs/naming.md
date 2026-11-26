@@ -1,13 +1,13 @@
 # Renaming Forge (2026-11-10)
 
-## The assistant is Jig (2026-11-26)
+## The assistant is Torch (2026-11-26)
 
-Brazework's AI assistant is called **Jig** (a jig holds your work in place while you build). The founders renamed it from Ember on 2026-11-26 and asked for a sleek black mark: an ink disc with a four-point spark, black on light pages and white on dark (`web/src/components/ember/ember.tsx`, `--mark` in `globals.css`).
+Brazework's AI assistant is called **Torch** (the tool that does the brazing). The founders renamed it from Ember on 2026-11-26 (it was briefly going to be Jig, which never shipped) and asked for a sleek black mark: an ink disc with a four-point spark, black on light pages and white on dark (`web/src/components/ember/ember.tsx`, `--mark` in `globals.css`).
 
-- Everything people read says Jig.
+- Everything people read says Torch.
 - Code keeps the old identifiers: the `Ember` component, `ember-*` class names and files, `takeEmberCredits`, the `ember-*.sql` steps.
 - Two rare database messages still say Ember (`ember-memory.sql`, `group-chats.sql`) until a database step renames them.
-- Older docs that say Ember mean Jig. Check the name for trademark conflicts before printing it anywhere.
+- Older docs that say Ember mean Torch. Check the name for trademark conflicts before printing it anywhere.
 
 ## Decision: Brazework, pending a trademark check
 

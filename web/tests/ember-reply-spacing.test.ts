@@ -1,4 +1,4 @@
-// When Jig writes, uses a tool, then writes again, the two pieces arrived glued together: on
+// When Torch writes, uses a tool, then writes again, the two pieces arrived glued together: on
 // production a reply read "…on the card.I've put together…". The loop (lib/copilot-agent.ts) now
 // starts the second piece on a new paragraph. Run: npm test
 import assert from "node:assert/strict";
@@ -29,7 +29,7 @@ async function reply(rounds: Round[]): Promise<string> {
   return out;
 }
 
-test("what Jig writes before a tool and after it are separate paragraphs", async () => {
+test("what Torch writes before a tool and after it are separate paragraphs", async () => {
   const out = await reply([{ say: ["You'll fill in their email ", "on the card."], tool: true }, { say: ["I've put together ", "the card."] }]);
   assert.equal(out, "You'll fill in their email on the card.\n\nI've put together the card.");
 });

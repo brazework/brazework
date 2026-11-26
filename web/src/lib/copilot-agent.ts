@@ -54,7 +54,7 @@ export type Proposal = { id: string } & (
   | { kind: "review"; milestone_id: string; club_name: string; member: string; title: string; detail: string; evidence: string; verify: boolean; note: string }
   | { kind: "rsvp"; event_id: string; title: string; starts_at: string; where: string; going: number; cancel?: boolean }
   | { kind: "message"; person_id: string; name: string; headline: string; body: string; accepts?: { conversation_id: string } }
-  // From AI tools over MCP too (supabase/tool-actions.sql): the same kinds, so a tool's draft is a Jig card.
+  // From AI tools over MCP too (supabase/tool-actions.sql): the same kinds, so a tool's draft is a Torch card.
   | { kind: "project_edit"; project_id: string; project_title: string; summary?: string; details?: string; link?: string; specs?: Spec[]; before: { summary: string; details: string; link: string; specs: Spec[] } }
   | { kind: "invite"; code: string; club_id: string; club_name: string }
   | { kind: "teammate"; project_id: string; project_title: string; person_id: string; name: string; headline: string; role: "member" | "viewer" }
@@ -64,7 +64,7 @@ export type Spec = { label: string; value: string };
 export type AgentEvent = { type: "text"; text: string } | { type: "tool"; name: string };
 
 // Prompt caching. A request renders tools, then system, then messages, and a cache entry covers
-// everything up to its marker. So the fixed part goes first and carries the marker: Jig's rules,
+// everything up to its marker. So the fixed part goes first and carries the marker: Torch's rules,
 // and before them the tool list. Every member's question reads that from the cache at a tenth of the
 // price. The member's details, the task and the page they asked from come after it. Nothing that
 // changes per request (a date, an id) may go into `rules`, or every request misses. The marker only
@@ -137,7 +137,7 @@ export async function runAgent(opts: {
 // normal text: "\u001E{"tool":"search_clubs"}\u001E". parseStream splits them back out.
 export const RS = "\u001E";
 export const frame = (e: { tool: string } | { proposal: Proposal }) => `${RS}${JSON.stringify(e)}${RS}`;
-// What an answer is made of, in the order it arrived: text, then the card Jig prepared, then the
+// What an answer is made of, in the order it arrived: text, then the card Torch prepared, then the
 // text after it. Rendering in this order means a card never gets pushed down by words arriving above it.
 export type Segment = { type: "text"; text: string } | { type: "proposal"; proposal: Proposal };
 

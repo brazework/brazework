@@ -7,7 +7,7 @@ import { Ember } from "@/components/ember/ember";
 import { cn } from "@/lib/forge";
 import { applyOrganize, organizeProject } from "@/lib/organize";
 
-// The owner asks Jig to organize the project; Jig suggests a stack and topics, the owner keeps
+// The owner asks Torch to organize the project; Torch suggests a stack and topics, the owner keeps
 // what's right (tap to drop) and applies.
 export function OrganizeWithEmber({ projectId }: { projectId: string }) {
   const router = useRouter();
@@ -37,12 +37,12 @@ export function OrganizeWithEmber({ projectId }: { projectId: string }) {
       {!s ? (
         <div className="flex flex-wrap items-center gap-3">
           <Ember size={32} mood={pending ? "thinking" : "idle"} />
-          <span className="min-w-0 flex-1 text-sm"><span className="font-medium">Organize with Jig · {emberCreditCost("organize")}</span><span className="block text-xs text-muted">Jig reads your write-up and suggests the stack and topics.</span></span>
+          <span className="min-w-0 flex-1 text-sm"><span className="font-medium">Organize with Torch · {emberCreditCost("organize")}</span><span className="block text-xs text-muted">Torch reads your write-up and suggests the stack and topics.</span></span>
           <button type="button" onClick={ask} disabled={pending} className="bg-accent-grad inline-flex h-9 items-center gap-1.5 rounded-lg px-4 text-sm font-medium text-on-accent disabled:opacity-60">{pending && <Loader2 className="size-4 animate-spin" />} {pending ? "Reading…" : "Organize"}</button>
         </div>
       ) : (
         <div>
-          <p className="text-sm font-medium">Jig suggests</p>
+          <p className="text-sm font-medium">Torch suggests</p>
           {s.note && <p className="mt-0.5 text-xs text-muted">{s.note}</p>}
           <div className="mt-2 flex flex-wrap gap-1.5">{s.tools.map((t) => chip(t, t))}{s.topics.map((t) => chip(`#${t}`, `#${t}`))}</div>
           {!s.tools.length && !s.topics.length && <p className="mt-2 text-xs text-muted">Nothing to suggest yet. Add a write-up first.</p>}

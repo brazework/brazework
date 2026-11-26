@@ -25,7 +25,7 @@ test("a path lights up exactly one place, by whole path segments", () => {
   assert.equal(placeFor("/messages/g/1")?.id, "inbox");
   assert.equal(placeFor("/u/someone")?.id, "record");
   assert.equal(placeFor("/settings/tools")?.id, "record");
-  assert.equal(placeFor("/copilot"), null, "Jig is not a place");
+  assert.equal(placeFor("/copilot"), null, "Torch is not a place");
 });
 
 test("the tab row shows on a place's own pages, never on detail pages", () => {

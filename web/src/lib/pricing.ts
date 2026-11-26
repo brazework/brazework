@@ -17,7 +17,7 @@ import { FEATURE_ACCESS } from "@/lib/plans";
 export const PLUS = { name: "Plus", student: 6, everyone: 12, studentYear: 48, everyoneYear: 96 };
 export const SPONSORSHIP = { chapter: 2500, challengePrizes: 5000, serviceFee: 500 };
 export const EMBER_DAILY_LIMIT = { free: 15, plus: 50 } as const;
-export const EMBER_RESET = "Jig credits reset at midnight UTC.";
+export const EMBER_RESET = "Torch credits reset at midnight UTC.";
 // What a school pays (founders, 2026-11-26; docs/strategy.md). Never per club, chapter or student, so a
 // school never has a reason to keep anyone off. Every school pays, pilots included.
 // - Pilot: one department for one semester, credited toward the first year.
@@ -92,7 +92,7 @@ export const TIERS: Tier[] = [
   },
   {
     id: "free", audience: "builders", name: "Students", price: "$0", note: "Always, with no ads", featured: true,
-    points: ["Your record: every project, with the people who signed it", "Ask a professor, your club or a coworker to sign", "A share card for every milestone, signed or waiting", `Jig: ${EMBER_DAILY_LIMIT.free} credits a day`, "Keep it all when you graduate: move to a personal email", "Be found by companies, and see who looked"],
+    points: ["Your record: every project, with the people who signed it", "Ask a professor, your club or a coworker to sign", "A share card for every milestone, signed or waiting", `Torch: ${EMBER_DAILY_LIMIT.free} credits a day`, "Keep it all when you graduate: move to a personal email", "Be found by companies, and see who looked"],
     cta: { label: "Start your record", href: "/signup" },
   },
   {
@@ -126,7 +126,7 @@ export const PLUS_TIER: Tier = {
       "Everything in Free",
       // Free while it's a Plus preview (lib/plans.ts), and the card says so: one word there changes both.
       `Review packets: your signed work over any period, ready for a performance review or a promotion case${FEATURE_ACCESS.reviewPacket === "plus-preview" ? " (free for everyone during launch)" : ""}`,
-      `More Jig: ${EMBER_DAILY_LIMIT.plus} credits a day total`,
+      `More Torch: ${EMBER_DAILY_LIMIT.plus} credits a day total`,
       "Every company that looked in the last 90 days, not just this week",
       ...PLUS_SOON.map((x) => `${x} (coming soon)`),
     ],

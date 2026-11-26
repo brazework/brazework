@@ -41,7 +41,7 @@ test("everything done leaves nothing next", () => {
   assert.equal(next({ student: false, hasProject: true, hasUpdate: true, asked: true, verified: true }), undefined);
 });
 
-test("Jig is told who it's drafting for", () => {
+test("Torch is told who it's drafting for", () => {
   assert.equal(describeMember("Physics", true), "a Physics student");
   assert.equal(describeMember("Design & Arts", false), "a Design & Arts professional");
   assert.equal(describeMember("", false), "a professional");

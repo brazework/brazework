@@ -20,7 +20,7 @@ const ben = psql("select id from auth.users where email = 'ben@forge.test'");
     await card.getByRole("button", { name: "Set my goal" }).click();
     await page.getByText("a summer internship in power electronics").first().waitFor({ timeout: 15000 });
     await page.getByText("Next step:").first().waitFor();
-    if (!(await page.getByRole("link", { name: "Ask Jig" }).first().isVisible())) throw new Error("Ask Jig link missing");
+    if (!(await page.getByRole("link", { name: "Ask Torch" }).first().isVisible())) throw new Error("Ask Torch link missing");
     const row = psql(`select kind || '|' || target || '|' || ('internships' = any (p.open_to)) from public.member_goals g join public.profiles p on p.id = g.uid where g.uid = '${ben}' and g.status = 'active'`);
     if (row !== "internship|power electronics|true") throw new Error("goal row: " + row);
   }, page);
