@@ -5,7 +5,8 @@ import { emberCreditCost } from "@/lib/ember-credits";
 // part 2), under its question on Torch's page and in the Ask Torch bar. Tapping one sends it as the
 // member's answer; typing something else works too, and the buttons go away either way. They stand out
 // more than the quiet follow-up chips, which don't show while Torch is waiting on an answer.
-export function ChoiceButtons({ options, onPick, disabled = false, typeHint = "type your own answer" }: { options: string[]; onPick: (o: string) => void; disabled?: boolean; typeHint?: string }) {
+// `cost`: "free" while Torch has free follow-ups left after the question (supabase/ember-follow.sql).
+export function ChoiceButtons({ options, onPick, disabled = false, typeHint = "type your own answer", cost = emberCreditCost("ask") }: { options: string[]; onPick: (o: string) => void; disabled?: boolean; typeHint?: string; cost?: string }) {
   return (
     <div role="group" aria-label="Answer Torch" className="mt-3 whitespace-normal">
       <div className="flex flex-wrap gap-2">
@@ -15,7 +16,7 @@ export function ChoiceButtons({ options, onPick, disabled = false, typeHint = "t
           </button>
         ))}
       </div>
-      <p className="mt-1.5 text-xs text-muted">Tap one, or {typeHint} · {emberCreditCost("ask")}</p>
+      <p className="mt-1.5 text-xs text-muted">Tap one, or {typeHint} · {cost}</p>
     </div>
   );
 }

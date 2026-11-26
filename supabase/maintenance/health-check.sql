@@ -104,7 +104,8 @@ from (values
   (104, 'club-projects', to_regprocedure('public.club_projects_ready()') is not null),
   (105, 'school-portal', to_regprocedure('public.school_portal_ready()') is not null),
   (106, 'courses', to_regprocedure('public.courses_ready()') is not null),
-  (107, 'courses-b', to_regprocedure('public.courses_b_ready()') is not null)
+  (107, 'ember-follow', to_regprocedure('public.ember_follow_ready()') is not null),
+  (108, 'courses-b', to_regprocedure('public.courses_b_ready()') is not null)
 ) as s(step, file, present)
 order by step;
 

@@ -3,7 +3,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { copilotRequest } from "@/lib/copilot-request";
-import { ASK_PLACEHOLDER, BAR_TURNS, askShortcut, barHistory, cardLabels, cardSummary, pageContext, pickedFrom, type BarTurn } from "@/lib/ember-bar";
+import { ASK_PLACEHOLDER, BAR_TURNS, askShortcut, barHistory, cardLabels, cardSummary, pageContext, pickedFrom, carryOnSteps, followsAfter, FOLLOWS_PER_ASK, type BarTurn } from "@/lib/ember-bar";
 import { threadMessages, type CardOutcome } from "@/lib/ember-thread";
 
 test("the bar knows the project, club or event it's on, from the path", () => {
@@ -122,4 +122,29 @@ test("the bar's history says which offered answer was tapped", () => {
   const h = barHistory([{ q: "I got the PID loop stable", text: "Who saw it?", cards: [], choice: pickedFrom(offered, "Rocketry Club") }]);
   assert.deepEqual(h[1], { role: "assistant", content: "Who saw it?", choice: { ...offered, picked: "Rocketry Club" } });
   assert.match(threadMessages(h, "Rocketry Club").at(-1)!.content, /They tapped "Rocketry Club"/);
+});
+
+test("a follow turn stays in the bar's history even with no words, and reads as carrying on", () => {
+  const card: CardOutcome = { kind: "project", label: "Rover", state: "confirmed", then: "log the milestone on it" };
+  const h = barHistory([
+    { q: "Add my rover", text: "Here's the project.", cards: [card] },
+    { q: "", text: "Here's the milestone.", cards: [], follow: true },
+    { q: "", text: "", cards: [] },
+  ]);
+  assert.deepEqual(h.map((m) => m.role), ["user", "assistant", "user", "assistant"]);
+  assert.deepEqual(h[2], { role: "user", content: "", follow: true });
+  assert.match(threadMessages(h, "thanks")[2].content, /carry on with what you said comes next: log the milestone on it/);
+});
+
+test("Carry on offers the next steps of confirmed cards only; free follow-ups are counted for the labels", () => {
+  assert.deepEqual(carryOnSteps([
+    { kind: "project", label: "Rover", state: "confirmed", then: "log the milestone on it" },
+    { kind: "post", label: "x", state: "dismissed", then: "post it in the club" },
+    { kind: "rsvp", label: "y", state: "confirmed" },
+  ]), ["log the milestone on it"]);
+  assert.equal(followsAfter(0, false, false), FOLLOWS_PER_ASK, "a paid ask gives 3");
+  assert.equal(followsAfter(3, true, false), 2);
+  assert.equal(followsAfter(0, true, false), 0);
+  assert.equal(followsAfter(2, true, true), 0, "a refused follow means none are left");
+  assert.equal(FOLLOWS_PER_ASK, 3);
 });

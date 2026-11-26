@@ -115,4 +115,5 @@ group-chat-controls
 club-projects
 school-portal
 courses
+ember-follow
 courses-b

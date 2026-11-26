@@ -66,8 +66,10 @@ const fromLocal = (v: string) => new Date(v).toISOString();
 // `inline`: in a page (under the Ask Torch bar, or a project's own drafts), the card is a short summary
 // with buttons that say what happens ("Log and send to club", "Edit", "Not now"); Edit opens the fields.
 // `onOutcome`: the chat hears what happened to the card (confirmed as the member left it, dismissed, or
-// refused with the server's reason), so Torch knows on its next turn (lib/ember-thread.ts).
-export function ProposalCard({ p: initial, fromTool, inline = false, onOutcome }: { p: Proposal; fromTool?: { draftId: string; via: string; source: string }; inline?: boolean; onOutcome?: (id: string, o: CardOutcome) => void }) {
+// refused with the server's reason), so Torch knows on its next turn (lib/ember-thread.ts). `settled` is
+// false for the optimistic "confirmed" at the tap and true once the server has answered: only then may
+// the page carry on to the card's next step.
+export function ProposalCard({ p: initial, fromTool, inline = false, onOutcome }: { p: Proposal; fromTool?: { draftId: string; via: string; source: string }; inline?: boolean; onOutcome?: (id: string, o: CardOutcome, settled: boolean) => void }) {
   const [p, setP] = useState(initial);
   const [state, setState] = useState<"open" | "done" | "dismissed">("open");
   const [msg, setMsg] = useState("");
@@ -94,7 +96,7 @@ export function ProposalCard({ p: initial, fromTool, inline = false, onOutcome }
     setState("done");
     // The chat hears it at the same moment, so a follow-up asked while the server is still answering
     // doesn't tell Torch the card is untouched. A refusal below corrects it.
-    onOutcome?.(initial.id, outcomeOf(p, "confirmed"));
+    onOutcome?.(initial.id, outcomeOf(p, "confirmed"), false);
     try {
     let r: { ok: boolean; message: string };
     let heldNote = "";
@@ -162,18 +164,18 @@ export function ProposalCard({ p: initial, fromTool, inline = false, onOutcome }
       r = await saveEvent({ ok: false, message: "" }, f);
     }
     if (r.ok) {
-      if (heldNote) onOutcome?.(initial.id, outcomeOf(p, "confirmed", "held for a moderator to review before it shows"));
+      onOutcome?.(initial.id, outcomeOf(p, "confirmed", heldNote ? "held for a moderator to review before it shows" : ""), true);
       if (fromTool) await settleDraft(fromTool.draftId);
     } else {
       setState("open"); setMsg(r.message || "That didn't work. Check the details and try again.");
-      onOutcome?.(initial.id, outcomeOf(p, "failed", r.message));
+      onOutcome?.(initial.id, outcomeOf(p, "failed", r.message), true);
     }
-    } catch { setState("open"); setMsg("That didn't work. Check your connection and try again."); onOutcome?.(initial.id, outcomeOf(p, "failed", "the connection dropped")); }
+    } catch { setState("open"); setMsg("That didn't work. Check your connection and try again."); onOutcome?.(initial.id, outcomeOf(p, "failed", "the connection dropped"), true); }
   });
   const dismiss = () => start(async () => {
     if (fromTool) await dismissDraft(fromTool.draftId);
     setState("dismissed");
-    onOutcome?.(initial.id, outcomeOf(p, "dismissed"));
+    onOutcome?.(initial.id, outcomeOf(p, "dismissed"), true);
   });
 
   if (state === "dismissed") return <p className="mt-2 text-xs text-faint">Dismissed. Nothing was saved.</p>;
@@ -375,6 +377,8 @@ export function ProposalCard({ p: initial, fromTool, inline = false, onOutcome }
           )}
           </>}
           <AnimatePresence>{msg && <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} role="alert" className="text-xs text-danger">{msg}</motion.p>}</AnimatePresence>
+          {/* What Torch does once this is confirmed (the spec's part 3): it carries on by itself. */}
+          {p.then && <p className="text-xs text-muted"><span className="font-medium text-text-2">Then:</span> {p.then}</p>}
           <div className="flex items-center gap-2">
             <button type="button" onClick={confirm} disabled={pending} className="bg-accent-grad inline-flex h-9 items-center gap-1.5 rounded-lg px-4 text-sm font-medium text-on-accent transition active:scale-95 disabled:opacity-50">
               {pending ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />} {labels.confirm}

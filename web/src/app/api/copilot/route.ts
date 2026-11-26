@@ -6,7 +6,7 @@ import { pageLine } from "@/lib/copilot-page";
 import { presetInstruction } from "@/lib/copilot-presets";
 import { OFFER_CHOICES, TOOLS, makeExec } from "@/lib/copilot-tools";
 import { takeEmberCredits } from "@/lib/ember-quota";
-import { threadMessages } from "@/lib/ember-thread";
+import { followRefusal, threadMessages } from "@/lib/ember-thread";
 import { viewerFromToken } from "@/lib/supabase/server";
 
 // POST /api/copilot: streams Copilot's reply as plain text, so it types out live in the UI.
@@ -21,6 +21,9 @@ export async function POST(req: Request) {
   const parsed = copilotRequest.safeParse(await req.json().catch(() => null));
   if (!parsed.success) return json(400, parsed.error.issues[0]?.message ?? "Check your request.");
   const r = parsed.data;
+  // A free follow turn only carries on after a yes (lib/ember-thread.ts); checked before anything is spent.
+  const notFollow = r.follow ? followRefusal(r.history ?? [], r.input) : "";
+  if (notFollow) return json(400, notFollow);
 
   // The web sends its session cookie; the iPhone app sends its Supabase access token instead.
   const token = (req.headers.get("authorization") ?? "").match(/^Bearer\s+(\S+)$/i)?.[1];
@@ -30,12 +33,14 @@ export async function POST(req: Request) {
   if (!ctx) return json(401, "Log in again to ask Torch.");
   if (!(await copilotEnabled())) return json(503, "Torch isn't switched on here yet.");
 
-  const credits = await takeEmberCredits(ctx.supabase, r.task);
+  const credits = await takeEmberCredits(ctx.supabase, r.follow ? "follow" : r.task);
+  // No free follow left (or the database step hasn't run): the page offers to carry on for a credit.
+  if (!credits.ok && r.follow) return Response.json({ message: "Torch's free follow-ups for that question are used up.", follow: "refused" }, { status: 429 });
   if (!credits.ok) return json(credits.status, credits.message);
 
   const { instructions, maxTokens } = taskPrompt(r);
   // What happened to the cards of each earlier answer goes in with the turn after it (lib/ember-thread.ts).
-  const messages: Anthropic.MessageParam[] = threadMessages(r.history ?? [], r.input);
+  const messages: Anthropic.MessageParam[] = threadMessages(r.history ?? [], r.input, !!r.follow);
   const client = await claudeClient();
   // Asked from the bar on a project, club or event page: what that page is, read as the member.
   const here = r.task === "ask" ? await pageLine(ctx.supabase, ctx.userId, r.page) : "";
@@ -49,7 +54,7 @@ export async function POST(req: Request) {
       const out = (s: string) => controller.enqueue(enc.encode(s));
       try {
         if (r.task === "ask") {
-          await runAgent({ client, model: COPILOT_MODEL, system, messages, tools: r.choices ? [...TOOLS, OFFER_CHOICES] : TOOLS, exec: makeExec(ctx.supabase, ctx.userId, (proposal) => out(frame({ proposal })), (choice) => out(frame({ choice }))), maxTokens, signal: abort.signal, emit: (e) => out(e.type === "text" ? e.text : frame({ tool: e.name })) });
+          await runAgent({ client, model: COPILOT_MODEL, system, messages, tools: r.choices ? [...TOOLS, OFFER_CHOICES] : TOOLS, exec: makeExec(ctx.supabase, ctx.userId, (proposal) => out(frame({ proposal })), (choice) => out(frame({ choice })), { carryOn: !!r.choices }), maxTokens, signal: abort.signal, emit: (e) => out(e.type === "text" ? e.text : frame({ tool: e.name })) });
         } else {
           const stream = client.messages.stream({ model: COPILOT_MODEL, max_tokens: maxTokens, system, messages }, { signal: abort.signal });
           for await (const ev of stream) if (ev.type === "content_block_delta" && ev.delta.type === "text_delta") out(ev.delta.text);

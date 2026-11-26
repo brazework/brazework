@@ -18,19 +18,19 @@ import { forgeLinks, splitNext } from "@/lib/copilot-text";
 import { emberActions, emberGreeting, type EmberAction } from "@/lib/ember-actions";
 import type { NextStep } from "@/lib/ember-record";
 import { CARD_LABEL, MAX_TURN, cardsOf, savedCards, type CardOutcome, type OfferedChoice, type ThreadTurn } from "@/lib/ember-thread";
-import { pickedFrom } from "@/lib/ember-bar";
+import { carryOnSteps, followsAfter, pickedFrom } from "@/lib/ember-bar";
 import { ChoiceButtons } from "@/components/copilot/choices";
 import { deleteAllChats, deleteChat, loadChat, rateAnswer, saveChat, type ChatSummary, type SavedMsg } from "@/lib/copilot-chats";
 
 // `outcomes`: a saved chat's cards and what happened to them (a live answer has `proposals` instead).
-type Msg = { role: "user" | "assistant"; content: string; tools?: string[]; proposals?: Proposal[]; segments?: Segment[]; cards?: string[]; next?: string[]; outcomes?: CardOutcome[]; choice?: OfferedChoice };
+type Msg = { role: "user" | "assistant"; content: string; tools?: string[]; proposals?: Proposal[]; segments?: Segment[]; cards?: string[]; next?: string[]; outcomes?: CardOutcome[]; choice?: OfferedChoice; follow?: boolean };
 // What happened to each card on screen, by the card's id (lib/ember-thread.ts).
 type Done = Record<string, CardOutcome>;
 const cardsFor = (m: Msg, done: Done): CardOutcome[] => (m.proposals?.length ? cardsOf(m.proposals, done) : m.outcomes ?? []);
 // The chat so far as Torch gets it: the words of each turn, and what became of each answer's cards.
 const toHistory = (msgs: Msg[], done: Done): ThreadTurn[] => msgs.slice(-10).map((m) => {
   const cards = m.role === "assistant" ? cardsFor(m, done) : [];
-  return { role: m.role, content: m.content.slice(0, MAX_TURN), ...(cards.length ? { cards } : {}), ...(m.choice ? { choice: m.choice } : {}) };
+  return { role: m.role, content: m.content.slice(0, MAX_TURN), ...(cards.length ? { cards } : {}), ...(m.choice ? { choice: m.choice } : {}), ...(m.follow ? { follow: true } : {}) };
 });
 // Answers Torch offered that are still waiting: on the newest message, and none tapped yet.
 const openChoice = (m: Msg | undefined) => (m?.role === "assistant" && m.choice && !m.choice.picked ? m.choice : null);
@@ -38,7 +38,7 @@ const openChoice = (m: Msg | undefined) => (m?.role === "assistant" && m.choice 
 // What a card Torch prepared is called once the chat is saved (saved chats keep a label, never a
 // live card that could be confirmed twice).
 // (CARD_LABEL lives in lib/ember-thread.ts, shared with the note Torch reads.)
-const toSaved = (done: Done) => (m: Msg): SavedMsg => ({ role: m.role, content: m.content, tools: m.tools, cards: [...(m.cards ?? []), ...(m.proposals ?? []).map((p) => CARD_LABEL[p.kind])], outcomes: cardsFor(m, done), ...(m.choice ? { choice: m.choice } : {}) });
+const toSaved = (done: Done) => (m: Msg): SavedMsg => ({ role: m.role, content: m.content, tools: m.tools, cards: [...(m.cards ?? []), ...(m.proposals ?? []).map((p) => CARD_LABEL[p.kind])], outcomes: cardsFor(m, done), ...(m.choice ? { choice: m.choice } : {}), ...(m.follow ? { follow: true } : {}) });
 const ago = (iso: string) => {
   const d = (Date.now() - new Date(iso).getTime()) / 86400000;
   return d < 1 ? "Today" : d < 2 ? "Yesterday" : d < 7 ? `${Math.floor(d)} days ago` : new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
@@ -157,7 +157,21 @@ export function CopilotChat({ first, field, student = true, initial = "", initia
   const [done, setDone] = useState<Done>({});
   const doneNow = useRef(done);
   useEffect(() => { doneNow.current = done; }, [done]);
-  const onOutcome = (id: string, o: CardOutcome) => setDone((d) => ({ ...d, [id]: o }));
+  // Torch carries on after a yes (the spec's part 3): a card confirmed with a next step sets a follow turn
+  // going, which an effect below sends with this render's state. Free, up to 3 after each ask.
+  // Each confirmed card with a next step, numbered so the effect carries on once per card.
+  const [pendingFollow, setPendingFollow] = useState<{ id: string; n: number } | null>(null);
+  const followed = useRef(0);
+  // Free follow-ups left, as this page guesses it for its labels (the database decides).
+  const [follows, setFollows] = useState(0);
+  // No free follow-up was left: the card's next step, offered for a credit instead.
+  const [carryPaid, setCarryPaid] = useState<string[]>([]);
+  const [notice, setNotice] = useState("");
+  const onOutcome = (id: string, o: CardOutcome, settled: boolean) => {
+    doneNow.current = { ...doneNow.current, [id]: o };
+    setDone((d) => ({ ...d, [id]: o }));
+    if (settled && o.state === "confirmed" && o.then) setPendingFollow((p) => ({ id, n: (p?.n ?? 0) + 1 }));
+  };
   // Follows the answer down as it grows, only while you're at the bottom: scroll up to read and it
   // stays put (redesign 2026-11; it used to start a smooth scroll on every streamed chunk).
   const thread = useRef<HTMLDivElement>(null);
@@ -166,21 +180,36 @@ export function CopilotChat({ first, field, student = true, initial = "", initia
   const actions: ComposerAction[] = emberActions({ field, student }).map((a) => ({ ...a, icon: ACTION_ICON[a.id] }));
 
   // `tapped`: one of the answers Torch offered, so the message that offered them records which.
-  const send = async (text: string, preset?: Preset, tapped?: string) => {
+  // `carry`: a free follow turn: after a confirmed card (no words) or a tapped answer.
+  const send = async (text: string, preset?: Preset, tapped?: string, carry = false) => {
     const q = text.trim();
-    if (!q || busy || opening) return;
+    if ((!q && !carry) || busy || opening) return;
+    const was = msgs;
     const before = msgs.map((m, i) => (i === msgs.length - 1 && m.choice ? { ...m, choice: pickedFrom(m.choice, tapped) } : m));
-    const asked: Msg = { role: "user", content: q };
+    const asked: Msg = { role: "user", content: q, ...(carry ? { follow: true } : {}) };
     let last: Msg = { role: "assistant", content: "" };
     setMsgs([...before, asked, last]);
     setInput("");
+    setCarryPaid([]);
+    setNotice("");
     follow();
-    const out = await run({ task: "ask", input: q, preset, history: toHistory(before, doneNow.current), choices: true }, (full, tools, proposals, segments, choice) => {
+    let refused = false;
+    const out = await run({ task: "ask", input: q, preset, history: toHistory(before, doneNow.current), choices: true, ...(carry ? { follow: true } : {}) }, (full, tools, proposals, segments, choice) => {
       const { text: body, next } = splitNext(full);
       last = { role: "assistant", content: body, tools, proposals, segments, next, ...(choice ? { choice: { options: choice.options } } : {}) };
       setMsgs([...before, asked, last]);
-    });
+    }, { onRefused: () => { refused = true; } });
+    if (refused) {
+      // No free follow-up left: back as it was, and the next step is offered for a credit.
+      setMsgs(was);
+      setFollows(0);
+      const lastAnswer = was.at(-1);
+      if (!q && lastAnswer) setCarryPaid(carryOnSteps(cardsFor(lastAnswer, doneNow.current)));
+      else setNotice("Torch's free follow-ups for that question are used up, so answering now takes a credit.");
+      return;
+    }
     if (out === null && !last.content) { setMsgs(before); return; }
+    setFollows((f) => followsAfter(f, carry, false));
     if (!saving || !last.content) return;
     // Keep the chat (only you can see it). The URL follows, so a refresh brings it back.
     const r = await saveChat(chatId, [...before, asked, last].map(toSaved(doneNow.current))).catch(() => null);
@@ -189,6 +218,19 @@ export function CopilotChat({ first, field, student = true, initial = "", initia
     if (id !== chatId) { setChatId(id); window.history.replaceState(null, "", `/copilot?chat=${id}`); }
     setList((l) => [{ id, title: r.title, updated_at: new Date().toISOString() }, ...l.filter((c) => c.id !== id)]);
   };
+  // A card was confirmed with a next step: carry on, if it's in the newest answer and nothing is running.
+  // Otherwise its outcome simply rides along with the member's next question.
+  useEffect(() => {
+    if (!pendingFollow || pendingFollow.n === followed.current) return;
+    const { id, n } = pendingFollow;
+    const last = msgs.at(-1);
+    if (busy || opening || last?.role !== "assistant" || !last.proposals?.some((p) => p.id === id)) return;
+    // Marked when it's sent, not when it's scheduled (as with ?q= below): in development React runs an
+    // effect, cleans it up and runs it again.
+    const t = setTimeout(() => { followed.current = n; void send("", undefined, undefined, true); }, 0);
+    return () => clearTimeout(t);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pendingFollow]);
   // A card answered after the chat was saved: save again, so opening the chat later still knows.
   // (While an answer is streaming, the save at its end carries it.)
   useEffect(() => {
@@ -298,7 +340,9 @@ export function CopilotChat({ first, field, student = true, initial = "", initia
               const question = msgs[i - 1]?.role === "user" ? msgs[i - 1].content : "";
               return (
                 <motion.div key={`${chatId ?? "new"}-${i}`} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className={cn("flex", m.role === "user" ? "justify-end" : "justify-start")}>
-                  {m.role === "user" ? (
+                  {m.role === "user" && m.follow && !m.content ? (
+                    <p className="w-full pl-11 text-xs text-muted">Confirmed. Carrying on…</p>
+                  ) : m.role === "user" ? (
                     <p className="bg-accent-grad max-w-[85%] rounded-3xl rounded-br-md px-4 py-2.5 text-[15px] whitespace-pre-wrap text-on-accent">{m.content}</p>
                   ) : (
                     <div className="flex w-full min-w-0 gap-3">
@@ -328,8 +372,17 @@ export function CopilotChat({ first, field, student = true, initial = "", initia
           </AnimatePresence>
           {/* Torch is waiting on an answer: the ones it offered, as buttons. */}
           {!busy && openChoice(lastAnswer) ? (
-            <div className="pl-11"><ChoiceButtons options={openChoice(lastAnswer)!.options} onPick={(o) => void send(o, undefined, o)} typeHint="type your own answer below" /></div>
+            <div className="pl-11"><ChoiceButtons options={openChoice(lastAnswer)!.options} onPick={(o) => void send(o, undefined, o, follows > 0)} typeHint="type your own answer below" cost={follows > 0 ? emberCreditCost("follow") : emberCreditCost("ask")} /></div>
           ) : null}
+          {/* No free follow-up was left after a confirmed card: carry on for a credit. */}
+          {!busy && carryPaid.length > 0 ? (
+            <div className="pl-11">
+              <button type="button" onClick={() => void send(`Carry on: ${carryPaid.join("; then ")}`)} className="min-h-10 rounded-xl border border-line-strong bg-surface px-3.5 py-2 text-left text-sm font-medium text-text transition hover:bg-hover active:scale-[0.98]">
+                Carry on: {carryPaid.join("; then ")} <span className="text-xs font-normal text-muted">· {emberCreditCost("ask")}</span>
+              </button>
+            </div>
+          ) : null}
+          {notice && <p className="pl-11 text-xs text-muted">{notice}</p>}
           {/* Next steps Torch suggests, one tap to ask; not while it's waiting on an answer. */}
           {!busy && !openChoice(lastAnswer) && lastAnswer?.role === "assistant" && lastAnswer.next?.length ? (
             <div className="flex flex-wrap gap-2 pl-11">
