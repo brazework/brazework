@@ -13,6 +13,7 @@ import { dbFeatures } from "@/lib/db-features";
 import { SchoolLinkDecision } from "@/components/clubs/school-link-decision";
 import { SchoolLinkBackers } from "@/components/clubs/school-link-backers";
 import { launchTiles, weekLabel, type LaunchMetrics } from "@/lib/launch-metrics";
+import { torchTiles, type TorchMetrics } from "@/lib/torch-metrics";
 
 export const metadata: Metadata = { title: "Brazework admin" };
 
@@ -45,7 +46,7 @@ async function Admin() {
   if (!user) redirect("/login");
   const { data: isAdmin } = await supabase.rpc("is_forge_admin");
   if (!isAdmin) notFound();
-  const [{ data: m }, { data: requests }, { data: queue }, { data: reportRows }, { data: schoolRows }, { data: ret }, { data: claimRows }, { data: launchRow }] = await Promise.all([
+  const [{ data: m }, { data: requests }, { data: queue }, { data: reportRows }, { data: schoolRows }, { data: ret }, { data: claimRows }, { data: launchRow }, { data: torchRow }] = await Promise.all([
     supabase.rpc("admin_metrics"),
     supabase.from("challenges").select("id, title, prize, deadline, organizations(name)").eq("sponsorship", "requested").order("created_at", { ascending: true }).limit(50),
     supabase.from("admin_queue").select("id, kind, subject_id, detail, created_at").eq("status", "open").order("created_at", { ascending: true }).limit(50),
@@ -56,7 +57,9 @@ async function Admin() {
     // Until step 35 runs, this errors and the section stays hidden. Two links to profiles: name the claimant's.
     supabase.from("club_claims").select("id, community_id, role_title, evidence, created_at, communities(name, owner_name), profiles!club_claims_claimant_fkey(first_name, last_name)").eq("status", "open").order("created_at", { ascending: true }).limit(50),
     // The launch numbers (step 92). Until it runs, this errors and the panel stays hidden.
-    supabase.rpc("admin_launch_metrics")
+    supabase.rpc("admin_launch_metrics"),
+    // Torch's numbers (step 108). Until it runs, this errors and the panel stays hidden.
+    supabase.rpc("admin_torch_metrics")
   ]);
   type Claim = { id: number; community_id: string; role_title: string; evidence: string; created_at: string; communities: { name: string; owner_name: string } | null; profiles: { first_name: string; last_name: string } | null };
   const claims = claimRows as unknown as Claim[] | null;
@@ -83,6 +86,7 @@ async function Admin() {
   const reportHref = (r: Report) => ({ post: `/post/${r.target_id}`, person: `/u/${r.target_id}`, project: `/projects/${r.target_id}`, challenge: `/challenges/${r.target_id}`, milestone: msProject.get(r.target_id) ? `/projects/${msProject.get(r.target_id)}` : "" } as Record<string, string>)[r.kind] ?? "";
   const x = m as Metrics | null;
   const launch = launchRow as LaunchMetrics | null;
+  const torch = torchRow as TorchMetrics | null;
   const reqs = (requests ?? []) as unknown as { id: string; title: string; prize: string; organizations: { name: string } | null }[];
 
   // The loop, as a funnel: each step's share of members.
@@ -105,6 +109,7 @@ async function Admin() {
       <PageHeader title="Brazework admin" subtitle="Whether the loop works, and what's waiting on the Brazework team." />
 
       {launch && <LaunchNumbers m={launch} />}
+      {torch && <TorchNumbers m={torch} />}
 
       <section className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-3" aria-label="Metrics">
         {tiles.map(([label, value, sub]) => (
@@ -284,6 +289,37 @@ function Cohorts({ cohorts }: { cohorts: Retention["cohorts"] }) {
           ))}
         </tbody>
       </table>
+    </Panel>
+  );
+}
+
+// How Torch is doing (supabase/ember-card-counts.sql): totals across all members for the last 7 days,
+// and questions a day for the last 14. Counts only: never what anyone asked or what a card held.
+function TorchNumbers({ m }: { m: TorchMetrics }) {
+  const top = Math.max(1, ...m.days.map((d) => d.asks + d.follows));
+  return (
+    <Panel className="mt-6 p-5">
+      <Kicker>Torch, last 7 days</Kicker>
+      <section className="mt-3 grid grid-cols-2 gap-3 lg:grid-cols-4" aria-label="Torch numbers">
+        {torchTiles(m).map((t) => (
+          <div key={t.label} className="rounded-lg border border-line p-3">
+            <p className="text-xs text-faint">{t.label}</p>
+            <p className="mt-1 text-2xl font-semibold tracking-tight tabular-nums">{t.value}</p>
+            <p className="mt-0.5 text-xs text-muted">{t.sub}</p>
+          </div>
+        ))}
+      </section>
+      <figure className="mt-5">
+        <figcaption className="text-xs text-faint">Questions and free follow-ups a day, last 14 days (UTC, today on the right)</figcaption>
+        <ol aria-label="Torch questions a day" className="mt-2 grid h-24 grid-cols-14 items-end gap-1">
+          {m.days.map((d, i) => (
+            <li key={d.day} className="flex h-full flex-col justify-end gap-1 text-center" aria-label={`${d.day}: ${d.asks} questions, ${d.follows} follow-ups`}>
+              <span className="text-[10px] tabular-nums text-text-2">{d.asks + d.follows}</span>
+              <span className={i === m.days.length - 1 ? "rounded-t-sm bg-accent/50" : "rounded-t-sm bg-accent"} style={{ height: `${Math.max(2, ((d.asks + d.follows) / top) * 100)}%` }} />
+            </li>
+          ))}
+        </ol>
+      </figure>
     </Panel>
   );
 }

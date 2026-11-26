@@ -12,6 +12,7 @@ import { EVENT_FORMATS, EVENT_TYPES } from "@/lib/events";
 import { cardLabels, cardSummary } from "@/lib/ember-bar";
 import { emberAskToSign } from "@/lib/ember-sign";
 import { outcomeOf, type CardOutcome } from "@/lib/ember-thread";
+import { noteCardOutcome } from "@/lib/ember-stats";
 import { ALL_TOPICS, cn } from "@/lib/forge";
 import { LINKEDIN_PLACEHOLDER, LINKEDIN_PRIVATE, LINKEDIN_WHY } from "@/lib/linkedin";
 import { addMilestone, reviewMilestone } from "@/lib/milestones";
@@ -83,6 +84,9 @@ export function ProposalCard({ p: initial, fromTool, inline = false, onOutcome }
   const href = p.kind === "join" || p.kind === "club_post" || p.kind === "invite" ? `/c/${p.club_id}` : p.kind === "follow" ? `/u/${p.person_id}` : p.kind === "event" ? `/c/${p.club_id}?tab=events` : p.kind === "review" ? "/communities" : p.kind === "rsvp" ? `/events/${p.event_id}` : p.kind === "message" && cid ? `/messages/${cid}` : p.kind === "project_edit" || p.kind === "teammate" ? `/projects/${p.project_id}` : h.href;
   const set = (patch: Partial<Proposal>) => setP((cur) => ({ ...cur, ...patch }) as Proposal);
 
+  // Torch's numbers (supabase/ember-card-counts.sql): once the server has answered, count what happened to
+  // Torch's own card. A draft an AI tool left over MCP isn't Torch's, so it isn't counted here.
+  const counted = (o: CardOutcome) => { if (!fromTool && o.state !== "open") void noteCardOutcome(o.state === "confirmed" ? "confirmed" : o.state === "dismissed" ? "dismissed" : "failed"); };
   const confirm = () => start(async () => {
     setMsg("");
     // Optimistic: the card shows it's done at once, and goes back with the reason if the server says no.
@@ -147,18 +151,24 @@ export function ProposalCard({ p: initial, fromTool, inline = false, onOutcome }
       r = await saveEvent({ ok: false, message: "" }, f);
     }
     if (r.ok) {
-      onOutcome?.(initial.id, outcomeOf(p, "confirmed", heldNote ? "held for a moderator to review before it shows" : ""), true);
+      const done = outcomeOf(p, "confirmed", heldNote ? "held for a moderator to review before it shows" : "");
+      onOutcome?.(initial.id, done, true);
+      counted(done);
       if (fromTool) await settleDraft(fromTool.draftId);
     } else {
       setState("open"); setMsg(r.message || "That didn't work. Check the details and try again.");
-      onOutcome?.(initial.id, outcomeOf(p, "failed", r.message), true);
+      const failed = outcomeOf(p, "failed", r.message);
+      onOutcome?.(initial.id, failed, true);
+      counted(failed);
     }
-    } catch { setState("open"); setMsg("That didn't work. Check your connection and try again."); onOutcome?.(initial.id, outcomeOf(p, "failed", "the connection dropped"), true); }
+    } catch { setState("open"); setMsg("That didn't work. Check your connection and try again."); const dropped = outcomeOf(p, "failed", "the connection dropped"); onOutcome?.(initial.id, dropped, true); counted(dropped); }
   });
   const dismiss = () => start(async () => {
     if (fromTool) await dismissDraft(fromTool.draftId);
     setState("dismissed");
-    onOutcome?.(initial.id, outcomeOf(p, "dismissed"), true);
+    const gone = outcomeOf(p, "dismissed");
+    onOutcome?.(initial.id, gone, true);
+    counted(gone);
   });
 
   if (state === "dismissed") return <p className="mt-2 text-xs text-faint">Dismissed. Nothing was saved.</p>;
