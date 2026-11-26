@@ -401,6 +401,15 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity
   transition: border-color 0.15s ease, box-shadow 0.2s ease;
   &:hover, &:focus-within { border-color: var(--border-strong); }
 }
+/* Home's top panel (2026-11-26): the clearest glass in the app. It sits still at the top of the page,
+   so a real backdrop blur costs nothing on scroll; the app's soft lights glow through it. */
+.home-glass {
+  background: linear-gradient(160deg, color-mix(in oklab, var(--surface) 72%, transparent), color-mix(in oklab, var(--surface) 46%, transparent));
+  border: 1px solid color-mix(in oklab, var(--border) 75%, transparent);
+  box-shadow: inset 0 1px 0 var(--glass-hi), 0 20px 50px -30px rgb(0 0 0 / 0.35);
+  backdrop-filter: blur(20px) saturate(1.5);
+  -webkit-backdrop-filter: blur(20px) saturate(1.5);
+}
 /* The default banner on a profile and a club (2026-11-26): a dark drafting sheet in both themes, lit in
    copper (or the club's accent, --cover-tint) from the top right, with a fine grid. The field's line
    drawing sits on it (components/media/profile-media.tsx). */
@@ -463,10 +472,10 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity
 :root { --ember-a: #ffd9bf; --ember-b: #9a3f1a; --ember-c: #e8946a; --ember-plasma: 0.9; --ember-fresnel: 0.9; }
 /* The assistant's mark (components/ember/ember.tsx): ink with the page's colour cut out of it, so it
    is black on light pages and white on dark ones, like a primary button. */
-:root { --mark: #0f1012; --mark-on: #ffffff; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --mark: #ededef; --mark-on: #0b0c0e; } }
-:root[data-theme="dark"] { --mark: #ededef; --mark-on: #0b0c0e; }
-.theme-dark { --mark: #ededef; --mark-on: #0b0c0e; }
+:root { --mark-hi: #4a4c55; --mark: #18191d; --mark-lo: #050506; --mark-on: #ffffff; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --mark-hi: #ffffff; --mark: #e4e4e8; --mark-lo: #a9aab2; --mark-on: #0b0c0e; } }
+:root[data-theme="dark"] { --mark-hi: #ffffff; --mark: #e4e4e8; --mark-lo: #a9aab2; --mark-on: #0b0c0e; }
+.theme-dark { --mark-hi: #ffffff; --mark: #e4e4e8; --mark-lo: #a9aab2; --mark-on: #0b0c0e; }
 
 /* Moods are light and motion: idle breathes and drifts, thinking swirls fast and pulses, happy
    brightens and bounces, sleepy dims and slows, surprised flares. */

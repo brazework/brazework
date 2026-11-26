@@ -332,7 +332,7 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
           </details>}
         hero={<>
           {/* The top of Home (home-band.tsx): where your record stands, the one next thing, your places. */}
-          <Suspense fallback={<div className="h-[22rem] shimmer rounded-2xl sm:h-64" aria-hidden="true" />}><HomeBand first={profile.first_name} field={profile.field ?? ""} interests={interests} /></Suspense>
+          <Suspense fallback={<div className="h-[22rem] shimmer rounded-2xl sm:h-64" aria-hidden="true" />}><HomeBand first={profile.first_name} /></Suspense>
           {/* Home, top to bottom (section redesign, Nov 2026): the one next step, then one stream in the
               order you'd act on it (what your tools noticed, what needs you, what your clubs shipped,
               your goal), then the log-work box and the posts. Your builds live on Projects, not here. */}
