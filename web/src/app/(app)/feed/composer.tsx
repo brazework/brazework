@@ -72,7 +72,7 @@ export function Composer({ first, last, interests, userId, mediaEnabled = false,
     if (!copilot) { setSoon(true); return; }
     setQuestion("");
     setAnswer({ ...NO_ANSWER, q: t });
-    await ai.run({ task: "ask", input: t, preset }, (full, tools, proposals) => setAnswer({ q: t, text: full, tools, proposals }));
+    await ai.run({ task: "ask", input: t, preset }, (full, tools, proposals, segments) => setAnswer({ q: t, text: full, tools, proposals, segments }));
   };
   const pickAction = (a: EmberAction) => {
     if (a.ask) void ask(a.ask, a.preset);

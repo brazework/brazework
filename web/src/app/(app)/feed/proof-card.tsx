@@ -13,7 +13,7 @@ export type Proof = {
 
 export function ProofCard({ p, reason = "" }: { p: Proof; reason?: string }) {
   return (
-    <article className="glass-card rounded-3xl p-5">
+    <article className="glass-card rounded-2xl p-5 max-sm:rounded-none max-sm:border-x-0 max-sm:border-t-0 max-sm:bg-transparent max-sm:px-0 max-sm:pt-1 max-sm:pb-5 max-sm:shadow-none sm:p-6">
       {reason && <p className="mb-3 flex items-center gap-1.5 text-xs text-faint"><Sparkles className="size-3.5 shrink-0" /> {reason}</p>}
       {p.vouched_by ? <VouchStamp by={p.vouched_by} when={timeAgo(p.reviewed_at)} /> : <VerifiedStamp club={p.community_name} clubId={p.community_id ?? undefined} by={p.reviewer_name} when={timeAgo(p.reviewed_at)} />}
 

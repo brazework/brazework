@@ -18,8 +18,8 @@ export const metadata: Metadata = { title: "Communities" };
 
 export default function CommunitiesPage({ searchParams }: PageProps<"/communities">) {
   return (
-    <div className="mx-auto max-w-4xl 2xl:max-w-6xl">
-      <Suspense fallback={<><PageHeader title="Clubs" /><Skeleton className="mt-6 h-96" /></>}>
+    <div className="mx-auto max-w-3xl xl:max-w-4xl 2xl:max-w-5xl">
+      <Suspense fallback={<><PageHeader title="Your clubs" /><div className="mt-8 flex flex-col gap-5">{[0, 1].map((i) => <Skeleton key={i} className="h-56 rounded-2xl" />)}</div></>}>
         <Communities searchParams={searchParams} />
       </Suspense>
     </div>
@@ -95,10 +95,9 @@ async function Communities({ searchParams }: { searchParams: PageProps<"/communi
       <PageHeader
         tour="clubs"
         title={tab === "discover" ? "Find a club" : tab === "create" ? "Start a club" : "Your clubs"}
-        subtitle={tab === "mine" ? "Your chapter, team or lab: members, events, chat and the work you verify, in one place." : tab === "discover" ? "Clubs in your field first, then the biggest." : "For the chapter, team or lab that isn't here yet."}
+        subtitle={tab === "mine" ? "Your chapter, team or lab: what's happening, what's next, and what waits on you." : tab === "discover" ? "Clubs in your field first, then the biggest." : "For the chapter, team or lab that isn't here yet."}
         actions={tab === "mine" ? <>
           <Link href="/communities?tab=discover" className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-line px-4 text-sm font-medium transition hover:bg-hover"><Search className="size-4" /> Find a club</Link>
-          {f.studyGroups && <Link href="/communities?tab=create&type=study" className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-line px-4 text-sm font-medium transition hover:bg-hover"><BookOpen className="size-4" /> Start a study group</Link>}
           <Link href="/communities?tab=create" className="bg-text inline-flex h-10 items-center gap-1.5 rounded-lg px-4 text-sm font-medium text-surface"><Plus className="size-4" /> Start a club</Link>
         </> : <>
           {/* Someone in no club yet: "Your clubs" would open an empty list, so Find offers starting one instead. */}
@@ -107,17 +106,21 @@ async function Communities({ searchParams }: { searchParams: PageProps<"/communi
           {tab === "discover" && <Link href="/communities?tab=create" className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-line px-4 text-sm font-medium transition hover:bg-hover"><Plus className="size-4" /> Start a club</Link>}
         </>}
       />
-      <div className="mt-6">
+      <div className="mt-7 sm:mt-8">
         {tab === "mine" && (
           <CommunityGrid
             items={joined.map((j) => ({ c: j.c, role: j.role, pulse: pulse[j.c.id] }))}
             empty={<EmptyState icon={<Users className="size-6" />} title="You haven't joined a community yet" body="Find your club, or start the one your field is missing." action={<Link href="/communities?tab=discover" className="text-sm underline underline-offset-4">Discover communities</Link>} />}
           />
         )}
+        {/* A study group is a smaller kind of club: a quiet line, not a third button up top. */}
+        {tab === "mine" && f.studyGroups && joined.length > 0 && (
+          <p className="mt-5 flex items-center gap-2 text-sm text-muted"><BookOpen className="size-4 shrink-0" /> Studying for a course? <Link href="/communities?tab=create&type=study" className="font-medium text-text underline-offset-4 hover:underline">Start a study group</Link></p>
+        )}
         {/* Clubs you might join come after your own, not before them. */}
         {tab === "mine" && discover.length > 0 && (
-          <Carousel className="mt-10" title={profile.field ? `Popular in ${profile.field}` : "Popular on Brazework"} icon={<Flame className="size-3.5" />} href="/communities?tab=discover" hrefLabel="Find a club">
-            {discover.slice(0, 10).map((c) => <div key={c.id} className="w-[300px]"><CommunityCard c={c} joinable pulse={pulse[c.id]} /></div>)}
+          <Carousel className="mt-12" title={profile.field ? `Popular in ${profile.field}` : "Popular on Brazework"} icon={<Flame className="size-3.5" />} href="/communities?tab=discover" hrefLabel="Find a club">
+            {discover.slice(0, 10).map((c) => <div key={c.id} className="w-[280px]"><CommunityCard c={c} joinable pulse={pulse[c.id]} /></div>)}
           </Carousel>
         )}
         {tab === "discover" && (

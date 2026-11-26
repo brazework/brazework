@@ -1,6 +1,6 @@
 "use client";
 import { AnimatePresence, motion } from "motion/react";
-import { BadgeCheck, Bell, Bookmark, CalendarDays, Compass, FolderGit2, House, MessageCircle, LayoutDashboard, LogOut, Network, PanelLeftClose, PanelLeftOpen, PenLine, Plus, Search, Settings, Sparkles, Sun, Trophy, UserRound, Users, X } from "lucide-react";
+import { BadgeCheck, Bell, Bookmark, CalendarDays, Compass, FolderGit2, House, MessageCircle, LayoutDashboard, LogOut, Network, PanelLeftClose, PanelLeftOpen, PenLine, Plus, Settings, Sparkles, Sun, Trophy, UserRound, Users, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -29,7 +29,7 @@ const MENU_ICON: Record<string, typeof Sun> = { "/notifications": Bell, "/events
 const ROW = "group relative flex items-center gap-2.5 rounded-md py-1 text-sm transition";
 // Sections are separated by a hairline and a small label, not boxed in cards.
 const GROUP = "border-t border-line/70 pt-3";
-const GROUP_LABEL = "px-2 py-1.5 text-[11px] font-medium tracking-[0.12em] text-faint uppercase";
+const GROUP_LABEL = "px-2 py-1.5 text-xs font-medium text-faint";
 const TOP_BTN = cn(TILE, "text-faint hover:bg-hover hover:text-text");
 
 function Count({ n, className }: { n: number; className?: string }) {
@@ -70,7 +70,7 @@ export function Sidebar({ first, last, userId, badges, avatar, initialCollapsed 
   return (
     <motion.aside layoutRoot aria-label="Sidebar" className={cn("sticky top-0 isolate z-30 hidden h-dvh shrink-0 transition-[width] duration-300 ease-out motion-reduce:transition-none md:block", collapsed ? "w-16" : "w-[248px]")}>
       {/* A flush, calm column (redesign 2026-11): a hairline edge on a soft tint, no floating glass. */}
-      <div className="flex h-full flex-col border-r border-line bg-surface-2/70 px-2 py-3">
+      <div className="flex h-full flex-col border-r border-line bg-surface-2 px-2 py-3">
       <div className={cn("flex items-center gap-1", collapsed ? "flex-col" : "justify-between pr-1 pl-2")}>
         <Link href="/feed" aria-label="Brazework feed" className={cn(collapsed && "mb-2")}><Logo withWord={!collapsed} /></Link>
         <div className={cn("flex items-center gap-1", collapsed && "flex-col")}>
@@ -254,15 +254,13 @@ export function MobileBar({ first, last, badges, avatar }: { first: string; last
   return (
     <>
       {/* Top bar: under the notch / Dynamic Island, padded by the safe area. */}
-      <header className="glass fixed inset-x-0 top-0 z-40 flex items-center gap-3 px-4 pt-[calc(env(safe-area-inset-top)+0.625rem)] pb-2.5 md:hidden">
+      <header className="glass fixed inset-x-0 top-0 z-40 flex items-center gap-3 border-x-0 border-t-0 px-5 pt-[calc(env(safe-area-inset-top)+0.625rem)] pb-2.5 md:hidden">
         <Link href="/feed" aria-label="Brazework feed"><Logo /></Link>
-        <div className="ml-auto flex items-center gap-1">
-          <button type="button" onClick={() => setSheet("create")} aria-expanded={sheet === "create"} aria-label="Create" className="bg-accent-grad mr-1 grid size-9 place-items-center rounded-full text-on-accent transition active:scale-95">
-            <Plus className="size-5" strokeWidth={2.4} />
+        <div className="ml-auto flex items-center gap-2">
+          {/* The main thing to do on a phone, said in words (redesign 2026-11): log what you built. */}
+          <button type="button" onClick={() => setSheet("create")} aria-expanded={sheet === "create"} aria-label="Log work or create" className="bg-accent-grad mr-1 inline-flex h-9 items-center gap-1 rounded-lg pr-3 pl-2.5 text-sm font-medium text-on-accent transition active:scale-95">
+            <Plus className="size-4" strokeWidth={2.4} /> Log
           </button>
-          <Link href="/search" aria-label="Search" className="grid size-10 place-items-center rounded-full text-text-2 transition hover:bg-hover">
-            <Search className="size-5" />
-          </Link>
           <Link href="/notifications" aria-label={badges.notifications ? `Notifications, ${badges.notifications} new` : "Notifications"} className="relative grid size-10 place-items-center rounded-full text-text-2 transition hover:bg-hover">
             <Bell className="size-5" />
             <Count n={badges.notifications} className="absolute top-0.5 right-0" />
@@ -275,13 +273,13 @@ export function MobileBar({ first, last, badges, avatar }: { first: string; last
       </header>
 
       {/* Floating tab bar above the home indicator: the five places. */}
-      <motion.nav layoutRoot data-tour="menu" aria-label="Main" className="fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+0.5rem)] z-40 md:hidden">
+      <motion.nav layoutRoot data-tour="menu" aria-label="Main" className="fixed inset-x-4 bottom-[calc(env(safe-area-inset-bottom)+0.5rem)] z-40 md:hidden">
         <div className="glass grid grid-cols-5 items-center rounded-2xl border border-line p-1 shadow-[var(--shadow-float)]">
           {TABS.map(tab)}
         </div>
       </motion.nav>
 
-      <Sheet open={sheet === "create"} title="Create" onClose={() => setSheet(null)}>
+      <Sheet open={sheet === "create"} title="Log or create" onClose={() => setSheet(null)}>
         <div className="grid grid-cols-2 gap-2">
           {CREATE.map((c) => (
             <Link key={c.label} href={c.href} onClick={(e) => { if (c.href === "/feed#composer" && path === "/feed") { e.preventDefault(); setSheet(null); window.dispatchEvent(new Event("forge:compose")); } }} className="flex flex-col gap-2 rounded-2xl border border-line p-4 text-left transition active:scale-[0.97]">

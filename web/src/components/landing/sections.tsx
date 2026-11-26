@@ -4,7 +4,7 @@ import Link from "next/link";
 import { cn } from "@/lib/forge";
 import { PublicAiCard } from "@/components/landing/public-ai-card";
 import { AppTour } from "./app-tour";
-import { BuildShowcase } from "./build-showcase";
+import { CadLab } from "./cad-lab";
 import { ClubSetupDemo } from "./club-setup-demo";
 import { CompanySearch } from "./company-search";
 import { EmberDemo } from "./ember-demo";
@@ -88,51 +88,23 @@ export function Tour() {
 
 // The build itself: pick a field and see an example in the product's own 3D viewer
 // (build-showcase.tsx). three.js loads only when this nears the screen.
-export function ShowBuild() {
+// Real builds, the way their makers see them in CAD (redesign 2026-11): a rocket's avionics bay, a
+// six-axis arm and a planetary gearbox, to turn, cut open and stress, each with the result it led to
+// and who signed it. A dark band in both themes: the lab, between the paper sections around it.
+export function Builds() {
   return (
-    <section id="projects" className={cn(SEC, BAND)}>
-      {/* Phone: the heading, then the picker and the model, then the detail. Laptop: the model on the left, the words beside it. */}
-      <div className={cn(WRAP, "grid grid-cols-1 gap-x-16 gap-y-8 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]")}>
-        <div className="lg:col-start-2 lg:row-start-1 lg:self-end">
-          <h2 className={H2}>Don&apos;t describe it. Show the build.</h2>
-          <p className={LEAD}>Whatever you make, post the thing itself. Upload the model, and whoever checks your work can turn it over, look inside and see how big it is.</p>
+    <section id="builds" aria-labelledby="builds-h" className="theme-dark relative isolate scroll-mt-20 overflow-hidden border-y border-line bg-bg py-14 text-text md:py-28">
+      <div aria-hidden="true" className="lab-glow pointer-events-none absolute inset-x-0 -mt-14 h-[32rem] md:-mt-28" />
+      <div className={cn(WRAP, "relative")}>
+        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div>
+            <p className="font-mono text-xs text-brand">From the bench</p>
+            <h2 id="builds-h" className={cn(H2, "mt-3")}>Real builds. Signed results.</h2>
+          </div>
+          <p className="max-w-[26rem] text-[15px] leading-relaxed text-muted md:text-right">Turn it, cut it open, see where it&apos;s loaded. The number on the right is the one somebody watched happen and signed.</p>
         </div>
-        <div className="min-w-0 lg:col-start-1 lg:row-span-2 lg:row-start-1 lg:self-center"><BuildShowcase /></div>
-        <div className="lg:col-start-2 lg:row-start-2 lg:self-start [&>div]:mt-0">
-          <Points items={[
-            ["Pick what you do", "Twenty fields, from robotics and software to chemistry, business, design and education. Each shows an example build and the milestone that goes with it."],
-            ["Look closer", "Front, side and top at a tap. See through the surfaces, or pull an assembly apart."],
-            ["Blueprint mode", "One tap turns it into a line drawing on blue paper, with its dimensions written on it."],
-            ["Your real file", "STL, OBJ, GLB and 3MF open right on your project page. No CAD tool needed."],
-          ]} />
-        </div>
-      </div>
-    </section>
-  );
-}
-
-const FACTS = [
-  { n: "91%", label: "of recruiters have spotted candidate deception.", src: "Greenhouse, 2025", href: "https://www.greenhouse.com/newsroom/an-ai-trust-crisis-70-of-hiring-managers-trust-ai-to-make-faster-and-better-hiring-decisions-only-8-of-job-seekers-call-it-fair" },
-  { n: "1 in 4", label: "candidate profiles are expected to be fake by 2028.", src: "Gartner via HR Dive", href: "https://www.hrdive.com/news/fake-job-candidates-ai/757126/" },
-  { n: "54%", label: "of long posts from top LinkedIn profiles in 2025 were likely written by AI.", src: "Originality.ai", href: "https://ppc.land/over-half-of-linkedin-posts-are-now-likely-ai-but-authenticity-still-wins/" },
-];
-
-export function Why() {
-  return (
-    <section id="why" className={cn(SEC, BAND)}>
-      <div className={cn(WRAP, "grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:gap-16")}>
-        <div>
-          <h2 className={H2}><span className="block">Anyone can write a great résumé with AI.</span> Proof of the work is rare.</h2>
-          <p className={LEAD}>What still counts is work someone else saw you do. Today that lives in pull requests, test logs, lab notebooks and group chats that nobody outside ever sees. Brazework puts it in one place, signed by the people who were there.</p>
-        </div>
-        <dl className="flex flex-col divide-y divide-line border-y border-line self-start">
-          {FACTS.map((f) => (
-            <div key={f.src} className="grid grid-cols-[6.5rem_minmax(0,1fr)] items-baseline gap-4 py-5 sm:grid-cols-[9rem_minmax(0,1fr)]">
-              <dt className="text-3xl font-semibold tracking-tight tabular-nums sm:text-4xl">{f.n}</dt>
-              <dd className="text-[15px] leading-relaxed text-text-2">{f.label} <a href={f.href} target="_blank" rel="noopener noreferrer" className="whitespace-nowrap text-muted underline decoration-line-strong underline-offset-4 hover:text-text">{f.src}</a></dd>
-            </div>
-          ))}
-        </dl>
+        <div className="mt-8 md:mt-12"><CadLab /></div>
+        <p className="mt-3 text-xs text-faint">Example builds and results. Your own CAD files open in the same viewer on your project page.</p>
       </div>
     </section>
   );

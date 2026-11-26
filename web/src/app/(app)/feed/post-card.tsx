@@ -116,7 +116,7 @@ export function PostCard({ post, liked, saved = false, own = false, index, proje
       onAnimationComplete={() => markCard(post.id, { seen: true })}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.45, delay: Math.min(index, 8) * 0.04, ease: [0.16, 1, 0.3, 1] }}
-      className="group/post glass-card relative rounded-2xl p-5 transition-colors duration-200 hover:border-line-strong"
+      className="group/post glass-card relative rounded-2xl p-5 transition-colors duration-200 hover:border-line-strong max-sm:rounded-none max-sm:border-x-0 max-sm:border-t-0 max-sm:bg-transparent max-sm:px-0 max-sm:pt-1 max-sm:pb-5 max-sm:shadow-none sm:p-6"
       onDoubleClick={(e) => {
         if ((e.target as Element).closest("a,button,video,input,textarea")) return;
         window.getSelection()?.removeAllRanges();

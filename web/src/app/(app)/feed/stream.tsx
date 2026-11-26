@@ -58,7 +58,7 @@ export async function HomeStream() {
   const hasProjects = (record?.projects ?? 0) > 0;
 
   return (
-    <div aria-label="Your day" role="group" className="relative flex flex-col gap-7 pl-7 sm:pl-8 before:absolute before:top-3 before:bottom-3 before:left-[8.5px] before:w-px before:bg-line">
+    <div aria-label="Your day" role="group" className="flex flex-col gap-8">
       {/* Once daily-triage.sql has run, the drafts are decided right here, a tap each (triage.tsx). */}
       {f.dailyTriage && <DraftTriage node={<Ember size={18} />} />}
       {toolDrafts.length > 0 && (
@@ -75,7 +75,7 @@ export async function HomeStream() {
       )}
 
       {needsYou && (
-        <Group label="Needs you" node={<span className="block size-2.5 rounded-full bg-text ring-4 ring-bg" />}>
+        <Group label="Needs you" node={<span className="block size-2 rounded-full bg-text" />}>
           <div className="flex flex-col gap-4">
             {(nRequests > 0 || nInvites > 0) && (
               <List label="Requests">
@@ -107,7 +107,7 @@ export async function HomeStream() {
       </Group>}
 
       {record && (
-        <Group label="Where you're headed" node={<span className="grid size-[18px] place-items-center rounded-full bg-surface-2 text-muted ring-4 ring-bg"><Flag className="size-3" /></span>}>
+        <Group label="Where you're headed" node={<Flag className="size-3.5 text-muted" />}>
           <GoalCard compact goal={goal} record={record} profileId={user.id} />
         </Group>
       )}
@@ -125,14 +125,14 @@ const draftTitle = (d: ToolDraft) => {
   return t.length > 90 ? `${t.slice(0, 89)}…` : t;
 };
 
-// A group on the spine: its node sits on the line, its heading says what's in it.
+// A group in Home's stream (redesign 2026-11): a small heading with its mark, then its rows. No
+// timeline spine: the order already says what comes first.
 function Group({ label, node, more, children }: { label: string; node: React.ReactNode; more?: React.ReactNode; children: React.ReactNode }) {
   const id = `home-${label.toLowerCase().replace(/[^a-z]+/g, "-")}`;
   return (
-    <section aria-labelledby={id} className="relative">
-      <span aria-hidden="true" className="absolute top-0.5 -left-7 grid sm:-left-8 w-[18px] place-items-center">{node}</span>
-      <div className="mb-2.5 flex items-baseline justify-between gap-3">
-        <h2 id={id} className="text-[15px] font-semibold tracking-tight text-text">{label}</h2>
+    <section aria-labelledby={id}>
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <h2 id={id} className="flex items-center gap-2 text-sm font-semibold text-text"><span aria-hidden="true" className="grid w-[18px] place-items-center">{node}</span>{label}</h2>
         {more}
       </div>
       {children}
@@ -164,7 +164,7 @@ function Invite({ cids, working = false }: { cids: number; working?: boolean }) 
 // The stream's place while it loads: the spine and the clubs group, which always shows.
 export function StreamSkeleton() {
   return (
-    <div aria-hidden="true" className="relative flex flex-col gap-7 pl-7 sm:pl-8">
+    <div aria-hidden="true" className="flex flex-col gap-8">
       <div>
         <div className="mb-2.5 h-5 w-52 shimmer rounded-md" />
         <div className="h-[58px] shimmer rounded-xl" />

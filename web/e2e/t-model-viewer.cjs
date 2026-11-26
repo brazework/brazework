@@ -1,5 +1,5 @@
-// The 3D viewer (components/projects/model-viewer.tsx, Linear FIX-98). On the landing page it shows
-// an example robot and loads nothing until it nears the screen; in the app, a member attaches a 3D
+// The 3D viewer (components/projects/model-viewer.tsx, Linear FIX-98), and the landing page's CAD lab,
+// which loads nothing until it nears the screen. In the app, a member attaches a 3D
 // file to a project, opens it there, and opens it from the project's Build card. Where the browser
 // can't start WebGL (some CI machines) the viewer says so and still shows the model's size, so the
 // size is what every step checks; the controls are checked when the picture is there.
@@ -15,55 +15,37 @@ const settled = (v) => v.evaluate((el) => new Promise((ok) => { const t = setInt
 
   const page = await (await b.newContext({ viewport: { width: 1440, height: 950 } })).newPage();
   page.errs = []; page.on("pageerror", (e) => page.errs.push(e.message));
-  await step("landing: the viewer waits until it's near the screen, then shows the example robot's size", async () => {
+  // The landing page's CAD lab (components/landing/cad-lab.tsx, redesign 2026-11) replaced the example
+  // viewer there; the viewer itself is checked on a project page below.
+  await step("landing: the CAD lab loads nothing until it's near the screen, then draws the build (or says it can't) beside its spec sheet", async () => {
     await go(page, "/");
-    const v = page.locator("#projects [data-model-viewer]");
-    if ((await v.getAttribute("data-state")) !== "idle") throw new Error("the viewer started loading before it was near the screen");
-    if (await v.locator("canvas").count()) throw new Error("a 3D canvas exists before the viewer was scrolled to");
-    await v.scrollIntoViewIfNeeded();
-    const state = await settled(v);
-    if (state === "error") throw new Error("the example model failed to load");
-    const size = await v.locator("[data-model-size]").innerText();
-    if (!/^\d+ × \d+ × [\d.]+ mm$/.test(size.replace(/\s+/g, " ").trim())) throw new Error(`size reads "${size}"`);
-    await v.getByText("Example model").waitFor();
-    if (state === "nogl") { await v.getByText("3D isn't available in this browser.").waitFor(); return; }
-    await v.getByRole("button", { name: "Top" }).click();
-    if ((await v.getByRole("button", { name: "Top" }).getAttribute("aria-pressed")) !== "true") throw new Error("Top isn't marked as the view");
-    for (const name of ["See through", "Explode", "Turn slowly"]) {
-      const btn = v.getByRole("button", { name });
-      const was = await btn.getAttribute("aria-pressed");
-      await btn.click();
-      if ((await btn.getAttribute("aria-pressed")) === was) throw new Error(`${name} didn't toggle`);
-    }
+    const lab = page.locator("#builds"), stage = lab.locator("#cad-stage");
+    if ((await stage.getAttribute("data-state")) !== "waiting") throw new Error("the lab started before it was near the screen");
+    if (await stage.locator("canvas").count()) throw new Error("a 3D canvas exists before the lab was scrolled to");
+    await stage.scrollIntoViewIfNeeded();
+    await page.waitForFunction(() => ["ready", "failed"].includes(document.querySelector("#cad-stage")?.getAttribute("data-state") ?? ""), null, { timeout: 30000 });
+    const state = await stage.getAttribute("data-state");
+    if (state === "failed") await stage.getByText(/can't draw 3D/).waitFor();
+    else if (!(await stage.locator("canvas").count())) throw new Error("ready, but no canvas");
+    const sheet = lab.getByRole("complementary", { name: "Spec sheet" });
+    await sheet.getByRole("heading", { name: "Dual-deploy flight computer" }).waitFor();
+    await sheet.getByText(/Signed by/).waitFor();
     if (page.errs.length) throw new Error(page.errs[0]);
   }, page);
 
-  await step("landing: blueprint mode draws on blue paper, and it's one look at a time", async () => {
-    const v = page.locator("#projects [data-model-viewer]");
-    if ((await v.getAttribute("data-state")) !== "ready") return; // no WebGL here: nothing to draw
-    await v.getByRole("button", { name: "Blueprint" }).click();
-    if ((await v.getAttribute("data-look")) !== "blueprint") throw new Error("the viewer isn't in blueprint mode");
-    if ((await v.getByRole("button", { name: "See through" }).getAttribute("aria-pressed")) !== "false") throw new Error("See through stayed on under the blueprint");
-    const paper = await v.evaluate((el) => getComputedStyle(el).backgroundImage);
-    if (!/31, 92, 173|#1f5cad/i.test(paper)) throw new Error(`the backdrop isn't blueprint blue: ${paper.slice(0, 80)}`);
-    await v.getByRole("button", { name: "Blueprint" }).click();
-    if ((await v.getAttribute("data-look")) !== "solid") throw new Error("Blueprint didn't switch back off");
-    if (page.errs.length) throw new Error(page.errs[0]);
-  }, page);
-
-  await step("landing: picking what you do shows a different build and what you'd post", async () => {
-    const sec = page.locator("#projects"), v = sec.locator("[data-model-viewer]");
-    const seen = new Set();
-    if ((await sec.getByRole("tab").count()) !== 20) throw new Error(`expected 20 fields in the picker, found ${await sec.getByRole("tab").count()}`);
-    const tries = [["Aerospace", "Certification rocket"], ["Software", "Campus shuttle tracker app"], ["Computer science", "Four-node compute cluster"], ["Data & AI", "Crop disease classifier"], ["Chemistry", "Cathode material study"], ["Business", "Warehouse pick-and-pack station"], ["Education", "Fractions learning kit"], ["Robotics", "Line-following robot"]];
-    for (const [field, build] of tries) {
-      await sec.getByRole("tab", { name: field, exact: true }).click();
-      await sec.locator("#build-example").getByText(build, { exact: true }).waitFor();
-      await sec.locator("#build-example").getByText(/(Verified|Signed) by /).waitFor(); // a club, or a person who saw it
-      if ((await settled(v)) === "error") throw new Error(`${field}: the example failed to load`);
-      seen.add((await v.locator("[data-model-size]").innerText()).replace(/\s+/g, " ").trim());
+  await step("landing: each build has its own spec sheet and signed result, and the view is one of Render, Section or Stress", async () => {
+    const lab = page.locator("#builds"), sheet = lab.getByRole("complementary", { name: "Spec sheet" });
+    for (const [tab, name] of [["6-axis arm", "Benchtop cobot arm"], ["Planetary gearbox", "5:1 planetary reduction"], ["Avionics bay", "Dual-deploy flight computer"]]) {
+      await lab.getByRole("tab", { name: tab }).click();
+      if ((await lab.getByRole("tab", { name: tab }).getAttribute("aria-selected")) !== "true") throw new Error(`${tab} isn't marked as the build`);
+      await sheet.getByRole("heading", { name }).waitFor();
+      await sheet.getByText(/Signed by/).waitFor();
     }
-    if (seen.size !== tries.length) throw new Error(`${tries.length} examples but ${seen.size} different sizes: the model didn't change`);
+    for (const mode of ["Section", "Stress", "Render"]) {
+      await lab.getByRole("radio", { name: mode }).click();
+      const on = await lab.getByRole("radiogroup", { name: "View" }).getByRole("radio", { checked: true }).allInnerTexts();
+      if (on.length !== 1 || !on[0].includes(mode)) throw new Error(`after ${mode}, the views marked are ${on.join(", ")}`);
+    }
     if (page.errs.length) throw new Error(page.errs[0]);
   }, page);
 

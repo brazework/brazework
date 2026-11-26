@@ -27,13 +27,14 @@ export const viewport: Viewport = {
   // Draw under the notch and the home indicator; the app pads itself with the safe-area insets.
   viewportFit: "cover",
   themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#ffffff" },
-    { media: "(prefers-color-scheme: dark)", color: "#09090b" },
+    { media: "(prefers-color-scheme: light)", color: "#f7f7f5" },
+    { media: "(prefers-color-scheme: dark)", color: "#0b0c0e" },
   ],
 };
 
-// Runs before first paint so a saved theme never flashes the other one.
-const themeScript = `try{var d=document.documentElement,t=localStorage.getItem("forge-theme"),k=localStorage.getItem("forge-skin");if(t==="light"||t==="dark")d.dataset.theme=t;if(k&&/^(blueprint|fire|aurora|emerald)$/.test(k)&&location.pathname!=="/")d.dataset.skin=k}catch(e){}`;
+// Runs before first paint so a saved theme never flashes the other one. Brazework has one theme in
+// light and dark (redesign 2026-11); an old colour skin saved on this device is dropped here.
+const themeScript = `try{var d=document.documentElement,t=localStorage.getItem("forge-theme");if(t==="light"||t==="dark")d.dataset.theme=t;localStorage.removeItem("forge-skin")}catch(e){}`;
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (
