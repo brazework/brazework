@@ -255,8 +255,15 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity
   &:hover, &:focus-within { background: linear-gradient(var(--surface), var(--surface)) padding-box, linear-gradient(var(--border-strong), var(--border-strong)) border-box; }
 }
 /* The app's backdrop: the theme's glow from the top corners, fixed while content scrolls. */
+/* The app's ground (glass, 2026-11-26): the page colour under two soft, still lights (copper from the top
+   left, a cool tone from the bottom right), fixed so they don't move as you scroll. They are what the
+   glass sidebar frosts over; the page itself stays calm. */
 @utility app-backdrop {
   background-color: var(--bg);
+  background-image:
+    radial-gradient(900px 520px at -8% -12%, color-mix(in oklab, var(--brand) 11%, transparent), transparent 70%),
+    radial-gradient(760px 520px at 108% 112%, color-mix(in oklab, #5b7cfa 9%, transparent), transparent 70%);
+  background-attachment: fixed;
 }
 
 /* A soft light that follows the cursor across a card (position set by SpotlightTracker). */
@@ -359,10 +366,14 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity
 .ai-aurora { opacity: 0.16; animation: ai-drift 14s ease-in-out infinite; }
 .ai-aurora-2 { opacity: 0.12; animation: ai-drift-2 18s ease-in-out infinite; }
 
-/* The sidebar: a floating frosted-glass panel over the page's glow. */
+/* The sidebar (glass, 2026-11-26): a floating frosted panel over the app's soft lights, with a bright top
+   edge. It never scrolls over content, so the blur is drawn once, not on every scroll frame. */
 @utility glass-panel {
-  background: var(--surface-2);
-  border: 1px solid var(--border);
+  background: color-mix(in oklab, var(--surface) 62%, transparent);
+  border: 1px solid color-mix(in oklab, var(--border) 85%, transparent);
+  box-shadow: inset 0 1px 0 var(--glass-hi), 0 1px 2px rgb(0 0 0 / 0.04), 0 12px 32px -18px rgb(0 0 0 / 0.18);
+  backdrop-filter: blur(18px) saturate(1.4);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4);
 }
 /* The feed's two columns (posts, then the rail), widening with the screen. The search row above the
    page takes the same frame on the feed, so the search bar lines up with the posts. */
@@ -380,9 +391,9 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity
 
 /* Cards in the same glass as the sidebar: translucent, a bright top edge, a slightly firmer edge on hover. */
 @utility glass-card {
-  background: var(--surface);
+  background: color-mix(in oklab, var(--surface) 92%, transparent);
   border: 1px solid var(--border);
-  box-shadow: var(--shadow);
+  box-shadow: inset 0 1px 0 var(--glass-hi), var(--shadow);
   transition: border-color 0.15s ease;
   &:hover, &:focus-within { border-color: var(--border-strong); }
 }
@@ -412,7 +423,8 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity
 /* The selected sidebar tab: a soft tint in the theme's colour (no edge bar). */
 /* The current page's row: a faint wash (its glowing icon tile carries the emphasis). */
 .nav-pill {
-  background: color-mix(in oklab, var(--text) 5%, transparent);
+  background: color-mix(in oklab, var(--surface) 70%, transparent);
+  box-shadow: inset 0 1px 0 var(--glass-hi), 0 0 0 1px color-mix(in oklab, var(--border) 80%, transparent);
 }
 
 /* ---------- Ember, Brazework's AI (components/ember/ember.tsx) ----------

@@ -4,7 +4,8 @@
 import { FIELDS, friendlyError, type Post } from "@/lib/forge";
 
 export type Role = "owner" | "admin" | "moderator" | "helper" | "member";
-export type CommunityType = "field" | "study" | "project" | "school";
+// "class": a school class (supabase/school-portal.sql), started by faculty from Your school, never from Create.
+export type CommunityType = "field" | "study" | "project" | "school" | "class";
 export type Privacy = "public" | "approval";
 export type AutoMod = { words: string[]; holdNewLinks: boolean };
 
@@ -91,7 +92,7 @@ export const TYPES: { id: CommunityType; label: string }[] = [
   { id: "project", label: "Project team" },
   { id: "school", label: "School & alumni" },
 ];
-export const TYPE_LABEL: Record<CommunityType, string> = Object.fromEntries(TYPES.map((t) => [t.id, t.label])) as Record<CommunityType, string>;
+export const TYPE_LABEL: Record<CommunityType, string> = { ...Object.fromEntries(TYPES.map((t) => [t.id, t.label])), class: "Class" } as Record<CommunityType, string>;
 
 export const PRIVACY: { id: Privacy; label: string; hint: string }[] = [
   { id: "public", label: "Public", hint: "Anyone on Brazework can find it, read it and join." },

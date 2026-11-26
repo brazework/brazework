@@ -49,8 +49,8 @@ async function Onboarding({ searchParams }: { searchParams: PageProps<"/onboardi
     // Clubs that can sign it: theirs (an invite they followed), then open clubs, biggest first. The
     // wizard puts the ones in the field they pick at the top.
     const [mine, open] = await Promise.all([
-      supabase.from("community_members").select("community:communities(id, name, field, member_count)").eq("uid", user.id).limit(10),
-      supabase.from("communities").select("id, name, field, member_count").eq("privacy", "public").neq("type", "study").order("member_count", { ascending: false }).limit(60),
+      supabase.from("community_members").select("community:communities!inner(id, name, field, member_count)").eq("uid", user.id).neq("community.type", "class").limit(10),
+      supabase.from("communities").select("id, name, field, member_count").eq("privacy", "public").not("type", "in", "(study,class)").order("member_count", { ascending: false }).limit(60),
     ]);
     type Row = { id: string; name: string; field: string | null; member_count: number };
     const own = ((mine.data ?? []) as unknown as { community: Row | null }[]).map((m) => m.community).filter((c): c is Row => !!c);

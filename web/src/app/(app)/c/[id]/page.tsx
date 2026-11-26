@@ -108,7 +108,8 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
   const leads = leadCounts((leadRows ?? []) as LeadRow[], user.id);
   // Setup, for the club's owner and admins (rank 4+), until it's done or they hide it.
   const lead = rank(role) >= 4 && !(await cookies()).has(`${DISMISS_PREFIX}club-setup-${id}`);
-  const setupSteps = lead ? await clubSetupSteps(supabase, await dbFeatures(), { id: c.id, name: c.name, about: c.about, rules: c.rules, member_count: c.member_count }) : [];
+  const setupSteps = lead && c.type !== "class" ? await clubSetupSteps(supabase, await dbFeatures(), { id: c.id, name: c.name, about: c.about, rules: c.rules, member_count: c.member_count }) : [];
+  // A class (supabase/school-portal.sql) has no club setup: its roster comes from Your school.
   const showSetup = lead && setupSteps.length > 0 && !setupProgress(setupSteps).complete;
   const { data: inviteRows } = showSetup && invitesOn ? await supabase.from("community_invites").select("code, expires_at, max_uses, uses, revoked").eq("community_id", id).order("created_at", { ascending: false }).limit(20) : { data: [] };
   const setupInvite = reusableInvite((inviteRows ?? []) as InviteRow[], now)?.code ?? null;
@@ -152,10 +153,10 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
             <CopyLink path={`/c/${c.id}`} label="Share" />
             {me && groupChats && (
               <form action={openClubChat.bind(null, c.id)}>
-                <button className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-line bg-surface px-4 text-sm font-medium transition hover:bg-hover active:scale-95"><MessagesSquare className="size-4" /> Club chat</button>
+                <button className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-line bg-surface px-4 text-sm font-medium transition hover:bg-hover active:scale-95"><MessagesSquare className="size-4" /> {c.type === "class" ? "Class chat" : "Club chat"}</button>
               </form>
             )}
-            {rank(role) >= 2 && invitesOn && (
+            {rank(role) >= 2 && invitesOn && c.type !== "class" && (
               <Link href={`/c/${c.id}/manage?tab=invite`} className="inline-flex h-10 items-center gap-1.5 rounded-lg bg-text px-4 text-sm font-medium text-surface transition active:scale-95"><UserPlus className="size-4" /> Invite</Link>
             )}
             {rank(role) >= 2 && (
@@ -172,11 +173,13 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
             </div>
             {c.tagline && <p className="mt-0.5 text-[15px] text-text-2">{c.tagline}</p>}
             <Suspense fallback={null}><div><ChapterLine cid={c.id} /></div></Suspense>
-            <MetaLine parts={[membersLabel(c.member_count), PRIVACY_LABEL[c.privacy], c.field, TYPE_LABEL[c.type]]} />
+            {c.type === "class"
+              ? <MetaLine parts={[[c.course, c.term].filter(Boolean).join(" · "), membersLabel(c.member_count), "Private to the class"]} />
+              : <MetaLine parts={[membersLabel(c.member_count), PRIVACY_LABEL[c.privacy], c.field, TYPE_LABEL[c.type]]} />}
             {study && studyLine(c) && <p className="mt-1 text-sm font-medium text-text-2">{studyLine(c)}</p>}
             {c.website && /^https?:\/\/\S+$/i.test(c.website) && <a href={c.website} target="_blank" rel="noopener noreferrer nofollow" className="mt-1 inline-flex items-center gap-1 text-xs text-text-2 hover:text-text hover:underline"><Globe className="size-3.5" /> {c.website.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "")}</a>}
             {/* Money paths (lib/money.ts): a quiet line for visitors to a public club, never for its members. */}
-            {!me && !study && c.privacy === "public" && <Link href={`/book?kind=chapter&club=${encodeURIComponent(c.id)}`} className="mt-1 inline-flex text-xs text-muted underline-offset-4 hover:text-text hover:underline">Sponsor this chapter</Link>}
+            {!me && !study && c.type !== "class" && c.privacy === "public" && <Link href={`/book?kind=chapter&club=${encodeURIComponent(c.id)}`} className="mt-1 inline-flex text-xs text-muted underline-offset-4 hover:text-text hover:underline">Sponsor this chapter</Link>}
             <MemberFaces faces={faces} ids={members.map((m) => m.uid)} total={c.member_count} className="mt-3" />
           </div>
         </div>
@@ -210,7 +213,7 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
         {study && <StudyLeads cid={c.id} me={user.id} member={!!me} people={leadPeople} />}
         {msOn && <Suspense fallback={null}><BuildersThisTerm cid={c.id} /></Suspense>}
         {/* The club's own projects (FIX-264): for whoever can see the club, as its posts are. */}
-        {(c.privacy === "public" || me) && <Suspense fallback={null}><ClubProjects cid={c.id} name={c.name} lead={rank(role) >= 4} interests={profile?.interests ?? []} /></Suspense>}
+        {(c.privacy === "public" || me) && <Suspense fallback={null}><ClubProjects cid={c.id} name={c.name} lead={rank(role) >= 4} interests={profile?.interests ?? []} isClass={c.type === "class"} member={!!me} /></Suspense>}
         {typeof sp.chat_error === "string" && <p role="alert" className="mt-4 rounded-2xl border border-danger/30 bg-danger/10 px-4 py-2.5 text-sm text-danger">{sp.chat_error}</p>}
         {sp.joined === "1" && (
           <p className="relative mt-4 flex items-center gap-2 rounded-2xl border border-line bg-surface-2 px-4 py-3 text-sm">

@@ -51,7 +51,19 @@ Hosting and AI cost per school is small, so the margin is high (about 90%, *assu
 
 The flow: a student joins with their school email and is placed at their school; their classes come from the roster; each project sits under a class or a club; the professor or officer verifies it; it lands at once on the student's record, the school's reports and recruiter search; the student can add it to LinkedIn or Handshake as verified.
 
-**Blackboard, Canvas, Moodle: plug in, don't replace.** An LMS keeps assignments, grades and course content, and no school will swap it for a startup's. Brazework is the project layer an LMS does badly (teams, milestones, CAD and test files, verification, a record that outlives the course). Integration is **LTI 1.3**, the standard all of them support: a teacher adds Brazework to a course, students click in with no new login, and the roster comes across (Names and Role Provisioning). No grade passback: grades never live on Brazework. Build it once a paying school's IT asks; until then a CSV roster each semester.
+**Blackboard, Canvas, Moodle: win the project course.** An LMS is built for readings, quizzes and a gradebook, and no school will swap it out. It is bad at project courses (capstones, design and lab courses, and club builds), and that is where Brazework wins outright: "run your project courses on Brazework." A professor runs the whole course here and the LMS only keeps the final grade.
+
+| In a project course | Blackboard / Canvas | Brazework |
+|---|---|---|
+| Teams | A group set | Teams with roles, each member's part on record |
+| Progress | One file per assignment | Milestones against the professor's deliverable schedule (proposal, design review, prototype, final) |
+| Teamwork | Nothing; schools buy a separate peer-evaluation tool (CATME and the like) | Peer evaluation built in: each teammate rates contribution |
+| Evidence | Files in a course shell | CAD you can turn, test logs, video, and who verified it |
+| Accreditation | Faculty assemble ABET evidence by hand | Faculty tick the ABET outcomes a milestone shows when they verify; the export is grouped by outcome |
+| Industry sponsors | Can't see the course | Sign off results by email (built) |
+| After the course | The shell is archived | The verified work stays the student's |
+
+Integration is **LTI 1.3**, which all of them support: a teacher adds Brazework to a course, students click in with no new login, the roster comes across (Names and Role Provisioning), and the final grade goes back to the LMS gradebook (Assignment and Grade Services), so grades still never live on Brazework. Build it once a paying school's IT asks; until then a CSV roster each semester and grades entered as today.
 
 **Partners and LinkedIn, in two steps.** Now, with no partnership: an "Add to LinkedIn" button on every verified project (LinkedIn's public add-to-profile link for a certification, pointing at its `/v/<id>` verify page), and the verify page itself, which anyone (a recruiter, a Handshake or LinkedIn viewer) opens to see who signed and with what evidence. Later: a Verified Work API that Handshake, LinkedIn or an applicant-tracking system licenses, read-only and per student consent. That is the network for YC: they have the profiles; Brazework holds the proof.
 
@@ -62,8 +74,9 @@ The flow: a student joins with their school email and is placed at their school;
 4. Classes and semesters from a CSV upload; class projects (teacher-assigned groups, or a student lists their project under a class); faculty verification of the work and each student's part; private to the class by default.
 5. The school dashboard: engagement, verified work by class and department, the accreditation (ABET) evidence export, placement.
 6. Student to professional: move the account to a personal email, both addresses confirmed, everything kept.
-7. "Add to LinkedIn" on verified work, a partners page, then the Verified Work API.
-8. LTI 1.3 for Blackboard, Canvas, Moodle and D2L, when a paying school asks.
+7. The project-course toolkit: a deliverable schedule per class, peer evaluation, and ABET outcomes ticked at verification (the export grouped by outcome). This is what makes a professor run the course on Brazework instead of the LMS.
+8. "Add to LinkedIn" on verified work, a partners page, then the Verified Work API.
+9. LTI 1.3 for Blackboard, Canvas, Moodle and D2L (sign-in, roster, final grade back), when a paying school asks.
 
 **To settle before building classes.** FERPA: a data agreement with each school; class projects private to the class by default; the student chooses what goes public; grades and teacher notes never public. Faculty proof: from the school's sign-on list only. Email change: confirm both addresses so nobody takes over a record.
 

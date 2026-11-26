@@ -33,8 +33,8 @@ async function Communities({ searchParams }: { searchParams: PageProps<"/communi
   const q = typeof sp.q === "string" ? sp.q.trim() : "";
 
   const [mine, top] = await Promise.all([
-    supabase.from("community_members").select(`role, joined_at, communities(${COMMUNITY_COLS})`).eq("uid", user.id).limit(100),
-    supabase.from("communities").select(COMMUNITY_COLS).order("member_count", { ascending: false }).limit(200),
+    supabase.from("community_members").select(`role, joined_at, communities!inner(${COMMUNITY_COLS})`).eq("uid", user.id).neq("communities.type", "class").limit(100),
+    supabase.from("communities").select(COMMUNITY_COLS).neq("type", "class").order("member_count", { ascending: false }).limit(200),
   ]);
   const joined = ((mine.data ?? []) as unknown as { role: Role; communities: Community | null }[]).filter((r) => r.communities).map((r) => ({ role: r.role, c: r.communities! }));
   const tab = sp.tab === "discover" || sp.tab === "create" ? sp.tab : joined.length ? "mine" : "discover";

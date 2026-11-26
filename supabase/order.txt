@@ -113,3 +113,4 @@ project-files-view-only
 post-files
 group-chat-controls
 club-projects
+school-portal
