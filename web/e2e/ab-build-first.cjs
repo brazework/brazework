@@ -173,15 +173,18 @@ const psql = (sql) => execSync(`docker exec -i forge-e2e-db psql -U postgres -h 
   // 5: pricing.
   const ctx3 = await b.newContext();
   const p3 = await ctx3.newPage(); p3.errs = [];
-  await step("/pricing is public: free for builders, Plus coming, and who pays", async () => {
+  await step("/pricing is public: schools pay first, students and clubs never, then companies", async () => {
     await go(p3, "/pricing");
-    await p3.getByRole("heading", { name: /Free for the people who build/ }).waitFor({ timeout: 15000 });
-    for (const t of ["Builders", "Clubs, networks and schools", "Companies", "Book a pilot", "$15,000", "Every club included"]) await p3.getByText(t, { exact: false }).first().waitFor();
+    await p3.getByRole("heading", { name: /Schools pay/ }).waitFor({ timeout: 15000 });
+    for (const t of ["Students and clubs", "Companies", "Semester pilot", "$1,500", "$6,000", "Every student and every club included", "Book a pilot", "$15,000"]) await p3.getByText(t, { exact: false }).first().waitFor();
+    const order = await p3.locator("h3[id^=pricing-]").evaluateAll((els) => els.map((el) => el.id));
+    if (order.join() !== "pricing-schools,pricing-builders,pricing-companies") throw new Error(`price list order: ${order.join()}`);
+    if (await p3.getByRole("link", { name: "Get Plus" }).count()) throw new Error("Plus is still on the public price list");
     if (await p3.getByText(/\bPro\b/).count()) throw new Error("the price list says Pro, which means pro verification");
     const allowance = p3.getByText(/Free includes 15 credits a day/);
     await allowance.waitFor();
     const details = await allowance.innerText();
-    for (const text of ["50 credits a day", "1 credit", "2 credits", "3 credits", "Web and iPhone share one balance"]) {
+    for (const text of ["1 credit", "2 credits", "3 credits", "Web and iPhone share one balance"]) {
       if (!details.includes(text)) throw new Error(`Ember pricing is missing ${text}`);
     }
   }, p3);

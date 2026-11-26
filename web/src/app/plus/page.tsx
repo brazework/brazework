@@ -7,7 +7,7 @@ import { ThemeChrome } from "@/components/theme-chrome";
 import { Logo } from "@/components/ui";
 import { PLUS_STUDENT_ANNUAL_PRICE_ENV, plusOnSale, plusPriceEnv, plusYearlyOnSale } from "@/lib/billing";
 import { dbFeatures } from "@/lib/db-features";
-import { EMBER_DAILY_LIMIT, PLUS, PLUS_SOON, TIERS } from "@/lib/pricing";
+import { EMBER_DAILY_LIMIT, PLUS, PLUS_SOON, PLUS_TIER } from "@/lib/pricing";
 import { getViewer } from "@/lib/supabase/server";
 import { PlusButton } from "./plus-button";
 
@@ -50,7 +50,7 @@ async function Plus({ searchParams }: { searchParams: PageProps<"/plus">["search
   const yearly = onSale && (student
     ? plusPriceEnv({ student, yearly: true }) === PLUS_STUDENT_ANNUAL_PRICE_ENV
     : plusYearlyOnSale());
-  const tier = TIERS.find((t) => t.id === "plus")!;
+  const tier = PLUS_TIER;
   return (
     <>
       <h1 className="text-[clamp(2rem,5vw,2.75rem)] leading-[1.05] font-semibold tracking-[-0.03em]">{PLUS.name}</h1>

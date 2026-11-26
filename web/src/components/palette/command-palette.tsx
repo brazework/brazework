@@ -1,7 +1,7 @@
 "use client";
 import { emberCreditCost } from "@/lib/ember-credits";
 import { AnimatePresence, motion } from "motion/react";
-import { BadgeCheck, Building2, CalendarDays, FolderGit2, MessageSquare, PenLine, Search, Settings, Sparkles, Trophy, UserRound, Users } from "lucide-react";
+import { BadgeCheck, Building2, CalendarDays, FolderGit2, GraduationCap, MessageSquare, PenLine, Search, Settings, Sparkles, UserRound, Users } from "lucide-react";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/forge";
@@ -39,10 +39,10 @@ export function CommandPalette() {
     const actions: Item[] = [
       { id: "post", label: "Log work", hint: "What did you build today?", icon: PenLine, run: () => { setOpen(false); if (path === "/feed") window.dispatchEvent(new Event("forge:compose")); else router.push("/feed#composer"); } },
       { id: "project", label: "Add a project", icon: FolderGit2, run: go("/projects") },
-      { id: "verify", label: "Ask your club to verify a milestone", icon: BadgeCheck, run: go("/projects") },
+      { id: "verify", label: "Ask your professor or club to verify a milestone", icon: BadgeCheck, run: go("/projects") },
       { id: "clubs", label: "Find a club", icon: Users, run: go("/communities?tab=discover") },
       { id: "events", label: "Events", icon: CalendarDays, run: go("/events") },
-      { id: "challenges", label: "Challenges", hint: "Build briefs from companies and schools", icon: Trophy, run: go("/challenges") },
+      { id: "school", label: "Your school", hint: "Its page and verified clubs", icon: GraduationCap, run: go("/school") },
       { id: "talent", label: "Find builders by verified work", hint: "For verified companies and schools", icon: Building2, run: go("/talent") },
       { id: "messages", label: "Messages", icon: MessageSquare, run: go("/messages") },
       { id: "profile", label: "Your profile", icon: UserRound, run: go("/profile") },

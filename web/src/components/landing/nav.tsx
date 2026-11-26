@@ -2,16 +2,17 @@
 import { AnimatePresence, motion, useMotionValueEvent, useScroll } from "motion/react";
 import { Menu, X } from "lucide-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button, Logo } from "@/components/ui";
 import { cn } from "@/lib/forge";
 
 // `wide`: only in the bar on a wide screen. `noPhone`: a section a phone doesn't show (app/page.tsx), so
-// the phone menu leaves it out.
+// the phone menu leaves it out. Section links (#how) point back at the landing page from /schools.
 const LINKS: { href: string; label: string; wide?: boolean; noPhone?: boolean }[] = [
   { href: "#how", label: "How it works" },
-  { href: "#for", label: "Who it's for" },
+  { href: "/schools", label: "For schools" },
   { href: "/pricing", label: "Pricing" },
   { href: "/ai", label: "Connect your AI", wide: true },
 ];
@@ -20,6 +21,9 @@ export function Nav() {
   const { scrollY, scrollYProgress } = useScroll();
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  const path = usePathname();
+  const to = (href: string) => (href.startsWith("#") && path !== "/" ? `/${href}` : href);
+  const current = (href: string) => here === href || path === href;
   useMotionValueEvent(scrollY, "change", (v) => setScrolled(v > 24));
   // Where you are on the page: the last linked section whose top has passed a third of the way down
   // the screen. The sections between two links (who signs, why, the 3D build) count as the one above.
@@ -62,7 +66,7 @@ export function Nav() {
         <ul className="ml-4 hidden items-center gap-1 md:flex">
           {LINKS.map((l) => (
             <li key={l.href} className={cn(l.wide && "hidden xl:block")}>
-              <a href={l.href} aria-current={here === l.href ? "location" : undefined} className={cn("rounded-md px-3 py-1.5 text-sm transition hover:bg-hover hover:text-text", here === l.href ? "bg-hover text-text" : "text-muted")}>{l.label}</a>
+              <a href={to(l.href)} aria-current={here === l.href ? "location" : path === l.href ? "page" : undefined} className={cn("rounded-md px-3 py-1.5 text-sm transition hover:bg-hover hover:text-text", current(l.href) ? "bg-hover text-text" : "text-muted")}>{l.label}</a>
             </li>
           ))}
         </ul>
@@ -93,7 +97,7 @@ export function Nav() {
             >
               {[...LINKS.filter((l) => !l.noPhone), { href: "/login", label: "Log in" }].map((l) => (
                 <li key={l.href}>
-                  <a href={l.href} onClick={() => setOpen(false)} className="block rounded-xl px-2 py-3 text-[15px] text-text-2 transition hover:bg-hover hover:text-text">
+                  <a href={to(l.href)} onClick={() => setOpen(false)} className="block rounded-xl px-2 py-3 text-[15px] text-text-2 transition hover:bg-hover hover:text-text">
                     {l.label}
                   </a>
                 </li>

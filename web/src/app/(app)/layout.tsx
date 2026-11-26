@@ -50,7 +50,7 @@ async function SignedInShell() {
 
   // What's waiting for you, shown as badges across the app (supabase/activity.sql, messages.sql).
   const { clubProfile, media } = await dbFeatures();
-  const [counts, cl, pr] = await Promise.all([
+  const [counts, cl, pr, sc] = await Promise.all([
     // Shared with the place tabs above the page (lib/badges.ts): one set of queries per render.
     loadBadges(),
     // Your clubs, as shortcuts in the sidebar.
@@ -58,7 +58,10 @@ async function SignedInShell() {
     supabase.from("community_members").select(`communities(id, name${clubProfile ? ", logo_path" : ""}${media ? ", cover_path" : ""})`).eq("uid", user.id).order("joined_at", { ascending: false }).limit(5),
     // Your projects, the same way: the ones you touched last.
     supabase.from("projects").select("id, title").eq("owner_id", user.id).order("updated_at", { ascending: false }).limit(4),
+    // Your school, from your confirmed email's domain (supabase/chapters.sql my_school()), under Clubs.
+    supabase.rpc("my_school"),
   ]);
+  const school = (sc.data as { school?: string } | null)?.school ?? null;
   const myBuilds = ((pr.data ?? []) as { id: string; title: string }[]).map((p) => ({ id: p.id, name: p.title }));
   type ClubRef = { id: string; name: string; logo_path?: string | null; cover_path?: string | null };
   const myClubs = ((cl.data ?? []) as unknown as { communities: ClubRef | ClubRef[] | null }[])
@@ -73,7 +76,7 @@ async function SignedInShell() {
       <LiveRefresh tables={["notifications", "conversations", "connections", "chats"]} delay={800} quietOn={["/feed"]} />
       {/* Online status: who has Brazework open right now. */}
       <PresenceMount userId={user.id} />
-      <Sidebar first={profile.first_name} last={profile.last_name} userId={user.id} badges={badges} avatar={avatarSrc(profile)} initialCollapsed={collapsed} clubs={myClubs} builds={myBuilds} />
+      <Sidebar first={profile.first_name} last={profile.last_name} userId={user.id} badges={badges} avatar={avatarSrc(profile)} initialCollapsed={collapsed} clubs={myClubs} builds={myBuilds} school={school} />
       <CommandPalette />
       <ReportDialog />
       <MobileBar first={profile.first_name} last={profile.last_name} badges={badges} avatar={avatarSrc(profile)} />

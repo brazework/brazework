@@ -9,17 +9,19 @@ import { cn } from "@/lib/forge";
 import { useReducedMotion } from "@/lib/use-reduced-motion";
 import { CadStage, type BuildId, type Mode } from "./cad-stage";
 
-// The hero (redesign 2026-11): the whole product in one screen, to play with. On the left, one line
-// and one box: what did you build? On the right, a real build in CAD (turn it, cut it open, see where
-// it's loaded) with your milestone docked on it. What you type becomes the milestone, and pressing
-// Sign does what the person who saw it would: their seal comes down and it's on your record. The
-// button carries what you typed into sign-up (?build=, lib/front-door.ts). Examples, and it says so.
+// The hero (redesign 2026-11; schools first since 2026-11-26): the whole product in one screen, to
+// play with. On the left, one line and one box: what did you build? On the right, a real build in
+// CAD (turn it, cut it open, see where it's loaded) with your milestone docked on it, as a class or
+// club project. What you type becomes the milestone, and pressing Sign does what the professor or
+// club officer who saw it would: their seal comes down and it's on your record, with the class and
+// the semester. The button carries what you typed into sign-up (?build=, lib/front-door.ts).
+// Examples, and it says so.
 
-type Example = { id: BuildId; chip: string; field: string; name: string; milestone: string; proof: string; signer: string; role: string; callouts: Record<string, string> };
+type Example = { id: BuildId; chip: string; where: string; name: string; milestone: string; proof: string; signer: string; role: string; callouts: Record<string, string> };
 const EXAMPLES: Example[] = [
-  { id: "avionics", chip: "Rocket avionics", field: "Aerospace", name: "Dual-deploy flight computer", milestone: "Level 1 flight: 1,140 m apogee, both charges fired on time", proof: "flight-log-0412.csv", signer: "J. Reyes", role: "certification prefect", callouts: { imu: "IMU + baro · 200 Hz", pyro: "Drogue / main pyro", frame: "Ø98 mm carbon airframe" } },
-  { id: "arm", chip: "Robot arm", field: "Robotics", name: "Benchtop cobot arm", milestone: "Cut the pick-and-place cycle from 9.4 to 7.1 seconds", proof: "cycle-test-500-runs.csv", signer: "Dana R.", role: "test lead, Voltline", callouts: { j2: "J2 · 38 N·m peak", elbow: "Harmonic drive · 100:1", grip: "±0.05 mm · 3 kg" } },
-  { id: "gearbox", chip: "Gearbox", field: "Mechanical", name: "5:1 planetary reduction", milestone: "Ran 2 hours at 40 N·m with no slip, case under 50 °C", proof: "dyno-run-2h.mp4", signer: "Prof. Alvarez", role: "Machine Design", callouts: { ratio: "Carrier · 5:1", tooth: "Module 1.0 · 20° PA", shaft: "40 N·m output" } },
+  { id: "avionics", chip: "Rocket avionics", where: "Club project · Rocketry Club", name: "Dual-deploy flight computer", milestone: "Level 1 flight: 1,140 m apogee, both charges fired on time", proof: "flight-log-0412.csv", signer: "J. Reyes", role: "safety officer, Rocketry Club", callouts: { imu: "IMU + baro · 200 Hz", pyro: "Drogue / main pyro", frame: "Ø98 mm carbon airframe" } },
+  { id: "arm", chip: "Robot arm", where: "Class project · ME 482 Robotics · Fall 2026", name: "Benchtop cobot arm", milestone: "Cut the pick-and-place cycle from 9.4 to 7.1 seconds", proof: "cycle-test-500-runs.csv", signer: "Prof. Dana Ruiz", role: "ME 482, Fall 2026", callouts: { j2: "J2 · 38 N·m peak", elbow: "Harmonic drive · 100:1", grip: "±0.05 mm · 3 kg" } },
+  { id: "gearbox", chip: "Gearbox", where: "Class project · ME 410 Capstone · Fall 2026", name: "5:1 planetary reduction", milestone: "Ran 2 hours at 40 N·m with no slip, case under 50 °C", proof: "dyno-run-2h.mp4", signer: "Prof. Alvarez", role: "ME 410 Capstone, Fall 2026", callouts: { ratio: "Carrier · 5:1", tooth: "Module 1.0 · 20° PA", shaft: "40 N·m output" } },
 ];
 const MODES: { id: Mode; label: string; icon: typeof Box }[] = [
   { id: "render", label: "Render", icon: Box },
@@ -51,9 +53,9 @@ export function Hero() {
       <div aria-hidden="true" className="hero-glow pointer-events-none absolute inset-0 -z-10" />
       <div className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-10 px-5 sm:px-6 lg:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] lg:gap-12">
         <div className="min-w-0">
-          <p className="inline-flex items-center gap-2 rounded-full border border-line bg-surface/60 px-3 py-1 text-xs text-text-2"><span aria-hidden="true" className="size-1.5 rounded-full bg-brand" /> Free for students and anyone who builds</p>
+          <p className="inline-flex items-center gap-2 rounded-full border border-line bg-surface/60 px-3 py-1 text-xs text-text-2"><span aria-hidden="true" className="size-1.5 rounded-full bg-brand" /> Free with your school email</p>
           <h1 id="hero-h" className="mt-5 text-[clamp(2.75rem,6.4vw,4.75rem)] leading-[0.95] font-semibold tracking-[-0.05em]">Prove what<br />you built.</h1>
-          <p className="mt-5 max-w-[30rem] text-lg leading-relaxed text-muted">Log it, get it signed by the person who saw it, and keep it for good. Your club, a professor, a coworker or a client.</p>
+          <p className="mt-5 max-w-[30rem] text-lg leading-relaxed text-muted">Your class and club projects, verified by the professor or club that saw the work. A record that counts for your school, and that you keep when you graduate.</p>
 
           <div className="mt-8 max-w-[30rem]">
             <label htmlFor="hero-build" className="text-sm font-medium text-text-2">What did you build?</label>
@@ -101,7 +103,7 @@ export function Hero() {
 
             {/* Your milestone: what you typed, its proof, and who it's waiting for, until they sign. */}
             <div id="hero-card" aria-live="polite" className="border-t border-line px-4 py-4 sm:px-5">
-              <p className="font-mono text-[11px] text-faint">{ex.field} · {ex.name}</p>
+              <p className="truncate font-mono text-[11px] text-faint">{ex.where} · {ex.name}</p>
               <p className="mt-1.5 line-clamp-2 min-h-[2.75em] text-[15px] leading-snug font-semibold text-pretty break-words">{title}</p>
               <div className="mt-3 flex flex-col items-start gap-2 sm:min-h-9 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
                 <span className="inline-flex min-w-0 items-center gap-1.5 text-xs text-muted"><FileText className="size-3.5 shrink-0" aria-hidden="true" /><span className="truncate">{ex.proof}</span></span>

@@ -6,6 +6,8 @@
 // 3. The reviewer (a Brazework admin, until the school has its account) sees which officers' school
 //    addresses back the ask, and verifies it.
 // 4. The club shows "Verified club of <school>" on its page and on its card in Clubs.
+// 5. A student at the school finds it under Clubs in the sidebar (school-first, 2026-11-26): Your
+//    school lists its verified clubs, and says the school isn't on Brazework yet.
 // Ben's sign-in email is switched to a school address for part of this and always put back.
 const { execSync } = require("child_process");
 const { step, browser, as, go, summary } = require("./lib.cjs");
@@ -74,9 +76,25 @@ const SCHOOL = "University of Hartford";
       await go(ben, "/communities");
       await ben.locator("article, li, div").filter({ hasText: "Rocketry Club" }).getByText(`Verified club of ${SCHOOL}`).first().waitFor({ timeout: 15000 });
     }, ben);
+
+    await step("Your school: the sidebar names it under Clubs, and its page lists the verified club and what's coming", async () => {
+      psql("insert into public.school_domains (domain, school) values ('hartford.edu', 'University of Hartford') on conflict (domain) do nothing");
+      await go(ben, "/feed");
+      const row = ben.getByTestId("sidebar-school");
+      await row.getByText(SCHOOL).waitFor({ timeout: 15000 });
+      await row.click();
+      await ben.waitForURL(/\/school$/, { timeout: 15000 });
+      await ben.getByRole("heading", { level: 1, name: SCHOOL }).waitFor({ timeout: 15000 });
+      await ben.getByRole("link", { name: /Rocketry Club/ }).waitFor();
+      await ben.getByText(`${SCHOOL} isn't on Brazework yet`).waitFor();
+      await ben.getByRole("link", { name: /What schools get/ }).waitFor();
+      await ben.getByText("Verified class projects").waitFor();
+      if (await ben.evaluate(() => document.documentElement.scrollWidth > innerWidth)) throw new Error("the page overflows sideways");
+    }, ben);
   } finally {
     setBen("ben@forge.test");
     psql("delete from public.club_school_links where community_id = 'rkt'");
+    psql("delete from public.school_domains where domain = 'hartford.edu' and school = 'University of Hartford'");
   }
 
   await b.close();

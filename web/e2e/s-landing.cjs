@@ -1,8 +1,9 @@
-// The landing page (redesign 2026-11): short, with the product to play with in the hero. Signed out,
-// on a laptop and a phone: typing a build puts it on the milestone card and carries it into sign-up;
-// the example signs itself, another build waits for its signer, and Sign signs it; the 3D view is one
-// of three; how it works, who it's for and where each starts; the page stays short; with reduced
-// motion, nothing waits on an animation.
+// The landing page (redesign 2026-11; schools first since 2026-11-26): short, with the product to
+// play with in the hero. Signed out, on a laptop and a phone: typing a build puts it on the milestone
+// card and carries it into sign-up; the example signs itself, a class project waits for its professor,
+// and Sign signs it; the 3D view is one of three; how it works; the band for schools and /schools;
+// who it's for and where each starts; the pilot form; the page stays short; with reduced motion,
+// nothing waits on an animation.
 const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
 
 (async () => {
@@ -23,14 +24,14 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
     if (new URL(href, BASE).searchParams.get("build") !== "Thrust stand calibrated to 0.4 percent") throw new Error(`the button doesn't carry the build: ${href}`);
   }, page);
 
-  await step("hero: another build waits for its own signer, and Sign signs it", async () => {
+  await step("hero: a class project waits for its professor, and Sign signs it with the class and semester", async () => {
     const builds = page.getByRole("group", { name: "Example builds" });
     await builds.getByRole("button", { name: "Robot arm" }).click();
     if ((await builds.getByRole("button", { name: "Robot arm" }).getAttribute("aria-pressed")) !== "true") throw new Error("Robot arm isn't marked as the build");
     const card = page.locator("#hero-card");
-    await card.getByText(/Benchtop cobot arm/).waitFor();
-    await card.getByRole("button", { name: "Sign as Dana R." }).click();
-    await card.getByText(/Signed by Dana R\./).waitFor();
+    await card.getByText(/Class project · ME 482 Robotics · Fall 2026/).waitFor();
+    await card.getByRole("button", { name: "Sign as Prof. Dana Ruiz" }).click();
+    await card.getByText(/Signed by Prof\. Dana Ruiz, ME 482, Fall 2026/).waitFor();
   }, page);
 
   await step("hero: the 3D build draws (or says it can't), and its view is one of Render, Section or Stress", async () => {
@@ -55,18 +56,34 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
     await states.nth(2).scrollIntoViewIfNeeded();
     await page.mouse.wheel(0, 300);
     await states.nth(2).waitFor({ state: "visible", timeout: 10000 });
-    if (!/Signed by Dana R\./.test(await states.nth(2).innerText())) throw new Error("the third step isn't the signed one");
+    if (!/Signed by Prof\. Alvarez, ME 410/.test(await states.nth(2).innerText())) throw new Error("the third step isn't the signed one");
     await page.locator('header a[aria-current="location"]').filter({ hasText: "How it works" }).waitFor();
     await go(page, "/");
   }, page);
 
-  await step("who it's for: builders, clubs and companies, each with where to start", async () => {
-    const sec = page.locator("#for");
-    for (const h of ["Builders", "Clubs", "Companies"]) await sec.getByRole("heading", { name: h, exact: true }).waitFor();
-    await sec.getByRole("link", { name: /Bring your club/ }).click();
-    await page.locator("#founding").getByRole("heading", { name: /first clubs/ }).waitFor();
+  await step("for schools: the band names each office's outcome, marks what's still being built, and leads to /schools", async () => {
+    const band = page.locator("#schools");
+    await band.getByRole("heading", { name: /verified and counted/ }).waitFor();
+    for (const h of ["Accreditation evidence", "Club engagement", "Placement data", "A public showcase"]) await band.getByRole("heading", { name: h, exact: true }).waitFor();
+    if ((await band.getByText("With pilot schools").count()) !== 2) throw new Error("the band should mark the two outcomes still being built");
+    await band.getByRole("link", { name: /See what schools get/ }).click();
+    await page.waitForURL(/\/schools$/, { timeout: 15000 });
+    await page.getByRole("heading", { level: 1, name: /portal for your students/ }).waitFor();
+    await page.getByText("$6,000").first().waitFor();
+    await page.getByText(/\$1,500 for the semester/).waitFor();
+    await page.getByText(/Grades and teacher notes are never shown/).waitFor();
+    if (await page.getByText(/first 10 schools|semester free/i).count()) throw new Error("/schools still offers a free pilot");
     await go(page, "/");
-    await page.locator("#for").getByRole("link", { name: /Company pricing/ }).click();
+  }, page);
+
+  await step("who it's for: students, clubs and schools, each with where to start; companies get a line", async () => {
+    const sec = page.locator("#for");
+    for (const h of ["Students", "Clubs", "Schools"]) await sec.getByRole("heading", { name: h, exact: true }).waitFor();
+    await sec.getByRole("link", { name: /Bring your club/ }).click();
+    await page.locator("#pilot").getByRole("heading", { name: /Start a pilot at your school/ }).waitFor();
+    if ((await page.locator("#pilot").getByRole("button", { name: "School or department", pressed: true }).count()) !== 1) throw new Error("the pilot form doesn't start on School");
+    await go(page, "/");
+    await page.locator("#for").getByRole("link", { name: /Find students by signed work/ }).click();
     await page.waitForURL(/\/pricing#pricing-companies$/, { timeout: 15000 });
     await page.getByText("$15,000").first().waitFor();
     await go(page, "/");
