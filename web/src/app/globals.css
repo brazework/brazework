@@ -470,12 +470,9 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity
    tone, --ember-c the accent that swirls through it.  */
 /* Torch is brazed copper in both themes: the one place the brand colour lives inside the app. */
 :root { --ember-a: #ffd9bf; --ember-b: #9a3f1a; --ember-c: #e8946a; --ember-plasma: 0.9; --ember-fresnel: 0.9; }
-/* The assistant's mark (components/ember/ember.tsx): ink with the page's colour cut out of it, so it
-   is black on light pages and white on dark ones, like a primary button. */
-:root { --mark-hi: #4a4c55; --mark: #18191d; --mark-lo: #050506; --mark-on: #ffffff; }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --mark-hi: #ffffff; --mark: #e4e4e8; --mark-lo: #a9aab2; --mark-on: #0b0c0e; } }
-:root[data-theme="dark"] { --mark-hi: #ffffff; --mark: #e4e4e8; --mark-lo: #a9aab2; --mark-on: #0b0c0e; }
-.theme-dark { --mark-hi: #ffffff; --mark: #e4e4e8; --mark-lo: #a9aab2; --mark-on: #0b0c0e; }
+/* The orb itself is black glass with white light (Josh, 2026-11-26: "make the orb black"), the palette it
+   had before as Mono. Set on the orb only, so the copper above stays on the AI chips' edges. */
+.ember { --ember-a: #ffffff; --ember-b: #18181b; --ember-c: #71717a; --ember-plasma: 0.5; --ember-fresnel: 0.55; }
 
 /* Moods are light and motion: idle breathes and drifts, thinking swirls fast and pulses, happy
    brightens and bounces, sleepy dims and slows, surprised flares. */
@@ -489,10 +486,6 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity
 .ember .ember-glow { animation: ember-breathe 3.6s ease-in-out infinite; }
 .ember .ember-glow-out { animation: ember-breathe 3.6s ease-in-out 1.8s infinite; }
 /* The spark at Torch's centre: it breathes; while Torch thinks, it turns. */
-@keyframes ember-twinkle { 50% { transform: scale(0.88) rotate(6deg); opacity: 0.9; } }
-.ember .ember-spark { transform-box: view-box; transform-origin: 32px 32px; animation: ember-twinkle 3.6s ease-in-out infinite; }
-.ember-thinking .ember-spark { animation: ember-spin 2.2s linear infinite; }
-.ember-sleepy .ember-spark { animation-duration: 7s; opacity: 0.8; }
 .ember .ember-band-1 { animation: ember-spin 6s linear infinite; }
 .ember .ember-band-2 { animation: ember-spin 8.5s linear infinite reverse; }
 .ember .ember-core { animation: ember-pulse 3.6s ease-in-out infinite; }
