@@ -67,11 +67,12 @@ export const AUDIENCES: { id: Audience; label: string; line: string }[] = [
 
 // What a school gets that's built today, and what's being built with the pilot schools. Every card
 // marks the second kind, so no school pays for something that isn't there yet.
-// (Faculty lists, class projects and the evidence export shipped with the portal, supabase/school-portal.sql.)
-export const SCHOOL_SOON = ["Deliverable schedules and peer evaluation for project courses", "ABET outcomes ticked at verification, export grouped by outcome", "Placement data: which employers viewed and contacted your students"];
+// (Faculty lists, class projects and the evidence export shipped with the portal, supabase/school-portal.sql;
+// the course core, with modules, assignments, rubric grading and the gradebook, with courses.sql.)
+export const SCHOOL_SOON = ["Quizzes, attendance, extensions and peer evaluation", "Evidence export grouped by ABET outcome", "Placement data: which employers viewed and contacted your students"];
 
 // What the campus license adds that's still being built, marked the same way.
-export const CAMPUS_SOON = ["Student life, career center and admissions views", "Single sign-on", "Blackboard, Canvas or Moodle connection (LTI)"];
+export const CAMPUS_SOON = ["Student life, career center and admissions views", "Single sign-on and roster sync from your student system", "Import Canvas and Blackboard courses; LTI for publisher tools"];
 
 // Each audience has one primary call to action (featured); the other cards' are quieter.
 export const TIERS: Tier[] = [
@@ -82,7 +83,7 @@ export const TIERS: Tier[] = [
   },
   {
     id: "school", audience: "schools", name: "Department", price: usd(SCHOOL.department), note: `Per year, with ${SCHOOL.seatsIncluded} faculty seats. ${usd(SCHOOL.perSeat)} per extra seat.`, featured: true,
-    points: ["Every student and every club in the department included", "Classes by course and semester, with rosters from a CSV", "Faculty from your own list verify class projects", "Evidence export for accreditation: every verified milestone", "Your school's numbers: students, classes, verified work, active clubs", ...SCHOOL_SOON.map((x) => `${x} (building with pilot schools)`)],
+    points: ["Every student and every club in the department included", "Classes by course and semester, with rosters from a CSV", "Courses: modules, assignments, rubric grading, a private gradebook", "Faculty from your own list verify class projects", "Evidence export for accreditation: every verified milestone", "Your school's numbers: students, classes, verified work, active clubs", ...SCHOOL_SOON.map((x) => `${x} (building with pilot schools)`)],
     cta: { label: "Book a call", href: "/book?kind=school" },
   },
   {

@@ -8,6 +8,7 @@ import Link from "next/link";
 import { BuildersThisTerm, termStart } from "./builders";
 import { ClubProjects } from "./club-projects";
 import { ClassBoard } from "./class-board";
+import { CourseStrip } from "./course-strip";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { LiveRefresh } from "@/components/app/live-refresh";
@@ -210,6 +211,7 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
         {me && nextEvent && !officer && <NextUp event={nextEvent} going={goingSet.has(nextEvent.id)} now={now} />}
         {showSetup && <ClubSetup cid={c.id} name={c.name} steps={setupSteps} origin={env.siteUrl} invite={setupInvite} />}
         {/* A class at a glance: every group for faculty, your own project for a student (class-board.tsx). */}
+        {c.type === "class" && me && <Suspense fallback={null}><CourseStrip cid={c.id} staff={rank(role) >= 3} /></Suspense>}
         {c.type === "class" && me && <Suspense fallback={null}><ClassBoard cid={c.id} faculty={officer} /></Suspense>}
         {officer && c.type !== "class" && (
           <section aria-label="To do" className="mt-5">

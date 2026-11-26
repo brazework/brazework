@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { AtSign, BadgeCheck, Bell, Building2, Heart, MessageSquare, UserPlus, Users } from "lucide-react";
+import { AtSign, BadgeCheck, Bell, Building2, ClipboardList, GraduationCap, Heart, Megaphone, MessageSquare, UserPlus, Users } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
@@ -13,7 +13,7 @@ export const metadata: Metadata = { title: "Notifications" };
 
 type N = {
   id: number; actor_id: string | null; actor_first: string; actor_last: string;
-  kind: "like" | "comment" | "follow" | "connect_request" | "connect_accepted" | "community_request" | "community_approved" | "milestone_request" | "milestone_verified" | "milestone_declined" | "mention" | "company_view" | "proof_shared";
+  kind: "like" | "comment" | "follow" | "connect_request" | "connect_accepted" | "community_request" | "community_approved" | "milestone_request" | "milestone_verified" | "milestone_declined" | "mention" | "company_view" | "proof_shared" | "class_announcement" | "assignment_posted" | "grade_released";
   post_id: string | null; community_id: string | null; milestone_id?: string | null; community_name: string; snippet: string; read: boolean; created_at: string;
 };
 
@@ -65,6 +65,10 @@ function describe(items: N[]) {
     case "company_view": return { icon: Building2, href: "/dashboard", text: <><strong className="font-medium text-text">{n.community_name}</strong> looked at your profile</>, cta: "See who looked" };
     // Someone shared a result you signed as a public card (witness-invites.sql, FIX-129).
     case "proof_shared": return { icon: BadgeCheck, href: n.milestone_id ? `/p/${n.milestone_id}` : "/notifications", text: <>{who} shared a result you signed</>, quote: n.snippet, cta: "See the card" };
+    // Brazework Courses (courses.sql): an announcement, a new assignment, a released grade.
+    case "class_announcement": return { icon: Megaphone, href: `/c/${n.community_id}/course?tab=announcements`, text: <>{who} posted an announcement in <strong className="font-medium text-text">{n.community_name}</strong></>, quote: n.snippet, cta: "Read it" };
+    case "assignment_posted": return { icon: ClipboardList, href: `/c/${n.community_id}/course?tab=assignments`, text: <>New assignment in <strong className="font-medium text-text">{n.community_name}</strong></>, quote: n.snippet, cta: "Open it" };
+    case "grade_released": return { icon: GraduationCap, href: `/c/${n.community_id}/course?tab=grades`, text: <>Your grade is out in <strong className="font-medium text-text">{n.community_name}</strong></>, quote: n.snippet, cta: "See it" };
   }
 }
 
