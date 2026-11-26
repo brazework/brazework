@@ -10,15 +10,15 @@ const mono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"] });
 
 export const metadata: Metadata = {
   metadataBase: new URL(env.siteUrl),
-  title: { default: "Brazework: build it, prove it, get found", template: "%s · Brazework" },
+  title: { default: "Brazework: build it, prove it, own it", template: "%s · Brazework" },
   description:
-    "Brazework is the record of your work, signed by the people who saw it. Log what you build, get it signed by a club officer, a coworker or a mentor, and let companies find you by the proof.",
+    "Brazework is a record of the work you've really done, each piece signed by the person who saw it: your professor, your club or your coworker. Free for students and professionals; schools run their project courses on it.",
   applicationName: "Brazework",
   // Installed from Safari's Share menu: full screen; the status bar takes the theme-color (ThemeChrome).
   appleWebApp: { capable: true, title: "Brazework", statusBarStyle: "default" },
   openGraph: {
-    title: "Brazework: build it, prove it, get found",
-    description: "The record of your work, signed by the people who saw it: a club officer, a coworker, a mentor. Companies find you by the proof, not the résumé.",
+    title: "Brazework: build it, prove it, own it",
+    description: "A record of the work you've really done, each piece signed by the person who saw it: your professor, your club or your coworker. Free for students and professionals; schools run their project courses on it.",
     type: "website",
   },
 };
