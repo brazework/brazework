@@ -62,7 +62,7 @@ export function Audiences() {
         <h2 id="for-h" className={H2}>Who it&apos;s for</h2>
         <ul className="reveal mt-8 grid grid-cols-1 gap-4 md:mt-10 md:grid-cols-3">
           {FOR.map((f) => (
-            <li key={f.who} className="flex flex-col rounded-2xl border border-line bg-surface p-5 transition duration-300 hover:-translate-y-0.5 hover:shadow-[var(--shadow-float)] md:p-6">
+            <li key={f.who} className="flex flex-col rounded-2xl border border-line bg-surface p-5 transition duration-300 hover:border-line-strong hover:bg-hover md:p-6">
               <span className="flex items-center gap-3 md:block">
                 <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-surface-2 text-text-2"><f.icon className="size-5" aria-hidden="true" /></span>
                 <h3 className="text-xl font-semibold tracking-tight md:mt-5">{f.who}</h3>

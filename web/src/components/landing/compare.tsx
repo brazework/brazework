@@ -52,7 +52,7 @@ export function Compare() {
             );
           })}
         </div>
-        <p className="mt-5 max-w-[46rem] text-sm leading-relaxed text-muted">Move course by course. Coming with pilot schools: peer evaluation, importing a course from Canvas or Blackboard, your school&apos;s single sign-on, and publisher tools through LTI. Every verified project already has a link anyone on LinkedIn or Handshake can open to see who verified it.</p>
+        <p className="mt-5 max-w-[46rem] text-sm leading-relaxed text-muted">Move course by course. Coming with pilot schools: importing a course from Canvas or Blackboard, your school&apos;s single sign-on, and publisher tools through LTI. Every verified project already has a link anyone on LinkedIn or Handshake can open to see who verified it.</p>
       </div>
     </section>
   );

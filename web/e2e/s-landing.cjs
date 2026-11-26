@@ -131,9 +131,9 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
     for (const h of ["LinkedIn, Handshake", "Blackboard, Canvas", "Brazework"]) await sec.getByRole("heading", { name: h, exact: true }).waitFor();
     await sec.getByText("The professor, club or sponsor who saw it").waitFor();
     await sec.getByText("Upload a file, get a grade").waitFor();
-    // What isn't built yet says so, in one line: peer evaluation, imports, sign-on, LTI.
+    // What isn't built yet says so, in one line: imports, sign-on, LTI (peer evaluation shipped in #260).
     if (await sec.getByText("with pilot schools", { exact: true }).count()) throw new Error("the strip still marks shipped Courses features as coming");
-    await sec.getByText(/Coming with pilot schools: peer evaluation, importing a course/).waitFor();
+    await sec.getByText(/Coming with pilot schools: importing a course/).waitFor();
   }, page);
 
   await step("for schools: the band names each office's outcome, marks what's still being built, and leads to /schools", async () => {
