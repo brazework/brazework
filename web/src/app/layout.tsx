@@ -43,7 +43,8 @@ export default function RootLayout({ children }: Readonly<{ children: React.Reac
       </head>
       <body className="min-h-dvh antialiased">
         {children}
-        <Analytics />
+        {/* /_vercel/insights only exists on Vercel; off it (CI, next start) the script 404s and trips the CSP check. */}
+        {process.env.VERCEL_ENV && <Analytics />}
       </body>
     </html>
   );
