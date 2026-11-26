@@ -7,7 +7,7 @@ import { TOOLS, toolsInText } from "@/lib/stack";
 import { takeEmberCredits } from "@/lib/ember-quota";
 import { getViewer } from "@/lib/supabase/server";
 
-// "Organize with Ember": Ember reads a project (title, summary, write-up) and suggests its "Built with"
+// "Organize with Jig": Jig reads a project (title, summary, write-up) and suggests its "Built with"
 // stack from the catalog plus up to 3 topics. Nothing changes until the owner applies the suggestion.
 type Suggestion = { ok: boolean; message: string; tools?: string[]; topics?: string[] };
 const ID_RE = /^[A-Za-z0-9-]{1,64}$/;
@@ -16,7 +16,7 @@ export async function organizeProject(projectId: string): Promise<Suggestion> {
   if (!ID_RE.test(projectId)) return { ok: false, message: "That project wasn't found." };
   const { supabase, user } = await getViewer();
   if (!user) return { ok: false, message: "Log in again." };
-  if (!(await copilotEnabled())) return { ok: false, message: "Ember isn't switched on yet." };
+  if (!(await copilotEnabled())) return { ok: false, message: "Jig isn't switched on yet." };
   const [{ data: p }, { data: d }] = await Promise.all([
     supabase.from("projects").select("title, summary, tags, tools").eq("id", projectId).eq("owner_id", user.id).maybeSingle(),
     supabase.from("project_details").select("details, link").eq("project_id", projectId).maybeSingle(),
@@ -40,7 +40,7 @@ export async function organizeProject(projectId: string): Promise<Suggestion> {
     const topics = (Array.isArray(json.topics) ? json.topics : []).map(String).filter((t) => ALL_TOPICS.includes(t)).slice(0, 3);
     return { ok: true, message: "", tools: tools.length ? tools : toolsInText(text), topics };
   } catch {
-    return { ok: true, message: "Ember couldn't read it closely, so these come from the tools your text names.", tools: toolsInText(text), topics: [] };
+    return { ok: true, message: "Jig couldn't read it closely, so these come from the tools your text names.", tools: toolsInText(text), topics: [] };
   }
 }
 

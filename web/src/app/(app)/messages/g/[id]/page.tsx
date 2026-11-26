@@ -108,7 +108,7 @@ async function Group({ params }: { params: PageProps<"/messages/g/[id]">["params
       <GroupComposer chatId={id} canAnnounce={canAnnounce} ember={emberOn} placeholder={c.kind === "event" ? "Ask about the event, share logistics" : `Message ${title}`} />
       </div>
       <aside aria-label="Chat details" className="hidden w-80 shrink-0 flex-col gap-6 overflow-y-auto border-l border-line p-5 xl:flex">
-        {emberOn && <section><h3 className="mb-2 text-xs font-medium tracking-wide text-faint uppercase">Ember</h3><CatchMeUp chatId={id} /></section>}
+        {emberOn && <section><h3 className="mb-2 text-xs font-medium tracking-wide text-faint uppercase">Jig</h3><CatchMeUp chatId={id} /></section>}
         <MemberList people={people} />
         <section>
           <h3 className="text-xs font-medium tracking-wide text-faint uppercase">{c.kind === "event" ? "The event" : "Coming up"}</h3>

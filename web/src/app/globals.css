@@ -2,7 +2,7 @@
 
 /* Brazework design tokens (redesign 2026-11): one theme, light and dark. Use these, never fixed colours.
    Light is paper and ink; dark is graphite. Primary actions are ink (--accent). The one brand colour,
-   brazed copper (--brand), is for Ember and the landing page only: in the app, colour means proof
+   brazed copper (--brand), is for Jig and the landing page only: in the app, colour means proof
    (--ok signed, --info GitHub, dashed --wait waiting, --pro gold). Every text colour stays at 4.5:1
    or better on --bg, --surface and --raised (the accessibility scan checks).
    Theme = the visitor's system setting, unless they pick one (html[data-theme], set before paint in layout.tsx). */
@@ -261,8 +261,9 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity
 @utility app-backdrop {
   background-color: var(--bg);
   background-image:
-    radial-gradient(900px 520px at -8% -12%, color-mix(in oklab, var(--brand) 11%, transparent), transparent 70%),
-    radial-gradient(760px 520px at 108% 112%, color-mix(in oklab, #5b7cfa 9%, transparent), transparent 70%);
+    radial-gradient(1000px 620px at -6% -10%, color-mix(in oklab, var(--brand) 30%, transparent), transparent 68%),
+    radial-gradient(760px 560px at 64% 34%, color-mix(in oklab, #9b7cf0 13%, transparent), transparent 70%),
+    radial-gradient(900px 620px at 106% 108%, color-mix(in oklab, #5b7cfa 26%, transparent), transparent 68%);
   background-attachment: fixed;
 }
 
@@ -353,7 +354,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity
     conic-gradient(from var(--ai-angle), var(--brand), color-mix(in oklab, var(--brand) 10%, transparent) 25%, var(--border-strong) 50%, color-mix(in oklab, var(--brand) 10%, transparent) 75%, var(--brand)) border-box;
   animation: ai-sweep 8s linear infinite;
 }
-/* An AI action chip (Polish with Ember): the same Ember gradient as .ai-border, as a still hairline. */
+/* An AI action chip (Polish with Jig): the same Jig gradient as .ai-border, as a still hairline. */
 .ai-chip {
   border: 1px solid transparent;
   background:
@@ -383,18 +384,21 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity
   margin-inline: auto;
   max-width: 42rem;
 }
-/* Phones show the row too: the Ask Ember bar is on every page (components/ember/ask-bar.tsx). */
+/* Phones show the row too: the Ask Jig bar is on every page (components/ember/ask-bar.tsx). */
 @media (width >= 80rem) { .feed-frame, main:has(.feed-frame) .search-row, main:has(.feed-frame) .place-row { max-width: 72rem; grid-template-columns: minmax(0, 1fr) 300px; } }
 @media (width >= 96rem) { .feed-frame, main:has(.feed-frame) .search-row, main:has(.feed-frame) .place-row { max-width: 80rem; grid-template-columns: minmax(0, 1fr) 340px; } }
 @media (width >= 112.5rem) { .feed-frame, main:has(.feed-frame) .search-row, main:has(.feed-frame) .place-row { max-width: 1520px; grid-template-columns: minmax(0, 1fr) 380px; } }
 @media (width >= 137.5rem) { .feed-frame, main:has(.feed-frame) .search-row, main:has(.feed-frame) .place-row { max-width: 1840px; grid-template-columns: minmax(0, 1fr) 740px; } }
 
 /* Cards in the same glass as the sidebar: translucent, a bright top edge, a slightly firmer edge on hover. */
+/* (2026-11-26) Real glass: the app's soft lights show through, a bright top edge catches them, and a
+   long soft shadow lifts the card. No backdrop blur here: the ground behind is a smooth gradient, so
+   blur would change nothing you can see and would cost a repaint on every scroll frame. */
 @utility glass-card {
-  background: color-mix(in oklab, var(--surface) 92%, transparent);
-  border: 1px solid var(--border);
-  box-shadow: inset 0 1px 0 var(--glass-hi), var(--shadow);
-  transition: border-color 0.15s ease;
+  background: linear-gradient(180deg, color-mix(in oklab, var(--surface) 76%, transparent), color-mix(in oklab, var(--surface) 58%, transparent));
+  border: 1px solid color-mix(in oklab, var(--border) 80%, transparent);
+  box-shadow: inset 0 1px 0 var(--glass-hi), 0 1px 2px rgb(0 0 0 / 0.04), 0 14px 34px -22px rgb(0 0 0 / 0.22);
+  transition: border-color 0.15s ease, box-shadow 0.2s ease;
   &:hover, &:focus-within { border-color: var(--border-strong); }
 }
 /* The default banner on a profile and a club (2026-11-26): a dark drafting sheet in both themes, lit in
@@ -430,9 +434,21 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity
   background: var(--surface);
   border: 1px solid var(--border);
 }
-.nav-tile-on {
-  color: var(--text);
+/* (2026-11-26) Icons with depth: each sits on a small glass tile, drawn in two tones (the stroke,
+   and a faint fill of the same colour). The current page's tile is filled ink and lifts. */
+.nav-icon {
+  background: linear-gradient(180deg, color-mix(in oklab, var(--surface) 95%, transparent), color-mix(in oklab, var(--surface) 55%, transparent));
+  border: 1px solid color-mix(in oklab, var(--border) 85%, transparent);
+  box-shadow: inset 0 1px 0 var(--glass-hi), 0 1px 2px rgb(0 0 0 / 0.06);
 }
+.icon-duo { fill: color-mix(in oklab, currentColor 16%, transparent); }
+.nav-tile-on {
+  color: var(--on-accent);
+  background: var(--accent-grad, var(--text));
+  border: 1px solid transparent;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.22), 0 6px 14px -6px color-mix(in oklab, var(--text) 55%, transparent);
+}
+.nav-tile-on .icon-duo { fill: color-mix(in oklab, currentColor 26%, transparent); }
 /* The selected sidebar tab: a soft tint in the theme's colour (no edge bar). */
 /* The current page's row: a faint wash (its glowing icon tile carries the emphasis). */
 .nav-pill {
@@ -440,11 +456,17 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity
   box-shadow: inset 0 1px 0 var(--glass-hi), 0 0 0 1px color-mix(in oklab, var(--border) 80%, transparent);
 }
 
-/* ---------- Ember, Brazework's AI (components/ember/ember.tsx) ----------
+/* ---------- Jig, Brazework's AI (components/ember/ember.tsx) ----------
    A glowing glass orb with light swirling inside. --ember-a is its bright tone, --ember-b its deep
    tone, --ember-c the accent that swirls through it.  */
-/* Ember is brazed copper in both themes: the one place the brand colour lives inside the app. */
+/* Jig is brazed copper in both themes: the one place the brand colour lives inside the app. */
 :root { --ember-a: #ffd9bf; --ember-b: #9a3f1a; --ember-c: #e8946a; --ember-plasma: 0.9; --ember-fresnel: 0.9; }
+/* The assistant's mark (components/ember/ember.tsx): ink with the page's colour cut out of it, so it
+   is black on light pages and white on dark ones, like a primary button. */
+:root { --mark: #0f1012; --mark-on: #ffffff; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --mark: #ededef; --mark-on: #0b0c0e; } }
+:root[data-theme="dark"] { --mark: #ededef; --mark-on: #0b0c0e; }
+.theme-dark { --mark: #ededef; --mark-on: #0b0c0e; }
 
 /* Moods are light and motion: idle breathes and drifts, thinking swirls fast and pulses, happy
    brightens and bounces, sleepy dims and slows, surprised flares. */
@@ -457,6 +479,11 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity
 .ember .ember-glow, .ember .ember-glow-out, .ember .ember-core, .ember .ember-body, .ember [class^="ember-swirl"], .ember [class^="ember-band"] { transform-box: view-box; transform-origin: 32px 32px; }
 .ember .ember-glow { animation: ember-breathe 3.6s ease-in-out infinite; }
 .ember .ember-glow-out { animation: ember-breathe 3.6s ease-in-out 1.8s infinite; }
+/* The spark at Jig's centre: it breathes; while Jig thinks, it turns. */
+@keyframes ember-twinkle { 50% { transform: scale(0.88) rotate(6deg); opacity: 0.9; } }
+.ember .ember-spark { transform-box: view-box; transform-origin: 32px 32px; animation: ember-twinkle 3.6s ease-in-out infinite; }
+.ember-thinking .ember-spark { animation: ember-spin 2.2s linear infinite; }
+.ember-sleepy .ember-spark { animation-duration: 7s; opacity: 0.8; }
 .ember .ember-band-1 { animation: ember-spin 6s linear infinite; }
 .ember .ember-band-2 { animation: ember-spin 8.5s linear infinite reverse; }
 .ember .ember-core { animation: ember-pulse 3.6s ease-in-out infinite; }
@@ -559,7 +586,7 @@ select option { background-color: var(--surface); color: var(--text); }
 .seal-stamp { animation: seal-stamp 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both; transform-origin: center; }
 @media (prefers-reduced-motion: reduce) { .seal-stamp { animation: none; } }
 
-/* Ember's reply as it streams (components/copilot/reply.tsx): a caret at the end of the words, and
+/* Jig's reply as it streams (components/copilot/reply.tsx): a caret at the end of the words, and
    the three waiting dots. Opacity only, so nothing around them moves. */
 .ember-caret {
   display: inline-block;

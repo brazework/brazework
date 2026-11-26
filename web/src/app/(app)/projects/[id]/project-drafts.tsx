@@ -3,7 +3,7 @@ import { ProposalCard } from "@/components/copilot/proposal-card";
 import { draftToProposal, isCardKind } from "@/lib/tool-actions";
 import type { ToolDraft } from "@/lib/tool-drafts";
 
-// What Ember or your AI tools drafted for this project, waiting for you, right in its timeline (the
+// What Jig or your AI tools drafted for this project, waiting for you, right in its timeline (the
 // same cards as /drafts: supabase/tool-actions.sql). Nothing is posted or sent until you press the
 // card's button. Only the member who owns a draft can read it (row-level security).
 export function ProjectDrafts({ drafts, projectTitle, clubName }: { drafts: ToolDraft[]; projectTitle: string; clubName: Map<string, string> }) {

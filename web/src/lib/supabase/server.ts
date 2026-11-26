@@ -49,7 +49,7 @@ async function viewer() {
 }
 
 // The same viewer from an access token instead of cookies: the iPhone app signs in with Supabase
-// itself and sends "Authorization: Bearer <access token>" (only /api/copilot reads it, so Ember works
+// itself and sends "Authorization: Bearer <access token>" (only /api/copilot reads it, so Jig works
 // there too). getClaims(token) verifies the token; row-level security then runs as that member, as
 // with cookies. Returns null for a token that isn't valid.
 export async function viewerFromToken(token: string) {

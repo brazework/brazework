@@ -47,7 +47,7 @@ export const PLACES: Place[] = [
   { id: "inbox", label: "Chats", href: "/messages", badge: "messages", match: ["/messages"], tabs: [] },
 ];
 
-// Which place lights up for this path (null for pages outside the five, like Ember's own page).
+// Which place lights up for this path (null for pages outside the five, like Jig's own page).
 export function placeFor(path: string): Place | null {
   return PLACES.find((p) => p.match.some((m) => onPage(path, m))) ?? null;
 }

@@ -8,7 +8,7 @@ import { useRouter } from "next/navigation";
 import { deleteGroupChat, leaveGroupChat } from "@/lib/chats";
 import { catchMeUp } from "@/lib/chat-ember";
 
-// "Catch me up": Ember reads the recent chat and tells only you what you missed.
+// "Catch me up": Jig reads the recent chat and tells only you what you missed.
 export function CatchMeUp({ chatId }: { chatId: string }) {
   const [text, setText] = useState("");
   const [error, setError] = useState("");
@@ -20,7 +20,7 @@ export function CatchMeUp({ chatId }: { chatId: string }) {
       </button>
       {error && <p role="alert" className="mt-2 text-xs text-danger">{error}</p>}
       {text && <p className="mt-3 rounded-2xl bg-surface-2/70 p-3 text-sm leading-relaxed whitespace-pre-wrap text-text-2">{text}</p>}
-      <p className="mt-2 text-[11px] text-faint">Only you see this. Type <b className="font-medium text-text-2">@Ember</b> in the chat to ask in front of everyone.</p>
+      <p className="mt-2 text-[11px] text-faint">Only you see this. Type <b className="font-medium text-text-2">@Jig</b> in the chat to ask in front of everyone.</p>
     </div>
   );
 }

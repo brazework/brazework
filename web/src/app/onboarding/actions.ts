@@ -58,7 +58,7 @@ export async function finishSignup(_: FinishState, form: FormData): Promise<Fini
     return { message };
   }
   // Where they're headed, if they said (optional; private until they choose otherwise). A goal that
-  // can't be saved never stops sign-up: Ember offers to set one later.
+  // can't be saved never stops sign-up: Jig offers to set one later.
   const goal = signupGoalFrom(form.get("goalKind"), form.get("goalTarget"), accountType);
   if (goal && (await dbFeatures()).goals) await supabase.rpc("set_goal", { p_kind: goal.kind, p_target: goal.target, p_visible: false });
   redirect("/onboarding");

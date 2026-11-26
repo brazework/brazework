@@ -1,4 +1,4 @@
-// Ember asks a person to sign (Linear FIX-216), tested on the real tool code with a database that
+// Jig asks a person to sign (Linear FIX-216), tested on the real tool code with a database that
 // refuses every write:
 //  - a new milestone needs a real https proof link, never an invented one;
 //  - the signer's email is only ever what the member gave: a made-up or malformed one is dropped,
@@ -76,7 +76,7 @@ test("the signer's email is the member's or nothing; the relationship is one the
 
 test("a milestone already waiting can be asked about, with its own words", async () => {
   const waiting = { id: "m1", project_id: "p1", title: "Thrust stand reads within 2%", detail: "Against reference weights", evidence: "https://github.com/acme/rig/pull/9", achieved_on: "2026-11-02", status: "draft" };
-  // Whatever else Ember passes about the milestone is ignored: the card shows what is on the record.
+  // Whatever else Jig passes about the milestone is ignored: the card shows what is on the record.
   const { cards, writes } = await run({ milestone_id: "m1", title: "Something else", evidence: "https://evil.example/x", email: "dr.ruiz@stateu.edu", relationship: "professor" }, waiting);
   assert.deepEqual(writes, []);
   assert.equal(cards.length, 1);
@@ -99,7 +99,7 @@ test("a milestone that isn't theirs, or isn't waiting, can't be asked about", as
   assert.match((await run({ milestone_id: "not an id!" })).result.error ?? "", /open_milestones/);
 });
 
-test("with no project, Ember is told to make one first", async () => {
+test("with no project, Jig is told to make one first", async () => {
   const r = await run({ title: NEW.title, evidence: NEW.evidence });
   assert.match(r.result.error ?? "", /propose_project first/);
   assert.equal(r.cards.length, 0);

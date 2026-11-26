@@ -2,7 +2,7 @@ import { Beaker, CircuitBoard, Code2, Cog, LineChart, Wrench } from "lucide-reac
 
 // The "Built with" catalog: tools across every STEM major, grouped the way builders think about them,
 // each with one line on what it's for. Projects can also name tools outside the catalog (they show
-// under "Other"). Used by the project editor, project pages, Explore, Ember and GitHub import.
+// under "Other"). Used by the project editor, project pages, Explore, Jig and GitHub import.
 
 export const STACK_CATEGORIES = [
   { id: "software", label: "Software", icon: Code2 },
@@ -106,7 +106,7 @@ export function toolsFromGitHub(words: string[]) {
   return out;
 }
 
-// Tools named in free text (for Ember's "Organize" pass and quick suggestions).
+// Tools named in free text (for Jig's "Organize" pass and quick suggestions).
 export function toolsInText(text: string) {
   const lower = ` ${text.toLowerCase()} `;
   return TOOLS.filter((t) => new RegExp(`[^a-z0-9]${t.name.toLowerCase().replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}[^a-z0-9]`).test(lower)).map((t) => t.name).slice(0, 12);

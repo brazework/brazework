@@ -100,7 +100,7 @@ const post = (body) => `jsonb_build_object('body', '${body}', 'kind', 'update', 
     await line.waitFor({ timeout: 10000 });
     await line.click();
     await page.waitForURL(/\/drafts$/, { timeout: 15000 });
-    // Ember's card for it, with the title in its editable field.
+    // Jig's card for it, with the title in its editable field.
     await page.getByText("Add a project", { exact: true }).first().waitFor({ timeout: 15000 });
     const shown = await page.getByRole("textbox").first().inputValue();
     if (shown !== title) throw new Error(`Drafts shows "${shown}"`);

@@ -222,7 +222,7 @@ export function PasswordForm() {
   );
 }
 
-// What Ember can and can't see, and deleting your chats with it (supabase/copilot-chats.sql).
+// What Jig can and can't see, and deleting your chats with it (supabase/copilot-chats.sql).
 export function EmberSettings({ saving, chats, memories }: { saving: boolean; chats: number; memories?: Memory[] }) {
   const [left, setLeft] = useState(chats);
   const [msg, setMsg] = useState("");
@@ -230,8 +230,8 @@ export function EmberSettings({ saving, chats, memories }: { saving: boolean; ch
   return (
     <div className="space-y-4 text-sm leading-relaxed text-text-2">
       <ul className="space-y-2">
-        <li><strong className="font-medium text-text">What Ember reads:</strong> your profile, clubs and projects, and what any member can see on Brazework (clubs, events, people, posts), plus public GitHub when you ask about a repo.</li>
-        <li><strong className="font-medium text-text">What it never reads:</strong> your direct messages. In a group chat it reads recent messages only when someone there asks @Ember or taps Catch me up.</li>
+        <li><strong className="font-medium text-text">What Jig reads:</strong> your profile, clubs and projects, and what any member can see on Brazework (clubs, events, people, posts), plus public GitHub when you ask about a repo.</li>
+        <li><strong className="font-medium text-text">What it never reads:</strong> your direct messages. In a group chat it reads recent messages only when someone there asks @Jig or taps Catch me up.</li>
         <li><strong className="font-medium text-text">What it does on its own:</strong> nothing. It prepares cards; posting, joining, RSVPing or messaging happens only when you confirm.</li>
         <li><strong className="font-medium text-text">Your chats:</strong> {saving ? "private to you, and deleted 180 days after you last use them. A thumbs up or down sends only that question and answer to the Brazework team." : "not kept after you leave the page."}</li>
       </ul>
@@ -239,8 +239,8 @@ export function EmberSettings({ saving, chats, memories }: { saving: boolean; ch
       {saving && (
         <div className="flex flex-wrap items-center gap-3 border-t border-line pt-4">
           <span className="text-muted">{left ? `${left} saved ${left === 1 ? "chat" : "chats"}` : "No saved chats"}</span>
-          <button type="button" disabled={!left || pending} onClick={() => { if (!confirm("Delete all your Ember chats? This can't be undone.")) return; start(async () => { const r = await deleteAllChats(); setMsg(r.ok ? "All your Ember chats are deleted." : r.message); if (r.ok) setLeft(0); }); }} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-line px-4 font-medium text-text transition hover:border-danger hover:text-danger disabled:opacity-40">
-            {pending && <Loader2 className="size-4 animate-spin" />} Delete all Ember chats
+          <button type="button" disabled={!left || pending} onClick={() => { if (!confirm("Delete all your Jig chats? This can't be undone.")) return; start(async () => { const r = await deleteAllChats(); setMsg(r.ok ? "All your Jig chats are deleted." : r.message); if (r.ok) setLeft(0); }); }} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-line px-4 font-medium text-text transition hover:border-danger hover:text-danger disabled:opacity-40">
+            {pending && <Loader2 className="size-4 animate-spin" />} Delete all Jig chats
           </button>
           {msg && <p role="status" className="w-full text-xs text-muted">{msg}</p>}
         </div>
@@ -338,15 +338,15 @@ export function EmailSettings({ weekly, alerts, dailyDrafts }: { weekly: boolean
   );
 }
 
-// What Ember remembers (supabase/ember-memory.sql): every item, in the member's words, each with Forget.
+// What Jig remembers (supabase/ember-memory.sql): every item, in the member's words, each with Forget.
 function EmberMemories({ initial }: { initial: Memory[] }) {
   const [items, setItems] = useState(initial);
   const [msg, setMsg] = useState("");
   const [pending, start] = useTransition();
   return (
     <div className="border-t border-line pt-4">
-      <p className="font-medium text-text">What Ember remembers</p>
-      <p className="mt-0.5 text-xs text-muted">Only what you said yes to on a card. Only you can see it, and Ember uses it in your next chats.</p>
+      <p className="font-medium text-text">What Jig remembers</p>
+      <p className="mt-0.5 text-xs text-muted">Only what you said yes to on a card. Only you can see it, and Jig uses it in your next chats.</p>
       {items.length ? (
         <ul className="mt-3 divide-y divide-line rounded-xl border border-line">
           {items.map((m) => (
@@ -358,7 +358,7 @@ function EmberMemories({ initial }: { initial: Memory[] }) {
           ))}
         </ul>
       ) : (
-        <p className="mt-3 rounded-xl border border-dashed border-line px-3 py-2.5 text-xs text-muted">Nothing yet. When you tell Ember something worth keeping, it offers to remember it.</p>
+        <p className="mt-3 rounded-xl border border-dashed border-line px-3 py-2.5 text-xs text-muted">Nothing yet. When you tell Jig something worth keeping, it offers to remember it.</p>
       )}
       {msg && <p role="status" className="mt-2 text-xs text-muted">{msg}</p>}
     </div>

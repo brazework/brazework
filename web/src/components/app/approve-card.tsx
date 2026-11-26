@@ -4,7 +4,7 @@ import { ArrowRight, Check, ExternalLink, Loader2, PencilLine, X } from "lucide-
 import Link from "next/link";
 import { cn } from "@/lib/forge";
 
-// Something Ember or a member's tool drafted, waiting for their OK, right in the page
+// Something Jig or a member's tool drafted, waiting for their OK, right in the page
 // (docs/design/app.md). Short until Edit: a title, a line or two, an evidence link. The confirm button
 // says what happens ("Log and send to club"); then Edit and Not now. Presentational: the caller runs
 // the action and passes `state`. Show "done" at once when they press it (optimistic) and set it back

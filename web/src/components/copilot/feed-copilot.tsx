@@ -8,7 +8,7 @@ import { EmberReply, Thinking } from "@/components/copilot/reply";
 import type { Proposal, Segment } from "@/lib/copilot-agent";
 import { clubUpdateAsk, clubUpdatePreset, type Preset } from "@/lib/copilot-presets";
 
-// Pieces of "Ask Ember" in the feed's create box (feed/composer.tsx): example prompts typed into
+// Pieces of "Ask Jig" in the feed's create box (feed/composer.tsx): example prompts typed into
 // the placeholder, the one-tap actions, and the answer area with lookups and confirm cards.
 
 export type EmberAction = { icon: typeof Compass; label: string; ask?: string; prefill?: string; preset?: Preset; href: string };
@@ -56,7 +56,7 @@ export function EmberAnswer({ a, busy, error, remaining, onClear }: { a: EmberAn
             </div>
             {error && <p role="alert" className="mt-2 text-sm text-danger">{error}</p>}
             <div className="mt-3 flex items-center gap-3 text-xs">
-              <Link href="/copilot" className="inline-flex items-center gap-1 font-medium text-text hover:underline">Continue with Ember <ArrowRight className="size-3.5" /></Link>
+              <Link href="/copilot" className="inline-flex items-center gap-1 font-medium text-text hover:underline">Continue with Jig <ArrowRight className="size-3.5" /></Link>
               <button type="button" onClick={onClear} className="inline-flex items-center gap-1 text-muted hover:text-text"><RotateCcw className="size-3.5" /> Clear</button>
               {remaining !== null && <span className="ml-auto text-faint">{remaining} credits left today</span>}
             </div>

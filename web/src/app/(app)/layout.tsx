@@ -27,8 +27,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <SignedInShell />
       </Suspense>
       <main className="min-w-0 flex-1 px-5 pt-[calc(var(--m-top)+0.25rem)] pb-[calc(var(--m-bottom)+1.5rem)] sm:px-6 md:py-6 lg:px-8 2xl:px-12">
-        {/* The Ask Ember bar, above every page, phones too (components/ember/ask-bar.tsx): search people and
-            clubs, ask Ember, or tell it what you did; its cards open right under it. On the feed it lines up
+        {/* The Ask Jig bar, above every page, phones too (components/ember/ask-bar.tsx): search people and
+            clubs, ask Jig, or tell it what you did; its cards open right under it. On the feed it lines up
             with the posts column (globals.css). The placeholder is the bar's own size, so nothing jumps. */}
         <div className="search-row mx-auto mb-5 max-w-3xl md:mb-6 xl:max-w-4xl"><Suspense fallback={<div className="h-10 rounded-lg border border-line bg-surface" aria-hidden="true" />}><AskBar /></Suspense></div>
         {/* The pages inside the place you're in (lib/places.ts), on phones too. Lines up with the search row. */}

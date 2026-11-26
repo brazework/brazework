@@ -56,7 +56,7 @@ export default function ProjectPage({ params, searchParams }: PageProps<"/projec
 type Project = { tools?: string[]; id: string; title: string; summary: string; status: "in_progress" | "completed"; year: number | null; tags: string[]; private: boolean; updated_at: string; created_at: string; owner_id: string; community_id?: string | null; club?: { id: string; name: string } | null; profiles: { first_name: string; last_name: string; headline: string; field: string } | null };
 
 // A project's home: what it is, the write-up, what its club has verified, its updates over time,
-// and who built it. The owner posts updates here; anyone can send it on or ask Ember about it.
+// and who built it. The owner posts updates here; anyone can send it on or ask Jig about it.
 async function ProjectView({ params, searchParams }: { params: PageProps<"/projects/[id]">["params"]; searchParams: PageProps<"/projects/[id]">["searchParams"] }) {
   const { id } = await params;
   const ghNote = (await searchParams).github;
@@ -120,7 +120,7 @@ async function ProjectView({ params, searchParams }: { params: PageProps<"/proje
   const verified = milestones.filter((m) => m.status === "verified");
   const signoffResults = milestones.filter((m) => !m.community_id && (m.status === "draft" || m.status === "logged")).map((m) => ({ id: m.id, title: m.title }));
   // The flow redesign (lib/next-step.ts): the one step this project needs next (toward the member's
-  // goal when they have one), the drafts Ember or their tools left for it, and who could sign a waiting
+  // goal when they have one), the drafts Jig or their tools left for it, and who could sign a waiting
   // milestone, by name (lib/signers.ts).
   const f = await dbFeatures();
   const [draftRes, officerRes, goal, record] = builder ? await Promise.all([
@@ -280,7 +280,7 @@ async function ProjectView({ params, searchParams }: { params: PageProps<"/proje
           {!own && <Link href={`/messages/new?to=${p.owner_id}`} className="mt-4 inline-flex h-9 w-full items-center justify-center rounded-lg border border-line text-sm font-medium transition hover:bg-hover">Message {owner?.first_name || "them"}</Link>}
         </Panel>
         {/* For people reading someone else's build (less clutter, Nov 21): you know your own project, and
-            Ember is in the bar at the top of every page. */}
+            Jig is in the bar at the top of every page. */}
         {!own && <ThirtySeconds lines={summary} ownerId={p.owner_id} />}
         {/* Rendered once (no hidden copy for phones): the side column follows the log on a phone. */}
         {about}
@@ -294,7 +294,7 @@ async function ProjectView({ params, searchParams }: { params: PageProps<"/proje
         )}
         {!own && <Link href={`/copilot?q=${encodeURIComponent(ask)}`} className="glass-card flex items-center gap-3 rounded-3xl p-4 transition">
           <Ember size={36} />
-          <span className="min-w-0"><span className="block text-sm font-medium">Ask Ember about this project</span><span className="block text-xs text-muted">{emberCreditCost("ask")} · What it is, what&apos;s impressive, what to ask.</span></span>
+          <span className="min-w-0"><span className="block text-sm font-medium">Ask Jig about this project</span><span className="block text-xs text-muted">{emberCreditCost("ask")} · What it is, what&apos;s impressive, what to ask.</span></span>
         </Link>}
         {(more.data ?? []).length > 0 && (
           <Panel>

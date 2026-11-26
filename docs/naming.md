@@ -1,5 +1,14 @@
 # Renaming Forge (2026-11-10)
 
+## The assistant is Jig (2026-11-26)
+
+Brazework's AI assistant is called **Jig** (a jig holds your work in place while you build). The founders renamed it from Ember on 2026-11-26 and asked for a sleek black mark: an ink disc with a four-point spark, black on light pages and white on dark (`web/src/components/ember/ember.tsx`, `--mark` in `globals.css`).
+
+- Everything people read says Jig.
+- Code keeps the old identifiers: the `Ember` component, `ember-*` class names and files, `takeEmberCredits`, the `ember-*.sql` steps.
+- Two rare database messages still say Ember (`ember-memory.sql`, `group-chats.sql`) until a database step renames them.
+- Older docs that say Ember mean Jig. Check the name for trademark conflicts before printing it anywhere.
+
 ## Decision: Brazework, pending a trademark check
 
 **Brazework.** Brazing joins two metals into one piece stronger than either alone. That's what Forge does for students, their clubs and companies: verified work holds them together. "Verified on Brazework." Josh picked it on 2026-11-10. Signet, the earlier frontrunner, was dropped: signet.com, .app and .io are all registered, and Signet Jewelers is a large company.

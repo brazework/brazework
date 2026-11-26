@@ -1,4 +1,4 @@
-// The Ask Ember bar (components/ember/ask-bar.tsx): which page it's on, when "/" jumps to it, and the
+// The Ask Jig bar (components/ember/ask-bar.tsx): which page it's on, when "/" jumps to it, and the
 // words on an approve card in the page. Run: npm test
 import assert from "node:assert/strict";
 import { test } from "node:test";
@@ -19,7 +19,7 @@ test("pages that aren't about one thing have no context", () => {
   assert.equal(pageContext("/feed"), null);
   assert.equal(pageContext("/communities"), null);
   assert.equal(pageContext("/events/new"), null);
-  assert.equal(pageContext("/u/someone"), null, "a person isn't a page Ember drafts into");
+  assert.equal(pageContext("/u/someone"), null, "a person isn't a page Jig drafts into");
   assert.equal(pageContext("/projects/a%20b"), null, "odd ids never reach the server");
   assert.equal(pageContext(`/projects/${"x".repeat(65)}`), null);
 });
@@ -45,7 +45,7 @@ test("a card in the page says what it does; elsewhere it's unchanged", () => {
   // Asking a person to sign sends an email, so the button says so wherever the card is.
   assert.deepEqual(cardLabels("signature", false), { confirm: "Ask them to sign", edit: null, dismiss: "Dismiss" });
   assert.deepEqual(cardLabels("signature", true), { confirm: "Ask them to sign", edit: "Edit", dismiss: "Not now" });
-  assert.equal(ASK_PLACEHOLDER, "Ask Ember, or tell it what you did…");
+  assert.equal(ASK_PLACEHOLDER, "Ask Jig, or tell it what you did…");
 });
 
 test("the request carries the page, and refuses an id that isn't one", () => {

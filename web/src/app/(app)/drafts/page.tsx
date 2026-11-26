@@ -16,7 +16,7 @@ export const metadata: Metadata = { title: "Drafts" };
 // Drafts (docs/mcp-workflows.md): what your tools left for you, an automation on a merged pull
 // request or your assistant when you said "later". Nothing here is posted until you approve it.
 // Posts and milestones have their own card; every other action (a project, a teammate, …) is the
-// same card Ember shows (supabase/tool-actions.sql), and Confirm runs the app's own action.
+// same card Jig shows (supabase/tool-actions.sql), and Confirm runs the app's own action.
 export default function DraftsPage() {
   return (
     <div className="mx-auto max-w-2xl">

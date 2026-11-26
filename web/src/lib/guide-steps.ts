@@ -33,11 +33,11 @@ export type LoopFacts = {
 /** True when their work is signed through a club: every student, and anyone who has joined one. */
 export const clubPath = (f: Pick<LoopFacts, "student" | "inClub">) => f.student || f.inClub;
 
-/** How Ember should describe them when it drafts for them ("a Physics student", "a design professional"). */
+/** How Jig should describe them when it drafts for them ("a Physics student", "a design professional"). */
 export const describeMember = (field: string | null | undefined, student: boolean) => `a ${field?.trim() ? `${field.trim()} ` : ""}${student ? "student" : "professional"}`;
 
 export function loopSteps(f: LoopFacts): GuideStep[] {
-  const project: GuideStep = { id: "project", label: "Add what you're building", done: f.hasProject, href: "/profile#projects", why: "A project with photos and specs. No repo needed; Ember can import one from GitHub.", ask: "Help me turn something I've built into a project on my profile." };
+  const project: GuideStep = { id: "project", label: "Add what you're building", done: f.hasProject, href: "/profile#projects", why: "A project with photos and specs. No repo needed; Jig can import one from GitHub.", ask: "Help me turn something I've built into a project on my profile." };
   if (clubPath(f)) {
     return [
       { id: "club", label: "Join your club", done: f.inClub, href: "/communities?tab=discover", why: "Your club is who vouches for your work. Not here yet? Create it, or invite your officer." },

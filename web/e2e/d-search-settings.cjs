@@ -87,7 +87,7 @@ const pw = require("playwright-core");
     await go(josh, "/profile");
     await josh.getByText("Class of 2027").first().waitFor({ timeout: 10000 });
   }, josh);
-  await step("Ember & your data section is there", async () => {
+  await step("Jig & your data section is there", async () => {
     await go(josh, "/settings#ember");
     await josh.getByText("What it never reads:").waitFor();
   }, josh);

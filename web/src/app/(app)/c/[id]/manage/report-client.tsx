@@ -39,7 +39,7 @@ export function ClubUpdate({ report, clubId, copilot }: { report: ClubReport; cl
           <h3 className="font-semibold">Write this week&apos;s update</h3>
           <p className="text-sm text-muted">A short post for the club from these numbers. You review it before it&apos;s posted.</p>
         </div>
-        {copilot && <button type="button" onClick={draft} disabled={ai.busy} className="bg-text inline-flex h-9 items-center gap-1.5 rounded-lg px-4 text-sm font-medium text-surface disabled:opacity-50"><Sparkles className="size-4" /> {ai.busy ? "Drafting…" : "Draft with Ember"}</button>}
+        {copilot && <button type="button" onClick={draft} disabled={ai.busy} className="bg-text inline-flex h-9 items-center gap-1.5 rounded-lg px-4 text-sm font-medium text-surface disabled:opacity-50"><Sparkles className="size-4" /> {ai.busy ? "Drafting…" : "Draft with Jig"}</button>}
         <button type="button" onClick={() => { setText(""); setTools([]); setCards([{ id: `t${Date.now()}`, kind: "club_post", club_id: clubId, club_name: report.name, body: template(report), postKind: "update" }]); }} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-line px-4 text-sm text-text-2 hover:bg-hover"><FileText className="size-4" /> Quick template</button>
       </div>
       {(text || tools.length > 0) && <div className="mt-3 text-sm leading-relaxed whitespace-pre-wrap text-text-2"><Lookups tools={tools} live={ai.busy} /><Rich text={text} /></div>}

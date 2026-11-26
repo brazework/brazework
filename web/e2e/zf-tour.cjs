@@ -13,7 +13,7 @@ const seen = () => psql("select count(*) from public.seen_tours where key = 'wel
 const STEPS = [
   [/^Welcome to Brazework/, null],
   ["Five places", "menu"],
-  ["Ask Ember, or log what you did", "search"],
+  ["Ask Jig, or log what you did", "search"],
   ["Your feed", "feed-tabs"],
   ["Share progress", "composer"],
   ["Projects", "projects"],
@@ -114,9 +114,9 @@ async function clear(page, what) {
     await lit(phone, "menu");
     await clear(phone, "the tab bar");
     await card(phone).getByRole("button", { name: "Next" }).click();
-    await card(phone).getByRole("heading", { name: "Ask Ember, or log what you did" }).waitFor();
+    await card(phone).getByRole("heading", { name: "Ask Jig, or log what you did" }).waitFor();
     await lit(phone, "search");
-    await clear(phone, "the Ask Ember bar");
+    await clear(phone, "the Ask Jig bar");
     await phone.keyboard.press("Escape");
     await card(phone).waitFor({ state: "detached", timeout: 10000 });
     if (await locked(phone)) throw new Error("the page is still locked after Escape");

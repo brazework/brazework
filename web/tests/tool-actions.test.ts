@@ -1,6 +1,6 @@
-// One set of actions behind AI tools (MCP) and Ember (lib/tool-actions.ts, supabase/tool-actions.sql):
+// One set of actions behind AI tools (MCP) and Jig (lib/tool-actions.ts, supabase/tool-actions.sql):
 // every action tool drafts with a drafting token and is offered with the right scope; a tool's draft
-// becomes the Ember card that confirms it; arguments reach the database cleaned; every result says
+// becomes the Jig card that confirms it; arguments reach the database cleaned; every result says
 // what's next. Run: npm test
 import assert from "node:assert/strict";
 import { test } from "node:test";
@@ -34,7 +34,7 @@ test("no tool verifies, signs for the member, or deletes", () => {
   assert.ok(!isCardKind("verify") && !isCardKind("review"));
 });
 
-test("a project draft becomes Ember's project card, with only the app's topics", () => {
+test("a project draft becomes Jig's project card, with only the app's topics", () => {
   const p = draftToProposal({ id: "d1", kind: "project", payload: { title: "Hopper", summary: "A hopper.", link: "https://github.com/b/h", tags: ["Aerospace", "Nope", "Mechanical Design"], status: "completed", year: "2026" } });
   assert.deepEqual(p, { id: "draft-d1", kind: "project", title: "Hopper", summary: "A hopper.", details: "", link: "https://github.com/b/h", tags: ["Aerospace", "Mechanical Design"], status: "completed", year: "2026", source: "GitHub" });
   assert.deepEqual(appTopics(["Aerospace", 3, "x", "Embedded Systems", "Mechanical Design", "Civil & Structural"]), ["Aerospace", "Embedded Systems", "Mechanical Design"]);
@@ -80,7 +80,7 @@ test("refusals about clubs and draft-only actions say how to fix them", () => {
   assert.match(withFix("That one is always left as a draft: the member sends it from Brazework. Draft it instead."), /draft: true/);
 });
 
-test("RSVP: a draft becomes Ember's RSVP card (going or taking it back); the tool sends going as a boolean", () => {
+test("RSVP: a draft becomes Jig's RSVP card (going or taking it back); the tool sends going as a boolean", () => {
   const go = draftToProposal({ id: "r1", kind: "rsvp", payload: { event_id: "ev1", title: "Build night", starts_at: "2026-11-20T23:00:00Z", where: "Hangar", going: 4, cancel: false } });
   assert.deepEqual(go, { id: "draft-r1", kind: "rsvp", event_id: "ev1", title: "Build night", starts_at: "2026-11-20T23:00:00Z", where: "Hangar", going: 4, cancel: false });
   const back = draftToProposal({ id: "r2", kind: "rsvp", payload: { event_id: "ev1", cancel: true } });
@@ -93,7 +93,7 @@ test("RSVP: a draft becomes Ember's RSVP card (going or taking it back); the too
   assert.match(nextStep("rsvp_event", { drafted: false, status: "not going", title: "Build night", url: "/events/ev1" }, O)!.next, /given back/);
 });
 
-test("clubs and messages: join, invite and message drafts become Ember's cards; replies are always drafts", () => {
+test("clubs and messages: join, invite and message drafts become Jig's cards; replies are always drafts", () => {
   assert.deepEqual(draftToProposal({ id: "j", kind: "join", payload: { club_id: "rkt", club_name: "Rocketry Club", privacy: "approval" } }), { id: "draft-j", kind: "join", club_id: "rkt", club_name: "Rocketry Club", privacy: "approval" });
   assert.deepEqual(draftToProposal({ id: "i", kind: "invite", payload: { code: "0123456789abcdef", club_id: "sec", club_name: "Secret" } }), { id: "draft-i", kind: "invite", code: "0123456789abcdef", club_id: "sec", club_name: "Secret" });
   const m = draftToProposal({ id: "m", kind: "message", payload: { person_id: "u1", name: "Josh", headline: "", body: "Sure." } });
@@ -110,11 +110,11 @@ test("clubs and messages: join, invite and message drafts become Ember's cards; 
   assert.equal(MCP_TOOLS.find((t) => t.name === "my_inbox")!.needs, undefined, "my_inbox only reads");
 });
 
-test("officers: event and announcement drafts become Ember's cards; both are always drafts; the brief only reads", () => {
+test("officers: event and announcement drafts become Jig's cards; both are always drafts; the brief only reads", () => {
   const e = draftToProposal({ id: "e", kind: "event", payload: { club_id: "rkt", club_name: "Rocketry Club", title: "Static fire", type: "Workshop", format: "In person", location: "", topic: "Aerospace", starts_at: "2026-12-03T23:00:00Z", ends_at: "2026-12-04T01:00:00Z", description: "" } });
   assert.ok(e && e.kind === "event" && e.title === "Static fire" && e.ends_at === "2026-12-04T01:00:00Z");
   const odd = draftToProposal({ id: "e2", kind: "event", payload: { club_id: "rkt", title: "x", topic: "Rocketry", starts_at: "2026-12-03T23:00:00Z", ends_at: "2026-12-04T01:00:00Z" } });
-  assert.ok(odd && odd.kind === "event" && odd.topic === "", "a club topic that isn't one of the app's is left out, as Ember does (the event form refuses it)");
+  assert.ok(odd && odd.kind === "event" && odd.topic === "", "a club topic that isn't one of the app's is left out, as Jig does (the event form refuses it)");
   const a = draftToProposal({ id: "a", kind: "club_post", payload: { club_id: "rkt", club_name: "Rocketry Club", body: "Build night moves to Thursday." } });
   assert.deepEqual(a, { id: "draft-a", kind: "club_post", club_id: "rkt", club_name: "Rocketry Club", body: "Build night moves to Thursday.", postKind: "update" });
   for (const n of ["draft_event", "draft_announcement"]) assert.equal(MCP_TOOLS.find((t) => t.name === n)!.draftOnly, true, n);
@@ -170,7 +170,7 @@ test("find_builders names who signed: the person who vouched, else the officer, 
   assert.equal(by["Old rig"], "Rocketry Club");
 });
 
-test("follow: the last Ember card a tool couldn't reach; career_fair asks before each write and names only the token's tools", () => {
+test("follow: the last Jig card a tool couldn't reach; career_fair asks before each write and names only the token's tools", () => {
   assert.deepEqual(draftToProposal({ id: "f", kind: "follow", payload: { person_id: "u1", name: "Cara Diaz", headline: "" } }), { id: "draft-f", kind: "follow", person_id: "u1", name: "Cara Diaz", headline: "" });
   const post = promptText("career_fair", { event: "Spring Engineering Career Fair" }, { canDraft: true, canPost: true })!;
   for (const t of ["upcoming_events", "my_projects", "request_signature", "my_resume", "rsvp_event"]) assert.match(post, new RegExp(t), t);

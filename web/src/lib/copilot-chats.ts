@@ -2,7 +2,7 @@
 import { dbFeatures } from "@/lib/db-features";
 import { getViewer } from "@/lib/supabase/server";
 
-// Ember chats you can come back to, and answer ratings (supabase/copilot-chats.sql). Every call
+// Jig chats you can come back to, and answer ratings (supabase/copilot-chats.sql). Every call
 // runs as the member, so the database's rules decide: only your own chats, ever. Without the SQL
 // file, chats simply aren't kept (the page works as before).
 

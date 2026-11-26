@@ -104,7 +104,7 @@ export function RecordYearsChart({ data, own, ember, toggle }: { data: RecordYea
       {(data.earlier || (own && ember)) && (
         <div className="mt-3 flex flex-wrap items-center justify-between gap-x-4 gap-y-1 text-xs text-muted">
           {data.earlier ? <a href="#projects" className="hover:text-text hover:underline">{data.earlier.results} earlier result{data.earlier.results === 1 ? "" : "s"} from before {data.earlier.before} on the projects below</a> : <span />}
-          {own && ember && <Link href={`/copilot?q=${encodeURIComponent(TELL)}`} className="inline-flex items-center gap-1 font-medium text-text underline-offset-4 hover:underline">Have Ember tell this story · {emberCreditCost("ask")} <ArrowRight className="size-3.5" /></Link>}
+          {own && ember && <Link href={`/copilot?q=${encodeURIComponent(TELL)}`} className="inline-flex items-center gap-1 font-medium text-text underline-offset-4 hover:underline">Have Jig tell this story · {emberCreditCost("ask")} <ArrowRight className="size-3.5" /></Link>}
         </div>
       )}
     </section>

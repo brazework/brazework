@@ -15,7 +15,7 @@ export function Workbench({ projects, interests, copilot, stack, specsOn = false
         <h2 className="text-lg font-semibold tracking-tight">Start your first project</h2>
         <p className="mt-1 max-w-xl text-sm text-muted">A project is anything you&apos;re building: a robot, a rocket, a model, an experiment, an app. Post updates as you go, and get each milestone signed by someone who saw it.</p>
         <div className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-3">
-          {[[Cpu, "Hardware", "A flight computer, a chassis, a test rig. Photos and specs, no repo needed."], [FlaskConical, "Research", "An experiment or model: what you measured and what it showed."], [Wrench, "Software", "An app, a tool or a library. Ember can import it from GitHub."]].map(([Icon, t, d]) => {
+          {[[Cpu, "Hardware", "A flight computer, a chassis, a test rig. Photos and specs, no repo needed."], [FlaskConical, "Research", "An experiment or model: what you measured and what it showed."], [Wrench, "Software", "An app, a tool or a library. Jig can import it from GitHub."]].map(([Icon, t, d]) => {
             const I = Icon as typeof Cpu;
             return (
               <div key={t as string} className="rounded-2xl border border-line bg-surface p-4">
@@ -28,7 +28,7 @@ export function Workbench({ projects, interests, copilot, stack, specsOn = false
         </div>
         <div className="mt-5 flex flex-wrap items-center gap-2">
           <ProjectEditor interests={interests} copilot={copilot} stack={stack} specsOn={specsOn} />
-          {copilot && <Link href="/copilot?q=Import%20my%20GitHub%20repo%20as%20a%20project" className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-line px-4 text-sm font-medium transition hover:bg-hover"><GitBranch className="size-4" /> Import from GitHub with Ember · {emberCreditCost("ask")}</Link>}
+          {copilot && <Link href="/copilot?q=Import%20my%20GitHub%20repo%20as%20a%20project" className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-line px-4 text-sm font-medium transition hover:bg-hover"><GitBranch className="size-4" /> Import from GitHub with Jig · {emberCreditCost("ask")}</Link>}
         </div>
       </section>
     );

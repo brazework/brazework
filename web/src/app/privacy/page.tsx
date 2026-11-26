@@ -24,16 +24,16 @@ const SECTIONS: { h: string; items: string[] }[] = [
     h: "Who sees your work",
     items: [
       "New milestones are private by default. They show on your profile only if you choose to show them.",
-      "A milestone is verified only by an officer of the club you sent it to, never by you, a teammate on the project or Ember. Each badge records who verified it, their role, the club and when.",
+      "A milestone is verified only by an officer of the club you sent it to, never by you, a teammate on the project or Jig. Each badge records who verified it, their role, the club and when.",
       "Verified companies and schools can search public verified work only. Messages they send land in your Requests, and you choose whether to reply.",
       "Challenge entries are seen by the sponsor. Winners are shown publicly once the sponsor announces them.",
     ],
   },
   {
-    h: "Ember, the AI agent",
+    h: "Jig, the AI agent",
     items: [
-      "Ember drafts; you approve. It never posts, sends, verifies or saves anything without your tap.",
-      "When you ask Ember something, your request and the Brazework data it needs to answer are sent to Anthropic's API to generate the reply.",
+      "Jig drafts; you approve. It never posts, sends, verifies or saves anything without your tap.",
+      "When you ask Jig something, your request and the Brazework data it needs to answer are sent to Anthropic's API to generate the reply.",
       "If you connect an AI tool to your Brazework (Settings → Your tools), it can read but not change anything, unless you turn on \"Can post\" for it. Then it can post build updates and send milestones to your club to verify, and each one shows which tool sent it. It never edits or deletes anything, and you can revoke it at any time.",
     ],
   },

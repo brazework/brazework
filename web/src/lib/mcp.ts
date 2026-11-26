@@ -13,7 +13,7 @@ export const tokenHash = (token: string) => createHash("sha256").update(token).d
 
 // needs: the scope a tool needs beyond reading. "draft" leaves something in the member's drafts for
 // them to approve in Brazework (supabase/mcp-workflows.sql); "post" acts as them straight away.
-// act: an action kind shared with Ember (supabase/tool-actions.sql): drafted, or done with a token that posts.
+// act: an action kind shared with Jig (supabase/tool-actions.sql): drafted, or done with a token that posts.
 type Tool = { name: string; title: string; description: string; inputSchema: Record<string, unknown>; rpc: string; args: (input: Record<string, unknown>) => Record<string, unknown>; writes?: boolean; needs?: "draft" | "post"; act?: CardKind; draftOnly?: boolean };
 const none = { type: "object", properties: {}, additionalProperties: false };
 
@@ -136,10 +136,10 @@ export function absolutize(value: unknown, origin: string): unknown {
   return value;
 }
 
-// Step 65 (supabase/tool-actions.sql): the member's intents, as Ember's cards. Each of these is one
-// action kind shared with Ember (lib/tool-actions.ts). A token that may post does it once the member
+// Step 65 (supabase/tool-actions.sql): the member's intents, as Jig's cards. Each of these is one
+// action kind shared with Jig (lib/tool-actions.ts). A token that may post does it once the member
 // says yes in chat; a token that drafts (or draft: true) leaves it as a card the member confirms in
-// Brazework (/drafts, and on Ember's page). The database checks it as the member either way.
+// Brazework (/drafts, and on Jig's page). The database checks it as the member either way.
 const DRAFT_ARG = { draft: { type: "boolean", description: "Leave it in the member's Brazework drafts for them to confirm, instead of doing it now. Always the case for a token that can't post." } };
 const actSchema = (properties: Record<string, unknown>, required: string[], draftOnly = false) => ({ type: "object", properties: { ...properties, ...(draftOnly ? {} : DRAFT_ARG), ...SOURCE }, required, additionalProperties: false });
 MCP_TOOLS.push(
@@ -228,7 +228,7 @@ MCP_TOOLS.push(
 MCP_TOOLS.push(
   {
     name: "club_brief", title: "This week in a club (officers)",
-    description: "For a club's moderators and up: Ember's weekly brief for one of their clubs (ids from my_clubs): members and new joiners, posts this week vs last, the top post and most active members, events coming up and just past, milestones verified and waiting for review, join requests. Use its numbers as they are for an update, a meeting plan or a recap; never invent any.",
+    description: "For a club's moderators and up: Jig's weekly brief for one of their clubs (ids from my_clubs): members and new joiners, posts this week vs last, the top post and most active members, events coming up and just past, milestones verified and waiting for review, join requests. Use its numbers as they are for an update, a meeting plan or a recap; never invent any.",
     inputSchema: { type: "object", properties: { club_id: { type: "string", description: "One of the member's clubs where they're a moderator or above, from my_clubs." } }, required: ["club_id"], additionalProperties: false },
     rpc: "mcp_club_brief", args: (i) => ({ p_club: String(i.club_id ?? "") }),
   },
@@ -260,7 +260,7 @@ MCP_TOOLS.push(
 );
 
 // Step 69 (supabase/tool-talent.sql): a résumé from signed work, company search (/talent's data and
-// ranking, for verified company and school admins), and following someone (Ember's last card kind).
+// ranking, for verified company and school admins), and following someone (Jig's last card kind).
 MCP_TOOLS.push(
   {
     name: "my_resume", title: "My résumé from signed work",

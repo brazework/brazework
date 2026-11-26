@@ -36,6 +36,6 @@ export async function dockThread(kind: "dm" | "group", id: string): Promise<{ ok
   if (!(await dbFeatures()).groupChats) return { ok: false, msgs: [], canSend: false };
   const { data } = await supabase.from("chat_messages").select("id, sender_id, sender_first, body, ember, created_at").eq("chat_id", id).order("created_at", { ascending: false }).limit(40);
   if (!data) return { ok: false, msgs: [], canSend: false };
-  const msgs = (data as { id: string; sender_id: string; sender_first: string; body: string; ember: boolean; created_at: string }[]).reverse().map((m) => ({ id: m.id, mine: m.sender_id === user.id && !m.ember, name: m.ember ? "Ember" : m.sender_first, body: m.body, at: m.created_at }));
+  const msgs = (data as { id: string; sender_id: string; sender_first: string; body: string; ember: boolean; created_at: string }[]).reverse().map((m) => ({ id: m.id, mine: m.sender_id === user.id && !m.ember, name: m.ember ? "Jig" : m.sender_first, body: m.body, at: m.created_at }));
   return { ok: true, msgs, canSend: true };
 }

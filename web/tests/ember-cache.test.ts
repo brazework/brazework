@@ -1,4 +1,4 @@
-// Ember's prompt caching (lib/copilot-agent.ts): the fixed rules carry the cache marker and come
+// Jig's prompt caching (lib/copilot-agent.ts): the fixed rules carry the cache marker and come
 // first, the member's details follow it, and a question's tool rounds cache the growing conversation.
 // Run: npm test
 import assert from "node:assert/strict";

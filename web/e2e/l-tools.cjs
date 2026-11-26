@@ -27,7 +27,7 @@ const { step, browser, as, go, summary, BASE } = require("./lib.cjs");
     const names = (list.result?.tools ?? []).map((t) => t.name);
     const writes = list.result.tools.filter((t) => t.annotations?.readOnlyHint !== true);
     // New tokens draft by default (supabase/mcp-workflows.sql): drafts wait for Ben's tap in Brazework.
-    // Writes are drafts only: posts, milestones, and the actions shared with Ember (create_project, …), never posting.
+    // Writes are drafts only: posts, milestones, and the actions shared with Jig (create_project, …), never posting.
     const w = writes.map((t) => t.name);
     if (!names.includes("me") || !["draft_milestone", "draft_post", "create_project", "add_teammate"].every((n) => w.includes(n)) || ["post_update", "log_milestone", "request_signature"].some((n) => w.includes(n)) || writes.some((t) => t.annotations?.destructiveHint !== false)) throw new Error(`tools: ${JSON.stringify(names)}`);
     const init = await (await mcp("initialize", { protocolVersion: "2025-06-18" })).json();
@@ -230,10 +230,10 @@ const { step, browser, as, go, summary, BASE } = require("./lib.cjs");
     if (psql(`select count(*) from public.milestone_vouches where milestone_id = '${id}'`) !== "0") throw new Error("an ask was left waiting");
   }, ben);
 
-  // ---------- Intents shared with Ember (supabase/tool-actions.sql, lib/tool-actions.ts) ----------
+  // ---------- Intents shared with Jig (supabase/tool-actions.sql, lib/tool-actions.ts) ----------
   const call = async (name, args, t) => (await (await mcp("tools/call", { name, arguments: args }, t)).json()).result;
   const stamp = Date.now() % 100000;
-  await step("intents: a drafting token's new project and teammate wait on /drafts as Ember's cards; Ben confirms one and dismisses the other", async () => {
+  await step("intents: a drafting token's new project and teammate wait on /drafts as Jig's cards; Ben confirms one and dismisses the other", async () => {
     const proj = await call("create_project", { title: `Hopper drone ${stamp}`, summary: "A tethered hopper to test the engine gimbal.", tags: ["Aerospace", "Not a topic"], link: "https://github.com/ben/hopper" }, readOnly);
     if (proj?.isError || proj.structuredContent?.drafted !== true || !/\/drafts$/.test(proj.structuredContent.open ?? "") || !/as a card/.test(proj.structuredContent.next ?? "")) throw new Error(`create_project as a draft: ${JSON.stringify(proj).slice(0, 240)}`);
     const mate = await call("add_teammate", { project_id: "p1", person_id: process.env.JOSH_ID }, readOnly);
@@ -270,7 +270,7 @@ const { step, browser, as, go, summary, BASE } = require("./lib.cjs");
     psql(`delete from public.projects where title in ('Hopper drone ${stamp}', 'Thrust stand v2 ${stamp}')`);
   }, ben);
 
-  await step("intents: Ben asks for a spot at Rocketry Club's build night; the draft waits as Ember's RSVP card, he confirms, then Claude Code gives the spot back", async () => {
+  await step("intents: Ben asks for a spot at Rocketry Club's build night; the draft waits as Jig's RSVP card, he confirms, then Claude Code gives the spot back", async () => {
     const ev = `mcp-ev-${stamp}`;
     psql(`insert into public.events (id, community_id, title, type, format, topic, location, starts_at, ends_at) values ('${ev}', 'rkt', 'Build night ${stamp}', 'Workshop', 'In person', 'Aerospace', 'Hangar 2', now() + interval '2 days', now() + interval '2 days 2 hours')`);
     const listed = (await call("upcoming_events", { days: 7 }, readOnly)).structuredContent?.items ?? [];
@@ -291,7 +291,7 @@ const { step, browser, as, go, summary, BASE } = require("./lib.cjs");
     psql(`delete from public.events where id = '${ev}'`); // leave Rocketry's calendar as later journeys expect it
   }, ben);
 
-  await step("intents: Ben's assistant reads Josh's message and drafts a reply; it waits as Ember's message card and goes only when Ben confirms. Claude Code joins a club and accepts an invite", async () => {
+  await step("intents: Ben's assistant reads Josh's message and drafts a reply; it waits as Jig's message card and goes only when Ben confirms. Claude Code joins a club and accepts an invite", async () => {
     const conv = psql(`begin; select set_config('request.jwt.claim.sub', '${process.env.JOSH_ID}', true) is not null; select public.start_conversation('${process.env.BEN_ID}'); commit;`).split("\n").filter((l) => /^[0-9a-f-]{36}$/.test(l))[0];
     psql(`insert into public.messages (conversation_id, sender_id, body) values ('${conv}', '${process.env.JOSH_ID}', 'Can you look at my thrust curve before Friday? ${stamp}')`);
     const inbox = (await call("my_inbox", {}, readOnly)).structuredContent?.items ?? [];
@@ -325,7 +325,7 @@ const { step, browser, as, go, summary, BASE } = require("./lib.cjs");
     psql(`delete from public.communities where id in ('${club}', '${closed}')`); // Ben's clubs as later journeys expect them
   }, ben);
 
-  await step("officers: Ben (Rocketry's owner) reads Ember's weekly brief over MCP, drafts an announcement and an event; both wait as Ember's cards and go out only when he confirms", async () => {
+  await step("officers: Ben (Rocketry's owner) reads Jig's weekly brief over MCP, drafts an announcement and an event; both wait as Jig's cards and go out only when he confirms", async () => {
     const brief = (await call("club_brief", { club_id: "rkt" }, cc)).structuredContent;
     if (brief?.club !== "Rocketry Club" || typeof brief.posts?.this_week !== "number" || !brief.can_host_events || !/manage\?tab=verify$/.test(brief.milestones?.review_in_brazework ?? "")) throw new Error(`club_brief: ${JSON.stringify(brief).slice(0, 240)}`);
     const body = `This week at Rocketry: ${brief.members} members, ${brief.posts.this_week} posts. Build night Thursday! ${stamp}`;

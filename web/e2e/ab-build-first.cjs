@@ -185,12 +185,12 @@ const psql = (sql) => execSync(`docker exec -i forge-e2e-db psql -U postgres -h 
     await allowance.waitFor();
     const details = await allowance.innerText();
     for (const text of ["1 credit", "2 credits", "3 credits", "Web and iPhone share one balance"]) {
-      if (!details.includes(text)) throw new Error(`Ember pricing is missing ${text}`);
+      if (!details.includes(text)) throw new Error(`Jig pricing is missing ${text}`);
     }
   }, p3);
-  await step("Plus explains the waitlist and its Ember balance", async () => {
+  await step("Plus explains the waitlist and its Jig balance", async () => {
     await go(p3, "/plus");
-    await p3.getByText(/Plus also includes 50 Ember credits a day/).waitFor();
+    await p3.getByText(/Plus also includes 50 Jig credits a day/).waitFor();
     await p3.getByRole("link", { name: "Log in to join the waitlist" }).waitFor();
   }, p3);
   await ctx3.close();

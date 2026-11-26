@@ -2,7 +2,7 @@ import { Check, FileSpreadsheet, MessageSquareText, Sparkles, X } from "lucide-r
 import { ProStamp } from "@/components/app/verified-seal";
 
 // The log-in screen's picture: Brazework's one moment, drawn with the app's own pieces. A draft your
-// AI left waits as a card (the same card Ember and your tools leave, components/copilot/proposal-card.tsx),
+// AI left waits as a card (the same card Jig and your tools leave, components/copilot/proposal-card.tsx),
 // and below it the same result on your record, signed by the person who saw it (the real ProStamp).
 // A professional's story on purpose: the landing page already tells a club's. Example people; it's
 // decorative (aria-hidden by the layout) and has no live buttons.

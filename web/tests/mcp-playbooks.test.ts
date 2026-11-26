@@ -81,7 +81,7 @@ test("tools follow scopes: read gets reads only, draft adds drafts, post adds ev
   const reads = MCP_TOOLS.filter((t) => !t.needs).map((t) => t.name);
   assert.deepEqual(names(["read"]), reads);
   assert.ok(toolsFor(["read"]).every((t) => annotationsFor(t).readOnlyHint === true), "a read token's tools are all read-only");
-  // Actions shared with Ember (supabase/tool-actions.sql) draft with a drafting token and act with a posting one.
+  // Actions shared with Jig (supabase/tool-actions.sql) draft with a drafting token and act with a posting one.
   const acts = MCP_TOOLS.filter((t) => t.act).map((t) => t.name);
   assert.deepEqual(names(["read", "draft"]).filter((n) => !reads.includes(n)).sort(), ["draft_milestone", "draft_post", ...acts].sort());
   assert.deepEqual(names(["read", "post"]).filter((n) => !reads.includes(n)).sort(), ["draft_milestone", "draft_post", "drop_goal", "log_milestone", "post_update", "reach_goal", "request_signature", "set_goal", ...acts].sort());
