@@ -1,14 +1,14 @@
 "use server";
 import { redirect } from "next/navigation";
 import { z } from "zod";
-import { billing, PLUS_STUDENT_ANNUAL_PRICE_ENV, PLUS_STUDENT_PRICE_ENV, plusOnSale, plusPriceEnv } from "@/lib/billing";
+import { billing, plusOnSale, plusPriceEnv } from "@/lib/billing";
 import { dbFeatures } from "@/lib/db-features";
 import { env } from "@/lib/env";
 import { friendlyError } from "@/lib/forge";
 import { SALES_KINDS } from "@/lib/pricing";
 import { getViewer } from "@/lib/supabase/server";
 
-// Money paths (supabase/money.sql, lib/pricing.ts): Plus for builders, search seats for verified
+// Money paths (supabase/money.sql, lib/pricing.ts): Plus for builders who aren't students, search seats for verified
 // companies, and requests (a pilot, sponsoring a chapter or a challenge, a school's demo) that land in
 // the founders' admin queue. Stripe Checkout through lib/billing.ts when its keys and prices are set;
 // until then, a request the founders answer. Nobody types an email address: requests carry the
@@ -26,14 +26,10 @@ export async function startPlus(yearly = false): Promise<MoneyState> {
   if (!(await dbFeatures()).money) return { ok: false, message: "Plus isn't open yet. Try again soon." };
   const { data: has } = await supabase.rpc("has_plus");
   if (has) return { ok: true, message: "You already have Plus." };
+  // Students never pay (founders, 2026-11-26): no checkout and no waitlist for a student account.
+  if (profile.account_type === "student") return { ok: false, message: "Students never pay on Brazework. Plus is for professionals and independent builders." };
   if (plusOnSale()) {
-    const eligibility = profile.account_type === "student" ? await supabase.rpc("student_plus_eligible") : null;
-    if (eligibility?.error) return { ok: false, message: "Couldn’t check student pricing. Try again in a minute." };
-    const student = eligibility?.data === true;
-    const priceEnv = plusPriceEnv({ student, yearly: yearly === true });
-    if (student && priceEnv !== (yearly ? PLUS_STUDENT_ANNUAL_PRICE_ENV : PLUS_STUDENT_PRICE_ENV)) {
-      return { ok: false, message: "That student billing period isn’t available yet." };
-    }
+    const priceEnv = plusPriceEnv({ student: false, yearly: yearly === true });
     const pay = await billing().checkout({
       plan: "plus", userId: user.id, reference: user.id, email: user.email, priceEnv,
       successUrl: `${env.siteUrl}/plus?welcome=1`, cancelUrl: `${env.siteUrl}/plus`,

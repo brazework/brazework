@@ -13,10 +13,10 @@ export function SchoolEmailForm({ eligible }: { eligible: boolean }) {
     <section id="school-email" className="mt-5 scroll-mt-[calc(var(--m-top)+6.5rem)] md:scroll-mt-28 lg:scroll-mt-8 border-t border-line pt-5">
       <h3 className="font-medium">School email</h3>
       {eligible ? (
-        <p className="mt-1 text-sm text-muted">Your sign-in email qualifies for student pricing. <Link href="/plus" className="underline underline-offset-4">See Plus</Link></p>
+        <p className="mt-1 text-sm text-muted">Your sign-in email is your school email, so you&apos;re placed in your school and its classes.</p>
       ) : (
         <form onSubmit={submitWithoutReset(action)} className="mt-2 grid max-w-md gap-3">
-          <p className="text-sm text-muted">Confirm your school address for student pricing. Your profile and work stay with you when it becomes your sign-in email.</p>
+          <p className="text-sm text-muted">Confirm your school address to be placed in your school and its classes. Your profile and work stay with you when it becomes your sign-in email.</p>
           <Field label="School email">
             <input name="email" type="email" autoComplete="email" required maxLength={254} value={email} onChange={(e) => setEmail(e.target.value)} className={inputCls} />
           </Field>
