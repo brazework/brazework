@@ -147,7 +147,12 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
   const projects: ProjectView[] = projectRows.map((r) => ({ ...r, details: details.get(r.id)?.details ?? null, link: details.get(r.id)?.link ?? null, specs: details.get(r.id)?.specs ?? [], milestones: msOn && (own || !r.private) ? ms.filter((m) => m.project_id === r.id) : undefined }));
   // Proof shows work on public projects (and your own private ones, to you), like the feed and résumé.
   const titles = new Map(projectRows.filter((r) => mine || !r.private).map((r) => [r.id, r.title]));
-  const proofBase: ProofItem[] = ms.filter((m) => m.status === "verified" && titles.has(m.project_id)).map((m) => ({ id: m.id, title: m.title, detail: m.detail, achieved_on: m.achieved_on, community_id: m.community_id, community_name: m.community_name, reviewer_name: m.reviewer_name, vouched_by: m.vouched_by, project: { id: m.project_id, title: titles.get(m.project_id)! } }));
+  // Work verified in a class (supabase/school-portal.sql) says its term too: "ME 410 · Capstone Design · Fall 2026".
+  const signedIn = [...new Set(ms.filter((m) => m.status === "verified" && m.community_id).map((m) => m.community_id as string))];
+  const { data: classRows } = signedIn.length && f.schoolPortal ? await supabase.from("communities").select("id, term").eq("type", "class").in("id", signedIn) : { data: [] };
+  const termOf = new Map(((classRows ?? []) as { id: string; term: string }[]).filter((c) => c.term).map((c) => [c.id, c.term]));
+  const where = (m: { community_id: string | null; community_name: string }) => (m.community_id && termOf.has(m.community_id) ? `${m.community_name} · ${termOf.get(m.community_id)}` : m.community_name);
+  const proofBase: ProofItem[] = ms.filter((m) => m.status === "verified" && titles.has(m.project_id)).map((m) => ({ id: m.id, title: m.title, detail: m.detail, achieved_on: m.achieved_on, community_id: m.community_id, community_name: where(m), reviewer_name: m.reviewer_name, vouched_by: m.vouched_by, project: { id: m.project_id, title: titles.get(m.project_id)! } }));
   // Pro sign-offs (supabase/pro-verification.sql): an engineer's name, title, employer and note. Work
   // they signed comes first: Pro-verified, then club-verified (Linear FIX-72).
   type ProRow = { milestone_id: string; reviewer_name: string; reviewer_title: string; employer_name: string; note: string; created_at: string };

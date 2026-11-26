@@ -60,7 +60,7 @@ const rid = `vrev-${Date.now()}`;
   }, anon);
 
   const page = await as(b, "ben@forge.test");
-  await step("Ben's Verify link: the link, its QR code, and the page", async () => {
+  await step("Ben's Verify link: the link, its QR code, the page, and Add to LinkedIn", async () => {
     await go(page, `/u/${ben}`);
     await openLogs(page); // a long log on the profile is folded (FIX-240)
     await page.getByRole("button", { name: "Verify link" }).first().click();
@@ -69,6 +69,9 @@ const rid = `vrev-${Date.now()}`;
     const url = await dialog.getByRole("textbox", { name: "Verify link" }).inputValue();
     if (!/\/v\/m[12]$/.test(url)) throw new Error("unexpected link: " + url);
     if (!(await dialog.getByRole("img", { name: /^QR code for / }).isVisible())) throw new Error("no QR code in the dialog");
+    // Add to LinkedIn: LinkedIn's own add-to-profile link, carrying this verify link as the credential.
+    const li = new URL(await dialog.getByRole("link", { name: "Add to LinkedIn" }).getAttribute("href"));
+    if (li.origin + li.pathname !== "https://www.linkedin.com/profile/add" || li.searchParams.get("certUrl") !== url || li.searchParams.get("organizationName") !== "Brazework") throw new Error("Add to LinkedIn link: " + li.href);
   }, page);
 
   await step("hiding the milestone takes its page down at once", async () => {
