@@ -3,6 +3,7 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { ALL_TOPICS, EMAIL_RE, FIELDS, friendlyError } from "@/lib/forge";
 import { env } from "@/lib/env";
+import { cleanEmail, personalEmailProblem, personalEmailSent } from "@/lib/graduate-email";
 import { cleanLinkedin } from "@/lib/linkedin";
 import { parseGradYear } from "@/lib/profile-meta";
 import { getViewer } from "@/lib/supabase/server";
@@ -111,6 +112,39 @@ export async function changeSchoolEmail(_: SettingsState, form: FormData): Promi
       : friendlyError(error) };
   }
   return { ok: true, message: "Check your school inbox and your current inbox. Follow the confirmation links to finish switching." };
+}
+
+// Graduating (lib/graduate-email.ts): your sign-in moves from your school email to a personal one once
+// you follow the links sent to both. Your account, and everything on it, stays the same. Ticking
+// "switch to Working" changes the account type now, so Home and your profile read as a graduate's.
+export async function moveToPersonalEmail(_: SettingsState, form: FormData): Promise<SettingsState> {
+  const email = cleanEmail(form.get("email"));
+  const { supabase, user } = await getViewer();
+  if (!user) return { ok: false, message: "Log in again." };
+  const [cur, nxt] = await Promise.all([
+    supabase.rpc("is_school_email", { p_email: user.email ?? "" }),
+    EMAIL_RE.test(email) ? supabase.rpc("is_school_email", { p_email: email }) : Promise.resolve({ data: false, error: null }),
+  ]);
+  if (cur.error || nxt.error) return { ok: false, message: "Couldn’t check that email. Try again." };
+  const problem = personalEmailProblem({ next: email, current: user.email, currentIsSchool: cur.data === true, nextIsSchool: nxt.data === true });
+  if (problem) return { ok: false, message: problem };
+
+  const redirectTo = new URL("/auth/callback", env.siteUrl);
+  redirectTo.searchParams.set("flow", "email-change");
+  // Once it's done this section is gone (the new email isn't a school one): land on Account.
+  redirectTo.searchParams.set("next", "/settings#account");
+  const { error } = await supabase.auth.updateUser({ email }, { emailRedirectTo: redirectTo.toString() });
+  if (error) {
+    return { ok: false, message: error.code === "email_exists" || error.code === "user_already_exists"
+      ? "That email is already on a Brazework account. Contact support for help keeping your records together."
+      : friendlyError(error) };
+  }
+  if (form.get("working") === "on") {
+    const { error: e2 } = await supabase.rpc("set_account_type", { p_type: "professional" });
+    revalidatePath("/", "layout");
+    if (e2) return { ok: true, message: `${personalEmailSent(email)} Switch to Working under Profile when you're ready.` };
+  }
+  return { ok: true, message: personalEmailSent(email) };
 }
 
 export async function changePassword(_: SettingsState, form: FormData): Promise<SettingsState> {
