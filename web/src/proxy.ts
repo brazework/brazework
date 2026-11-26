@@ -63,7 +63,8 @@ export async function proxy(request: NextRequest) {
     response.cookies.getAll().forEach((c) => r.cookies.set(c));
     return r;
   }
-  if (!signedIn && APP_PATHS.some((p) => path.startsWith(p))) return redirect("/login");
+  // Whole path segments only, so "/pro" covers /pro and /pro/… but not the public /professionals.
+  if (!signedIn && APP_PATHS.some((p) => path === p || path.startsWith(p.endsWith("/") ? p : `${p}/`))) return redirect("/login");
   if (signedIn && AUTH_PATHS.some((p) => path.startsWith(p))) return redirect("/feed");
   return response;
 }

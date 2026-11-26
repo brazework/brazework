@@ -14,6 +14,7 @@ import { cn } from "@/lib/forge";
 const LINKS: { href: string; label: string; wide?: boolean; noPhone?: boolean }[] = [
   { href: "#top", label: "How it works" },
   { href: "/schools", label: "For schools" },
+  { href: "/professionals", label: "For professionals" },
   { href: "/pricing", label: "Pricing" },
   { href: "/ai", label: "Connect your AI", wide: true },
 ];
