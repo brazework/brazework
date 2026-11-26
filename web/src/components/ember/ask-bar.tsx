@@ -3,7 +3,7 @@ import { emberCreditCost } from "@/lib/ember-credits";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { X } from "lucide-react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Lookups } from "@/app/(app)/copilot/copilot-client";
 import { EmberReply, Thinking } from "@/components/copilot/reply";
@@ -13,7 +13,7 @@ import { GlobalSearch } from "@/components/search/global-search";
 import type { Proposal, Segment } from "@/lib/copilot-agent";
 import { saveChat, type SavedMsg } from "@/lib/copilot-chats";
 import { splitNext } from "@/lib/copilot-text";
-import { barHistory, carryOnSteps, followsAfter, pageContext, pickedFrom, type BarTurn } from "@/lib/ember-bar";
+import { TORCH_ASK, barHistory, carryOnSteps, followsAfter, pageContext, pickedFrom, type BarTurn } from "@/lib/ember-bar";
 import { ChoiceButtons } from "@/components/copilot/choices";
 import { CARD_LABEL, cardsOf, type CardOutcome, type OfferedChoice } from "@/lib/ember-thread";
 
@@ -42,6 +42,7 @@ const toSaved = (turns: Turn[], done: Done): SavedMsg[] => turns.filter((t) => s
 
 export function AskBar() {
   const path = usePathname();
+  const router = useRouter();
   const { run, busy, error, remaining, stop } = useCopilot();
   const [turns, setTurns] = useState<Turn[]>([]);
   const [done, setDone] = useState<Done>({});
@@ -113,6 +114,23 @@ export function AskBar() {
     return () => clearTimeout(t);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pendingFollow]);
+
+  // A card on the page asked Torch something (lib/ember-bar.ts askTorch): ask it here, and bring the
+  // bar into view so the answer and its cards open where the member can see them.
+  const askNow = useRef(ask);
+  useEffect(() => { askNow.current = ask; });
+  useEffect(() => {
+    const on = (e: Event) => {
+      const q = (e as CustomEvent<string>).detail;
+      if (typeof q !== "string" || !q.trim()) return;
+      // On Torch's own page the bar is hidden: ask there instead.
+      if (window.location.pathname.startsWith("/copilot")) { router.push(`/copilot?q=${encodeURIComponent(q)}`); return; }
+      window.scrollTo({ top: 0, behavior: "smooth" });
+      void askNow.current(q);
+    };
+    window.addEventListener(TORCH_ASK, on);
+    return () => window.removeEventListener(TORCH_ASK, on);
+  }, [router]);
 
   // Torch's own page has its composer: a second box to ask in would only compete with it.
   if (path.startsWith("/copilot")) return null;

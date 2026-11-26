@@ -7,6 +7,14 @@ import { MAX_TURN, type CardOutcome, type OfferedChoice, type ThreadTurn } from 
 
 export const ASK_PLACEHOLDER = "Ask Torch, or tell it what you did…";
 
+// Hand a question to the Ask Torch bar from anywhere on the page (the goal card's "Do it with Torch"):
+// the bar asks it and its answer, with its cards to approve, opens right there. Client only.
+export const TORCH_ASK = "torch:ask";
+export function askTorch(text: string): void {
+  if (typeof window === "undefined" || !text.trim()) return;
+  window.dispatchEvent(new CustomEvent<string>(TORCH_ASK, { detail: text.trim() }));
+}
+
 export type PageKind = "project" | "club" | "event";
 export type PageRef = { kind: PageKind; id: string };
 
