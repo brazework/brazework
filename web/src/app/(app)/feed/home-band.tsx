@@ -14,7 +14,8 @@ import { ComposeLink } from "./compose-link";
 //   school by their email) leads with School and their classes; anyone else leads with Projects, and
 //   Torch, the assistant, takes the fourth tile.
 // The next step used to be its own strip under the greeting; it's the band's button now.
-export async function HomeBand({ first }: { first: string }) {
+// `quiet`: no button, when the box right under the band already asks for the first project.
+export async function HomeBand({ first, quiet = false }: { first: string; quiet?: boolean }) {
   const { supabase, user, profile } = await getViewer();
   if (!user) return null;
   const now = requestTime();
@@ -78,9 +79,9 @@ export async function HomeBand({ first }: { first: string }) {
             ))}
           </dl>
         </div>
-        <ComposeLink href={cta.href} className="inline-flex h-11 max-w-full shrink-0 items-center gap-2 self-start rounded-xl bg-text px-4 text-sm font-semibold text-bg shadow-[0_8px_24px_-12px_color-mix(in_oklab,var(--text)_70%,transparent)] transition hover:opacity-90 active:scale-[0.98] sm:self-auto">
+        {!quiet && <ComposeLink href={cta.href} className="inline-flex h-11 max-w-full shrink-0 items-center gap-2 self-start rounded-xl bg-text px-4 text-sm font-semibold text-bg shadow-[0_8px_24px_-12px_color-mix(in_oklab,var(--text)_70%,transparent)] transition hover:opacity-90 active:scale-[0.98] sm:self-auto">
           <span className="truncate">{cta.text}</span> <ArrowRight className="size-4 shrink-0" aria-hidden="true" />
-        </ComposeLink>
+        </ComposeLink>}
       </div>
       <nav aria-label="Your places" className="grid grid-cols-2 border-t border-[color-mix(in_oklab,var(--border)_70%,transparent)] lg:grid-cols-4">
         {tiles.map((t, i) => (
