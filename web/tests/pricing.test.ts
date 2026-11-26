@@ -10,15 +10,19 @@ test("every audience has two or three tiers and exactly one primary call to acti
   }
   for (const t of TIERS) {
     assert.ok(t.price && t.note && t.points.length >= 3, t.id);
-    assert.match(t.cta.href, /^\/(signup|#pilot|book\?kind=(talent|chapter|challenge|school))$/, t.id);
+    assert.match(t.cta.href, /^\/(signup|plus|#pilot|book\?kind=(talent|chapter|challenge|school))$/, t.id);
   }
 });
 
-test("schools come first, students and clubs never pay, and every /book link is a kind the database accepts", () => {
+test("schools come first, students and clubs never pay, Plus is for other builders, and every /book link is a kind the database accepts", () => {
   // The school is the customer (docs/strategy.md, 2026-11-26).
   assert.deepEqual(AUDIENCES.map((a) => a.id), ["schools", "builders", "companies"]);
-  for (const t of tiersFor("builders")) assert.match(t.price, /^(\$0|Free)$/, t.id);
-  assert.ok(!TIERS.some((t) => t.cta.href === "/plus"), "Plus isn't on the public price list");
+  // Builders: Free and Clubs cost nothing; Plus is the one paid card, for builders who aren't students.
+  for (const t of tiersFor("builders").filter((t) => t.id !== "plus")) assert.match(t.price, /^(\$0|Free)$/, t.id);
+  assert.deepEqual(tiersFor("builders").map((t) => t.id), ["free", "plus", "clubs"]);
+  assert.equal(PLUS_TIER.cta.href, "/plus");
+  assert.match(PLUS_TIER.note, /Students never pay/);
+  assert.ok(!("student" in PLUS) && !("studentYear" in PLUS), "no student price: students never pay");
   assert.ok(tiersFor("companies").every((t) => t.cta.href.startsWith("/book?kind=")));
   assert.ok(tiersFor("schools").every((t) => t.cta.href === "/book?kind=school"));
   for (const t of TIERS) {
@@ -33,7 +37,7 @@ test("the record is free; the paid tier isn't called Pro and its prices come fro
   assert.notEqual(PLUS.name.toLowerCase(), "pro", "Pro means pro verification");
   for (const t of TIERS) assert.ok(!/\bpro\b/i.test(t.name), t.name);
   assert.ok(!/\bpro\b/i.test(PLUS_TIER.name));
-  assert.ok(PLUS_TIER.price.includes(String(PLUS.everyoneYear)) && PLUS_TIER.note.includes(String(PLUS.student)));
+  assert.ok(PLUS_TIER.price.includes(String(PLUS.everyoneYear)) && PLUS_TIER.note.includes(`$${PLUS.everyone}/mo`));
 });
 
 test("schools pay by department or campus and by faculty seat, never per club, chapter or student", async () => {
@@ -101,8 +105,10 @@ test("Plus leads with the review packet, says plainly it's free during launch, a
   const plus = PLUS_TIER;
   assert.match(plus.points[1], /review packet/i, "the packet is the first thing Plus adds");
   assert.match(plus.points[1], /free for everyone during launch/, "it's a Plus preview today, and says so");
-  assert.ok(plus.note.includes(`$${PLUS.studentYear}`) && plus.price.includes(`$${PLUS.everyoneYear}`), plus.note);
-  assert.ok(PLUS.everyoneYear < PLUS.everyone * 12 && PLUS.studentYear < PLUS.student * 12, "a year costs less than twelve months");
+  assert.ok(plus.price.includes(`$${PLUS.everyoneYear}`), plus.price);
+  assert.ok(PLUS.everyoneYear < PLUS.everyone * 12, "a year costs less than twelve months");
+  // Torch credits: a daily allowance, more with Plus, and nothing to buy on top.
+  assert.ok(plus.points.some((p) => /Torch: \d+ credits a day \(Free has \d+\)\. No packs to buy/.test(p)));
 });
 
 
@@ -118,5 +124,5 @@ test("company search excludes sponsorships and service fees never reduce club or
   assert.match(sponsor.note, /3,000 total/);
   assert.match(sponsor.points.join(" "), /5,500 total/);
   assert.match(TIERS.find((t) => t.id === "free")!.points.join(" "), /15 credits a day/);
-  assert.match(PLUS_TIER.points.join(" "), /50 credits a day total/);
+  assert.match(PLUS_TIER.points.join(" "), /50 credits a day \(Free has 15\)/);
 });
