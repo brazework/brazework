@@ -3,7 +3,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { copilotRequest } from "@/lib/copilot-request";
-import { ASK_PLACEHOLDER, BAR_TURNS, askShortcut, barHistory, cardLabels, cardSummary, pageContext, type BarTurn } from "@/lib/ember-bar";
+import { ASK_PLACEHOLDER, BAR_TURNS, askShortcut, barHistory, cardLabels, cardSummary, pageContext, pickedFrom, type BarTurn } from "@/lib/ember-bar";
 import { threadMessages, type CardOutcome } from "@/lib/ember-thread";
 
 test("the bar knows the project, club or event it's on, from the path", () => {
@@ -111,4 +111,15 @@ test("the bar sends back its newest turns, within what the request allows", () =
   const long = barHistory([turn("q", "x".repeat(9000))]);
   assert.ok(copilotRequest.safeParse({ task: "ask", input: "next", history: [...h] }).success);
   assert.ok(copilotRequest.safeParse({ task: "ask", input: "next", history: long }).success, "a very long answer is cut to fit");
+});
+
+test("the bar's history says which offered answer was tapped", () => {
+  const offered = { options: ["Rocketry Club", "A person who saw it"] };
+  assert.deepEqual(pickedFrom(offered, "Rocketry Club"), { ...offered, picked: "Rocketry Club" });
+  assert.deepEqual(pickedFrom(offered, "something they typed"), offered, "typed, not tapped");
+  assert.deepEqual(pickedFrom(offered, undefined), offered);
+  assert.equal(pickedFrom(undefined, "Rocketry Club"), undefined);
+  const h = barHistory([{ q: "I got the PID loop stable", text: "Who saw it?", cards: [], choice: pickedFrom(offered, "Rocketry Club") }]);
+  assert.deepEqual(h[1], { role: "assistant", content: "Who saw it?", choice: { ...offered, picked: "Rocketry Club" } });
+  assert.match(threadMessages(h, "Rocketry Club").at(-1)!.content, /They tapped "Rocketry Club"/);
 });

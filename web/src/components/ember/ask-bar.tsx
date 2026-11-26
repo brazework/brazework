@@ -13,8 +13,9 @@ import { GlobalSearch } from "@/components/search/global-search";
 import type { Proposal, Segment } from "@/lib/copilot-agent";
 import { saveChat, type SavedMsg } from "@/lib/copilot-chats";
 import { splitNext } from "@/lib/copilot-text";
-import { barHistory, pageContext, type BarTurn } from "@/lib/ember-bar";
-import { CARD_LABEL, cardsOf, type CardOutcome } from "@/lib/ember-thread";
+import { barHistory, pageContext, pickedFrom, type BarTurn } from "@/lib/ember-bar";
+import { ChoiceButtons } from "@/components/copilot/choices";
+import { CARD_LABEL, cardsOf, type CardOutcome, type OfferedChoice } from "@/lib/ember-thread";
 
 // The Ask Torch bar, at the top of every signed-in page (the flow redesign,
 // docs/superpowers/specs/2026-11-19-app-flow-redesign-design.md). One bar: type to search people and
@@ -27,14 +28,15 @@ import { CARD_LABEL, cardsOf, type CardOutcome } from "@/lib/ember-thread";
 // bar is closed or the member moves to another page. From the second turn the exchange is kept as one
 // of their Torch chats (where chats are kept at all), so "Keep going on Torch's page" opens it there.
 
-type Turn = { id: number; q: string; text: string; tools: string[]; proposals: Proposal[]; segments: Segment[] };
+// `choice`: answers Torch offered as buttons, with the one tapped once the member answers.
+type Turn = { id: number; q: string; text: string; tools: string[]; proposals: Proposal[]; segments: Segment[]; choice?: OfferedChoice };
 type Done = Record<string, CardOutcome>;
 
-const toBar = (t: Turn, done: Done): BarTurn => ({ q: t.q, text: splitNext(t.text).text, cards: cardsOf(t.proposals, done) });
+const toBar = (t: Turn, done: Done): BarTurn => ({ q: t.q, text: splitNext(t.text).text, cards: cardsOf(t.proposals, done), ...(t.choice ? { choice: t.choice } : {}) });
 // The exchange as a saved chat: labels and outcomes, never a live card (lib/copilot-chats.ts).
 const toSaved = (turns: Turn[], done: Done): SavedMsg[] => turns.filter((t) => splitNext(t.text).text.trim()).flatMap((t): SavedMsg[] => [
   { role: "user", content: t.q },
-  { role: "assistant", content: splitNext(t.text).text, tools: t.tools, cards: t.proposals.map((p) => CARD_LABEL[p.kind]), outcomes: cardsOf(t.proposals, done) },
+  { role: "assistant", content: splitNext(t.text).text, tools: t.tools, cards: t.proposals.map((p) => CARD_LABEL[p.kind]), outcomes: cardsOf(t.proposals, done), ...(t.choice ? { choice: t.choice } : {}) },
 ]);
 
 export function AskBar() {
@@ -53,15 +55,17 @@ export function AskBar() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => () => stop(), [path]);
 
-  const ask = async (text: string) => {
+  // `tapped`: one of the answers Torch offered, so the turn that offered them records which.
+  const ask = async (text: string, tapped?: string) => {
     const q = text.trim();
     if (!q) return;
     // Only exchanges that got an answer carry on; one that failed gives way to the new question.
-    const before = turns.filter((t) => splitNext(t.text).text.trim());
+    const answered = turns.filter((t) => splitNext(t.text).text.trim());
+    const before = answered.map((t, i) => (i === answered.length - 1 && t.choice ? { ...t, choice: pickedFrom(t.choice, tapped) } : t));
     let last: Turn = { id: ++turnId.current, q, text: "", tools: [], proposals: [], segments: [] };
     setTurns([...before, last]);
-    const out = await run({ task: "ask", input: q, page: pageContext(path) ?? undefined, history: barHistory(before.map((t) => toBar(t, doneNow.current))) }, (full, tools, proposals, segments) => {
-      last = { ...last, text: full, tools, proposals, segments };
+    const out = await run({ task: "ask", input: q, page: pageContext(path) ?? undefined, history: barHistory(before.map((t) => toBar(t, doneNow.current))), choices: true }, (full, tools, proposals, segments, choice) => {
+      last = { ...last, text: full, tools, proposals, segments, ...(choice ? { choice: { options: choice.options } } : {}) };
       setTurns([...before, last]);
     });
     // One question and its answer aren't kept, as before; a real exchange is.
@@ -77,7 +81,7 @@ export function AskBar() {
   return (
     <div>
       <GlobalSearch onAsk={(q) => void ask(q)} asking={busy} joined={turns.length > 0} />
-      <AskAnswer turns={turns} busy={busy} error={error} remaining={remaining} chatId={chatId} onAsk={(q) => void ask(q)} onClose={close} onOutcome={onOutcome} />
+      <AskAnswer turns={turns} busy={busy} error={error} remaining={remaining} chatId={chatId} onAsk={(q, tapped) => void ask(q, tapped)} onClose={close} onOutcome={onOutcome} />
     </div>
   );
 }
@@ -85,7 +89,7 @@ export function AskBar() {
 // Torch's answers, hanging from the bar as one piece: each thing you said as a quiet line, Torch's
 // reply beside its mark with the cards to approve, and under the newest its suggested next questions,
 // one tap to ask. A long exchange scrolls inside the panel, so the page under it stays put.
-function AskAnswer({ turns, busy, error, remaining, chatId, onAsk, onClose, onOutcome }: { turns: Turn[]; busy: boolean; error: string; remaining: number | null; chatId: string | null; onAsk: (q: string) => void; onClose: () => void; onOutcome: (id: string, o: CardOutcome) => void }) {
+function AskAnswer({ turns, busy, error, remaining, chatId, onAsk, onClose, onOutcome }: { turns: Turn[]; busy: boolean; error: string; remaining: number | null; chatId: string | null; onAsk: (q: string, tapped?: string) => void; onClose: () => void; onOutcome: (id: string, o: CardOutcome) => void }) {
   const reduce = useReducedMotion();
   const scroller = useRef<HTMLDivElement>(null);
   const newest = turns.at(-1)?.id;
@@ -123,7 +127,8 @@ function AskAnswer({ turns, busy, error, remaining, chatId, onAsk, onClose, onOu
                       {thinking && <p className="flex items-center gap-2 text-sm text-muted"><Thinking label="Looking at this page" /> Looking at this page…</p>}
                       {(t.text || t.proposals.length > 0) && <EmberReply text={t.text} proposals={t.proposals} segments={t.segments} live={live} inline cardProps={{ onOutcome }} />}
                       {lastOne && error && <p role="alert" className="text-sm text-text-2">{error}</p>}
-                      {lastOne && !busy && next.length > 0 && (
+                      {lastOne && !busy && t.choice && !t.choice.picked && <ChoiceButtons options={t.choice.options} onPick={(o) => onAsk(o, o)} typeHint="type your own in the bar" />}
+                      {lastOne && !busy && !(t.choice && !t.choice.picked) && next.length > 0 && (
                         <div className="mt-3 flex flex-wrap gap-1.5 whitespace-normal">
                           {next.map((n) => <button key={n} type="button" onClick={() => onAsk(n)} className="rounded-full border border-line px-3 py-1 text-left text-xs text-text-2 transition hover:border-line-strong hover:text-text">{n} · {emberCreditCost("ask")}</button>)}
                         </div>

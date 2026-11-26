@@ -2,7 +2,8 @@ import { goalTitle, isGoalKind } from "@/lib/goals";
 import type Anthropic from "@anthropic-ai/sdk";
 import { can, rank } from "@/lib/communities";
 import { EVENT_FORMATS, EVENT_TYPES } from "@/lib/events";
-import type { Proposal } from "@/lib/copilot-agent";
+import type { Choice, Proposal } from "@/lib/copilot-agent";
+import { MAX_OPTION, MAX_OPTIONS, MIN_OPTIONS, cleanOptions } from "@/lib/ember-thread";
 import { dbFeatures } from "@/lib/db-features";
 import { newestFirst } from "@/lib/ember-record";
 import { ALL_TOPICS, requestTime } from "@/lib/forge";
@@ -163,6 +164,14 @@ export const TOOLS: Anthropic.Tool[] = [
   },
 ];
 
+// Offered only where the page can show buttons (the Ask Torch bar and Torch's page send `choices`;
+// app/api/copilot/route.ts). Elsewhere, and in group chats, Torch asks in words.
+export const OFFER_CHOICES: Anthropic.Tool = {
+  name: "offer_choices",
+  description: `Show the member ${MIN_OPTIONS} to ${MAX_OPTIONS} short answers to the question you just asked, as buttons they tap. Use it only when you need one answer to go on and the answers are things you already have: their clubs, projects or waiting milestones, people a lookup returned, or yes and no. Each answer at most ${MAX_OPTION} characters, in the member's words. It ends your message, so write the question before calling it and nothing after. Nothing is saved.`,
+  input_schema: { type: "object", properties: { options: { type: "array", items: { type: "string" }, minItems: MIN_OPTIONS, maxItems: MAX_OPTIONS } }, required: ["options"] },
+};
+
 // What Copilot hears back after a proposal: it's on screen, and the member decides.
 const SHOWN = { shown_to_member: true, note: "The member sees this as a card and will confirm, edit or dismiss it. Don't say it's done; tell them to check the card." };
 const pid = () => Math.random().toString(36).slice(2, 10);
@@ -174,7 +183,7 @@ const SIGNERS = ["professor", "ta", "pi", "manager", "mentor", "other"];
 const clean = (v: unknown, max = 60) => (typeof v === "string" ? v.replace(/[^\p{L}\p{N} '&.+#-]/gu, " ").replace(/\s+/g, " ").trim().slice(0, max) : "");
 const snip = (s: string | null | undefined, n = 140) => (s ?? "").replace(/\s+/g, " ").trim().slice(0, n);
 
-export function makeExec(db: DB, userId: string, onProposal: (p: Proposal) => void = () => {}) {
+export function makeExec(db: DB, userId: string, onProposal: (p: Proposal) => void = () => {}, onChoice: (c: Choice) => void = () => {}) {
   return async (name: string, input: unknown): Promise<unknown> => {
     const a = (input ?? {}) as Record<string, unknown>;
     switch (name) {
@@ -553,6 +562,12 @@ export function makeExec(db: DB, userId: string, onProposal: (p: Proposal) => vo
         const tags = (Array.isArray(a.tags) ? a.tags : []).filter((t): t is string => typeof t === "string" && ALL_TOPICS.includes(t)).slice(0, 3);
         onProposal({ id: pid(), kind: "project", title, summary, details: typeof a.details === "string" ? a.details.trim().slice(0, 5000) : "", link, tags, status, year, source: link.includes("github.com") ? "GitHub" : "" });
         return SHOWN;
+      }
+      case "offer_choices": {
+        const c = cleanOptions(a.options);
+        if ("error" in c) return c;
+        onChoice({ id: pid(), options: c.options });
+        return { shown_to_member: true, note: "The member sees these as buttons and may tap one or type an answer. Your message ends here." };
       }
       default:
         return { error: `Unknown tool ${name}.` };

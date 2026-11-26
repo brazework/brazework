@@ -6,8 +6,8 @@
 // Run: npm test
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import { TOOLS, makeExec } from "@/lib/copilot-tools";
-import type { Proposal } from "@/lib/copilot-agent";
+import { OFFER_CHOICES, TOOLS, makeExec } from "@/lib/copilot-tools";
+import type { Choice, Proposal } from "@/lib/copilot-agent";
 
 const ME = "00000000-0000-0000-0000-000000000001";
 
@@ -97,4 +97,20 @@ test("milestone drafts need real evidence", async () => {
   await exec("propose_milestone", { project_id: "p1", club_id: "rkt", title: "Passed load test", evidence: "https://youtu.be/abc" });
   assert.equal(cards.length, 1);
   assert.equal((cards[0] as { evidence?: string }).evidence, "https://youtu.be/abc");
+});
+
+test("offering answers as buttons never writes: it only hands the buttons to the page", async () => {
+  const { db, writes } = readOnlyDb();
+  const choices: Choice[] = [];
+  const cards: Proposal[] = [];
+  const exec = makeExec(db, ME, (p) => cards.push(p), (c) => choices.push(c));
+  const r = (await exec("offer_choices", { options: ["Rocketry Club", "A person who saw it"] })) as { shown_to_member?: boolean };
+  assert.equal(r.shown_to_member, true);
+  assert.deepEqual(choices.map((c) => c.options), [["Rocketry Club", "A person who saw it"]]);
+  assert.equal(cards.length, 0);
+  const bad = (await exec("offer_choices", { options: ["Only one"] })) as { error?: string };
+  assert.ok(bad.error, "fewer than two answers is refused");
+  assert.equal(choices.length, 1);
+  assert.deepEqual(writes, []);
+  assert.match(String(OFFER_CHOICES.description), /Nothing is saved/);
 });

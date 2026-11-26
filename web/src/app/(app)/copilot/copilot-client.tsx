@@ -17,24 +17,28 @@ import { LinkCards } from "@/components/copilot/link-cards";
 import { forgeLinks, splitNext } from "@/lib/copilot-text";
 import { emberActions, emberGreeting, type EmberAction } from "@/lib/ember-actions";
 import type { NextStep } from "@/lib/ember-record";
-import { CARD_LABEL, MAX_TURN, cardsOf, savedCards, type CardOutcome, type ThreadTurn } from "@/lib/ember-thread";
+import { CARD_LABEL, MAX_TURN, cardsOf, savedCards, type CardOutcome, type OfferedChoice, type ThreadTurn } from "@/lib/ember-thread";
+import { pickedFrom } from "@/lib/ember-bar";
+import { ChoiceButtons } from "@/components/copilot/choices";
 import { deleteAllChats, deleteChat, loadChat, rateAnswer, saveChat, type ChatSummary, type SavedMsg } from "@/lib/copilot-chats";
 
 // `outcomes`: a saved chat's cards and what happened to them (a live answer has `proposals` instead).
-type Msg = { role: "user" | "assistant"; content: string; tools?: string[]; proposals?: Proposal[]; segments?: Segment[]; cards?: string[]; next?: string[]; outcomes?: CardOutcome[] };
+type Msg = { role: "user" | "assistant"; content: string; tools?: string[]; proposals?: Proposal[]; segments?: Segment[]; cards?: string[]; next?: string[]; outcomes?: CardOutcome[]; choice?: OfferedChoice };
 // What happened to each card on screen, by the card's id (lib/ember-thread.ts).
 type Done = Record<string, CardOutcome>;
 const cardsFor = (m: Msg, done: Done): CardOutcome[] => (m.proposals?.length ? cardsOf(m.proposals, done) : m.outcomes ?? []);
 // The chat so far as Torch gets it: the words of each turn, and what became of each answer's cards.
 const toHistory = (msgs: Msg[], done: Done): ThreadTurn[] => msgs.slice(-10).map((m) => {
   const cards = m.role === "assistant" ? cardsFor(m, done) : [];
-  return { role: m.role, content: m.content.slice(0, MAX_TURN), ...(cards.length ? { cards } : {}) };
+  return { role: m.role, content: m.content.slice(0, MAX_TURN), ...(cards.length ? { cards } : {}), ...(m.choice ? { choice: m.choice } : {}) };
 });
+// Answers Torch offered that are still waiting: on the newest message, and none tapped yet.
+const openChoice = (m: Msg | undefined) => (m?.role === "assistant" && m.choice && !m.choice.picked ? m.choice : null);
 
 // What a card Torch prepared is called once the chat is saved (saved chats keep a label, never a
 // live card that could be confirmed twice).
 // (CARD_LABEL lives in lib/ember-thread.ts, shared with the note Torch reads.)
-const toSaved = (done: Done) => (m: Msg): SavedMsg => ({ role: m.role, content: m.content, tools: m.tools, cards: [...(m.cards ?? []), ...(m.proposals ?? []).map((p) => CARD_LABEL[p.kind])], outcomes: cardsFor(m, done) });
+const toSaved = (done: Done) => (m: Msg): SavedMsg => ({ role: m.role, content: m.content, tools: m.tools, cards: [...(m.cards ?? []), ...(m.proposals ?? []).map((p) => CARD_LABEL[p.kind])], outcomes: cardsFor(m, done), ...(m.choice ? { choice: m.choice } : {}) });
 const ago = (iso: string) => {
   const d = (Date.now() - new Date(iso).getTime()) / 86400000;
   return d < 1 ? "Today" : d < 2 ? "Yesterday" : d < 7 ? `${Math.floor(d)} days ago` : new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric" });
@@ -161,18 +165,19 @@ export function CopilotChat({ first, field, student = true, initial = "", initia
 
   const actions: ComposerAction[] = emberActions({ field, student }).map((a) => ({ ...a, icon: ACTION_ICON[a.id] }));
 
-  const send = async (text: string, preset?: Preset) => {
+  // `tapped`: one of the answers Torch offered, so the message that offered them records which.
+  const send = async (text: string, preset?: Preset, tapped?: string) => {
     const q = text.trim();
     if (!q || busy || opening) return;
-    const before = msgs;
+    const before = msgs.map((m, i) => (i === msgs.length - 1 && m.choice ? { ...m, choice: pickedFrom(m.choice, tapped) } : m));
     const asked: Msg = { role: "user", content: q };
     let last: Msg = { role: "assistant", content: "" };
     setMsgs([...before, asked, last]);
     setInput("");
     follow();
-    const out = await run({ task: "ask", input: q, preset, history: toHistory(before, doneNow.current) }, (full, tools, proposals, segments) => {
+    const out = await run({ task: "ask", input: q, preset, history: toHistory(before, doneNow.current), choices: true }, (full, tools, proposals, segments, choice) => {
       const { text: body, next } = splitNext(full);
-      last = { role: "assistant", content: body, tools, proposals, segments, next };
+      last = { role: "assistant", content: body, tools, proposals, segments, next, ...(choice ? { choice: { options: choice.options } } : {}) };
       setMsgs([...before, asked, last]);
     });
     if (out === null && !last.content) { setMsgs(before); return; }
@@ -321,8 +326,12 @@ export function CopilotChat({ first, field, student = true, initial = "", initia
               );
             })}
           </AnimatePresence>
-          {/* Next steps Torch suggests, one tap to ask. */}
-          {!busy && lastAnswer?.role === "assistant" && lastAnswer.next?.length ? (
+          {/* Torch is waiting on an answer: the ones it offered, as buttons. */}
+          {!busy && openChoice(lastAnswer) ? (
+            <div className="pl-11"><ChoiceButtons options={openChoice(lastAnswer)!.options} onPick={(o) => void send(o, undefined, o)} typeHint="type your own answer below" /></div>
+          ) : null}
+          {/* Next steps Torch suggests, one tap to ask; not while it's waiting on an answer. */}
+          {!busy && !openChoice(lastAnswer) && lastAnswer?.role === "assistant" && lastAnswer.next?.length ? (
             <div className="flex flex-wrap gap-2 pl-11">
               {lastAnswer.next.map((n) => (
                 <button key={n} type="button" onClick={() => void send(n)} className="inline-flex items-center gap-1.5 rounded-full border border-line bg-surface/80 px-3 py-1.5 text-left text-xs font-medium text-text-2 transition hover:border-line-strong hover:text-text active:scale-95">
