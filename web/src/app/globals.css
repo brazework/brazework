@@ -397,6 +397,19 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity
   transition: border-color 0.15s ease;
   &:hover, &:focus-within { border-color: var(--border-strong); }
 }
+/* The default banner on a profile and a club (2026-11-26): a dark drafting sheet in both themes, lit in
+   copper (or the club's accent, --cover-tint) from the top right, with a fine grid. The field's line
+   drawing sits on it (components/media/profile-media.tsx). */
+.cover-blueprint {
+  --cover-tint: #e8946a;
+  color: #ededef;
+  background:
+    radial-gradient(70% 170% at 88% -15%, color-mix(in oklab, var(--cover-tint) 44%, transparent), transparent 60%),
+    radial-gradient(55% 150% at -5% 115%, rgb(91 124 250 / 0.2), transparent 62%),
+    linear-gradient(rgb(255 255 255 / 0.055) 1px, transparent 1px) 0 0 / 28px 28px,
+    linear-gradient(90deg, rgb(255 255 255 / 0.055) 1px, transparent 1px) 0 0 / 28px 28px,
+    linear-gradient(180deg, #14151a, #0b0c0e);
+}
 /* A profile with no cover yet: a faint engineering grid under a soft light, in the theme's own colours. */
 .cover-empty {
   background:
