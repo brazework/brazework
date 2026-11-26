@@ -1,13 +1,16 @@
 "use client";
 import { emberCreditCost } from "@/lib/ember-credits";
 import { AnimatePresence, motion } from "motion/react";
-import { BadgeCheck, CheckCircle2, ExternalLink, GitBranch, Loader2, Lock, Pencil, Plus, Share2, Sparkles, Trash2, X } from "lucide-react";
+import { BadgeCheck, CheckCircle2, ExternalLink, Loader2, Lock, Pencil, Plus, Share2, Sparkles, Trash2, X, Link as LinkIcon } from "lucide-react";
 import Link from "next/link";
 import { useCopilot } from "@/components/copilot/use-copilot";
 import { importFromGitHub } from "@/lib/connectors/actions";
 import type { ProjectDraft } from "@/lib/connectors/github";
 import { StackPicker } from "@/components/projects/stack-picker";
 import { AddMilestone, MilestoneLog, type Club, type Milestone } from "./milestones";
+import { Schematic } from "@/components/landing/schematics";
+import { schematicFor } from "@/lib/schematic-field";
+import { cleanLink, workSource, type WorkSource } from "@/lib/work-link";
 import { useActionState, useEffect, useRef, useState, useTransition } from "react";
 import { chipCls } from "@/components/app/page-ui";
 import { Button, Field, inputCls } from "@/components/ui";
@@ -105,11 +108,19 @@ export function ProjectCard({ project, own, interests, copilot = false, clubs, v
   const act = (fn: () => Promise<ProjectState>) => start(async () => { const r = await fn(); setMsg(r.ok ? r.message : r.message); });
 
   return (
-    <article className="border border-line bg-surface group relative flex h-full flex-col overflow-hidden rounded-2xl p-5 transition duration-300">
+    <article className="glass-card group relative flex h-full flex-col overflow-hidden rounded-2xl transition duration-300">
+      {/* A strip of the drafting sheet: the project's field drawing, its status and what's verified, so a
+          recruiter scanning a profile sees what each build is before reading a word. */}
+      <Link href={`/projects/${project.id}`} tabIndex={-1} aria-hidden="true" className="theme-dark cover-blueprint relative block h-20 overflow-hidden border-b border-line">
+        <Schematic id={schematicFor([...project.tags, field ?? ""], project.tools ?? [])} className="absolute top-1/2 right-4 h-[120%] w-auto -translate-y-1/2 text-[#f0a57e] opacity-70 transition duration-500 group-hover:opacity-95" />
+        <span className="absolute bottom-2.5 left-4 flex items-center gap-2">
+          {verified > 0 && <span className="inline-flex items-center gap-1 rounded-full bg-[#4ccb82]/15 px-2 py-0.5 text-[11px] font-medium text-[#4ccb82] backdrop-blur-sm"><BadgeCheck className="size-3.5" /> {verified} verified</span>}
+          {project.private && <span className="inline-flex items-center gap-1 rounded-full border border-white/15 bg-black/30 px-2 py-0.5 text-[11px] text-white/75 backdrop-blur-sm"><Lock className="size-3" /> Private</span>}
+        </span>
+      </Link>
+      <div className="flex flex-1 flex-col p-5 pt-4">
       <div className="flex items-start justify-between gap-3">
         <h3 className="text-lg font-semibold tracking-tight"><Link href={`/projects/${project.id}`} className="hover:underline">{project.title}</Link></h3>
-        {verified > 0 && <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[color-mix(in_oklab,var(--ok)_14%,transparent)] px-2 py-0.5 text-[11px] font-medium text-ok"><BadgeCheck className="size-3.5" /> {verified} verified</span>}
-        {project.private && <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-line px-2 py-0.5 text-[11px] text-muted"><Lock className="size-3" /> Private</span>}
       </div>
       <p suppressHydrationWarning className="mt-1.5 flex items-center gap-1.5 text-xs text-muted">
         {project.status === "completed" ? <CheckCircle2 className="size-3.5 text-ok" /> : <span className="relative flex size-2"><span className="absolute inset-0 animate-ping rounded-full bg-accent opacity-50" /><span className="relative size-2 rounded-full bg-accent" /></span>}
@@ -148,6 +159,7 @@ export function ProjectCard({ project, own, interests, copilot = false, clubs, v
       )}
       {sharing && <ShareBox id={project.id} title={project.title} onDone={(m) => { setSharing(false); setMsg(m); }} />}
       {editing && <ProjectDialog project={project} interests={interests} copilot={copilot} stack={stack} specsOn={specsOn} onClose={() => setEditing(false)} />}
+      </div>
     </article>
   );
 }
@@ -235,8 +247,20 @@ function ProjectDialog({ project, interests, onClose, copilot = false, stack = f
   const [importing, startImport] = useTransition();
   const [importMsg, setImportMsg] = useState("");
   const [imported, setImported] = useState<ProjectDraft | null>(null);
+  const [linked, setLinked] = useState<WorkSource | null>(null);
+  const source = workSource(repoUrl);
+  // Start from a link (2026-11-26): GitHub is imported as before; any other place work lives (Onshape,
+  // Fusion, Drive, a video, Figma…) fills the project's link and adds the tool it implies.
   const runImport = () => startImport(async () => {
-    setImportMsg("");
+    setImportMsg(""); setLinked(null);
+    if (!source) { setImportMsg("Paste a link to your work: a repo, a CAD model, a doc or a video."); return; }
+    if (source.id !== "github") {
+      const el = formRef.current?.elements.namedItem("link");
+      if (el instanceof HTMLInputElement) el.value = cleanLink(repoUrl);
+      if (source.tool) setTools((t) => (t.includes(source.tool!) ? t : [...t, source.tool!]));
+      setLinked(source);
+      return;
+    }
     const r = await importFromGitHub(repoUrl);
     if (!r.ok) { setImportMsg(r.message); return; }
     const d = r.draft;
@@ -276,11 +300,18 @@ function ProjectDialog({ project, interests, onClose, copilot = false, stack = f
         </div>
         {!project && (
           <div className="rounded-2xl border border-dashed border-line-strong bg-surface-2/50 p-3">
-            <label htmlFor="gh-url" className="flex items-center gap-1.5 text-xs font-medium text-muted"><GitBranch className="size-3.5" /> Import from GitHub (optional)</label>
+            <label htmlFor="gh-url" className="flex items-center gap-1.5 text-xs font-medium text-muted"><LinkIcon className="size-3.5" /> Start from a link (optional)</label>
+            <p className="mt-0.5 text-xs text-faint">A repo, a CAD model, a doc, a video: wherever the work lives.</p>
             <div className="mt-2 flex gap-2">
-              <input id="gh-url" value={repoUrl} onChange={(e) => setRepoUrl(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); runImport(); } }} placeholder="github.com/owner/repo" className={cn(inputCls, "h-10 flex-1")} />
-              <Button type="button" variant="outline" onClick={runImport} disabled={importing || !repoUrl.trim()}>{importing ? <Loader2 className="size-4 animate-spin" /> : "Import"}</Button>
+              <input id="gh-url" value={repoUrl} onChange={(e) => { setRepoUrl(e.target.value); setLinked(null); }} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); runImport(); } }} placeholder="github.com/…, cad.onshape.com/…, docs.google.com/…" className={cn(inputCls, "h-10 flex-1")} />
+              <Button type="button" variant="outline" onClick={runImport} disabled={importing || !repoUrl.trim()}>{importing ? <Loader2 className="size-4 animate-spin" /> : source?.id === "github" ? "Import" : "Use link"}</Button>
             </div>
+            <div className="mt-2 flex flex-wrap gap-1.5" aria-label="Where work can come from">
+              {["GitHub", "Onshape", "Fusion", "Google Drive", "YouTube", "Figma", "Overleaf"].map((x) => (
+                <span key={x} className={cn("rounded-full border px-2 py-0.5 text-[11px]", source && source.label.startsWith(x.split(" ")[0]) ? "border-transparent bg-text text-surface" : "border-line text-muted")}>{x}</span>
+              ))}
+            </div>
+            {linked && <p className="mt-2 text-xs text-ok">Linked from {linked.label}{linked.tool ? `, and ${linked.tool} added to what you built it with` : ""}. Add the title and summary, then save.</p>}
             {importMsg && <p role="alert" className="mt-2 text-xs text-danger">{importMsg}</p>}
             {imported && (
               <div className="mt-2 text-xs text-muted">
