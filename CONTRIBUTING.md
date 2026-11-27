@@ -43,10 +43,10 @@ Agent-authored pull requests (Forge, Rivet, and other cloud agents) follow [docs
    npx tsc --noEmit && npm run lint && npm test   # types, lint, unit tests (~30 s)
    npm run e2e                                    # the full suite: database rules + browser journeys (~8 min, needs Docker and Chrome)
    ```
-3. Push the branch and open the pull request with auto-merge on:
+3. Push the branch. **Ship Bot** opens the pull request with auto-merge on ([docs/ship-bot.md](docs/ship-bot.md)); name it `wip/…` to push without shipping, or add the `hold` label to stop one. Until the bot is set up, open it yourself:
    ```sh
    git push -u origin HEAD
-   gh pr create --fill && gh pr merge --auto --squash --delete-branch
+   gh pr create --fill && gh pr merge --auto --squash
    ```
    GitHub Actions then runs, and `main` requires these to pass before it merges:
    - **checks**: typecheck, lint, unit tests, production build, smoke test

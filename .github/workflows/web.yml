@@ -101,6 +101,21 @@ jobs:
           node-version: 22
           cache: npm
           cache-dependency-path: web/package-lock.json
+      # Compiler cache only (web/.next/cache), never the .next build output.
+      # https://nextjs.org/docs/app/guides/ci-build-caching
+      # Key is OS + lockfile + next.config.* + source, so a source or config change
+      # misses the exact key. restore-keys may reuse an older compiler cache for the
+      # same lockfile. next build still compiles this tree and validates cache entries
+      # before reuse, so a partial restore cannot make a broken build pass.
+      # npm stays on the setup-node cache above.
+      - name: Cache Next.js build
+        uses: actions/cache@v6
+        with:
+          path: web/.next/cache
+          key: ${{ runner.os }}-nextjs-${{ hashFiles('web/package-lock.json') }}-${{ hashFiles('web/next.config.*') }}-${{ hashFiles('web/**/*.js', 'web/**/*.jsx', 'web/**/*.ts', 'web/**/*.tsx') }}
+          restore-keys: |
+            ${{ runner.os }}-nextjs-${{ hashFiles('web/package-lock.json') }}-${{ hashFiles('web/next.config.*') }}-
+            ${{ runner.os }}-nextjs-${{ hashFiles('web/package-lock.json') }}-
       - run: npm ci
       - run: npx next typegen
       - name: Typecheck
