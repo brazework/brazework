@@ -1,0 +1,75 @@
+name: Verify after deploy
+
+# After every "Web (Next.js)" run for a push to main (Linear FIX-314, part of FIX-313). That run is
+# the full check of the commit: build, unit tests, every end-to-end journey on its own local stack.
+# Vercel has usually deployed the commit already. .github/scripts/verify-deploy.mjs then:
+#   green → marks the commit "production/verified"; promotes it if production is behind (after a rollback)
+#   red   → rolls production back to the newest verified commit (or cancels the deployment if it's still
+#           building), opens a revert pull request labelled "hold", files a Linear issue, and fails so
+#           GitHub emails us
+# Only "Typecheck, lint, unit tests, build" and "End-to-end (database rules + browser journeys)" decide;
+# a cancelled run does nothing.
+#
+# Secrets: VERCEL_TOKEN (a token for team FORGE DEV) to roll back and promote; without it the run records
+# the result and fails on red, but can't touch production. LINEAR_API_KEY to file issues.
+#
+# Run workflow: "dry-run" says what it would do for a commit; "mark-verified" records a commit as
+# known-good (the first time, or after fixing production by hand). Runbook: docs/verify-after-deploy.md.
+on:
+  workflow_run:
+    workflows: ["Web (Next.js)"]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      sha:
+        description: "Commit on main (full SHA)"
+        required: true
+      mode:
+        description: "dry-run or mark-verified"
+        required: true
+        default: dry-run
+        type: choice
+        options: [dry-run, mark-verified]
+      verdict:
+        description: "dry-run only: pretend the check was green or red"
+        required: false
+        default: red
+        type: choice
+        options: [red, green]
+
+# One at a time, in order, never cancelled: each decides what production serves.
+concurrency:
+  group: verify-production
+  cancel-in-progress: false
+
+permissions:
+  contents: write      # push the revert branch
+  pull-requests: write # open the revert pull request
+  statuses: write      # the production/verified commit status
+  actions: read        # read the Web run's jobs
+
+jobs:
+  verify:
+    name: Verify and roll back if red
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.event == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - name: Act on the result
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}
+          HEAD_SHA: ${{ github.event.workflow_run.head_sha || inputs.sha }}
+          WEB_RUN_ID: ${{ github.event.workflow_run.id }}
+          WEB_RUN_URL: ${{ github.event.workflow_run.html_url }}
+          MODE: ${{ inputs.mode || 'run' }}
+          FORCE_VERDICT: ${{ inputs.mode == 'dry-run' && inputs.verdict || '' }}
+        run: node .github/scripts/verify-deploy.mjs
