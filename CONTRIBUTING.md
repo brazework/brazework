@@ -50,7 +50,8 @@ Agent-authored pull requests (Forge, Rivet, and other cloud agents) follow [docs
    ```
    GitHub Actions then runs, and `main` requires these to pass before it merges:
    - **checks**: typecheck, lint, unit tests, production build, smoke test
-   - **e2e**: the same `npm run e2e` (a throwaway Supabase with every migration, then every journey)
+   - **Fast gate**: every SQL rule test plus the must-not-break journeys (sign up and post, clubs and events, messages and projects, verifying a milestone) on a throwaway Supabase, ~4 min. Locally: `npm run e2e:fast`
+   - **e2e**: the full suite (`npm run e2e`), split across parallel jobs. On a pull request it runs only when the change touches `web/e2e/`, `package.json` or `.github/`, or has the `full-e2e` label; otherwise it skips (which counts as passing). It always runs after the merge on `main`, and if it fails there production is rolled back by itself ([docs/verify-after-deploy.md](docs/verify-after-deploy.md))
    - **security**: production dependency audit and a secret scan of the history
 
    A pull request that touches no app or database file (docs, other workflows) skips checks and e2e, which counts as passing. Also on pull requests, every Monday, and on demand (Actions → Run workflow), but not on every push to `main`, so CI fits a free plan's 2,000 Actions minutes a month:

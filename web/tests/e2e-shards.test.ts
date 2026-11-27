@@ -276,3 +276,13 @@ test("gate command exits non-zero when a shard was skipped", () => {
   assert.notEqual(matrix.status, 0);
   assert.match(matrix.stderr, /matrix result: cancelled/);
 });
+
+test("the fast gate is a few journeys from the plan, in plan order, with no cross-runner handoffs", async () => {
+  const { fast, fastSpecs, browser: plan, check: checkPlan } = await import("../e2e/shards.mjs");
+  const specs = fastSpecs();
+  assert.equal(specs.length, fast.length);
+  assert.ok(specs.length > 0 && specs.length <= 6, "keep the fast gate small: it runs on every pull request");
+  const order = plan.map((row: { file: string }) => row.file);
+  assert.deepEqual(specs, [...specs].sort((a: string, b: string) => order.indexOf(a) - order.indexOf(b)));
+  assert.doesNotThrow(() => checkPlan());
+});

@@ -72,6 +72,22 @@ export const browser = [
   { file: "e2e/zj-milestone-log.cjs", shard: "b3" },
 ];
 
+// The fast gate (Linear FIX-315): the pull request check that blocks a merge. Every SQL rule test
+// plus the journeys that must never break, on one runner. The full suite above still runs on every
+// push to main, and production is rolled back if it fails there (.github/workflows/verify.yml).
+// Keep this under ~4 minutes: each journey here is time on every pull request.
+export const fast = [
+  "e2e/a-signup-post.cjs", // sign up, sign in, post
+  "e2e/b-clubs-events.cjs", // clubs and events
+  "e2e/c-messages-projects.cjs", // messages and projects
+  "e2e/zb-verify.cjs", // a milestone gets verified
+];
+
+/** The fast gate's journeys, in full-suite order. */
+export function fastSpecs() {
+  return browser.filter((row) => fast.includes(row.file)).map((row) => row.file);
+}
+
 const byName = (a, b) => (a < b ? -1 : a > b ? 1 : 0);
 
 export function sqlTests() {
@@ -216,6 +232,11 @@ export function check() {
   for (const id of ids) {
     if (specsFor(id).length === 0) problems.push(`shard ${id} has no browser journeys`);
   }
+  for (const file of fast) {
+    if (!seen.has(file)) problems.push(`fast gate journey ${file} isn't in the plan`);
+  }
+  // The fast gate is one runner too: a journey there can't read a file only a journey elsewhere writes.
+  problems.push(...resultsHandoffs(browser.filter((row) => fast.includes(row.file)).map((row) => ({ ...row, shard: "fast" }))).problems);
   const sql = sqlTests();
   problems.push(...resultsHandoffs().problems);
   if (sql.length === 0) problems.push("sql shard has no supabase/tests/*.test.sql files");
@@ -308,6 +329,11 @@ async function main() {
     for (const file of specsFor(id)) console.log(file);
     return;
   }
+  if (cmd === "fast") {
+    check();
+    for (const file of fastSpecs()) console.log(file);
+    return;
+  }
   if (cmd === "manifest") {
     check();
     for (const id of shardIds()) {
@@ -334,7 +360,7 @@ async function main() {
     for (const id of shardIds()) console.log(`e2e shard ${id}: success`);
     return;
   }
-  console.error("usage: node e2e/shards.mjs check|matrix|specs|shard <id>|manifest|gate");
+  console.error("usage: node e2e/shards.mjs check|matrix|specs|shard <id>|fast|manifest|gate");
   process.exit(2);
 }
 

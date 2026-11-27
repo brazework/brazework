@@ -5,7 +5,8 @@
 # CI sets E2E_SHARD (see e2e/shards.mjs). Each shard is one job on its own runner. This script brings
 # up that runner's own local Supabase (e2e/local-supabase.sh): its own Docker database, its own Auth
 # users (josh, maya, ben, cara @forge.test), and its own seed. Shards do not share accounts or rows.
-# Unset E2E_SHARD runs the whole suite on one stack, which is what a laptop does.
+# Unset E2E_SHARD runs the whole suite on one stack, which is what a laptop does. E2E_SHARD=fast runs
+# the fast gate: the SQL rule tests and the must-not-break journeys (npm run e2e:fast).
 set -euo pipefail
 
 # A spec counts only when its output file exists, is non-empty, and has a "N/N passed" line.
@@ -61,7 +62,7 @@ fi
 cd "$(dirname "$0")/.."
 SHARD="${E2E_SHARD:-all}"
 node e2e/shards.mjs check
-if [ "$SHARD" != all ]; then
+if [ "$SHARD" != all ] && [ "$SHARD" != fast ]; then
   node e2e/shards.mjs shard "$SHARD" >/dev/null
 fi
 trap 'kill $(lsof -ti:3200 -sTCP:LISTEN) 2>/dev/null || true; e2e/local-supabase.sh down >/dev/null' EXIT
@@ -105,6 +106,15 @@ if [ "$SHARD" = sql ]; then
   # Rule tests talk to Postgres only. Each file rolls back. Skip the Next.js build.
   e2e/local-supabase.sh up
   run_sql
+elif [ "$SHARD" = fast ]; then
+  # The fast gate (FIX-315): every SQL rule test plus the must-not-break journeys, on one stack.
+  . e2e/serve.sh
+  id() { docker exec forge-e2e-db psql -U postgres -h localhost -d postgres -tAc "select id from auth.users where email='$1'"; }
+  export BEN_ID="$(id ben@forge.test)" JOSH_ID="$(id josh@forge.test)"
+  run_sql
+  read_specs fast
+  echo "fast gate: ${#specs[@]} browser journeys"
+  run_specs "${specs[@]}"
 elif [ "$SHARD" = all ]; then
   . e2e/serve.sh
   id() { docker exec forge-e2e-db psql -U postgres -h localhost -d postgres -tAc "select id from auth.users where email='$1'"; }
