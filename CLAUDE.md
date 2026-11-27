@@ -2,7 +2,7 @@
 
 Read [AGENTS.md](AGENTS.md) and [docs/team-playbook.md](docs/team-playbook.md) first. They are the rules.
 
-How we work is in [CONTRIBUTING.md](CONTRIBUTING.md); the docs index is [docs/README.md](docs/README.md). Read both first.
+How we work is in [CONTRIBUTING.md](CONTRIBUTING.md); the docs index is [docs/README.md](docs/README.md).
 
 ## Working from the board
 
