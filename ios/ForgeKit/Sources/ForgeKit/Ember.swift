@@ -150,8 +150,9 @@ enum EmberLogic {
   }
 
   /// The chat so far, as the route accepts it: the last 12 turns, each at most 6,000 characters.
+  // The whole conversation, up to the 80 messages the route takes (FIX-239); the server folds a long one to fit.
   static func history(_ turns: [(user: Bool, text: String)]) -> [[String: String]] {
-    turns.filter { !$0.text.isEmpty }.suffix(12).map { ["role": $0.user ? "user" : "assistant", "content": String($0.text.prefix(6000))] }
+    turns.filter { !$0.text.isEmpty }.suffix(80).map { ["role": $0.user ? "user" : "assistant", "content": String($0.text.prefix(6000))] }
   }
 }
 

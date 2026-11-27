@@ -21,6 +21,7 @@ import { CARD_LABEL, MAX_TURN, cardsOf, savedCards, type CardOutcome, type Offer
 import { carryOnSteps, followsAfter, pickedFrom } from "@/lib/ember-bar";
 import { ChoiceButtons } from "@/components/copilot/choices";
 import { deleteAllChats, deleteChat, loadChat, rateAnswer, saveChat, type ChatSummary, type SavedMsg } from "@/lib/copilot-chats";
+import { MAX_TURNS } from "@/lib/ember-history";
 
 // `outcomes`: a saved chat's cards and what happened to them (a live answer has `proposals` instead).
 type Msg = { role: "user" | "assistant"; content: string; tools?: string[]; proposals?: Proposal[]; segments?: Segment[]; cards?: string[]; next?: string[]; outcomes?: CardOutcome[]; choice?: OfferedChoice; follow?: boolean };
@@ -28,7 +29,7 @@ type Msg = { role: "user" | "assistant"; content: string; tools?: string[]; prop
 type Done = Record<string, CardOutcome>;
 const cardsFor = (m: Msg, done: Done): CardOutcome[] => (m.proposals?.length ? cardsOf(m.proposals, done) : m.outcomes ?? []);
 // The chat so far as Torch gets it: the words of each turn, and what became of each answer's cards.
-const toHistory = (msgs: Msg[], done: Done): ThreadTurn[] => msgs.slice(-10).map((m) => {
+const toHistory = (msgs: Msg[], done: Done): ThreadTurn[] => msgs.slice(-MAX_TURNS).map((m) => {
   const cards = m.role === "assistant" ? cardsFor(m, done) : [];
   return { role: m.role, content: m.content.slice(0, MAX_TURN), ...(cards.length ? { cards } : {}), ...(m.choice ? { choice: m.choice } : {}), ...(m.follow ? { follow: true } : {}) };
 });
@@ -157,6 +158,9 @@ export function CopilotChat({ first, field, student = true, initial = "", initia
   const [done, setDone] = useState<Done>({});
   const doneNow = useRef(done);
   useEffect(() => { doneNow.current = done; }, [done]);
+  // The save after each answer (FIX-239): the next question waits for it, so the server, which reads
+  // a saved chat from the database, never sees it a turn behind.
+  const savingNow = useRef<Promise<unknown> | null>(null);
   // Torch carries on after a yes (the spec's part 3): a card confirmed with a next step sets a follow turn
   // going, which an effect below sends with this render's state. Free, up to 3 after each ask.
   // Each confirmed card with a next step, numbered so the effect carries on once per card.
@@ -184,6 +188,7 @@ export function CopilotChat({ first, field, student = true, initial = "", initia
   const send = async (text: string, preset?: Preset, tapped?: string, carry = false) => {
     const q = text.trim();
     if ((!q && !carry) || busy || opening) return;
+    if (savingNow.current) await savingNow.current;
     const was = msgs;
     const before = msgs.map((m, i) => (i === msgs.length - 1 && m.choice ? { ...m, choice: pickedFrom(m.choice, tapped) } : m));
     const asked: Msg = { role: "user", content: q, ...(carry ? { follow: true } : {}) };
@@ -194,7 +199,9 @@ export function CopilotChat({ first, field, student = true, initial = "", initia
     setNotice("");
     follow();
     let refused = false;
-    const out = await run({ task: "ask", input: q, preset, history: toHistory(before, doneNow.current), choices: true, ...(carry ? { follow: true } : {}) }, (full, tools, proposals, segments, choice) => {
+    // The whole conversation (FIX-239). For a saved chat the server reads it from the database by id;
+    // what's sent here is the fallback, and what a chat that isn't saved yet uses.
+    const out = await run({ task: "ask", input: q, preset, chat: chatId ?? undefined, history: toHistory(before, doneNow.current), choices: true, ...(carry ? { follow: true } : {}) }, (full, tools, proposals, segments, choice) => {
       const { text: body, next } = splitNext(full);
       last = { role: "assistant", content: body, tools, proposals, segments, next, ...(choice ? { choice: { options: choice.options } } : {}) };
       setMsgs([...before, asked, last]);
@@ -212,7 +219,10 @@ export function CopilotChat({ first, field, student = true, initial = "", initia
     setFollows((f) => followsAfter(f, carry, false));
     if (!saving || !last.content) return;
     // Keep the chat (only you can see it). The URL follows, so a refresh brings it back.
-    const r = await saveChat(chatId, [...before, asked, last].map(toSaved(doneNow.current))).catch(() => null);
+    const saved = saveChat(chatId, [...before, asked, last].map(toSaved(doneNow.current))).catch(() => null);
+    savingNow.current = saved;
+    const r = await saved;
+    if (savingNow.current === saved) savingNow.current = null;
     if (!r?.id) return;
     const id = r.id;
     if (id !== chatId) { setChatId(id); window.history.replaceState(null, "", `/copilot?chat=${id}`); }

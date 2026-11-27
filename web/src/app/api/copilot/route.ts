@@ -2,11 +2,12 @@ import type Anthropic from "@anthropic-ai/sdk";
 import { claudeClient } from "@/lib/claude";
 import { COPILOT_MODEL, copilotEnabled, copilotRequest, memberContext, taskPrompt } from "@/lib/copilot";
 import { emberSystem, frame, runAgent } from "@/lib/copilot-agent";
+import { conversation } from "@/lib/ember-history-summary";
 import { pageLine } from "@/lib/copilot-page";
 import { presetInstruction } from "@/lib/copilot-presets";
 import { OFFER_CHOICES, TOOLS, makeExec } from "@/lib/copilot-tools";
 import { takeEmberCredits } from "@/lib/ember-quota";
-import { followRefusal, threadMessages } from "@/lib/ember-thread";
+import { cardOutcome, followRefusal, offeredChoice, threadMessages, type ThreadTurn } from "@/lib/ember-thread";
 import { viewerFromToken } from "@/lib/supabase/server";
 
 // POST /api/copilot: streams Copilot's reply as plain text, so it types out live in the UI.
@@ -16,6 +17,20 @@ import { viewerFromToken } from "@/lib/supabase/server";
 // Errors come back as JSON { message } with a status: 400 bad input, 401 signed out,
 // 429 daily limit reached, 503 Copilot not switched on.
 const json = (status: number, message: string) => Response.json({ message }, { status });
+
+// A saved chat stores card outcomes beside the words. The note Torch reads (lib/ember-thread.ts) wants
+// them on `cards`, so either shape is accepted before the conversation is folded to its budget.
+function asThread(raw: unknown): ThreadTurn[] {
+  if (!Array.isArray(raw)) return [];
+  return raw.flatMap((m): ThreadTurn[] => {
+    if (!m || typeof m !== "object") return [];
+    const t = m as { role?: unknown; content?: unknown; cards?: unknown; outcomes?: unknown; choice?: unknown; follow?: unknown };
+    if ((t.role !== "user" && t.role !== "assistant") || typeof t.content !== "string") return [];
+    const cards = cardOutcome.array().safeParse(t.cards ?? t.outcomes);
+    const choice = offeredChoice.safeParse(t.choice);
+    return [{ role: t.role, content: t.content, ...(cards.success && cards.data.length ? { cards: cards.data } : {}), ...(choice.success ? { choice: choice.data } : {}), ...(t.follow === true ? { follow: true } : {}) }];
+  });
+}
 
 export async function POST(req: Request) {
   const parsed = copilotRequest.safeParse(await req.json().catch(() => null));
@@ -39,9 +54,13 @@ export async function POST(req: Request) {
   if (!credits.ok) return json(credits.status, credits.message);
 
   const { instructions, maxTokens } = taskPrompt(r);
-  // What happened to the cards of each earlier answer goes in with the turn after it (lib/ember-thread.ts).
-  const messages: Anthropic.MessageParam[] = threadMessages(r.history ?? [], r.input, !!r.follow);
   const client = await claudeClient();
+  // The conversation so far (FIX-239). A saved chat is read from the database as the member (its rules
+  // let only the owner read it), not taken from what the browser sends; within a budget Torch sees all
+  // of it, and a longer one keeps its start and latest messages with the middle summarised. What happened
+  // to each answer's cards goes in with the turn after it (lib/ember-thread.ts) before that fold.
+  const saved = r.chat ? await ctx.supabase.from("copilot_chats").select("messages").eq("id", r.chat).maybeSingle().then((x) => (Array.isArray(x.data?.messages) ? x.data.messages : null), () => null) : null;
+  const messages: Anthropic.MessageParam[] = await conversation(client, threadMessages(asThread(saved ?? r.history ?? []), r.input, !!r.follow));
   // Asked from the bar on a project, club or event page: what that page is, read as the member.
   const here = r.task === "ask" ? await pageLine(ctx.supabase, ctx.userId, r.page) : "";
   // The rules first, cached; then what's particular to this member and this request.
@@ -65,7 +84,8 @@ export async function POST(req: Request) {
         if (r.task === "ask") {
           await runAgent({ client, model: COPILOT_MODEL, system, messages, tools: r.choices ? [...TOOLS, OFFER_CHOICES] : TOOLS, exec: makeExec(ctx.supabase, ctx.userId, (proposal) => { prepared++; out(frame({ proposal })); }, (choice) => { offered++; out(frame({ choice })); }, { carryOn: !!r.choices }), maxTokens, signal: abort.signal, emit: (e) => out(e.type === "text" ? e.text : frame({ tool: e.name })) });
         } else {
-          const stream = client.messages.stream({ model: COPILOT_MODEL, max_tokens: maxTokens, system, messages }, { signal: abort.signal });
+          // Cached like questions are: the rules' own marker, plus the conversation so far.
+          const stream = client.messages.stream({ model: COPILOT_MODEL, max_tokens: maxTokens, system, messages, cache_control: { type: "ephemeral" } }, { signal: abort.signal });
           for await (const ev of stream) if (ev.type === "content_block_delta" && ev.delta.type === "text_delta") out(ev.delta.text);
         }
         controller.close();

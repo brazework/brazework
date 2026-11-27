@@ -2,7 +2,6 @@
 import { emberCreditCost } from "@/lib/ember-credits";
 import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import { X } from "lucide-react";
-import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import { Lookups } from "@/app/(app)/copilot/copilot-client";
@@ -99,6 +98,16 @@ export function AskBar() {
     if (r?.id) setChatId(r.id);
   };
   const close = () => { stop(); setTurns([]); setDone({}); setChatId(null); setCarryPaid([]); setNotice(""); };
+  // "Keep going" opens this exchange on Torch's page. A single question isn't saved on its own; saving
+  // it here (FIX-239) means the page opens with everything said in the bar, not a blank chat.
+  const keepGoing = async () => {
+    let id = chatId;
+    if (!id && turns.some((t) => splitNext(t.text).text.trim())) {
+      const r = await saveChat(null, toSaved(turns, doneNow.current)).catch(() => null);
+      if (r?.id) { id = r.id; setChatId(r.id); }
+    }
+    router.push(id ? `/copilot?chat=${id}` : "/copilot");
+  };
   const onOutcome = (id: string, o: CardOutcome, settled: boolean) => {
     doneNow.current = { ...doneNow.current, [id]: o };
     setDone((d) => ({ ...d, [id]: o }));
@@ -137,7 +146,7 @@ export function AskBar() {
   return (
     <div>
       <GlobalSearch onAsk={(q) => void ask(q)} asking={busy} joined={turns.length > 0} />
-      <AskAnswer turns={turns} busy={busy} error={error} remaining={remaining} chatId={chatId} follows={follows} carryPaid={carryPaid} notice={notice} onAsk={(q, tapped, carry) => void ask(q, tapped, carry)} onClose={close} onOutcome={onOutcome} />
+      <AskAnswer turns={turns} busy={busy} error={error} remaining={remaining} follows={follows} carryPaid={carryPaid} notice={notice} onAsk={(q, tapped, carry) => void ask(q, tapped, carry)} onClose={close} onOutcome={onOutcome} onKeepGoing={() => void keepGoing()} />
     </div>
   );
 }
@@ -145,7 +154,7 @@ export function AskBar() {
 // Torch's answers, hanging from the bar as one piece: each thing you said as a quiet line, Torch's
 // reply beside its mark with the cards to approve, and under the newest its suggested next questions,
 // one tap to ask. A long exchange scrolls inside the panel, so the page under it stays put.
-function AskAnswer({ turns, busy, error, remaining, chatId, follows, carryPaid, notice, onAsk, onClose, onOutcome }: { turns: Turn[]; busy: boolean; error: string; remaining: number | null; chatId: string | null; follows: number; carryPaid: string[]; notice: string; onAsk: (q: string, tapped?: string, carry?: boolean) => void; onClose: () => void; onOutcome: (id: string, o: CardOutcome, settled: boolean) => void }) {
+function AskAnswer({ turns, busy, error, remaining, follows, carryPaid, notice, onAsk, onClose, onOutcome, onKeepGoing }: { turns: Turn[]; busy: boolean; error: string; remaining: number | null; follows: number; carryPaid: string[]; notice: string; onAsk: (q: string, tapped?: string, carry?: boolean) => void; onClose: () => void; onOutcome: (id: string, o: CardOutcome, settled: boolean) => void; onKeepGoing: () => void }) {
   const reduce = useReducedMotion();
   const scroller = useRef<HTMLDivElement>(null);
   const newest = turns.at(-1)?.id;
@@ -203,7 +212,7 @@ function AskAnswer({ turns, busy, error, remaining, chatId, follows, carryPaid, 
           </div>
           {(!busy || remaining !== null) && (
             <div className="flex items-center gap-3 border-t border-line px-3 py-2 text-xs sm:px-4">
-              <Link href={chatId ? `/copilot?chat=${chatId}` : "/copilot"} className="font-medium text-text-2 underline-offset-4 hover:text-text hover:underline">Keep going on Torch&apos;s page</Link>
+              <button type="button" onClick={onKeepGoing} disabled={busy} className="font-medium text-text-2 underline-offset-4 hover:text-text hover:underline disabled:opacity-60">Keep going on Torch&apos;s page</button>
               {remaining !== null && <span className="ml-auto text-faint">{remaining} credits left today</span>}
             </div>
           )}
