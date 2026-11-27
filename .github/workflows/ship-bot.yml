@@ -15,10 +15,11 @@ on:
     # Not "synchronize": a push to the branch already runs this through the push trigger.
     types: [opened, reopened, ready_for_review, labeled, unlabeled, converted_to_draft]
 
-# One run per branch at a time; a newer push supersedes an older one.
+# One run per branch at a time. Queued, not cancelled: a push and the "opened" event it causes arrive
+# together, and a cancelled run shows as a red X on the pull request. Each run takes seconds.
 concurrency:
   group: ship-bot-${{ github.head_ref || github.ref_name }}
-  cancel-in-progress: true
+  cancel-in-progress: false
 
 permissions:
   contents: read
