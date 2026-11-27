@@ -7,6 +7,57 @@
 # users (josh, maya, ben, cara @forge.test), and its own seed. Shards do not share accounts or rows.
 # Unset E2E_SHARD runs the whole suite on one stack, which is what a laptop does.
 set -euo pipefail
+
+# A spec counts only when its output file exists, is non-empty, and has a "N/N passed" line.
+# Any line that starts with FAIL fails the job. No output is not a pass: grep finding no FAIL
+# line used to return 1, and under set -e that became the function's status (or, with if/grep,
+# a silent success). These helpers return 0 either way; the caller checks $fail.
+fail=0
+passed=0
+note_spec_output() {
+  local spec="$1" out="$2"
+  if [ ! -f "$out" ]; then
+    echo "missing spec output: $spec" >&2
+    fail=1
+    return 0
+  fi
+  if [ ! -s "$out" ]; then
+    echo "empty spec output: $spec" >&2
+    fail=1
+    return 0
+  fi
+  if grep -q "^FAIL" "$out"; then
+    fail=1
+  fi
+  if grep -Eq "^[0-9]+/[0-9]+ passed$" "$out"; then
+    passed=$((passed + 1))
+  else
+    echo "no passed line: $spec" >&2
+    fail=1
+  fi
+  return 0
+}
+finish_specs() {
+  local expected="$1"
+  if [ "$passed" -ne "$expected" ]; then
+    echo "expected $expected specs to report a passed line, got $passed" >&2
+    fail=1
+  fi
+  return 0
+}
+# Unit tests call this so they can check a results file without Docker. `npm run e2e` does not.
+if [ "${1:-}" = "--check-output" ]; then
+  shift
+  n=0
+  for f in "$@"; do
+    note_spec_output "$f" "$f"
+    n=$((n + 1))
+  done
+  finish_specs "$n"
+  [ "$fail" = 0 ]
+  exit
+fi
+
 cd "$(dirname "$0")/.."
 SHARD="${E2E_SHARD:-all}"
 node e2e/shards.mjs check
@@ -27,12 +78,16 @@ run_sql() {
 }
 
 run_specs() {
-  local spec
+  local spec expected=$#
+  passed=0
   for spec in "$@"; do
     echo "== $spec"
+    : > /tmp/forge-e2e-out.txt
     node "$spec" | tee /tmp/forge-e2e-out.txt
-    grep -q "^FAIL" /tmp/forge-e2e-out.txt && fail=1
+    note_spec_output "$spec" /tmp/forge-e2e-out.txt
   done
+  finish_specs "$expected"
+  return 0
 }
 
 read_specs() {

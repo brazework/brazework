@@ -7,7 +7,7 @@
 // Browser shards are balanced from the per-spec times in main run 45902587269 (job 140191750586,
 // 2026-11-26). The longest journey is s-landing.cjs at 166s. sql is every file in
 // supabase/tests/*.test.sql; each one rolls back, and that shard does not start the Next server.
-import { readdirSync, realpathSync, statSync } from "node:fs";
+import { readFileSync, readdirSync, realpathSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 
@@ -20,11 +20,12 @@ export const browser = [
   { file: "e2e/ab-build-first.cjs", shard: "b3" },
   { file: "e2e/ac-money.cjs", shard: "b3" },
   { file: "e2e/b-clubs-events.cjs", shard: "b5" },
-  { file: "e2e/c-messages-projects.cjs", shard: "b7" },
+  { file: "e2e/c-messages-projects.cjs", shard: "b6" },
   { file: "e2e/d-search-settings.cjs", shard: "b4" },
   { file: "e2e/e-chat.cjs", shard: "b4" },
   { file: "e2e/f-dock.cjs", shard: "b6" },
-  { file: "e2e/h-challenges.cjs", shard: "b6" },
+  // Reads .results/school-domain.txt, which a-signup-post.cjs writes earlier in this list. Same shard.
+  { file: "e2e/h-challenges.cjs", shard: "b7" },
   { file: "e2e/i-chapters.cjs", shard: "b2" },
   { file: "e2e/j-pro.cjs", shard: "b7" },
   { file: "e2e/k-feed-budget.cjs", shard: "b6" },
@@ -57,7 +58,7 @@ export const browser = [
   { file: "e2e/zk-linkedin.cjs", shard: "b5" },
   { file: "e2e/zl-chats-look.cjs", shard: "b7" },
   { file: "e2e/zm-photo-viewer.cjs", shard: "b3" },
-  { file: "e2e/zo-chat-delete.cjs", shard: "b7" },
+  { file: "e2e/zo-chat-delete.cjs", shard: "b1" },
   { file: "e2e/zn-view-only.cjs", shard: "b5" },
   { file: "e2e/zp-post-files.cjs", shard: "b4" },
   { file: "e2e/zq-club-projects.cjs", shard: "b2" },
@@ -66,7 +67,8 @@ export const browser = [
   { file: "e2e/zt-progress.cjs", shard: "b6" },
   { file: "e2e/zu-courses-b.cjs", shard: "b3" },
   { file: "e2e/zv-project-steps.cjs", shard: "b2" },
-  { file: "e2e/g-account.cjs", shard: "b1" },
+  // Last in the plan on purpose: its name sorts before h-challenges, and the shard must not follow that sort.
+  { file: "e2e/g-account.cjs", shard: "b7" },
   { file: "e2e/zj-milestone-log.cjs", shard: "b3" },
 ];
 
@@ -89,6 +91,97 @@ export function shardIds() {
 export function specsFor(shard) {
   if (shard === "sql") return sqlTests();
   return browser.filter((row) => row.shard === shard).map((row) => row.file);
+}
+
+// Reads and writes of a named file under e2e/.results/. Screenshots and the shared OUT directory
+// are not a handoff: only a readFile/writeFile call with a path under .results counts.
+const RESULTS_CALL =
+  /(readFileSync|readFile|createReadStream|writeFileSync|writeFile|appendFileSync|createWriteStream)[\s\S]{0,300}?\.results(?:["'`]\s*,\s*["'`]([^"'`]+)["'`]|\/([^"'`\s)\\]+))/g;
+const WRITE_CALL = /writeFileSync|writeFile|appendFileSync|createWriteStream/;
+
+const ASSIGNED_PATH = /(?:const|let|var)\s+(\w+)\s*=[^;]*\.results["'`]\s*,\s*["'`]([^"'`]+)["'`]|(?:const|let|var)\s+(\w+)\s*=[^;]*\.results\/([^"'`\s)\\]+)/g;
+
+export function resultsAccessIn(source) {
+  const reads = new Set();
+  const writes = new Set();
+  RESULTS_CALL.lastIndex = 0;
+  let match;
+  while ((match = RESULTS_CALL.exec(source))) {
+    const rel = match[2] || match[3];
+    if (!rel) continue;
+    (WRITE_CALL.test(match[1]) ? writes : reads).add(rel);
+  }
+  // session-cookie.cjs binds the path, then writeFileSync(out). The call itself does not contain ".results".
+  ASSIGNED_PATH.lastIndex = 0;
+  while ((match = ASSIGNED_PATH.exec(source))) {
+    const name = match[1] || match[3];
+    const rel = match[2] || match[4];
+    if (!name || !rel) continue;
+    const uses = new RegExp(`\\b(?:readFileSync|readFile|createReadStream|writeFileSync|writeFile|appendFileSync|createWriteStream)\\s*\\(\\s*${name}\\b`, "g");
+    let use;
+    while ((use = uses.exec(source))) {
+      (WRITE_CALL.test(use[0]) ? writes : reads).add(rel);
+    }
+  }
+  return { reads: [...reads], writes: [...writes] };
+}
+
+// A spec that reads a .results file written by a spec on another shard cannot see that file.
+// `rows` is the plan ({ file, shard }). `accessByFile` maps a spec path to { reads, writes }.
+export function resultsHandoffProblems(rows, accessByFile) {
+  const problems = [];
+  const shardOf = new Map(rows.map((row) => [row.file, row.shard]));
+  const writers = new Map();
+  for (const row of rows) {
+    for (const rel of accessByFile.get(row.file)?.writes || []) {
+      if (!writers.has(rel)) writers.set(rel, []);
+      writers.get(rel).push(row.file);
+    }
+  }
+  for (const row of rows) {
+    for (const rel of accessByFile.get(row.file)?.reads || []) {
+      const wrote = (writers.get(rel) || []).filter((file) => file !== row.file);
+      if (wrote.length === 0) {
+        problems.push(`${row.file} reads .results/${rel}, and no other spec in the plan writes it`);
+        continue;
+      }
+      for (const writer of wrote) {
+        if (shardOf.get(writer) !== row.shard) {
+          problems.push(
+            `${row.file} on ${row.shard} reads .results/${rel} written by ${writer} on ${shardOf.get(writer)}`,
+          );
+        }
+      }
+    }
+  }
+  return problems;
+}
+
+export function resultsHandoffs(rows = browser) {
+  const accessByFile = new Map();
+  for (const row of rows) {
+    accessByFile.set(row.file, resultsAccessIn(readFileSync(join(webDir, row.file), "utf8")));
+  }
+  const problems = resultsHandoffProblems(rows, accessByFile);
+  const handoffs = [];
+  const shardOf = new Map(rows.map((row) => [row.file, row.shard]));
+  for (const row of rows) {
+    for (const rel of accessByFile.get(row.file)?.writes || []) {
+      for (const reader of rows) {
+        if (reader.file === row.file) continue;
+        if ((accessByFile.get(reader.file)?.reads || []).includes(rel)) {
+          handoffs.push({
+            path: rel,
+            writer: row.file,
+            reader: reader.file,
+            writerShard: shardOf.get(row.file),
+            readerShard: reader.shard,
+          });
+        }
+      }
+    }
+  }
+  return { problems, handoffs, accessByFile };
 }
 
 // Problems with this run's jobs. A shard must appear exactly once and conclude success.
@@ -124,6 +217,7 @@ export function check() {
     if (specsFor(id).length === 0) problems.push(`shard ${id} has no browser journeys`);
   }
   const sql = sqlTests();
+  problems.push(...resultsHandoffs().problems);
   if (sql.length === 0) problems.push("sql shard has no supabase/tests/*.test.sql files");
   const sqlSeen = new Set();
   for (const file of sql) {
