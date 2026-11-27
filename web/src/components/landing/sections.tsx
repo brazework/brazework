@@ -1,12 +1,12 @@
-import { ArrowRight, BarChart3, Briefcase, ClipboardCheck, GraduationCap, Landmark, Link2, PenLine, Plus, Users } from "lucide-react";
+import { ArrowRight, BarChart3, Briefcase, ClipboardCheck, GraduationCap, Landmark, Plus, Users } from "lucide-react";
 import Link from "next/link";
-import { Ember } from "@/components/ember/ember";
-import { Seal } from "@/components/app/verified-seal";
 import { PLUS } from "@/lib/pricing";
+import { Tilt } from "./tilt";
 
 // The landing page's short sections (redesign 2026-11; schools first since 2026-11-26, see
 // docs/strategy.md; Brazework Courses since 2026-11-26). The hero does the showing; ForSchools is the
-// one band that speaks to the school that pays; /schools says the rest and /pricing has the prices. Audiences says who it's for and where each starts.
+// one band that speaks to the school that pays; /schools says the rest and /pricing has the prices
+// (no price on this page: the founders, 2026-11-27). Audiences says who it's for and where each starts.
 // The whole page tells one story (2026-11-26, Ian and Josh: "include professionals", "tie it all
 // together"): what it is (the hero), how it works in three steps that are the same for everyone (How),
 // who it's for, students and professionals alike (Audiences), what a school gets (ForSchools, Compare),
@@ -23,42 +23,7 @@ export const SCHOOL_OUTCOMES = [
   { icon: Landmark, office: "Admissions", title: "A public showcase", body: "Your verified clubs and what your students are building right now, for prospective students and donors.", soon: false },
 ];
 
-// How it works: the same three steps for a student, a professional and a club member. Torch, the AI
-// built in, does the busywork, and nothing is saved or signed until a person says yes.
-const STEPS = [
-  { icon: Plus, title: "Log what you built", body: "A class project, a club build or something you shipped at work. Add a photo, a file or a link. Or tell Torch in one sentence and it writes it up.", sample: <span className="rounded-lg border border-line bg-surface-2 px-3 py-2 text-[13px] text-text-2">Cut the robot arm&apos;s cycle from 9.4 to 7.1 seconds</span> },
-  { icon: PenLine, title: "Someone who saw it signs it", body: "Your professor, a club officer, your coworker or a client signs it with their name. They get one email and don't need an account.", sample: <span className="flex flex-wrap gap-1.5">{["Your professor", "Your club", "Your coworker", "A client"].map((x) => <span key={x} className="rounded-full border border-line px-2.5 py-1 text-[12px] text-text-2">{x}</span>)}</span> },
-  { icon: Link2, title: "It's yours for good", body: "Each signed piece goes on your record, with one link for LinkedIn, your résumé or any application. Change schools or jobs, and it comes with you.", sample: <span className="inline-flex items-center gap-2 rounded-lg border border-line bg-surface-2 px-3 py-2 text-[13px] text-text-2"><Seal size={16} /> Verified by Prof. Dana Ruiz</span> },
-];
-
-export function How() {
-  return (
-    <section id="how" aria-labelledby="how-h" className="scroll-mt-20 py-16 md:py-24">
-      <div className="mx-auto max-w-6xl px-5 sm:px-6">
-        <h2 id="how-h" className={H2}>How it works</h2>
-        <p className="mt-4 max-w-[40rem] text-lg leading-relaxed text-muted">Three steps, the same whether you&apos;re in school, at work or in a club. Anyone can write a great résumé now. A name standing behind your work is much harder to fake.</p>
-        <ol className="reveal mt-8 grid grid-cols-1 gap-4 md:mt-10 md:grid-cols-3">
-          {STEPS.map((s, i) => (
-            <li key={s.title} className="flex flex-col rounded-2xl border border-line bg-surface p-5 md:p-6">
-              <span className="flex items-center gap-3">
-                <span className="grid size-9 shrink-0 place-items-center rounded-full bg-accent font-mono text-sm font-semibold text-on-accent">{i + 1}</span>
-                <s.icon className="size-4 text-faint" aria-hidden="true" />
-              </span>
-              <h3 className="mt-5 text-xl font-semibold tracking-tight">{s.title}</h3>
-              <p className="mt-2 flex-1 text-[15px] leading-relaxed text-muted">{s.body}</p>
-              <div aria-hidden="true" className="mt-5">{s.sample}</div>
-            </li>
-          ))}
-        </ol>
-        <div className="reveal mt-4 flex flex-col gap-4 rounded-2xl border border-line bg-surface p-5 sm:flex-row sm:items-center md:p-6">
-          <Ember mood="happy" size={44} label="Torch" />
-          <p className="flex-1 text-[15px] leading-relaxed text-muted"><span className="font-semibold text-text">Torch, your AI teammate, does the busywork.</span> It writes up what you did, finds who should sign it, plans your week and can start a club or study group for you. It never signs anything, and nothing is saved until you say yes.</p>
-          <Link href="/ai" className="inline-flex shrink-0 items-center gap-1.5 text-sm font-medium text-text underline-offset-4 hover:underline">Use it from Claude or ChatGPT <ArrowRight className="size-3.5" /></Link>
-        </div>
-      </div>
-    </section>
-  );
-}
+// How it works lives in how.tsx (it plays as you scroll).
 
 export function ForSchools() {
   return (
@@ -93,10 +58,10 @@ export function ForSchools() {
   );
 }
 
-const FOR = [
-  { icon: GraduationCap, who: "Students", body: "Your classes, clubs and projects in one place. Your professor or club signs what you built, and it stays yours after you graduate. Free with your school email.", cta: "Start your record", href: "/signup" },
-  { icon: Briefcase, who: "Professionals", body: "Log what you ship at work. A coworker, tech lead or client signs it from their work email. Nothing is public until you choose, and your record moves with you when you change jobs. Free to start.", cta: "Start as a professional", href: "/signup?goal=job" },
-  { icon: Users, who: "Clubs", body: "Officers sign what members build, and your school sees what the club does. Free for every club and member.", cta: "Bring your club", href: "#pilot" },
+const FOR: { icon: typeof Users; who: string; body: string; cta: string; href: string; more?: string }[] = [
+  { icon: GraduationCap, who: "Students", body: "Your classes, clubs and projects in one place. Your professor or club signs what you built, and it stays yours after you graduate. Free with your school email.", cta: "Start your record", href: "/signup" , more: "/for/students"},
+  { icon: Briefcase, who: "Professionals", body: "Log what you ship at work. A coworker, tech lead or client signs it from their work email. Nothing is public until you choose, and your record moves with you when you change jobs. Free to start.", cta: "Start as a professional", href: "/signup?goal=job" , more: "/for/professionals"},
+  { icon: Users, who: "Clubs", body: "Officers sign what members build, and your school sees what the club does. Free for every club and member.", cta: "Bring your club", href: "#pilot" , more: "/for/clubs"},
   { icon: Landmark, who: "Schools", body: "Run your project courses on it. Faculty grade and verify in one step, and each office gets the evidence it's measured on.", cta: "What schools get", href: "/schools" },
 ];
 
@@ -108,14 +73,17 @@ export function Audiences() {
         <p className="mt-4 max-w-[40rem] text-lg leading-relaxed text-muted">One record for everyone who builds things, in any field: engineering, software, research, design and more.</p>
         <ul className="reveal mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 md:mt-10 lg:grid-cols-4">
           {FOR.map((f) => (
-            <li key={f.who} className="flex flex-col rounded-2xl border border-line bg-surface p-5 transition duration-300 hover:border-line-strong hover:bg-hover md:p-6">
+            <Tilt as="li" key={f.who} className="flex flex-col rounded-2xl border border-line bg-surface p-5 hover:border-line-strong md:p-6">
               <span className="flex items-center gap-3 md:block">
                 <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-surface-2 text-text-2"><f.icon className="size-5" aria-hidden="true" /></span>
                 <h3 className="text-xl font-semibold tracking-tight md:mt-5">{f.who}</h3>
               </span>
               <p className="mt-2 flex-1 text-[15px] leading-relaxed text-muted">{f.body}</p>
-              <Link href={f.href} className="mt-5 inline-flex items-center gap-1.5 text-sm font-medium text-text underline-offset-4 hover:underline">{f.cta} <ArrowRight className="size-3.5" /></Link>
-            </li>
+              <span className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2">
+                <Link href={f.href} className="inline-flex items-center gap-1.5 text-sm font-medium text-text underline-offset-4 hover:underline">{f.cta} <ArrowRight className="size-3.5" /></Link>
+                {f.more && <Link href={f.more} className="text-sm text-muted underline-offset-4 hover:text-text hover:underline">How it works for {f.who.toLowerCase()}</Link>}
+              </span>
+            </Tilt>
           ))}
         </ul>
         <p className="mt-6 text-sm text-muted">Hiring? <Link href="/pricing#pricing-companies" className="font-medium text-text underline-offset-4 hover:underline">Find people by signed work</Link>, students and professionals alike. Already use Claude or ChatGPT? <Link href="/ai" className="font-medium text-text underline-offset-4 hover:underline">Connect your AI</Link>.</p>
@@ -131,7 +99,7 @@ const FAQ: [string, React.ReactNode][] = [
   ["Who can sign my work?", "Someone who saw it happen: a professor, TA, lab lead, club officer, coworker, manager or client. A work or university email carries the most weight, and the signature says which kind it came from. You can't sign your own work."],
   ["What does Torch do?", "Torch is the AI built into Brazework. It drafts your write-ups, finds who should sign, plans your week and can set up a club or study group for you. It never signs anything, and nothing is saved until you say yes."],
   ["How is this different from LinkedIn or a résumé?", "Those show what you say about yourself. Brazework shows what someone who was there says about your work, with their name on it. You can still put it on LinkedIn or your résumé: every signed piece has a link anyone can check."],
-  ["What does it cost?", <>Free for students, clubs and the people who sign, always. Professionals start free; {PLUS.name} is ${PLUS.everyone} a month for more Torch and every company that looked at your work. Schools pay per school, never per student. <Link href="/pricing" className="font-medium text-text underline-offset-4 hover:underline">See pricing</Link></>],
+  ["What does it cost?", <>Free for students, clubs and the people who sign, always. Professionals start free, and {PLUS.name} adds more Torch and every company that looked at your work. Schools pay per school, never per student: <Link href="#pilot" className="font-medium text-text underline-offset-4 hover:underline">talk to us</Link>. Every price is on <Link href="/pricing" className="font-medium text-text underline-offset-4 hover:underline">the pricing page</Link>.</>],
 ];
 
 export function Faq() {

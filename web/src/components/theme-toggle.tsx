@@ -5,11 +5,10 @@ import { cn } from "@/lib/forge";
 
 type Theme = "light" | "dark";
 
-// The theme in effect: the saved choice (html[data-theme]) or else the system setting.
+// The theme in effect: the saved choice (html[data-theme]), and light when there is none (every
+// screen starts light; app/layout.tsx).
 function current(): Theme {
-  const set = document.documentElement.dataset.theme;
-  if (set === "light" || set === "dark") return set;
-  return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+  return document.documentElement.dataset.theme === "dark" ? "dark" : "light";
 }
 
 function subscribe(cb: () => void) {
@@ -24,7 +23,7 @@ function subscribe(cb: () => void) {
 }
 
 export function useTheme() {
-  return useSyncExternalStore(subscribe, current, () => "dark" as Theme);
+  return useSyncExternalStore(subscribe, current, () => "light" as Theme);
 }
 
 export function ThemeToggle({ className }: { className?: string }) {

@@ -21,6 +21,8 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
   await step("hero: what you type is the milestone in the product window, and it goes with you to sign-up", async () => {
     await go(page, "/");
     await hydrated(page.locator("#hero-build"));
+    // The example builds take turns on a timer until the visitor picks one or types; pick the arm.
+    await page.getByRole("group", { name: "Example builds" }).getByRole("button", { name: "Robot arm", exact: true }).click();
     await page.locator("#hero-build").fill(BUILD);
     await page.locator("#hero-card").getByText(BUILD).waitFor();
     // The robot arm leads: a class milestone, submitted to its assignment in the course.
@@ -73,6 +75,20 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
     await view("verify").getByText("Coming soon:").waitFor();
   }, page);
 
+  await step("hero: the example builds take turns on a timer, and picking one stops it", async () => {
+    await go(page, "/");
+    await hydrated(page.locator("#hero-build"));
+    const builds = page.getByRole("group", { name: "Example builds" });
+    const shown = () => builds.getByRole("button", { pressed: true }).innerText();
+    // Whichever build is showing when we look (a slow machine may already be past the first), the
+    // next one takes over within one turn.
+    const first = await shown();
+    await page.waitForFunction((was) => document.querySelector('[aria-label="Example builds"] [aria-pressed="true"]')?.textContent !== was, first, { timeout: 9000 });
+    await builds.getByRole("button", { name: "Drone", exact: true }).click();
+    await page.waitForTimeout(6500);
+    if ((await shown()) !== "Drone") throw new Error(`after picking Drone the hero moved on to ${await shown()}`);
+  }, page);
+
   await step("hero: every build draws in 3D in its three views (software ones name theirs), and a club build is verified by its officer", async () => {
     await go(page, "/");
     await page.waitForFunction(() => ["ready", "failed"].includes(document.querySelector("#cad-stage")?.getAttribute("data-state") ?? ""), null, { timeout: 30000 });
@@ -123,7 +139,7 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
   await step("what the others can't do: profiles, the course site and Brazework, straight after the hero, with what's still being built marked", async () => {
     await go(page, "/");
     const order = await page.locator("main > section").evaluateAll((els) => els.map((el) => el.id));
-    if (order.join(",") !== "top,how,for,schools,compare,faq,pilot") throw new Error(`the page runs ${order.join(", ")}`);
+    if (order.join(",") !== "top,how,torch,for,schools,compare,faq,pilot") throw new Error(`the page runs ${order.join(", ")}`);
     const sec = page.locator("#compare");
     await sec.getByRole("heading", { name: /Everything a course needs, built around what students build/ }).waitFor();
     // Brazework is the course platform now (docs/strategy.md): the page no longer hands grades to an LMS.
@@ -148,19 +164,37 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
     await band.getByRole("link", { name: /See what schools get/ }).click();
     await page.waitForURL(/\/schools$/, { timeout: 15000 });
     await page.getByRole("heading", { level: 1, name: /Your courses, projects and clubs/ }).waitFor();
-    await page.getByText("$6,000").first().waitFor();
-    await page.getByText(/\$1,500 for the semester/).waitFor();
+    // No prices on /schools either (founders, 2026-11-27): a school talks to us, and /pricing lists them.
+    if (/\$\d/.test(await page.locator("main:visible").innerText())) throw new Error("/schools shows a price");
     await page.getByText(/your offices see counts, never a grade/).waitFor();
-    if (await page.getByText(/first 10 schools|semester free/i).count()) throw new Error("/schools still offers a free pilot");
+    if ((await page.locator("#top").getByRole("link", { name: "Talk to us" }).getAttribute("href")) !== "#pilot") throw new Error("Talk to us doesn't lead to the form on the page");
+    await page.locator("#pilot").getByRole("heading", { name: /Start a pilot at your school/ }).waitFor();
+    // Try the portal: grade Team Atlas and verify it, and the gradebook and the evidence change with it.
+    const portal = page.locator("#portal");
+    await portal.getByRole("button", { name: /Team Atlas/ }).click();
+    await portal.getByRole("button", { name: "Raise Teamwork" }).click();
+    await portal.getByRole("button", { name: "Grade and verify" }).click();
+    await portal.getByRole("status").filter({ hasText: /Verified by Prof\. Dana Ruiz.*26 \/ 30 stays private/ }).waitFor();
+    await portal.getByRole("tab", { name: /Gradebook/ }).click();
+    await portal.getByRole("row", { name: /Team Atlas 27 \/ 30 26 \/ 30 Verified/ }).waitFor();
+    await portal.getByRole("tab", { name: /Evidence/ }).click();
+    await portal.getByText("29", { exact: true }).waitFor();
+    if ((await portal.getByRole("list", { name: "Try it" }).getByText("(done)").count()) !== 3) throw new Error("the portal's guide didn't tick all three moves");
     await go(page, "/");
   }, page);
 
-  await step("how it works: three steps that are the same for everyone, and Torch does the busywork", async () => {
+  await step("how it works: three steps that are the same for everyone, then Torch: pick an example, scroll it from one sentence to a yes", async () => {
     const sec = page.locator("#how");
     for (const h of ["Log what you built", "Someone who saw it signs it", "It's yours for good"]) await sec.getByRole("heading", { name: h, exact: true }).waitFor();
     for (const who of ["Your professor", "Your club", "Your coworker", "A client"]) await sec.getByText(who, { exact: true }).waitFor();
-    await sec.getByText(/nothing is saved until you say yes/).waitFor();
-    if ((await sec.getByRole("link", { name: /Use it from Claude or ChatGPT/ }).getAttribute("href")) !== "/ai") throw new Error("the Torch line doesn't link to /ai");
+    const torch = page.locator("#torch");
+    await torch.getByRole("heading", { name: "Nothing is saved until you say yes" }).waitFor();
+    if ((await torch.getByRole("link", { name: /Use it from Claude or ChatGPT/ }).getAttribute("href")) !== "/ai") throw new Error("the Torch section doesn't link to /ai");
+    // Pick the work example, scroll to the last step, and say yes: the screen answers, and sends nothing.
+    await torch.getByRole("group", { name: "Try it with" }).getByRole("button", { name: "Something from work" }).click();
+    await torch.locator("li[data-k='3']").evaluate((el) => el.scrollIntoView({ block: "center" }));
+    await torch.getByRole("button", { name: "Yes, save it" }).click();
+    await torch.locator("[role=status]").filter({ hasText: /R\. Okoro was asked to sign\. \(An example: nothing is sent from this page\.\)/ }).waitFor();
   }, page);
 
   await step("who it's for: students, professionals, clubs and schools, each with where to start; companies get a line", async () => {
@@ -187,9 +221,51 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
     await sec.getByText(/It never signs anything/).waitFor();
   }, page);
 
-  await step("the page stays short: the hero's scroll run plus a few screens on a laptop", async () => {
+  await step("no prices on the landing page: they're on /pricing, and schools talk to us", async () => {
+    if (/\$\d/.test(await page.locator("main:visible").innerText())) throw new Error("the landing page shows a price");
+    const cost = page.locator("#faq").getByText("What does it cost?", { exact: true });
+    await cost.click();
+    await page.locator("#faq").getByRole("link", { name: "the pricing page" }).waitFor();
+  }, page);
+
+  // Three sections pin and play as you scroll on a laptop (the hero, how it works and the comparison;
+  // premium pass 2026-11-27) and Torch's story scrolls past its screen, so the page runs longer than it
+  // reads: the cap is fifteen screens.
+  await step("the page stays within fifteen laptop screens, with three sections that play as you scroll", async () => {
     const h = await page.evaluate(() => document.documentElement.scrollHeight);
-    if (h > 950 * 8) throw new Error(`the page is ${h}px tall, more than eight screens`);
+    if (h > 950 * 15) throw new Error(`the page is ${h}px tall, more than fifteen screens`);
+    for (const sel of ["#top[data-pinned]", "#how [data-pinned]", "#compare[data-pinned]"]) if (!(await page.locator(sel).count())) throw new Error(`${sel.split(" ")[0].replace("[data-pinned]", "")} doesn't pin on a laptop`);
+    await page.locator("#how").getByRole("button", { name: /It's yours for good/ }).click();
+    await page.waitForFunction(() => document.querySelector("#how [data-step]")?.getAttribute("data-step") === "2", null, { timeout: 5000 });
+  }, page);
+
+  await step("a page for each: students, professionals and clubs, each told as a scroll story, linked from who it's for", async () => {
+    await go(page, "/");
+    for (const [who, path, h1, cta] of [["students", "/for/students", /Your work, signed by the people who saw it/, "/signup"], ["professionals", "/for/professionals", /What you ship, signed by the people you ship it with/, "/signup?goal=job"], ["clubs", "/for/clubs", /Run your club\. Stand behind what it builds/, "/#pilot"]]) {
+      if ((await page.locator("#for").getByRole("link", { name: `How it works for ${who}` }).getAttribute("href")) !== path) throw new Error(`the ${who} card doesn't link to ${path}`);
+      await go(page, path);
+      await page.getByRole("heading", { level: 1, name: h1 }).waitFor();
+      if ((await page.locator("#top").getByRole("link").first().getAttribute("href")) !== cta) throw new Error(`${path}: the first button doesn't lead to ${cta}`);
+      const steps = page.locator("li[data-k]");
+      const n = await steps.count();
+      if (n < 4) throw new Error(`${path}: ${n} steps in the story`);
+      await steps.nth(n - 1).evaluate((el) => el.scrollIntoView({ block: "center" }));
+      await page.waitForFunction(() => document.querySelectorAll("figure > div:not([inert])").length === 1, null, { timeout: 5000 });
+      if (/\$\d/.test(await page.locator("main:visible").innerText())) throw new Error(`${path} shows a price`);
+      await go(page, "/");
+    }
+  }, page);
+
+  await step("phone: /for/clubs keeps its screen under the nav while the steps scroll, with nothing sideways", async () => {
+    const p = await (await b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true })).newPage();
+    await go(p, "/for/clubs");
+    const steps = p.locator("li[data-k]");
+    await steps.nth(2).evaluate((el) => el.scrollIntoView({ block: "center" }));
+    const fig = await p.locator("figure").boundingBox();
+    if (!fig || fig.y < 60 || fig.y > 120) throw new Error(`the screen isn't held under the nav (top at ${fig && Math.round(fig.y)}px)`);
+    await p.locator("figure > div:not([inert])").getByText("Asked to verify").waitFor({ timeout: 5000 });
+    if (await p.evaluate(() => document.documentElement.scrollWidth > innerWidth)) throw new Error("/for/clubs scrolls sideways on a phone");
+    await p.context().close();
   }, page);
 
   await step("the AI guide: a signed-out visitor follows the footer to /ai and finds the setup, what to ask, the rules and all 20 fields", async () => {
@@ -237,17 +313,23 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
     }
   }, phone);
 
-  // Light and dark: the hero, the band for schools and the nav over the hero follow the visitor's theme.
-  await step("light and dark: the hero and the band for schools follow the visitor's theme", async () => {
+  // Every screen starts light (Josh, 2026-11-27), even on a device set to dark; picking dark with the
+  // theme toggle is saved and wins. The hero, the band for schools and /schools follow that choice.
+  await step("light by default, even on a dark device; dark once picked, on the landing page and /schools", async () => {
     const look = {};
-    for (const scheme of ["light", "dark"]) {
-      const p = await (await b.newContext({ viewport: { width: 1440, height: 950 }, colorScheme: scheme })).newPage();
+    for (const [name, saved] of [["first visit", null], ["picked dark", "dark"]]) {
+      const ctx = await b.newContext({ viewport: { width: 1440, height: 950 }, colorScheme: "dark" });
+      if (saved) await ctx.addInitScript((t) => localStorage.setItem("forge-theme", t), saved);
+      const p = await ctx.newPage();
       await p.goto(BASE + "/", { waitUntil: "networkidle" });
-      look[scheme] = await p.evaluate(() => ["top", "schools"].map((id) => getComputedStyle(document.getElementById(id)).backgroundColor).concat(getComputedStyle(document.querySelector("#hero-h")).color));
-      await p.context().close();
+      const home = await p.evaluate(() => ["top", "schools"].map((id) => getComputedStyle(document.getElementById(id)).backgroundColor).concat(getComputedStyle(document.querySelector("#hero-h")).color));
+      await p.goto(BASE + "/schools", { waitUntil: "networkidle" });
+      look[name] = home.concat(await p.evaluate(() => getComputedStyle(document.body).backgroundColor));
+      await ctx.close();
     }
-    for (let i = 0; i < 3; i++) if (look.light[i] === look.dark[i]) throw new Error(`part ${i} looks the same in both themes: ${look.light[i]}`);
-    if (look.light[0] !== "rgb(247, 247, 245)") throw new Error(`the light hero isn't on paper: ${look.light[0]}`);
+    for (let i = 0; i < 4; i++) if (look["first visit"][i] === look["picked dark"][i]) throw new Error(`part ${i} looks the same in both themes: ${look["first visit"][i]}`);
+    if (look["first visit"][0] !== "rgb(247, 247, 245)") throw new Error(`a first visit on a dark device isn't light: ${look["first visit"][0]}`);
+    if (look["first visit"][3] !== "rgb(247, 247, 245)") throw new Error(`/schools doesn't start light: ${look["first visit"][3]}`);
   }, page);
 
   // Reduced motion: nothing pins, plays or waits.
@@ -257,6 +339,7 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
   await step("reduced motion: the hero doesn't pin, and each view shows its end state as soon as it opens", async () => {
     await still.goto(BASE + "/", { waitUntil: "networkidle" });
     await hydrated(still.locator("#hero-build"));
+    if (await still.locator("[data-pinned]").count()) throw new Error("a section still pins with reduced motion");
     const run = await still.evaluate(() => { const el = document.getElementById("top"); return el.offsetHeight - el.firstElementChild.offsetHeight; });
     if (Math.abs(run) > 2) throw new Error(`the hero still has a scroll run (${run}px)`);
     const t = still.getByRole("tablist", { name: "Follow one project" });
