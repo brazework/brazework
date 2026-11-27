@@ -1,0 +1,66 @@
+name: Ship Bot
+
+# Push a branch and it ships (Linear FIX-316): opens the pull request if there isn't one and turns
+# auto-merge on, so the required checks merge it and Vercel deploys it. The rules (what it skips,
+# the "hold" label, pipeline changes) are at the top of .github/scripts/ship-bot.mjs.
+#
+# Needs the Ship Bot GitHub App (setup: docs/ship-bot.md) and two repository secrets,
+# SHIP_BOT_APP_ID and SHIP_BOT_PRIVATE_KEY. Until they're set, each run says so and passes.
+# Optional repository variable SHIP_BOT_SKIP: branch globs never shipped (default
+# "wip/* dependabot/* cursor/* codex/*").
+on:
+  push:
+    branches-ignore: [main, "wip/**", "dependabot/**", "gh-readonly-queue/**"]
+  pull_request:
+    # Not "synchronize": a push to the branch already runs this through the push trigger.
+    types: [opened, reopened, ready_for_review, labeled, unlabeled, converted_to_draft]
+
+# One run per branch at a time; a newer push supersedes an older one.
+concurrency:
+  group: ship-bot-${{ github.head_ref || github.ref_name }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  ship:
+    name: Open and auto-merge
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check the App is set up
+        id: setup
+        env:
+          APP_ID: ${{ secrets.SHIP_BOT_APP_ID }}
+        run: |
+          if [ -z "$APP_ID" ]; then
+            echo "::notice::Ship Bot is off: add the SHIP_BOT_APP_ID and SHIP_BOT_PRIVATE_KEY secrets (docs/ship-bot.md)."
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+      - uses: actions/create-github-app-token@v2
+        if: steps.setup.outputs.ready == 'true'
+        id: token
+        with:
+          app-id: ${{ secrets.SHIP_BOT_APP_ID }}
+          private-key: ${{ secrets.SHIP_BOT_PRIVATE_KEY }}
+      - uses: actions/checkout@v7
+        if: steps.setup.outputs.ready == 'true'
+        with:
+          fetch-depth: 0
+          sparse-checkout: .github/scripts
+      - uses: actions/setup-node@v7
+        if: steps.setup.outputs.ready == 'true'
+        with:
+          node-version: 22
+      - name: Open the pull request and turn auto-merge on
+        if: steps.setup.outputs.ready == 'true'
+        env:
+          GH_TOKEN: ${{ steps.token.outputs.token }}
+          SHIP_BOT_SKIP: ${{ vars.SHIP_BOT_SKIP }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_HEAD: ${{ github.event.pull_request.head.ref }}
+          PR_FORK: ${{ github.event.pull_request.head.repo.fork }}
+        run: node .github/scripts/ship-bot.mjs
