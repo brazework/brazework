@@ -1,35 +1,45 @@
 name: Web (Next.js)
 
-# Every push to main and every pull request touching the app or the database:
+# Every push to main, every merge queue group, and every pull request:
 #   checks   - typecheck, lint, unit tests, production build, smoke test
 #   e2e      - the full local suite (web/e2e/run.sh): a throwaway Supabase (Postgres + Auth + REST)
 #              with every migration in supabase/order.txt, the SQL rule tests, then every browser
 #              journey in Chrome. Same command as on a laptop.
 #   security - production dependency audit and a secret scan of the git history
-# Pull requests, the weekly run and Run workflow only (not every push, to stay inside a free
-# plan's 2,000 Actions minutes a month; it's 7 of the 19 minutes a full run takes):
+# Pull requests, the weekly run and Run workflow only (not a push to main, and not the merge
+# queue, to stay inside a free plan's 2,000 Actions minutes a month; it's 7 of the 19 minutes
+# a full run takes):
 #   quality  - Lighthouse budgets (speed, accessibility, best practices) on public and logged-in
 #              pages, and an OWASP ZAP baseline scan of the running app (fails on High risk).
 #              Locally: npm run quality.
-# Every pull request starts this workflow (main requires its checks), and the "changes" job skips
-# the heavy jobs when no app or database file changed: a skipped required check counts as passing,
-# so a docs-only pull request isn't left waiting for checks that never start.
+# main requires checks, e2e, and the secret scan. A pull request may skip checks and e2e when
+# no app or database file changed: on a pull request a skipped required check counts as passing,
+# so a docs-only pull request isn't left waiting. The merge queue does not treat a skip as a
+# pass. A skipped required check stays pending and the queued pull request never merges, so a
+# merge_group run and a push to main always run those three jobs.
 on:
   pull_request:
-  # Ready for GitHub's merge queue, if main's ruleset ever turns it on (it's off: one test run per PR is faster).
+  # main's merge queue. The three required jobs above must each report a result.
   merge_group:
   push:
     branches: [main]
-    paths: ["web/**", "supabase/**", ".github/workflows/web.yml"]
   workflow_dispatch:
   # Weekly, even with no pushes: catches what changes without us (new dependency advisories,
   # scanner rules, outside services) before it surprises the next push. Mondays 06:00 UTC.
   schedule:
     - cron: "0 6 * * 1"
 
+# A new push on a pull request still cancels that pull request's earlier run: those
+# runs share one group per ref (refs/pull/<number>/merge). Every other event gets its
+# own group, named with github.run_id, which is unique per run and defined for every
+# event. That covers a push to main, a merge queue group, the Monday weekly run, and
+# Run workflow. cancel-in-progress false on a shared group is not enough: GitHub still
+# replaces a pending run when a newer one is queued, so a main commit can end with no
+# result. case() picks the group value directly (github.ref and github.run_id are both
+# always set, so this does not read github.head_ref, which is unset outside a pull request).
 concurrency:
-  group: web-${{ github.ref }}
-  cancel-in-progress: true
+  group: web-${{ case(github.event_name == 'pull_request', github.ref, github.run_id) }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   changes:
@@ -44,9 +54,11 @@ jobs:
           fetch-depth: 0
       - id: f
         run: |
+          # Only a pull request may skip checks and e2e. merge_group, a push to main,
+          # the weekly run, and Run workflow always set app=true. The job `if` below
+          # repeats that, so a diff here cannot skip a required check in the queue.
           case "${{ github.event_name }}" in
             pull_request) base="origin/${{ github.base_ref }}" ;;
-            merge_group) base="${{ github.event.merge_group.base_sha }}" ;;
             *) echo "app=true" >> "$GITHUB_OUTPUT"; exit 0 ;;
           esac
           if git diff --name-only "$base...HEAD" | grep -qE '^(web/|supabase/|\.github/workflows/web\.yml)'; then echo "app=true" >> "$GITHUB_OUTPUT"; else echo "app=false" >> "$GITHUB_OUTPUT"; fi
@@ -54,7 +66,12 @@ jobs:
   checks:
     name: Typecheck, lint, unit tests, build
     needs: changes
-    if: needs.changes.outputs.app == 'true'
+    # Required. A pull request skips it when the diff misses the app. Every other
+    # event runs it, including merge_group and a push to main. !cancelled() stops a
+    # failed "What changed" job from skipping this one, and still stops it when a
+    # pull request run is cancelled. A bare `if` would count as success() and skip
+    # when "What changed" failed, which leaves the merge queue pending.
+    if: ${{ !cancelled() && (github.event_name != 'pull_request' || needs.changes.outputs.app == 'true') }}
     runs-on: ubuntu-latest
     timeout-minutes: 15
     defaults:
@@ -93,7 +110,8 @@ jobs:
   e2e:
     name: End-to-end (database rules + browser journeys)
     needs: changes
-    if: needs.changes.outputs.app == 'true'
+    # Same rule as "Typecheck, lint, unit tests, build": only a pull request may skip.
+    if: ${{ !cancelled() && (github.event_name != 'pull_request' || needs.changes.outputs.app == 'true') }}
     runs-on: ubuntu-latest
     timeout-minutes: 35
     defaults:
@@ -165,6 +183,8 @@ jobs:
 
   security:
     name: Dependency audit and secret scan
+    # Required. No `if` and no path filter, so a merge_group run and a push to main
+    # cannot skip it. A skip would leave the merge queue pending.
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
