@@ -108,10 +108,10 @@ async function Group({ params }: { params: PageProps<"/messages/g/[id]">["params
       <GroupComposer chatId={id} canAnnounce={canAnnounce} ember={emberOn} placeholder={c.kind === "event" ? "Ask about the event, share logistics" : `Message ${title}`} />
       </div>
       <aside aria-label="Chat details" className="hidden w-80 shrink-0 flex-col gap-6 overflow-y-auto border-l border-line p-5 xl:flex">
-        {emberOn && <section><h3 className="mb-2 text-xs font-medium tracking-wide text-faint uppercase">Torch</h3><CatchMeUp chatId={id} /></section>}
+        {emberOn && <section><h3 className="mb-2 text-[13px] font-medium text-faint">Torch</h3><CatchMeUp chatId={id} /></section>}
         <MemberList people={people} />
         <section>
-          <h3 className="text-xs font-medium tracking-wide text-faint uppercase">{c.kind === "event" ? "The event" : "Coming up"}</h3>
+          <h3 className="text-[13px] font-medium text-faint">{c.kind === "event" ? "The event" : "Coming up"}</h3>
           <ul className="mt-2 space-y-2">
             {upcoming.map((e) => (
               <li key={e.id}><Link href={`/events/${e.id}`} className="block rounded-2xl border border-line p-3 transition hover:border-line-strong"><span className="block truncate text-sm font-medium">{e.title}</span><span className="text-xs text-muted">{new Date(e.starts_at).toLocaleString("en-US", { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })} · {e.rsvp_count} going</span></Link></li>
@@ -121,7 +121,7 @@ async function Group({ params }: { params: PageProps<"/messages/g/[id]">["params
         </section>
         {shared.length > 0 && (
           <section>
-            <h3 className="text-xs font-medium tracking-wide text-faint uppercase">Shared in this chat</h3>
+            <h3 className="text-[13px] font-medium text-faint">Shared in this chat</h3>
             <div className="mt-2 space-y-2">{shared.map((path) => <MessageBody key={path} body={path} />)}</div>
           </section>
         )}

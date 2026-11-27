@@ -18,12 +18,12 @@ export function ChapterForm({ school, networks }: { school: string; networks: Ne
   return (
     <form onSubmit={(e) => { e.preventDefault(); setError(""); start(async () => { const r = await startChapter(network, privacy); if (r && !r.ok) setError(r.message); }); }} className="flex flex-col gap-4">
       <Panel className="p-5 sm:p-6">
-        <p className="flex items-center gap-2 text-xs font-medium tracking-wide text-faint uppercase"><GraduationCap className="size-3.5" /> Your school</p>
+        <p className="flex items-center gap-2 text-[13px] font-medium text-faint"><GraduationCap className="size-3.5" /> Your school</p>
         <p className="mt-1.5 text-lg font-semibold tracking-tight">{school}</p>
         <p className="text-xs text-muted">From your school email.</p>
 
         <fieldset className="mt-6">
-          <legend className="text-xs font-medium tracking-wide text-faint uppercase">National organization</legend>
+          <legend className="text-[13px] font-medium text-faint">National organization</legend>
           <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2" role="radiogroup">
             {networks.map((n) => (
               <label key={n.id} className={cn("flex cursor-pointer items-center gap-3 rounded-2xl border p-3.5 transition", network === n.id ? "border-text bg-surface shadow-[var(--shadow)]" : "border-line hover:border-line-strong")}>
@@ -37,7 +37,7 @@ export function ChapterForm({ school, networks }: { school: string; networks: Ne
         </fieldset>
 
         <fieldset className="mt-6">
-          <legend className="text-xs font-medium tracking-wide text-faint uppercase">Who can join</legend>
+          <legend className="text-[13px] font-medium text-faint">Who can join</legend>
           <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-2">
             {([["approval", Lock, "Ask first", "You approve each request. Invite links skip the wait."], ["public", Users, "Open", "Anyone at Brazework can join."]] as const).map(([v, Icon, title, line]) => (
               <label key={v} className={cn("flex cursor-pointer items-start gap-3 rounded-2xl border p-3.5 transition", privacy === v ? "border-text bg-surface shadow-[var(--shadow)]" : "border-line hover:border-line-strong")}>

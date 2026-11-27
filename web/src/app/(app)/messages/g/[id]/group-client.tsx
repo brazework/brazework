@@ -283,7 +283,7 @@ export function TeamSwitcher({ communityId, current, chats, members, me }: { com
               <Users className="size-4 shrink-0 text-muted" /> <span className="flex-1 truncate">Main club chat</span>{main.id === current && <Check className="size-4" />}
             </button>
           )}
-          {teams.length > 0 && <div className="mx-2.5 mt-1.5 mb-1 font-mono text-[10px] tracking-wide text-faint uppercase">Team chats</div>}
+          {teams.length > 0 && <div className="mx-2.5 mt-1.5 mb-1 text-[12px] font-medium text-faint">Team chats</div>}
           {teams.map((t) => (
             <button key={t.id} type="button" role="menuitemradio" aria-checked={t.id === current} onClick={() => go(t.id)} className={item}>
               <Hash className="size-4 shrink-0 text-muted" /> <span className="flex-1 truncate">{t.name}</span>{t.id === current && <Check className="size-4" />}

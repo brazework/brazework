@@ -94,7 +94,7 @@ export function AboutBuild({ link, specs, tools, uses, details, ember }: { link:
 export function ThirtySeconds({ lines, ownerId }: { lines: string[]; ownerId: string }) {
   return (
     <section aria-label="In 30 seconds" className="glass-card rounded-xl p-5">
-      <p className="flex items-center gap-1.5 text-[11px] font-medium tracking-[0.06em] text-faint uppercase"><Timer className="size-3.5" /> In 30 seconds</p>
+      <p className="flex items-center gap-1.5 text-[13px] font-medium text-faint"><Timer className="size-3.5" /> In 30 seconds</p>
       <ul className="mt-3 flex flex-col gap-2">
         {lines.map((l) => <li key={l} className="text-sm leading-relaxed text-text-2">{l}</li>)}
       </ul>

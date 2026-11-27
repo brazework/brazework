@@ -29,8 +29,9 @@ export function Button({ href, variant = "primary", size = "md", className, chil
   return <button className={cls} {...rest}>{children}</button>;
 }
 
+// A small label above a heading: sentence case, never all caps (docs/design/app.md).
 export function Kicker({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <div className={cn("text-[11px] font-medium uppercase tracking-[0.06em] text-faint", className)}>{children}</div>;
+  return <div className={cn("text-[13px] font-medium text-muted", className)}>{children}</div>;
 }
 
 export function Avatar({ first, last, size = 40, className, src }: { first: string; last: string; size?: number; className?: string; src?: string | null }) {

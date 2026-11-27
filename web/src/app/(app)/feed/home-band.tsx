@@ -68,7 +68,7 @@ export async function HomeBand({ first, quiet = false }: { first: string; quiet?
     <section aria-label="Where you stand" className="home-glass relative overflow-hidden rounded-3xl">
       <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-end sm:justify-between sm:gap-6 sm:p-7">
         <div className="min-w-0">
-          <p className="text-xs font-medium tracking-wide text-muted uppercase">{atSchool ? [schoolName, terms[0]].filter(Boolean).join(" · ") : professional ? "Your record" : "Your work"}</p>
+          <p className="text-[13px] font-medium text-muted">{atSchool ? [schoolName, terms[0]].filter(Boolean).join(" · ") : professional ? "Your record" : "Your work"}</p>
           <h1 className={cn(pageTitleCls, "mt-1.5")}>Welcome back, {first}</h1>
           <dl className="mt-3 flex flex-wrap gap-x-5 gap-y-1.5 text-sm">
             {stats.map((x) => (
