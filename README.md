@@ -80,6 +80,8 @@ public/                 The original app, kept until production is confirmed on 
 docs/                   Everything else: start at docs/README.md
 .github/workflows/      CI, CodeQL, preview deploy, Linear sync, load test
 .claude/skills/         /next, /ship, /standup: working from the Linear board in Claude Code
+AGENTS.md               How agents work in this repo, and the hard rules
+.cursor/                Rules and skills for the AI engineering team (docs/team-playbook.md)
 ```
 
 ### Database
