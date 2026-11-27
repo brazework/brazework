@@ -11,7 +11,7 @@
     "e2e": "bash e2e/run.sh",
     "quality": "bash e2e/quality.sh",
     "load": "bash e2e/load.sh",
-    "test": "tsx --test tests/*.test.ts"
+    "test": "tsx --test tests/*.test.ts && tsx scripts/check-order.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^1.6.0",
