@@ -1,11 +1,10 @@
 import { emberCreditCost } from "@/lib/ember-credits";
 import type { Metadata } from "next";
-import Link from "next/link";
 import { Footer } from "@/components/landing/closing";
 import { PricingTiers } from "@/components/landing/pricing";
 import { H2 } from "@/components/landing/sections";
+import { Nav } from "@/components/landing/nav";
 import { ThemeChrome } from "@/components/theme-chrome";
-import { Logo } from "@/components/ui";
 import { CAMPUS_BANDS, EMBER_DAILY_LIMIT, EMBER_RESET, FOUNDING, SCHOOL, SPONSORSHIP, TALENT, departmentPrice, perStudent, seatsWhereCampusWins } from "@/lib/pricing";
 
 const usd = (n: number) => `$${n.toLocaleString("en-US")}`;
@@ -33,18 +32,12 @@ export default function PricingPage() {
   return (
     <div className="landing min-h-dvh">
       <ThemeChrome landing />
-      <header className="mx-auto flex max-w-6xl items-center justify-between px-5 py-5 sm:px-6">
-        <Link href="/" aria-label="Brazework home"><Logo /></Link>
-        <nav className="flex items-center gap-2 text-sm">
-          <Link href="/login" className="rounded-lg px-3 py-2 text-muted hover:text-text">Log in</Link>
-          <Link href="/signup" className="inline-flex h-9 items-center rounded-lg bg-accent px-3.5 font-medium text-on-accent hover:opacity-90">Sign up free</Link>
-        </nav>
-      </header>
-      <main className="mx-auto max-w-6xl px-5 pt-10 pb-24 sm:px-6 sm:pt-16">
+      <Nav />
+      <main className="mx-auto max-w-6xl px-5 pt-[calc(env(safe-area-inset-top)+7.5rem)] pb-24 sm:px-6 sm:pt-36">
         <h1 className={H2}>Schools pay.<br className="hidden sm:block" /> Students and clubs never do.</h1>
         <p className="mt-5 max-w-2xl text-lg text-muted">A school pays for the portal its faculty and offices use: verified student projects, club reports and a showcase of what its students build. Every student and every club is included. Companies pay for their own tools.</p>
-        <PricingTiers className="mt-14" />
-        <section aria-labelledby="pricing-questions" className="mt-20 max-w-3xl">
+        <PricingTiers className="reveal mt-14" />
+        <section aria-labelledby="pricing-questions" className="reveal mt-20 max-w-3xl">
           <h2 id="pricing-questions" className="text-2xl font-semibold tracking-tight">Questions</h2>
           <dl className="mt-6 divide-y divide-line border-y border-line">
             {QUESTIONS.map(([q, a]) => (

@@ -162,10 +162,22 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
     await band.getByRole("link", { name: /See what schools get/ }).click();
     await page.waitForURL(/\/schools$/, { timeout: 15000 });
     await page.getByRole("heading", { level: 1, name: /Your courses, projects and clubs/ }).waitFor();
-    await page.getByText("$6,000").first().waitFor();
-    await page.getByText(/\$1,500 for the semester/).waitFor();
+    // No prices on /schools either (founders, 2026-11-27): a school talks to us, and /pricing lists them.
+    if (/\$\d/.test(await page.locator("main:visible").innerText())) throw new Error("/schools shows a price");
     await page.getByText(/your offices see counts, never a grade/).waitFor();
-    if (await page.getByText(/first 10 schools|semester free/i).count()) throw new Error("/schools still offers a free pilot");
+    if ((await page.locator("#top").getByRole("link", { name: "Talk to us" }).getAttribute("href")) !== "#pilot") throw new Error("Talk to us doesn't lead to the form on the page");
+    await page.locator("#pilot").getByRole("heading", { name: /Start a pilot at your school/ }).waitFor();
+    // Try the portal: grade Team Atlas and verify it, and the gradebook and the evidence change with it.
+    const portal = page.locator("#portal");
+    await portal.getByRole("button", { name: /Team Atlas/ }).click();
+    await portal.getByRole("button", { name: "Raise Teamwork" }).click();
+    await portal.getByRole("button", { name: "Grade and verify" }).click();
+    await portal.getByRole("status").filter({ hasText: /Verified by Prof\. Dana Ruiz.*26 \/ 30 stays private/ }).waitFor();
+    await portal.getByRole("tab", { name: /Gradebook/ }).click();
+    await portal.getByRole("row", { name: /Team Atlas 27 \/ 30 26 \/ 30 Verified/ }).waitFor();
+    await portal.getByRole("tab", { name: /Evidence/ }).click();
+    await portal.getByText("29", { exact: true }).waitFor();
+    if ((await portal.getByRole("list", { name: "Try it" }).getByText("(done)").count()) !== 3) throw new Error("the portal's guide didn't tick all three moves");
     await go(page, "/");
   }, page);
 
@@ -180,7 +192,7 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
     await torch.getByRole("group", { name: "Try it with" }).getByRole("button", { name: "Something from work" }).click();
     await torch.locator("li[data-k='3']").evaluate((el) => el.scrollIntoView({ block: "center" }));
     await torch.getByRole("button", { name: "Yes, save it" }).click();
-    await torch.getByRole("status").filter({ hasText: /R\. Okoro was asked to sign\. \(An example: nothing is sent from this page\.\)/ }).waitFor();
+    await torch.locator("[role=status]").filter({ hasText: /R\. Okoro was asked to sign\. \(An example: nothing is sent from this page\.\)/ }).waitFor();
   }, page);
 
   await step("who it's for: students, professionals, clubs and schools, each with where to start; companies get a line", async () => {
@@ -208,7 +220,7 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
   }, page);
 
   await step("no prices on the landing page: they're on /pricing, and schools talk to us", async () => {
-    if (/\$\d/.test(await page.locator("main").innerText())) throw new Error("the landing page shows a price");
+    if (/\$\d/.test(await page.locator("main:visible").innerText())) throw new Error("the landing page shows a price");
     const cost = page.locator("#faq").getByText("What does it cost?", { exact: true });
     await cost.click();
     await page.locator("#faq").getByRole("link", { name: "the pricing page" }).waitFor();
@@ -237,7 +249,7 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
       if (n < 4) throw new Error(`${path}: ${n} steps in the story`);
       await steps.nth(n - 1).evaluate((el) => el.scrollIntoView({ block: "center" }));
       await page.waitForFunction(() => document.querySelectorAll("figure > div:not([inert])").length === 1, null, { timeout: 5000 });
-      if (/\$\d/.test(await page.locator("main").innerText())) throw new Error(`${path} shows a price`);
+      if (/\$\d/.test(await page.locator("main:visible").innerText())) throw new Error(`${path} shows a price`);
       await go(page, "/");
     }
   }, page);
@@ -299,17 +311,23 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
     }
   }, phone);
 
-  // Light and dark: the hero, the band for schools and the nav over the hero follow the visitor's theme.
-  await step("light and dark: the hero and the band for schools follow the visitor's theme", async () => {
+  // Every screen starts light (Josh, 2026-11-27), even on a device set to dark; picking dark with the
+  // theme toggle is saved and wins. The hero, the band for schools and /schools follow that choice.
+  await step("light by default, even on a dark device; dark once picked, on the landing page and /schools", async () => {
     const look = {};
-    for (const scheme of ["light", "dark"]) {
-      const p = await (await b.newContext({ viewport: { width: 1440, height: 950 }, colorScheme: scheme })).newPage();
+    for (const [name, saved] of [["first visit", null], ["picked dark", "dark"]]) {
+      const ctx = await b.newContext({ viewport: { width: 1440, height: 950 }, colorScheme: "dark" });
+      if (saved) await ctx.addInitScript((t) => localStorage.setItem("forge-theme", t), saved);
+      const p = await ctx.newPage();
       await p.goto(BASE + "/", { waitUntil: "networkidle" });
-      look[scheme] = await p.evaluate(() => ["top", "schools"].map((id) => getComputedStyle(document.getElementById(id)).backgroundColor).concat(getComputedStyle(document.querySelector("#hero-h")).color));
-      await p.context().close();
+      const home = await p.evaluate(() => ["top", "schools"].map((id) => getComputedStyle(document.getElementById(id)).backgroundColor).concat(getComputedStyle(document.querySelector("#hero-h")).color));
+      await p.goto(BASE + "/schools", { waitUntil: "networkidle" });
+      look[name] = home.concat(await p.evaluate(() => getComputedStyle(document.body).backgroundColor));
+      await ctx.close();
     }
-    for (let i = 0; i < 3; i++) if (look.light[i] === look.dark[i]) throw new Error(`part ${i} looks the same in both themes: ${look.light[i]}`);
-    if (look.light[0] !== "rgb(247, 247, 245)") throw new Error(`the light hero isn't on paper: ${look.light[0]}`);
+    for (let i = 0; i < 4; i++) if (look["first visit"][i] === look["picked dark"][i]) throw new Error(`part ${i} looks the same in both themes: ${look["first visit"][i]}`);
+    if (look["first visit"][0] !== "rgb(247, 247, 245)") throw new Error(`a first visit on a dark device isn't light: ${look["first visit"][0]}`);
+    if (look["first visit"][3] !== "rgb(247, 247, 245)") throw new Error(`/schools doesn't start light: ${look["first visit"][3]}`);
   }, page);
 
   // Reduced motion: nothing pins, plays or waits.

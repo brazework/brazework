@@ -64,7 +64,7 @@ export function AudiencePage({ a }: { a: Audience }) {
         <section aria-labelledby="facts-h" className="py-16 md:py-24">
           <div className="mx-auto max-w-6xl px-5 sm:px-6">
             <h2 id="facts-h" className="sr-only">Good to know</h2>
-            <ul className="grid grid-cols-1 gap-x-10 gap-y-6 border-t border-line pt-10 md:grid-cols-3">
+            <ul className="reveal grid grid-cols-1 gap-x-10 gap-y-6 border-t border-line pt-10 md:grid-cols-3">
               {a.facts.map((f) => <li key={f} className="text-[17px] leading-relaxed text-text-2">{f}</li>)}
             </ul>
           </div>
@@ -73,7 +73,7 @@ export function AudiencePage({ a }: { a: Audience }) {
         <section aria-labelledby="also-h" className="pb-16 md:pb-24">
           <div className="mx-auto max-w-6xl px-5 sm:px-6">
             <h2 id="also-h" className="text-2xl font-semibold tracking-tight">One record for everyone who builds</h2>
-            <ul className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <ul className="reveal mt-6 grid grid-cols-1 gap-3 sm:grid-cols-3">
               {ALL.filter((x) => x.id !== a.id).map((x) => (
                 <Tilt as="li" key={x.id} className="rounded-2xl border border-line bg-surface">
                   <Link href={x.href} className="flex h-full flex-col p-5">
@@ -87,7 +87,7 @@ export function AudiencePage({ a }: { a: Audience }) {
         </section>
 
         <section aria-labelledby="close-h" className="border-t border-line bg-surface-2/50 py-16 md:py-24">
-          <div className="mx-auto flex max-w-6xl flex-col items-start gap-6 px-5 sm:px-6 md:flex-row md:items-center md:justify-between">
+          <div className="reveal mx-auto flex max-w-6xl flex-col items-start gap-6 px-5 sm:px-6 md:flex-row md:items-center md:justify-between">
             <h2 id="close-h" className="max-w-[22ch] text-[clamp(1.75rem,5vw,2.5rem)] leading-tight font-semibold tracking-[-0.03em] text-balance">{a.close}</h2>
             <Link href={a.cta.href} className="inline-flex h-12 w-full items-center justify-center gap-1.5 rounded-xl bg-accent px-6 text-[16px] font-medium text-on-accent transition hover:opacity-90 active:scale-[0.98] sm:w-auto">{a.cta.label} <ArrowRight className="size-4" aria-hidden="true" /></Link>
           </div>

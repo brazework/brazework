@@ -2,14 +2,11 @@
 import { Download } from "lucide-react";
 import { useId, useState } from "react";
 import { cn } from "@/lib/forge";
-import { CAMPUS_BANDS, FOUNDING, campusPrice, perStudent } from "@/lib/pricing";
 import { SCHOOL_OUTCOMES } from "./sections";
 
 // /schools, interactive parts (premium landing, 2026-11-27). Offices: pick an office and see the
-// report it gets (examples, marked). Campus price: slide to your enrollment and read the yearly price
-// from lib/pricing.ts, so the page and /pricing can't disagree.
+// report it gets (examples, marked). The portal to try is portal.tsx.
 
-const usd = (n: number) => `$${n.toLocaleString("en-US")}`;
 
 function Preview({ k }: { k: number }) {
   if (k === 0) return (
@@ -86,27 +83,6 @@ export function Offices() {
           <Preview k={k} />
         </div>
       </div>
-    </div>
-  );
-}
-
-export function CampusPrice() {
-  const [n, setN] = useState(12000);
-  const id = useId();
-  const band = CAMPUS_BANDS.findIndex((b) => n <= b.upTo);
-  return (
-    <div className="mt-5 rounded-xl border border-line bg-surface-2/60 p-4">
-      <div className="flex items-baseline justify-between gap-3">
-        <label htmlFor={id} className="text-sm font-medium">A whole campus, by enrollment</label>
-        <output htmlFor={id} className="text-sm text-muted tabular-nums">{n.toLocaleString("en-US")} students</output>
-      </div>
-      <input id={id} type="range" min={1000} max={40000} step={500} value={n} onChange={(e) => setN(Number(e.target.value))}
-        className="mt-3 w-full accent-[var(--brand)]" />
-      <div className="mt-3 grid grid-cols-3 gap-1" aria-hidden="true">
-        {CAMPUS_BANDS.map((_, i) => <span key={i} className={cn("h-1 rounded-full transition-colors", i === band ? "bg-brand" : "bg-line-strong")} />)}
-      </div>
-      <p className="mt-4 text-3xl font-semibold tracking-tight tabular-nums">{usd(campusPrice(n))}<span className="text-base font-normal text-muted"> / year</span></p>
-      <p className="mt-1 text-sm text-muted">{perStudent(n)} a student a year for a founding school, every department and unlimited faculty. List price {usd(campusPrice(n, false))} once the first {FOUNDING.schools} campuses are in.</p>
     </div>
   );
 }

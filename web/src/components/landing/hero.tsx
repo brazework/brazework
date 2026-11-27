@@ -132,7 +132,7 @@ export function Hero() {
         <div className="mx-auto grid w-full max-w-6xl grid-cols-1 items-center gap-10 px-5 sm:px-6 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:gap-12">
           <div className="min-w-0">
             <p className="inline-flex items-center gap-2 rounded-full border border-line bg-surface/60 px-3 py-1 text-xs text-text-2"><span aria-hidden="true" className="size-1.5 rounded-full bg-brand" /> New: Brazework Courses</p>
-            <h1 id="hero-h" className="mt-5 text-[clamp(2.75rem,6.2vw,4.75rem)] leading-[0.95] font-semibold tracking-[-0.05em]">{["Build it.", "Prove it.", "Own it."].map((w, i) => (
+            <h1 id="hero-h" className="mt-6 text-[clamp(3.6rem,16vw,5.5rem)] leading-[0.9] font-semibold tracking-[-0.055em] lg:text-[clamp(4.75rem,6.6vw,6rem)]">{["Build it.", "Prove it.", "Own it."].map((w, i) => (
                 <span key={w} className={cn("weld-line", i === 2 && "text-brand")} data-state={i < weld ? "done" : i === weld ? "hot" : "ahead"}>{w}</span>
               ))}</h1>
             <p className="mt-5 max-w-[31rem] text-lg leading-relaxed text-muted">A record of the work you&apos;ve really done, each piece signed by the person who saw it: your professor, your club or your coworker. Free for students and professionals. Schools run their project courses on it.</p>
