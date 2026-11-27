@@ -153,9 +153,26 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: 22
-          cache: npm
-          cache-dependency-path: web/package-lock.json
-      - run: npm ci
+      # The compiler cache, as in "checks" (never the build output): next build still compiles this tree.
+      # Before the packages: hashFiles over web/**/*.js must not walk node_modules.
+      - name: Cache Next.js build
+        uses: actions/cache@v6
+        with:
+          path: web/.next/cache
+          key: ${{ runner.os }}-nextjs-e2e-${{ hashFiles('web/package-lock.json') }}-${{ hashFiles('web/next.config.*') }}-${{ hashFiles('web/**/*.js', 'web/**/*.jsx', 'web/**/*.ts', 'web/**/*.tsx') }}
+          restore-keys: |
+            ${{ runner.os }}-nextjs-e2e-${{ hashFiles('web/package-lock.json') }}-${{ hashFiles('web/next.config.*') }}-
+            ${{ runner.os }}-nextjs-e2e-${{ hashFiles('web/package-lock.json') }}-
+      # FIX-81: installed packages, keyed on the exact lockfile (no fallback key), so a hit is the same
+      # tree npm ci would make, restored in seconds. A miss runs npm ci and saves it for the next run.
+      - name: Cache installed packages
+        id: modules
+        uses: actions/cache@v6
+        with:
+          path: web/node_modules
+          key: ${{ runner.os }}-${{ runner.arch }}-node22-modules-${{ hashFiles('web/package-lock.json') }}
+      - if: steps.modules.outputs.cache-hit != 'true'
+        run: npm ci
       - name: SQL rule tests and must-not-break journeys
         run: E2E_SHARD=fast bash e2e/run.sh
       - name: Keep failure screenshots
@@ -208,9 +225,24 @@ jobs:
       - uses: actions/setup-node@v7
         with:
           node-version: 22
-          cache: npm
-          cache-dependency-path: web/package-lock.json
-      - run: npm ci
+      # Before the packages: hashFiles over web/**/*.js must not walk node_modules.
+      - name: Cache Next.js build
+        uses: actions/cache@v6
+        with:
+          path: web/.next/cache
+          key: ${{ runner.os }}-nextjs-e2e-${{ hashFiles('web/package-lock.json') }}-${{ hashFiles('web/next.config.*') }}-${{ hashFiles('web/**/*.js', 'web/**/*.jsx', 'web/**/*.ts', 'web/**/*.tsx') }}
+          restore-keys: |
+            ${{ runner.os }}-nextjs-e2e-${{ hashFiles('web/package-lock.json') }}-${{ hashFiles('web/next.config.*') }}-
+            ${{ runner.os }}-nextjs-e2e-${{ hashFiles('web/package-lock.json') }}-
+      # The same two caches as the fast gate (same keys, so either job's save serves both).
+      - name: Cache installed packages
+        id: modules
+        uses: actions/cache@v6
+        with:
+          path: web/node_modules
+          key: ${{ runner.os }}-${{ runner.arch }}-node22-modules-${{ hashFiles('web/package-lock.json') }}
+      - if: steps.modules.outputs.cache-hit != 'true'
+        run: npm ci
       # Own runner, own local Supabase, own test accounts. See web/e2e/run.sh.
       - name: Run this shard
         run: E2E_SHARD="${{ matrix.shard }}" bash e2e/run.sh

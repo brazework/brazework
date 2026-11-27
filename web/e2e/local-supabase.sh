@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # A private, throwaway Supabase for end-to-end tests: Postgres + GoTrue (sign-in) + PostgREST (API)
 # in Docker, behind a tiny gateway on :54321 that looks like a Supabase URL. Nothing touches the
-# real project. Usage: e2e/local-supabase.sh up | down
+# real project. Usage: e2e/local-supabase.sh up | down | keys
 #
 # One stack per name, so two can run side by side without stopping each other (a demo while tests run):
 #   E2E_STACK=brazework-demo E2E_GATEWAY_PORT=54331 E2E_AUTH_PORT=19989 E2E_REST_PORT=13010 e2e/local-supabase.sh up
@@ -30,6 +30,12 @@ image() {
   done
   echo "::error::Couldn't pull $ref from any of: $*" >&2; return 1
 }
+# The API keys are fixed (signed with SECRET, which is fixed), so they can be written before the stack is
+# up: serve.sh builds the app with them while the stack starts. "keys" writes them and starts nothing.
+jwt() { node -e 'const c=require("crypto");const b=o=>Buffer.from(JSON.stringify(o)).toString("base64url");const h=b({alg:"HS256",typ:"JWT"}),p=b({role:process.argv[2],iss:"supabase",exp:2000000000});console.log(h+"."+p+"."+c.createHmac("sha256",process.argv[1]).update(h+"."+p).digest("base64url"))' "$SECRET" "$1"; }
+# The anon key, and a service-role key for trusted server code (the billing webhook).
+keys() { jwt anon > e2e/.anon-key; jwt service_role > e2e/.service-key; }
+if [ "${1:-up}" = "keys" ]; then keys; exit 0; fi
 STACK="${E2E_STACK:-forge-e2e}"; GW="${E2E_GATEWAY_PORT:-54321}"; AP="${E2E_AUTH_PORT:-19999}"; RP="${E2E_REST_PORT:-13000}"
 # The default stack runs e2e/gateway.cjs; any other runs its own copy, so stopping one gateway never
 # stops another stack's (down used to stop every gateway on the machine).
@@ -65,10 +71,7 @@ docker run -d --name $STACK-rest --network "$STACK" -p 127.0.0.1:$RP:3000 -e PGR
   -e PGRST_DB_SCHEMAS=public -e PGRST_DB_ANON_ROLE=anon -e PGRST_JWT_SECRET=$SECRET "$REST" >/dev/null
 GW_JWT_SECRET=$SECRET GW_PORT=$GW GW_AUTH_PORT=$AP GW_REST_PORT=$RP nohup node "$GWJS" > "/tmp/$STACK-gateway.log" 2>&1 &
 until curl -sf http://localhost:$GW/rest/v1/ >/dev/null; do sleep 1; done
-ANON=$(node -e 'const c=require("crypto");const b=o=>Buffer.from(JSON.stringify(o)).toString("base64url");const h=b({alg:"HS256",typ:"JWT"}),p=b({role:"anon",iss:"supabase",exp:2000000000});console.log(h+"."+p+"."+c.createHmac("sha256",process.argv[1]).update(h+"."+p).digest("base64url"))' "$SECRET")
-echo "$ANON" > e2e/.anon-key
-# A service-role key for trusted server code (the billing webhook).
-node -e 'const c=require("crypto");const b=o=>Buffer.from(JSON.stringify(o)).toString("base64url");const h=b({alg:"HS256",typ:"JWT"}),p=b({role:"service_role",iss:"supabase",exp:2000000000});console.log(h+"."+p+"."+c.createHmac("sha256",process.argv[1]).update(h+"."+p).digest("base64url"))' "$SECRET" > e2e/.service-key
+keys; ANON=$(cat e2e/.anon-key)
 # The test members' school: listed like a real school without an academic domain (signup-rules.sql).
 docker exec $STACK-db psql -U postgres -h localhost -d postgres -qc "insert into public.school_domains (domain, school) values ('forge.test', 'Brazework test school') on conflict do nothing" >/dev/null
 # Test members sign up through the real sign-up API (their profiles come from the same trigger).
