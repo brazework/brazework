@@ -77,11 +77,9 @@ export function cardSummary(p: Proposal): { title: string; lines: string[]; link
     case "memory": return { title: `Remember: ${cut(p.body, 120)}`, lines: ["Carries over to your next chats. Forget it any time in Settings."], link: "" };
     case "goal": return { title: `Work toward ${p.title}`, lines: p.why ? [cut(p.why)] : [], link: "" };
     case "project_edit": return { title: `Update ${p.project_title}`, lines: [["summary", "details", "link", "specs"].filter((k) => p[k as keyof typeof p] !== undefined).map((k) => (k === "details" ? "write-up" : k)).join(", ")], link: "" };
-    case "quiz": return { title: p.title, lines: [`${p.questions.length} ${p.questions.length === 1 ? "question" : "questions"} · ${p.questions.reduce((t, q) => t + q.points, 0)} points · ${p.class_name}`, p.publish ? "Posts to the class when you confirm" : "Saved as a draft when you confirm"], link: "" };
     case "assignment": return { title: p.title, lines: [`${p.points} points${p.rubric.length ? ` · ${p.rubric.length}-row rubric` : ""} · ${p.class_name}`, p.publish ? "Posts to the class when you confirm" : "Saved as a draft when you confirm"], link: "" };
     case "announcement": return { title: p.title, lines: [cut(p.body), `To everyone in ${p.class_name}`], link: "" };
     case "extension": return { title: `Extend ${p.assignment_title} for ${p.name}`, lines: [`New due date: ${new Date(p.due_at).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}`], link: "" };
-    case "attendance": return { title: `Take attendance${p.title ? `: ${p.title}` : ""}`, lines: [`${p.class_name} · check-in open ${p.minutes} minutes`], link: "" };
     default: return null;
   }
 }

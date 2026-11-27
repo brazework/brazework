@@ -2,7 +2,7 @@ import { goalTitle, isGoalKind } from "@/lib/goals";
 import type Anthropic from "@anthropic-ai/sdk";
 import { can, rank } from "@/lib/communities";
 import { EVENT_FORMATS, EVENT_TYPES } from "@/lib/events";
-import type { Choice, Proposal, TorchQuestion, TorchRubricRow } from "@/lib/copilot-agent";
+import type { Choice, Proposal, TorchRubricRow } from "@/lib/copilot-agent";
 import { MAX_OPTION, MAX_OPTIONS, MIN_OPTIONS, cleanOptions, cleanThen } from "@/lib/ember-thread";
 import { dbFeatures } from "@/lib/db-features";
 import { newestFirst } from "@/lib/ember-record";
@@ -150,21 +150,13 @@ export const TOOLS: Anthropic.Tool[] = [
   },
   {
     name: "my_courses",
-    description: "The member's classes on Brazework Courses, with their role. For classes they teach (owner, admin or moderator): each assignment and quiz with its id, due date, whether it's published, how many handed in and how many are graded. For classes they take: what's due, with whether they handed it in.",
+    description: "The member's classes on Brazework Courses, with their role. For classes they teach (owner, admin or moderator): each assignment with its id, due date, whether it's published, how many handed in and how many are graded. For classes they take: what's due, with whether they handed it in.",
     input_schema: { type: "object", properties: {} },
   },
   {
     name: "course_roster",
     description: "For a class the member teaches: its students (id and name) and, given an assignment_id, who handed it in, when, and whether it was late. Use it before propose_extension.",
     input_schema: { type: "object", properties: { class_id: { type: "string" }, assignment_id: { type: "string" } }, required: ["class_id"] },
-  },
-  {
-    name: "propose_quiz",
-    description: "Write a quiz for a class the member teaches. Each question: prompt; type 'choice' (one right option: answer is its 0-based index), 'multi' (several right: answer is an array of indexes), 'number' (answer is the number, tolerance the allowed error) or 'short' (no answer: the professor scores it); options (2 to 10) for choice and multi; points. Write accurate questions with one defensible right answer, at the level of the course; never invent course facts you weren't given. closes_at is ISO 8601 with a timezone offset. publish false keeps it a draft (the default). Nothing is saved until the member confirms.",
-    input_schema: { type: "object", properties: {
-      class_id: { type: "string" }, title: { type: "string" }, instructions: { type: "string" }, closes_at: { type: "string" },
-      questions: { type: "array", items: { type: "object", properties: { prompt: { type: "string" }, type: { type: "string", enum: ["choice", "multi", "number", "short"] }, options: { type: "array", items: { type: "string" } }, answer: {}, tolerance: { type: "number" }, points: { type: "number" } }, required: ["prompt", "type", "points"] } },
-      show_score: { type: "boolean" }, publish: { type: "boolean" } }, required: ["class_id", "title", "questions"] },
   },
   {
     name: "propose_assignment",
@@ -183,11 +175,6 @@ export const TOOLS: Anthropic.Tool[] = [
     name: "propose_extension",
     description: "Prepare an extension: a later due date on one assignment for one student in a class the member teaches (ids from my_courses and course_roster; due_at ISO 8601 with offset). Nothing happens until the member confirms.",
     input_schema: { type: "object", properties: { assignment_id: { type: "string" }, person_id: { type: "string" }, due_at: { type: "string" } }, required: ["assignment_id", "person_id", "due_at"] },
-  },
-  {
-    name: "propose_attendance",
-    description: "Prepare taking attendance in a class the member teaches: opens check-in with a code for minutes (5 to 60; default 15). Nothing happens until the member confirms.",
-    input_schema: { type: "object", properties: { class_id: { type: "string" }, title: { type: "string" }, minutes: { type: "number" } }, required: ["class_id"] },
   },
   {
     name: "github_repo",
@@ -636,7 +623,7 @@ export function makeExec(db: DB, userId: string, onProposal: (p: Proposal) => vo
         const by = new Map(((subs.data ?? []) as { uid: string; submitted_at: string }[]).map((x) => [x.uid, x.submitted_at]));
         return { assignment: asg.title, due: asg.due_at, students: students.map((x) => ({ ...x, handed_in: by.get(x.person_id) ?? null, late: !!(by.get(x.person_id) && asg.due_at && by.get(x.person_id)! > asg.due_at) })) };
       }
-      case "propose_quiz": case "propose_assignment": case "propose_announcement": case "propose_attendance": {
+      case "propose_assignment": case "propose_announcement": {
         const cid = String(a.class_id ?? "");
         if (!ID_RE.test(cid)) return { error: "Use a class_id from my_courses." };
         const [{ data: c }, { data: m }] = await Promise.all([
@@ -654,41 +641,8 @@ export function makeExec(db: DB, userId: string, onProposal: (p: Proposal) => vo
           onProposal({ id: pid(), kind: "announcement", class_id: cid, class_name: klass.name, title, body });
           return SHOWN;
         }
-        if (name === "propose_attendance") {
-          const minutes = Math.min(60, Math.max(5, Math.round(Number(a.minutes) || 15)));
-          onProposal({ id: pid(), kind: "attendance", class_id: cid, class_name: klass.name, title: text(a.title, 120), minutes });
-          return SHOWN;
-        }
         const title = text(a.title, 160);
         if (!title) return { error: "Give it a title." };
-        if (name === "propose_quiz") {
-          const raw = Array.isArray(a.questions) ? a.questions : [];
-          if (!raw.length || raw.length > 60) return { error: "A quiz has 1 to 60 questions." };
-          const questions: TorchQuestion[] = [];
-          for (const [i, q] of raw.entries()) {
-            const o = q as Record<string, unknown>;
-            const type = (["choice", "multi", "number", "short"] as const).find((t) => t === o.type);
-            const prompt = text(o.prompt, 2000), points = Number(o.points);
-            if (!type || !prompt || !(points > 0 && points <= 1000)) return { error: `Question ${i + 1} needs words, a type and some points.` };
-            const options = Array.isArray(o.options) ? o.options.map((x) => text(x, 300)).filter(Boolean).slice(0, 10) : [];
-            const base = { id: `q${i + 1}`, prompt, type, points };
-            if (type === "choice") {
-              const ans = Number(o.answer);
-              if (options.length < 2 || !Number.isInteger(ans) || ans < 0 || ans >= options.length) return { error: `Question ${i + 1}: give 2 to 10 options and the index of the right one.` };
-              questions.push({ ...base, options, answer: ans });
-            } else if (type === "multi") {
-              const ans = (Array.isArray(o.answer) ? o.answer : []).map(Number).filter((x) => Number.isInteger(x) && x >= 0 && x < options.length);
-              if (options.length < 2 || !ans.length) return { error: `Question ${i + 1}: give 2 to 10 options and the indexes of the right ones.` };
-              questions.push({ ...base, options, answer: [...new Set(ans)] });
-            } else if (type === "number") {
-              const ans = Number(o.answer);
-              if (!Number.isFinite(ans)) return { error: `Question ${i + 1}: give the right number.` };
-              questions.push({ ...base, answer: ans, tolerance: Math.abs(Number(o.tolerance) || 0) });
-            } else questions.push(base);
-          }
-          onProposal({ id: pid(), kind: "quiz", class_id: cid, class_name: klass.name, title, instructions: text(a.instructions, 20000), closes_at: when(a.closes_at), questions, show_score: a.show_score !== false, publish: a.publish === true });
-          return SHOWN;
-        }
         const rubric: TorchRubricRow[] = (Array.isArray(a.rubric) ? a.rubric : []).slice(0, 20).map((r) => r as Record<string, unknown>)
           .map((r) => ({ criterion: text(r.criterion, 200), points: Math.max(0, Number(r.points) || 0), ...(/^[1-7]$/.test(String(r.outcome ?? "")) ? { outcome: String(r.outcome) } : {}) }))
           .filter((r) => r.criterion);

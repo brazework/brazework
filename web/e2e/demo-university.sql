@@ -7,7 +7,7 @@ do $$
 declare
   d text := current_setting('demo.domain');
   dean uuid; prof uuid; ta uuid; ava uuid; ben uuid; cleo uuid; dev uuid; eli uuid; fay uuid;
-  org text; c text; club text; m1 text; m2 text; m3 text; a1 text; a2 text; a3 text; q text; p1 text; p2 text; s1 text; s2 text; s3 text;
+  org text; c text; club text; m1 text; m2 text; m3 text; a1 text; a2 text; a3 text; p1 text; p2 text; s1 text; s2 text; s3 text;
 begin
   select id into dean from auth.users where email = 'dean@' || d;
   select id into prof from auth.users where email = 'prof@' || d;
@@ -63,8 +63,8 @@ begin
     (p2, dev, c, 'ME 410 · Capstone Design', 'Climbed 12 stairs with an 80 kg load', 'Video and motor current traces attached.', 'https://example.com/stair-video', current_date - 2, 'pending', '', '', null, false, now() - interval '2 days');
   alter table public.milestones enable trigger user;
 
-  -- The course: three modules, a rubric assignment (ABET-tagged), a group design review with peer
-  -- evaluation, and a quiz.
+  -- The course: three modules, a rubric assignment (ABET-tagged), and a group design review with peer
+  -- evaluation.
   insert into public.course_modules (community_id, title, position, published) values (c, 'Weeks 1–3 · Requirements', 0, true) returning id into m1;
   insert into public.course_modules (community_id, title, position, published) values (c, 'Weeks 4–7 · Concept and design review', 1, true) returning id into m2;
   insert into public.course_modules (community_id, title, position, published) values (c, 'Weeks 8–12 · Build and test', 2, false) returning id into m3;
@@ -83,13 +83,6 @@ begin
   insert into public.assignments (community_id, module_id, title, instructions, due_at, submit_as, published) values
     (c, m3, 'Test plan', 'What you''ll test, how, and what passing looks like.', now() + interval '6 days', '{file,link}', true)
     returning id into a3;
-  insert into public.assignments (community_id, module_id, title, due_at, kind, published) values (c, m2, 'Quiz 2: Gear trains', now() + interval '2 days', 'quiz', false) returning id into q;
-  update public.assignments set quiz = '[
-      {"id":"q1","prompt":"A 20-tooth gear drives a 60-tooth gear. What is the speed ratio?","type":"choice","options":["1:3","3:1","1:2","2:1"],"points":2},
-      {"id":"q2","prompt":"Output torque (N·m) from 4 N·m through a 5:1 reduction at 90% efficiency?","type":"number","points":3},
-      {"id":"q3","prompt":"Why pick a planetary stage over a spur pair here?","type":"short","points":5}]'::jsonb,
-    submit_as = '{text}', published = true where id = q;
-  insert into public.quiz_keys (assignment_id, community_id, key) values (q, c, '{"q1":1,"q2":{"value":18,"tolerance":0.2}}') on conflict (assignment_id) do update set key = excluded.key;
 
   -- Hand-ins and released grades on the memo (rubric scores, so the ABET outcomes fill in).
   insert into public.submissions (assignment_id, community_id, uid, url, submitted_at) values
@@ -120,17 +113,7 @@ begin
     (a2, dev, eli, c, 4, ''), (a2, dev, fay, c, 5, 'Did the whole power budget.'), (a2, eli, dev, c, 4, ''), (a2, fay, dev, c, 5, '')
   on conflict do nothing;
 
-  -- Attendance: four sessions, with an excused absence and one late; Eli has an accommodation.
-  for s1 in select gen_random_uuid()::text from generate_series(1, 4) loop
-    insert into public.course_sessions (id, community_id, title, held_on, open_until) values (s1, c, '', current_date, now() - interval '1 day');
-  end loop;
-  update public.course_sessions cs set title = 'Lecture ' || n.rn, held_on = current_date - (7 * (5 - n.rn))::int
-    from (select id, row_number() over (order by id) rn from public.course_sessions where community_id = c) n where cs.id = n.id;
-  insert into public.attendance (session_id, uid, community_id, status, marked_by)
-  select s.id, u.uid, c, case when u.uid = eli and s.title = 'Lecture 2' then 'excused' when u.uid = cleo and s.title = 'Lecture 3' then 'late'
-                              when u.uid = dev and s.title = 'Lecture 4' then 'absent' else 'present' end, ta
-    from public.course_sessions s cross join (select unnest(array[ava, ben, cleo, dev, eli, fay]) uid) u where s.community_id = c
-  on conflict do nothing;
+  -- Eli has an accommodation (quizzes and attendance were taken out, 2026-11-27: the LMS runs them).
   insert into public.course_accommodations (community_id, uid, extra_days, extra_time_pct, note, set_by) values (c, eli, 2, 50, 'From accessibility services', prof) on conflict do nothing;
 
   insert into public.course_announcements (community_id, author_id, title, body, created_at) values

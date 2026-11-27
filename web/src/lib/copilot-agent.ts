@@ -34,15 +34,11 @@ export const TOOL_LABEL: Record<string, { doing: string; done: string }> = {
   propose_message: { doing: "Drafting a message", done: "a message draft" },
   my_courses: { doing: "Reading your courses", done: "your courses" },
   course_roster: { doing: "Reading the class", done: "the class" },
-  propose_quiz: { doing: "Writing a quiz", done: "a quiz draft" },
   propose_assignment: { doing: "Drafting an assignment", done: "an assignment draft" },
   propose_announcement: { doing: "Drafting an announcement", done: "an announcement draft" },
   propose_extension: { doing: "Preparing an extension", done: "an extension" },
-  propose_attendance: { doing: "Preparing attendance", done: "a check-in" },
 };
 
-// A quiz question as Torch writes it (the answers go to the database's hidden key, courses-b.sql).
-export type TorchQuestion = { id: string; prompt: string; type: "choice" | "multi" | "number" | "short"; options?: string[]; answer?: number | number[] | null; tolerance?: number; points: number };
 export type TorchRubricRow = { criterion: string; points: number; outcome?: string };
 
 // Something Copilot prepared for the member to confirm. Copilot never saves anything itself:
@@ -75,11 +71,9 @@ export type Proposal = { id: string; then?: string } & (
   | { kind: "teammate"; project_id: string; project_title: string; person_id: string; name: string; headline: string; role: "member" | "viewer" }
   // Brazework Courses, for a class's staff (supabase/courses.sql, courses-b.sql). Torch drafts; the
   // professor confirms on the card. It never grades or releases a grade.
-  | { kind: "quiz"; class_id: string; class_name: string; title: string; instructions: string; closes_at: string; questions: TorchQuestion[]; show_score: boolean; publish: boolean }
   | { kind: "assignment"; class_id: string; class_name: string; title: string; instructions: string; due_at: string; points: number; rubric: TorchRubricRow[]; submit_as: string[]; group_work: boolean; peer_eval: boolean; publish: boolean }
   | { kind: "announcement"; class_id: string; class_name: string; title: string; body: string }
   | { kind: "extension"; class_id: string; assignment_id: string; assignment_title: string; person_id: string; name: string; due_at: string }
-  | { kind: "attendance"; class_id: string; class_name: string; title: string; minutes: number }
 );
 export type Spec = { label: string; value: string };
 
