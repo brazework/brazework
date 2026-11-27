@@ -51,7 +51,8 @@ portal, company search, and Torch, the AI teammate that drafts everything for th
 - **Every change** goes through a pull request that merges itself once the required checks pass:
   typecheck, lint, unit tests, build, the full end-to-end suite on a throwaway database, a dependency
   audit and secret scan, plus Lighthouse/ZAP quality scans and CodeQL. See
-  [../CONTRIBUTING.md](../CONTRIBUTING.md).
+  [../CONTRIBUTING.md](../CONTRIBUTING.md). That is how the founders ship. Agent-authored pull requests
+  follow [team-playbook.md](team-playbook.md).
 - **Work tracking:** Linear, team Forge, key `FIX`. Commits name their issue; a nightly sync logs
   untracked commits. **The workspace is at its free plan's issue limit** (26 Nov): new issues are
   refused until the plan is upgraded or old issues are archived.

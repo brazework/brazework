@@ -32,7 +32,9 @@ Two guards keep untested code off production's database, whatever anyone's setti
 
 ## Today: a pull request for every change, merged by CI
 
-`main` is protected: every change goes in through a pull request, and it merges itself once the required checks pass. Nobody waits on anyone (two people; CI is the gate). Josh and Ian work the same way, and so does Claude Code.
+`main` is protected: every change goes in through a pull request, and it merges itself once the required checks pass. Nobody waits on anyone (two people; CI is the gate). Josh and Ian work the same way.
+
+Agent-authored pull requests (Forge, Rivet, and other cloud agents) follow [docs/team-playbook.md](docs/team-playbook.md). The steps below are how Josh and Ian ship.
 
 1. Start from the latest main on a branch: `git switch main && git pull --rebase origin main && git switch -c fix-30-short-topic` (the Linear issue's ID and a few words).
 2. Make the change. Run the checks locally before you push:
@@ -59,7 +61,7 @@ Two guards keep untested code off production's database, whatever anyone's setti
 
 Also on hand:
 - `npm run load`: a k6 load test (200 members browsing at once, plus a sign-up burst) against the local stack. On GitHub: Actions → **Load test** → Run workflow.
-- **Working with Claude Code:** `/next` works the next Linear issue end to end, `/ship` runs this path (branch, checks, pull request with auto-merge, CI, report), and `/standup` reports where things are (see `CLAUDE.md`). The Linear connection is in `.mcp.json`.
+- **Working with Claude Code:** `/next` works the next Linear issue end to end, `/ship` runs the checks and opens a pull request (an agent leaves auto-merge off until Temper approves; see `.claude/skills/ship/SKILL.md` and [docs/team-playbook.md](docs/team-playbook.md)), and `/standup` reports where things are (see `CLAUDE.md`). The Linear connection is in `.mcp.json`. The numbered steps above stay how Josh and Ian ship.
 
 Small, focused commits with plain messages ("Events: week strip and host menu"), one feature each.
 
