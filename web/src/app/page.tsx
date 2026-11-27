@@ -5,6 +5,7 @@ import { LegacyLinks } from "@/components/landing/legacy-links";
 import { Nav } from "@/components/landing/nav";
 import { Organizations } from "@/components/landing/organizations";
 import { How } from "@/components/landing/how";
+import { Lms } from "@/components/landing/lms";
 import { Torch } from "@/components/landing/torch";
 import { Audiences, Faq, ForSchools } from "@/components/landing/sections";
 import { ThemeChrome } from "@/components/theme-chrome";
@@ -29,6 +30,7 @@ export default function Landing() {
         <How />
         <Torch />
         <Audiences />
+        <Lms />
         <ForSchools />
         <Compare />
         <Faq />

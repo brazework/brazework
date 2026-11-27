@@ -7,7 +7,8 @@ import { cn } from "@/lib/forge";
 // way faculty and offices use it: a course, its gradebook, the dean's evidence and student life's
 // clubs. Grade a team's milestone against the rubric and verify it, and the gradebook, the evidence
 // by ABET outcome and the club's numbers change with it. A guide at the top walks the three moves.
-// Example school, people and numbers; nothing here is saved. Courses, rubric grading, the gradebook
+// Example school, people and numbers; nothing here is saved. The course opens from the school's LMS
+// (the plug-in angle, 2026-11-27); grades go back to it. Courses, rubric grading, the gradebook
 // and the evidence export work today (app/(app)/c, supabase/courses*.sql).
 
 type Sub = { id: string; team: string; members: string; title: string; file: string; club?: string; verified: boolean; scores: number[] };
@@ -76,7 +77,7 @@ export function Portal() {
         <div role="tabpanel" aria-label={ROOMS.find((r) => r.id === room)!.label} className="min-h-[26rem] p-4 sm:p-5">
           {room === "course" && !sub && (
             <div key="list" className="hero-rise">
-              <p className="text-[12px] text-faint">ME 482 Robotics, Fall 2026</p>
+              <p className="text-[12px] text-faint">ME 482 Robotics, Fall 2026, opened from your LMS</p>
               <h3 className="mt-1 text-lg font-semibold tracking-tight">Assignment 3: Cycle-time test</h3>
               <p className="mt-1 text-[13px] text-muted">Hand in the milestone with its evidence. Grading it verifies it.</p>
               <ul className="mt-4 flex flex-col gap-2">

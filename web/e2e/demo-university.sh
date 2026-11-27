@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Brazework Demo University: a whole school to show on a sales call (docs/demo-university.md).
 # A dean (the school's admin), a professor, a teaching assistant and six students; a capstone course
-# mid-semester with modules, graded assignments on an ABET rubric, a quiz, attendance, announcements
+# mid-semester with modules, graded assignments on an ABET rubric, announcements
 # and peer ratings; class projects with verified milestones; a verified club. Made-up people and work.
 #
 # Local (default): the private test stack (e2e/local-supabase.sh up), domain demo.brazework.test.

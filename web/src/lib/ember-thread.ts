@@ -14,7 +14,7 @@ import type { Proposal } from "@/lib/copilot-agent";
 
 // What a card is called in the note and once a chat is saved (a saved chat keeps a label, never a
 // live card that could be confirmed twice).
-export const CARD_LABEL: Record<Proposal["kind"], string> = { goal: "a goal", memory: "something to remember", post: "a post", milestone: "a milestone to verify", signature: "an ask to sign", join: "joining a club", club: "a new club", follow: "a follow", event: "a club event", club_post: "a club post", project: "a project", review: "a milestone review", rsvp: "an RSVP", message: "a message", project_edit: "a project update", teammate: "a teammate", invite: "a club invite", quiz: "a quiz", assignment: "an assignment", announcement: "a class announcement", extension: "an extension", attendance: "taking attendance" };
+export const CARD_LABEL: Record<Proposal["kind"], string> = { goal: "a goal", memory: "something to remember", post: "a post", milestone: "a milestone to verify", signature: "an ask to sign", join: "joining a club", club: "a new club", follow: "a follow", event: "a club event", club_post: "a club post", project: "a project", review: "a milestone review", rsvp: "an RSVP", message: "a message", project_edit: "a project update", teammate: "a teammate", invite: "a club invite", assignment: "an assignment", announcement: "a class announcement", extension: "an extension" };
 const KINDS = Object.keys(CARD_LABEL) as [Proposal["kind"], ...Proposal["kind"][]];
 
 export const CARD_STATES = ["open", "confirmed", "dismissed", "failed"] as const;
@@ -67,7 +67,7 @@ export function cardTitle(p: Proposal): string {
     case "club": return tidy(p.name);
     case "follow": case "teammate": return tidy(p.name);
     case "project_edit": return tidy(p.project_title);
-    case "quiz": case "assignment": case "announcement": case "attendance": return tidy(p.title || p.class_name);
+    case "assignment": case "announcement": return tidy(p.title || p.class_name);
     case "extension": return tidy(`${p.assignment_title} for ${p.name}`);
   }
 }

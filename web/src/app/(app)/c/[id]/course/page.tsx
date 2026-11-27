@@ -10,7 +10,7 @@ import { rank } from "@/lib/communities";
 import { requestTime, timeAgo } from "@/lib/forge";
 import { signedUrls } from "@/lib/signed-urls";
 import { loadCommunity } from "../data";
-import { AccommodationForm, AddItemForm, AddModuleForm, AnnounceForm, AssignmentForm, AttendancePicker, CheckInForm, CloseSessionButton, OpenSessionForm, PublishToggle, RemoveButton } from "./course-client";
+import { AccommodationForm, AddItemForm, AddModuleForm, AnnounceForm, AssignmentForm, PublishToggle, RemoveButton } from "./course-client";
 import { ABET_OUTCOMES } from "@/lib/course-math";
 
 // Brazework Courses (supabase/courses.sql): a class's course. Modules of pages, links and files;
@@ -20,7 +20,7 @@ import { ABET_OUTCOMES } from "@/lib/course-math";
 // what each sees; this page never widens it.
 export const metadata: Metadata = { title: "Course" };
 
-type Tab = "modules" | "assignments" | "attendance" | "grades" | "announcements";
+type Tab = "modules" | "assignments" | "grades" | "announcements";
 type Module = { id: string; title: string; position: number; published: boolean };
 type Item = { id: string; module_id: string; kind: "page" | "link" | "file"; title: string; body: string; url: string | null; path: string | null; position: number };
 type Assignment = CourseAssignment & { module_id: string | null; group_work: boolean; submit_as: string[]; kind?: string };
@@ -52,7 +52,7 @@ async function Course({ params, searchParams }: { params: PageProps<"/c/[id]/cou
   if (!f.courses) return <>{header}<EmptyState title="Courses are on their way" body="Modules, assignments and grades for this class arrive with the next update." /></>;
 
   const staff = rank(me.role) >= 3;
-  const tab: Tab = (["assignments", "attendance", "grades", "announcements"] as const).find((t) => t === sp.tab && (t !== "attendance" || f.coursesB)) ?? "modules";
+  const tab: Tab = (["assignments", "grades", "announcements"] as const).find((t) => t === sp.tab) ?? "modules";
   const now = requestTime();
   const [mods, items, asg, ann, subs, grs] = await Promise.all([
     supabase.from("course_modules").select("id, title, position, published").eq("community_id", id).order("position").limit(200),
@@ -64,7 +64,8 @@ async function Course({ params, searchParams }: { params: PageProps<"/c/[id]/cou
   ]);
   const modules = (mods.data ?? []) as Module[];
   const allItems = (items.data ?? []) as Item[];
-  const assignments = (asg.data ?? []) as unknown as Assignment[];
+  // Quizzes were taken out (2026-11-27: the school's LMS runs them); old ones are no longer listed.
+  const assignments = ((asg.data ?? []) as unknown as Assignment[]).filter((a) => a.kind !== "quiz");
   const announcements = (ann.data ?? []) as unknown as Announcement[];
   const submissions = (subs.data ?? []) as CourseSubmission[];
   const grades = (grs.data ?? []) as CourseGrade[];
@@ -94,7 +95,7 @@ async function Course({ params, searchParams }: { params: PageProps<"/c/[id]/cou
         <ClipboardList className="size-4 shrink-0 text-text-2" aria-hidden="true" />
         <div className="min-w-0 flex-1">
           <Link href={`/c/${id}/course/a/${a.id}`} className="block truncate text-sm font-medium hover:underline">{a.title}</Link>
-          <p suppressHydrationWarning className="truncate text-xs text-muted">{[a.kind === "quiz" ? "Quiz" : null, dueText(a.due_at, now), `${a.points} points`, a.group_work ? "Group work" : null, staff ? staffStatus(a) : null].filter(Boolean).join(" · ")}</p>
+          <p suppressHydrationWarning className="truncate text-xs text-muted">{[dueText(a.due_at, now), `${a.points} points`, a.group_work ? "Group work" : null, staff ? staffStatus(a) : null].filter(Boolean).join(" · ")}</p>
         </div>
         {st && <span className={`shrink-0 text-xs font-medium ${st.tone}`}>{st.text}</span>}
         {staff && <PublishToggle table="assignments" id={a.id} cid={id} published={a.published} />}
@@ -110,7 +111,6 @@ async function Course({ params, searchParams }: { params: PageProps<"/c/[id]/cou
         { id: "modules", label: "Modules", href: `/c/${id}/course` },
         { id: "assignments", label: "Assignments", href: `/c/${id}/course?tab=assignments`, count: assignments.filter((a) => a.published).length },
         { id: "grades", label: staff ? "Gradebook" : "Grades", href: `/c/${id}/course?tab=grades` },
-        ...(f.coursesB ? [{ id: "attendance", label: "Attendance", href: `/c/${id}/course?tab=attendance` }] : []),
         { id: "announcements", label: "Announcements", href: `/c/${id}/course?tab=announcements` },
       ]} />
 
@@ -180,7 +180,6 @@ async function Course({ params, searchParams }: { params: PageProps<"/c/[id]/cou
         </div>
       )}
 
-      {tab === "attendance" && <Suspense fallback={<Skeleton className="mt-5 h-64" />}><Attendance cid={id} staff={staff} uid={user.id} now={now} /></Suspense>}
       {tab === "grades" && (staff
         ? <Suspense fallback={<Skeleton className="mt-5 h-64" />}><Gradebook cid={id} assignments={assignments} grades={grades} submissions={submissions} now={now} phaseB={f.coursesB} /></Suspense>
         : <MyGrades cid={id} assignments={assignments.filter((a) => a.published)} grades={grades.filter((g) => g.uid === user.id && g.released)} />)}
@@ -305,7 +304,7 @@ async function Gradebook({ cid, assignments, grades, submissions, now, phaseB }:
           </section>
           <section aria-label="Accommodations" className="glass-card mt-4 rounded-2xl p-5">
             <h2 className="font-semibold tracking-tight">Accommodations</h2>
-            <p className="mt-0.5 text-sm text-muted">Extra days move every due date for that student; quizzes stay open for them too. Only you and the student see it.</p>
+            <p className="mt-0.5 text-sm text-muted">Extra days move every due date for that student. Only you and the student see it.</p>
             {accs.length > 0 && (
               <ul className="mt-3 flex flex-col gap-1 text-sm text-text-2">
                 {accs.map((a) => <li key={a.uid}><span className="font-medium text-text">{students.find((x) => x.uid === a.uid)?.name ?? "A student"}</span> · {[a.extra_days ? `${a.extra_days} extra ${a.extra_days === 1 ? "day" : "days"}` : null, a.extra_time_pct ? `${a.extra_time_pct}% extra time` : null, a.note || null].filter(Boolean).join(" · ")}</li>)}
@@ -316,85 +315,5 @@ async function Gradebook({ cid, assignments, grades, submissions, now, phaseB }:
         </>
       )}
     </>
-  );
-}
-
-// Attendance (supabase/courses-b.sql): staff open a session with a check-in code and mark the rest;
-// a student checks in with the code and sees their own record.
-async function Attendance({ cid, staff, uid, now }: { cid: string; staff: boolean; uid: string; now: number }) {
-  const { supabase } = await loadCommunity(cid);
-  const [sess, att] = await Promise.all([
-    supabase.from("course_sessions").select("id, title, held_on, open_until, created_at").eq("community_id", cid).order("created_at", { ascending: false }).limit(100),
-    supabase.from("attendance").select("session_id, uid, status").eq("community_id", cid).limit(10000),
-  ]);
-  const sessions = (sess.data ?? []) as { id: string; title: string; held_on: string; open_until: string | null; created_at: string }[];
-  const marks = (att.data ?? []) as { session_id: string; uid: string; status: string }[];
-  const dateOf = (d: string) => new Date(`${d}T12:00:00`).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
-  const tone = (st?: string) => (st === "present" ? "text-ok" : st === "absent" ? "text-danger" : st ? "text-text-2" : "text-faint");
-  if (!staff) {
-    const mine = new Map(marks.filter((m) => m.uid === uid).map((m) => [m.session_id, m.status]));
-    // A session counts once it's closed or you're marked; excused ones never count.
-    const counted = sessions.filter((x) => mine.get(x.id) !== "excused" && (mine.has(x.id) || !x.open_until || new Date(x.open_until).getTime() <= now));
-    const there = counted.filter((x) => ["present", "late"].includes(mine.get(x.id) ?? "")).length;
-    return (
-      <div className="mt-5 flex flex-col gap-4">
-        <CheckInForm />
-        {sessions.length ? (
-          <section aria-label="Your attendance" className="glass-card rounded-2xl p-5">
-            <div className="flex flex-wrap items-baseline justify-between gap-2">
-              <h2 className="font-semibold tracking-tight">Your attendance</h2>
-              <p className="text-sm text-text-2"><span className="text-2xl font-semibold text-text tabular-nums">{counted.length ? Math.round((there / counted.length) * 100) : 100}%</span> of {counted.length} {counted.length === 1 ? "session" : "sessions"}</p>
-            </div>
-            <ul className="mt-3 divide-y divide-[color-mix(in_oklab,var(--border)_70%,transparent)] text-sm">
-              {sessions.map((x) => <li key={x.id} className="flex justify-between gap-3 py-2"><span suppressHydrationWarning>{dateOf(x.held_on)}{x.title ? ` · ${x.title}` : ""}</span><span className={`font-medium capitalize ${tone(mine.get(x.id))}`}>{mine.get(x.id) ?? "Not marked"}</span></li>)}
-            </ul>
-          </section>
-        ) : <EmptyState title="No sessions yet" body="When your professor takes attendance, type the code on the screen above to check in." />}
-      </div>
-    );
-  }
-  const [st, codes] = await Promise.all([supabase.rpc("course_students", { p_cid: cid }), supabase.rpc("course_session_codes", { p_cid: cid })]);
-  const students = ((st.data ?? []) as { uid: string; first_name: string; last_name: string }[]).map((x) => ({ uid: x.uid, name: `${x.first_name} ${x.last_name}`.trim() || "A student" }));
-  const codeOf = new Map(((codes.data ?? []) as { id: string; code: string }[]).map((c) => [c.id, c.code]));
-  const latest = sessions[0];
-  const open = latest?.open_until && new Date(latest.open_until).getTime() > now;
-  const markOf = (sid: string, u: string) => marks.find((m) => m.session_id === sid && m.uid === u)?.status ?? null;
-  const rate = (u: string) => { const c = sessions.filter((x) => markOf(x.id, u) !== "excused" && (markOf(x.id, u) || !x.open_until || new Date(x.open_until).getTime() <= now)); const t = c.filter((x) => ["present", "late"].includes(markOf(x.id, u) ?? "")).length; return c.length ? Math.round((t / c.length) * 100) : null; };
-  return (
-    <div className="mt-5 flex flex-col gap-4">
-      <OpenSessionForm cid={cid} />
-      {latest && (
-        <section aria-label="This session" className="glass-card rounded-2xl p-5">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <h2 suppressHydrationWarning className="font-semibold tracking-tight">{latest.title || "Session"} · {dateOf(latest.held_on)}</h2>
-              <p suppressHydrationWarning className="mt-0.5 text-sm text-muted">{open ? `Check-in open until ${new Date(latest.open_until!).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" })}. Put the code on the screen.` : "Check-in closed. Mark anyone below."} {marks.filter((m) => m.session_id === latest.id && ["present", "late"].includes(m.status)).length} of {students.length} here.</p>
-            </div>
-            {open && (
-              <div className="flex flex-col items-end gap-2">
-                <p aria-label="Check-in code" className="rounded-2xl bg-text px-5 py-3 font-mono text-3xl font-semibold tracking-[0.25em] text-bg">{codeOf.get(latest.id)}</p>
-                <CloseSessionButton cid={cid} sid={latest.id} />
-              </div>
-            )}
-          </div>
-          <ul className="mt-4 divide-y divide-[color-mix(in_oklab,var(--border)_70%,transparent)]">
-            {students.map((x) => (
-              <li key={x.uid} className="flex flex-wrap items-center justify-between gap-2 py-2">
-                <span className="text-sm font-medium">{x.name}<span className="ml-2 text-xs font-normal text-muted tabular-nums">{rate(x.uid) == null ? "" : `${rate(x.uid)}% this term`}</span></span>
-                <AttendancePicker cid={cid} sid={latest.id} uid={x.uid} name={x.name} status={markOf(latest.id, x.uid)} />
-              </li>
-            ))}
-          </ul>
-        </section>
-      )}
-      {sessions.length > 1 && (
-        <section aria-label="Past sessions" className="glass-card rounded-2xl p-5">
-          <h2 className="text-sm font-semibold">Past sessions</h2>
-          <ul className="mt-2 divide-y divide-[color-mix(in_oklab,var(--border)_70%,transparent)] text-sm">
-            {sessions.slice(1).map((x) => <li key={x.id} className="flex justify-between gap-3 py-2"><span suppressHydrationWarning>{dateOf(x.held_on)}{x.title ? ` · ${x.title}` : ""}</span><span className="text-text-2 tabular-nums">{marks.filter((m) => m.session_id === x.id && ["present", "late"].includes(m.status)).length} of {students.length}</span></li>)}
-          </ul>
-        </section>
-      )}
-    </div>
   );
 }

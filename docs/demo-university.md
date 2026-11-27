@@ -9,13 +9,13 @@ Made-up people and work, built by `web/e2e/demo-university.sh` (people) and `web
 | Who | Email | What to show |
 | --- | --- | --- |
 | Dean (the school's admin) | `dean@<domain>` | School: students, classes, verified work, courses run on Brazework, **evidence by ABET outcome** and both CSV exports |
-| Professor | `prof@<domain>` | ME 410 · Capstone Design: modules, the gradebook (released grades, a late hand-in, an accommodation), ABET attainment, the design review with peer ratings, a quiz with its answer key, attendance across four lectures, the class board with a milestone waiting to verify |
-| Teaching assistant | `ta@<domain>` | The same course as staff: grading and attendance |
-| Students | `ava`, `ben`, `cleo`, `dev`, `eli`, `fay` `@<domain>` | Due next, the quiz to take, released grades and feedback, rating teammates, check-in, verified milestones on their record, the robotics club |
+| Professor | `prof@<domain>` | ME 410 · Capstone Design: modules, the gradebook (released grades, a late hand-in, an accommodation), ABET attainment, the design review with peer ratings |
+| Teaching assistant | `ta@<domain>` | The same course as staff: grading |
+| Students | `ava`, `ben`, `cleo`, `dev`, `eli`, `fay` `@<domain>` | Due next, released grades and feedback, rating teammates, verified milestones on their record, the robotics club |
 
 The course is mid-semester: the requirements memo is graded and released (rubric rows tagged with ABET
 outcomes 1, 2 and 3), the greenhouse team's design review is graded with peer ratings in, the
-stair-climber team's waits, a gear-trains quiz is open, and the build-and-test module is still a draft.
+stair-climber team's waits, and the build-and-test module is still a draft.
 
 ## Run it locally (today)
 

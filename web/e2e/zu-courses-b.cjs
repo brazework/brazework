@@ -1,10 +1,8 @@
 // Brazework Courses, phase B (supabase/courses-b.sql): running a course.
-// 1. The professor (Ben) writes a quiz in the browser: a multiple-choice question and a number question.
-// 2. A student (Cara) takes it once and is marked on the spot; the professor sees her answers against the key.
-// 3. Attendance: the professor opens check-in, Cara checks in from School with the code on the screen,
-//    and the professor sees her present.
-// 4. Peer evaluation: Cara rates her teammate (Josh) on a group assignment; nobody but staff sees it.
-// 5. Accommodations: the professor gives Josh extra days from the gradebook.
+// 1. Quizzes and attendance are gone (2026-11-27: the school's LMS runs them): no quiz option on a new
+//    assignment, no attendance tab, no class check-in on School.
+// 2. Peer evaluation: Cara rates her teammate (Josh) on a group assignment; nobody but staff sees it.
+// 3. Accommodations: the professor gives Josh extra days from the gradebook.
 // The class and the group are made directly in the database and removed at the end.
 const { execSync } = require("child_process");
 const { step, browser, as, go, hydrated, summary } = require("./lib.cjs");
@@ -28,65 +26,15 @@ const COURSE = `ME ${200 + (Date.now() % 90)}`;
   const b = await browser();
   try {
     const ben = await as(b, "ben@forge.test");
-    await step("the professor writes a quiz in the browser: a choice question and a number question", async () => {
-      await go(ben, `/c/${cid}/course?tab=assignments`);
-      await hydrated(ben.getByRole("button", { name: "New assignment" }));
-      await ben.getByRole("button", { name: "New assignment" }).click();
-      const f = ben.getByRole("form", { name: "New assignment" });
-      await f.getByRole("radio", { name: "Quiz" }).click();
-      await f.getByLabel("Title").fill("Quiz 1: Units");
-      await f.getByLabel("Question 1", { exact: true }).fill("Units of force?");
-      await f.getByLabel("Question 1 option 1").fill("Joule");
-      await f.getByLabel("Question 1 option 2").fill("Newton");
-      await f.getByRole("radio", { name: "Option 2 is right" }).check();
-      await f.getByLabel("Question 1 points").fill("2");
-      await f.getByRole("button", { name: "Add a question" }).click();
-      await f.getByLabel("Question 2 kind").selectOption("number");
-      await f.getByLabel("Question 2", { exact: true }).fill("g in m/s²?");
-      await f.getByLabel("Question 2 answer").fill("9.81");
-      await f.getByLabel("Question 2 tolerance").fill("0.05");
-      await f.getByLabel("Question 2 points").fill("3");
-      await f.getByRole("button", { name: "Save the quiz" }).click();
-      await f.getByRole("status").getByText(/Quiz posted/).waitFor({ timeout: 15000 });
-      const row = psql(`select kind || '|' || points || '|' || jsonb_array_length(quiz) || '|' || (quiz::text like '%answer%') from public.assignments where community_id = '${cid}' and title = 'Quiz 1: Units'`);
-      if (row !== "quiz|5.00|2|false") throw new Error(`the quiz: ${row}`);
-    }, ben);
-
     const cara = await as(b, "cara@forge.test");
-    await step("a student takes the quiz once and is marked on the spot; the professor sees her answers against the key", async () => {
-      await go(cara, `/c/${cid}/course?tab=assignments`);
-      await cara.getByRole("link", { name: "Quiz 1: Units" }).click();
-      await cara.waitForURL(/\/course\/a\//, { timeout: 15000 });
-      const q = cara.getByRole("form", { name: "Take the quiz" });
-      await hydrated(q.getByRole("button", { name: "Hand in the quiz" }));
-      await q.getByText("Newton", { exact: true }).click();
-      await q.getByLabel("Answer 2").fill("9.8");
-      await q.getByRole("button", { name: "Hand in the quiz" }).click();
-      await cara.getByRole("region", { name: "Your answers" }).getByText("Scored 5 of 5").waitFor({ timeout: 15000 });
-      await cara.reload();
-      await cara.getByRole("region", { name: "Your answers" }).getByText("Newton").waitFor({ timeout: 15000 });
-      if (await cara.getByRole("form", { name: "Take the quiz" }).count()) throw new Error("the quiz can be taken twice");
-      await go(ben, cara.url().replace(/^https?:\/\/[^/]+/, ""));
-      await ben.getByRole("region", { name: "Questions and answers" }).getByText("Newton").first().waitFor({ timeout: 15000 });
-      await ben.getByRole("region", { name: "Hand-ins" }).getByText("5 / 5").waitFor();
-    }, ben);
-
-    await step("attendance: the professor opens check-in, the student checks in from School with the code, and shows present", async () => {
-      await go(ben, `/c/${cid}/course?tab=attendance`);
-      const open = ben.getByRole("form", { name: "Take attendance" });
-      await hydrated(open.getByRole("button", { name: "Take attendance" }));
-      await open.getByLabel(/Session/).fill("Lecture 3");
-      await open.getByRole("button", { name: "Take attendance" }).click();
-      const code = (await ben.getByLabel("Check-in code").innerText({ timeout: 15000 })).trim();
-      if (!/^[A-Z0-9]{4,8}$/.test(code)) throw new Error(`the code: ${code}`);
+    await step("quizzes and attendance are gone: a new assignment has no quiz option, and the course has no attendance tab", async () => {
+      await go(ben, `/c/${cid}/course?tab=assignments`);
+      await ben.getByRole("button", { name: "New assignment" }).click();
+      await ben.getByLabel("Title").waitFor({ timeout: 15000 });
+      if (await ben.getByRole("radio", { name: "Quiz" }).count()) throw new Error("the assignment form still offers a quiz");
+      if (await ben.getByRole("link", { name: "Attendance" }).count()) throw new Error("the course still has an attendance tab");
       await go(cara, "/school");
-      const form = cara.getByRole("form", { name: "Check in to class" });
-      await hydrated(form.getByRole("button", { name: "Check in" }));
-      await form.getByLabel("Check-in code").fill(code.toLowerCase());
-      await form.getByRole("button", { name: "Check in" }).click();
-      await form.getByRole("status").getByText(new RegExp(`checked in to ${COURSE}`)).waitFor({ timeout: 15000 });
-      await ben.reload();
-      await ben.getByRole("radiogroup", { name: /^Cara .*attendance/ }).getByRole("radio", { name: "Present", checked: true }).waitFor({ timeout: 15000 });
+      if (await cara.getByRole("form", { name: "Check in to class" }).count()) throw new Error("School still shows class check-in");
     }, ben);
 
     await step("peer evaluation: the student rates her teammate, and only staff can read it", async () => {

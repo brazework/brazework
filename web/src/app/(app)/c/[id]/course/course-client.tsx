@@ -1,10 +1,10 @@
 "use client";
-import { Check, DoorOpen, Eye, EyeOff, FileUp, Link2, Loader2, Megaphone, Plus, Send, Star, Trash2, X } from "lucide-react";
+import { Check, Eye, EyeOff, FileUp, Link2, Loader2, Megaphone, Plus, Send, Star, Trash2, X } from "lucide-react";
 import { useActionState, useId, useState, useTransition } from "react";
 import { Button, Field, inputCls } from "@/components/ui";
 import { cn } from "@/lib/forge";
 import { ABET_OUTCOMES, type RubricRow } from "@/lib/course-math";
-import { addItem, addModule, announce, checkIn, closeSession, gradeStudents, markAttendance, openSession, peerReview, releaseGrades, removeCourseThing, saveAssignment, setAccommodation, setExtension, setPublished, submitAssignment, takeQuiz, type CourseState } from "@/lib/courses";
+import { addItem, addModule, announce, gradeStudents, peerReview, releaseGrades, removeCourseThing, saveAssignment, setAccommodation, setExtension, setPublished, submitAssignment, type CourseState } from "@/lib/courses";
 import { storageUpload } from "@/lib/storage-upload";
 import { submitWithoutReset } from "@/lib/submit";
 
@@ -141,116 +141,40 @@ function RubricEditor() {
   );
 }
 
-// A quiz's questions as the professor writes them (the right answers go to the database's quiz_keys,
-// which students can't read; supabase/courses-b.sql).
-type DraftQ = { id: string; type: "choice" | "multi" | "number" | "short"; prompt: string; options: string[]; answer: number[]; value: string; tolerance: string; points: string };
-const newQ = (n: number): DraftQ => ({ id: `q${n}`, type: "choice", prompt: "", options: ["", ""], answer: [], value: "", tolerance: "", points: "1" });
-const Q_TYPES: { id: DraftQ["type"]; label: string }[] = [{ id: "choice", label: "One answer" }, { id: "multi", label: "Several answers" }, { id: "number", label: "A number" }, { id: "short", label: "Short answer" }];
-
-function quizJson(qs: DraftQ[]): string {
-  return JSON.stringify(qs.filter((q) => q.prompt.trim()).map((q) => {
-    const options = q.options.map((o) => o.trim()).filter(Boolean);
-    const base = { id: q.id, prompt: q.prompt.trim(), type: q.type, points: Number(q.points) || 0 };
-    if (q.type === "choice") return { ...base, options, answer: q.answer[0] ?? null };
-    if (q.type === "multi") return { ...base, options, answer: q.answer };
-    if (q.type === "number") return { ...base, answer: q.value.trim() === "" ? null : Number(q.value), tolerance: Number(q.tolerance) || 0 };
-    return base;
-  }));
-}
-
-function QuizEditor({ value, onChange }: { value: DraftQ[]; onChange: (q: DraftQ[]) => void }) {
-  const set = (i: number, patch: Partial<DraftQ>) => onChange(value.map((q, j) => (j === i ? { ...q, ...patch } : q)));
-  const total = value.reduce((t, q) => t + (Number(q.points) || 0), 0);
-  return (
-    <fieldset className="flex flex-col gap-3">
-      <legend className="mb-1 flex w-full items-baseline justify-between text-sm font-medium text-text-2">Questions <span className="text-xs font-normal text-faint">{value.length} · {total} points · marked automatically, short answers by you</span></legend>
-      {value.map((q, i) => (
-        <div key={q.id} className="flex flex-col gap-2.5 rounded-xl bg-[color-mix(in_oklab,var(--text)_4%,transparent)] p-3.5">
-          <div className="flex items-center gap-2">
-            <span className="font-mono text-xs text-faint">{i + 1}</span>
-            <select aria-label={`Question ${i + 1} kind`} value={q.type} onChange={(e) => set(i, { type: e.target.value as DraftQ["type"], answer: [] })} className={cn(inputCls, "h-9 w-auto text-sm")}>{Q_TYPES.map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}</select>
-            <input aria-label={`Question ${i + 1} points`} inputMode="decimal" value={q.points} onChange={(e) => set(i, { points: e.target.value })} className={cn(inputCls, "h-9 w-16 text-right text-sm tabular-nums")} /><span className="text-xs text-muted">pts</span>
-            {value.length > 1 && <button type="button" aria-label={`Remove question ${i + 1}`} onClick={() => onChange(value.filter((_, j) => j !== i))} className="ml-auto grid size-8 place-items-center rounded-md text-muted hover:bg-hover hover:text-text"><X className="size-4" /></button>}
-          </div>
-          <textarea aria-label={`Question ${i + 1}`} rows={2} value={q.prompt} onChange={(e) => set(i, { prompt: e.target.value })} placeholder="The question" className={areaCls} />
-          {(q.type === "choice" || q.type === "multi") && (
-            <div className="flex flex-col gap-1.5">
-              {q.options.map((o, k) => (
-                <div key={k} className="flex items-center gap-2">
-                  <input type={q.type === "choice" ? "radio" : "checkbox"} name={`right_${q.id}`} aria-label={`Option ${k + 1} is right`} checked={q.answer.includes(k)}
-                    onChange={(e) => set(i, { answer: q.type === "choice" ? [k] : e.target.checked ? [...q.answer, k] : q.answer.filter((x) => x !== k) })} className="size-4 accent-[var(--ok)]" />
-                  <input aria-label={`Question ${i + 1} option ${k + 1}`} value={o} onChange={(e) => set(i, { options: q.options.map((x, j) => (j === k ? e.target.value : x)) })} placeholder={`Option ${k + 1}`} className={cn(inputCls, "h-9 text-sm")} />
-                </div>
-              ))}
-              <span className="flex items-center gap-3 text-xs text-muted">
-                {q.options.length < 10 && <button type="button" onClick={() => set(i, { options: [...q.options, ""] })} className="font-medium text-text-2 hover:text-text hover:underline">Add an option</button>}
-                <span>Tick the {q.type === "choice" ? "right one" : "right ones"}.</span>
-              </span>
-            </div>
-          )}
-          {q.type === "number" && (
-            <div className="flex flex-wrap items-center gap-2 text-sm text-text-2">
-              Answer <input aria-label={`Question ${i + 1} answer`} inputMode="decimal" value={q.value} onChange={(e) => set(i, { value: e.target.value })} className={cn(inputCls, "h-9 w-28 text-sm tabular-nums")} />
-              within ± <input aria-label={`Question ${i + 1} tolerance`} inputMode="decimal" value={q.tolerance} onChange={(e) => set(i, { tolerance: e.target.value })} placeholder="0" className={cn(inputCls, "h-9 w-20 text-sm tabular-nums")} />
-            </div>
-          )}
-          {q.type === "short" && <p className="text-xs text-muted">You read and score these after students hand in.</p>}
-        </div>
-      ))}
-      {value.length < 60 && <button type="button" onClick={() => onChange([...value, newQ(Math.max(0, ...value.map((q) => Number(q.id.slice(1)) || 0)) + 1)])} className="self-start text-sm font-medium text-text-2 underline-offset-4 hover:text-text hover:underline">Add a question</button>}
-    </fieldset>
-  );
-}
-
 export function AssignmentForm({ cid, modules }: { cid: string; modules: { id: string; title: string }[] }) {
   const [state, action, pending] = useActionState(saveAssignment, idle);
   const [due, setDue] = useState("");
-  const [kind, setKind] = useState<"assignment" | "quiz">("assignment");
   const [group, setGroup] = useState(false);
-  const [qs, setQs] = useState<DraftQ[]>([newQ(1)]);
-  const quiz = kind === "quiz";
   return (
     <Opener label="New assignment" variant="primary">
       {(close) => (
         <FormShell title="New assignment" onClose={close} onSubmit={submitWithoutReset(action)}>
           <input type="hidden" name="cid" value={cid} />
-          <input type="hidden" name="kind" value={kind} />
-          {quiz && <input type="hidden" name="quiz_json" value={quizJson(qs)} />}
           {/* The browser knows the professor's time zone; the server gets the exact moment. */}
           <input type="hidden" name="due_iso" value={due ? new Date(due).toISOString() : ""} />
-          <div role="radiogroup" aria-label="Kind" className="flex gap-1 self-start rounded-lg bg-surface-2 p-1 text-sm">
-            {([["assignment", "Assignment"], ["quiz", "Quiz"]] as const).map(([k, l]) => (
-              <button key={k} type="button" role="radio" aria-checked={kind === k} onClick={() => setKind(k)} className={cn("rounded-md px-4 py-1.5 transition", kind === k ? "bg-surface font-medium text-text shadow-sm" : "text-muted hover:text-text")}>{l}</button>
-            ))}
-          </div>
-          <Field label="Title"><input name="title" required maxLength={160} placeholder={quiz ? "Quiz 1: Free-body diagrams" : "Requirements memo"} autoComplete="off" className={inputCls} /></Field>
-          <div className={cn("grid grid-cols-1 gap-4", quiz ? "sm:grid-cols-2" : "sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_7rem]")}>
-            <Field label={quiz ? "Closes" : "Due"}><input type="datetime-local" value={due} onChange={(e) => setDue(e.target.value)} className={inputCls} /></Field>
+          <Field label="Title"><input name="title" required maxLength={160} placeholder="Requirements memo" autoComplete="off" className={inputCls} /></Field>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_7rem]">
+            <Field label="Due"><input type="datetime-local" value={due} onChange={(e) => setDue(e.target.value)} className={inputCls} /></Field>
             <Field label="Module" optional><select name="module_id" defaultValue="" className={inputCls}><option value="">None</option>{modules.map((m) => <option key={m.id} value={m.id}>{m.title}</option>)}</select></Field>
-            {!quiz && <Field label="Points"><input name="points" inputMode="decimal" defaultValue="100" className={inputCls} /></Field>}
+            <Field label="Points"><input name="points" inputMode="decimal" defaultValue="100" className={inputCls} /></Field>
           </div>
-          <Field label="Instructions" optional={quiz}><textarea name="instructions" rows={quiz ? 2 : 5} maxLength={20000} placeholder={quiz ? "Anything to know before starting." : "What to hand in, how it's judged, and anything they should read first."} className={areaCls} /></Field>
-          {quiz ? <QuizEditor value={qs} onChange={setQs} /> : (
-            <>
-              <fieldset className="flex flex-col gap-2">
-                <legend className="mb-1 text-sm font-medium text-text-2">Students hand in</legend>
-                <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-text-2">
-                  {([["file", "A file"], ["link", "A link"], ["text", "Text"], ["milestone", "A project milestone"]] as const).map(([k, l]) => (
-                    <label key={k} className="flex items-center gap-2"><input type="checkbox" name={`as_${k}`} defaultChecked={k !== "text"} className="size-4 accent-[var(--text)]" /> {l}</label>
-                  ))}
-                </div>
-                <p className="text-xs text-faint">A milestone, once you verify it as you grade, also goes on the student&apos;s record.</p>
-              </fieldset>
-              <RubricEditor />
-            </>
-          )}
+          <Field label="Instructions"><textarea name="instructions" rows={5} maxLength={20000} placeholder="What to hand in, how it's judged, and anything they should read first." className={areaCls} /></Field>
+          <fieldset className="flex flex-col gap-2">
+            <legend className="mb-1 text-sm font-medium text-text-2">Students hand in</legend>
+            <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-text-2">
+              {([["file", "A file"], ["link", "A link"], ["text", "Text"], ["milestone", "A project milestone"]] as const).map(([k, l]) => (
+                <label key={k} className="flex items-center gap-2"><input type="checkbox" name={`as_${k}`} defaultChecked={k !== "text"} className="size-4 accent-[var(--text)]" /> {l}</label>
+              ))}
+            </div>
+            <p className="text-xs text-faint">A milestone, once you verify it as you grade, also goes on the student&apos;s record.</p>
+          </fieldset>
+          <RubricEditor />
           <div className="flex flex-wrap gap-x-5 gap-y-2 text-sm text-text-2">
-            {!quiz && <label className="flex items-center gap-2"><input type="checkbox" name="group_work" checked={group} onChange={(e) => setGroup(e.target.checked)} className="size-4 accent-[var(--text)]" /> Group work (one hand-in per project group)</label>}
-            {!quiz && group && <label className="flex items-center gap-2"><input type="checkbox" name="peer_eval" defaultChecked className="size-4 accent-[var(--text)]" /> Peer evaluation (each student rates their teammates)</label>}
-            {quiz && <label className="flex items-center gap-2"><input type="checkbox" name="show_score" defaultChecked className="size-4 accent-[var(--text)]" /> Show each student their score when they finish</label>}
+            <label className="flex items-center gap-2"><input type="checkbox" name="group_work" checked={group} onChange={(e) => setGroup(e.target.checked)} className="size-4 accent-[var(--text)]" /> Group work (one hand-in per project group)</label>
+            {group && <label className="flex items-center gap-2"><input type="checkbox" name="peer_eval" defaultChecked className="size-4 accent-[var(--text)]" /> Peer evaluation (each student rates their teammates)</label>}
             <label className="flex items-center gap-2"><input type="checkbox" name="published" defaultChecked className="size-4 accent-[var(--text)]" /> Post it now and tell the class</label>
           </div>
-          <div className="flex items-center gap-3"><Button type="submit" disabled={pending}>{pending && <Loader2 className="size-4 animate-spin" />} {quiz ? "Save the quiz" : "Save the assignment"}</Button></div>
+          <div className="flex items-center gap-3"><Button type="submit" disabled={pending}>{pending && <Loader2 className="size-4 animate-spin" />} Save the assignment</Button></div>
           <Status state={state} />
         </FormShell>
       )}
@@ -430,56 +354,8 @@ export function Fold({ label, openAtFirst, className, children }: { label: strin
   );
 }
 
-// ---------- Phase B: quizzes, extensions, accommodations, attendance, peer evaluation ----------
-
-export type QuizQuestion = { id: string; prompt: string; type: "choice" | "multi" | "number" | "short"; options?: string[]; points: number };
-
-// A student takes the quiz: once, before it closes (supabase/courses-b.sql submit_quiz).
-export function QuizForm({ cid, aid, questions }: { cid: string; aid: string; questions: QuizQuestion[] }) {
-  const [state, action, pending] = useActionState(takeQuiz, idle);
-  const [answers, setAnswers] = useState<Record<string, unknown>>({});
-  const answered = questions.filter((q) => { const a = answers[q.id]; return Array.isArray(a) ? a.length > 0 : a !== undefined && a !== ""; }).length;
-  if (state.ok) return <div className="glass-card rounded-2xl p-5"><Status state={state} /></div>;
-  return (
-    <form onSubmit={(e) => { if (answered < questions.length && !confirm(`You've answered ${answered} of ${questions.length}. Hand it in anyway? You can only take it once.`)) { e.preventDefault(); return; } submitWithoutReset(action)(e); }}
-      aria-label="Take the quiz" className="flex flex-col gap-4">
-      <input type="hidden" name="cid" value={cid} />
-      <input type="hidden" name="aid" value={aid} />
-      <input type="hidden" name="answers" value={JSON.stringify(answers)} />
-      {questions.map((q, i) => (
-        <fieldset key={q.id} className="glass-card rounded-2xl p-5">
-          <legend className="sr-only">Question {i + 1}</legend>
-          <div className="flex items-baseline justify-between gap-3">
-            <p className="text-[15px] leading-relaxed font-medium whitespace-pre-line"><span className="mr-2 font-mono text-xs text-faint">{i + 1}</span>{q.prompt}</p>
-            <span className="shrink-0 text-xs text-muted">{q.points} {q.points === 1 ? "pt" : "pts"}</span>
-          </div>
-          {(q.type === "choice" || q.type === "multi") && (
-            <div className="mt-3 flex flex-col gap-1.5">
-              {(q.options ?? []).map((o, k) => {
-                const on = q.type === "choice" ? answers[q.id] === k : ((answers[q.id] as number[] | undefined) ?? []).includes(k);
-                return (
-                  <label key={k} className={cn("flex cursor-pointer items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm transition", on ? "bg-[color-mix(in_oklab,var(--text)_9%,transparent)] font-medium" : "bg-[color-mix(in_oklab,var(--text)_3%,transparent)] hover:bg-[color-mix(in_oklab,var(--text)_6%,transparent)]")}>
-                    <input type={q.type === "choice" ? "radio" : "checkbox"} name={`a_${q.id}`} checked={on} className="size-4 accent-[var(--text)]"
-                      onChange={(e) => setAnswers((a) => ({ ...a, [q.id]: q.type === "choice" ? k : e.target.checked ? [...((a[q.id] as number[]) ?? []), k] : ((a[q.id] as number[]) ?? []).filter((x) => x !== k) }))} />
-                    {o}
-                  </label>
-                );
-              })}
-              {q.type === "multi" && <p className="text-xs text-faint">Tick every right answer.</p>}
-            </div>
-          )}
-          {q.type === "number" && <input aria-label={`Answer ${i + 1}`} inputMode="decimal" onChange={(e) => setAnswers((a) => ({ ...a, [q.id]: e.target.value.trim() === "" ? undefined : Number(e.target.value) }))} className={cn(inputCls, "mt-3 w-40 tabular-nums")} />}
-          {q.type === "short" && <textarea aria-label={`Answer ${i + 1}`} rows={3} maxLength={4000} onChange={(e) => setAnswers((a) => ({ ...a, [q.id]: e.target.value }))} className={cn(areaCls, "mt-3")} />}
-        </fieldset>
-      ))}
-      <div className="flex flex-wrap items-center gap-3">
-        <Button type="submit" disabled={pending}>{pending ? <Loader2 className="size-4 animate-spin" /> : <Send className="size-4" />} Hand in the quiz</Button>
-        <span className="text-sm text-muted tabular-nums">{answered} of {questions.length} answered · one attempt</span>
-      </div>
-      <Status state={state} />
-    </form>
-  );
-}
+// ---------- Phase B: extensions, accommodations, peer evaluation ----------
+// (Quizzes and attendance were taken out, 2026-11-27: the school's LMS runs them.)
 
 // Staff move one student's due date on this assignment.
 export function ExtensionForm({ cid, aid, students }: { cid: string; aid: string; students: { uid: string; name: string }[] }) {
@@ -510,54 +386,6 @@ export function AccommodationForm({ cid, students }: { cid: string; students: { 
       <Field label="Note" optional><input name="note" maxLength={500} placeholder="From disability services" className={cn(inputCls, "h-9 text-sm")} /></Field>
       <Button type="submit" variant="outline" disabled={pending}>{pending && <Loader2 className="size-4 animate-spin" />} Save</Button>
       <div className="sm:col-span-5"><Status state={state} /></div>
-    </form>
-  );
-}
-
-// Staff open a class session: a code to put on the screen, open for a few minutes.
-export function OpenSessionForm({ cid }: { cid: string }) {
-  const [state, action, pending] = useActionState(openSession, idle);
-  return (
-    <form onSubmit={submitWithoutReset(action)} aria-label="Take attendance" className="glass-card flex flex-wrap items-end gap-3 rounded-2xl p-5">
-      <input type="hidden" name="cid" value={cid} />
-      <Field label="Session" optional><input name="title" maxLength={120} placeholder="Lecture 7: Gear trains" className={cn(inputCls, "h-9 text-sm")} /></Field>
-      <Field label="Check-in open for"><select name="minutes" defaultValue="15" className={cn(inputCls, "h-9 text-sm")}><option value="5">5 minutes</option><option value="15">15 minutes</option><option value="30">30 minutes</option><option value="0">No self check-in</option></select></Field>
-      <Button type="submit" disabled={pending}>{pending ? <Loader2 className="size-4 animate-spin" /> : <DoorOpen className="size-4" />} Take attendance</Button>
-      <div className="basis-full"><Status state={state} /></div>
-    </form>
-  );
-}
-
-const STATUSES = [["present", "Present"], ["late", "Late"], ["absent", "Absent"], ["excused", "Excused"]] as const;
-
-export function AttendancePicker({ cid, sid, uid, name, status }: { cid: string; sid: string; uid: string; name: string; status: string | null }) {
-  const [pending, start] = useTransition();
-  const [now, setNow] = useState(status);
-  return (
-    <div role="radiogroup" aria-label={`${name}'s attendance`} className={cn("flex gap-1", pending && "opacity-60")}>
-      {STATUSES.map(([k, l]) => (
-        <button key={k} type="button" role="radio" aria-checked={now === k} onClick={() => start(async () => { const r = await markAttendance(cid, sid, uid, k); if (r.ok) setNow(k); })}
-          className={cn("rounded-lg px-2.5 py-1 text-xs font-medium transition", now === k ? (k === "present" ? "bg-ok text-white" : k === "absent" ? "bg-danger text-white" : "bg-text text-bg") : "bg-[color-mix(in_oklab,var(--text)_5%,transparent)] text-muted hover:text-text")}>{l}</button>
-      ))}
-    </div>
-  );
-}
-
-export function CloseSessionButton({ cid, sid }: { cid: string; sid: string }) {
-  const [pending, start] = useTransition();
-  return <Button type="button" variant="outline" disabled={pending} onClick={() => start(async () => { await closeSession(cid, sid); })}>{pending && <Loader2 className="size-4 animate-spin" />} Close check-in</Button>;
-}
-
-// A student checks in with the code on the screen.
-export function CheckInForm({ compact = false }: { compact?: boolean }) {
-  const [state, action, pending] = useActionState(checkIn, idle);
-  return (
-    <form onSubmit={submitWithoutReset(action)} aria-label="Check in to class" className={cn("flex flex-wrap items-center gap-3", !compact && "glass-card rounded-2xl p-5")}>
-      <DoorOpen className="size-5 text-text-2" aria-hidden="true" />
-      <span className="text-sm font-medium">In class now?</span>
-      <input name="code" aria-label="Check-in code" required maxLength={8} autoComplete="off" autoCapitalize="characters" placeholder="CODE" className={cn(inputCls, "h-10 w-32 text-center font-mono tracking-[0.3em] uppercase")} />
-      <Button type="submit" disabled={pending}>{pending && <Loader2 className="size-4 animate-spin" />} Check in</Button>
-      <div className="basis-full"><Status state={state} /></div>
     </form>
   );
 }
