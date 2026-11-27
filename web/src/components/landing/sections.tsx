@@ -2,7 +2,6 @@ import { ArrowRight, BarChart3, Briefcase, ClipboardCheck, GraduationCap, Landma
 import Link from "next/link";
 import { Ember } from "@/components/ember/ember";
 import { Seal } from "@/components/app/verified-seal";
-import { PLUS } from "@/lib/pricing";
 
 // The landing page's short sections (redesign 2026-11; schools first since 2026-11-26, see
 // docs/strategy.md; Brazework Courses since 2026-11-26). The hero does the showing; ForSchools is the
@@ -27,7 +26,7 @@ export const SCHOOL_OUTCOMES = [
 // built in, does the busywork, and nothing is saved or signed until a person says yes.
 const STEPS = [
   { icon: Plus, title: "Log what you built", body: "A class project, a club build or something you shipped at work. Add a photo, a file or a link. Or tell Torch in one sentence and it writes it up.", sample: <span className="rounded-lg border border-line bg-surface-2 px-3 py-2 text-[13px] text-text-2">Cut the robot arm&apos;s cycle from 9.4 to 7.1 seconds</span> },
-  { icon: PenLine, title: "Someone who saw it signs it", body: "Your professor, a club officer, your coworker or a client signs it with their name. They get one email and don't need an account.", sample: <span className="flex flex-wrap gap-1.5">{["Your professor", "Your club", "Your coworker", "A client"].map((x) => <span key={x} className="rounded-full border border-line px-2.5 py-1 text-[12px] text-text-2">{x}</span>)}</span> },
+  { icon: PenLine, title: "Someone who saw it signs it", body: "Your professor, a club officer, your coworker or a client signs it with their name. They get one email asking them to sign.", sample: <span className="flex flex-wrap gap-1.5">{["Your professor", "Your club", "Your coworker", "A client"].map((x) => <span key={x} className="rounded-full border border-line px-2.5 py-1 text-[12px] text-text-2">{x}</span>)}</span> },
   { icon: Link2, title: "It's yours for good", body: "Each signed piece goes on your record, with one link for LinkedIn, your résumé or any application. Change schools or jobs, and it comes with you.", sample: <span className="inline-flex items-center gap-2 rounded-lg border border-line bg-surface-2 px-3 py-2 text-[13px] text-text-2"><Seal size={16} /> Verified by Prof. Dana Ruiz</span> },
 ];
 
@@ -127,11 +126,11 @@ export function Audiences() {
 // Plain answers to what people ask first. Short on purpose: the details live on /schools, /pricing and /ai.
 const FAQ: [string, React.ReactNode][] = [
   ["What is Brazework, in one line?", "A record of the work you've really done, each piece signed by someone who saw it happen."],
-  ["I already have a job. Is this for me?", "Yes. Log what you ship, and your coworker, tech lead or client signs it from their work email, with no account needed. Nothing shows on your profile until you choose, so work for your employer is never public by accident. Leave out numbers your employer hasn't published: the person who signs still knows what you did."],
-  ["Who can sign my work?", "Someone who saw it happen: a professor, TA, lab lead, club officer, coworker, manager or client. A work or university email carries the most weight, and the signature says which kind it came from. You can't sign your own work."],
+  ["I already have a job. Is this for me?", "Yes. Log what you ship, and your coworker, tech lead or client signs it from their work email. Nothing shows on your profile until you choose, so work for your employer is never public by accident. Leave out numbers your employer hasn't published: the person who signs still knows what you did."],
+  ["Who can sign my work?", "Someone who saw it happen: a professor, TA, lab lead, club officer, coworker, manager or client. A work or university email carries the most weight, and each signature shows who signed and their role. You can't sign your own work."],
   ["What does Torch do?", "Torch is the AI built into Brazework. It drafts your write-ups, finds who should sign, plans your week and can set up a club or study group for you. It never signs anything, and nothing is saved until you say yes."],
   ["How is this different from LinkedIn or a résumé?", "Those show what you say about yourself. Brazework shows what someone who was there says about your work, with their name on it. You can still put it on LinkedIn or your résumé: every signed piece has a link anyone can check."],
-  ["What does it cost?", <>Free for students, clubs and the people who sign, always. Professionals start free; {PLUS.name} is ${PLUS.everyone} a month for more Torch and every company that looked at your work. Schools pay per school, never per student. <Link href="/pricing" className="font-medium text-text underline-offset-4 hover:underline">See pricing</Link></>],
+  ["What does it cost?", <>Free for students, clubs and the people who sign, always. Professionals start free. Plus, with more Torch, is on a waitlist while paid plans are set up. Schools pay per school, never per student. <Link href="/pricing" className="font-medium text-text underline-offset-4 hover:underline">See pricing</Link></>],
 ];
 
 export function Faq() {

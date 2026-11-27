@@ -109,7 +109,8 @@ export function Hero() {
           <div className="min-w-0">
             <p className="inline-flex items-center gap-2 rounded-full border border-line bg-surface/60 px-3 py-1 text-xs text-text-2"><span aria-hidden="true" className="size-1.5 rounded-full bg-brand" /> New: Brazework Courses</p>
             <h1 id="hero-h" className="mt-5 text-[clamp(2.75rem,6.2vw,4.75rem)] leading-[0.95] font-semibold tracking-[-0.05em]">Build it.<br />Prove it.<br /><span className="text-brand">Own it.</span></h1>
-            <p className="mt-5 max-w-[31rem] text-lg leading-relaxed text-muted">A record of the work you&apos;ve really done, each piece signed by the person who saw it: your professor, your club or your coworker. Free for students and professionals. Schools run their project courses on it.</p>
+            <p className="mt-5 max-w-[31rem] text-lg leading-relaxed text-muted">A record of the work you&apos;ve really done, each piece signed by the person who saw it: your professor, your club or your coworker. Free for students and professionals. Built for schools to run their project courses.</p>
+            <a href="#pilot" className="mt-6 inline-flex h-11 items-center rounded-lg border border-line-strong px-5 text-[15px] transition hover:bg-hover">For schools</a>
 
             <div className="mt-8 max-w-[30rem]">
               <label htmlFor="hero-build" className="text-sm font-medium text-text-2">What did you build?</label>
