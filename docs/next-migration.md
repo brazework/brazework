@@ -149,7 +149,7 @@ The Vercel project lives in Ian's account, so these are his steps. It's already 
 
 **From then on,** every push to `main` deploys the Next.js app to production by itself.
 
-**Supabase redirect URLs:** if Authentication → URL Configuration already allows `https://<production domain>/**` (SETUP.md step 4), the new `/auth/callback` is covered. For local development, also add `http://localhost:3000/**`.
+**Supabase redirect URLs:** if Authentication → URL Configuration already allows `https://<production domain>/**`, the new `/auth/callback` is covered. For local development, also add `http://localhost:3000/**`. Laptop setup for the private database is [SETUP.md](../SETUP.md).
 
 **Old links keep working:** bookmarks like `/#/feed` and `/#/u/<id>` redirect to their new pages, and confirmation or reset emails sent by the old app are routed through the new sign-in callback.
 
