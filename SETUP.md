@@ -6,7 +6,7 @@ The GitHub repository is [brazework/brazework](https://github.com/brazework/braz
 
 ## Prerequisites
 
-- **Node.js 22.** GitHub Actions installs Node 22 (`node-version: 22` in `.github/workflows/web.yml`). [CONTRIBUTING.md](CONTRIBUTING.md) asks for Node 22. Neither `package.json` nor `web/package.json` has an `engines` field, and this repo has no `.nvmrc`.
+- **Node.js 22.** The app needs Node 22, matching CI (`node-version: 22` in `.github/workflows/web.yml`). [CONTRIBUTING.md](CONTRIBUTING.md) asks for Node 22. The version is pinned in `web/package.json` `engines` (`22.x`) once [PR #285](https://github.com/brazework/brazework/pull/285) merges. This repo has no `.nvmrc`.
 - **Docker**, running. OrbStack or Docker Desktop. `web/scripts/dev.sh` exits when `docker info` fails. `npm run e2e` needs Docker too.
 - **Google Chrome**, for `npm run e2e` (`web/e2e/run.sh`).
 
@@ -91,7 +91,7 @@ The root `package.json` has one script, `build`, which runs `node scripts/build-
 ## Where the rules live
 
 - [AGENTS.md](AGENTS.md): how an agent works in this repo, including branch, pull request, and hard rules.
-- [docs/team-playbook.md](docs/team-playbook.md): how Rivet, Temper, and Kiln ship, and when auto-merge stays off.
+- [docs/team-playbook.md](docs/team-playbook.md): how Rivet, Temper, and Kiln ship, and how agents merge through the merge queue.
 - [CONTRIBUTING.md](CONTRIBUTING.md): how Josh and Ian ship, and where code runs (laptop, pull request, production).
 
 ## Layout
