@@ -1,13 +1,15 @@
 # Notes for Claude in this repo
 
-How we work is in [CONTRIBUTING.md](CONTRIBUTING.md); the docs index is [docs/README.md](docs/README.md). Read both first.
+Read [AGENTS.md](AGENTS.md) and [docs/team-playbook.md](docs/team-playbook.md) first. They are the rules.
+
+How we work is in [CONTRIBUTING.md](CONTRIBUTING.md); the docs index is [docs/README.md](docs/README.md).
 
 ## Working from the board
 
 The Linear connection is in `.mcp.json`; the first use asks each person to sign in to Linear once. Three skills run the workflow:
 
 - `/next` works the next issue end to end: it picks the lowest open step whose blockers are done, builds, tests, ships, updates and closes it. `/next FIX-30` works that issue.
-- `/ship` does the safe release path: checks, a commit with the issue ID on a branch, a pull request, then CI. Josh and Ian turn auto-merge on and watch until it merges. An agent (Forge, Rivet, or another cloud agent) leaves auto-merge off until Temper approves, and never enables it before that review. After Temper approves, only a safe pull request with green CI may auto-merge. Database, auth or row-level security, workflow, or pricing changes stay off until Josh says yes. The steps are in `.claude/skills/ship/SKILL.md` and [docs/team-playbook.md](docs/team-playbook.md).
+- `/ship` does the safe release path: checks, a commit with the issue ID on a branch, a pull request, then CI. Josh and Ian turn auto-merge on and watch until it merges. Agents never turn on auto-merge. After Temper approves, the PR goes to the merge queue; DB, auth/RLS, workflow and pricing changes also need Josh's own yes. An agent relaying Josh's approval doesn't count; Josh's yes has to come from Josh himself. The steps are in `.claude/skills/ship/SKILL.md` and [docs/team-playbook.md](docs/team-playbook.md).
 - `/standup` reports shipped, in progress, next, blocked and CI. `/standup post` also writes each project's weekly update.
 
 ## Product Hunt
@@ -24,6 +26,6 @@ The Product Hunt connection is in `.mcp.json` too; the first use asks you to sig
 ## Ground rules
 
 - `web/.env.local` points at production. Never run tests or scripts that write against it; use the local stack (`web/e2e/local-supabase.sh up`, `npm run e2e`, `npm run quality`).
-- `main` is protected: changes go in through a pull request that merges itself when the required checks pass (`CONTRIBUTING.md`). Open it only after the local checks pass, and call it done when it has merged and CI on `main` is green. That auto-merge is how Josh and Ian ship. An agent leaves auto-merge off until Temper approves. Database, auth or row-level security, workflow, or pricing changes also wait for Josh's yes ([docs/team-playbook.md](docs/team-playbook.md)).
+- `main` is protected: one small pull request per change. Josh and Ian's changes go in through a pull request that merges itself when the required checks pass. Open it only after the local checks pass, and call it done when it has merged and CI on `main` is green. That auto-merge is how Josh and Ian ship. Agents never turn on auto-merge. After Temper approves, the PR goes to the merge queue; DB, auth/RLS, workflow and pricing changes also need Josh's own yes. An agent relaying Josh's approval doesn't count; Josh's yes has to come from Josh himself ([docs/team-playbook.md](docs/team-playbook.md)).
 - Database steps reach production by themselves after the merge (`.github/workflows/db-migrate.yml`). Never run SQL against production by hand from a session.
 - Never commit `public/js/supabase-config.local.bak` or `scripts/check.mjs`.
