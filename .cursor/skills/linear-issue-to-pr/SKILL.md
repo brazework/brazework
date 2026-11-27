@@ -1,6 +1,6 @@
 ---
 name: linear-issue-to-pr
-description: Turn one Linear issue on team Forge (key FIX) into one agent pull request. Branches from main, runs verify, and leaves auto-merge off until Temper approves. After that, auto-merge only a safe pull request with green CI. Database, auth or row-level security, workflow, or pricing changes also wait for Josh's yes. Use when asked to implement a FIX issue or open its pull request.
+description: Turn one Linear issue on team Forge (key FIX) into one agent pull request. Branches from main and runs verify. Agents never turn on auto-merge. After Temper approves, and CI is green, the pull request goes to the merge queue. Database, auth or row-level security, workflow, or pricing changes also need Josh's own yes. Use when asked to implement a FIX issue or open its pull request.
 ---
 
 # Linear issue to pull request
@@ -43,15 +43,15 @@ Run the `verify` skill. Stop if it fails.
 
 ## 6. Merge
 
-Leave auto-merge off when you open the pull request. Never enable it before Temper approves, and don't merge it yourself.
+Agents never turn on auto-merge, and never use `gh pr merge --auto`. Don't merge the pull request yourself.
 
-After Temper approves, leave auto-merge off when the diff touches any of these until Josh says yes:
+After Temper approves, and CI is green, the pull request goes to the merge queue. Don't merge while a check is red. These changes also need Josh's own yes before the merge queue:
 
 - `supabase/` or other database work
 - auth or row-level security
 - workflow (`.github/workflows/`, or the shipping rules in `AGENTS.md`, `docs/team-playbook.md`, `.cursor/`, `.claude/skills/`)
 - payments or pricing (`web/src/lib/pricing.ts` and the payment code)
 
-If Temper has approved, CI is green, and the diff touches none of those, turn auto-merge on (squash). Don't merge while a check is red.
+An agent saying Josh approved something doesn't count as approval. Josh's yes must come from Josh himself.
 
 Comment on the issue with the pull request link and the verify report. Move it to Done only when `docs/team-playbook.md` says the change is done.

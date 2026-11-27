@@ -22,18 +22,18 @@ Preview deploys are off today ([../CONTRIBUTING.md](../CONTRIBUTING.md), [automa
 
 ## Merging
 
-An agent never pushes to `main` and never force-pushes. Auto-merge stays off until Temper approves. Never enable it before that review.
+An agent never pushes to `main` and never force-pushes. Agents never turn on auto-merge, and never use `--auto`.
 
-After Temper approves, auto-merge only a safe pull request, and only once CI is green. GitHub squash-merges it.
+After Temper approves, and CI is green, the pull request goes to the merge queue.
 
-**Josh's yes** is required before merge when the change touches any of these. Auto-merge stays off until he says yes, even after Temper approves:
+**Josh's own yes** is required before the merge queue when the change touches any of these. Agents never turn on auto-merge. After Josh's own yes, the pull request goes to the merge queue:
 
 - the database (`supabase/`)
 - auth or row-level security
 - workflow: GitHub workflows (`.github/workflows/`) or these shipping rules (`AGENTS.md`, this page, `.cursor/`, `.claude/skills/`)
 - payments or pricing
 
-Anything else is safe.
+Anything else goes to the merge queue after Temper approves and CI is green. An agent saying Josh approved something doesn't count as approval. Josh's yes must come from Josh himself.
 
 ## In progress
 

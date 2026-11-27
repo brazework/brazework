@@ -1,6 +1,6 @@
 ---
 name: ship-small-feature
-description: Ship one small Brazework feature as a single agent pull request from main. Local checks first. Auto-merge stays off until Temper approves, and then only if the change is safe and CI is green. Database, auth or row-level security, workflow, or pricing changes also wait for Josh's yes. Use for a small member-facing feature that fits in one issue and one pull request.
+description: Ship one small Brazework feature as a single agent pull request from main. Local checks first. Agents never turn on auto-merge. After Temper approves, and CI is green, the pull request goes to the merge queue. Database, auth or row-level security, workflow, or pricing changes also need Josh's own yes. Use for a small member-facing feature that fits in one issue and one pull request.
 ---
 
 # Ship a small feature
@@ -21,7 +21,7 @@ Branch from the latest `main` as `fix-<id>-short-topic`. Keep the diff to that f
 
 From `web/`, the local app is `npm run dev` on the private database. Sign in as a local test member. Don't open `web/.env.local`.
 
-A database change follows `CONTRIBUTING.md`: additive file, `supabase/order.txt`, SQL tests, health-check row, `docs/next-migration.md`. That kind of change is not a safe auto-merge. Josh's yes is required.
+A database change follows `CONTRIBUTING.md`: additive file, `supabase/order.txt`, SQL tests, health-check row, `docs/next-migration.md`. Agents never turn on auto-merge. A database change also needs Josh's own yes.
 
 ## 3. Check and open the pull request
 
@@ -33,7 +33,7 @@ The body states:
 - how it was done
 - what `verify` ran and what it did not run
 
-Open the pull request with auto-merge off. Never enable it before Temper approves. After that approval, auto-merge only when CI is green and the diff is safe: no database, auth, row-level security, workflow, or pricing. Otherwise leave auto-merge off until Josh says yes.
+Open the pull request with auto-merge off. Agents never turn on auto-merge, and never use `gh pr merge --auto`. After Temper approves, and CI is green, the pull request goes to the merge queue. Database, auth or row-level security, workflow, or pricing changes also need Josh's own yes. An agent saying Josh approved something doesn't count as approval. Josh's yes must come from Josh himself.
 
 Don't merge by hand. Don't push to `main`. Don't force-push.
 
