@@ -1,92 +1,105 @@
 @import "tailwindcss";
 
-/* Brazework design tokens: monochrome, light and dark. Use these, never fixed colours.
+/* Brazework design tokens (redesign 2026-11): one theme, light and dark. Use these, never fixed colours.
+   Light is paper and ink; dark is graphite. Primary actions are ink (--accent). The one brand colour,
+   brazed copper (--brand), is for Torch and the landing page only: in the app, colour means proof
+   (--ok signed, --info GitHub, dashed --wait waiting, --pro gold). Every text colour stays at 4.5:1
+   or better on --bg, --surface and --raised (the accessibility scan checks).
    Theme = the visitor's system setting, unless they pick one (html[data-theme], set before paint in layout.tsx). */
 :root {
   /* Phone chrome: the top bar and the floating tab bar, plus the notch and home indicator. */
   --m-top: calc(env(safe-area-inset-top, 0px) + 4rem);
   --m-bottom: calc(env(safe-area-inset-bottom, 0px) + 5.5rem);
+  /* Motion: one curve and three durations for every state change. */
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --dur-1: 120ms;
+  --dur-2: 200ms;
+  --dur-3: 320ms;
 
   color-scheme: light;
-  /* Redesign (2026-11): a calm, warm canvas with white surfaces and hairline borders; ink-like text.
-     Every text colour stays at 4.5:1 or better on --bg and --surface (the accessibility scan checks). */
-  --bg: #fbfbfa;
+  --bg: #f7f7f5;
   --surface: #ffffff;
-  --surface-2: #f6f6f4;
-  --raised: #efefed;
-  --hover: #f1f1ef;
-  --border: #e9e9e6;
-  --border-strong: #d9d9d5;
-  --text: #1f1f1d;
-  --text-2: #37352f;
-  --muted: #5f5e5a;
-  --faint: #6b6a66; /* 4.7:1 or better on every light surface, small text included (was #73726e: 4.2 on raised) */
-  --accent: #1f1f1d;
+  --surface-2: #f1f1ee;
+  --raised: #eaeae6;
+  --hover: #efefec;
+  --border: #e4e4df;
+  --border-strong: #d2d2cc;
+  --text: #0f1012;
+  --text-2: #2a2b2f;
+  --muted: #55565c;
+  --faint: #66676d;
+  --accent: #0f1012;
   --on-accent: #ffffff;
-  --ok: #15703a; /* 4.7:1 or better as text on its own 12-14% tint, as in the verified pills (was #15803d: 4.1) */
-  --danger: #dc2626;
-  --info: #2563eb;
-  --wait: #92570a; /* waiting for a signature: amber ink, 5.9:1 on white, dashed wherever it shows */
-  --tag: #7c3aed;
-  --pro: #d97706;
-  --glow: rgba(31, 31, 29, 0.05);
-  --spark: 31, 31, 29;
-  /* Shadows: almost none on cards (the border does the work); real depth only for what floats. */
-  --shadow: 0 1px 2px rgba(15, 15, 14, 0.04);
-  --shadow-float: 0 1px 2px rgba(15, 15, 14, 0.06), 0 12px 32px -12px rgba(15, 15, 14, 0.22);
+  --brand: #a8491f;
+  --brand-soft: #f6e7de;
+  --ok: #15703a;
+  --danger: #c8261d;
+  --info: #1d5fd6;
+  --wait: #8a5208;
+  --tag: #6d3fd0;
+  --pro: #b86e06;
+  --glow: rgba(15, 16, 18, 0.05);
+  --spark: 15, 16, 18;
+  --shadow: 0 1px 0 rgba(15, 16, 18, 0.03), 0 1px 3px rgba(15, 16, 18, 0.04);
+  --shadow-float: 0 0 0 1px rgba(15, 16, 18, 0.04), 0 2px 4px rgba(15, 16, 18, 0.04), 0 16px 40px -12px rgba(15, 16, 18, 0.18);
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
-    --bg: #191919;
-    --surface: #202020;
-    --surface-2: #252525;
-    --raised: #2c2c2c;
-    --hover: #2a2a2a;
-    --border: #2f2f2f;
-    --border-strong: #3f3f3f;
-    --text: #ededeb;
-    --text-2: #d3d3d0;
-    --muted: #a3a29e;
-    --faint: #959490; /* 4.6:1 or better on dark surfaces (was #8d8c88: 4.0 on raised) */
-    --accent: #fafafa;
-    --on-accent: #09090b;
+    --bg: #0b0c0e;
+    --surface: #131418;
+    --surface-2: #16171b;
+    --raised: #1e1f24;
+    --hover: #1b1c21;
+    --border: #25262c;
+    --border-strong: #35363e;
+    --text: #ededef;
+    --text-2: #cbccd1;
+    --muted: #a2a3aa;
+    --faint: #8f9098;
+    --accent: #f4f4f5;
+    --on-accent: #0b0c0e;
+    --brand: #e8946a;
+    --brand-soft: #2a1a12;
     --ok: #4ade80;
     --danger: #f87171;
-    --info: #60a5fa;
+    --info: #6ea8ff;
     --wait: #fbbf24;
     --tag: #a78bfa;
     --pro: #fbbf24;
-    --glow: rgba(255, 255, 255, 0.09);
+    --glow: rgba(255, 255, 255, 0.07);
     --spark: 255, 255, 255;
-    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
-    --shadow-float: 0 1px 2px rgba(0, 0, 0, 0.4), 0 16px 40px -16px rgba(0, 0, 0, 0.75);
+    --shadow: 0 0 0 1px rgba(0, 0, 0, 0.2), 0 1px 2px rgba(0, 0, 0, 0.35);
+    --shadow-float: 0 0 0 1px rgba(255, 255, 255, 0.04), 0 2px 6px rgba(0, 0, 0, 0.4), 0 24px 48px -16px rgba(0, 0, 0, 0.7);
   }
 }
 :root[data-theme="dark"] {
   color-scheme: dark;
-  --bg: #191919;
-  --surface: #202020;
-  --surface-2: #252525;
-  --raised: #2c2c2c;
-  --hover: #2a2a2a;
-  --border: #2f2f2f;
-  --border-strong: #3f3f3f;
-  --text: #ededeb;
-  --text-2: #d3d3d0;
-  --muted: #a3a29e;
-  --faint: #959490;
-  --accent: #fafafa;
-  --on-accent: #09090b;
+  --bg: #0b0c0e;
+  --surface: #131418;
+  --surface-2: #16171b;
+  --raised: #1e1f24;
+  --hover: #1b1c21;
+  --border: #25262c;
+  --border-strong: #35363e;
+  --text: #ededef;
+  --text-2: #cbccd1;
+  --muted: #a2a3aa;
+  --faint: #8f9098;
+  --accent: #f4f4f5;
+  --on-accent: #0b0c0e;
+  --brand: #e8946a;
+  --brand-soft: #2a1a12;
   --ok: #4ade80;
   --danger: #f87171;
-  --info: #60a5fa;
+  --info: #6ea8ff;
   --wait: #fbbf24;
   --tag: #a78bfa;
   --pro: #fbbf24;
-  --glow: rgba(255, 255, 255, 0.09);
+  --glow: rgba(255, 255, 255, 0.07);
   --spark: 255, 255, 255;
-  --shadow: 0 1px 2px rgba(0, 0, 0, 0.5), 0 16px 40px -16px rgba(0, 0, 0, 0.8);
+  --shadow: 0 0 0 1px rgba(0, 0, 0, 0.2), 0 1px 2px rgba(0, 0, 0, 0.35);
+  --shadow-float: 0 0 0 1px rgba(255, 255, 255, 0.04), 0 2px 6px rgba(0, 0, 0, 0.4), 0 24px 48px -16px rgba(0, 0, 0, 0.7);
 }
 
 @theme inline {
@@ -108,15 +121,17 @@
   --color-danger: var(--danger);
   --color-info: var(--info);
   --color-wait: var(--wait);
+  --color-brand: var(--brand);
+  --color-brand-soft: var(--brand-soft);
 
-  /* Corners (redesign 2026-11): crisper than Tailwind's defaults; one change for every rounded-*.
+  /* Corners (redesign 2026-11): a touch softer than the old ones, still crisper than Tailwind's defaults; one change for every rounded-*.
      rounded-full stays a pill for avatars and chips. */
-  --radius-sm: 0.25rem;
-  --radius-md: 0.375rem;
-  --radius-lg: 0.5rem;
-  --radius-xl: 0.625rem;
-  --radius-2xl: 0.75rem;
-  --radius-3xl: 0.875rem;
+  --radius-sm: 0.3125rem;
+  --radius-md: 0.4375rem;
+  --radius-lg: 0.5625rem;
+  --radius-xl: 0.75rem;
+  --radius-2xl: 0.875rem;
+  --radius-3xl: 1.125rem;
 
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
@@ -158,6 +173,27 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity
   &::-webkit-scrollbar { display: none; }
 }
 
+/* Native swipe rows on the landing page. A piece of the next card stays in view. */
+@media (width < 48rem) {
+  .landing-swipe-row {
+    display: grid;
+    grid-auto-flow: column;
+    grid-template-columns: none;
+    grid-auto-columns: calc(100% - 2.5rem);
+    gap: 0.75rem;
+    min-width: 0;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scroll-snap-type: x proximity;
+    padding-bottom: 0.5rem;
+  }
+
+  .landing-swipe-row > :is(li, div, article) {
+    min-width: 0;
+    scroll-snap-align: start;
+  }
+}
+
 /* Headline second lines: a quiet top-to-bottom fade from the text colour into muted. */
 @utility text-shine {
   background: linear-gradient(180deg, var(--text) 20%, var(--faint) 100%);
@@ -171,6 +207,14 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity
 @utility glass {
   background: var(--surface);
   border: 1px solid var(--border);
+}
+
+/* A step of a stepped form (lib/project-steps.ts) slides in from the side it came from. */
+@keyframes step-in {
+  from { opacity: 0; transform: translateX(14px); }
+}
+.step-in {
+  animation: step-in 0.32s cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
 /* Entrance and scroll reveals are pure CSS, so text is visible before (and without) JavaScript. */
@@ -206,22 +250,8 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity
 :root[data-theme="dark"] .dark-only { display: block; }
 :root[data-theme="dark"] .light-only { display: none; }
 
-/* ---------- Themes ("skins"): the whole app, light and dark ----------
-   Settings → Appearance sets html[data-skin]. Mono (no attribute) is the default. Each skin swaps the
-   surfaces, text, accent and a signature gradient (--accent-grad), tuned so button text stays readable. */
+/* No colour skins (redesign 2026-11): the gradient helpers resolve to the ink accent. */
 :root { --accent-grad: linear-gradient(135deg, var(--accent), var(--accent)); --text-grad: linear-gradient(90deg, var(--text), var(--faint)); }
-:root[data-skin="blueprint"] { --bg: #f4f7fb; --surface: #ffffff; --surface-2: #eef3fa; --raised: #e2eaf6; --hover: #e9f0f9; --border: #c9d7ea; --border-strong: #a7bedc; --text: #0e2a52; --text-2: #1e3d6b; --muted: #3c5c8a; --faint: #4b6a95; --accent: #1f5fbf; --on-accent: #ffffff; --accent-grad: linear-gradient(135deg, #2563eb 0%, #1f5fbf 55%, #1e40af 100%); --text-grad: linear-gradient(90deg, #1f5fbf, #1e40af); --glow: rgba(31, 95, 191, 0.10); }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"])[data-skin="blueprint"] { color-scheme: dark; --bg: #0a1c35; --surface: #0e2645; --surface-2: #112d52; --raised: #15365f; --hover: #13325a; --border: #23477a; --border-strong: #3a649f; --text: #eaf2ff; --text-2: #c8daf4; --muted: #9db9df; --faint: #8aa8d2; --accent: #7cc4ff; --on-accent: #0a1c35; --accent-grad: linear-gradient(135deg, #a5d8ff 0%, #7cc4ff 50%, #5b9dff 100%); --text-grad: linear-gradient(90deg, #a5d8ff, #6aa8ff); --glow: rgba(124, 196, 255, 0.12); } }
-:root[data-theme="dark"][data-skin="blueprint"] { color-scheme: dark; --bg: #0a1c35; --surface: #0e2645; --surface-2: #112d52; --raised: #15365f; --hover: #13325a; --border: #23477a; --border-strong: #3a649f; --text: #eaf2ff; --text-2: #c8daf4; --muted: #9db9df; --faint: #8aa8d2; --accent: #7cc4ff; --on-accent: #0a1c35; --accent-grad: linear-gradient(135deg, #a5d8ff 0%, #7cc4ff 50%, #5b9dff 100%); --text-grad: linear-gradient(90deg, #a5d8ff, #6aa8ff); --glow: rgba(124, 196, 255, 0.12); }
-:root[data-skin="fire"] { --bg: #fff8f3; --surface: #ffffff; --surface-2: #fff1e7; --raised: #ffe6d5; --hover: #fff0e5; --border: #f3d6c2; --border-strong: #e7b998; --text: #2a1208; --text-2: #4a2413; --muted: #7a4528; --faint: #8a5434; --accent: #ea580c; --on-accent: #2a1208; --accent-grad: linear-gradient(135deg, #fcd34d 0%, #fb923c 50%, #f87171 100%); --text-grad: linear-gradient(90deg, #ea580c, #dc2626); --glow: rgba(234, 88, 12, 0.12); }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"])[data-skin="fire"] { color-scheme: dark; --bg: #120a07; --surface: #1a100b; --surface-2: #21150e; --raised: #2b1b12; --hover: #24170f; --border: #3a2518; --border-strong: #5a3820; --text: #fff4ec; --text-2: #f3d9c6; --muted: #d4ab8e; --faint: #bd9172; --accent: #ff7a2f; --on-accent: #1a0b04; --accent-grad: linear-gradient(135deg, #ffd166 0%, #ff8a3d 45%, #ff4d4d 100%); --text-grad: linear-gradient(90deg, #ffd166, #ff7a2f 50%, #ff4d4d); --glow: rgba(255, 106, 26, 0.18); } }
-:root[data-theme="dark"][data-skin="fire"] { color-scheme: dark; --bg: #120a07; --surface: #1a100b; --surface-2: #21150e; --raised: #2b1b12; --hover: #24170f; --border: #3a2518; --border-strong: #5a3820; --text: #fff4ec; --text-2: #f3d9c6; --muted: #d4ab8e; --faint: #bd9172; --accent: #ff7a2f; --on-accent: #1a0b04; --accent-grad: linear-gradient(135deg, #ffd166 0%, #ff8a3d 45%, #ff4d4d 100%); --text-grad: linear-gradient(90deg, #ffd166, #ff7a2f 50%, #ff4d4d); --glow: rgba(255, 106, 26, 0.18); }
-:root[data-skin="aurora"] { --bg: #f7f6ff; --surface: #ffffff; --surface-2: #f1efff; --raised: #e7e3ff; --hover: #efecff; --border: #dcd6f7; --border-strong: #c2b8ee; --text: #1b1442; --text-2: #2e2563; --muted: #544a8a; --faint: #665c9c; --accent: #6d28d9; --on-accent: #1b1442; --accent-grad: linear-gradient(135deg, #67e8f9 0%, #a5b4fc 50%, #f0abfc 100%); --text-grad: linear-gradient(90deg, #0891b2, #6d28d9 50%, #c026d3); --glow: rgba(109, 40, 217, 0.10); }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"])[data-skin="aurora"] { color-scheme: dark; --bg: #0b0a1a; --surface: #121029; --surface-2: #171433; --raised: #1f1b42; --hover: #191636; --border: #2c2757; --border-strong: #443d7d; --text: #f1efff; --text-2: #d6d1fb; --muted: #aaa3df; --faint: #968fcf; --accent: #a78bfa; --on-accent: #0b0a1a; --accent-grad: linear-gradient(135deg, #22d3ee 0%, #818cf8 50%, #e879f9 100%); --text-grad: linear-gradient(90deg, #22d3ee, #a78bfa 50%, #f0abfc); --glow: rgba(129, 140, 248, 0.16); } }
-:root[data-theme="dark"][data-skin="aurora"] { color-scheme: dark; --bg: #0b0a1a; --surface: #121029; --surface-2: #171433; --raised: #1f1b42; --hover: #191636; --border: #2c2757; --border-strong: #443d7d; --text: #f1efff; --text-2: #d6d1fb; --muted: #aaa3df; --faint: #968fcf; --accent: #a78bfa; --on-accent: #0b0a1a; --accent-grad: linear-gradient(135deg, #22d3ee 0%, #818cf8 50%, #e879f9 100%); --text-grad: linear-gradient(90deg, #22d3ee, #a78bfa 50%, #f0abfc); --glow: rgba(129, 140, 248, 0.16); }
-:root[data-skin="emerald"] { --bg: #f4fbf7; --surface: #ffffff; --surface-2: #ecf8f1; --raised: #dcf2e5; --hover: #e9f7ef; --border: #c6e8d3; --border-strong: #a1d6b6; --text: #06291c; --text-2: #0d3d2a; --muted: #2f6650; --faint: #3f735c; --accent: #047857; --on-accent: #06291c; --accent-grad: linear-gradient(135deg, #bef264 0%, #6ee7b7 50%, #67e8f9 100%); --text-grad: linear-gradient(90deg, #047857, #0e7490); --glow: rgba(4, 120, 87, 0.10); }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"])[data-skin="emerald"] { color-scheme: dark; --bg: #06140f; --surface: #0a1d16; --surface-2: #0e241b; --raised: #132f24; --hover: #10281f; --border: #1d3d30; --border-strong: #2f5c49; --text: #ecfff6; --text-2: #c9f2dd; --muted: #94cdb2; --faint: #7fbca0; --accent: #34d399; --on-accent: #06140f; --accent-grad: linear-gradient(135deg, #d9f99d 0%, #34d399 50%, #22d3ee 100%); --text-grad: linear-gradient(90deg, #a3e635, #34d399 50%, #22d3ee); --glow: rgba(52, 211, 153, 0.14); } }
-:root[data-theme="dark"][data-skin="emerald"] { color-scheme: dark; --bg: #06140f; --surface: #0a1d16; --surface-2: #0e241b; --raised: #132f24; --hover: #10281f; --border: #1d3d30; --border-strong: #2f5c49; --text: #ecfff6; --text-2: #c9f2dd; --muted: #94cdb2; --faint: #7fbca0; --accent: #34d399; --on-accent: #06140f; --accent-grad: linear-gradient(135deg, #d9f99d 0%, #34d399 50%, #22d3ee 100%); --text-grad: linear-gradient(90deg, #a3e635, #34d399 50%, #22d3ee); --glow: rgba(52, 211, 153, 0.14); }
 
 /* Depth helpers used across the app. */
 @utility bg-accent-grad { background-color: var(--accent); background-image: var(--accent-grad); }
@@ -232,9 +262,17 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity
   background: linear-gradient(var(--surface), var(--surface)) padding-box, linear-gradient(var(--border), var(--border)) border-box;
   &:hover, &:focus-within { background: linear-gradient(var(--surface), var(--surface)) padding-box, linear-gradient(var(--border-strong), var(--border-strong)) border-box; }
 }
-/* The app's backdrop: the theme's glow from the top corners, fixed while content scrolls. */
+/* The app's ground (2026-11-26, Josh: "cleaner and high quality, I don't really like the dark blue and
+   orange"): the theme's own page colour with one soft, neutral light from the top, fixed while content
+   scrolls. No coloured lights: inside the app, colour means proof (the verified green) and Torch. The
+   glass sidebar and cards still have something to catch: the light, and their own bright top edge. */
+:root { --ground-light: rgba(255, 255, 255, 0.85); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --ground-light: rgba(255, 255, 255, 0.05); } }
+:root[data-theme="dark"] { --ground-light: rgba(255, 255, 255, 0.05); }
 @utility app-backdrop {
   background-color: var(--bg);
+  background-image: radial-gradient(1200px 640px at 50% -14%, var(--ground-light), transparent 70%);
+  background-attachment: fixed;
 }
 
 /* A soft light that follows the cursor across a card (position set by SpotlightTracker). */
@@ -256,7 +294,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity
   &:hover::before { opacity: 0; }
 }
 
-/* Progress bars that drive auto-advancing pickers (the hero's fields, the how-it-works steps):
+/* Progress bars that drive auto-advancing pickers:
    when the bar finishes, onAnimationEnd moves to the next item. */
 @keyframes progress-fill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 /* The record timeline's lanes draw in once, left to right (components/profile/record-timeline.tsx). */
@@ -276,7 +314,6 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity
 @keyframes shimmer-x { from { background-position: 200% 0; } to { background-position: -200% 0; } }
 /* Corner glows on banners: faint in Mono (black or white would read as a smudge), vivid in colour themes. */
 .banner-glow { opacity: 0.07; }
-:root[data-skin] .banner-glow { opacity: 0.28; }
 
 /* Schematics (components/landing/schematics.tsx): every stroke has pathLength=1, so a dash of 1
    offset by 1 hides it and animating the offset to 0 draws it. Strokes are staggered in order. */
@@ -322,10 +359,10 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity
   border: 1.5px solid transparent;
   background:
     linear-gradient(var(--surface), var(--surface)) padding-box,
-    conic-gradient(from var(--ai-angle), var(--accent), color-mix(in oklab, var(--accent) 10%, transparent) 25%, var(--border-strong) 50%, color-mix(in oklab, var(--accent) 10%, transparent) 75%, var(--accent)) border-box;
+    conic-gradient(from var(--ai-angle), var(--brand), color-mix(in oklab, var(--brand) 10%, transparent) 25%, var(--border-strong) 50%, color-mix(in oklab, var(--brand) 10%, transparent) 75%, var(--brand)) border-box;
   animation: ai-sweep 8s linear infinite;
 }
-/* An AI action chip (Polish with Ember): the same Ember gradient as .ai-border, as a still hairline. */
+/* An AI action chip (Polish with Torch): the same Torch gradient as .ai-border, as a still hairline. */
 .ai-chip {
   border: 1px solid transparent;
   background:
@@ -337,13 +374,15 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity
 @keyframes ai-drift-2 { 50% { transform: translate(28px, -14px) scale(0.94); } }
 .ai-aurora { opacity: 0.16; animation: ai-drift 14s ease-in-out infinite; }
 .ai-aurora-2 { opacity: 0.12; animation: ai-drift-2 18s ease-in-out infinite; }
-:root[data-skin] .ai-aurora { opacity: 0.32; }
-:root[data-skin] .ai-aurora-2 { opacity: 0.24; }
 
-/* The sidebar: a floating frosted-glass panel over the page's glow. */
+/* The sidebar (glass, 2026-11-26): a floating frosted panel over the app's soft lights, with a bright top
+   edge. It never scrolls over content, so the blur is drawn once, not on every scroll frame. */
 @utility glass-panel {
-  background: var(--surface-2);
-  border: 1px solid var(--border);
+  background: color-mix(in oklab, var(--surface) 62%, transparent);
+  border: 1px solid color-mix(in oklab, var(--border) 85%, transparent);
+  box-shadow: inset 0 1px 0 var(--glass-hi), 0 1px 2px rgb(0 0 0 / 0.04), 0 12px 32px -18px rgb(0 0 0 / 0.18);
+  backdrop-filter: blur(18px) saturate(1.4);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4);
 }
 /* The feed's two columns (posts, then the rail), widening with the screen. The search row above the
    page takes the same frame on the feed, so the search bar lines up with the posts. */
@@ -353,27 +392,52 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity
   margin-inline: auto;
   max-width: 42rem;
 }
-/* Phones show the row too: the Ask Ember bar is on every page (components/ember/ask-bar.tsx). */
+/* Phones show the row too: the Ask Torch bar is on every page (components/ember/ask-bar.tsx). */
 @media (width >= 80rem) { .feed-frame, main:has(.feed-frame) .search-row, main:has(.feed-frame) .place-row { max-width: 72rem; grid-template-columns: minmax(0, 1fr) 300px; } }
 @media (width >= 96rem) { .feed-frame, main:has(.feed-frame) .search-row, main:has(.feed-frame) .place-row { max-width: 80rem; grid-template-columns: minmax(0, 1fr) 340px; } }
 @media (width >= 112.5rem) { .feed-frame, main:has(.feed-frame) .search-row, main:has(.feed-frame) .place-row { max-width: 1520px; grid-template-columns: minmax(0, 1fr) 380px; } }
 @media (width >= 137.5rem) { .feed-frame, main:has(.feed-frame) .search-row, main:has(.feed-frame) .place-row { max-width: 1840px; grid-template-columns: minmax(0, 1fr) 740px; } }
 
 /* Cards in the same glass as the sidebar: translucent, a bright top edge, a slightly firmer edge on hover. */
+/* (2026-11-26) Real glass: the app's soft lights show through, a bright top edge catches them, and a
+   long soft shadow lifts the card. No backdrop blur here: the ground behind is a smooth gradient, so
+   blur would change nothing you can see and would cost a repaint on every scroll frame. */
 @utility glass-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  box-shadow: var(--shadow);
-  transition: border-color 0.15s ease;
+  background: linear-gradient(180deg, color-mix(in oklab, var(--surface) 76%, transparent), color-mix(in oklab, var(--surface) 58%, transparent));
+  border: 1px solid color-mix(in oklab, var(--border) 80%, transparent);
+  box-shadow: inset 0 1px 0 var(--glass-hi), 0 1px 2px rgb(0 0 0 / 0.04), 0 14px 34px -22px rgb(0 0 0 / 0.22);
+  transition: border-color 0.15s ease, box-shadow 0.2s ease;
   &:hover, &:focus-within { border-color: var(--border-strong); }
 }
-/* A profile with no cover yet: a faint engineering grid under a soft light, in the theme's own colours. */
+/* Home's top panel (2026-11-26): the clearest glass in the app. It sits still at the top of the page,
+   so a real backdrop blur costs nothing on scroll; the app's soft lights glow through it. */
+.home-glass {
+  background: linear-gradient(160deg, color-mix(in oklab, var(--surface) 72%, transparent), color-mix(in oklab, var(--surface) 46%, transparent));
+  border: 1px solid color-mix(in oklab, var(--border) 75%, transparent);
+  box-shadow: inset 0 1px 0 var(--glass-hi), 0 20px 50px -30px rgb(0 0 0 / 0.35);
+  backdrop-filter: blur(20px) saturate(1.5);
+  -webkit-backdrop-filter: blur(20px) saturate(1.5);
+}
+/* The default banner on a profile, a club and a project: a smooth graphite surface in both themes, with
+   a soft white light from the top right (2026-11-26: no copper or blue, like the page ground). A club
+   that picked an accent colour (--cover-tint, set on the club page) gets its colour in that light,
+   a little stronger. No grid and no line drawings anywhere on a banner (the founders' call): a photo, or
+   this light. */
+.cover-blueprint {
+  --cover-tint: #ffffff;
+  --cover-strength: 13%;
+  color: #ededef;
+  background:
+    radial-gradient(70% 170% at 88% -15%, color-mix(in oklab, var(--cover-tint) var(--cover-strength), transparent), transparent 60%),
+    radial-gradient(40% 90% at 55% 120%, color-mix(in oklab, var(--cover-tint) 5%, transparent), transparent 70%),
+    linear-gradient(180deg, #1b1c20, #0d0e10);
+}
+.cover-blueprint[style*="--cover-tint"] { --cover-strength: 30%; }
+/* A profile with no cover yet: a soft light in the theme's own colours (no grid, no lines). */
 .cover-empty {
   background:
     radial-gradient(520px 220px at 18% 0%, color-mix(in oklab, var(--text) 12%, transparent), transparent 70%),
     radial-gradient(420px 200px at 95% 110%, color-mix(in oklab, var(--accent) 14%, transparent), transparent 70%),
-    linear-gradient(color-mix(in oklab, var(--text) 7%, transparent) 1px, transparent 1px) 0 0 / 24px 24px,
-    linear-gradient(90deg, color-mix(in oklab, var(--text) 7%, transparent) 1px, transparent 1px) 0 0 / 24px 24px,
     var(--surface-2);
 }
 /* How bright a glass edge catches the light: strong on light pages, a hint on dark ones. */
@@ -387,25 +451,36 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity
   background: var(--surface);
   border: 1px solid var(--border);
 }
-.nav-tile-on {
-  color: var(--text);
+/* (2026-11-26) Icons with depth: each sits on a small glass tile, drawn in two tones (the stroke,
+   and a faint fill of the same colour). The current page's tile is filled ink and lifts. */
+.nav-icon {
+  background: linear-gradient(180deg, color-mix(in oklab, var(--surface) 95%, transparent), color-mix(in oklab, var(--surface) 55%, transparent));
+  border: 1px solid color-mix(in oklab, var(--border) 85%, transparent);
+  box-shadow: inset 0 1px 0 var(--glass-hi), 0 1px 2px rgb(0 0 0 / 0.06);
 }
+.icon-duo { fill: color-mix(in oklab, currentColor 16%, transparent); }
+.nav-tile-on {
+  color: var(--on-accent);
+  background: var(--accent-grad, var(--text));
+  border: 1px solid transparent;
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.22), 0 6px 14px -6px color-mix(in oklab, var(--text) 55%, transparent);
+}
+.nav-tile-on .icon-duo { fill: color-mix(in oklab, currentColor 26%, transparent); }
 /* The selected sidebar tab: a soft tint in the theme's colour (no edge bar). */
 /* The current page's row: a faint wash (its glowing icon tile carries the emphasis). */
 .nav-pill {
-  background: color-mix(in oklab, var(--text) 5%, transparent);
+  background: color-mix(in oklab, var(--surface) 70%, transparent);
+  box-shadow: inset 0 1px 0 var(--glass-hi), 0 0 0 1px color-mix(in oklab, var(--border) 80%, transparent);
 }
 
-/* ---------- Ember, Brazework's AI (components/ember/ember.tsx) ----------
+/* ---------- Torch, Brazework's AI (components/ember/ember.tsx) ----------
    A glowing glass orb with light swirling inside. --ember-a is its bright tone, --ember-b its deep
-   tone, --ember-c the accent that swirls through it. In Mono it's black glass with white light,
-   matching the black-and-white app; the other skins tint it. */
-:root { --ember-a: #ffffff; --ember-b: #18181b; --ember-c: #71717a; --ember-plasma: 0.5; --ember-fresnel: 0.55; }
-:root[data-skin] { --ember-plasma: 1; --ember-fresnel: 1; }
-:root[data-skin="fire"] { --ember-a: #ffd166; --ember-b: #ff4d4d; --ember-c: #ff3d7f; }
-:root[data-skin="blueprint"] { --ember-a: #a5d8ff; --ember-b: #2563eb; --ember-c: #8b5cf6; }
-:root[data-skin="aurora"] { --ember-a: #67e8f9; --ember-b: #c026d3; --ember-c: #818cf8; }
-:root[data-skin="emerald"] { --ember-a: #d9f99d; --ember-b: #10b981; --ember-c: #22d3ee; }
+   tone, --ember-c the accent that swirls through it.  */
+/* Torch is brazed copper in both themes: the one place the brand colour lives inside the app. */
+:root { --ember-a: #ffd9bf; --ember-b: #9a3f1a; --ember-c: #e8946a; --ember-plasma: 0.9; --ember-fresnel: 0.9; }
+/* The orb itself is black glass with white light (Josh, 2026-11-26: "make the orb black"), the palette it
+   had before as Mono. Set on the orb only, so the copper above stays on the AI chips' edges. */
+.ember { --ember-a: #ffffff; --ember-b: #18181b; --ember-c: #71717a; --ember-plasma: 0.5; --ember-fresnel: 0.55; }
 
 /* Moods are light and motion: idle breathes and drifts, thinking swirls fast and pulses, happy
    brightens and bounces, sleepy dims and slows, surprised flares. */
@@ -418,6 +493,7 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity
 .ember .ember-glow, .ember .ember-glow-out, .ember .ember-core, .ember .ember-body, .ember [class^="ember-swirl"], .ember [class^="ember-band"] { transform-box: view-box; transform-origin: 32px 32px; }
 .ember .ember-glow { animation: ember-breathe 3.6s ease-in-out infinite; }
 .ember .ember-glow-out { animation: ember-breathe 3.6s ease-in-out 1.8s infinite; }
+/* The spark at Torch's centre: it breathes; while Torch thinks, it turns. */
 .ember .ember-band-1 { animation: ember-spin 6s linear infinite; }
 .ember .ember-band-2 { animation: ember-spin 8.5s linear infinite reverse; }
 .ember .ember-core { animation: ember-pulse 3.6s ease-in-out infinite; }
@@ -502,13 +578,9 @@ select option { background-color: var(--surface); color: var(--text); }
 
 /* A drawing sheet's grid, in ink at a whisper (docs/design/app.md): behind a project's cover or an
    empty state, once per page at most. It follows the theme: dark ink on light, light ink on dark. */
+/* Formerly a drafting grid; now a plain soft surface (no lines anywhere, 2026-11-26). */
 .sheet-grid {
   background-color: var(--surface-2);
-  background-image:
-    linear-gradient(color-mix(in oklab, var(--text) 6%, transparent) 1px, transparent 1px),
-    linear-gradient(90deg, color-mix(in oklab, var(--text) 6%, transparent) 1px, transparent 1px);
-  background-size: 24px 24px;
-  background-position: -1px -1px;
 }
 
 /* A signature landing (components/app/fresh-seal.tsx): the seal comes down like a stamp, once. */
@@ -519,3 +591,113 @@ select option { background-color: var(--surface); color: var(--text); }
 }
 .seal-stamp { animation: seal-stamp 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both; transform-origin: center; }
 @media (prefers-reduced-motion: reduce) { .seal-stamp { animation: none; } }
+
+/* Torch's reply as it streams (components/copilot/reply.tsx): a caret at the end of the words, and
+   the three waiting dots. Opacity only, so nothing around them moves. */
+.ember-caret {
+  display: inline-block;
+  width: 0.5em;
+  height: 0.5em;
+  margin-left: 0.2em;
+  border-radius: 999px;
+  background: var(--brand);
+  vertical-align: 0.05em;
+  animation: ember-caret 1s ease-in-out infinite;
+}
+@keyframes ember-caret { 50% { opacity: 0.25; } }
+.ember-dot { animation: ember-dot 1s ease-in-out infinite; opacity: 0.3; }
+@keyframes ember-dot { 50% { opacity: 1; } }
+
+/* A dark band in either theme (redesign 2026-11): the landing page's CAD lab. Same tokens as dark mode,
+   so everything inside it (cards, text, buttons) just works. */
+.theme-dark {
+  color-scheme: dark;
+  --bg: #0b0c0e;
+  --surface: #131418;
+  --surface-2: #16171b;
+  --raised: #1e1f24;
+  --hover: #1b1c21;
+  --border: #25262c;
+  --border-strong: #35363e;
+  --text: #ededef;
+  --text-2: #cbccd1;
+  --muted: #a2a3aa;
+  --faint: #8f9098;
+  --accent: #f4f4f5;
+  --on-accent: #0b0c0e;
+  --brand: #e8946a;
+  --brand-soft: #2a1a12;
+  --ok: #4ade80;
+  --danger: #f87171;
+  --info: #6ea8ff;
+  --wait: #fbbf24;
+  --tag: #a78bfa;
+  --pro: #fbbf24;
+  --glow: rgba(255, 255, 255, 0.07);
+  --spark: 255, 255, 255;
+  --shadow: 0 0 0 1px rgba(0, 0, 0, 0.2), 0 1px 2px rgba(0, 0, 0, 0.35);
+  --shadow-float: 0 0 0 1px rgba(255, 255, 255, 0.04), 0 2px 6px rgba(0, 0, 0, 0.4), 0 24px 48px -16px rgba(0, 0, 0, 0.7);
+  /* Gradients resolve where they're defined, so they're redefined here with the band's colours. */
+  --accent-grad: linear-gradient(135deg, var(--accent), var(--accent));
+  --text-grad: linear-gradient(90deg, var(--text), var(--faint));
+  color: var(--text);
+}
+.lab-glow {
+  background:
+    radial-gradient(40rem 20rem at 78% 0%, color-mix(in oklab, var(--brand) 16%, transparent), transparent 70%),
+    radial-gradient(36rem 18rem at 12% 10%, rgba(110, 168, 255, 0.07), transparent 70%);
+}
+/* The CAD stage: a drawing sheet, fine grid over a soft studio sweep. */
+.cad-sheet {
+  background:
+    linear-gradient(color-mix(in oklab, var(--text) 5%, transparent) 1px, transparent 1px) -1px -1px / 28px 28px,
+    linear-gradient(90deg, color-mix(in oklab, var(--text) 5%, transparent) 1px, transparent 1px) -1px -1px / 28px 28px,
+    radial-gradient(120% 90% at 50% 0%, var(--raised), var(--surface) 70%);
+}
+/* While three.js loads: a thin scan line, opacity and transform only. */
+.cad-scan { background: linear-gradient(90deg, transparent, var(--brand), transparent); animation: cad-scan 1.6s var(--ease) infinite; }
+@keyframes cad-scan { from { transform: scaleX(0.2); opacity: 0.2; } 50% { transform: scaleX(1); opacity: 0.9; } to { transform: scaleX(0.2); opacity: 0.2; } }
+/* CAD callouts (components/landing/cad-lab.tsx): a dot on the part, a leader rising away from the
+   middle of the stage, and the label at its end. */
+.cad-callout[data-side="r"] .cad-leader { left: 3px; transform-origin: left; transform: rotate(-30deg); }
+.cad-callout[data-side="r"] .cad-tag { left: 34px; }
+.cad-callout[data-side="l"] .cad-leader { right: 3px; transform-origin: right; transform: rotate(30deg); }
+.cad-callout[data-side="l"] .cad-tag { right: 34px; }
+/* The landing hero's light (components/landing/hero.tsx): copper from the top right, a cool fill from
+   the left, and a fine drawing grid that fades out toward the edges. */
+/* It follows the theme (landing journey, 2026-11-26): drafting paper in light (a softer copper, a
+   blue-grey grid like vellum), the lab at night in dark. */
+.landing { --hero-copper: 13%; --hero-cool: rgba(29, 95, 214, 0.07); --hero-grid: rgba(29, 64, 120, 0.075); --window-rim: rgba(255, 255, 255, 0); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .landing { --hero-copper: 22%; --hero-cool: rgba(110, 168, 255, 0.08); --hero-grid: rgba(255, 255, 255, 0.05); --window-rim: rgba(255, 255, 255, 0.07); } }
+:root[data-theme="dark"] .landing, .landing .theme-dark { --hero-copper: 22%; --hero-cool: rgba(110, 168, 255, 0.08); --hero-grid: rgba(255, 255, 255, 0.05); --window-rim: rgba(255, 255, 255, 0.07); }
+.hero-glow {
+  background:
+    radial-gradient(48rem 26rem at 82% -6%, color-mix(in oklab, var(--brand) var(--hero-copper, 22%), transparent), transparent 70%),
+    radial-gradient(40rem 24rem at 0% 30%, var(--hero-cool, rgba(110, 168, 255, 0.08)), transparent 70%),
+    linear-gradient(var(--hero-grid, rgba(255, 255, 255, 0.05)) 1px, transparent 1px) 0 0 / 32px 32px,
+    linear-gradient(90deg, var(--hero-grid, rgba(255, 255, 255, 0.05)) 1px, transparent 1px) 0 0 / 32px 32px;
+  mask-image: radial-gradient(ellipse 90% 80% at 60% 30%, #000 40%, transparent 90%);
+}
+/* The product window's edge: a lit top rim in dark, a clean card on paper. */
+.hero-window { box-shadow: var(--shadow-float), inset 0 1px 0 var(--window-rim, transparent); }
+/* Landing sections rise in as they arrive (scroll-driven, on the compositor: no script, no layout
+   shift). Browsers without scroll timelines, and reduced motion, show them as they are. */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .landing .reveal { animation: landing-rise linear both; animation-timeline: view(); animation-range: entry 0% entry 55%; }
+  }
+}
+@keyframes landing-rise { from { opacity: 0; transform: translateY(28px); } }
+/* The band for schools: a warm tint of the page, so it stands apart in both themes. */
+.schools-band { background: color-mix(in oklab, var(--brand) 5%, var(--surface-2)); }
+/* The hero's product window (components/landing/hero.tsx): its five views share one body of a fixed
+   size, so switching views never moves the page. On a laptop tall enough, the hero pins for a scroll
+   run, one stretch per view (hero.tsx RUN is the same query); elsewhere the views are tabs. */
+.hero-body { height: 36rem; }
+@media (min-width: 640px) { .hero-body { height: 33rem; } }
+@media (min-width: 1024px) { .hero-body { height: clamp(26rem, calc(100svh - 16rem), 35rem); } }
+@media (min-width: 1024px) and (min-height: 700px) and (prefers-reduced-motion: no-preference) {
+  .hero-run { height: calc(100svh + 80svh); }
+  .hero-pin { position: sticky; top: 0; height: 100svh; }
+  .hero-scroll-hint { display: inline-flex; }
+}

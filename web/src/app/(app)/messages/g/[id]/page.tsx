@@ -1,14 +1,14 @@
 import { avatarSrc } from "@/lib/media";
-import { ArrowLeft, CalendarDays, Hash, LogOut, Users } from "lucide-react";
+import { ArrowLeft, CalendarDays, Hash, Users } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { MemberFaces, type Face } from "@/components/network/member-faces";
-import { leaveTeamChat } from "@/lib/chats";
+import { CommunityBadge } from "../../../communities/_components/badge";
 import { dbFeatures } from "@/lib/db-features";
 import { getViewer } from "@/lib/supabase/server";
-import { GroupComposer, GroupThread, MarkChatRead, NewTeamChat, type GroupMsg, type Seen } from "./group-client";
-import { CatchMeUp, MemberList } from "./details";
+import { GroupComposer, GroupThread, MarkChatRead, TeamSwitcher, type ClubChatLink, type GroupMsg, type Seen } from "./group-client";
+import { CatchMeUp, GroupChatActions, MemberList } from "./details";
 import { MessageBody } from "@/components/share/message-body";
 import type { Reaction } from "@/components/chat/message-tools";
 import { copilotEnabled } from "@/lib/copilot";
@@ -22,16 +22,16 @@ export default function GroupChatPage({ params }: PageProps<"/messages/g/[id]">)
   );
 }
 
-type Chat = { id: string; kind: "club" | "event" | "team"; community_id: string | null; event_id: string | null; name: string; communities: { name: string } | null; events: { title: string } | null };
+type Chat = { id: string; kind: "club" | "event" | "team"; community_id: string | null; event_id: string | null; name: string; created_by: string | null; communities: { name: string; logo_path?: string | null } | null; events: { title: string } | null };
 const ICON = { club: Users, event: CalendarDays, team: Hash } as const;
 
 async function Group({ params }: { params: PageProps<"/messages/g/[id]">["params"] }) {
   const { id } = await params;
   const { supabase, user, profile } = await getViewer();
   if (!user || !profile) redirect("/login");
-  const { groupChats, chatExtras: extras } = await dbFeatures();
+  const { groupChats, chatExtras: extras, clubProfile, groupChatControls } = await dbFeatures();
   if (!groupChats) redirect("/messages");
-  const { data: chat } = await supabase.from("chats").select("id, kind, community_id, event_id, name, communities(name), events(title)").eq("id", id).maybeSingle();
+  const { data: chat } = await supabase.from("chats").select(`id, kind, community_id, event_id, name, created_by, communities(name${clubProfile ? ", logo_path" : ""}), events(title)`).eq("id", id).maybeSingle();
   if (!chat)
     return <div data-thread className="contents"><div className="grid h-full place-items-center p-8 text-center text-sm text-muted">This chat isn&apos;t available to you.<Link href="/messages?tab=groups" className="mt-3 underline">Back to messages</Link></div></div>;
   const c = chat as unknown as Chat;
@@ -54,6 +54,18 @@ async function Group({ params }: { params: PageProps<"/messages/g/[id]">["params
   const canAnnounce = c.kind === "club" && officer;
   type MemberRow = { uid: string; first_name?: string; last_name?: string; profiles?: { first_name: string; last_name: string } | null };
   const people: Face[] = ((memberRes.data ?? []) as MemberRow[]).map((m) => ({ uid: m.uid, first: m.first_name ?? m.profiles?.first_name ?? "", last: m.last_name ?? m.profiles?.last_name ?? "" }));
+
+  // The Teams menu (FIX-248): this club's main chat and the team chats you can see (row-level security
+  // shows a team chat only to its members), and, inside a team chat, the whole club to start a new one with.
+  const club = (c.kind === "club" || c.kind === "team") && c.community_id ? c.community_id : null;
+  const [clubChatRes, clubPeopleRes] = club
+    ? await Promise.all([
+        supabase.from("chats").select("id, kind, name").eq("community_id", club).in("kind", ["club", "team"]).limit(100),
+        c.kind === "team" ? supabase.from("community_members").select("uid, first_name, last_name").eq("community_id", club).order("joined_at", { ascending: false }).limit(500) : Promise.resolve({ data: null }),
+      ])
+    : [{ data: [] }, { data: null }];
+  const clubChats = (clubChatRes.data ?? []) as ClubChatLink[];
+  const clubPeople: Face[] = clubPeopleRes.data ? (clubPeopleRes.data as MemberRow[]).map((m) => ({ uid: m.uid, first: m.first_name ?? "", last: m.last_name ?? "" })) : people;
 
   // Club officers see how many members have seen each announcement.
   let seen: Seen = {};
@@ -81,24 +93,22 @@ async function Group({ params }: { params: PageProps<"/messages/g/[id]">["params
       <MarkChatRead id={id} count={msgs.length} />
       <header className="relative flex items-center gap-3 border-b border-line px-4 py-3">
         <Link href="/messages?tab=groups" aria-label="Back to messages" className="grid size-9 place-items-center rounded-full text-muted hover:bg-hover hover:text-text md:hidden"><ArrowLeft className="size-4" /></Link>
-        <span className="nav-tile grid size-9 shrink-0 place-items-center rounded-xl text-text-2"><Icon className="size-4" /></span>
+        {c.kind !== "event" && c.community_id && c.communities?.logo_path ? <CommunityBadge id={c.community_id} name={c.communities.name} size={36} logo={c.communities.logo_path} /> : <span className="nav-tile grid size-9 shrink-0 place-items-center rounded-xl text-text-2"><Icon className="size-4" /></span>}
         <Link href={href} className="min-w-0 flex-1">
           <div className="truncate text-sm font-semibold hover:underline">{title}</div>
           <div className="truncate text-xs text-faint">{sub}</div>
         </Link>
         <MemberFaces faces={people.slice(0, 4)} ids={people.map((p) => p.uid)} total={people.length} size={24} className="hidden sm:flex" />
-        {c.kind === "club" && c.community_id && <NewTeamChat communityId={c.community_id} members={people} me={user.id} />}
-        {c.kind === "team" && (
-          <form action={async () => { "use server"; await leaveTeamChat(id); }}>
-            <button aria-label="Leave this team chat" title="Leave chat" className="grid size-8 place-items-center rounded-full text-faint transition hover:bg-hover hover:text-text"><LogOut className="size-4" /></button>
-          </form>
+        {club && <TeamSwitcher communityId={club} current={id} chats={clubChats} members={clubPeople} me={user.id} />}
+        {(groupChatControls || c.kind === "team") && (
+          <GroupChatActions key={id} chatId={id} kind={c.kind} canDelete={groupChatControls && c.kind === "team" && c.created_by === user.id} />
         )}
       </header>
       <GroupThread msgs={msgs} pics={pics} me={user.id} myName={profile.first_name} chatId={id} seen={seen} reactions={(rxRows ?? []) as Reaction[]} extras={extras} />
       <GroupComposer chatId={id} canAnnounce={canAnnounce} ember={emberOn} placeholder={c.kind === "event" ? "Ask about the event, share logistics" : `Message ${title}`} />
       </div>
       <aside aria-label="Chat details" className="hidden w-80 shrink-0 flex-col gap-6 overflow-y-auto border-l border-line p-5 xl:flex">
-        {emberOn && <section><h3 className="mb-2 text-xs font-medium tracking-wide text-faint uppercase">Ember</h3><CatchMeUp chatId={id} /></section>}
+        {emberOn && <section><h3 className="mb-2 text-xs font-medium tracking-wide text-faint uppercase">Torch</h3><CatchMeUp chatId={id} /></section>}
         <MemberList people={people} />
         <section>
           <h3 className="text-xs font-medium tracking-wide text-faint uppercase">{c.kind === "event" ? "The event" : "Coming up"}</h3>

@@ -34,7 +34,7 @@ export function triageDone(action: Exclude<TriageAction, "sign">, kind: "post" |
   return action === "club" ? `Sent to ${club ?? "your club"} to verify.` : "Kept on your project. Ask someone to sign it when you're ready.";
 }
 
-// Drafts Today can't decide in a tap (a project, a teammate, an RSVP… from Ember or a connected
+// Drafts Today can't decide in a tap (a project, a teammate, an RSVP… from Torch or a connected
 // assistant): one line that says what's waiting and links to Drafts, so nothing a tool left is hidden.
 const OTHER: Record<string, string> = {
   project: "a new project", project_edit: "a change to a project", teammate: "a teammate to add", rsvp: "an RSVP",

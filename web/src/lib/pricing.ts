@@ -1,5 +1,5 @@
-// What Brazework costs, in one place (the Product Hunt launch). The landing page's Pricing section and
-// /pricing both read it, so they can't disagree. Company prices match docs/strategy.md. Pure, and
+// What Brazework costs, in one place. /pricing, /schools and /plus read it, so they can't disagree.
+// Prices match docs/strategy.md (schools first since 2026-11-26). Pure, and
 // tested (tests/pricing.test.ts).
 //
 // Plus's name and prices aren't settled: change them here. Whether it can be bought is decided at
@@ -7,85 +7,138 @@
 // a place on the waitlist. Never call it "Pro": Pro means pro verification, a professional at a
 // verified company signing a milestone (supabase/pro-verification.sql).
 //
-// What Plus is for (Nov 19): students pay to be found (every company that looked); professionals pay
-// to be recognized at work (the review packet: their signed work, ready for a review or promotion).
+// What Plus is for (founders, 2026-11-26): builders who aren't students (professionals, independent
+// builders) pay to be recognized at work (the review packet: their signed work, ready for a review or
+// promotion) and to see every company that looked. Students never pay: no student price, and checkout
+// refuses a student account (lib/money.ts). Torch credits: 15 a day free, 50 with Plus, no packs.
 
 import { FEATURE_ACCESS } from "@/lib/plans";
 
 // Monthly, and by the year at a third off: review cycles come once or twice a year, so a year is the
 // natural unit for a professional. Yearly checkout needs its Stripe prices (lib/billing.ts plusPriceEnv).
-export const PLUS = { name: "Plus", student: 6, everyone: 12, studentYear: 48, everyoneYear: 96 };
-// What a school pays: a flat portal and a seat for each advisor who uses it. Never per club or
-// chapter, so a school never has a reason to keep a club off Brazework (founders, 2026-11-19).
-export const SCHOOL = { portal: 6000, seatsIncluded: 2, perAdvisor: 1200 };
-/** A school's yearly price for this many advisors (the portal includes the first seats). */
-export const schoolPrice = (advisors: number) => SCHOOL.portal + Math.max(0, Math.ceil(advisors) - SCHOOL.seatsIncluded) * SCHOOL.perAdvisor;
+export const PLUS = { name: "Plus", everyone: 12, everyoneYear: 96 };
+export const SPONSORSHIP = { chapter: 2500, challengePrizes: 5000, serviceFee: 500 };
+export const EMBER_DAILY_LIMIT = { free: 15, plus: 50 } as const;
+export const EMBER_RESET = "Torch credits reset at midnight UTC.";
+// What a school pays (founders, 2026-11-26; docs/strategy.md). Never per club, chapter or student, so a
+// school never has a reason to keep anyone off. Every school pays, pilots included.
+// - Pilot: one department for one semester, credited toward the first year.
+// - Department: one department or college, a few faculty seats included, more at a seat price. Kept
+//   under the amount most schools can sign without a formal bid, so a dean or chair can say yes.
+// - Campus: every department and unlimited faculty, by enrollment band (a size, not a count of who
+//   joins), so a school pays the same however many students and clubs come on.
+export const SCHOOL = { pilot: 1500, department: 6000, seatsIncluded: 5, perSeat: 600 };
+// Founding schools (founders, 2026-11-26): the first campuses pay `price`, locked for a few years; `list`
+// is what a campus pays after those places are taken. A reason to sign this semester, and early
+// schools pay no more than before. Keep `list` honest: it's the price later schools are really quoted.
+export const FOUNDING = { schools: 10, lockYears: 3 };
+export const CAMPUS_BANDS = [
+  { upTo: 5000, price: 18000, list: 30000 },
+  { upTo: 15000, price: 30000, list: 48000 },
+  { upTo: Infinity, price: 45000, list: 72000 },
+] as const;
+/** A department's yearly price with this many faculty seats (the first few are included). */
+export const departmentPrice = (seats: number) => SCHOOL.department + Math.max(0, Math.ceil(seats) - SCHOOL.seatsIncluded) * SCHOOL.perSeat;
+/** A whole campus's yearly price, by its enrollment: the founding-school price, or the list price. */
+export const campusPrice = (enrollment: number, founding = true) => { const b = CAMPUS_BANDS.find((x) => enrollment <= x.upTo)!; return founding ? b.price : b.list; };
+/** What a campus of this size pays per student per year, in whole dollars and cents ("$2.00"). */
+export const perStudent = (enrollment: number, founding = true) => `$${(campusPrice(enrollment, founding) / enrollment).toFixed(2)}`;
+/** Past this many seats a campus license costs less than a department: say so where it's priced. */
+export const seatsWhereCampusWins = () => Math.ceil((CAMPUS_BANDS[0].price - SCHOOL.department) / SCHOOL.perSeat) + SCHOOL.seatsIncluded;
+// Companies: the hiring plan, a starter seat for a smaller or local employer, and sponsorships.
+export const TALENT = { plan: 15000, planSeats: 2, starter: 4800 };
 const usd = (n: number) => `$${n.toLocaleString("en-US")}`;
 // What Plus will add but doesn't yet. Every page that lists Plus marks these "coming soon", so nobody
 // pays for something that isn't built. Move an item out of this list when it ships.
 export const PLUS_SOON = ["Your own profile link", "A PDF portfolio of your signed work", "More AI drafts from your tools"];
 
-export type Audience = "builders" | "companies" | "organizations";
+export type Audience = "schools" | "builders" | "companies";
 export type Tier = {
   id: string; audience: Audience; name: string; price: string; note: string; points: string[];
   cta: { label: string; href: string }; featured?: boolean;
 };
 
+// Schools first (the realignment of 2026-11-26, docs/strategy.md): the school is the customer;
+// students, clubs and signers never pay; companies come second. Builders who aren't students can add
+// Plus (on the list since 2026-11-26).
 export const AUDIENCES: { id: Audience; label: string; line: string }[] = [
-  { id: "builders", label: "Builders", line: "Students and professionals. The record is free, forever." },
-  { id: "companies", label: "Companies", line: "Find people by work someone signed, not by keywords they typed." },
-  { id: "organizations", label: "Clubs, networks and schools", line: "Free for every club. Schools pay for a portal and their advisors, never per club." },
+  { id: "schools", label: "Schools", line: "A portal for your faculty and offices. Never per student or per club." },
+  { id: "builders", label: "Builders", line: "Free, always, for students and clubs. Plus for professionals and independent builders." },
+  { id: "companies", label: "Companies", line: "Find students by work their faculty and clubs signed." },
 ];
 
-// The landing page shows only what a visitor there would pay: nothing, or Plus. Company and school
-// prices are on /pricing, one click away, so the first page doesn't read as enterprise software to
-// the students and professionals it's for (founders, 2026-11-19).
-export const LANDING_AUDIENCES: Audience[] = ["builders"];
-/** Where the landing page sends the buyers whose prices it doesn't show. */
-export const PRICING_LINKS: { audience: Audience; label: string; href: string }[] = AUDIENCES
-  .filter((a) => !LANDING_AUDIENCES.includes(a.id))
-  .map((a) => ({ audience: a.id, label: a.id === "companies" ? "Company pricing" : "Club and school pricing", href: `/pricing#pricing-${a.id}` }));
+// What a school gets that's built today, and what's being built with the pilot schools. Every card
+// marks the second kind, so no school pays for something that isn't there yet.
+// (Faculty lists, class projects and the evidence export shipped with the portal, supabase/school-portal.sql;
+// the course core with courses.sql; quizzes, attendance, accommodations, peer evaluation and ABET
+// attainment with courses-b.sql.)
+export const SCHOOL_SOON = ["Discussion threads in each course", "Placement data: which employers viewed and contacted your students"];
 
-// Each audience has one primary call to action (featured); the other card's is quieter.
+// What the campus license adds that's still being built, marked the same way.
+export const CAMPUS_SOON = ["Student life, career center and admissions views", "Single sign-on and roster sync from your student system", "Import Canvas and Blackboard courses; LTI for publisher tools"];
+
+// Each audience has one primary call to action (featured); the other cards' are quieter.
 export const TIERS: Tier[] = [
   {
-    id: "free", audience: "builders", name: "Free", price: "$0", note: "Always, with no ads", featured: true,
-    points: ["Your record: every build, with the people who signed it", "Ask anyone who saw it to sign: a professor, a manager, your club", "A share card for every milestone, signed or waiting", "Clubs, study groups, events and your AI agent", "Be found by companies, and see who looked this week"],
-    cta: { label: "Log your first build", href: "/signup" },
+    id: "pilot", audience: "schools", name: "Semester pilot", price: usd(SCHOOL.pilot), note: "One department or a few classes, for one semester. Credited toward your first year.",
+    points: ["Set up with you by the founders", "Your students and clubs on Brazework, grouped by your school email", "Your official school account and its verified clubs", "A semester report of what your students built and who signed it", "Your numbers, to decide on the full campus"],
+    cta: { label: "Start a pilot", href: "/book?kind=school" },
   },
   {
-    id: "plus", audience: "builders", name: PLUS.name, price: `$${PLUS.student}/mo`,
-    note: `For students, or $${PLUS.studentYear} a year. Professionals: $${PLUS.everyone}/mo, or $${PLUS.everyoneYear} a year.`,
+    id: "school", audience: "schools", name: "Department", price: usd(SCHOOL.department), note: `Per year, with ${SCHOOL.seatsIncluded} faculty seats. ${usd(SCHOOL.perSeat)} per extra seat.`, featured: true,
+    points: ["Every student and every club in the department included", "Classes by course and semester, with rosters from a CSV", "Courses: modules, assignments, rubric grading, a private gradebook",
+      "Quizzes, attendance, extensions and accommodations, peer evaluation",
+      "ABET attainment by outcome and course, as a download", "Faculty from your own list verify class projects", "Evidence export for accreditation: every verified milestone", "Your school's numbers: students, classes, verified work, active clubs", ...SCHOOL_SOON.map((x) => `${x} (building with pilot schools)`)],
+    cta: { label: "Book a call", href: "/book?kind=school" },
+  },
+  {
+    id: "campus", audience: "schools", name: "Campus", price: `From ${usd(CAMPUS_BANDS[0].price)}`, note: `Per year for the first ${FOUNDING.schools} founding schools, locked for ${FOUNDING.lockYears} years: ${usd(CAMPUS_BANDS[0].price)} up to ${CAMPUS_BANDS[0].upTo.toLocaleString("en-US")} students, ${usd(CAMPUS_BANDS[1].price)} up to ${CAMPUS_BANDS[1].upTo.toLocaleString("en-US")}, ${usd(CAMPUS_BANDS[2].price)} above. List price from ${usd(CAMPUS_BANDS[0].list)}.`,
+    points: ["Every department, unlimited faculty seats", `At ${CAMPUS_BANDS[1].upTo.toLocaleString("en-US")} students, ${perStudent(CAMPUS_BANDS[1].upTo)} a student a year`, "Every club on campus, verified as yours", "A data agreement for student privacy (FERPA)", ...CAMPUS_SOON.map((x) => `${x} (building with pilot schools)`)],
+    cta: { label: "Talk to us", href: "/book?kind=school" },
+  },
+  {
+    id: "free", audience: "builders", name: "Free", price: "$0", note: "For students, clubs and anyone building. Always, with no ads", featured: true,
+    points: ["Your record: every project, with the people who signed it", "Ask a professor, your club, a coworker, a client or a mentor to sign", "A share card for every milestone, signed or waiting", `Torch: ${EMBER_DAILY_LIMIT.free} credits a day`, "Keep it all when you graduate: move to a personal email", "Be found by companies, and see who looked"],
+    cta: { label: "Start your record", href: "/signup" },
+  },
+  {
+    id: "plus", audience: "builders", name: PLUS.name, price: `$${PLUS.everyoneYear}/yr`,
+    note: `For professionals and independent builders, or $${PLUS.everyone}/mo. Students never pay. Join the waitlist while paid plans are being set up.`,
     points: [
       "Everything in Free",
       // Free while it's a Plus preview (lib/plans.ts), and the card says so: one word there changes both.
       `Review packets: your signed work over any period, ready for a performance review or a promotion case${FEATURE_ACCESS.reviewPacket === "plus-preview" ? " (free for everyone during launch)" : ""}`,
+      `Torch: ${EMBER_DAILY_LIMIT.plus} credits a day (Free has ${EMBER_DAILY_LIMIT.free}). No packs to buy`,
       "Every company that looked in the last 90 days, not just this week",
       ...PLUS_SOON.map((x) => `${x} (coming soon)`),
     ],
-    cta: { label: "Get Plus", href: "/plus" },
+    cta: { label: "See Plus", href: "/plus" },
   },
   {
-    id: "talent", audience: "companies", name: "Find builders", price: "$15,000", note: "Per year, for 2 seats and 2 chapter sponsorships", featured: true,
-    points: ["Search members by signed work, field, school and class year", "Message them in their Requests", "Two chapters sponsored each semester, your pick", "They see that you looked, so it starts warm"],
+    id: "clubs", audience: "builders", name: "Clubs", price: "Free", note: "For every student club and study group",
+    points: ["Members, events, chat, roles and officer handoff", "Officers verify members' work", "Club projects and a page that shows what the club builds", "Verified as your school's club, with its badge"],
+    cta: { label: "Bring your club", href: "/#pilot" },
+  },
+  {
+    id: "starter", audience: "companies", name: "Starter", price: usd(TALENT.starter), note: "Per year, for 1 search and messaging seat",
+    points: ["Search students by signed work, field, school and class year", "Message them in their Requests", "For a smaller or local employer"],
+    cta: { label: "Start with one seat", href: "/book?kind=talent" },
+  },
+  {
+    id: "talent", audience: "companies", name: "Find builders", price: usd(TALENT.plan), note: `Per year, for ${TALENT.planSeats} search and messaging seats`, featured: true,
+    points: ["Search students by signed work, field, school and class year", "Message them in their Requests", "Chapter sponsorships and challenges are priced separately", "They see that you looked, so it starts warm"],
     cta: { label: "Book a pilot", href: "/book?kind=talent" },
   },
   {
-    id: "sponsor", audience: "companies", name: "Sponsor a chapter or a challenge", price: "$2,500", note: "Per chapter, per semester. All of it goes to the club.",
-    points: ["Your name on a chapter's page and its members' signed work", "Or post a build challenge that clubs opt into, from $5,000. Prizes go to the winners in full.", "Meet the members who win, signed by their clubs", "Reporting on who took part and what they built"],
+    id: "sponsor", audience: "companies", name: "Sponsor a chapter or a challenge", price: usd(SPONSORSHIP.chapter), note: `Per chapter, per semester. All of it goes to the club. Plus a separate ${usd(SPONSORSHIP.serviceFee)} service fee: ${usd(SPONSORSHIP.chapter + SPONSORSHIP.serviceFee)} total.`,
+    points: ["Your name on a chapter's page and its members' signed work", `Challenges: from ${usd(SPONSORSHIP.challengePrizes)} in prizes plus a separate ${usd(SPONSORSHIP.serviceFee)} service fee (${usd(SPONSORSHIP.challengePrizes + SPONSORSHIP.serviceFee)} total). Prizes go to the winners in full.`, "Meet the members who win, signed by their clubs", "The service fee covers setup, coordination and reporting; it never comes out of club funds or prizes"],
     cta: { label: "Sponsor a chapter", href: "/book?kind=chapter" },
   },
-  {
-    id: "clubs", audience: "organizations", name: "Clubs", price: "Free", note: "For every student club and study group",
-    points: ["Members, events, chat, roles and officer handoff", "Officers verify members' work", "A page that shows what the club builds", "Study groups with the members' own record of who led"],
-    cta: { label: "Bring your club", href: "/#founding" },
-  },
-  {
-    id: "network", audience: "organizations", name: "Schools and networks", price: usd(SCHOOL.portal), note: `Per year for a school, with ${SCHOOL.seatsIncluded} advisor seats. ${usd(SCHOOL.perAdvisor)} per extra advisor.`, featured: true,
-    points: ["Every club included, however many join", "Your school's official account and its verified clubs", "Advisors approve clubs and follow what they build", "Reporting: what members built and who signed it", "The first 10 schools get their first semester free", "National networks: a portal across chapters, priced with the founders"],
-    cta: { label: "Book a demo", href: "/book?kind=school" },
-  },
 ];
+
+
+// Plus, as /plus shows it: the same card as on the price list.
+export const PLUS_TIER: Tier = TIERS.find((t) => t.id === "plus")!;
 
 export const tiersFor = (a: Audience) => TIERS.filter((t) => t.audience === a);
 
@@ -96,6 +149,6 @@ export const SALES: Record<SalesKind, { label: string; ask: string; org: string 
   talent: { label: "Search seats for my company", ask: "A pilot of Find builders: search signed work and message members.", org: "Company" },
   chapter: { label: "Sponsor a chapter", ask: "Your name on a chapter, with reporting on what its members build.", org: "Company" },
   challenge: { label: "Sponsor a build challenge", ask: "A challenge clubs opt into, and the members who win it.", org: "Company" },
-  school: { label: "A demo for my school or network", ask: "A portal for your school's clubs and advisors, with reporting. Every club included.", org: "School or network" },
+  school: { label: "A pilot for my school", ask: "A semester pilot for a department or a few classes: your students' projects, verified by faculty and clubs, with a report at the end. Every student and club included.", org: "School or department" },
   plus: { label: "Join the Plus waitlist", ask: "We'll email you when Plus opens, at the launch price.", org: null },
 };

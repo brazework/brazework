@@ -1,7 +1,7 @@
 import { z } from "zod";
 
-// One-tap Ember actions ("This week's update for Rocketry Club"). The member sees and saves a plain
-// request; the step-by-step instructions for Ember go to the server beside it and are added to the
+// One-tap Torch actions ("This week's update for Rocketry Club"). The member sees and saves a plain
+// request; the step-by-step instructions for Torch go to the server beside it and are added to the
 // system prompt there, so they never show up in the chat, the chat's title or "You asked".
 // Pure, so the client can build requests with it and tests can check it (tests/copilot-presets.test.ts).
 
@@ -15,7 +15,7 @@ export type Preset = z.infer<typeof presetSchema>;
 export const clubUpdateAsk = (clubName: string) => `Draft this week's update for ${clubName.trim() || "my club"}`;
 export const clubUpdatePreset = (id: string): Preset => ({ kind: "club_update", club_id: id });
 
-// What Ember is told, server side. Club access is still checked by the club_report tool itself.
+// What Torch is told, server side. Club access is still checked by the club_report tool itself.
 export function presetInstruction(p: Preset): string {
   switch (p.kind) {
     case "club_update":
@@ -28,10 +28,10 @@ export function presetInstruction(p: Preset): string {
   }
 }
 
-// A link that opens Ember with this preset (?q= is what the member sees; ?club_update= carries the club).
+// A link that opens Torch with this preset (?q= is what the member sees; ?club_update= carries the club).
 export const clubUpdateHref = (id: string, name: string) => `/copilot?q=${encodeURIComponent(clubUpdateAsk(name))}&club_update=${encodeURIComponent(id)}`;
 
-// Read the preset back from the Ember page's query string. Anything malformed is ignored, not an error.
+// Read the preset back from the Torch page's query string. Anything malformed is ignored, not an error.
 export function presetFromQuery(sp: Record<string, string | string[] | undefined>): Preset | null {
   const id = typeof sp.club_update === "string" ? sp.club_update : "";
   if (!id) return null;

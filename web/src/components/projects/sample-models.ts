@@ -30,13 +30,13 @@ export type Extras = { RoundedBoxGeometry?: typeof RoundedBox };
 /** The examples, in the order the landing page offers them: the field, the build, the result someone
  *  in that field would record (with its number), and who confirmed it, the way Brazework does:
  *  verified by a club its officers run, or signed by a person who saw the work (a professor, a
- *  manager, a client, a mentor), named with their role. Students and working professionals alike. */
+ *  coworker, a client, a mentor), named with their role. Students and working professionals alike. */
 export const SAMPLES = [
   // Engineering
   { id: "robot", field: "Robotics", name: "Line-following robot", milestone: "Ran the 12 m course in 41.2 s, best of three runs", by: "Rocketry Club", how: "verified" },
   { id: "rocket", field: "Aerospace", name: "Certification rocket", milestone: "Level 1 flight: 1,140 m apogee, recovered intact", by: "J. Reyes, certification prefect", how: "signed" },
   { id: "gearbox", field: "Mechanical", name: "Reduction gearbox", milestone: "Ran 2 hours at 40 N·m with no slip or heat damage", by: "Prof. Alvarez, Machine Design", how: "signed" },
-  { id: "board", field: "Electronics", name: "Battery management board", milestone: "Balanced all 12 cells within 5 mV at bring-up", by: "D. Ruiz, hardware lead (manager)", how: "signed" },
+  { id: "board", field: "Electronics", name: "Battery management board", milestone: "Balanced all 12 cells within 5 mV at bring-up", by: "D. Ruiz, hardware lead (coworker)", how: "signed" },
   { id: "bridge", field: "Civil", name: "Balsa truss bridge", milestone: "Held 48 kg at 62 g, a 774 to 1 load ratio", by: "Civil Engineering Society", how: "verified" },
   // Computing
   { id: "phone", field: "Software", name: "Campus shuttle tracker app", milestone: "Shipped v2: 2,100 weekly riders, 99.6% crash-free", by: "M. Okoro, Transit Office (client)", how: "signed" },
@@ -45,8 +45,8 @@ export const SAMPLES = [
   // Sciences
   { id: "knot", field: "Mathematics", name: "Drone inspection flight path", milestone: "Planned a 3D inspection path: 31% shorter, every face of the tower covered", by: "S. Kim, operations lead (client)", how: "signed" },
   { id: "pendulum", field: "Physics", name: "Motion-sensor calibration rig", milestone: "Calibrated a client's motion sensors to within 0.5% error", by: "T. Nguyen, QA lead (client)", how: "signed" },
-  { id: "crystal", field: "Chemistry", name: "Cathode material study", milestone: "Screened 120 cathode coatings; the best kept 92% capacity after 500 cycles", by: "Dr. Haddad, R&D manager", how: "signed" },
-  { id: "helix", field: "Biology", name: "Gene-editing guide design", milestone: "Designed guides that reached 94% editing efficiency in the pilot", by: "Dr. Lee, lab director (manager)", how: "signed" },
+  { id: "crystal", field: "Chemistry", name: "Cathode material study", milestone: "Screened 120 cathode coatings; the best kept 92% capacity after 500 cycles", by: "Dr. Haddad, R&D lead", how: "signed" },
+  { id: "helix", field: "Biology", name: "Gene-editing guide design", milestone: "Designed guides that reached 94% editing efficiency in the pilot", by: "Dr. Lee, lab director (coworker)", how: "signed" },
   { id: "weather", field: "Environment", name: "Campus weather station", milestone: "90 days of readings with no gaps, shared with the city", by: "City sustainability office (client)", how: "signed" },
   { id: "cubesat", field: "Space", name: "CubeSat structure", milestone: "Passed the vibration test at launch levels", by: "Space Systems Lab", how: "verified" },
   { id: "hand", field: "Medicine", name: "3D-printed prosthetic hand", milestone: "Lifted a 500 g bottle in 20 of 20 trials", by: "R. Patel, clinical mentor", how: "signed" },
@@ -54,7 +54,7 @@ export const SAMPLES = [
   { id: "fulfillment", field: "Business", name: "Warehouse pick-and-pack station", milestone: "Re-slotted 1,800 SKUs: orders out 23% faster in a 6-week pilot", by: "L. Grant, Operations Director (client)", how: "signed" },
   { id: "chair", field: "Design", name: "Flat-pack lounge chair", milestone: "Passed a 120 kg load test; the client ordered a 200-unit run", by: "A. Moreno, product lead (client)", how: "signed" },
   { id: "camera", field: "Media", name: "Product launch film", milestone: "Launch film for a client: 410,000 views, 3.1% click-through", by: "K. Osei, marketing lead (client)", how: "signed" },
-  { id: "chart", field: "Social science", name: "Customer churn study", milestone: "40 customer interviews; three churn drivers adopted in the Q3 roadmap", by: "Dr. Ortiz, head of research (manager)", how: "signed" },
+  { id: "chart", field: "Social science", name: "Customer churn study", milestone: "40 customer interviews; three churn drivers adopted in the Q3 roadmap", by: "Dr. Ortiz, head of research (coworker)", how: "signed" },
   { id: "blocks", field: "Education", name: "Fractions learning kit", milestone: "Adopted by 3 schools; unit quiz scores up 18%", by: "M. Gómez, district curriculum lead", how: "signed" },
 ] as const;
 export type SampleId = (typeof SAMPLES)[number]["id"];

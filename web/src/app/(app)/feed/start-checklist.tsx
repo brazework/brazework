@@ -16,7 +16,7 @@ export function StartChecklist({ steps }: { steps: GuideStep[] }) {
   const next = steps.find((s) => !s.done)!;
   const pct = done / steps.length;
   return (
-    <section aria-label="Get started" className="border border-line bg-surface mb-4 rounded-2xl p-4 sm:p-5">
+    <section aria-label="Get started" className="glass-card rounded-2xl p-5">
       <div className="flex items-center gap-3.5">
         {/* Progress ring */}
         <div className="relative grid size-11 shrink-0 place-items-center" role="progressbar" aria-valuemin={0} aria-valuemax={steps.length} aria-valuenow={done} aria-label={`${done} of ${steps.length} done`}>
@@ -38,7 +38,7 @@ export function StartChecklist({ steps }: { steps: GuideStep[] }) {
       </div>
       <p className="mt-2.5 text-xs leading-relaxed text-muted">{next.why}</p>
       <div className="mt-3 flex items-center gap-2">
-        <Link href={next.href} className="bg-text inline-flex h-9 flex-1 items-center justify-center gap-1.5 rounded-full text-sm font-semibold text-surface sm:hidden">
+        <Link href={next.href} className="bg-text inline-flex h-10 flex-1 items-center justify-center gap-1.5 rounded-lg text-sm font-semibold text-surface sm:hidden">
           Start <ArrowRight className="size-4" />
         </Link>
         <button type="button" onClick={() => setAll((v) => !v)} aria-expanded={all} className="inline-flex h-9 items-center gap-1 rounded-lg px-3 text-xs font-medium text-muted transition hover:bg-hover hover:text-text">

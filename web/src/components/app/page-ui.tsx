@@ -30,10 +30,11 @@ export function Panel({ className, children }: { className?: string; children: R
 }
 
 // An empty list (docs/design/app.md): on the drawing-sheet grid, it says what goes here and offers the
-// first action. Left-aligned, so it reads as a start, not a dead end. Ember waits beside it.
+// first action. Left-aligned, so it reads as a start, not a dead end. Torch waits beside it.
 export function EmptyState({ icon, title, body, action, mood = "idle" }: { icon?: React.ReactNode; title: string; body?: React.ReactNode; action?: React.ReactNode; mood?: EmberMood }) {
   return (
-    <div className="sheet-grid flex flex-col items-start gap-4 rounded-xl border border-dashed border-line-strong px-5 py-6 sm:flex-row sm:items-center sm:px-6">
+    // Clean glass (2026-11-26, the founders' call: no grid or dashed lines anywhere).
+    <div className="glass-card flex flex-col items-start gap-4 rounded-2xl px-5 py-6 sm:flex-row sm:items-center sm:px-6">
       <div className="relative shrink-0">
         <Ember size={52} mood={mood} />
         {icon && <span className="absolute -right-1.5 -bottom-1 grid size-6 place-items-center rounded-full border-2 border-surface-2 bg-text text-surface [&_svg]:size-3">{icon}</span>}
@@ -51,7 +52,9 @@ export function EmptyState({ icon, title, body, action, mood = "idle" }: { icon?
 export function Tabs({ tabs, active }: { tabs: { id: string; label: string; href: string; count?: number }[]; active: string }) {
   return (
     // Redesign 2026-11: underline tabs (Linear/Vercel style): a hairline row, the current tab marked in ink.
-    <TabRow active={active} className="no-scrollbar flex gap-5 overflow-x-auto border-b border-line">
+    // overflow-y-hidden: the row scrolls sideways only. Left to "auto" it could scroll a pixel down, and a
+    // mouse wheel over it then moved the row, not the page.
+    <TabRow active={active} className="no-scrollbar flex gap-5 overflow-x-auto overflow-y-hidden border-b border-line">
       {tabs.map((t) => (
         <Link
           key={t.id}

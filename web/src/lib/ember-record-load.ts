@@ -5,9 +5,9 @@ import { isGoalKind, type GoalKind } from "@/lib/goals";
 import { loadRecentWork } from "@/lib/recent-work-load";
 import type { createClient } from "@/lib/supabase/server";
 
-// Server only: a member's record for Ember (lib/ember-record.ts), read with the member's own client,
+// Server only: a member's record for Torch (lib/ember-record.ts), read with the member's own client,
 // so row-level security decides what is seen. It only reads. Every part fails soft: a table that
-// isn't there yet or a slow lookup leaves that part empty, and Ember still answers.
+// isn't there yet or a slow lookup leaves that part empty, and Torch still answers.
 
 type DB = Awaited<ReturnType<typeof createClient>>;
 const PROVEN = ["verified", "logged"];
@@ -15,7 +15,7 @@ const OPEN = ["draft", "pending"];
 
 /**
  * `withGitHub`: also count the member's merged pull requests that aren't on the record. That asks
- * GitHub, so it is for a page load (Ember's page), not for every question to Ember.
+ * GitHub, so it is for a page load (Torch's page), not for every question to Torch.
  */
 export async function loadEmberRecord(db: DB, userId: string, accountType: string | null | undefined, { withGitHub = false }: { withGitHub?: boolean } = {}): Promise<EmberRecord> {
   const student = accountType !== "professional";
@@ -28,7 +28,7 @@ export async function loadEmberRecord(db: DB, userId: string, accountType: strin
       f.milestones ? db.from("milestone_vouches").select("milestone_id, email, created_at").eq("state", "asked").gt("expires_at", new Date(now).toISOString()).order("created_at", { ascending: true }).limit(60) : Promise.resolve({ data: [] }),
       !student && f.linkedinRequired ? db.rpc("needs_linkedin") : Promise.resolve({ data: false }),
       // What they're working toward (supabase/goals.sql); null when they haven't set one, undefined if
-      // the table isn't there or the read failed (then Ember neither offers nor assumes a goal).
+      // the table isn't there or the read failed (then Torch neither offers nor assumes a goal).
       f.goals ? db.from("member_goals").select("kind, target").eq("uid", userId).eq("status", "active").order("created_at", { ascending: false }).limit(1) : Promise.resolve({ data: null, error: null }),
     ]);
     const mine = ((projects.data ?? []) as { id: string; title: string }[]);

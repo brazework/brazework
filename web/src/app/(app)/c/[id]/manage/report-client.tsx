@@ -39,7 +39,7 @@ export function ClubUpdate({ report, clubId, copilot }: { report: ClubReport; cl
           <h3 className="font-semibold">Write this week&apos;s update</h3>
           <p className="text-sm text-muted">A short post for the club from these numbers. You review it before it&apos;s posted.</p>
         </div>
-        {copilot && <button type="button" onClick={draft} disabled={ai.busy} className="bg-text inline-flex h-9 items-center gap-1.5 rounded-lg px-4 text-sm font-medium text-surface disabled:opacity-50"><Sparkles className="size-4" /> {ai.busy ? "Drafting…" : "Draft with Copilot"}</button>}
+        {copilot && <button type="button" onClick={draft} disabled={ai.busy} className="bg-text inline-flex h-9 items-center gap-1.5 rounded-lg px-4 text-sm font-medium text-surface disabled:opacity-50"><Sparkles className="size-4" /> {ai.busy ? "Drafting…" : "Draft with Torch"}</button>}
         <button type="button" onClick={() => { setText(""); setTools([]); setCards([{ id: `t${Date.now()}`, kind: "club_post", club_id: clubId, club_name: report.name, body: template(report), postKind: "update" }]); }} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-line px-4 text-sm text-text-2 hover:bg-hover"><FileText className="size-4" /> Quick template</button>
       </div>
       {(text || tools.length > 0) && <div className="mt-3 text-sm leading-relaxed whitespace-pre-wrap text-text-2"><Lookups tools={tools} live={ai.busy} /><Rich text={text} /></div>}
@@ -49,7 +49,7 @@ export function ClubUpdate({ report, clubId, copilot }: { report: ClubReport; cl
   );
 }
 
-// "Share with sponsors": a private link to the club's semester report (public information only).
+// "Semester report" (was "Share with sponsors"): a private link to the club's semester report (public information only).
 export function ShareReport({ clubId, token: initial }: { clubId: string; token: string | null }) {
   const [token, setToken] = useState(initial);
   const [msg, setMsg] = useState("");
@@ -57,11 +57,11 @@ export function ShareReport({ clubId, token: initial }: { clubId: string; token:
   const [pending, start] = useTransition();
   const url = token ? `${typeof window !== "undefined" ? window.location.origin : ""}/r/${token}` : "";
   return (
-    <div className="rounded-3xl border border-line bg-surface p-5 shadow-[var(--shadow)]">
+    <div id="report" className="scroll-mt-24 rounded-3xl border border-line bg-surface p-5 shadow-[var(--shadow)]">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <h3 className="font-semibold">Share with sponsors</h3>
-          <p className="mt-1 max-w-xl text-sm text-muted">A link to this semester&apos;s report: events and attendance, members&apos; club-verified work and challenge wins. Public information only; anyone with the link can open it, no account needed.</p>
+          <h3 className="font-semibold">Semester report</h3>
+          <p className="mt-1 max-w-xl text-sm text-muted">One link for your dean, your advisor or a sponsor: this semester&apos;s events and attendance, members&apos; club-verified work and challenge wins. Public information only; anyone with the link can open it, no account needed.</p>
         </div>
         {!token && (
           <button type="button" disabled={pending} onClick={() => start(async () => { const r = await shareClubReport(clubId); if (r.ok && r.token) setToken(r.token); else setMsg(r.message); })} className="inline-flex h-10 items-center gap-1.5 rounded-lg bg-accent px-4 text-sm font-medium text-on-accent disabled:opacity-50">

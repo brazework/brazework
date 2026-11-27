@@ -1,52 +1,168 @@
 "use client";
-import { useState } from "react";
+import { ArrowDown, ArrowRight } from "lucide-react";
+import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { Button } from "@/components/ui";
 import { cleanBuild, signupHref } from "@/lib/front-door";
-import { ProofStage } from "./proof-stage";
+import { cn } from "@/lib/forge";
+import { useReducedMotion } from "@/lib/use-reduced-motion";
+import { EverywhereView, RecruiterView, SchoolView, StudentView, VerifyView } from "./journey";
+import { EXAMPLES, type Example } from "./journey-data";
 
-// The hero: one line, one box, and the product happening beside it. Type what you're building and it
-// becomes the milestone in the demo (proof-stage.tsx), which a club officer then signs (the example;
-// the line under the heading names the others who can: a manager, a mentor). The button
-// carries the line into sign-up (?build=, lib/front-door.ts), where it's waiting as your first build.
+// The hero (landing journey; Brazework Courses since 2026-11-26, docs/strategy.md; for students and
+// professionals alike since the page was tied together the same day): the product
+// window. One project followed through five views: the student submits the milestone to its
+// assignment (or logs it under a club), the professor grades it against the rubric and verifies it in
+// one step (a club officer verifies), the school's dashboard counts it, a recruiter finds it, and it
+// goes everywhere the student does. What the visitor types is the milestone in all five, and the button carries it into
+// sign-up (?build=, lib/front-door.ts).
+//
+// The views are tabs to click, and on a laptop the hero also pins and plays them as you scroll
+// (globals.css .hero-run; RUN below is the same query). On a phone, a short screen or with reduced
+// motion it doesn't pin: the views are just tabs, and nothing plays by itself.
+// Examples throughout. Courses, grading and the gradebook are live (#254); each view's note says what
+// is example data and what is still coming (Torch's feedback drafts).
+// It follows the visitor's theme: drafting paper in light, the lab at night in dark (globals.css).
+
+const RUN = "(min-width: 1024px) and (min-height: 700px) and (prefers-reduced-motion: no-preference)";
+const subscribe = (f: () => void) => { const m = matchMedia(RUN); m.addEventListener("change", f); return () => m.removeEventListener("change", f); };
+const usePinned = () => useSyncExternalStore(subscribe, () => matchMedia(RUN).matches, () => false);
+
+const VIEWS = [
+  { id: "student", tab: "Student", say: "The student hands in the milestone for the assignment, with the file that proves it.", note: "Example project" },
+  { id: "verify", tab: "Professor", say: "The professor grades it with the rubric, and the same click verifies it. Only the student and the course's faculty see the grade.", note: "Example · Torch's feedback draft is coming soon" },
+  { id: "school", tab: "School", say: "The school counts it the moment it's verified, and exports the evidence for accreditation.", note: "Example data" },
+  { id: "recruiter", tab: "Recruiter", say: "Recruiters search by verified work and see who vouched for it. The student sees who looked.", note: "Illustration · example data" },
+  { id: "everywhere", tab: "Everywhere", say: "The verified work goes where the student does: LinkedIn, the résumé, any application.", note: "Example · Add to LinkedIn, the verify link and the résumé work today" },
+] as const;
+
 export function Hero() {
   const [typed, setTyped] = useState("");
-  // What they typed, tidied; "" until it's long enough to be a build.
+  const [pick, setPick] = useState<Example["id"]>("arm");
+  const [view, setView] = useState(0);
+  const [verified, setVerified] = useState(false);
+  const still = useReducedMotion();
+  const pinned = usePinned();
+  const run = useRef<HTMLElement>(null);
+  const quietUntil = useRef(0);
+  // The progress line under the tabs: written straight to the element on scroll (no re-render), so it
+  // follows the page continuously while the view changes only at each stretch.
+  const line = useRef<HTMLSpanElement>(null);
+  const ex = EXAMPLES.find((e) => e.id === pick)!;
   const build = cleanBuild(typed);
-  return (
-    <section id="top" className="relative isolate overflow-hidden pt-28 pb-16 sm:pt-32 sm:pb-24">
-      <div aria-hidden="true" className="landing-grid absolute inset-0 -z-10" />
-      <div className="mx-auto grid max-w-6xl grid-cols-1 items-center gap-12 px-5 sm:px-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,30rem)] lg:gap-16">
-        <div className="min-w-0">
-          <h1 className="text-[clamp(2.9rem,7vw,5.25rem)] leading-[0.95] font-semibold tracking-[-0.05em]">
-            Prove what
-            <br />
-            you built.
-          </h1>
-          <p className="mt-6 max-w-[34rem] text-lg leading-relaxed text-muted sm:text-xl sm:leading-relaxed">
-            For students and working professionals: a record of your work, signed by the people who saw it. Log what you finished, ask your professor, your club or your manager to sign, and it stays yours wherever you go next.
-          </p>
+  const title = build || ex.milestone;
+  const tabs = VIEWS.map((v) => (v.id === "verify" && ex.kind === "club" ? { ...v, tab: "Club officer" } : v));
 
-          <div className="mt-9 max-w-[34rem]">
-            <label htmlFor="hero-build" className="text-sm font-medium">What are you building?</label>
-            <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
-              <input id="hero-build" value={typed} onChange={(e) => setTyped(e.target.value)} maxLength={300} autoComplete="off" enterKeyHint="go"
-                onKeyDown={(e) => { if (e.key === "Enter" && build) window.location.assign(signupHref("", build)); }}
-                placeholder="A line-following robot"
-                aria-describedby="hero-build-hint" aria-controls="hero-preview"
-                className="h-12 w-full min-w-0 shrink-0 rounded-xl border border-line-strong bg-surface px-4 text-[16px] transition outline-none placeholder:text-faint focus:border-text focus:shadow-[0_0_0_4px_color-mix(in_oklab,var(--text)_9%,transparent)]" />
-              <Button href={signupHref("", typed)} size="lg" className="h-12 shrink-0 rounded-xl px-5">{build ? "Start with this build" : "Create your free account"}</Button>
+  // Pinned: where the page is in the hero's scroll run picks the view, five equal stretches.
+  useEffect(() => {
+    if (!pinned) return;
+    let frame = 0;
+    const read = () => {
+      frame = 0;
+      const el = run.current;
+      if (!el) return;
+      const length = el.offsetHeight - innerHeight;
+      const p = length > 0 ? Math.min(1, Math.max(0, -el.getBoundingClientRect().top / length)) : 0;
+      if (line.current) line.current.style.transform = `scaleX(${Math.max(0.2, p)})`;
+      if (performance.now() < quietUntil.current) return;
+      setView(Math.min(VIEWS.length - 1, Math.floor(p * VIEWS.length)));
+    };
+    const onScroll = () => { if (!frame) frame = requestAnimationFrame(read); };
+    // A click's smooth scroll is over when the browser says so (slow machines take longer than the
+    // fallback below): from then on the page's position picks the view again.
+    const onEnd = () => { quietUntil.current = 0; onScroll(); };
+    read();
+    addEventListener("scroll", onScroll, { passive: true });
+    addEventListener("scrollend", onEnd);
+    addEventListener("resize", onScroll);
+    return () => { cancelAnimationFrame(frame); removeEventListener("scroll", onScroll); removeEventListener("scrollend", onEnd); removeEventListener("resize", onScroll); };
+  }, [pinned]);
+
+  // Clicking a view: show it, and when pinned, scroll to its stretch so the page and the view agree.
+  const go = useCallback((k: number) => {
+    setView(k);
+    const el = run.current;
+    if (!pinned || !el) return;
+    const length = el.offsetHeight - innerHeight;
+    const top = el.getBoundingClientRect().top + scrollY;
+    // Quiet until the smooth scroll ends (scrollend, above), at most 2 s where that event isn't sent.
+    quietUntil.current = performance.now() + 2000;
+    scrollTo({ top: top + (length * (k + 0.5)) / VIEWS.length, behavior: "smooth" });
+  }, [pinned]);
+  const choose = (id: Example["id"]) => { setPick(id); setVerified(false); };
+  const verify = useCallback(() => setVerified(true), []);
+  const onKeyTabs = (e: React.KeyboardEvent) => {
+    const d = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0;
+    if (!d) return;
+    e.preventDefault();
+    const k = (view + d + VIEWS.length) % VIEWS.length;
+    go(k);
+    document.getElementById(`hero-tab-${VIEWS[k].id}`)?.focus();
+  };
+
+  const props = (k: number) => ({ ex, title, on: view === k, still, next: () => go(k + 1) });
+
+  return (
+    <section id="top" ref={run} aria-labelledby="hero-h" className="hero-run relative isolate overflow-clip bg-bg text-text">
+      <div className="hero-pin relative isolate flex flex-col justify-center pt-24 pb-12 sm:pt-28 lg:pt-20 lg:pb-6">
+        <div aria-hidden="true" className="hero-glow pointer-events-none absolute inset-0 -z-10" />
+        <div className="mx-auto grid w-full max-w-6xl grid-cols-1 items-center gap-10 px-5 sm:px-6 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:gap-12">
+          <div className="min-w-0">
+            <p className="inline-flex items-center gap-2 rounded-full border border-line bg-surface/60 px-3 py-1 text-xs text-text-2"><span aria-hidden="true" className="size-1.5 rounded-full bg-brand" /> New: Brazework Courses</p>
+            <h1 id="hero-h" className="mt-5 text-[clamp(2.75rem,6.2vw,4.75rem)] leading-[0.95] font-semibold tracking-[-0.05em]">Build it.<br />Prove it.<br /><span className="text-brand">Own it.</span></h1>
+            <p className="mt-5 max-w-[31rem] text-lg leading-relaxed text-muted">A record of the work you&apos;ve really done, each piece signed by the person who saw it: your professor, your club or your coworker. Free for students and professionals. Schools run their project courses on it.</p>
+
+            <div className="mt-8 max-w-[30rem]">
+              <label htmlFor="hero-build" className="text-sm font-medium text-text-2">What did you build?</label>
+              <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
+                <input id="hero-build" value={typed} maxLength={300} autoComplete="off" enterKeyHint="go"
+                  onChange={(e) => { setTyped(e.target.value); setVerified(false); if (view !== 0) go(0); }}
+                  onKeyDown={(e) => { if (e.key === "Enter" && build) window.location.assign(signupHref("", build)); }}
+                  placeholder={ex.milestone} aria-describedby="hero-build-hint" aria-controls="hero-card"
+                  className="h-12 w-full min-w-0 rounded-xl border border-line-strong bg-surface px-4 text-[16px] transition outline-none placeholder:text-faint focus:border-text focus:shadow-[0_0_0_4px_color-mix(in_oklab,var(--text)_12%,transparent)]" />
+                <Button href={signupHref("", typed)} size="lg" className="h-12 shrink-0 rounded-xl px-5">Get it verified <ArrowRight className="size-4" /></Button>
+              </div>
+              <p id="hero-build-hint" className="mt-2.5 text-sm text-faint">Type it, then follow it from you to the person who signs it, and everywhere it goes.</p>
             </div>
-            <p id="hero-build-hint" className="mt-2.5 text-sm text-faint">{build ? "That's your first milestone. Take it with you." : "Type what you built and watch it get signed."} Free for everyone who builds.</p>
+            <p aria-hidden="true" className="hero-scroll-hint mt-10 hidden items-center gap-2 font-mono text-xs text-faint"><ArrowDown className="size-3.5" /> Scroll to follow it from log to LinkedIn</p>
           </div>
 
-          <p className="mt-9 text-sm text-muted">
-            Running a club? <a href="#clubs" className="font-medium text-text underline decoration-line-strong underline-offset-4 hover:decoration-text">See what officers get</a>
-            <span className="mx-2 text-line-strong" aria-hidden="true">|</span>
-            Hiring? <a href="#companies" className="font-medium text-text underline decoration-line-strong underline-offset-4 hover:decoration-text">Search signed work</a>
-          </p>
+          {/* The product window: five views of one project, the same size, so nothing moves. */}
+          <div className="min-w-0">
+            <div className="hero-window overflow-hidden rounded-2xl border border-line bg-surface">
+              <div role="tablist" aria-label="Follow one project" onKeyDown={onKeyTabs} className="relative grid grid-cols-5 border-b border-line">
+                {tabs.map((v, k) => (
+                  <button key={v.id} id={`hero-tab-${v.id}`} type="button" role="tab" aria-selected={view === k} aria-controls={`hero-view-${v.id}`} tabIndex={view === k ? 0 : -1} onClick={() => go(k)}
+                    className={cn("relative flex min-w-0 flex-col items-center gap-0.5 px-0.5 py-2 text-[11px] leading-tight transition-colors max-[380px]:text-[10px] max-[380px]:tracking-tight sm:flex-row sm:justify-center sm:gap-1.5 sm:text-[13px]", view === k ? "font-medium text-text" : "text-muted hover:text-text")}>
+                    <span aria-hidden="true" className={cn("grid size-5 shrink-0 place-items-center rounded-full border font-mono text-[10px] transition-colors", view === k ? "border-brand bg-brand text-bg" : k < view ? "border-text-2 text-text-2" : "border-line-strong")}>{k + 1}</span>
+                    <span className="max-w-full truncate">{v.tab}</span>
+                  </button>
+                ))}
+                <span ref={line} aria-hidden="true" className={cn("absolute right-0 bottom-[-1px] left-0 h-0.5 origin-left bg-brand will-change-transform", !pinned && "transition-transform duration-500 ease-out")} style={pinned ? undefined : { transform: `scaleX(${(view + 1) / VIEWS.length})` }} />
+              </div>
+              <div className="hero-body relative">
+                {tabs.map((v, k) => (
+                  <div key={v.id} id={`hero-view-${v.id}`} role="tabpanel" aria-labelledby={`hero-tab-${v.id}`} inert={view !== k}
+                    className={cn("absolute inset-0 transition-[opacity,translate,visibility] duration-[420ms] ease-[cubic-bezier(0.2,0.8,0.2,1)] motion-reduce:transition-none", view === k ? "visible translate-y-0 opacity-100" : "invisible translate-y-1.5 opacity-0")}>
+                    {k === 0 && <StudentView {...props(0)} pick={pick} choose={choose} />}
+                    {k === 1 && <VerifyView key={ex.id} {...props(1)} verified={verified} verify={verify} />}
+                    {k === 2 && <SchoolView key={ex.id} {...props(2)} />}
+                    {k === 3 && <RecruiterView key={ex.id} {...props(3)} />}
+                    {k === 4 && <EverywhereView key={ex.id} {...props(4)} />}
+                  </div>
+                ))}
+              </div>
+              <div className="flex h-24 items-center gap-3 border-t border-line px-4 sm:h-[4.25rem] sm:px-5">
+                <p className="min-w-0 flex-1 text-[13px] leading-snug text-text-2"><span className="line-clamp-3 sm:line-clamp-2">{VIEWS[view].say}</span><span className="mt-0.5 block truncate font-mono text-[10px] text-faint">{VIEWS[view].note}</span></p>
+                {view < VIEWS.length - 1 ? (
+                  <button type="button" onClick={() => go(view + 1)} className="inline-flex h-8 shrink-0 items-center gap-1 rounded-lg border border-line-strong px-2.5 text-xs font-medium transition hover:bg-hover">Next <ArrowRight className="size-3.5" aria-hidden="true" /></button>
+                ) : (
+                  <Button href={signupHref("", typed)} size="md" className="h-8 shrink-0 rounded-lg px-3 text-xs">Start yours</Button>
+                )}
+              </div>
+            </div>
+            <p className="mt-3 text-xs text-faint">Example projects and people. Courses, grading and the gradebook work today; the school and recruiter views use example data.</p>
+          </div>
         </div>
-
-        <ProofStage build={build} />
       </div>
     </section>
   );

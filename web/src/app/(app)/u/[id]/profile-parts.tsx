@@ -51,9 +51,9 @@ export type ProofItem = { id: string; title: string; detail: string; achieved_on
 export function ProofTimeline({ items, own, led = [] }: { items: ProofItem[]; own: boolean; led?: StudyProof[] }) {
   if (!items.length && !led.length)
     return own ? (
-      <section className="rounded-2xl border border-dashed border-line-strong p-5">
+      <section className="glass-card rounded-2xl p-5">
         <h2 className="flex items-center gap-2 font-semibold"><BadgeCheck className="size-4" /> Proof</h2>
-        <p className="mt-1 text-sm text-muted">Hit a milestone on a project? Ask someone who saw it to sign it (your club, a professor, a manager), and it shows here with their name on it.</p>
+        <p className="mt-1 text-sm text-muted">Hit a milestone on a project? Ask someone who saw it to sign it (your club, a professor, a coworker), and it shows here with their name on it.</p>
         <a href="#projects" className="mt-3 inline-flex items-center gap-1 text-sm font-medium hover:underline">Open your projects <ArrowRight className="size-3.5" /></a>
       </section>
     ) : null;
@@ -100,7 +100,8 @@ function ProofRow({ m, day }: { m: ProofItem; day: (d: string) => string }) {
     <li className="relative flex gap-3">
       {m.community_id ? <CommunityBadge id={m.community_id} name={m.community_name} size={32} className="relative shrink-0 rounded-full ring-4 ring-surface" /> : <span className="relative grid size-8 shrink-0 place-items-center rounded-full bg-surface-2 ring-4 ring-surface"><Seal size={18} /></span>}
       <div className="min-w-0">
-        <p className="font-medium leading-snug">{m.title}</p>
+        {/* Opens the project's log below and scrolls to it (FIX-240). */}
+        <p className="font-medium leading-snug"><a href={`#milestone-${m.id}`} className="hover:underline">{m.title}</a></p>
         {m.pro?.map((r) => <ProStamp key={r.name + r.at} name={r.name} title={r.title} employer={r.employer} note={r.note} className="mt-1.5" />)}
         <p className="mt-1">{m.vouched_by ? <VouchStamp by={m.vouched_by} when={day(m.achieved_on)} /> : <VerifiedStamp club={m.community_name} clubId={m.community_id ?? undefined} by={m.reviewer_name} when={day(m.achieved_on)} size="sm" />}</p>
         <p className="mt-1 text-xs text-muted">On <Link href={`/projects/${m.project.id}`} className="hover:text-text hover:underline">{m.project.title}</Link></p>

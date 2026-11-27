@@ -2,6 +2,7 @@
 
 ## Start here
 
+- [today.md](today.md): **Brazework today (26 Nov).** What it is, everything that's live, who pays, how it runs, and what's next, on one page. Start here.
 - [overview.md](overview.md): **Brazework in plain language.** What it is, how it works, how we know it's working, where everything lives. For anyone.
 - [architecture.md](architecture.md): **the technical version.** System diagram, tech stack, code map, security model, environments, delivery. For engineers.
 - [plan.md](plan.md): what's built, phase by phase (✅ / 🟡 / ⬜), and the decisions behind it.
@@ -19,7 +20,10 @@
 
 ## Running it
 
-- [launch.md](launch.md): **the launch runbook for Sunday, November 22.** What's live, what only a founder can do, the days before and after, go/no-go checks, rollback, and every launch link in one list.
+- [operating.md](operating.md): **running the company week to week.** Shipping, testing the school side, demos and the Reel, the weekly rhythm, and what to watch.
+- [team-playbook.md](team-playbook.md): **how the AI engineering team ships.** Intake, Rivet, Temper, and Kiln, what an agent may auto-merge, two at a time, done, and the weekly ship log.
+- [demo-university.md](demo-university.md): a whole demo school (dean, professor, students, a capstone course) for sales calls, locally today and hosted once there's a domain.
+- [launch.md](launch.md): the launch runbook for Sunday, November 22 (past; kept for the checklists). What's live, what only a founder can do, the days before and after, go/no-go checks, rollback, and every launch link in one list.
 - [product-hunt.md](product-hunt.md): the Product Hunt launch kit (tagline, first comment, gallery, demo script, answers, launch-day checklist).
 - [explainer/](explainer/): the launch pages behind the videos and posts (test script, social plan, explainers) and the social account kit ([explainer/social/](explainer/social/)).
 - [next-migration.md](next-migration.md): every database step with a one-line description. The order itself is [`supabase/order.txt`](../supabase/order.txt).
@@ -34,4 +38,5 @@
 
 ## History
 
+- [history.md](history.md): how Brazework got here, week by week from 7 to 26 November, and the decisions that shaped it.
 - [current-state.md](current-state.md): the codebase map from 2026-11-09, before the nine-phase build. Kept for reference; plan.md is current.

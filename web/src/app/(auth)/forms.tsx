@@ -211,7 +211,7 @@ export function SignupForm({ invite, clubName, providers = [], oauth, build }: {
       )}
       {oauthMessage(oauth) && <Notice tone="danger">{oauthMessage(oauth)}</Notice>}
       <ProviderButtons providers={providers} from="signup" invite={invite} />
-      <Field label="Email" hint="Student? Use your university email: it's how we know you're at your school.">
+      <Field label="Email" hint="Use a personal, work, or school email.">
         <input name="email" type="email" autoComplete="email" className={inputCls} required />
       </Field>
       <Field label="Password" hint="At least 8 characters. Longer, with a mix of letters and numbers, is stronger."><PasswordInput name="password" autoComplete="new-password" meter /></Field>

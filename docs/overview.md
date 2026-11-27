@@ -4,7 +4,7 @@ For anyone: co-founders, advisors, investors, a new teammate. No technical backg
 
 ## What it is
 
-**Brazework is the record of your work, signed by the people who saw it.** It is for anyone who builds, studying or working, and it launches in university clubs. A member posts their project. Someone who saw the work happen puts their name on it ("verified"): their club's officers, or a manager or mentor asked by email. Companies looking for builders find people through that verified work, not through résumés anyone can write.
+**Brazework is the record of your work, signed by the people who saw it.** It is for anyone who builds, studying or working, and it launches in university clubs. A member posts their project. Someone who saw the work happen puts their name on it ("verified"): their club's officers, or a coworker or mentor asked by email. Companies looking for builders find people through that verified work, not through résumés anyone can write.
 
 Three kinds of people use it:
 

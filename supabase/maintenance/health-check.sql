@@ -89,7 +89,26 @@ from (values
   (89, 'school-link-email', to_regprocedure('public.school_link_email_ready()') is not null),
   (90, 'milestone-late-evidence', to_regprocedure('public.milestone_late_evidence_ready()') is not null),
   (91, 'founding-members', to_regprocedure('public.founding_members_ready()') is not null),
-  (92, 'playbook-lanes',          to_regprocedure('public.playbook_lanes_ready()') is not null)
+  (92, 'launch-metrics', to_regprocedure('public.launch_metrics_ready()') is not null),
+  (93, 'ember-allowances', to_regprocedure('public.ember_allowances_ready()') is not null),
+  (94, 'ember-credits', to_regprocedure('public.ember_take(text)') is not null),
+  (95, 'club-deletion', to_regprocedure('public.club_deletion_ready()') is not null),
+  (96, 'linkedin-public', to_regprocedure('public.linkedin_public_ready()') is not null),
+  (97, 'student-plus-email', to_regprocedure('public.student_plus_eligible()') is not null),
+  (98, 'post-files-only', to_regprocedure('public.post_files_only_ready()') is not null),
+  (99, 'owner-club-deletion', to_regprocedure('public.owner_club_deletion_ready()') is not null),
+  (100, 'chat-delete', to_regprocedure('public.chat_delete_ready()') is not null),
+  (101, 'project-files-view-only', to_regprocedure('public.project_files_view_only_ready()') is not null),
+  (102, 'post-files', to_regprocedure('public.post_files_ready()') is not null),
+  (103, 'group-chat-controls', to_regprocedure('public.group_chat_controls_ready()') is not null),
+  (104, 'club-projects', to_regprocedure('public.club_projects_ready()') is not null),
+  (105, 'school-portal', to_regprocedure('public.school_portal_ready()') is not null),
+  (106, 'courses', to_regprocedure('public.courses_ready()') is not null),
+  (107, 'ember-follow', to_regprocedure('public.ember_follow_ready()') is not null),
+  (108, 'courses-b', to_regprocedure('public.courses_b_ready()') is not null),
+  (109, 'ember-card-counts', to_regprocedure('public.ember_card_counts_ready()') is not null),
+  (110, 'function-access', to_regprocedure('public.function_access_ready()') is not null),
+  (111, 'playbook-lanes', to_regprocedure('public.playbook_lanes_ready()') is not null)
 ) as s(step, file, present)
 order by step;
 

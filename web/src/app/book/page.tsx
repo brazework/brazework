@@ -8,7 +8,7 @@ import { SALES, SALES_KINDS, type SalesKind } from "@/lib/pricing";
 import { getViewer } from "@/lib/supabase/server";
 import { BookForm } from "./book-form";
 
-export const metadata: Metadata = { title: "Book a pilot", description: "Search seats, chapter sponsorships, challenges and school demos, set up with the founders." };
+export const metadata: Metadata = { title: "Book a pilot", description: "School pilots, search seats, chapter sponsorships and challenges, set up with the founders." };
 
 // /book?kind=talent|chapter|challenge|school|plus[&club=<id>]: a request for the founders, from the
 // pricing cards, a club's "Sponsor this chapter" and Find builders. Signed in, so it carries the
@@ -40,7 +40,7 @@ async function Book({ searchParams }: { searchParams: PageProps<"/book">["search
   const { data: c } = club && user ? await supabase.from("communities").select("name").eq("id", club).maybeSingle() : { data: null };
   return (
     <>
-      <h1 className="text-[clamp(2rem,5vw,2.75rem)] leading-[1.05] font-semibold tracking-[-0.03em]">{kind === "school" ? "Book a demo" : kind === "plus" ? "Plus waitlist" : kind === "chapter" ? "Sponsor a chapter" : "Book a pilot"}</h1>
+      <h1 className="text-[clamp(2rem,5vw,2.75rem)] leading-[1.05] font-semibold tracking-[-0.03em]">{kind === "school" ? "Start a pilot" : kind === "plus" ? "Plus waitlist" : kind === "chapter" ? "Sponsor a chapter" : "Book a pilot"}</h1>
       <p className="mt-3 text-[15px] leading-relaxed text-muted">Tell us what you&apos;d like. The founders reply within a day and set it up with you.</p>
       <div className="mt-8">
         {user ? (

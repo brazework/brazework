@@ -5,7 +5,7 @@
 
 export const GOAL_KINDS = {
   internship: { label: "Internship", title: "a summer internship", target: 3, signers: "your club or a mentor", looking: "companies hiring interns" },
-  job: { label: "Next job", title: "your next full-time role", target: 4, signers: "a manager or your club", looking: "hiring teams" },
+  job: { label: "Next job", title: "your next full-time role", target: 4, signers: "a coworker or your club", looking: "hiring teams" },
   grad: { label: "Grad school", title: "grad school", target: 2, signers: "a professor or PI", looking: "grad programs" },
   research: { label: "Research lab", title: "a spot in a research lab", target: 2, signers: "the PI or a TA", looking: "labs" },
   competition: { label: "Competition", title: "a competition win", target: 6, signers: "your club's officers", looking: "sponsors" },
@@ -52,4 +52,82 @@ export function nextStep(g: Pick<Goal, "kind" | "target">, r: Record_): Next {
   }
   if (r.looked === 0) return { text: `Your record is ready. Send your page to ${k.looking} you'd like to work with; it's the link that replaces a résumé.`, href: "share", action: "Copy your link" };
   return { text: `${r.looked} ${r.looked === 1 ? "person" : "people"} looked this month. Keep the log going weekly and answer your Requests.`, href: "/messages", action: "Open Requests" };
+}
+
+// The goal setup (components/app/goal-card.tsx, Nov 26): each goal says what it means in one line, offers
+// a few fields it could be in (each reads after "in": "a summer internship in robotics"), and, when it's
+// visible, which "Open to" it adds to the profile (supabase/goals.sql, goal_open_to).
+export const GOAL_HELP: Record<GoalKind, { line: string; examples: string[]; openTo?: string }> = {
+  internship: { line: "A summer or term role while you study", examples: ["power electronics", "robotics", "embedded systems"], openTo: "internships" },
+  job: { line: "A full-time role, first or next", examples: ["backend engineering", "mechanical design", "data science"], openTo: "full-time roles" },
+  grad: { line: "A master's, PhD or professional program", examples: ["robotics", "materials science", "bioengineering"] },
+  research: { line: "A place in a lab, with a PI who can sign your work", examples: ["applied ML", "battery materials", "CRISPR"], openTo: "research" },
+  competition: { line: "Placing at a competition with your team", examples: ["Formula SAE", "robotics", "rocketry"] },
+  funding: { line: "A grant, prize or investment for what you build", examples: ["climate hardware", "medical devices", "open-source tools"] },
+};
+
+/** The goals in the order that fits a student or someone who already works, with the label that fits them. */
+export function goalChoices(type: "student" | "professional" | null | undefined): { kind: GoalKind; label: string }[] {
+  const order: GoalKind[] = type === "professional"
+    ? ["job", "funding", "grad", "research", "competition", "internship"]
+    : ["internship", "job", "research", "grad", "competition", "funding"];
+  const label = (k: GoalKind) => (k === "job" ? (type === "professional" ? "Next role" : "First job") : GOAL_KINDS[k].label);
+  return order.map((kind) => ({ kind, label: label(kind) }));
+}
+
+// Sign-up asks where you're headed (Josh, 22 Nov: the app is set up around your field and your goal),
+// on "About you" (app/onboarding/finish-signup-form.tsx). The goals that fit a student or someone who
+// already works, most likely first, each with an example of what it's in. Optional: skipping it is fine.
+export type SignupGoal = { kind: GoalKind; label: string; example: string };
+export function signupGoals(type: "student" | "professional"): SignupGoal[] {
+  return type === "student"
+    ? [
+        { kind: "internship", label: "An internship", example: "power electronics" },
+        { kind: "job", label: "My first job", example: "backend engineering" },
+        { kind: "grad", label: "Grad school", example: "a robotics PhD" },
+        { kind: "research", label: "A research lab", example: "a materials lab" },
+        { kind: "competition", label: "A competition", example: "Formula SAE" },
+      ]
+    : [
+        { kind: "job", label: "My next role", example: "staff engineer" },
+        { kind: "funding", label: "Funding", example: "a climate hardware startup" },
+        { kind: "grad", label: "Grad school", example: "an MBA" },
+        { kind: "research", label: "A research lab", example: "applied ML" },
+      ];
+}
+
+/** A goal from the sign-up form, or null when none was picked or it doesn't fit (the form never blocks on it). */
+export function signupGoalFrom(kind: unknown, target: unknown, type: "student" | "professional"): { kind: GoalKind; target: string } | null {
+  if (!isGoalKind(kind) || !signupGoals(type).some((g) => g.kind === kind)) return null;
+  const t = typeof target === "string" ? target.replace(/\s+/g, " ").trim() : "";
+  return { kind, target: t.length <= 80 && !/[<>]/.test(t) ? t : "" };
+}
+
+// Torch does the next step (Josh, 26 Nov: "integrate with Torch to actually do it"). Each is what the
+// goal card sends to the Ask Torch bar (lib/ember-bar.ts askTorch): plain words a member could have
+// typed, specific to where they are on the path, ending in cards they approve. Torch's own rules still
+// hold: it drafts, the member confirms, and it never invents work or signatures.
+export type TorchAsk = { label: string; prompt: string };
+
+/** The one next step, done with Torch. */
+export function torchNext(g: Pick<Goal, "kind" | "target">, r: Record_): TorchAsk {
+  const k = GOAL_KINDS[g.kind], title = goalTitle(g);
+  if (r.projects === 0) return { label: "Add it with Torch", prompt: `I'm working toward ${title}. Help me put the project I'm building on my record: ask me what it is and what it's built with, then draft it as a project for me to approve.` };
+  if (r.waiting > 0) return { label: "Nudge them with Torch", prompt: `I'm working toward ${title}. ${r.waiting === 1 ? "One of my milestones is" : `${r.waiting} of my milestones are`} still waiting to be signed. Look at what's waiting and draft a short, friendly nudge to whoever can sign each one.` };
+  if (r.signed < k.target) return { label: "Find my next milestone", prompt: `I'm working toward ${title}. Look at my projects and recent work and suggest the next result worth getting signed. Draft it as a milestone, and tell me who should sign it (${k.signers}).` };
+  if (r.looked === 0) return { label: "Find who to send it to", prompt: `I'm working toward ${title}, and my record has ${r.signed} signed results. Find ${k.looking}${g.target ? ` in ${g.target}` : ""} on Brazework worth sending my record to, and draft a short message to the best one.` };
+  return { label: "What should I do next?", prompt: `I'm working toward ${title}. ${r.looked} ${r.looked === 1 ? "person" : "people"} looked at my record this month. What's the best thing I can do this week? Draft it if it's something you can prepare.` };
+}
+
+/** A plan for the week, from the record. */
+export const torchWeek = (g: Pick<Goal, "kind" | "target">): TorchAsk => ({
+  label: "Plan my week",
+  prompt: `Plan my week toward ${goalTitle(g)}: three concrete things, from what's on my record, most important first. Prepare whatever you can as cards for me to approve.`,
+});
+
+/** A goal in the member's own words: Torch drafts it as a goal card. Null when there's nothing to send. */
+export function torchGoalFrom(words: string): TorchAsk | null {
+  const w = words.replace(/\s+/g, " ").trim().slice(0, 200);
+  if (w.length < 3) return null;
+  return { label: "Ask Torch", prompt: `Here's where I'm headed: "${w}". Turn it into my goal on Brazework and draft it as a goal card for me to approve, then tell me the first step from what's on my record.` };
 }

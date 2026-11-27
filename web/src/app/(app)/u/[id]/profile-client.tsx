@@ -1,18 +1,22 @@
 "use client";
+import { emberCreditCost } from "@/lib/ember-credits";
 import { AnimatePresence, motion } from "motion/react";
-import { BadgeCheck, CheckCircle2, ExternalLink, GitBranch, Loader2, Lock, Pencil, Plus, Share2, Sparkles, Trash2, X } from "lucide-react";
+import { BadgeCheck, CheckCircle2, ExternalLink, Loader2, Lock, Pencil, Plus, Share2, Sparkles, Trash2, X, Link as LinkIcon } from "lucide-react";
 import Link from "next/link";
 import { useCopilot } from "@/components/copilot/use-copilot";
 import { importFromGitHub } from "@/lib/connectors/actions";
 import type { ProjectDraft } from "@/lib/connectors/github";
 import { StackPicker } from "@/components/projects/stack-picker";
-import { AddMilestone, MilestoneTimeline, type Club, type Milestone } from "./milestones";
+import { AddMilestone, MilestoneLog, type Club, type Milestone } from "./milestones";
+import { cleanLink, workSource, type WorkSource } from "@/lib/work-link";
 import { useActionState, useEffect, useRef, useState, useTransition } from "react";
 import { chipCls } from "@/components/app/page-ui";
 import { Button, Field, inputCls } from "@/components/ui";
 import { ALL_TOPICS, cn, timeAgo } from "@/lib/forge";
 import { deleteProject, saveProject, setProjectPrivate, shareProject, updateProfileBasics, type ProjectState } from "@/lib/projects";
 import { submitWithoutReset } from "@/lib/submit";
+import { askTorch } from "@/lib/ember-bar";
+import { LAST_STEP, PROJECT_STEPS, nextStep, prevStep, topicChips, torchProjectAsk, type ProjectStart } from "@/lib/project-steps";
 
 export type ProjectView = {
   id: string;
@@ -28,45 +32,71 @@ export type ProjectView = {
   milestones?: Milestone[];
   tools?: string[];
   specs?: { label: string; value: string }[];
+  // A club project (supabase/club-projects.sql): the club it belongs to, shown as "with <club>".
+  club?: { id: string; name: string } | null;
+  // False where the viewer builds on it but doesn't run it (a teammate on a club project).
+  canEdit?: boolean;
 };
 
 const initial: ProjectState = { ok: false, message: "" };
 
-export function EditBasics({ headline, bio }: { headline: string; bio: string }) {
-  const [editing, setEditing] = useState(false);
-  const [state, action, pending] = useActionState(updateProfileBasics, initial);
-  const [seen, setSeen] = useState(state);
-  if (state !== seen) {
-    setSeen(state);
-    if (state.ok) setEditing(false);
-  }
+export function EditProfile({ headline, bio }: { headline: string; bio: string }) {
+  const dialog = useRef<HTMLDialogElement>(null);
+  const [saved, setSaved] = useState(false);
+  const [state, action, pending] = useActionState(async (previous: ProjectState, form: FormData) => {
+    const result = await updateProfileBasics(previous, form);
+    if (result.ok) {
+      setSaved(true);
+      dialog.current?.close();
+    }
+    return result;
+  }, initial);
 
-  if (!editing)
-    return (
-      <div className="mt-5">
-        {bio ? <p className="text-[15px] leading-relaxed whitespace-pre-wrap text-text-2">{bio}</p> : <p className="text-sm text-faint">Add a short bio so people know what you work on.</p>}
-        <button onClick={() => setEditing(true)} className="mt-3 inline-flex items-center gap-1.5 text-sm text-muted transition hover:text-text">
-          <Pencil className="size-3.5" /> Edit headline and bio
-        </button>
-      </div>
-    );
   return (
-    <form onSubmit={submitWithoutReset(action)} className="mt-5 flex flex-col gap-4">
-      <Field label="Headline"><input name="headline" defaultValue={headline} maxLength={200} className={inputCls} /></Field>
-      <Field label="Bio"><textarea name="bio" defaultValue={bio} maxLength={2000} rows={5} className={cn(inputCls, "h-auto resize-y py-3 leading-relaxed")} /></Field>
-      {state.message && !state.ok && <p role="alert" className="text-sm text-danger">{state.message}</p>}
-      <div className="flex gap-2">
-        <Button type="submit" disabled={pending}>{pending && <Loader2 className="size-4 animate-spin" />} Save</Button>
-        <Button type="button" variant="ghost" onClick={() => setEditing(false)}>Cancel</Button>
-      </div>
-    </form>
+    <>
+      <button id="edit-profile" type="button" disabled={pending} onClick={() => {
+        const element = dialog.current;
+        element?.querySelector("form")?.reset();
+        setSaved(false);
+        element?.showModal();
+        element?.querySelector<HTMLInputElement>('input[name="headline"]')?.focus();
+      }} className="inline-flex min-h-10 scroll-mt-24 items-center gap-1.5 rounded-lg bg-accent px-3 text-sm font-medium text-on-accent transition hover:opacity-85">
+        <Pencil aria-hidden="true" className="size-4" /> Edit profile
+      </button>
+      <span role="status" className="sr-only">{saved ? "Profile saved." : ""}</span>
+      <dialog ref={dialog} onCancel={(event) => { if (pending) event.preventDefault(); }} onKeyDown={(event) => {
+        if (event.key !== "Escape") return;
+        event.preventDefault();
+        event.stopPropagation();
+        if (!pending) dialog.current?.close();
+      }} aria-labelledby="edit-profile-title" className="m-auto max-h-[calc(100dvh-2rem)] w-[min(32rem,calc(100%-2rem))] overflow-y-auto rounded-2xl border border-line bg-surface p-0 text-text shadow-[var(--shadow)] backdrop:bg-black/60">
+        <form onSubmit={submitWithoutReset(action)} className="flex flex-col gap-4 p-4 sm:p-6">
+          <header className="flex items-start justify-between gap-3">
+            <div>
+              <h2 id="edit-profile-title" className="text-xl font-semibold tracking-tight">Edit profile</h2>
+              <p className="mt-1 text-sm text-muted">Update what people read when they open your profile.</p>
+            </div>
+            <button type="button" aria-label="Close profile editor" onClick={() => dialog.current?.close()} disabled={pending} className="grid size-10 shrink-0 place-items-center rounded-lg text-muted transition hover:bg-hover hover:text-text">
+              <X aria-hidden="true" className="size-5" />
+            </button>
+          </header>
+          <Field label="Headline"><input name="headline" defaultValue={headline} maxLength={200} className={inputCls} /></Field>
+          <Field label="Bio"><textarea name="bio" defaultValue={bio} maxLength={2000} rows={5} className={cn(inputCls, "h-auto resize-y py-3 leading-relaxed")} /></Field>
+          {state.message && !state.ok && <p role="alert" className="text-sm text-danger">{state.message}</p>}
+          <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line pt-4">
+            <Link href="/settings#profile" onClick={() => dialog.current?.close()} className="inline-flex min-h-10 items-center text-sm font-medium text-text-2 underline-offset-4 hover:underline">More profile settings</Link>
+            <Button type="submit" disabled={pending}>{pending && <Loader2 className="size-4 animate-spin" />} Save changes</Button>
+          </div>
+        </form>
+      </dialog>
+    </>
   );
 }
 
 const meta = (p: ProjectView) => (p.status === "completed" ? `Completed${p.year ? ` ${p.year}` : ""}` : `In progress · updated ${timeAgo(p.updated_at)}`);
 const safeLink = (l: string | null) => (l && /^https?:\/\/\S+$/i.test(l) ? l : null);
 
-export function ProjectCard({ project, own, interests, copilot = false, clubs, vouches = false, backing = false, stack = false, specsOn = false }: { project: ProjectView; own: boolean; interests: string[]; copilot?: boolean; clubs?: Club[]; vouches?: boolean; backing?: boolean; stack?: boolean; specsOn?: boolean }) {
+export function ProjectCard({ project, own, interests, copilot = false, clubs, vouches = false, backing = false, stack = false, specsOn = false, field }: { project: ProjectView; own: boolean; interests: string[]; copilot?: boolean; clubs?: Club[]; vouches?: boolean; backing?: boolean; stack?: boolean; specsOn?: boolean; field?: string | null }) {
   const verified = (project.milestones ?? []).filter((m) => m.status === "verified").length;
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(false);
@@ -74,24 +104,33 @@ export function ProjectCard({ project, own, interests, copilot = false, clubs, v
   const [msg, setMsg] = useState("");
   const [pending, start] = useTransition();
   const link = safeLink(project.link);
+  const edit = own && project.canEdit !== false;
   const act = (fn: () => Promise<ProjectState>) => start(async () => { const r = await fn(); setMsg(r.ok ? r.message : r.message); });
 
   return (
-    <article className="border border-line bg-surface group relative flex h-full flex-col overflow-hidden rounded-2xl p-5 transition duration-300">
+    <article className="glass-card group relative flex h-full flex-col overflow-hidden rounded-2xl transition duration-300">
+      {/* A soft lit strip with what's verified, so a recruiter scanning a profile sees each build's
+          standing before reading a word. No drawing or grid (the founders' call, 2026-11-26). */}
+      <Link href={`/projects/${project.id}`} tabIndex={-1} aria-hidden="true" className="theme-dark cover-blueprint relative block h-14 overflow-hidden">
+        <span className="absolute bottom-2.5 left-4 flex items-center gap-2">
+          {verified > 0 && <span className="inline-flex items-center gap-1 rounded-full bg-[#4ccb82]/15 px-2 py-0.5 text-[11px] font-medium text-[#4ccb82] backdrop-blur-sm"><BadgeCheck className="size-3.5" /> {verified} verified</span>}
+          {project.private && <span className="inline-flex items-center gap-1 rounded-full border border-white/15 bg-black/30 px-2 py-0.5 text-[11px] text-white/75 backdrop-blur-sm"><Lock className="size-3" /> Private</span>}
+        </span>
+      </Link>
+      <div className="flex flex-1 flex-col p-5 pt-4">
       <div className="flex items-start justify-between gap-3">
         <h3 className="text-lg font-semibold tracking-tight"><Link href={`/projects/${project.id}`} className="hover:underline">{project.title}</Link></h3>
-        {verified > 0 && <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-[color-mix(in_oklab,var(--ok)_14%,transparent)] px-2 py-0.5 text-[11px] font-medium text-ok"><BadgeCheck className="size-3.5" /> {verified} verified</span>}
-        {project.private && <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-line px-2 py-0.5 text-[11px] text-muted"><Lock className="size-3" /> Private</span>}
       </div>
       <p suppressHydrationWarning className="mt-1.5 flex items-center gap-1.5 text-xs text-muted">
         {project.status === "completed" ? <CheckCircle2 className="size-3.5 text-ok" /> : <span className="relative flex size-2"><span className="absolute inset-0 animate-ping rounded-full bg-accent opacity-50" /><span className="relative size-2 rounded-full bg-accent" /></span>}
         {meta(project)}
       </p>
+      {project.club && <p className="mt-1 text-xs text-muted">with <Link href={`/c/${project.club.id}`} className="font-medium text-text-2 hover:underline">{project.club.name}</Link></p>}
       <p className="mt-3 text-sm leading-relaxed text-text-2">{project.summary}</p>
       {project.tags.length > 0 && <div className="mt-3 flex flex-wrap gap-1.5">{project.tags.map((t) => <span key={t} className="rounded-full bg-surface-2 px-2.5 py-0.5 text-xs text-text-2">#{t}</span>)}</div>}
       {!!project.tools?.length && <p className="mt-2 truncate text-xs text-muted"><span className="text-faint">Built with</span> {project.tools.slice(0, 5).join(" · ")}{project.tools.length > 5 ? ` +${project.tools.length - 5}` : ""}</p>}
-      {project.milestones && <MilestoneTimeline items={project.milestones} own={own} projectPrivate={project.private} />}
-      {own && clubs && <div className="mt-3"><AddMilestone projectId={project.id} projectTitle={project.title} clubs={clubs} vouches={vouches} backing={backing} /></div>}
+      {project.milestones && <MilestoneLog items={project.milestones} own={own} projectPrivate={project.private} />}
+      {own && clubs && <div className="mt-3"><AddMilestone projectId={project.id} projectTitle={project.title} clubs={clubs} vouches={vouches} backing={backing} field={field} /></div>}
       {(project.details || link) && (
         <button onClick={() => setOpen((v) => !v)} aria-expanded={open} className="mt-4 inline-flex items-center gap-1.5 self-start rounded-full bg-surface-2 px-3 py-1.5 text-xs font-medium text-text-2 transition hover:bg-hover hover:text-text">
           {open ? "Hide write-up" : "Read the write-up"}
@@ -108,7 +147,7 @@ export function ProjectCard({ project, own, interests, copilot = false, clubs, v
           </motion.div>
         )}
       </AnimatePresence>
-      {own && (
+      {edit && (
         <div className="mt-auto flex flex-wrap items-center gap-1 pt-4">
           <IconBtn label="Edit" onClick={() => setEditing(true)}><Pencil className="size-4" /></IconBtn>
           <IconBtn label="Share to feed" onClick={() => setSharing((v) => !v)}><Share2 className="size-4" /></IconBtn>
@@ -119,6 +158,7 @@ export function ProjectCard({ project, own, interests, copilot = false, clubs, v
       )}
       {sharing && <ShareBox id={project.id} title={project.title} onDone={(m) => { setSharing(false); setMsg(m); }} />}
       {editing && <ProjectDialog project={project} interests={interests} copilot={copilot} stack={stack} specsOn={specsOn} onClose={() => setEditing(false)} />}
+      </div>
     </article>
   );
 }
@@ -130,7 +170,7 @@ const FILTERS = [
 ] as const;
 
 // The project grid with All / In progress / Completed filters; cards glide into their new spots.
-export function ProjectGrid({ projects, own, interests, copilot = false, clubs, vouches = false, backing = false, stack = false, specsOn = false }: { projects: ProjectView[]; own: boolean; interests: string[]; copilot?: boolean; clubs?: Club[]; vouches?: boolean; backing?: boolean; stack?: boolean; specsOn?: boolean }) {
+export function ProjectGrid({ projects, own, interests, copilot = false, clubs, vouches = false, backing = false, stack = false, specsOn = false, field }: { projects: ProjectView[]; own: boolean; interests: string[]; copilot?: boolean; clubs?: Club[]; vouches?: boolean; backing?: boolean; stack?: boolean; specsOn?: boolean; field?: string | null }) {
   const [filter, setFilter] = useState<(typeof FILTERS)[number]["id"]>("all");
   const shown = filter === "all" ? projects : projects.filter((p) => p.status === filter);
   const count = (id: string) => (id === "all" ? projects.length : projects.filter((p) => p.status === id).length);
@@ -150,7 +190,7 @@ export function ProjectGrid({ projects, own, interests, copilot = false, clubs, 
         <AnimatePresence mode="popLayout" initial={false}>
           {shown.map((pr) => (
             <motion.div key={pr.id} layout initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.95 }} transition={{ duration: 0.25 }}>
-              <ProjectCard project={pr} own={own} interests={interests} copilot={copilot} clubs={clubs} vouches={vouches} backing={backing} stack={stack} specsOn={specsOn} />
+              <ProjectCard project={pr} own={own} interests={interests} copilot={copilot} clubs={clubs} vouches={vouches} backing={backing} stack={stack} specsOn={specsOn} field={field} />
             </motion.div>
           ))}
         </AnimatePresence>
@@ -184,29 +224,52 @@ function ShareBox({ id, title, onDone }: { id: string; title: string; onDone: (m
   );
 }
 
-export function ProjectEditor({ interests, copilot = false, stack = false, specsOn = false }: { interests: string[]; copilot?: boolean; stack?: boolean; specsOn?: boolean }) {
+// club: a new club project (supabase/club-projects.sql), for the club's owners and admins.
+export function ProjectEditor({ interests, copilot = false, stack = false, specsOn = false, club }: { interests: string[]; copilot?: boolean; stack?: boolean; specsOn?: boolean; club?: { id: string; name: string; isClass?: boolean } }) {
   const [open, setOpen] = useState(false);
   return (
     <>
-      <Button onClick={() => setOpen(true)}><Plus className="size-4" /> Add project</Button>
-      {open && <ProjectDialog interests={interests} copilot={copilot} stack={stack} specsOn={specsOn} onClose={() => setOpen(false)} />}
+      <Button onClick={() => setOpen(true)}><Plus className="size-4" /> {club ? "New project" : "Add project"}</Button>
+      {open && <ProjectDialog interests={interests} copilot={copilot} stack={stack} specsOn={specsOn} club={club} onClose={() => setOpen(false)} />}
     </>
   );
 }
 
-function ProjectDialog({ project, interests, onClose, copilot = false, stack = false, specsOn = false }: { project?: ProjectView; interests: string[]; onClose: () => void; copilot?: boolean; stack?: boolean; specsOn?: boolean }) {
+function ProjectDialog({ project, interests, onClose, copilot = false, stack = false, specsOn = false, club }: { project?: ProjectView; interests: string[]; onClose: () => void; copilot?: boolean; stack?: boolean; specsOn?: boolean; club?: { id: string; name: string; isClass?: boolean } }) {
   const formRef = useRef<HTMLFormElement>(null);
   const [details, setDetails] = useState(project?.details ?? "");
   const [tools, setTools] = useState<string[]>(project?.tools ?? []);
   const [summaryText, setSummaryText] = useState(project?.summary ?? "");
   const ai = useCopilot();
+  // A new project goes in steps (lib/project-steps.ts); editing one keeps the whole form on one page.
+  const stepped = !project;
+  const [step, setStep] = useState(0);
+  const stepBoxes = useRef<(HTMLDivElement | null)[]>([]);
+  // How a new project starts: typed in, told to Torch in a sentence, or from a link to the work.
+  // Torch drafts personal projects only: a club's project is started here, on the club's page.
+  const torchOn = copilot && !club;
+  const [start, setStart] = useState<ProjectStart>("type");
+  const [torchWords, setTorchWords] = useState("");
   // Import from GitHub: fills the form from a public repo; the member reviews it before saving.
   const [repoUrl, setRepoUrl] = useState("");
   const [importing, startImport] = useTransition();
   const [importMsg, setImportMsg] = useState("");
   const [imported, setImported] = useState<ProjectDraft | null>(null);
+  const [linked, setLinked] = useState<WorkSource | null>(null);
+  const source = workSource(repoUrl);
+  // Start from a link (2026-11-26): GitHub is imported as before; any other place work lives (Onshape,
+  // Fusion, Drive, a video, Figma…) fills the project's link and adds the tool it implies.
   const runImport = () => startImport(async () => {
-    setImportMsg("");
+    setImportMsg(""); setLinked(null);
+    if (!source) { setImportMsg("Paste a link to your work: a repo, a CAD model, a doc or a video."); return; }
+    if (source.id !== "github") {
+      const el = formRef.current?.elements.namedItem("link");
+      if (el instanceof HTMLInputElement) el.value = cleanLink(repoUrl);
+      if (source.tool) setTools((t) => (t.includes(source.tool!) ? t : [...t, source.tool!]));
+      setLinked(source);
+      setStart("type");
+      return;
+    }
     const r = await importFromGitHub(repoUrl);
     if (!r.ok) { setImportMsg(r.message); return; }
     const d = r.draft;
@@ -216,7 +279,11 @@ function ProjectDialog({ project, interests, onClose, copilot = false, stack = f
     setDetails(d.details); setStatus(d.status); setTags(d.tags); setSummaryText(d.summary); if (d.tools?.length) setTools(d.tools);
     if (d.year) requestAnimationFrame(() => put("year", d.year));
     setImported(d);
+    setStart("type");
   });
+  // Hand it to Torch: the bar at the top drafts the project card, which the member checks and adds.
+  const torchAsk = torchProjectAsk(torchWords);
+  const sendToTorch = () => { if (!torchAsk) return; askTorch(torchAsk); onClose(); };
   // Copilot drafts the write-up from the title, summary and whatever notes are already in the box.
   const writeUp = () => {
     const f = new FormData(formRef.current ?? undefined);
@@ -229,96 +296,198 @@ function ProjectDialog({ project, interests, onClose, copilot = false, stack = f
   const [tags, setTags] = useState<string[]>(project?.tags ?? []);
   // Topics to pick from: your interests first, then everything else.
   const options = [...new Set([...interests, ...ALL_TOPICS])];
+  const chips = topicChips(interests, ALL_TOPICS, tags);
+  const addTag = (t: string) => { if (t && !tags.includes(t) && tags.length < 3) setTags([...tags, t]); };
 
   useEffect(() => { ref.current?.showModal(); }, []);
   useEffect(() => { if (state.ok) onClose(); }, [state.ok, onClose]);
 
+  const shown = (n: number) => !stepped || step === n;
+  // Next checks only this step's fields (the browser's own messages), then moves on and focuses the first field.
+  const goTo = (n: number) => {
+    setStep(n);
+    requestAnimationFrame(() => {
+      stepBoxes.current[n]?.querySelector<HTMLElement>("input:not([type=hidden]):not([type=checkbox]), textarea, select")?.focus();
+      ref.current?.scrollTo({ top: 0 });
+    });
+  };
+  const next = () => {
+    const box = stepBoxes.current[step];
+    const bad = [...(box?.querySelectorAll<HTMLInputElement | HTMLTextAreaElement>("input, textarea") ?? [])].find((el) => !el.checkValidity());
+    if (bad) { bad.reportValidity(); return; }
+    goTo(nextStep(step));
+  };
+  // Enter in a one-line field moves to the next step rather than saving half a project.
+  const onKeyDown = (e: React.KeyboardEvent<HTMLFormElement>) => {
+    if (!stepped || step === LAST_STEP || e.defaultPrevented || e.key !== "Enter" || !(e.target instanceof HTMLInputElement) || e.target.type === "checkbox") return;
+    e.preventDefault();
+    next();
+  };
+  const title = project ? "Edit project" : club ? `New ${club.name} project` : "Add a project";
+
   return (
     <dialog
       ref={ref}
+      aria-label={title}
       onCancel={(e) => { e.preventDefault(); onClose(); }}
       className="m-auto max-h-[90dvh] w-[min(640px,calc(100vw-24px))] overflow-y-auto rounded-3xl border border-line bg-surface p-0 text-text shadow-[var(--shadow)] backdrop:bg-bg/70 backdrop:backdrop-blur-sm"
     >
-      <form ref={formRef} onSubmit={submitWithoutReset(action)} className="flex flex-col gap-4 p-6">
-        <div className="flex items-start justify-between">
-          <h2 className="text-xl font-semibold tracking-tight">{project ? "Edit project" : "Add a project"}</h2>
-          <button type="button" onClick={onClose} aria-label="Close" className="grid size-8 place-items-center rounded-full text-faint hover:bg-hover hover:text-text"><X className="size-4" /></button>
-        </div>
-        {!project && (
-          <div className="rounded-2xl border border-dashed border-line-strong bg-surface-2/50 p-3">
-            <label htmlFor="gh-url" className="flex items-center gap-1.5 text-xs font-medium text-muted"><GitBranch className="size-3.5" /> Import from GitHub (optional)</label>
-            <div className="mt-2 flex gap-2">
-              <input id="gh-url" value={repoUrl} onChange={(e) => setRepoUrl(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); runImport(); } }} placeholder="github.com/owner/repo" className={cn(inputCls, "h-10 flex-1")} />
-              <Button type="button" variant="outline" onClick={runImport} disabled={importing || !repoUrl.trim()}>{importing ? <Loader2 className="size-4 animate-spin" /> : "Import"}</Button>
-            </div>
-            {importMsg && <p role="alert" className="mt-2 text-xs text-danger">{importMsg}</p>}
-            {imported && (
-              <div className="mt-2 text-xs text-muted">
-                <p className="text-ok">Filled in from GitHub. Check everything, then save.</p>
-                {imported.milestones.length > 0 && <p className="mt-1">After saving, add these as milestones for your club to verify: {imported.milestones.map((m) => `${m.title} (${m.date})`).join(", ")}.</p>}
-              </div>
-            )}
+      <form ref={formRef} onSubmit={submitWithoutReset(action)} onKeyDown={onKeyDown} className="flex flex-col gap-4 p-6">
+        <div className="flex items-start justify-between gap-3">
+          <div>
+            <h2 className="text-xl font-semibold tracking-tight">{title}</h2>
+            {stepped && <p className="mt-0.5 text-sm text-muted">{PROJECT_STEPS[step].hint}</p>}
           </div>
+          <button type="button" onClick={onClose} aria-label="Close" className="grid size-8 shrink-0 place-items-center rounded-full text-faint hover:bg-hover hover:text-text"><X className="size-4" /></button>
+        </div>
+        {stepped && (
+          <ol aria-label="Steps" className="grid grid-cols-3 gap-2">
+            {PROJECT_STEPS.map((s, i) => (
+              <li key={s.id}>
+                <button type="button" disabled={i >= step} onClick={() => goTo(i)} aria-current={i === step ? "step" : undefined} className="group flex w-full flex-col gap-1.5 text-left disabled:cursor-default">
+                  <span className={cn("h-1 rounded-full transition-colors duration-300", i <= step ? "bg-text" : "bg-line")} />
+                  <span className={cn("text-[11px] font-medium", i === step ? "text-text" : i < step ? "text-muted group-hover:text-text" : "text-faint")}>{i + 1}. {s.title}</span>
+                </button>
+              </li>
+            ))}
+          </ol>
         )}
         <input type="hidden" name="id" value={project?.id ?? ""} />
+        {club && !project && <input type="hidden" name="community_id" value={club.id} />}
         <input type="hidden" name="status" value={status} />
         {tags.map((t) => <input key={t} type="hidden" name="tags" value={t} />)}
-        <Field label="Title"><input name="title" defaultValue={project?.title} maxLength={120} className={inputCls} required /></Field>
-        <Field label="Summary" hint="Everyone sees this, even when the project is private."><textarea name="summary" defaultValue={project?.summary} onChange={(e) => setSummaryText(e.target.value)} maxLength={600} rows={3} className={cn(inputCls, "h-auto resize-none py-3")} required /></Field>
-        <div className="flex flex-wrap items-end gap-3">
-          <div role="group" aria-label="Status" className="flex gap-1.5">
-            {(["in_progress", "completed"] as const).map((s) => (
-              <button key={s} type="button" aria-pressed={status === s} onClick={() => setStatus(s)} className="rounded-full border border-line px-3.5 py-1.5 text-sm text-muted transition aria-pressed:border-transparent aria-pressed:bg-text aria-pressed:text-surface">
-                {s === "completed" ? "Completed" : "In progress"}
-              </button>
-            ))}
+
+        {/* 1. What is it? */}
+        <div ref={(el) => { stepBoxes.current[0] = el; }} hidden={!shown(0)} className={cn("flex flex-col gap-4", stepped && "step-in")}>
+          {stepped && (
+            <div role="radiogroup" aria-label="How do you want to start?" className="grid grid-cols-3 gap-1 rounded-2xl bg-surface-2 p-1">
+              {([["type", "Type it in", Pencil], ...(torchOn ? [["torch", "Tell Torch", Sparkles]] : []), ["link", "From a link", LinkIcon]] as [ProjectStart, string, typeof Pencil][]).map(([id, label, Icon]) => (
+                <button key={id} type="button" role="radio" aria-checked={start === id} onClick={() => setStart(id)} className="inline-flex h-9 items-center justify-center gap-1.5 rounded-xl text-sm text-muted transition aria-checked:bg-surface aria-checked:text-text aria-checked:shadow-sm">
+                  <Icon className="size-3.5" /> {label}
+                </button>
+              ))}
+            </div>
+          )}
+          {stepped && start === "torch" && (
+            <div className="glass-card flex flex-col gap-2 rounded-2xl p-3">
+              <label htmlFor="torch-project" className="text-sm font-medium">Tell Torch about it, in your own words</label>
+              <textarea id="torch-project" value={torchWords} onChange={(e) => setTorchWords(e.target.value)} onKeyDown={(e) => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) { e.preventDefault(); sendToTorch(); } }} maxLength={600} rows={3} placeholder="A line-following robot for my robotics class: Arduino, two IR sensors, it finished the track in 41 seconds." className={cn(inputCls, "h-auto resize-none py-2.5 text-sm")} />
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="text-xs text-faint">Torch drafts the card at the top of the page. You check it, then add it.</span>
+                <Button type="button" onClick={sendToTorch} disabled={!torchAsk}><Sparkles className="size-4" /> Draft it with Torch</Button>
+              </div>
+            </div>
+          )}
+          {stepped && start === "link" && (
+            <div className="glass-card rounded-2xl p-3">
+              <label htmlFor="gh-url" className="flex items-center gap-1.5 text-xs font-medium text-muted"><LinkIcon className="size-3.5" /> Start from a link</label>
+              <p className="mt-0.5 text-xs text-faint">A repo, a CAD model, a doc, a video: wherever the work lives.</p>
+              <div className="mt-2 flex gap-2">
+                <input id="gh-url" value={repoUrl} onChange={(e) => { setRepoUrl(e.target.value); setLinked(null); }} onKeyDown={(e) => { if (e.key === "Enter") { e.preventDefault(); e.stopPropagation(); runImport(); } }} placeholder="github.com/…, cad.onshape.com/…, docs.google.com/…" className={cn(inputCls, "h-10 flex-1")} />
+                <Button type="button" variant="outline" onClick={runImport} disabled={importing || !repoUrl.trim()}>{importing ? <Loader2 className="size-4 animate-spin" /> : source?.id === "github" ? "Import" : "Use link"}</Button>
+              </div>
+              <div className="mt-2 flex flex-wrap gap-1.5" aria-label="Where work can come from">
+                {["GitHub", "Onshape", "Fusion", "Google Drive", "YouTube", "Figma", "Overleaf"].map((x) => (
+                  <span key={x} className={cn("rounded-full border px-2 py-0.5 text-[11px]", source && source.label.startsWith(x.split(" ")[0]) ? "border-transparent bg-text text-surface" : "border-line text-muted")}>{x}</span>
+                ))}
+              </div>
+              {importMsg && <p role="alert" className="mt-2 text-xs text-danger">{importMsg}</p>}
+            </div>
+          )}
+          {linked && <p className="text-xs text-ok">Linked from {linked.label}{linked.tool ? `, and ${linked.tool} added to what you built it with` : ""}. Add the title and summary.</p>}
+          {imported && (
+            <div className="text-xs text-muted">
+              <p className="text-ok">Filled in from GitHub. Check each step, then add it.</p>
+              {imported.milestones.length > 0 && <p className="mt-1">After saving, add these as milestones for your club to verify: {imported.milestones.map((m) => `${m.title} (${m.date})`).join(", ")}.</p>}
+            </div>
+          )}
+          {club && !project && <p className="-mt-1 text-sm text-muted">{club.isClass ? "It's part of the class: your professor sees it and verifies its milestones, by class and term. It starts private. Add your group from the project page once it's saved." : <>It belongs to the club: every owner and admin can edit it and manage its team. Add teammates from the project page once it&apos;s saved.</>}</p>}
+          <div hidden={stepped && start === "torch"} className="flex flex-col gap-4">
+            <Field label="Title"><input name="title" defaultValue={project?.title} maxLength={120} placeholder={stepped ? "Wheelchair stair-climber" : undefined} className={inputCls} required /></Field>
+            <Field label="Summary" hint="Everyone sees this, even when the project is private."><textarea name="summary" defaultValue={project?.summary} onChange={(e) => setSummaryText(e.target.value)} maxLength={600} rows={3} placeholder={stepped ? "What it does and why, in a sentence or two." : undefined} className={cn(inputCls, "h-auto resize-none py-3")} required /></Field>
           </div>
-          {status === "completed" && <Field label="Year"><input name="year" inputMode="numeric" pattern="\d{4}" defaultValue={project?.year ?? ""} placeholder="2026" className={cn(inputCls, "w-28")} /></Field>}
         </div>
-        <Field label={`Topics (${tags.length}/3)`}>
-          <select
-            value=""
-            onChange={(e) => { const t = e.target.value; if (t && !tags.includes(t) && tags.length < 3) setTags([...tags, t]); }}
-            className={inputCls}
-            disabled={tags.length >= 3}
-          >
-            <option value="">{tags.length >= 3 ? "Up to 3 topics" : "Add a topic…"}</option>
-            {options.map((t) => <option key={t} value={t} disabled={tags.includes(t)}>{t}</option>)}
-          </select>
-        </Field>
-        {tags.length > 0 && (
-          <div className="-mt-2 flex flex-wrap gap-1.5">
-            {tags.map((t) => (
-              <button key={t} type="button" onClick={() => setTags(tags.filter((x) => x !== t))} className={cn(chipCls, "inline-flex items-center gap-1 hover:text-text")} aria-label={`Remove ${t}`}>
-                #{t} <X className="size-3" />
-              </button>
-            ))}
+
+        {/* 2. Where does it stand? */}
+        <div ref={(el) => { stepBoxes.current[1] = el; }} hidden={!shown(1)} className={cn("flex flex-col gap-4", stepped && "step-in")}>
+          <div className="flex flex-wrap items-end gap-3">
+            <div role="group" aria-label="Status" className="flex gap-1.5">
+              {(["in_progress", "completed"] as const).map((s) => (
+                <button key={s} type="button" aria-pressed={status === s} onClick={() => setStatus(s)} className="rounded-full border border-line px-3.5 py-1.5 text-sm text-muted transition aria-pressed:border-transparent aria-pressed:bg-text aria-pressed:text-surface">
+                  {s === "completed" ? "Completed" : "In progress"}
+                </button>
+              ))}
+            </div>
+            {status === "completed" && <Field label="Year"><input name="year" inputMode="numeric" pattern="\d{4}" defaultValue={project?.year ?? ""} placeholder="2026" className={cn(inputCls, "w-28")} /></Field>}
           </div>
-        )}
-        <Field label="Write-up" hint="What you built, how, and what you learned."><textarea name="details" value={details} onChange={(e) => setDetails(e.target.value)} maxLength={5000} rows={6} className={cn(inputCls, "h-auto resize-y py-3 leading-relaxed")} /></Field>
-        {copilot && (
-          <div className="-mt-2 flex flex-wrap items-center gap-2">
-            {ai.busy ? (
-              <button type="button" onClick={ai.stop} className="h-8 rounded-lg border border-line px-3 text-xs">Stop</button>
-            ) : (
-              <button type="button" onClick={writeUp} className="bg-text inline-flex h-8 items-center gap-1.5 rounded-lg px-3 text-xs font-medium text-surface"><Sparkles className="size-3.5" /> {details.trim() ? "Polish it with Copilot" : "Write it with Copilot"}</button>
-            )}
-            <span className="text-xs text-faint">Uses your title, summary and notes. Check every fact before saving.</span>
-            {ai.error && <p role="alert" className="w-full text-xs text-danger">{ai.error}</p>}
-          </div>
-        )}
-        {stack && <StackPicker value={tools} onChange={setTools} text={`${summaryText}\n${details}`} />}
-        <Field label="Link"><input name="link" type="url" defaultValue={project?.link ?? ""} placeholder="https://github.com/…" maxLength={300} className={inputCls} /></Field>
-        {specsOn && <SpecsEditor initial={project?.specs ?? []} />}
-        <label className="flex items-start gap-3 rounded-2xl border border-line p-4 text-sm">
-          <input type="checkbox" name="private" defaultChecked={project?.private} className="mt-0.5 size-4 accent-[var(--text)]" />
-          <span><span className="font-medium">Keep the write-up and link private</span><span className="block text-faint">Others see only the card.</span></span>
-        </label>
+          <Field label={`Topics (${tags.length}/3)`}>
+            <select value="" onChange={(e) => addTag(e.target.value)} className={inputCls} disabled={tags.length >= 3}>
+              <option value="">{tags.length >= 3 ? "Up to 3 topics" : "Add a topic…"}</option>
+              {options.map((t) => <option key={t} value={t} disabled={tags.includes(t)}>{t}</option>)}
+            </select>
+          </Field>
+          {(tags.length > 0 || (stepped && tags.length < 3)) && (
+            <div className="-mt-2 flex flex-wrap gap-1.5">
+              {tags.map((t) => (
+                <button key={t} type="button" onClick={() => setTags(tags.filter((x) => x !== t))} className={cn(chipCls, "inline-flex items-center gap-1 border-transparent bg-text text-surface")} aria-label={`Remove ${t}`}>
+                  #{t} <X className="size-3" />
+                </button>
+              ))}
+              {stepped && tags.length < 3 && chips.map((t) => (
+                <button key={t} type="button" onClick={() => addTag(t)} className={cn(chipCls, "inline-flex items-center gap-1 hover:text-text")} aria-label={`Add ${t}`}>
+                  <Plus className="size-3" /> {t}
+                </button>
+              ))}
+            </div>
+          )}
+          {stack && <StackPicker value={tools} onChange={setTools} text={`${summaryText}\n${details}`} />}
+        </div>
+
+        {/* 3. Show the work */}
+        <div ref={(el) => { stepBoxes.current[2] = el; }} hidden={!shown(2)} className={cn("flex flex-col gap-4", stepped && "step-in")}>
+          <Field label="Write-up" optional={stepped} hint="What you built, how, and what you learned."><textarea name="details" value={details} onChange={(e) => setDetails(e.target.value)} maxLength={5000} rows={6} className={cn(inputCls, "h-auto resize-y py-3 leading-relaxed")} /></Field>
+          {copilot && (
+            <div className="-mt-2 flex flex-wrap items-center gap-2">
+              {ai.busy ? (
+                <button type="button" onClick={ai.stop} className="h-8 rounded-lg border border-line px-3 text-xs">Stop</button>
+              ) : (
+                <button type="button" onClick={writeUp} className="bg-text inline-flex h-8 items-center gap-1.5 rounded-lg px-3 text-xs font-medium text-surface"><Sparkles className="size-3.5" /> {details.trim() ? "Polish it with Torch" : "Write it with Torch"} · {emberCreditCost("writeup")}</button>
+              )}
+              <span className="text-xs text-faint">Uses your title, summary and notes. Check every fact before saving.</span>
+              {ai.error && <p role="alert" className="w-full text-xs text-danger">{ai.error}</p>}
+            </div>
+          )}
+          <Field label="Link" optional={stepped}><input name="link" type="url" defaultValue={project?.link ?? ""} placeholder="https://github.com/…" maxLength={300} className={inputCls} /></Field>
+          {specsOn && <SpecsEditor initial={project?.specs ?? []} />}
+          <label className="flex items-start gap-3 rounded-2xl border border-line p-4 text-sm">
+            <input type="checkbox" name="private" defaultChecked={project ? project.private : !!club?.isClass} className="mt-0.5 size-4 accent-[var(--text)]" />
+            <span><span className="font-medium">Keep the write-up and link private</span><span className="block text-faint">Others see only the card.</span></span>
+          </label>
+        </div>
+
         {state.message && !state.ok && <p role="alert" className="text-sm text-danger">{state.message}</p>}
-        <div className="flex justify-end gap-2">
-          <Button type="button" variant="ghost" onClick={onClose}>Cancel</Button>
-          <Button type="submit" disabled={pending}>{pending && <Loader2 className="size-4 animate-spin" />} {project ? "Save" : "Add project"}</Button>
-        </div>
+        {stepped && start === "torch" ? (
+          <div className="flex justify-end"><Button type="button" variant="ghost" onClick={onClose}>Cancel</Button></div>
+        ) : stepped ? (
+          <div className="flex items-center gap-2">
+            {step > 0 ? <Button type="button" variant="ghost" onClick={() => goTo(prevStep(step))}>Back</Button> : <Button type="button" variant="ghost" onClick={onClose}>Cancel</Button>}
+            <div className="ml-auto flex gap-2">
+              {step < LAST_STEP ? (
+                <>
+                  <Button type="submit" variant="ghost" disabled={pending}>{pending && <Loader2 className="size-4 animate-spin" />} Add project</Button>
+                  <Button type="button" onClick={next}>Next</Button>
+                </>
+              ) : (
+                <Button type="submit" disabled={pending}>{pending && <Loader2 className="size-4 animate-spin" />} Add project</Button>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="flex justify-end gap-2">
+            <Button type="button" variant="ghost" onClick={onClose}>Cancel</Button>
+            <Button type="submit" disabled={pending}>{pending && <Loader2 className="size-4 animate-spin" />} Save</Button>
+          </div>
+        )}
       </form>
     </dialog>
   );

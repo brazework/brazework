@@ -17,7 +17,7 @@ export type PublicVerify = {
 
 const ROLES: Record<string, string> = {
   owner: "club president", admin: "club officer", moderator: "club officer", helper: "club helper",
-  professor: "professor", ta: "teaching assistant", pi: "lab PI", manager: "manager", mentor: "mentor", other: "witness",
+  professor: "professor", ta: "teaching assistant", pi: "lab PI", manager: "coworker", mentor: "mentor", other: "witness",
 };
 
 /** The signer's role in plain words ("professor", "club officer"). */
@@ -43,6 +43,14 @@ export function stateLine(v: Pick<PublicVerify, "state" | "signer" | "revoked_at
 }
 
 export const verifyUrl = (site: string, id: string) => `${site.replace(/\/$/, "")}/v/${encodeURIComponent(id)}`;
+
+// LinkedIn's own "add to profile" link (Licenses & certifications): the milestone as the name,
+// Brazework as the issuer, and the verify page as the credential URL, so anyone on LinkedIn can open
+// who signed it. The member clicks it and saves on LinkedIn themselves; nothing is posted for them.
+export function linkedinAddUrl(site: string, id: string, title: string): string {
+  const q = new URLSearchParams({ startTask: "CERTIFICATION_NAME", name: title.trim().slice(0, 120), organizationName: "Brazework", certUrl: verifyUrl(site, id), certId: id });
+  return `https://www.linkedin.com/profile/add?${q.toString()}`;
+}
 
 type EvidenceLink = { type: "link" | "commit"; url: string; after_signing?: boolean; added_at?: string | null };
 

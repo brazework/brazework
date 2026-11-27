@@ -6,8 +6,8 @@ import { useEffect, useRef } from "react";
 // Decorative (aria-hidden). It draws only while on screen, and holds still for reduced motion.
 // Black and white: silver-white particles on a dark background, graphite on a light one.
 // tone: "dark" for a dark band (the agent section); "auto" follows the page's theme, checked once a
-// second so a theme switch shows. `ember`: the particles warm to Ember's orange (the only colour on
-// the landing, and it means Ember), fading over about half a second.
+// second so a theme switch shows. `ember`: the particles warm to Torch's orange (the only colour on
+// the landing, and it means Torch), fading over about half a second.
 export function Orb({ pulse = 0, className, tone = "dark", ember = false }: { pulse?: number; className?: string; tone?: "dark" | "auto"; ember?: boolean }) {
   const ref = useRef<HTMLCanvasElement>(null);
   const kick = useRef(0);
@@ -43,7 +43,7 @@ export function Orb({ pulse = 0, className, tone = "dark", ember = false }: { pu
       canvas.width = Math.round(w * dpr); canvas.height = Math.round(h * dpr);
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
     };
-    // Ember's orange (#f28c28), mixed into the neutral: white on dark, near-black on light.
+    // Torch's orange (#f28c28), mixed into the neutral: white on dark, near-black on light.
     const EMBER = [242, 140, 40];
     const mix = (n: number[], k: number) => n.map((c, i) => Math.round(c + (EMBER[i] - c) * k)).join(",");
     const draw = (now: number) => {

@@ -21,7 +21,7 @@ import { cookies } from "next/headers";
 import { DISMISS_PREFIX } from "@/lib/dismiss";
 import { Composer } from "./composer";
 import { FeedHeader, TABS, type TabId } from "./header";
-import { NextStep } from "./next-step";
+import { HomeBand } from "./home-band";
 import { HomeStream, StreamSkeleton } from "./stream";
 import type { ReplyPreview } from "./post-card";
 import type { Proof } from "./proof-card";
@@ -184,7 +184,7 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
   }
 
   const discover = (tab === "for-you" || tab === "latest") && !tag && !kind;
-  // The create box: whether Ember is on, your next guide step, and a club you run (for its weekly update).
+  // The create box: whether Torch is on, your next guide step, and a club you run (for its weekly update).
   const [copilotOn, guide] = await extrasP;
   const hideStart = (await cookies()).has(`${DISMISS_PREFIX}feed-start`);
   // New members get the first-five-minutes checklist; once it's done (or hidden), the weekly loop.
@@ -331,15 +331,27 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
             </div>
           </details>}
         hero={<>
+          {/* The top of Home (home-band.tsx): where your record stands, the one next thing, your places. */}
+          <Suspense fallback={<div className="h-[22rem] shimmer rounded-2xl sm:h-64" aria-hidden="true" />}><HomeBand first={profile.first_name} quiet={noProjects} /></Suspense>
           {/* Home, top to bottom (section redesign, Nov 2026): the one next step, then one stream in the
               order you'd act on it (what your tools noticed, what needs you, what your clubs shipped,
               your goal), then the log-work box and the posts. Your builds live on Projects, not here. */}
           {noProjects && <FirstBuild first={profile.first_name} chapter={chapter?.name} student={profile.account_type !== "professional"} />}
           {/* When the checklist's next step is the project, the card above already asks it, so the checklist waits. */}
-          {startOpen && !(noProjects && nextStep === "project") ? <StartChecklist steps={guide?.loop ?? []} /> : noProjects ? null : <><Suspense fallback={<div className="h-14 shimmer rounded-2xl" aria-hidden="true" />}><NextStep /></Suspense></>}
+          {/* The next step is the band's button now; the first-five-minutes checklist still shows for new members. */}
+          {startOpen && !(noProjects && nextStep === "project") && <StartChecklist steps={guide?.loop ?? []} />}
           <Suspense fallback={<StreamSkeleton />}><HomeStream /></Suspense>
           {/* The next event this week, as one line (wide screens have it in the rail). */}
           {discover && <div className="xl:hidden"><Suspense fallback={null}><NextUp /></Suspense></div>}
+          {/* Home has two halves (redesign 2026-11-26): yours above, the community below, with the
+              composer opening it, so it's clear what's yours and what everyone's sharing. */}
+          <div className="flex items-end justify-between gap-3 border-t border-line pt-7 sm:pt-8">
+            <div className="min-w-0">
+              <h2 className="text-xl font-semibold tracking-[-0.02em]">Community</h2>
+              <p className="mt-0.5 text-sm text-muted">What your clubs and the people you follow are building.</p>
+            </div>
+            <Link href="/communities" className="shrink-0 text-sm text-muted underline-offset-4 transition hover:text-text hover:underline">Your clubs</Link>
+          </div>
           <div id="composer" data-tour="composer" className="scroll-mt-24"><Composer first={profile.first_name} last={profile.last_name} interests={interests} userId={user.id} mediaEnabled={mediaEnabled} captionsEnabled={captionsEnabled} avatarSrc={avatarSrc(profile)} copilot={copilotOn} mentionsEnabled={mentionsEnabled} club={ledClub} next={null} projects={(myProjects ?? []) as { id: string; title: string }[]} clubs={composeClubs} defaultShareTo={chapter?.id} initialProject={typeof sp.project === "string" ? sp.project : undefined} /></div>
         </>} />
       {(tag || kind) && (
@@ -348,7 +360,7 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
           <Link href={href({ kind: "", tag: "", sort: "" })} className="text-muted hover:text-text">Clear</Link>
         </div>
       )}
-      <div className="mt-6 flex flex-col gap-4">
+      <div className="mt-5 flex flex-col gap-4 sm:mt-6">
         {first.items.length === 0 && <EmptyState title={emptyTitle} body={emptyBody} action={emptyAction} />}
         <FeedList first={first} params={params} proofs={proofs} ranked={tab === "for-you" && sort === "best"} me={user.id} viewer={viewer} slots={{}}
           end={first.items.length > 0 ? <FeedEnd tab={tab} /> : null} />
@@ -357,10 +369,12 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
   );
 }
 
+// The top of Home (redesign 2026-11): who it's for, in one line, before anything asks for attention.
+
 // The bottom of the feed: somewhere useful to go next.
 function FeedEnd({ tab }: { tab: TabId }) {
   return (
-    <div className="glass-card mt-2 rounded-3xl p-6 text-center">
+    <div className="glass-card mt-4 rounded-2xl p-6 text-center">
       <p className="font-medium">You&apos;re all caught up</p>
       <p className="mt-1 text-sm text-muted">Keep the momentum: help someone, or show what you built.</p>
       <div className="mt-4 flex flex-wrap justify-center gap-2">

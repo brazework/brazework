@@ -9,7 +9,7 @@
 // when it asks for "Signed or backed", labelled as not signed. And his last 90 days: his own merged
 // pull requests are offered on the project page and one tap adds them, the private repo's hidden.
 const crypto = require("crypto"), http = require("http"), { execSync } = require("child_process");
-const { step, browser, as, go, summary } = require("./lib.cjs");
+const { step, browser, as, go, openLogs, summary } = require("./lib.cjs");
 const psql = (sql) => execSync("docker exec -i forge-e2e-db psql -U postgres -h localhost -d postgres -v ON_ERROR_STOP=1 -qtA", { input: sql }).toString().trim();
 const BEN = "ben@forge.test", MAYA = "maya@forge.test", CARA = "cara@forge.test";
 const REPO = "bencho/flight-computer", INST = 9201;
@@ -86,6 +86,7 @@ function startGitHub() {
     const dlg = await add("Telemetry parser merged", `https://github.com/${REPO}/pull/12`);
     await dlg.waitFor({ state: "detached", timeout: 20000 });
     await go(page, `/u/${ben}`);
+    await openLogs(page); // a long log on the profile is folded (FIX-240)
     const badge = page.locator("[data-backed]").filter({ hasText: `Backed by GitHub · PR #12 in ${REPO}` }).first();
     await badge.waitFor({ timeout: 15000 });
     const item = page.locator("li").filter({ has: badge }).first();
@@ -162,6 +163,8 @@ function startGitHub() {
   await step("another member sees Ben's backed work on his profile, labelled", async () => {
     const maya = await as(b, MAYA);
     await go(maya, `/u/${ben}`);
+    // p1 has several milestones by now, so its log is folded for a visitor (FIX-240).
+    await openLogs(maya);
     await maya.locator("[data-backed]").filter({ hasText: "PR #12" }).first().waitFor({ timeout: 15000 });
     if (await maya.getByText("Someone else's parser").count()) throw new Error("refused work shows");
     // What he added from his last 90 days: the public one shows; the private repo's stays his own.

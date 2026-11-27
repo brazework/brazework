@@ -36,7 +36,7 @@ welcome, and the first sentence of the first comment. Everything else on the lis
 
 ## Description (260 characters max)
 > AI made work cheap to produce and cheap to claim. Brazework is the record of what you shipped,
-> signed by someone who saw it: a tech lead, a manager, a professor. Tell Claude or Cursor what you
+> signed by someone who saw it: a tech lead, a coworker, a professor. Tell Claude or Cursor what you
 > finished and it drafts the proof. Free for builders.
 
 ## Maker's first comment
@@ -50,7 +50,7 @@ welcome, and the first sentence of the first comment. Everything else on the lis
 > If you already work in Claude, Cursor or VS Code, it takes a minute: add Brazework as a connector,
 > sign in, and say "put what I shipped today on my record". It reads the PR, the ticket, the dashboard,
 > drafts the milestone with the proof, and shows you exactly what it will add before anything is
-> saved. Then you ask the person who saw it (your tech lead, your manager, a client). They get one
+> saved. Then you ask the person who saw it (your tech lead, your coworker, a client). They get one
 > email with your proof and sign in a minute, with no account.
 >
 > No AI tools? Type what you built on the home page. Two fields and three screens later it's on your
@@ -85,7 +85,7 @@ cards (`/p/demo-m1`, `/p/demo-m3`, `/p/demo-m4`) and one card still waiting for 
 2. **The payoff:** a signed milestone's share card (`/p/<id>`, its preview image), with who signed it.
 3. **The hook:** the landing hero on the engineer's story (open `/?ref=producthunt`), with the
    draft, the proof and "Signed" by a tech lead.
-4. **Who saw it:** the signer step, with an email and "my manager".
+4. **Who saw it:** the signer step, with an email and "my coworker".
 5. **The record:** a profile with its timeline of signed work.
 
 Optional extra images:
@@ -141,7 +141,7 @@ screens (your build, the proof, who saw it), and the waiting card.
 - **"Does the AI post for me?"** Only after your yes. When you connect an assistant you choose: it adds
   things after you say yes in the chat, or it leaves drafts you approve in Brazework. It never signs
   or verifies anything.
-- **"Professionals too?"** Yes. You get the same steps, and a manager, tech lead or client signs.
+- **"Professionals too?"** Yes. You get the same steps, and a coworker, tech lead or client signs.
 - **"What about my data?"** Milestones are private until signed and you choose to show them. Proof
   links stay yours. See `/privacy`.
 

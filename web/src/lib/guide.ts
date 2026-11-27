@@ -43,7 +43,7 @@ export async function loadGuide(): Promise<Guide | null> {
     { id: "project", label: "Add a project", done: (projects.count ?? 0) > 0, href: "/profile#projects", why: "Projects are the heart of your profile.", ask: "Help me turn something I've built into a project: ask me a few questions, then draft a title and a one-line summary." },
     { id: "post", label: "Share your first post", done: (posts.count ?? 0) > 0, href: "/feed", why: "A post puts your work in front of your field.", ask: "Give me three ideas for a first post about what I'm building, based on my projects." },
     ...(f.milestones ? [
-      { id: "ask-verify", label: byClub ? "Ask your club to verify a milestone" : "Ask someone who saw it to verify a milestone", done: ms.length > 0, href: "/profile#projects", why: byClub ? "A club-verified milestone is proof no résumé can fake." : "A milestone signed by a manager or mentor is proof no résumé can fake.", ask: "Which of my project milestones would make a strong verified milestone, and how should I describe it?" },
+      { id: "ask-verify", label: byClub ? "Ask your club to verify a milestone" : "Ask someone who saw it to verify a milestone", done: ms.length > 0, href: "/profile#projects", why: byClub ? "A club-verified milestone is proof no résumé can fake." : "A milestone signed by a coworker or mentor is proof no résumé can fake.", ask: "Which of my project milestones would make a strong verified milestone, and how should I describe it?" },
       { id: "verified", label: "Get your first verified milestone", done: ms.some((m) => m.status === "verified"), href: "/profile#projects", why: byClub ? "It shows on your profile with your club's name on it." : "It shows on your profile with their name on it." },
     ] : []),
   ];

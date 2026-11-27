@@ -122,7 +122,7 @@ async function Events({ searchParams }: { searchParams: PageProps<"/events">["se
           <EmptyState
             icon={<CalendarDays className="size-5" />}
             title={tab === "going" ? "You haven't RSVP'd to anything yet" : tab === "saved" ? "No saved events" : fromClubs ? "Nothing from your clubs yet" : topic ? `No upcoming ${topic} events` : "No upcoming events yet"}
-            body={tab === "upcoming" ? (hostClubs.length ? "You can host one: use Host an event above, or let Ember plan it." : "Verified companies, schools and clubs post events here. Club admins can host from their club's Events tab.") : undefined}
+            body={tab === "upcoming" ? (hostClubs.length ? "You can host one: use Host an event above, or let Torch plan it." : "Verified companies, schools and clubs post events here. Club admins can host from their club's Events tab.") : undefined}
           />
         )}
       </div>

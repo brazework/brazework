@@ -1,6 +1,6 @@
 "use client";
 import { AnimatePresence, motion } from "motion/react";
-import { BadgeCheck, Bell, Bookmark, CalendarDays, Compass, FolderGit2, House, Inbox, LayoutDashboard, LogOut, Network, PanelLeftClose, PanelLeftOpen, PenLine, Plus, Search, Settings, Sparkles, Sun, Trophy, UserRound, Users, X } from "lucide-react";
+import { BadgeCheck, Bell, CalendarDays, Compass, FolderGit2, GraduationCap, House, MessageCircle, LayoutDashboard, LogOut, PanelLeftClose, PanelLeftOpen, PenLine, Plus, Settings, Sparkles, Sun, UserRound, Users, X } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
@@ -9,27 +9,29 @@ import { UpdatesButton, UpdatesDialog, startTour } from "@/components/tour/tour-
 import { Avatar, Logo, menuCls, menuItemCls } from "@/components/ui";
 import { MyStatus, WithPresence } from "@/components/presence/presence";
 import { cn } from "@/lib/forge";
-import { MENU_PAGES, PLACES, placeFor, type BadgeKey, type PlaceId } from "@/lib/places";
+import { MENU_PAGES, PLACES, phoneTabsFor, placeFor, placesFor, type BadgeKey, type PlaceId } from "@/lib/places";
 import { NavTile, TILE } from "@/components/app/nav-tile";
 
 export type Badges = Record<BadgeKey, number>;
 
 // The five places of the signed-in app, each answering one question: Home (what needs me?), Projects
 // (what am I making?), Clubs (what's my team doing?), Record (what have I done, and who signed it?),
-// Inbox (who's reaching out?). The list itself, and which place a page belongs to, live in
+// Chats (who's reaching out?). The list itself, and which place a page belongs to, live in
 // lib/places.ts; here they only get their icons. There is no More drawer: every other page sits inside
 // one of the five, a tab away (components/app/place-tabs.tsx), and settings are on your avatar.
-const PLACE_ICON: Record<PlaceId, typeof Sun> = { home: House, projects: FolderGit2, clubs: Users, record: BadgeCheck, inbox: Inbox };
+const PLACE_ICON: Record<PlaceId, typeof Sun> = { home: House, school: GraduationCap, projects: FolderGit2, clubs: Users, record: BadgeCheck, inbox: MessageCircle };
 const NAV = PLACES.map((p) => ({ ...p, icon: PLACE_ICON[p.id] }));
+// At a school, School is a place after Home (lib/places.ts placesFor).
+const navFor = (atSchool: boolean) => placesFor(atSchool).map((p) => ({ ...p, icon: PLACE_ICON[p.id] }));
 
 // Phones keep one sheet with every page inside the places (lib/places.ts MENU_PAGES).
-const MENU_ICON: Record<string, typeof Sun> = { "/notifications": Bell, "/events": CalendarDays, "/challenges": Trophy, "/pro": BadgeCheck, "/saved": Bookmark, "/network": Network, "/dashboard": LayoutDashboard, "/settings": Settings };
+const MENU_ICON: Record<string, typeof Sun> = { "/notifications": Bell, "/school": GraduationCap, "/events": CalendarDays, "/dashboard": LayoutDashboard, "/settings": Settings };
 
 // One row, one tile, one group card for every part of the sidebar, so the icons line up and match.
 const ROW = "group relative flex items-center gap-2.5 rounded-md py-1 text-sm transition";
 // Sections are separated by a hairline and a small label, not boxed in cards.
 const GROUP = "border-t border-line/70 pt-3";
-const GROUP_LABEL = "px-2 py-1.5 text-[11px] font-medium tracking-[0.12em] text-faint uppercase";
+const GROUP_LABEL = "px-2 py-1.5 text-xs font-medium text-faint";
 const TOP_BTN = cn(TILE, "text-faint hover:bg-hover hover:text-text");
 
 function Count({ n, className }: { n: number; className?: string }) {
@@ -43,8 +45,8 @@ function Count({ n, className }: { n: number; className?: string }) {
 
 export function SidebarSkeleton() {
   return (
-    <aside className="sticky top-0 hidden h-dvh w-[248px] shrink-0 md:block" aria-busy="true">
-      <div className="flex h-full flex-col border-r border-line bg-surface-2/70 p-3">
+    <aside className="sticky top-0 hidden h-dvh w-[260px] shrink-0 p-2 md:block" aria-busy="true">
+      <div className="glass-panel flex h-full flex-col rounded-2xl p-3">
       <div className="px-2 pt-2"><Logo /></div>
       <div className="mt-10 flex flex-col gap-2">
         {NAV.map((n) => <div key={n.label} className="h-10 animate-pulse rounded-xl bg-surface/60" />)}
@@ -58,9 +60,10 @@ export function SidebarSkeleton() {
 // Remembered in a cookie (not localStorage) so the server draws it at the right width: no jump on load.
 export const SIDEBAR_COOKIE = "forge-sidebar";
 
-export function Sidebar({ first, last, userId, badges, avatar, initialCollapsed = false, clubs = [], builds = [] }: { first: string; last: string; userId: string; badges: Badges; avatar?: string | null; clubs?: { id: string; name: string; image?: string | null }[]; builds?: { id: string; name: string }[]; initialCollapsed?: boolean }) {
+export function Sidebar({ first, last, userId, badges, avatar, initialCollapsed = false, clubs = [], builds = [], school = null, classes = [] }: { first: string; last: string; userId: string; badges: Badges; avatar?: string | null; clubs?: { id: string; name: string; image?: string | null }[]; builds?: { id: string; name: string }[]; initialCollapsed?: boolean; school?: string | null; classes?: { id: string; course: string; name: string }[] }) {
   const path = usePathname();
-  const here = placeFor(path)?.id;
+  const nav = navFor(!!school);
+  const here = placeFor(path, nav)?.id;
   const [collapsed, setCollapsed] = useState(initialCollapsed);
   const toggle = () => {
     const next = !collapsed;
@@ -68,9 +71,9 @@ export function Sidebar({ first, last, userId, badges, avatar, initialCollapsed 
     document.cookie = `${SIDEBAR_COOKIE}=${next ? "collapsed" : "open"}; path=/; max-age=31536000; samesite=lax`;
   };
   return (
-    <motion.aside layoutRoot aria-label="Sidebar" className={cn("sticky top-0 isolate z-30 hidden h-dvh shrink-0 transition-[width] duration-300 ease-out motion-reduce:transition-none md:block", collapsed ? "w-16" : "w-[248px]")}>
-      {/* A flush, calm column (redesign 2026-11): a hairline edge on a soft tint, no floating glass. */}
-      <div className="flex h-full flex-col border-r border-line bg-surface-2/70 px-2 py-3">
+    <motion.aside layoutRoot aria-label="Sidebar" className={cn("sticky top-0 isolate z-30 hidden h-dvh shrink-0 transition-[width] duration-300 ease-out motion-reduce:transition-none md:block", collapsed ? "w-[76px]" : "w-[260px]")}>
+      {/* A floating glass panel (2026-11-26) over the app's soft lights (globals.css glass-panel). */}
+      <div className="glass-panel m-2 flex h-[calc(100dvh-1rem)] flex-col rounded-2xl px-2 py-3">
       <div className={cn("flex items-center gap-1", collapsed ? "flex-col" : "justify-between pr-1 pl-2")}>
         <Link href="/feed" aria-label="Brazework feed" className={cn(collapsed && "mb-2")}><Logo withWord={!collapsed} /></Link>
         <div className={cn("flex items-center gap-1", collapsed && "flex-col")}>
@@ -87,11 +90,11 @@ export function Sidebar({ first, last, userId, badges, avatar, initialCollapsed 
           </button>
         </div>
       </div>
-      {/* No buttons above the places: logging work and asking Ember happen in the Ask Ember bar on every
-          page (components/ember/ask-bar.tsx). Ember's own page (history, your tools' drafts) is the row
+      {/* No buttons above the places: logging work and asking Torch happen in the Ask Torch bar on every
+          page (components/ember/ask-bar.tsx). Torch's own page (history, your tools' drafts) is the row
           under the places. */}
       <nav data-tour="menu" aria-label="Main" className={cn("flex shrink-0 flex-col gap-0.5", collapsed ? "mt-6" : "mt-7")}>
-        {NAV.map((n) => {
+        {nav.map((n) => {
           const active = here === n.id;
           const count = n.badge ? badges[n.badge] : 0;
           return (
@@ -110,11 +113,11 @@ export function Sidebar({ first, last, userId, badges, avatar, initialCollapsed 
             </Link>
           );
         })}
-        <Link href="/copilot" aria-current={path.startsWith("/copilot") ? "page" : undefined} aria-label="Ask Ember" title={collapsed ? "Ember" : undefined}
+        <Link href="/copilot" aria-current={path.startsWith("/copilot") ? "page" : undefined} aria-label="Ask Torch" title={collapsed ? "Torch" : undefined}
           className={cn(ROW, "mt-1", collapsed ? "justify-center px-0" : "px-2", path.startsWith("/copilot") ? "font-medium text-text" : "text-text-2 hover:bg-hover/60 hover:text-text")}>
           {path.startsWith("/copilot") && <motion.span layoutId="nav-active" className="nav-pill absolute inset-0 rounded-md" transition={{ type: "spring", stiffness: 400, damping: 34 }} />}
           <NavTile ember active={path.startsWith("/copilot")} />
-          {!collapsed && <span className="relative">Ember</span>}
+          {!collapsed && <span className="relative">Torch</span>}
         </Link>
       </nav>
       {/* Your clubs scroll on short screens, so the five places are always whole. */}
@@ -136,10 +139,11 @@ export function Sidebar({ first, last, userId, badges, avatar, initialCollapsed 
           })}
         </div>
       )}
-      {/* Your clubs, one click away. */}
-      {clubs.length > 0 && (
+      {/* Your clubs, one click away, and under them your school (docs/strategy.md, 2026-11-26): its
+          page, its verified clubs and, with the portal, your classes this semester. */}
+      {(clubs.length > 0 || school) && (
         <div aria-label="Your clubs" role="group" className={cn("mt-5 flex flex-col gap-0.5", collapsed ? "items-center border-t border-line pt-4" : GROUP)}>
-          {!collapsed && <div className={GROUP_LABEL}>Clubs</div>}
+          {!collapsed && clubs.length > 0 && <div className={GROUP_LABEL}>Clubs</div>}
           {clubs.map((c) => {
             const active = path.startsWith(`/c/${c.id}`);
             return (
@@ -151,6 +155,32 @@ export function Sidebar({ first, last, userId, badges, avatar, initialCollapsed 
               </Link>
             );
           })}
+          {school && (() => {
+            const active = path === "/school";
+            return (
+              <>
+                {/* School is a place above (lib/places.ts); here, its name heads this term's classes. */}
+                {!collapsed && (
+                  <Link href="/school" data-testid="sidebar-school" aria-current={active ? "page" : undefined}
+                    className={cn(GROUP_LABEL, "flex items-center gap-1.5 truncate rounded-md transition hover:text-text", clubs.length > 0 && "mt-2", active && "text-text")}>
+                    <GraduationCap className="size-3.5 shrink-0" aria-hidden="true" /><span className="truncate">{school}</span>
+                  </Link>
+                )}
+                {/* This semester's classes, under the school (supabase/school-portal.sql my_classes). */}
+                {classes.map((c) => {
+                  const on = path.startsWith(`/c/${c.id}`);
+                  return (
+                    <Link key={c.id} href={`/c/${c.id}`} title={collapsed ? c.name : undefined} aria-current={on ? "page" : undefined}
+                      className={cn(ROW, collapsed ? "justify-center px-0" : "pr-1.5 pl-3", on ? "font-medium text-text" : "text-text-2 hover:bg-hover/70 hover:text-text")}>
+                      {on && <motion.span layoutId="club-active" className="nav-pill absolute inset-0 rounded-md" transition={{ type: "spring", stiffness: 400, damping: 34 }} />}
+                      {collapsed ? <NavTile letter={c.course} active={on} /> : <span className="relative w-14 shrink-0 font-mono text-[11px] text-faint">{c.course}</span>}
+                      {!collapsed && <span className="relative truncate">{c.name.replace(/^[^·]+·\s*/, "")}</span>}
+                    </Link>
+                  );
+                })}
+              </>
+            );
+          })()}
         </div>
       )}
       </div>
@@ -216,10 +246,10 @@ function YouMenu({ first, last, userId, avatar, collapsed, path }: { first: stri
 
 // Phones: a slim top bar (logo, create, notifications, menu) plus a bottom tab bar with the same
 // five places as the sidebar.
-const TABS = NAV;
-
-export function MobileBar({ first, last, badges, avatar }: { first: string; last: string; badges: Badges; avatar?: string | null }) {
+export function MobileBar({ first, last, badges, avatar, atSchool = false }: { first: string; last: string; badges: Badges; avatar?: string | null; atSchool?: boolean }) {
   const path = usePathname();
+  // Five slots: at a school, School takes Chats' slot and Chats moves up beside the bell.
+  const TABS = phoneTabsFor(atSchool).map((p) => ({ ...p, icon: PLACE_ICON[p.id] }));
   const [sheet, setSheet] = useState<"more" | "create" | null>(null);
   // Close the sheet when the page changes or Escape is pressed.
   const [lastPath, setLastPath] = useState(path);
@@ -235,7 +265,7 @@ export function MobileBar({ first, last, badges, avatar }: { first: string; last
   }, [sheet]);
   const rest = MENU_PAGES.map((m) => ({ ...m, icon: MENU_ICON[m.href] ?? Settings }));
   const restCount = badges.invites;
-  const here = placeFor(path)?.id;
+  const here = placeFor(path, navFor(atSchool))?.id;
   const tab = (t: (typeof TABS)[number]) => {
     const active = here === t.id;
     const count = t.badge ? badges[t.badge] : 0;
@@ -243,7 +273,7 @@ export function MobileBar({ first, last, badges, avatar }: { first: string; last
       <Link key={t.href} href={t.href} aria-current={active ? "page" : undefined} aria-label={count ? `${t.label}, ${count} ${t.badge === "signing" ? "to sign" : "new"}` : t.label} className={cn("relative flex h-14 flex-col items-center justify-center gap-0.5 rounded-xl text-[10px] font-medium transition active:scale-90", active ? "text-text" : "text-faint")}>
         {active && <motion.span layoutId="tab-pill" className="absolute inset-0.5 rounded-xl bg-hover" transition={{ type: "spring", stiffness: 500, damping: 38 }} />}
         <span className="relative">
-          <t.icon className="size-[22px]" strokeWidth={active ? 2.2 : 1.8} />
+          <t.icon className="icon-duo size-[22px]" strokeWidth={active ? 2.2 : 1.8} />
           <Count n={count} className="absolute -top-1.5 -right-2.5" />
         </span>
         <span className="relative">{t.label}</span>
@@ -254,15 +284,19 @@ export function MobileBar({ first, last, badges, avatar }: { first: string; last
   return (
     <>
       {/* Top bar: under the notch / Dynamic Island, padded by the safe area. */}
-      <header className="glass fixed inset-x-0 top-0 z-40 flex items-center gap-3 px-4 pt-[calc(env(safe-area-inset-top)+0.625rem)] pb-2.5 md:hidden">
+      <header className="glass fixed inset-x-0 top-0 z-40 flex items-center gap-3 border-x-0 border-t-0 px-5 pt-[calc(env(safe-area-inset-top)+0.625rem)] pb-2.5 md:hidden">
         <Link href="/feed" aria-label="Brazework feed"><Logo /></Link>
-        <div className="ml-auto flex items-center gap-1">
-          <button type="button" onClick={() => setSheet("create")} aria-expanded={sheet === "create"} aria-label="Create" className="bg-accent-grad mr-1 grid size-9 place-items-center rounded-full text-on-accent transition active:scale-95">
-            <Plus className="size-5" strokeWidth={2.4} />
+        <div className="ml-auto flex items-center gap-2">
+          {/* The main thing to do on a phone, said in words (redesign 2026-11): log what you built. */}
+          <button type="button" onClick={() => setSheet("create")} aria-expanded={sheet === "create"} aria-label="Log work or create" className="bg-accent-grad mr-1 inline-flex h-9 items-center gap-1 rounded-lg pr-3 pl-2.5 text-sm font-medium text-on-accent transition active:scale-95">
+            <Plus className="size-4" strokeWidth={2.4} /> Log
           </button>
-          <Link href="/search" aria-label="Search" className="grid size-10 place-items-center rounded-full text-text-2 transition hover:bg-hover">
-            <Search className="size-5" />
-          </Link>
+          {atSchool && (
+            <Link href="/messages" aria-label={badges.messages ? `Chats, ${badges.messages} new` : "Chats"} className="relative grid size-10 place-items-center rounded-full text-text-2 transition hover:bg-hover">
+              <MessageCircle className="size-5" />
+              <Count n={badges.messages} className="absolute top-0.5 right-0" />
+            </Link>
+          )}
           <Link href="/notifications" aria-label={badges.notifications ? `Notifications, ${badges.notifications} new` : "Notifications"} className="relative grid size-10 place-items-center rounded-full text-text-2 transition hover:bg-hover">
             <Bell className="size-5" />
             <Count n={badges.notifications} className="absolute top-0.5 right-0" />
@@ -275,13 +309,13 @@ export function MobileBar({ first, last, badges, avatar }: { first: string; last
       </header>
 
       {/* Floating tab bar above the home indicator: the five places. */}
-      <motion.nav layoutRoot data-tour="menu" aria-label="Main" className="fixed inset-x-3 bottom-[calc(env(safe-area-inset-bottom)+0.5rem)] z-40 md:hidden">
+      <motion.nav layoutRoot data-tour="menu" aria-label="Main" className="fixed inset-x-4 bottom-[calc(env(safe-area-inset-bottom)+0.5rem)] z-40 md:hidden">
         <div className="glass grid grid-cols-5 items-center rounded-2xl border border-line p-1 shadow-[var(--shadow-float)]">
           {TABS.map(tab)}
         </div>
       </motion.nav>
 
-      <Sheet open={sheet === "create"} title="Create" onClose={() => setSheet(null)}>
+      <Sheet open={sheet === "create"} title="Log or create" onClose={() => setSheet(null)}>
         <div className="grid grid-cols-2 gap-2">
           {CREATE.map((c) => (
             <Link key={c.label} href={c.href} onClick={(e) => { if (c.href === "/feed#composer" && path === "/feed") { e.preventDefault(); setSheet(null); window.dispatchEvent(new Event("forge:compose")); } }} className="flex flex-col gap-2 rounded-2xl border border-line p-4 text-left transition active:scale-[0.97]">
@@ -323,7 +357,7 @@ export function MobileBar({ first, last, badges, avatar }: { first: string; last
 
 const CREATE = [
   { href: "/feed#composer", label: "Log work", body: "An update, result or question", icon: PenLine },
-  { href: "/copilot", label: "Ask Ember", body: "Your AI teammate does the busywork", icon: Sparkles },
+  { href: "/copilot", label: "Ask Torch", body: "Your AI teammate does the busywork", icon: Sparkles },
   { href: "/profile#projects", label: "Add a project", body: "Show what you built", icon: FolderGit2 },
   { href: "/events", label: "Events", body: "Find one, or host for your club", icon: CalendarDays },
 ];

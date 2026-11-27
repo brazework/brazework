@@ -2,37 +2,41 @@
 import { AnimatePresence, motion, useMotionValueEvent, useScroll } from "motion/react";
 import { Menu, X } from "lucide-react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button, Logo } from "@/components/ui";
 import { cn } from "@/lib/forge";
 
-// `wide`: only in the bar on a wide screen (the menu on a phone lists them all).
-const LINKS: { href: string; label: string; wide?: boolean }[] = [
+// `wide`: only in the bar on a wide screen. `noPhone`: a section a phone doesn't show (app/page.tsx), so
+// the phone menu leaves it out. Section links (#top, the hero's product window) point back at the
+// landing page from /schools.
+const LINKS: { href: string; label: string; wide?: boolean; noPhone?: boolean }[] = [
   { href: "#how", label: "How it works" },
-  { href: "#app", label: "The app" },
-  { href: "#ember", label: "Ember" },
-  { href: "#clubs", label: "Clubs" },
-  { href: "#companies", label: "Companies" },
-  { href: "#pricing", label: "Pricing" },
-  { href: "#faq", label: "Questions", wide: true },
+  { href: "#for", label: "Who it's for" },
+  { href: "/schools", label: "For schools" },
+  { href: "/pricing", label: "Pricing" },
+  { href: "/ai", label: "Connect your AI", wide: true },
 ];
 
 export function Nav() {
   const { scrollY, scrollYProgress } = useScroll();
   const [scrolled, setScrolled] = useState(false);
   const [open, setOpen] = useState(false);
+  const path = usePathname();
+  const to = (href: string) => (href.startsWith("#") && path !== "/" ? `/${href}` : href);
+  const current = (href: string) => here === href || path === href;
   useMotionValueEvent(scrollY, "change", (v) => setScrolled(v > 24));
-  // Where you are on the page: the last linked section whose top has passed a third of the way down
-  // the screen. The sections between two links (who signs, why, the 3D build) count as the one above.
+  // Where you are on the page: the linked section that a line a third of the way down the screen is in.
   const [here, setHere] = useState("");
   useEffect(() => {
-    const marks = LINKS.map((l) => document.getElementById(l.href.slice(1))).filter((el): el is HTMLElement => !!el);
+    const marks = LINKS.filter((l) => l.href.startsWith("#")).map((l) => document.getElementById(l.href.slice(1))).filter((el): el is HTMLElement => !!el);
     let frame = 0;
     const read = () => {
       frame = 0;
       const line = window.innerHeight / 3;
-      const past = marks.filter((el) => el.getBoundingClientRect().top <= line);
+      // Only while you're in it: the hero (#top) is a long scroll run, then other sections follow.
+      const past = marks.filter((el) => { const r = el.getBoundingClientRect(); return r.top <= line && r.bottom > line; });
       setHere(past.length ? `#${past[past.length - 1].id}` : "");
     };
     const onScroll = () => { if (!frame) frame = requestAnimationFrame(read); };
@@ -55,7 +59,7 @@ export function Nav() {
         aria-label="Main"
         className={cn(
           "relative flex w-full max-w-6xl flex-wrap items-center gap-x-3 gap-y-0 rounded-2xl sm:gap-x-6 px-4 py-2.5 transition-all duration-500",
-          scrolled || open ? "glass shadow-[var(--shadow-float)]" : "border border-transparent",
+          scrolled || open ? "glass shadow-[var(--shadow-float)]" : cn("border border-transparent bg-transparent", path !== "/" && "theme-dark"),
         )}
       >
         {/* How far down the page you've read: a hairline along the bar's lower edge, once it floats. */}
@@ -64,7 +68,7 @@ export function Nav() {
         <ul className="ml-4 hidden items-center gap-1 md:flex">
           {LINKS.map((l) => (
             <li key={l.href} className={cn(l.wide && "hidden xl:block")}>
-              <a href={l.href} aria-current={here === l.href ? "location" : undefined} className={cn("rounded-md px-3 py-1.5 text-sm transition hover:bg-hover hover:text-text", here === l.href ? "bg-hover text-text" : "text-muted")}>{l.label}</a>
+              <a href={to(l.href)} aria-current={here === l.href ? "location" : path === l.href ? "page" : undefined} className={cn("rounded-md px-3 py-1.5 text-sm transition hover:bg-hover hover:text-text", current(l.href) ? "bg-hover text-text" : "text-muted")}>{l.label}</a>
             </li>
           ))}
         </ul>
@@ -93,9 +97,9 @@ export function Nav() {
               transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
               className="w-full overflow-hidden md:hidden"
             >
-              {[...LINKS, { href: "/login", label: "Log in" }].map((l) => (
+              {[...LINKS.filter((l) => !l.noPhone), { href: "/login", label: "Log in" }].map((l) => (
                 <li key={l.href}>
-                  <a href={l.href} onClick={() => setOpen(false)} className="block rounded-xl px-2 py-3 text-[15px] text-text-2 transition hover:bg-hover hover:text-text">
+                  <a href={to(l.href)} onClick={() => setOpen(false)} className="block rounded-xl px-2 py-3 text-[15px] text-text-2 transition hover:bg-hover hover:text-text">
                     {l.label}
                   </a>
                 </li>

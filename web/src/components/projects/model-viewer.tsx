@@ -149,7 +149,7 @@ export function ModelViewer({ url, name, sample, className }: { url?: string; na
       )}
 
       {loading && <p className="absolute inset-0 grid place-items-center text-sm text-muted"><span className="inline-flex items-center gap-2"><Loader2 className="size-4 animate-spin" /> Loading the model…</span></p>}
-      {state === "error" && <p className="absolute inset-0 grid place-items-center p-6 text-center text-sm text-muted">This model couldn&apos;t be previewed. Download it to open it in your CAD tool.</p>}
+      {state === "error" && <p className="absolute inset-0 grid place-items-center p-6 text-center text-sm text-muted">This model couldn&apos;t be previewed here.</p>}
       {state === "nogl" && <p className="absolute inset-0 grid place-items-center p-6 text-center text-sm text-muted">3D isn&apos;t available in this browser.</p>}
 
       {state === "ready" && (

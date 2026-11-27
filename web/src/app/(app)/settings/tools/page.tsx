@@ -18,7 +18,7 @@ export const metadata: Metadata = { title: "Your tools" };
 export default function ToolsPage() {
   return (
     <div className="mx-auto max-w-2xl lg:max-w-4xl">
-      <PageHeader tour="ai-tools" title="Your tools" subtitle={<>Bring Brazework into Claude, or the editor and agent you already use. <Link href="/ai" className="font-medium text-text-2 underline-offset-4 hover:underline">The guide</Link> has what to ask, by field.</>} />
+      <PageHeader tour="ai-tools" title="Your tools" subtitle={<>Connect the AI tool you already use to draft updates and milestones from your work. Projects also accept evidence links and files from any field. <Link href="/ai" className="font-medium text-text-2 underline-offset-4 hover:underline">The guide</Link> has what to ask, by field.</>} />
       <Suspense fallback={<Skeleton className="mt-6 h-[520px]" />}>
         <Tools />
       </Suspense>

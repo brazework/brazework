@@ -18,9 +18,9 @@ export default function OnboardingPage({ searchParams }: PageProps<"/onboarding"
     <div className="relative isolate min-h-dvh">
       <div className="app-backdrop absolute inset-0 -z-10" />
       <ThemeToggle className="absolute top-5 right-5" />
-      <div className="mx-auto max-w-3xl px-6 py-14">
+      <div className="mx-auto max-w-2xl px-4 py-7 sm:px-6 sm:py-12">
         <Logo />
-        <div className="mt-14">
+        <div className="mt-6 rounded-3xl border border-line bg-surface p-5 shadow-sm sm:mt-9 sm:p-8">
           <Suspense fallback={<div className="h-96 shimmer rounded-3xl" aria-busy="true" />}>
             <Onboarding searchParams={searchParams} />
           </Suspense>
@@ -39,8 +39,7 @@ async function Onboarding({ searchParams }: { searchParams: PageProps<"/onboardi
     const { data } = await supabase.auth.getClaims();
     const claims = (data?.claims ?? {}) as { user_metadata?: unknown; app_metadata?: { provider?: string } };
     const via = claims.app_metadata?.provider;
-    // A professional is offered a LinkedIn link here (optional), once supabase/linkedin-required.sql has run.
-    return <FinishSignupForm email={user.email} provider={isProvider(via) ? providerLabel(via) : undefined} {...namesFrom(claims.user_metadata)} askLinkedin={(await dbFeatures()).linkedinRequired} />;
+    return <FinishSignupForm email={user.email} provider={isProvider(via) ? providerLabel(via) : undefined} {...namesFrom(claims.user_metadata)} />;
   }
   if (profile?.onboarded) redirect("/feed");
   const student = profile?.account_type === "student";
@@ -50,8 +49,8 @@ async function Onboarding({ searchParams }: { searchParams: PageProps<"/onboardi
     // Clubs that can sign it: theirs (an invite they followed), then open clubs, biggest first. The
     // wizard puts the ones in the field they pick at the top.
     const [mine, open] = await Promise.all([
-      supabase.from("community_members").select("community:communities(id, name, field, member_count)").eq("uid", user.id).limit(10),
-      supabase.from("communities").select("id, name, field, member_count").eq("privacy", "public").neq("type", "study").order("member_count", { ascending: false }).limit(60),
+      supabase.from("community_members").select("community:communities!inner(id, name, field, member_count)").eq("uid", user.id).neq("community.type", "class").limit(10),
+      supabase.from("communities").select("id, name, field, member_count").eq("privacy", "public").not("type", "in", "(study,class)").order("member_count", { ascending: false }).limit(60),
     ]);
     type Row = { id: string; name: string; field: string | null; member_count: number };
     const own = ((mine.data ?? []) as unknown as { community: Row | null }[]).map((m) => m.community).filter((c): c is Row => !!c);

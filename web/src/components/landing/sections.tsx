@@ -1,238 +1,155 @@
-import { BadgeCheck } from "lucide-react";
+import { ArrowRight, BarChart3, Briefcase, ClipboardCheck, GraduationCap, Landmark, Link2, PenLine, Plus, Users } from "lucide-react";
 import Link from "next/link";
-import { cn } from "@/lib/forge";
-import { ConnectSlot } from "@/components/connect/connect-live";
-import { AppTour } from "./app-tour";
-import { BuildShowcase } from "./build-showcase";
-import { ClubSetupDemo } from "./club-setup-demo";
-import { CompanySearch } from "./company-search";
-import { EmberDemo } from "./ember-demo";
-import { Faq } from "./faq";
-import { LANDING_AUDIENCES, PRICING_LINKS } from "@/lib/pricing";
-import { PricingTiers } from "./pricing";
+import { Ember } from "@/components/ember/ember";
+import { Seal } from "@/components/app/verified-seal";
+import { PLUS } from "@/lib/pricing";
 
-// The landing page's sections. The order they show in is set by app/page.tsx: who it's for (a
-// student, someone employed, someone working for themselves), why proof matters now, the app itself
-// (to try), a build in 3D, Ember and the AI tools you already use, what clubs get, what companies get
-// and what it costs, and questions.
-// Each one is a heading, a few plain sentences and something to try; the demos are client components.
+// The landing page's short sections (redesign 2026-11; schools first since 2026-11-26, see
+// docs/strategy.md; Brazework Courses since 2026-11-26). The hero does the showing; ForSchools is the
+// one band that speaks to the school that pays; /schools says the rest and /pricing has the prices. Audiences says who it's for and where each starts.
+// The whole page tells one story (2026-11-26, Ian and Josh: "include professionals", "tie it all
+// together"): what it is (the hero), how it works in three steps that are the same for everyone (How),
+// who it's for, students and professionals alike (Audiences), what a school gets (ForSchools, Compare),
+// plain answers (Faq), and the pilot form.
 
 export const H2 = "text-[clamp(2rem,4.4vw,3.25rem)] leading-[1.03] font-semibold tracking-[-0.04em] text-balance";
-const WRAP = "mx-auto max-w-6xl px-5 sm:px-6";
-const SEC = "scroll-mt-20 py-20 sm:py-28";
-const BAND = "border-y border-line bg-surface-2/60";
-const LEAD = "mt-5 max-w-[36rem] text-lg leading-relaxed text-muted";
 
-// Three plain points beside a demo: what it is, in the visitor's words.
-function Points({ items }: { items: [string, string][] }) {
+// What a school gets, by the office that buys it. `soon` marks what's being built with the pilot
+// schools, so the page never sells what isn't there (lib/pricing.ts SCHOOL_SOON says the same).
+export const SCHOOL_OUTCOMES = [
+  { icon: ClipboardCheck, office: "Engineering dean", title: "Accreditation evidence", body: "ABET outcomes from real class and club projects: design, teamwork, results, each verified by the faculty who saw it.", soon: true },
+  { icon: Users, office: "Student life", title: "Club engagement", body: "Which clubs are active, how many students build with them and what they made this semester, in one report.", soon: false },
+  { icon: Briefcase, office: "Career center", title: "Placement data", body: "Which employers looked at your students' work, who they contacted and who they hired.", soon: true },
+  { icon: Landmark, office: "Admissions", title: "A public showcase", body: "Your verified clubs and what your students are building right now, for prospective students and donors.", soon: false },
+];
+
+// How it works: the same three steps for a student, a professional and a club member. Torch, the AI
+// built in, does the busywork, and nothing is saved or signed until a person says yes.
+const STEPS = [
+  { icon: Plus, title: "Log what you built", body: "A class project, a club build or something you shipped at work. Add a photo, a file or a link. Or tell Torch in one sentence and it writes it up.", sample: <span className="rounded-lg border border-line bg-surface-2 px-3 py-2 text-[13px] text-text-2">Cut the robot arm&apos;s cycle from 9.4 to 7.1 seconds</span> },
+  { icon: PenLine, title: "Someone who saw it signs it", body: "Your professor, a club officer, your coworker or a client signs it with their name. They get one email and don't need an account.", sample: <span className="flex flex-wrap gap-1.5">{["Your professor", "Your club", "Your coworker", "A client"].map((x) => <span key={x} className="rounded-full border border-line px-2.5 py-1 text-[12px] text-text-2">{x}</span>)}</span> },
+  { icon: Link2, title: "It's yours for good", body: "Each signed piece goes on your record, with one link for LinkedIn, your résumé or any application. Change schools or jobs, and it comes with you.", sample: <span className="inline-flex items-center gap-2 rounded-lg border border-line bg-surface-2 px-3 py-2 text-[13px] text-text-2"><Seal size={16} /> Verified by Prof. Dana Ruiz</span> },
+];
+
+export function How() {
   return (
-    <dl className="mt-9 flex flex-col divide-y divide-line border-y border-line">
-      {items.map(([t, b]) => <div key={t} className="py-4"><dt className="font-medium">{t}</dt><dd className="mt-1 text-[15px] leading-relaxed text-muted">{b}</dd></div>)}
-    </dl>
+    <section id="how" aria-labelledby="how-h" className="scroll-mt-20 py-16 md:py-24">
+      <div className="mx-auto max-w-6xl px-5 sm:px-6">
+        <h2 id="how-h" className={H2}>How it works</h2>
+        <p className="mt-4 max-w-[40rem] text-lg leading-relaxed text-muted">Three steps, the same whether you&apos;re in school, at work or in a club. Anyone can write a great résumé now. A name standing behind your work is much harder to fake.</p>
+        <ol className="reveal mt-8 grid grid-cols-1 gap-4 md:mt-10 md:grid-cols-3">
+          {STEPS.map((s, i) => (
+            <li key={s.title} className="flex flex-col rounded-2xl border border-line bg-surface p-5 md:p-6">
+              <span className="flex items-center gap-3">
+                <span className="grid size-9 shrink-0 place-items-center rounded-full bg-accent font-mono text-sm font-semibold text-on-accent">{i + 1}</span>
+                <s.icon className="size-4 text-faint" aria-hidden="true" />
+              </span>
+              <h3 className="mt-5 text-xl font-semibold tracking-tight">{s.title}</h3>
+              <p className="mt-2 flex-1 text-[15px] leading-relaxed text-muted">{s.body}</p>
+              <div aria-hidden="true" className="mt-5">{s.sample}</div>
+            </li>
+          ))}
+        </ol>
+        <div className="reveal mt-4 flex flex-col gap-4 rounded-2xl border border-line bg-surface p-5 sm:flex-row sm:items-center md:p-6">
+          <Ember mood="happy" size={44} label="Torch" />
+          <p className="flex-1 text-[15px] leading-relaxed text-muted"><span className="font-semibold text-text">Torch, your AI teammate, does the busywork.</span> It writes up what you did, finds who should sign it, plans your week and can start a club or study group for you. It never signs anything, and nothing is saved until you say yes.</p>
+          <Link href="/ai" className="inline-flex shrink-0 items-center gap-1.5 text-sm font-medium text-text underline-offset-4 hover:underline">Use it from Claude or ChatGPT <ArrowRight className="size-3.5" /></Link>
+        </div>
+      </div>
+    </section>
   );
 }
 
-// Who signs, wherever you are. The record is the same for a student, someone employed and someone
-// working for themselves; only the person who saw the work changes (a club's officers, or anyone
-// asked by email: supabase/vouches.sql). Examples, and the page says so.
-const STAGES = [
-  { when: "Studying", who: "Your club's officers sign what they saw you build. A professor, a TA or a lab lead can too.", work: "Line-following robot beat the course in 41.2 seconds", by: "Ben C.", as: "officer, Rocketry Club" },
-  { when: "Working", who: "A manager or a mentor signs from their work email. They don't need an account.", work: "Cut the pick-and-place cycle from 9.4 to 7.1 seconds", by: "Dana R.", as: "engineering manager, Voltline" },
-  { when: "On your own", who: "Whoever you built it for signs it, from their company's address: the person who saw it ship.", work: "Rebuilt a bike shop's checkout: 31% fewer abandoned carts", by: "Sam O.", as: "owner, Northside Bikes" },
-];
-
-export function Stages() {
+export function ForSchools() {
   return (
-    <section id="who" className="scroll-mt-20 py-16 sm:py-24">
-      <div className={WRAP}>
-        <h2 className={H2}>Who signs it? Whoever saw it.</h2>
-        <p className={LEAD}>At school that&apos;s your club or a professor. At work, your manager or tech lead. On your own, your client. They sign from their own email (a work or university one carries the most weight), and the record stays yours when you move on.</p>
-        <ul className="mt-10 grid grid-cols-1 overflow-hidden rounded-[1.25rem] border border-line bg-surface md:grid-cols-3 md:divide-x md:divide-line">
-          {STAGES.map((s, i) => (
-            <li key={s.when} className={cn("flex flex-col p-6 sm:p-7", i > 0 && "border-t border-line md:border-t-0")}>
-              <h3 className="text-2xl font-semibold tracking-tight">{s.when}</h3>
-              <p className="mt-2 flex-1 text-[15px] leading-relaxed text-muted">{s.who}</p>
-              <figure className="mt-6 rounded-xl bg-surface-2/70 px-4 py-3">
-                <p className="text-sm leading-snug font-medium">{s.work}</p>
-                <figcaption className="mt-2 flex items-start gap-1.5 text-xs leading-relaxed text-muted">
-                  <BadgeCheck className="mt-0.5 size-3.5 shrink-0 text-ok" aria-hidden="true" />
-                  <span>Verified by <span className="font-medium text-text-2">{s.by}</span>, {s.as}</span>
-                </figcaption>
-              </figure>
+    <section id="schools" aria-labelledby="schools-h" className="schools-band relative isolate scroll-mt-20 overflow-hidden border-y border-line py-16 text-text md:py-24">
+      <div aria-hidden="true" className="hero-glow pointer-events-none absolute inset-0 -z-10 opacity-70" />
+      <div className="mx-auto max-w-6xl px-5 sm:px-6">
+        <p className="inline-flex items-center gap-2 font-mono text-xs text-faint"><GraduationCap className="size-3.5" aria-hidden="true" /> For schools</p>
+        <h2 id="schools-h" className={`${H2} mt-4 max-w-[22ch]`}>Your students&apos; project work, verified by the people who saw it.</h2>
+        <p className="mt-5 max-w-[40rem] text-lg leading-relaxed text-muted">Brazework is where your project courses run and your clubs build. Faculty grade and verify in one step, each office gets the evidence it&apos;s measured on, and students and clubs never pay.</p>
+        <ul className="reveal mt-8 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-line bg-line md:mt-10 lg:grid-cols-4">
+          {SCHOOL_OUTCOMES.map((o) => (
+            <li key={o.title} className="flex flex-col bg-surface p-4 sm:p-6">
+              <span className="flex items-center justify-between gap-3">
+                <o.icon className="size-5 text-brand" aria-hidden="true" />
+                {o.soon && <span className="rounded-full border border-line px-2 py-0.5 font-mono text-[10px] text-faint"><span className="max-sm:hidden">With pilot schools</span><span className="sm:hidden" aria-hidden="true">Soon</span></span>}
+              </span>
+              <p className="mt-4 font-mono text-[11px] text-faint sm:mt-5">{o.office}</p>
+              <h3 className="mt-1 text-[15px] leading-snug font-semibold tracking-tight sm:text-lg">{o.title}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-muted max-sm:hidden">{o.body}</p>
             </li>
           ))}
         </ul>
-        <p className="mt-3 text-xs text-faint">Examples, to show how signed work reads.</p>
-      </div>
-    </section>
-  );
-}
-
-export function Tour() {
-  return (
-    <section id="app" className={SEC}>
-      <div className={WRAP}>
-        <h2 className={H2}>The whole app is five places.</h2>
-        <p className={LEAD}>This is a working copy with example data. Tap around: what you do in one place shows up in the next.</p>
-        <div className="mt-10"><AppTour /></div>
-      </div>
-    </section>
-  );
-}
-
-// The build itself: pick a field and see an example in the product's own 3D viewer
-// (build-showcase.tsx). three.js loads only when this nears the screen.
-export function ShowBuild() {
-  return (
-    <section id="projects" className={cn(SEC, BAND)}>
-      {/* Phone: the heading, then the picker and the model, then the detail. Laptop: the model on the left, the words beside it. */}
-      <div className={cn(WRAP, "grid grid-cols-1 gap-x-16 gap-y-8 lg:grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)]")}>
-        <div className="lg:col-start-2 lg:row-start-1 lg:self-end">
-          <h2 className={H2}>Don&apos;t describe it. Show the build.</h2>
-          <p className={LEAD}>Whatever you make, post the thing itself. Upload the model, and whoever checks your work can turn it over, look inside and see how big it is.</p>
-        </div>
-        <div className="min-w-0 lg:col-start-1 lg:row-span-2 lg:row-start-1 lg:self-center"><BuildShowcase /></div>
-        <div className="lg:col-start-2 lg:row-start-2 lg:self-start [&>dl]:mt-0">
-          <Points items={[
-            ["Pick what you do", "Twenty fields, from robotics and software to chemistry, business, design and education. Each shows an example build and the milestone that goes with it."],
-            ["Look closer", "Front, side and top at a tap. See through the surfaces, or pull an assembly apart."],
-            ["Blueprint mode", "One tap turns it into a line drawing on blue paper, with its dimensions written on it."],
-            ["Your real file", "STL, OBJ, GLB and 3MF open right on your project page. No CAD tool needed."],
-          ]} />
+        <div className="mt-8 flex flex-wrap items-center gap-x-6 gap-y-4">
+          <div className="flex flex-wrap items-center gap-3">
+            <Link href="/schools" className="inline-flex h-11 items-center gap-1.5 rounded-lg bg-accent px-5 text-[15px] font-medium text-on-accent transition hover:opacity-90">See what schools get <ArrowRight className="size-4" aria-hidden="true" /></Link>
+            <Link href="#pilot" className="inline-flex h-11 items-center rounded-lg border border-line-strong px-5 text-[15px] transition hover:bg-hover">Start a pilot</Link>
+          </div>
+          <p className="text-sm text-muted"><BarChart3 className="mr-1.5 inline size-4 align-[-3px]" aria-hidden="true" />Priced per school, never per student or club. <Link href="/pricing" className="font-medium text-text underline-offset-4 hover:underline">See pricing</Link></p>
         </div>
       </div>
     </section>
   );
 }
 
-const FACTS = [
-  { n: "91%", label: "of recruiters have spotted candidate deception.", src: "Greenhouse, 2025", href: "https://www.greenhouse.com/newsroom/an-ai-trust-crisis-70-of-hiring-managers-trust-ai-to-make-faster-and-better-hiring-decisions-only-8-of-job-seekers-call-it-fair" },
-  { n: "1 in 4", label: "candidate profiles are expected to be fake by 2028.", src: "Gartner via HR Dive", href: "https://www.hrdive.com/news/fake-job-candidates-ai/757126/" },
-  { n: "54%", label: "of long posts from top LinkedIn profiles in 2025 were likely written by AI.", src: "Originality.ai", href: "https://ppc.land/over-half-of-linkedin-posts-are-now-likely-ai-but-authenticity-still-wins/" },
+const FOR = [
+  { icon: GraduationCap, who: "Students", body: "Your classes, clubs and projects in one place. Your professor or club signs what you built, and it stays yours after you graduate. Free with your school email.", cta: "Start your record", href: "/signup" },
+  { icon: Briefcase, who: "Professionals", body: "Log what you ship at work. A coworker, tech lead or client signs it from their work email. Nothing is public until you choose, and your record moves with you when you change jobs. Free to start.", cta: "Start as a professional", href: "/signup?goal=job" },
+  { icon: Users, who: "Clubs", body: "Officers sign what members build, and your school sees what the club does. Free for every club and member.", cta: "Bring your club", href: "#pilot" },
+  { icon: Landmark, who: "Schools", body: "Run your project courses on it. Faculty grade and verify in one step, and each office gets the evidence it's measured on.", cta: "What schools get", href: "/schools" },
 ];
 
-export function Why() {
+export function Audiences() {
   return (
-    <section id="why" className={cn(SEC, BAND)}>
-      <div className={cn(WRAP, "grid grid-cols-1 gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:gap-16")}>
-        <div>
-          <h2 className={H2}><span className="block">Anyone can write a great résumé with AI.</span> Proof of the work is rare.</h2>
-          <p className={LEAD}>What still counts is work someone else saw you do. Today that lives in pull requests, test logs, lab notebooks and group chats that nobody outside ever sees. Brazework puts it in one place, signed by the people who were there.</p>
-        </div>
-        <dl className="flex flex-col divide-y divide-line border-y border-line self-start">
-          {FACTS.map((f) => (
-            <div key={f.src} className="grid grid-cols-[6.5rem_minmax(0,1fr)] items-baseline gap-4 py-5 sm:grid-cols-[9rem_minmax(0,1fr)]">
-              <dt className="text-3xl font-semibold tracking-tight tabular-nums sm:text-4xl">{f.n}</dt>
-              <dd className="text-[15px] leading-relaxed text-text-2">{f.label} <a href={f.href} target="_blank" rel="noopener noreferrer" className="whitespace-nowrap text-muted underline decoration-line-strong underline-offset-4 hover:text-text">{f.src}</a></dd>
-            </div>
+    <section id="for" aria-labelledby="for-h" className="scroll-mt-20 py-16 md:py-24">
+      <div className="mx-auto max-w-6xl px-5 sm:px-6">
+        <h2 id="for-h" className={H2}>Who it&apos;s for</h2>
+        <p className="mt-4 max-w-[40rem] text-lg leading-relaxed text-muted">One record for everyone who builds things, in any field: engineering, software, research, design and more.</p>
+        <ul className="reveal mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 md:mt-10 lg:grid-cols-4">
+          {FOR.map((f) => (
+            <li key={f.who} className="flex flex-col rounded-2xl border border-line bg-surface p-5 transition duration-300 hover:border-line-strong hover:bg-hover md:p-6">
+              <span className="flex items-center gap-3 md:block">
+                <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-surface-2 text-text-2"><f.icon className="size-5" aria-hidden="true" /></span>
+                <h3 className="text-xl font-semibold tracking-tight md:mt-5">{f.who}</h3>
+              </span>
+              <p className="mt-2 flex-1 text-[15px] leading-relaxed text-muted">{f.body}</p>
+              <Link href={f.href} className="mt-5 inline-flex items-center gap-1.5 text-sm font-medium text-text underline-offset-4 hover:underline">{f.cta} <ArrowRight className="size-3.5" /></Link>
+            </li>
           ))}
-        </dl>
+        </ul>
+        <p className="mt-6 text-sm text-muted">Hiring? <Link href="/pricing#pricing-companies" className="font-medium text-text underline-offset-4 hover:underline">Find people by signed work</Link>, students and professionals alike. Already use Claude or ChatGPT? <Link href="/ai" className="font-medium text-text underline-offset-4 hover:underline">Connect your AI</Link>.</p>
       </div>
     </section>
   );
 }
 
-export function EmberSection() {
+// Plain answers to what people ask first. Short on purpose: the details live on /schools, /pricing and /ai.
+const FAQ: [string, React.ReactNode][] = [
+  ["What is Brazework, in one line?", "A record of the work you've really done, each piece signed by someone who saw it happen."],
+  ["I already have a job. Is this for me?", "Yes. Log what you ship, and your coworker, tech lead or client signs it from their work email, with no account needed. Nothing shows on your profile until you choose, so work for your employer is never public by accident. Leave out numbers your employer hasn't published: the person who signs still knows what you did."],
+  ["Who can sign my work?", "Someone who saw it happen: a professor, TA, lab lead, club officer, coworker, manager or client. A work or university email carries the most weight, and the signature says which kind it came from. You can't sign your own work."],
+  ["What does Torch do?", "Torch is the AI built into Brazework. It drafts your write-ups, finds who should sign, plans your week and can set up a club or study group for you. It never signs anything, and nothing is saved until you say yes."],
+  ["How is this different from LinkedIn or a résumé?", "Those show what you say about yourself. Brazework shows what someone who was there says about your work, with their name on it. You can still put it on LinkedIn or your résumé: every signed piece has a link anyone can check."],
+  ["What does it cost?", <>Free for students, clubs and the people who sign, always. Professionals start free; {PLUS.name} is ${PLUS.everyone} a month for more Torch and every company that looked at your work. Schools pay per school, never per student. <Link href="/pricing" className="font-medium text-text underline-offset-4 hover:underline">See pricing</Link></>],
+];
+
+export function Faq() {
   return (
-    <section id="ember" className={SEC}>
-      <div className={cn(WRAP, "grid grid-cols-1 items-start gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:gap-16")}>
+    <section id="faq" aria-labelledby="faq-h" className="scroll-mt-20 py-16 md:py-24">
+      <div className="mx-auto grid max-w-6xl grid-cols-1 gap-8 px-5 sm:px-6 lg:grid-cols-[minmax(0,0.7fr)_minmax(0,1.3fr)] lg:gap-16">
         <div>
-          <h2 className={H2}>Ember does the busywork.</h2>
-          <p className={LEAD}>Ember is the assistant inside Brazework. Say what you did in a sentence. It writes it up, gets it in front of the person who can sign, and tells you what to do next.</p>
-          <Points items={[
-            ["It knows your record", "What's signed, what's waiting and who you've asked. So it opens with your next step, not a blank box."],
-            ["It asks before it acts", "A post, a request or a milestone sits on a card until you press the button."],
-            ["It writes from what's proven", "Your self-review, your résumé bullets and your story year by year, each from signed work, with who signed it."],
-          ]} />
+          <h2 id="faq-h" className={H2}>Questions, answered</h2>
+          <p className="mt-4 text-lg leading-relaxed text-muted">Something else? <Link href="#pilot" className="font-medium text-text underline-offset-4 hover:underline">Ask the founders</Link>.</p>
         </div>
-        <EmberDemo />
-      </div>
-    </section>
-  );
-}
-
-// Connect your AI (the assistant connection, lib/mcp-oauth.ts): the connector address to copy, the
-// three steps in Claude, and one tap for the editors, so a visitor goes from here to connected.
-export function ConnectSection() {
-  return (
-    <section id="connect" aria-labelledby="connect-h" className="scroll-mt-20 pb-20 sm:pb-28">
-      <div className={cn(WRAP, "grid grid-cols-1 items-start gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:gap-16")}>
-        <div>
-          <h2 id="connect-h" className={H2}>Works with the AI you already use.</h2>
-          <p className={LEAD}>Add Brazework to Claude, Cursor or VS Code once. Then say what you did, like &ldquo;put the analysis I finished on my record.&rdquo; It drafts the entry with its proof and waits for your OK. It can never sign anything. Only people do.</p>
-          <Link href="/ai" className="mt-6 inline-flex items-center gap-1 text-[15px] font-medium underline-offset-4 hover:underline">Everything it can do, field by field</Link>
+        <div className="reveal divide-y divide-line rounded-2xl border border-line bg-surface">
+          {FAQ.map(([q, a]) => (
+            <details key={q} className="group px-5 py-4 md:px-6">
+              <summary className="flex cursor-pointer list-none items-center justify-between gap-4 text-[16px] font-medium [&::-webkit-details-marker]:hidden">{q}<Plus className="size-4 shrink-0 text-faint transition group-open:rotate-45" aria-hidden="true" /></summary>
+              <p className="mt-3 text-[15px] leading-relaxed text-muted">{a}</p>
+            </details>
+          ))}
         </div>
-        <ConnectSlot />
-      </div>
-    </section>
-  );
-}
-
-export function Clubs() {
-  return (
-    <section id="clubs" className={cn(SEC, "border-t border-line bg-surface-2/60")}>
-      <div className={cn(WRAP, "grid grid-cols-1 items-start gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-16")}>
-        <div>
-          <h2 className={H2}>Run your club here. Its work gets counted.</h2>
-          <p className={LEAD}>Members, events, chat and announcements in one place. When officers sign what members build, the club&apos;s name goes with them into every application.</p>
-          <Points items={[
-            ["Up and running in about five minutes", "A short checklist, starter rules, and one invite link for the group chat your club already uses."],
-            ["Study groups work the same way", "Name the course, the term and when you meet. Whoever leads a session gets it on their record."],
-            ["A clean handoff", "Next year's officers start where you left off: the members, the history and the rules stay with the club."],
-          ]} />
-          <Link href="#founding" className="mt-8 inline-flex h-11 items-center justify-center rounded-lg bg-accent px-5 text-[15px] font-medium text-on-accent transition hover:opacity-90">Bring your club</Link>
-        </div>
-        <ClubSetupDemo />
-      </div>
-    </section>
-  );
-}
-
-export function Companies() {
-  return (
-    <section id="companies" className={SEC}>
-      <div className={cn(WRAP, "grid grid-cols-1 items-start gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.05fr)] lg:gap-16")}>
-        <div>
-          <h2 className={H2}>Search the work, not the résumé.</h2>
-          <p className={LEAD}>Find people by what they built and who signed it, students and working professionals alike, not by keywords on a résumé anyone can generate.</p>
-          <Points items={[
-            ["Only signed work shows up", "Every result names the club officer or the person who saw it happen, and when."],
-            ["Ask, and they decide", "Your message waits in their Requests. The ones who reply want to talk."],
-            ["Sponsor a build challenge", "Clubs opt in, members build, and officers verify the results you meet the winners by."],
-          ]} />
-          <div className="mt-8 flex flex-wrap gap-3">
-            <Link href="#founding" className="inline-flex h-11 items-center justify-center rounded-lg bg-accent px-5 text-[15px] font-medium text-on-accent transition hover:opacity-90">Sponsor a challenge</Link>
-            <Link href="/pricing#pricing-companies" className="inline-flex h-11 items-center justify-center rounded-lg border border-line-strong bg-surface px-5 text-[15px] font-medium transition hover:bg-hover">See pricing</Link>
-          </div>
-        </div>
-        <CompanySearch />
-      </div>
-    </section>
-  );
-}
-
-export function Pricing() {
-  return (
-    <section id="pricing" className={cn(SEC, BAND)}>
-      <div className={WRAP}>
-        <h2 className={H2}>Free for the people who build. Paid by the people who hire.</h2>
-        <PricingTiers className="mt-10" only={LANDING_AUDIENCES} />
-        {/* Clubs are free; what companies and schools pay is on /pricing, not here (lib/pricing.ts). */}
-        <p className="mt-8 text-[15px] text-muted">
-          Clubs are free too. Hiring, sponsoring a club or running a school?{" "}
-          {PRICING_LINKS.map((l, i) => <span key={l.href}>{i > 0 && " · "}<Link href={l.href} className="font-medium text-text underline-offset-4 hover:underline">{l.label}</Link></span>)}
-        </p>
-      </div>
-    </section>
-  );
-}
-
-export function FaqSection() {
-  return (
-    <section id="faq" className={SEC}>
-      <div className="mx-auto max-w-3xl px-5 sm:px-6">
-        <h2 className={H2}>Questions</h2>
-        <div className="mt-8"><Faq /></div>
       </div>
     </section>
   );
