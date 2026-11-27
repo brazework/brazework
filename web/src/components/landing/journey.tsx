@@ -190,8 +190,11 @@ export function SchoolView({ ex, title, on, still }: ViewProps) {
   const n = (r: string) => ROWS[r] + (r === ex.where && counted ? 1 : 0);
   return (
     <div className="relative flex h-full flex-col gap-3 overflow-hidden p-3 sm:p-4">
-      <div className="flex items-baseline justify-between gap-3">
-        <p className="truncate text-sm font-semibold">School of Engineering</p>
+      <div className="flex items-center justify-between gap-3">
+        <p className="flex min-w-0 items-center gap-2">
+          <span className="truncate text-sm font-semibold">School of Engineering</span>
+          <span className="shrink-0 rounded-full border border-line px-2 py-0.5 font-mono text-[10px] text-faint">Example</span>
+        </p>
         <p className={cn(MONO, "shrink-0")}>Fall 2026</p>
       </div>
       <dl className="grid grid-cols-3 gap-2">

@@ -12,14 +12,20 @@ export const metadata: Metadata = {
   metadataBase: new URL(env.siteUrl),
   title: { default: "Brazework: build it, prove it, own it", template: "%s · Brazework" },
   description:
-    "Brazework is a record of the work you've really done, each piece signed by the person who saw it: your professor, your club or your coworker. Free for students and professionals; schools run their project courses on it.",
+    "Brazework is a record of the work you've really done, each piece signed by the person who saw it: your professor, your club or your coworker. Free for students and professionals. Built for schools to run their project courses.",
   applicationName: "Brazework",
   // Installed from Safari's Share menu: full screen; the status bar takes the theme-color (ThemeChrome).
   appleWebApp: { capable: true, title: "Brazework", statusBarStyle: "default" },
   openGraph: {
     title: "Brazework: build it, prove it, own it",
-    description: "A record of the work you've really done, each piece signed by the person who saw it: your professor, your club or your coworker. Free for students and professionals; schools run their project courses on it.",
+    description: "A record of the work you've really done, each piece signed by the person who saw it: your professor, your club or your coworker. Free for students and professionals. Built for schools to run their project courses.",
     type: "website",
+  },
+  // No separate Twitter copy before this: cards fell back to Open Graph. Set the same sentence here
+  // so the share text matches the page description.
+  twitter: {
+    title: "Brazework: build it, prove it, own it",
+    description: "A record of the work you've really done, each piece signed by the person who saw it: your professor, your club or your coworker. Free for students and professionals. Built for schools to run their project courses.",
   },
 };
 

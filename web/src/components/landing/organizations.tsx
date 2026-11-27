@@ -3,13 +3,14 @@ import { Check, Loader2 } from "lucide-react";
 import { useActionState, useState } from "react";
 import { registerOrgInterest, type OrgInterestState } from "@/app/actions/org-interest";
 import { Button, Field, inputCls } from "@/components/ui";
+import { SCHOOL } from "@/lib/pricing";
 import { submitWithoutReset } from "@/lib/submit";
 import { H2 } from "./sections";
 
 // The pilot form (school first since 2026-11-26, docs/strategy.md): a school or department, a club or
 // a company leaves its name and the founders get in touch. Same table as before (org_interest).
 const TYPES = [{ id: "school", label: "School or department" }, { id: "club", label: "Club" }, { id: "company", label: "Company" }] as const;
-const POINTS = ["One department or a few classes, for one semester", "Set up with you by the founders", "A paid semester pilot, credited toward your first year. Always free for students and clubs."];
+const POINTS = ["One department or a few classes, for one semester", "Set up with you by the founders", `A paid semester pilot, $${SCHOOL.pilot.toLocaleString("en-US")}, credited toward your first year. Always free for students and clubs.`];
 
 export function Organizations() {
   const [type, setType] = useState<(typeof TYPES)[number]["id"]>("school");
