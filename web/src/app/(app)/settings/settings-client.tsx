@@ -114,14 +114,16 @@ const sub = (cb: () => void) => {
 function applyTheme(c: Choice) {
   const root = document.documentElement;
   try {
-    if (c === "system") { root.removeAttribute("data-theme"); localStorage.removeItem("forge-theme"); }
+    // System is saved as its own choice: with nothing saved, every screen starts light (app/layout.tsx).
+    if (c === "system") { root.removeAttribute("data-theme"); localStorage.setItem("forge-theme", "system"); }
     else { root.setAttribute("data-theme", c); localStorage.setItem("forge-theme", c); }
   } catch {}
 }
 
 // One Brazework theme, in light and dark (redesign 2026-11). The colour skins (Blueprint, Fire,
 // Aurora, Emerald) are gone: colour in the app means proof, so the chrome stays ink on paper.
-// Same storage as the header toggle: html[data-theme] + localStorage "forge-theme"; System clears both.
+// Same storage as the header toggle: html[data-theme] + localStorage "forge-theme"; System leaves
+// data-theme off and saves "system", so the device decides.
 export function AppearanceSettings() {
   const choice = useSyncExternalStore(sub, read, () => "system" as Choice);
   const opts: [Choice, string, typeof Sun, string][] = [

@@ -32,9 +32,10 @@ export const viewport: Viewport = {
 
 // Runs before first paint so a saved theme never flashes the other one. Brazework has one theme in
 // light and dark (redesign 2026-11); an old colour skin saved on this device is dropped here. Every
-// screen starts light (Josh, 2026-11-27), whatever the device is set to, until the member picks dark
-// with the theme toggle; that choice is saved and wins from then on.
-const themeScript = `try{var d=document.documentElement,t=localStorage.getItem("forge-theme");d.dataset.theme=t==="dark"?"dark":"light";localStorage.removeItem("forge-skin")}catch(e){document.documentElement.dataset.theme="light"}`;
+// screen starts light (Josh, 2026-11-27), whatever the device is set to, until the member picks a
+// theme: Light or Dark (the toggle or Settings), or System in Settings, saved as "system", which
+// leaves html[data-theme] off so the device's setting decides (globals.css).
+const themeScript = `try{var d=document.documentElement,t=localStorage.getItem("forge-theme");if(t!=="system")d.dataset.theme=t==="dark"?"dark":"light";localStorage.removeItem("forge-skin")}catch(e){document.documentElement.dataset.theme="light"}`;
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
   return (

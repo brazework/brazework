@@ -2,10 +2,11 @@ import { ArrowRight, BadgeCheck, Eye, Flame, FolderGit2, GraduationCap, Users } 
 import Link from "next/link";
 import { Ember } from "@/components/ember/ember";
 import { dbFeatures } from "@/lib/db-features";
-import { requestTime } from "@/lib/forge";
+import { requestTime, cn } from "@/lib/forge";
 import { getViewer } from "@/lib/supabase/server";
 import { loadLoop } from "@/lib/week-load";
 import { ComposeLink } from "./compose-link";
+import { pageTitleCls } from "@/components/app/page-ui";
 
 // The top of Home (redesign 2026-11-26): the first thing anyone sees after signing in.
 // - One glass panel with your name, where your record
@@ -68,7 +69,7 @@ export async function HomeBand({ first, quiet = false }: { first: string; quiet?
       <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-end sm:justify-between sm:gap-6 sm:p-7">
         <div className="min-w-0">
           <p className="text-xs font-medium tracking-wide text-muted uppercase">{atSchool ? [schoolName, terms[0]].filter(Boolean).join(" · ") : professional ? "Your record" : "Your work"}</p>
-          <h1 className="mt-1.5 text-[1.75rem] leading-tight font-semibold tracking-[-0.03em] sm:text-[2.1rem]">Welcome back, {first}</h1>
+          <h1 className={cn(pageTitleCls, "mt-1.5")}>Welcome back, {first}</h1>
           <dl className="mt-3 flex flex-wrap gap-x-5 gap-y-1.5 text-sm">
             {stats.map((x) => (
               <div key={x.label} className="flex items-center gap-1.5">

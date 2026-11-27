@@ -12,7 +12,7 @@ import { Suspense } from "react";
 import { LiveRefresh } from "@/components/app/live-refresh";
 import { Celebrate } from "@/components/app/celebrate";
 import { CopyLink } from "@/components/app/copy-link";
-import { EmptyState, Panel, Skeleton, Tabs } from "@/components/app/page-ui";
+import { EmptyState, Panel, Skeleton, Tabs, pageTitleCls } from "@/components/app/page-ui";
 import { Kicker } from "@/components/ui";
 import { PRIVACY_LABEL, TYPE_LABEL, can, membersLabel, rank, type CommunityPost } from "@/lib/communities";
 import { PostCard } from "../../feed/post-card";
@@ -179,7 +179,7 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
           </div>
           <div className="min-w-0 basis-full">
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="text-3xl font-semibold tracking-tight">{c.name}</h1>
+              <h1 className={pageTitleCls}>{c.name}</h1>
               {clubVerified && <span title="A school-email officer runs it, and its members have club-verified work" className="inline-flex items-center gap-1 rounded-full bg-[color-mix(in_oklab,var(--ok)_12%,transparent)] px-2.5 py-0.5 text-xs font-medium text-ok"><BadgeCheck className="size-3.5" /> Verified club</span>}
               {schoolLink && <span title={`Verified as a club of ${(schoolLink as { school_name: string }).school_name}`} className="inline-flex items-center gap-1 rounded-full bg-[color-mix(in_oklab,var(--ok)_12%,transparent)] px-2.5 py-0.5 text-xs font-medium text-ok"><GraduationCap className="size-3.5" /> Verified club of {(schoolLink as { school_name: string }).school_name}</span>}
               {role && role !== "member" && <RoleChip role={role} />}
