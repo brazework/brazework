@@ -161,6 +161,9 @@ const { step, browser, as, go, summary, BASE } = require("./lib.cjs");
   await step("GitHub Actions: a drafts-only token for a project, a repo secret and a workflow; no posting switch", async () => {
     await go(ben, "/settings/tools");
     await ben.getByRole("region", { name: "Recipes for your field" }).getByText("Moments worth recording").waitFor({ timeout: 15000 });
+    // Playbook lanes (FIX-209): a student starts on Studying.
+    const lanes = ben.getByRole("region", { name: "Recipes for your field" }).getByRole("group", { name: "Studying or working" });
+    if ((await lanes.getByRole("button", { name: "Studying" }).getAttribute("aria-pressed", { timeout: 5000 })) !== "true") throw new Error("a student should start on Studying");
     await ben.getByRole("button", { name: "Connect GitHub Actions" }).click();
     const sheet = ben.getByRole("dialog", { name: "Connect GitHub Actions" });
     if (await sheet.getByRole("switch").count()) throw new Error("an automation was offered posting");

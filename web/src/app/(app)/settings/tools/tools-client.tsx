@@ -8,6 +8,7 @@ import { useCallback, useEffect, useState, useTransition } from "react";
 import { Button } from "@/components/ui";
 import { createApiToken, listApiTokens, revokeApiToken, setTokenCanPost, type ApiToken } from "@/lib/api-tokens";
 import { cn, timeAgo } from "@/lib/forge";
+import type { Lane } from "@/lib/lanes";
 import { TOOLS, draftsOnly, isConnected, setupSteps, toolFor, type Step, type ToolInfo } from "@/lib/tool-setup";
 import { FieldRecipes } from "./recipes";
 
@@ -19,7 +20,7 @@ const ASK = ["What's on in my clubs this week?", "Which of my projects still nee
 // `drafts`: tools can leave drafts you approve, and GitHub Actions can be connected (supabase/mcp-workflows.sql).
 type Project = { id: string; title: string };
 type Club = { id: string; name: string };
-export function ToolsHub({ tokens, endpoint, writes = false, drafts = false, projects = [], clubs = [], field = "", signIn = false }: { tokens: ApiToken[]; endpoint: string; writes?: boolean; drafts?: boolean; projects?: Project[]; clubs?: Club[]; field?: string; signIn?: boolean }) {
+export function ToolsHub({ tokens, endpoint, writes = false, drafts = false, projects = [], clubs = [], field = "", lane = "study", signIn = false }: { tokens: ApiToken[]; endpoint: string; writes?: boolean; drafts?: boolean; projects?: Project[]; clubs?: Club[]; field?: string; lane?: Lane; signIn?: boolean }) {
   const [list, setList] = useState(tokens);
   const [open, setOpen] = useState<ToolInfo | null>(null);
   const tools = TOOLS.filter((t) => drafts || !draftsOnly(t.id));
@@ -116,7 +117,7 @@ export function ToolsHub({ tokens, endpoint, writes = false, drafts = false, pro
 
       <Connected tokens={active} writes={writes} onRevoke={async (id) => { await revokeApiToken(id); await refresh(); }} onPost={async (id, on) => { await setTokenCanPost(id, on); await refresh(); }} />
 
-      {drafts && <FieldRecipes initialField={field} />}
+      {drafts && <FieldRecipes initialField={field} initialLane={lane} />}
 
       <AnimatePresence>
         {open && <SetupSheet key={open.id} tool={open} endpoint={endpoint} tokens={active} writes={writes} projects={projects} clubs={clubs} onClose={close} onChange={refresh} />}

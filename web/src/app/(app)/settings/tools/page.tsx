@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import { PageHeader, Skeleton } from "@/components/app/page-ui";
 import { listApiTokens } from "@/lib/api-tokens";
 import { dbFeatures } from "@/lib/db-features";
+import { defaultLane } from "@/lib/lanes";
 import { oauthEnabled } from "@/lib/mcp-oauth";
 import { env } from "@/lib/env";
 import { getViewer } from "@/lib/supabase/server";
@@ -38,6 +39,10 @@ async function Tools() {
     supabase.from("community_members").select("community_id, communities(name)").eq("uid", user.id).limit(50),
   ]) : [{ data: [] }, { data: [] }];
   const clubList = ((clubs ?? []) as unknown as { community_id: string; communities: { name: string } | null }[]).map((c) => ({ id: c.community_id, name: c.communities?.name ?? c.community_id }));
+  // Recipes open on the member's own part of the playbook, by the rule Home uses (defaultLane): a
+  // student on Studying, someone who works and is in no club on Working. Someone who works and is in a
+  // club is the one an assistant would ask; here they start on Working, their account's own word.
+  const lane = defaultLane(profile?.account_type, clubList.length) ?? (profile?.account_type === "professional" ? "work" : "study");
   return <ToolsHub tokens={await listApiTokens()} endpoint={`${env.siteUrl}/api/mcp`} writes={f.mcpWrites} drafts={f.mcpWorkflows}
-    projects={(projects ?? []) as { id: string; title: string }[]} clubs={clubList} field={profile?.field ?? ""} signIn={f.mcpOauth && (await oauthEnabled())} />;
+    projects={(projects ?? []) as { id: string; title: string }[]} clubs={clubList} field={profile?.field ?? ""} lane={lane} signIn={f.mcpOauth && (await oauthEnabled())} />;
 }

@@ -97,6 +97,19 @@ const psql = (sql) => execSync(`docker exec -i ${process.env.E2E_STACK || "forge
     await page.getByText("Profile saved.").waitFor({ timeout: 15000 });
   }, page);
 
+  // Playbook lanes (FIX-209): someone who works, in no club, sees what their assistant does for work.
+  await step("Your tools: the recipes open on Working, where a number becomes a hidden milestone", async () => {
+    await go(page, "/settings/tools");
+    const recipes = page.getByRole("region", { name: "Recipes for your field" });
+    const lanes = recipes.getByRole("group", { name: "Studying or working" });
+    await lanes.waitFor({ timeout: 15000 });
+    if ((await lanes.getByRole("button", { name: "Working" }).getAttribute("aria-pressed")) !== "true") throw new Error("a professional in no club should start on Working");
+    await recipes.getByText(/a number → a hidden milestone/).waitFor();
+    await lanes.getByRole("button", { name: "Studying" }).click();
+    await recipes.getByText(/a number → a result post/).waitFor();
+    if (await recipes.getByText(/a hidden milestone/).count()) throw new Error("Studying still says a hidden milestone");
+  }, page);
+
   const id = psql(`select id from auth.users where email = '${email}'`);
   const title = "Pick-and-place cell hit 42 parts a minute";
   await step("nobody is stopped for LinkedIn: without a link they use the app, and Settings shows the field empty", async () => {

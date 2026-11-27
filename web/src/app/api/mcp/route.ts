@@ -3,7 +3,8 @@ import { MCP_PROTOCOLS, MCP_TOOLS, absolutize, annotationsFor, mcpDb, scopeFlags
 import { actionPayload } from "@/lib/tool-actions";
 import { findBuilders, talentAsk, type TalentData } from "@/lib/mcp-talent";
 import { goalSummary, type GoalRead } from "@/lib/mcp-goal";
-import { PLAYBOOKS, PLAYBOOK_INDEX_URI, PROMPTS, playbookMarkdown, playbookUri, playbooksIndexMarkdown, promptText } from "@/lib/mcp-playbooks";
+import { defaultLane, type Lane } from "@/lib/lanes";
+import { LANES_NOTE, PLAYBOOKS, PLAYBOOK_INDEX_URI, PROMPTS, playbookMarkdown, playbookUri, playbooksIndexMarkdown, promptText } from "@/lib/mcp-playbooks";
 import { mailer } from "@/lib/email";
 import { CARD_HTML, CARD_MIME, CARD_URI, cardMeta, cardResourceMeta } from "@/lib/mcp-card";
 import { nextStep, withFix } from "@/lib/mcp-results";
@@ -37,7 +38,7 @@ const CARD_TOOLS = new Set(["log_milestone", "draft_milestone"]);
 const ABOUT = "Brazework is the record of what people build, signed by the people who saw it, and home base for their clubs.";
 function instructions(s: { canDraft: boolean; canPost: boolean }) {
   const reads = "These tools read the member's Brazework (profile and club-verified work, clubs, events, projects, notifications, messages, search, and a résumé of their signed work); verified company admins can also find builders by signed work (find_builders).";
-  const playbooks = `For the tools people in each field use and the moments worth recording, read ${PLAYBOOK_INDEX_URI}; the prompts shipped, result, week, ask_signature and setup run the common workflows, club_week helps club officers, and career_fair gets the member ready for a career fair.`;
+  const playbooks = `For the tools people in each field use and the moments worth recording, read ${PLAYBOOK_INDEX_URI}; the prompts shipped, result, week, ask_signature and setup run the common workflows, club_week helps club officers, and career_fair gets the member ready for a career fair. ${LANES_NOTE}`;
   const acts = "add a project (create_project), update one (update_project), add a teammate from their clubs (add_teammate), RSVP to events (rsvp_event), join a club (join_club), accept an invite (accept_invite) and follow someone (follow_person)";
   if (s.canPost) return `${ABOUT} ${reads} They can also post a build update (post_update), log a milestone (log_milestone), ask someone to sign one (request_signature), ${acts} as the member, or leave any of these as drafts for them to approve in Brazework (draft_post, draft_milestone, or draft: true). Before each one, show the member exactly what you'll add (the words, the project, the proof) and wait for their yes in the chat; then do it and give them the link. If they say "later" or aren't sure, leave it as a draft. Write in their voice. ${playbooks} Results include links to open in Brazework, and a next step.`;
   if (s.canDraft) return `${ABOUT} ${reads} This token can't post: it leaves drafts that the member edits and approves in Brazework (draft_post, draft_milestone; and ${acts}, which wait as cards in their drafts and on Torch's page), so nothing happens without them. Write in their voice, with specifics. ${playbooks} Results include links to open in Brazework, and a next step.`;
@@ -101,8 +102,11 @@ export async function POST(req: Request) {
       const name = String(msg.params?.name ?? "");
       const raw = (msg.params?.arguments ?? {}) as Record<string, unknown>;
       const args = Object.fromEntries(Object.entries(raw).filter(([, v]) => typeof v === "string").map(([k, v]) => [k, String(v).slice(0, 300)]));
-      const text = promptText(name, args, can);
       const def = PROMPTS.find((p) => p.name === name);
+      // With no lane typed, the lane this member starts from (their account and clubs), so a student's
+      // command carries no question and someone who works in no club gets the working text.
+      const known = def?.arguments.some((a) => a.name === "lane") && !args.lane?.trim() ? await memberLane(db, hash) : undefined;
+      const text = promptText(name, args, can, known);
       if (!text || !def) return rpc(msg.id, { error: { code: -32602, message: `Unknown prompt: ${name}` } });
       return rpc(msg.id, { result: { description: def.description, messages: [{ role: "user", content: { type: "text", text } }] } });
     }
@@ -145,6 +149,16 @@ export async function POST(req: Request) {
     default:
       return rpc(msg.id, { error: { code: -32601, message: `Method not found: ${msg.method}` } });
   }
+}
+
+// The lane a member starts from, from what me says about them (defaultLane, lib/lanes.ts): Studying
+// for a student, Working for someone who works and is in no club. Undefined when it can't be told
+// (someone who works and is in a club, a database without step 85 yet, or a read that failed); the
+// prompt then has the assistant ask.
+async function memberLane(db: ReturnType<typeof mcpDb>, hash: string): Promise<Lane | undefined> {
+  const { data } = await db.rpc("mcp_me", { p_hash: hash });
+  const me = (data ?? {}) as { account_type?: string; clubs?: number };
+  return defaultLane(me.account_type, typeof me.clubs === "number" ? me.clubs : NaN);
 }
 
 // Writes also say what happens next and where to see it (lib/mcp-results.ts).
