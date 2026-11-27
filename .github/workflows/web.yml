@@ -2,9 +2,13 @@ name: Web (Next.js)
 
 # Every push to main, every merge queue group, and every pull request:
 #   checks   - typecheck, lint, unit tests, production build, smoke test
-#   e2e      - the full local suite (web/e2e/run.sh): a throwaway Supabase (Postgres + Auth + REST)
-#              with every migration in supabase/order.txt, the SQL rule tests, then every browser
-#              journey in Chrome. Same command as on a laptop.
+#   e2e      - the same local suite (web/e2e/run.sh), in parallel shards. Each shard is its own
+#              runner and its own throwaway Supabase (Postgres + Auth + REST, every migration in
+#              supabase/order.txt). One shard runs the SQL rule tests. The others split the browser
+#              journeys. The required check keeps the name below: that job runs after the shards
+#              and passes only when every shard succeeded. A failed, cancelled, or skipped shard
+#              fails it. On a pull request the shards and that check still skip together when no
+#              app or database file changed. merge_group and a push to main always run them.
 #   security - production dependency audit and a secret scan of the git history
 # Pull requests, the weekly run and Run workflow only (not a push to main, and not the merge
 # queue, to stay inside a free plan's 2,000 Actions minutes a month; it's 7 of the 19 minutes
@@ -107,13 +111,36 @@ jobs:
           for p in /signup /login /privacy; do curl -fsS -o /dev/null "http://localhost:3000$p" || { echo "failed: $p"; exit 1; }; done
           code=$(curl -s -o /dev/null -w "%{http_code}" http://localhost:3000/feed); [ "$code" = "307" ] || { echo "/feed returned $code, expected 307"; exit 1; }
 
-  e2e:
-    name: End-to-end (database rules + browser journeys)
-    needs: changes
-    # Same rule as "Typecheck, lint, unit tests, build": only a pull request may skip.
+  e2e-plan:
+    name: End-to-end shard plan
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    outputs:
+      shards: ${{ steps.s.outputs.shards }}
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - id: s
+        working-directory: web
+        # JSON array of shard ids from web/e2e/shards.mjs, the same list the suite runs.
+        run: echo "shards=$(node e2e/shards.mjs matrix)" >> "$GITHUB_OUTPUT"
+
+  e2e-shards:
+    name: e2e shard ${{ matrix.shard }}
+    needs: [changes, e2e-plan]
+    # Only a pull request may skip. merge_group and a push to main always run every shard.
+    # !cancelled() still runs the job when "What changed" failed, and still stops it when
+    # a pull request run is cancelled.
     if: ${{ !cancelled() && (github.event_name != 'pull_request' || needs.changes.outputs.app == 'true') }}
     runs-on: ubuntu-latest
     timeout-minutes: 35
+    strategy:
+      # One failure must not cancel the others. A cancelled shard fails the required check.
+      fail-fast: false
+      matrix:
+        shard: ${{ fromJson(needs.e2e-plan.outputs.shards) }}
     defaults:
       run:
         working-directory: web
@@ -127,26 +154,54 @@ jobs:
           cache: npm
           cache-dependency-path: web/package-lock.json
       - run: npm ci
-      - name: Run the suite
-        run: bash e2e/run.sh
+      # Own runner, own local Supabase, own test accounts. See web/e2e/run.sh.
+      - name: Run this shard
+        run: E2E_SHARD="${{ matrix.shard }}" bash e2e/run.sh
       - name: Keep failure screenshots
         if: failure()
         uses: actions/upload-artifact@v7
         with:
-          name: e2e-results
+          name: e2e-results-${{ matrix.shard }}
           path: web/e2e/.results/
           include-hidden-files: true
+          if-no-files-found: ignore
           retention-days: 7
-      # Every key page at iPhone and laptop size (web/e2e/m-layout.cjs), kept for each run, so a reviewer
-      # can see what a change looks like without running it.
+      # Every key page at iPhone and laptop size (web/e2e/m-layout.cjs), on the shard that runs it.
       - name: Keep layout screenshots
         if: always()
         uses: actions/upload-artifact@v7
         with:
-          name: layout-screenshots
+          name: layout-screenshots-${{ matrix.shard }}
           path: web/e2e/.results/layout/
           if-no-files-found: ignore
           retention-days: 14
+
+  e2e:
+    name: End-to-end (database rules + browser journeys)
+    needs: [changes, e2e-shards]
+    # Required. The name above is the branch-protection check. It runs after the shards, including
+    # when a shard failed or was skipped, and fails unless every shard concluded success. A pull
+    # request still skips it, together with the shards, when the diff misses the app. merge_group
+    # and a push to main always run it, so a skipped shard cannot leave this check green.
+    if: ${{ !cancelled() && (github.event_name != 'pull_request' || needs.changes.outputs.app == 'true') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: read
+      contents: read
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - name: Fail unless every shard succeeded
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+          E2E_SHARDS_RESULT: ${{ needs.e2e-shards.result }}
+        run: node e2e/shards.mjs gate
 
   quality:
     name: Speed, accessibility and security scan
