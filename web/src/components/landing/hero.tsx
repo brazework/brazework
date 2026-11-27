@@ -48,7 +48,10 @@ export function Hero() {
   const still = useReducedMotion();
   const pinned = usePinned();
   const run = useRef<HTMLElement>(null);
-  const quietUntil = useRef(0);
+  // A view the visitor clicked holds until they scroll the page themselves (wheel, touch or keys).
+  // The smooth scroll a click starts can be cut short (another click, a test driver), and wherever
+  // it stops must not overrule the click.
+  const chosen = useRef(false);
   // The progress line under the tabs: written straight to the element on scroll (no re-render), so it
   // follows the page continuously while the view changes only at each stretch.
   const line = useRef<HTMLDivElement>(null);
@@ -68,18 +71,28 @@ export function Hero() {
       const length = el.offsetHeight - innerHeight;
       const p = length > 0 ? Math.min(1, Math.max(0, -el.getBoundingClientRect().top / length)) : 0;
       line.current?.style.setProperty("--seam", String(Math.max(0.2, p)));
-      if (performance.now() < quietUntil.current) return;
+      if (chosen.current) return;
       setView(Math.min(VIEWS.length - 1, Math.floor(p * VIEWS.length)));
     };
     const onScroll = () => { if (!frame) frame = requestAnimationFrame(read); };
-    // A click's smooth scroll is over when the browser says so (slow machines take longer than the
-    // fallback below): from then on the page's position picks the view again.
-    const onEnd = () => { quietUntil.current = 0; onScroll(); };
+    // The visitor scrolling by hand hands the view back to the page's position.
+    const byHand = () => { chosen.current = false; };
+    const SCROLL_KEYS = ["ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End", " "];
+    const onKey = (e: KeyboardEvent) => {
+      const t = e.target as HTMLElement | null;
+      if (SCROLL_KEYS.includes(e.key) && !t?.closest("input, textarea, [role=tab], button")) byHand();
+    };
     read();
     addEventListener("scroll", onScroll, { passive: true });
-    addEventListener("scrollend", onEnd);
+    addEventListener("wheel", byHand, { passive: true });
+    addEventListener("touchstart", byHand, { passive: true });
+    addEventListener("keydown", onKey);
     addEventListener("resize", onScroll);
-    return () => { cancelAnimationFrame(frame); removeEventListener("scroll", onScroll); removeEventListener("scrollend", onEnd); removeEventListener("resize", onScroll); };
+    return () => {
+      cancelAnimationFrame(frame);
+      removeEventListener("scroll", onScroll); removeEventListener("wheel", byHand); removeEventListener("touchstart", byHand);
+      removeEventListener("keydown", onKey); removeEventListener("resize", onScroll);
+    };
   }, [pinned]);
 
   // Clicking a view: show it, and when pinned, scroll to its stretch so the page and the view agree.
@@ -89,8 +102,7 @@ export function Hero() {
     if (!pinned || !el) return;
     const length = el.offsetHeight - innerHeight;
     const top = el.getBoundingClientRect().top + scrollY;
-    // Quiet until the smooth scroll ends (scrollend, above), at most 2 s where that event isn't sent.
-    quietUntil.current = performance.now() + 2000;
+    chosen.current = true;
     scrollTo({ top: top + (length * (k + 0.5)) / VIEWS.length, behavior: "smooth" });
   }, [pinned]);
   const choose = (id: Example["id"]) => { setAuto(false); setPick(id); setVerified(false); };

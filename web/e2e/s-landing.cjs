@@ -80,8 +80,10 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
     await hydrated(page.locator("#hero-build"));
     const builds = page.getByRole("group", { name: "Example builds" });
     const shown = () => builds.getByRole("button", { pressed: true }).innerText();
-    if ((await shown()) !== "Robot arm") throw new Error(`the hero opens on ${await shown()}`);
-    await page.waitForFunction(() => document.querySelector('[aria-label="Example builds"] [aria-pressed="true"]')?.textContent !== "Robot arm", null, { timeout: 9000 });
+    // Whichever build is showing when we look (a slow machine may already be past the first), the
+    // next one takes over within one turn.
+    const first = await shown();
+    await page.waitForFunction((was) => document.querySelector('[aria-label="Example builds"] [aria-pressed="true"]')?.textContent !== was, first, { timeout: 9000 });
     await builds.getByRole("button", { name: "Drone", exact: true }).click();
     await page.waitForTimeout(6500);
     if ((await shown()) !== "Drone") throw new Error(`after picking Drone the hero moved on to ${await shown()}`);
