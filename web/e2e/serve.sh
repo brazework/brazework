@@ -11,3 +11,7 @@ export GITHUB_APP_PRIVATE_KEY="$(openssl genrsa 2048 2>/dev/null | base64 | tr -
 npx next build >/tmp/forge-e2e-build.log 2>&1 || { tail -20 /tmp/forge-e2e-build.log; exit 1; }
 npx next start -p 3200 >/tmp/forge-e2e-server.log 2>&1 &
 until curl -sf http://localhost:3200/login >/dev/null; do sleep 1; done
+# Warm the heaviest public pages once before any journey runs. In a shard, the first journey can be
+# the landing page's 3D hero on a server nothing has loaded yet, and its first load then ran past
+# Playwright's 30 s navigation limit (merge queue run 46040292530, s-landing.cjs on shard b1).
+for p in / /schools /signup; do curl -s -o /dev/null --max-time 90 "http://localhost:3200$p" || true; done
