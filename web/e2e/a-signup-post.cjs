@@ -158,18 +158,27 @@ const { BASE, step, browser, as, go, closeTour, hydrated, summary } = require(".
     await q.getByRole("button", { name: /^Answer/ }).click();
     const box = q.getByPlaceholder("Write an answer…");
     await box.fill("Start with a complementary filter.");
+    // The question's own permalink is the time in its header. Any other /post/ link in the card
+    // would be a different post, and following the first one could open that instead.
+    const href = await q.locator("header a[href^='/post/']").getAttribute("href");
+    const otherPosts = await q.locator('a[href^="/post/"]').evaluateAll((els, own) => els.map((a) => a.getAttribute("href")).filter((h) => h !== own), href);
+    if (!href || !/^\/post\/[^/]+$/.test(href) || otherPosts.length) throw new Error("expected only the question's own post link, saw " + [href, ...otherPosts].join(", "));
     await box.press("Enter");
-    // Sent once the server has saved it: the box empties only then (post-card.tsx). Waiting on the text
-    // alone wasn't enough: React mirrors a textarea's value into its text, so the answer still sitting
-    // in the box matched, and the reload below could cancel the save before it reached the server.
+    // The box clears only after the server has saved the answer (post-card.tsx sendReply). The words
+    // are already visible in the box before that, so waiting on the text alone used to leave the page
+    // while the insert was still open. The save is not dropped, but the post page can be rendered
+    // before it commits, and that response then has no answer.
     await ben.waitForFunction((el) => el && el.value === "", await box.elementHandle(), { timeout: 10000 });
     // With the box empty, the only copy of the text is the answer itself.
     await q.getByText("Start with a complementary filter.", { exact: true }).first().waitFor({ timeout: 10000 });
     // Saved exactly once: checked on the post's own page. Home's feed is virtualized and ranked, so
     // after the answer the question can sit below the cards that are rendered (CI saw exactly that).
-    const href = await q.locator('a[href^="/post/"]').first().getAttribute("href");
     await go(ben, href);
     const saved = ben.getByText("Start with a complementary filter.");
+    await saved.first().waitFor({ timeout: 15000 }).catch(() => { throw new Error("answer missing after opening the post"); });
+    if ((await saved.count()) !== 1) throw new Error(`answer shown ${await saved.count()} times after opening the post`);
+    // A new load of the same page, after the one the save just rendered. The answer has to still be there.
+    await ben.reload({ waitUntil: "domcontentloaded" });
     await saved.first().waitFor({ timeout: 15000 }).catch(() => { throw new Error("answer missing after reload"); });
     if ((await saved.count()) !== 1) throw new Error(`answer shown ${await saved.count()} times after reload`);
   }, ben);
