@@ -43,7 +43,7 @@ The database fills in names, counts and times itself, so the app can't fake them
 - To announce a feature: add an entry at the top of `public/js/updates.js` with a new id, a summary and points, and optionally `tour` steps that point at `data-tour="…"` names on the page. Members who joined before it get a short What's new walkthrough on their next visit; everyone can read the note by clicking it under Brazework updates.
 - Notifications appear in the app only; there are no emails or phone push notifications yet, and no settings to turn kinds off.
 - Analytics counts profile views and engagement on your posts. Project views, search appearances and access requests from the prototype wait on those features. Career progression only shows when you joined until profiles have experience and education, and the career benchmark waits on deciding how skill levels are measured. Company analytics wait on the company page.
-- Supabase's built-in email sender only sends a few emails an hour; set up your own email sender before launch (SETUP.md, step 4).
+- Supabase's built-in email sender only sends a few emails an hour; set up your own email sender before launch ([launch.md](launch.md)).
 
 ## Club events (`supabase/club-events.sql`)
 
