@@ -1,8 +1,8 @@
-import { Flag, GitMerge, MessageSquare, Sparkles, UserPlus } from "lucide-react";
+import { GitMerge, MessageSquare, Sparkles, UserPlus } from "lucide-react";
 import Link from "next/link";
 import { List, ListRow } from "@/components/app/list";
 import { Seal } from "@/components/app/verified-seal";
-import { GoalCard } from "@/components/app/goal-card";
+import { GoalCard, GoalMark } from "@/components/app/goal-card";
 import { Ember } from "@/components/ember/ember";
 import { Avatar } from "@/components/ui";
 import { dbFeatures } from "@/lib/db-features";
@@ -54,11 +54,12 @@ export async function HomeStream() {
   const nRequests = requests.count ?? 0, nInvites = invites.count ?? 0;
   const ships = ((shipped.data ?? []) as unknown as Shipped[]).filter((m) => m.project && !m.project.private && m.owner).slice(0, SHIPPED_SHOWN);
   const needsYou = nRequests > 0 || nInvites > 0 || !!verify;
-  // From the record already loaded for your goal (no extra query); unknown counts as "no projects yet".
-  const hasProjects = (record?.projects ?? 0) > 0;
+  // Your goal shows in full once it's set; until then it's one row that opens the picker (Home asks
+  // one thing at a time: the band or the first-build box asks for the work).
+  const goalSet = goal?.status === "active" || goal?.status === "met";
 
   return (
-    <div aria-label="Your day" role="group" className="relative flex flex-col gap-7 pl-7 sm:pl-8 before:absolute before:top-3 before:bottom-3 before:left-[8.5px] before:w-px before:bg-line">
+    <div aria-label="Your day" role="group" className="flex flex-col gap-7">
       {/* Once daily-triage.sql has run, the drafts are decided right here, a tap each (triage.tsx). */}
       {f.dailyTriage && <DraftTriage node={<Ember size={18} />} />}
       {toolDrafts.length > 0 && (
@@ -75,7 +76,7 @@ export async function HomeStream() {
       )}
 
       {needsYou && (
-        <Group label="Needs you" node={<span className="block size-2.5 rounded-full bg-text ring-4 ring-bg" />}>
+        <Group label="Needs you" node={<span className="block size-2 rounded-full bg-text" />}>
           <div className="flex flex-col gap-4">
             {(nRequests > 0 || nInvites > 0) && (
               <List label="Requests">
@@ -91,7 +92,7 @@ export async function HomeStream() {
       {/* What was signed this week. With nothing signed yet it says how to get there, but only for a
           member whose next step above isn't already saying it (less clutter, Nov 21): someone with
           projects is shown "ask someone who saw it" there, so the empty box would repeat it. */}
-      {(ships.length > 0 || !hasProjects) && <Group label={profile?.account_type === "professional" && !cids.length ? "Signed this week" : "Your clubs shipped this week"} node={<Seal size={18} />}
+      {(ships.length > 0 || (!cids.length && profile?.account_type !== "professional")) && <Group label={profile?.account_type === "professional" && !cids.length ? "Signed this week" : "Your clubs shipped this week"} node={<Seal size={18} />}
         more={ships.length ? <Link href="/communities" className={moreCls}>Your clubs</Link> : null}>
         {ships.length ? (
           <List label="Signed this week in your clubs">
@@ -106,11 +107,26 @@ export async function HomeStream() {
         )}
       </Group>}
 
-      {record && (
-        <Group label="Where you're headed" node={<span className="grid size-[18px] place-items-center rounded-full bg-surface-2 text-muted ring-4 ring-bg"><Flag className="size-3" /></span>}>
-          <GoalCard compact goal={goal} record={record} profileId={user.id} />
+      {record && (goalSet ? (
+        <Group label="Where you're headed" node={<GoalMark />}>
+          <GoalCard compact goal={goal} record={record} profileId={user.id} accountType={profile?.account_type} />
         </Group>
-      )}
+      ) : (
+        <details className="group/goal glass-card rounded-2xl">
+          <summary className="flex cursor-pointer list-none items-center gap-3 px-4 py-3.5 [&::-webkit-details-marker]:hidden sm:px-5">
+            <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-surface-2 text-text-2"><GoalMark className="size-4" /></span>
+            <span className="min-w-0 flex-1">
+              <span className="block text-[15px] font-semibold tracking-tight">Where are you headed?</span>
+              <span className="block text-sm text-muted">Pick a goal, and your next steps come from your real work.</span>
+            </span>
+            <span className="shrink-0 rounded-lg border border-line px-3 py-1.5 text-xs font-medium transition group-open/goal:hidden hover:border-line-strong">Set a goal</span>
+            <span className="hidden shrink-0 text-xs text-muted group-open/goal:inline">Close</span>
+          </summary>
+          {/* display:none until opened: newer browsers keep a closed <details>'s content laid out (only
+              unpainted), and its tiles would still count for layout and hit-testing checks. */}
+          <div className="hidden border-t border-line p-2 group-open/goal:block sm:p-3"><GoalCard compact goal={goal} record={record} profileId={user.id} accountType={profile?.account_type} /></div>
+        </details>
+      ))}
     </div>
   );
 }
@@ -125,14 +141,15 @@ const draftTitle = (d: ToolDraft) => {
   return t.length > 90 ? `${t.slice(0, 89)}…` : t;
 };
 
-// A group on the spine: its node sits on the line, its heading says what's in it.
+// A group in Home's stream (redesign 2026-11): a small heading with its mark, then its rows. No
+// timeline spine: the order already says what comes first.
 function Group({ label, node, more, children }: { label: string; node: React.ReactNode; more?: React.ReactNode; children: React.ReactNode }) {
   const id = `home-${label.toLowerCase().replace(/[^a-z]+/g, "-")}`;
   return (
-    <section aria-labelledby={id} className="relative">
-      <span aria-hidden="true" className="absolute top-0.5 -left-7 grid sm:-left-8 w-[18px] place-items-center">{node}</span>
-      <div className="mb-2.5 flex items-baseline justify-between gap-3">
-        <h2 id={id} className="text-[15px] font-semibold tracking-tight text-text">{label}</h2>
+    <section aria-labelledby={id}>
+      {/* A clear section title (2026-11-26, Home redesign): each group says what it's for. */}
+      <div className="mb-2 flex items-center justify-between gap-3 px-1">
+        <h2 id={id} className="flex items-center gap-2 text-[15px] font-semibold tracking-tight text-text"><span aria-hidden="true" className="grid w-4 place-items-center text-muted [&_svg]:size-4">{node}</span>{label}</h2>
         {more}
       </div>
       {children}
@@ -150,9 +167,9 @@ function Tile({ children }: { children: React.ReactNode }) {
 function Invite({ cids, working = false }: { cids: number; working?: boolean }) {
   const solo = working && !cids;
   return (
-    <div className="flex flex-wrap items-center gap-x-4 gap-y-3 rounded-xl border border-dashed border-line-strong px-4 py-3.5">
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-3 glass-card rounded-xl px-4 py-3.5">
       <p className="min-w-0 flex-1 basis-56 text-sm text-muted">
-        {cids ? "Nothing signed in your clubs yet this week. Log a result and ask an officer who saw it." : solo ? "Work you get signed shows up here. Log a result and ask whoever saw it: a manager, a client, a teammate." : "Join your club, and the work its officers sign shows up here, yours included."}
+        {cids ? "Nothing signed in your clubs yet this week. Log a result and ask an officer who saw it." : solo ? "Work you get signed shows up here. Log a result and ask whoever saw it: a coworker outside the project, a client, a mentor." : "Join your club, and the work its officers sign shows up here, yours included."}
       </p>
       <Link href={cids || solo ? "/projects" : "/communities?tab=discover"} className="inline-flex h-8 shrink-0 items-center gap-1.5 rounded-lg bg-text px-3 text-xs font-semibold text-bg transition hover:opacity-90">
         <Sparkles className="size-3.5" />{cids ? "Log a milestone" : solo ? "Log a result" : "Find your club"}
@@ -164,7 +181,7 @@ function Invite({ cids, working = false }: { cids: number; working?: boolean }) 
 // The stream's place while it loads: the spine and the clubs group, which always shows.
 export function StreamSkeleton() {
   return (
-    <div aria-hidden="true" className="relative flex flex-col gap-7 pl-7 sm:pl-8">
+    <div aria-hidden="true" className="flex flex-col gap-8">
       <div>
         <div className="mb-2.5 h-5 w-52 shimmer rounded-md" />
         <div className="h-[58px] shimmer rounded-xl" />

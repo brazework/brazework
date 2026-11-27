@@ -23,7 +23,6 @@ export type PersonHit = {
   avatar: string | null;
   shared: string[]; // interests you have in common
   relationship: Relationship;
-  founding?: number | null; // founding-member number (FIX-241)
 };
 
 export type CommunityHit = {
@@ -80,15 +79,15 @@ export async function searchForge(rawQuery: string, limit = 5): Promise<SearchRe
   if (!user || !profile) return empty(query);
   const mine = new Set<string>(profile.interests ?? []);
   const myField: string = profile.field ?? "";
-  const { media, foundingMembers } = await dbFeatures();
+  const { media } = await dbFeatures();
 
   // Every word has to match somewhere (name, headline, field); words can match different places.
   let people = supabase
     .from("profiles")
-    .select(`id, first_name, last_name, headline, field, interests${media ? ", avatar_path" : ""}${foundingMembers ? ", founding_number" : ""}`)
+    .select(`id, first_name, last_name, headline, field, interests${media ? ", avatar_path" : ""}`)
     .eq("onboarded", true)
     .neq("id", user.id);
-  let clubs = supabase.from("communities").select("*");
+  let clubs = supabase.from("communities").select("*").neq("type", "class");
   for (const w of words) {
     people = people.or(`first_name.ilike.*${w}*,last_name.ilike.*${w}*,headline.ilike.*${w}*,field.ilike.*${w}*`);
     clubs = clubs.or(`name.ilike.*${w}*,about.ilike.*${w}*,field.ilike.*${w}*`);
@@ -109,15 +108,15 @@ export async function searchForge(rawQuery: string, limit = 5): Promise<SearchRe
     events.order("starts_at", { ascending: true }).limit(more * 2),
     posts.order("created_at", { ascending: false }).limit(more * 2),
     // The same, by topic: "robotics" finds people and clubs tagged Robotics & Autonomy.
-    byTopic ? supabase.from("profiles").select(`id, first_name, last_name, headline, field, interests${media ? ", avatar_path" : ""}${foundingMembers ? ", founding_number" : ""}`).eq("onboarded", true).neq("id", user.id).overlaps("interests", topics).limit(30) : Promise.resolve({ data: [] }),
-    byTopic ? supabase.from("communities").select("*").overlaps("topics", topics).limit(30) : Promise.resolve({ data: [] }),
+    byTopic ? supabase.from("profiles").select(`id, first_name, last_name, headline, field, interests${media ? ", avatar_path" : ""}`).eq("onboarded", true).neq("id", user.id).overlaps("interests", topics).limit(30) : Promise.resolve({ data: [] }),
+    byTopic ? supabase.from("communities").select("*").neq("type", "class").overlaps("topics", topics).limit(30) : Promise.resolve({ data: [] }),
     byTopic ? supabase.from("projects").select("id, owner_id, title, summary, status, tags, owner:profiles!projects_owner_id_fkey(first_name, last_name)").overlaps("tags", topics).order("updated_at", { ascending: false }).limit(more) : Promise.resolve({ data: [] }),
     byTopic ? supabase.from("events").select("id, title, type, format, starts_at, topic").eq("status", "published").gt("ends_at", new Date(requestTime()).toISOString()).in("topic", topics).order("starts_at").limit(more) : Promise.resolve({ data: [] }),
     byTopic ? supabase.from("posts").select("id, author_first, author_last, body, kind, tags, created_at").is("community_id", null).eq("status", "visible").overlaps("tags", topics).order("created_at", { ascending: false }).limit(more) : Promise.resolve({ data: [] }),
   ]);
   const uniq = <T extends { id: string }>(...lists: T[][]) => { const seen = new Set<string>(); return lists.flat().filter((x) => (seen.has(x.id) ? false : (seen.add(x.id), true))); };
 
-  type Row = { id: string; first_name: string; last_name: string; headline: string; field: string; interests: string[] | null; avatar_path?: string | null; founding_number?: number | null };
+  type Row = { id: string; first_name: string; last_name: string; headline: string; field: string; interests: string[] | null; avatar_path?: string | null };
   const lowerQ = query.toLowerCase();
   const nameScore = (name: string) => (name.toLowerCase().startsWith(lowerQ) ? 3 : name.toLowerCase().includes(lowerQ) ? 1 : 0);
 
@@ -188,7 +187,6 @@ export async function searchForge(rawQuery: string, limit = 5): Promise<SearchRe
         headline: r.headline ?? "",
         field: r.field ?? "",
         avatar: avatarSrc(r),
-        founding: r.founding_number ?? null,
         shared,
         relationship: { status, connId: cn?.id ?? null, note: cn?.note ?? "", following: following.has(r.id) },
       };

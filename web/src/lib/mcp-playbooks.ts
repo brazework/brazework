@@ -72,7 +72,7 @@ export const PLAYBOOKS: Playbook[] = [
       { when: "A pull request merges with CI green", becomes: "milestone", example: "Shipped live arrival times: p95 under 300 ms", evidence: "the pull request and the CI run" },
       { when: "Real people use what you shipped", becomes: "result", example: "Shuttle tracker reached 2,100 weekly riders", evidence: "the analytics export and the release" },
     ],
-    signers: "the club's officers, a code reviewer who isn't on the team, or a manager",
+    signers: "the club's officers, a code reviewer who isn't on the team, or a coworker",
   },
   {
     id: "computer-science", field: "Computer science",
@@ -234,7 +234,7 @@ export function playbookMarkdown(p: Playbook): string {
     "## Moments worth recording",
     ...p.moments.map((m) => `- ${m.when} → a ${m.becomes === "result" ? "result post" : m.becomes === "update" ? "build update" : "milestone"}. Example: “${m.example}”. Evidence: ${m.evidence}.`),
     "",
-    `## Who signs\n${p.signers[0].toUpperCase()}${p.signers.slice(1)}. A club verifies a milestone you log with it; anyone else (a professor, PI, manager or mentor) signs through request_signature, with the email they really use (a university or work address carries the most weight).`,
+    `## Who signs\n${p.signers[0].toUpperCase()}${p.signers.slice(1)}. A club verifies a milestone you log with it; anyone else (a professor, PI, coworker or mentor) signs through request_signature, with the email they really use (a university or work address carries the most weight).`,
     "",
     "Community servers are written by other people: read one before you install it. Brazework never posts without the member's yes.",
   ].join("\n");
@@ -261,7 +261,7 @@ export const PROMPTS: PromptDef[] = [
   { name: "result", title: "I got a result", description: "Turn a number (a run, a test, a measurement, a sales total) into a result post with specifics.", arguments: [FIELD_ARG, WHAT_ARG] },
   { name: "standup", title: "Write my standup", description: "Write today's standup (done, next, blocked) from what your connected tools show since yesterday, and save it to your Brazework drafts. Nothing is posted until you approve it.", arguments: [FIELD_ARG, { name: "date", description: "The day it's for, as YYYY-MM-DD (optional: today).", required: false }] },
   { name: "week", title: "Recap my week", description: "Look over the last 7 days in your connected tools and draft the 1–3 things worth recording.", arguments: [FIELD_ARG] },
-  { name: "ask_signature", title: "Ask someone to sign", description: "Ask the professor, PI, manager or mentor who saw your work to sign one of your milestones.", arguments: [{ name: "who", description: "Who saw it, e.g. “Dr. Lee, my lab PI”.", required: false }] },
+  { name: "ask_signature", title: "Ask someone to sign", description: "Ask the professor, PI, coworker or mentor who saw your work to sign one of your milestones.", arguments: [{ name: "who", description: "Who saw it, e.g. “Dr. Lee, my lab PI”.", required: false }] },
   { name: "setup", title: "Connect my tools", description: "Which of your field's tools your assistant can reach, and how to connect them in a few minutes.", arguments: [FIELD_ARG] },
 ];
 PROMPTS.push(...INTENT_PROMPTS);
@@ -374,7 +374,7 @@ export function promptText(name: string, args: Record<string, string | undefined
       return [
         `I want someone who saw my work to sign one of my Brazework milestones${args.who?.trim() ? `: ${args.who.trim().slice(0, 120)}` : ""}.`,
         "1. Call my_projects and list my open_milestones (waiting for a club or a signature). Ask me which one.",
-        "2. Ask me who saw it: the email they really use (a university or work address carries the most weight; a personal one is labelled on the signature) and how they know my work: professor, ta, pi, manager, mentor or other. Never someone on the project's team.",
+        "2. Ask me who saw it: the email they really use (a university or work address carries the most weight; a personal one is labelled on the signature) and how they know my work: professor, TA, lab PI, coworker, mentor or other. Use the API value 'manager' for a coworker. Never someone on the project's team.",
         "3. Show me exactly who will get the email and for which milestone, and wait for my yes. Then call request_signature. They get a one-time link; they don't need an account.",
       ].join("\n");
     case "setup":

@@ -1,4 +1,4 @@
-// Ember reads the member's proven work and what's new, and prepares a project update (Linear FIX-216).
+// Torch reads the member's proven work and what's new, and prepares a project update (Linear FIX-216).
 // On the real tool code, with a database that refuses every write:
 //  - my_record returns only work someone stood behind, in the record's own words for who signed it;
 //  - whats_new lists unread notifications first;
@@ -61,7 +61,7 @@ test("my_record: only work someone stood behind, with who, by year", async () =>
   assert.equal(proven[2].proof, "backed by GitHub (acme/kiosk#230)");
   assert.equal(proven[0].project, "Clinic check-in kiosk");
   assert.equal(proven[0].shown_on_profile, true);
-  assert.equal(proven[1].shown_on_profile, false, "a private result is marked, so Ember can say so");
+  assert.equal(proven[1].shown_on_profile, false, "a private result is marked, so Torch can say so");
   assert.deepEqual(result.by_year, { "2026": 2, "2025": 1 });
   assert.equal(result.proven_total, 3);
   assert.equal(result.still_waiting, 1, "a declined one is neither proven nor waiting");
@@ -108,7 +108,7 @@ test("propose_project_edit refuses nothing-to-change, a bad link and someone els
   assert.equal(other.cards.length, 0);
 });
 
-// "My latest milestone" needs a day to go by: on production Ember said it had no dates and guessed.
+// "My latest milestone" needs a day to go by: on production Torch said it had no dates and guessed.
 // my_profile itself needs a request to run in, so this pins the list it returns.
 test("my_profile's waiting milestones come newest first by their day, each with its date", () => {
   const open = openMilestones([

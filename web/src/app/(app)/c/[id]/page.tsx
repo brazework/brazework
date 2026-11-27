@@ -1,9 +1,12 @@
 import type { Metadata } from "next";
-import { CalendarDays, Globe, GraduationCap, MessagesSquare, PartyPopper, Settings, UserPlus, BadgeCheck } from "lucide-react";
-import { accentTint } from "@/lib/club-look";
+import { CalendarDays, FileText, Globe, GraduationCap, MessagesSquare, PartyPopper, PenLine, Settings, UserPlus, BadgeCheck } from "lucide-react";
+import { accentOf } from "@/lib/club-look";
 import { openClubChat } from "@/lib/chats";
 import Link from "next/link";
 import { BuildersThisTerm, termStart } from "./builders";
+import { ClubProjects } from "./club-projects";
+import { ClassBoard } from "./class-board";
+import { CourseStrip } from "./course-strip";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
 import { LiveRefresh } from "@/components/app/live-refresh";
@@ -15,6 +18,7 @@ import { PRIVACY_LABEL, TYPE_LABEL, can, membersLabel, rank, type CommunityPost 
 import { PostCard } from "../../feed/post-card";
 import { cardReplies } from "@/lib/card-replies";
 import { CommunityBadge, MetaLine, RoleChip } from "../../communities/_components/badge";
+import { ClubPictureButton } from "../../communities/_components/club-picture-button";
 import { inLog, withHost, type HostedEvent } from "@/lib/events";
 import { requestTime } from "@/lib/forge";
 import { EventCard } from "../../events/event-card";
@@ -65,7 +69,7 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
     supabase.from("posts").select(await postSelect()).eq("community_id", id).eq("status", "visible").order("created_at", { ascending: false }).limit(60),
     isMod ? supabase.from("posts").select(await postSelect()).eq("community_id", id).eq("status", "held").order("created_at", { ascending: false }).limit(100) : Promise.resolve({ data: [] }),
   ]);
-  const { clubEvents, media: mediaEnabled, invites: invitesOn, groupChats, videoCaptions: captionsEnabled } = await dbFeatures();
+  const { clubEvents, media: mediaEnabled, invites: invitesOn, groupChats, videoCaptions: captionsEnabled, clubProfile } = await dbFeatures();
   const { data: evRows } = clubEvents
     ? await supabase.from("events").select(await eventWithHost()).eq("community_id", id).order("starts_at", { ascending: true }).limit(100)
     : { data: [] };
@@ -106,7 +110,8 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
   const leads = leadCounts((leadRows ?? []) as LeadRow[], user.id);
   // Setup, for the club's owner and admins (rank 4+), until it's done or they hide it.
   const lead = rank(role) >= 4 && !(await cookies()).has(`${DISMISS_PREFIX}club-setup-${id}`);
-  const setupSteps = lead ? await clubSetupSteps(supabase, await dbFeatures(), { id: c.id, name: c.name, about: c.about, rules: c.rules, member_count: c.member_count }) : [];
+  const setupSteps = lead && c.type !== "class" ? await clubSetupSteps(supabase, await dbFeatures(), { id: c.id, name: c.name, about: c.about, rules: c.rules, member_count: c.member_count }) : [];
+  // A class (supabase/school-portal.sql) has no club setup: its roster comes from Your school.
   const showSetup = lead && setupSteps.length > 0 && !setupProgress(setupSteps).complete;
   const { data: inviteRows } = showSetup && invitesOn ? await supabase.from("community_invites").select("code, expires_at, max_uses, uses, revoked").eq("community_id", id).order("created_at", { ascending: false }).limit(20) : { data: [] };
   const setupInvite = reusableInvite((inviteRows ?? []) as InviteRow[], now)?.code ?? null;
@@ -125,20 +130,31 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
   const liked = new Set((likes.data ?? []).map((l: { post_id: string }) => l.post_id));
   const saved = new Set((saves.data ?? []).map((l: { post_id: string }) => l.post_id));
 
+  // What waits on this officer, and only that (the To do list below).
+  const todos = [
+    { n: toVerify.count ?? 0, label: "milestones to verify", one: "milestone to verify", href: `/c/${c.id}/manage?tab=verify`, show: msOn },
+    { n: joinReqs.count ?? 0, label: "join requests", one: "join request", href: `/c/${c.id}/manage?tab=requests`, show: can(role, "approve") },
+    { n: (held.data ?? []).length, label: "held posts to review", one: "held post to review", href: `/c/${c.id}?tab=held`, show: isMod },
+  ].filter((t) => officer && t.show && t.n > 0);
   return (
     <>
       <Panel className="overflow-hidden p-0">
-        <div className="relative h-24 overflow-hidden border-b border-line sm:h-36">
+        <div className="relative h-28 overflow-hidden border-b border-line sm:h-44">
           {c.cover_path ? (
             <Image src={mediaUrl(c.cover_path)} alt="" fill sizes="(min-width: 768px) 768px, 100vw" className="object-cover" priority />
           ) : (
-            <div className="cover-empty absolute inset-0" style={{ backgroundImage: accentTint(c.accent) }} />
+            <div className="cover-blueprint absolute inset-0" style={c.accent ? ({ "--cover-tint": accentOf(c.accent).swatch } as React.CSSProperties) : undefined}>
+            </div>
           )}
           <div className="absolute inset-x-0 bottom-0 h-14 bg-gradient-to-t from-black/25 to-transparent" aria-hidden="true" />
         </div>
         <div className="p-6">
         <div className="flex flex-wrap items-start gap-4">
-          <CommunityBadge id={c.id} name={c.name} size={72} logo={c.logo_path} accent={c.accent} className="relative z-10 -mt-12 border-4 border-surface shadow-[var(--shadow)] transition duration-300 hover:-rotate-6 hover:scale-105" />
+          {/* Owners and admins can set the club's picture right here (it shows on cards and in the club's chats). */}
+          <div className="relative z-10 -mt-12 shrink-0">
+            <CommunityBadge id={c.id} name={c.name} size={72} logo={c.logo_path} accent={c.accent} className="border-4 border-surface shadow-[var(--shadow)] transition duration-300 hover:-rotate-6 hover:scale-105" />
+            {mediaEnabled && clubProfile && can(role, "editInfo") && <ClubPictureButton cid={c.id} userId={user.id} has={!!c.logo_path} />}
+          </div>
           {/* Actions beside the badge, like a profile; the name and details get the full width below, so four
               buttons never squeeze a club's name onto two lines. On a phone they take the row under the badge
               (beside an 84px badge they wrapped one at a time, leaving Leave alone on its own line). */}
@@ -146,14 +162,18 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
             <CopyLink path={`/c/${c.id}`} label="Share" />
             {me && groupChats && (
               <form action={openClubChat.bind(null, c.id)}>
-                <button className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-line bg-surface px-4 text-sm font-medium transition hover:bg-hover active:scale-95"><MessagesSquare className="size-4" /> Club chat</button>
+                <button className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-line bg-surface px-4 text-sm font-medium transition hover:bg-hover active:scale-95"><MessagesSquare className="size-4" /> {c.type === "class" ? "Class chat" : "Club chat"}</button>
               </form>
             )}
-            {rank(role) >= 2 && invitesOn && (
+            {rank(role) >= 2 && invitesOn && c.type !== "class" && (
               <Link href={`/c/${c.id}/manage?tab=invite`} className="inline-flex h-10 items-center gap-1.5 rounded-lg bg-text px-4 text-sm font-medium text-surface transition active:scale-95"><UserPlus className="size-4" /> Invite</Link>
             )}
             {rank(role) >= 2 && (
               <Link href={`/c/${c.id}/manage`} className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-line px-4 text-sm transition hover:bg-hover"><Settings className="size-4" /> Manage</Link>
+            )}
+            {/* The core loop, one tap from the club: log what you built, and its officers sign it. */}
+            {me && c.type !== "class" && rank(role) < 2 && msOn && (
+              <Link href="/projects" className="inline-flex h-10 items-center gap-1.5 rounded-lg bg-text px-4 text-sm font-medium text-surface transition active:scale-95"><PenLine className="size-4" /> Get work signed</Link>
             )}
             <JoinButton cid={c.id} privacy={c.privacy} state={me ? "member" : requested ? "requested" : "none"} isOwner={role === "owner"} />
           </div>
@@ -166,11 +186,13 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
             </div>
             {c.tagline && <p className="mt-0.5 text-[15px] text-text-2">{c.tagline}</p>}
             <Suspense fallback={null}><div><ChapterLine cid={c.id} /></div></Suspense>
-            <MetaLine parts={[membersLabel(c.member_count), PRIVACY_LABEL[c.privacy], c.field, TYPE_LABEL[c.type]]} />
+            {c.type === "class"
+              ? <MetaLine parts={[[c.course, c.term].filter(Boolean).join(" · "), membersLabel(c.member_count), "Private to the class"]} />
+              : <MetaLine parts={[membersLabel(c.member_count), PRIVACY_LABEL[c.privacy], c.field, TYPE_LABEL[c.type]]} />}
             {study && studyLine(c) && <p className="mt-1 text-sm font-medium text-text-2">{studyLine(c)}</p>}
             {c.website && /^https?:\/\/\S+$/i.test(c.website) && <a href={c.website} target="_blank" rel="noopener noreferrer nofollow" className="mt-1 inline-flex items-center gap-1 text-xs text-text-2 hover:text-text hover:underline"><Globe className="size-3.5" /> {c.website.replace(/^https?:\/\/(www\.)?/, "").replace(/\/$/, "")}</a>}
             {/* Money paths (lib/money.ts): a quiet line for visitors to a public club, never for its members. */}
-            {!me && !study && c.privacy === "public" && <Link href={`/book?kind=chapter&club=${encodeURIComponent(c.id)}`} className="mt-1 inline-flex text-xs text-muted underline-offset-4 hover:text-text hover:underline">Sponsor this chapter</Link>}
+            {!me && !study && c.type !== "class" && c.privacy === "public" && <Link href={`/book?kind=chapter&club=${encodeURIComponent(c.id)}`} className="mt-1 inline-flex text-xs text-muted underline-offset-4 hover:text-text hover:underline">Sponsor this chapter</Link>}
             <MemberFaces faces={faces} ids={members.map((m) => m.uid)} total={c.member_count} className="mt-3" />
           </div>
         </div>
@@ -184,25 +206,32 @@ async function Community({ params, searchParams }: { params: PageProps<"/c/[id]"
         ]} />
         {me && nextEvent && !officer && <NextUp event={nextEvent} going={goingSet.has(nextEvent.id)} now={now} />}
         {showSetup && <ClubSetup cid={c.id} name={c.name} steps={setupSteps} origin={env.siteUrl} invite={setupInvite} />}
-        {officer && (
+        {/* A class at a glance: every group for faculty, your own project for a student (class-board.tsx). */}
+        {c.type === "class" && me && <Suspense fallback={null}><CourseStrip cid={c.id} staff={rank(role) >= 3} /></Suspense>}
+        {c.type === "class" && me && <Suspense fallback={null}><ClassBoard cid={c.id} faculty={officer} /></Suspense>}
+        {officer && c.type !== "class" && (
           <section aria-label="To do" className="mt-5">
             <h2 className="mb-2 text-sm font-semibold">To do</h2>
             <List label="Officer to-dos">
-              {[
-                { n: toVerify.count ?? 0, label: "milestones to verify", href: `/c/${c.id}/manage?tab=verify`, show: msOn },
-                { n: joinReqs.count ?? 0, label: "join requests", href: `/c/${c.id}/manage?tab=requests`, show: can(role, "approve") },
-                { n: (held.data ?? []).length, label: "held posts to review", href: `/c/${c.id}?tab=held`, show: isMod },
-              ].filter((t) => t.show).map((t) => (
-                <ListRow key={t.label} href={t.href} title={<span className={t.n ? "text-text" : "font-normal text-muted"}>{t.label}</span>}
-                  leading={<span className={t.n ? "grid h-6 min-w-6 place-items-center rounded-full bg-text px-1.5 text-xs font-semibold text-bg tabular-nums" : "grid h-6 min-w-6 place-items-center rounded-full bg-surface-2 px-1.5 text-xs text-faint tabular-nums"}>{t.n}</span>} />
+              {/* Only what waits on you: a row of zeros is noise. Nothing waiting says so in one line. */}
+              {todos.map((t) => (
+                <ListRow key={t.label} href={t.href} title={<span className="text-text">{t.n === 1 ? t.one : t.label}</span>}
+                  leading={<span className="grid h-6 min-w-6 place-items-center rounded-full bg-text px-1.5 text-xs font-semibold text-bg tabular-nums">{t.n}</span>} />
               ))}
+              {!todos.length && <ListRow href={`/c/${c.id}/manage`} leading={<span className="grid size-6 place-items-center"><BadgeCheck className="size-4 text-ok" /></span>}
+                title={<span className="font-normal text-text-2">All caught up: nothing to verify, approve or review</span>} />}
               <ListRow href={nextEvent ? `/events/${nextEvent.id}` : `/c/${c.id}?tab=events`} leading={<span className="grid size-6 place-items-center"><CalendarDays className="size-4 text-faint" /></span>}
                 title={<span className="font-normal text-text-2">{nextEvent ? `Next: ${nextEvent.title}` : "No event planned. Host one"}</span>} />
+              {/* The semester report (manage/report-client.tsx): what the club built, for a dean, an advisor or a sponsor. */}
+              {rank(role) >= 4 && <ListRow href={`/c/${c.id}/manage#report`} leading={<span className="grid size-6 place-items-center"><FileText className="size-4 text-faint" /></span>}
+                title={<span className="font-normal text-text-2">Semester report: share what the club built with your dean or sponsors</span>} />}
             </List>
           </section>
         )}
         {study && <StudyLeads cid={c.id} me={user.id} member={!!me} people={leadPeople} />}
         {msOn && <Suspense fallback={null}><BuildersThisTerm cid={c.id} /></Suspense>}
+        {/* The club's own projects (FIX-264): for whoever can see the club, as its posts are. */}
+        {(c.privacy === "public" || me) && <Suspense fallback={null}><ClubProjects cid={c.id} name={c.name} lead={rank(role) >= 4} interests={profile?.interests ?? []} isClass={c.type === "class"} member={!!me} /></Suspense>}
         {typeof sp.chat_error === "string" && <p role="alert" className="mt-4 rounded-2xl border border-danger/30 bg-danger/10 px-4 py-2.5 text-sm text-danger">{sp.chat_error}</p>}
         {sp.joined === "1" && (
           <p className="relative mt-4 flex items-center gap-2 rounded-2xl border border-line bg-surface-2 px-4 py-3 text-sm">

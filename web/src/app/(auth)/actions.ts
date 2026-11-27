@@ -25,7 +25,7 @@ export async function logIn(_: AuthState, form: FormData): Promise<AuthState> {
 // Sign-up asks only for what makes the account: an email and a password (or Google, GitHub or
 // LinkedIn). Student or professional, name and birthday come next, in onboarding's "About you", the
 // same step for every way in; the database applies the rules there (finish_signup() in
-// supabase/oauth-signup.sql: 18 or older, a school email for students). Until then there's no profile.
+// supabase/oauth-signup.sql: confirmed email and 18 or older). Until then there's no profile.
 const signUpSchema = z.object({
   email: z.string().trim().regex(EMAIL_RE, "Enter a valid email address."),
   password: z.string().min(8, "Choose a password with at least 8 characters."),

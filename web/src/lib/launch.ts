@@ -11,14 +11,3 @@ export function refFrom(search: string): string {
 
 /** Where the ref is remembered for this browser tab (components/launch/product-hunt-welcome.tsx). */
 export const REF_KEY = "brazework-ref";
-
-/**
- * Which of the landing hero's stories a visitor sees first. Product Hunt's crowd ships software and
- * already works in Claude and Cursor, so they start on the engineer's story (GitHub, a tech lead
- * signs); everyone else starts on the first one. The other stories still play after it.
- */
-export function firstStoryFor(ref: string, stories: readonly { who: string }[]): number {
-  if (ref !== PH_REF) return 0;
-  const i = stories.findIndex((s) => s.who === "Software");
-  return i < 0 ? 0 : i;
-}

@@ -72,7 +72,7 @@ async function providerNewcomer(email, name) {
   }, page);
   await ctx.close();
 
-  // A newcomer with a personal email: can't be a student, must be 18, then onboarding as usual.
+  // A newcomer with a personal email can pick either account type and must be 18.
   const ola = `ola${n}@gmail.com`;
   await providerNewcomer(ola, "Ola Ade");
   const p = await as(b, ola);
@@ -89,25 +89,16 @@ async function providerNewcomer(email, name) {
       await p.waitForURL(/\/onboarding$/, { timeout: 15000 });
     }
   }, p);
-  await step("a student account needs a university email, here as on the email form", async () => {
-    await hydrated(p.getByRole("button", { name: /Student/ }));
-    await p.getByRole("button", { name: /Student/ }).click();
-    await p.fill('input[name="birthday"]', "2003-05-01");
-    await p.getByRole("button", { name: "Continue" }).click();
-    await p.getByText(/Use your university email/).waitFor({ timeout: 15000 });
-    await p.locator("#request-school").waitFor();
-  }, p);
   await step("and everyone must be 18", async () => {
     await p.getByRole("button", { name: /Professional/ }).click();
     const young = new Date(Date.now() - 16 * 365.25 * 864e5).toISOString().slice(0, 10);
     await p.fill('input[name="birthday"]', young);
     await p.getByRole("button", { name: "Continue" }).click();
-    await p.getByText(/at least 18/).waitFor({ timeout: 15000 });
+    // The error, not the field hint ("Kept private. You must be at least 18 to join."), which is always there.
+    await p.getByText("You must be at least 18 to create an account.").waitFor({ timeout: 15000 });
   }, p);
   await step("a professional finishes sign-up, then onboarding, then lands on the feed", async () => {
     await p.fill('input[name="birthday"]', "1994-03-03");
-    // A professional is offered a LinkedIn profile link (optional; Linear FIX-214), however they signed in.
-    await p.getByLabel("LinkedIn profile").fill("linkedin.com/in/ola-ade");
     await p.getByRole("button", { name: "Continue" }).click();
     await hydrated(p.getByRole("link", { name: /Set up your profile instead/ }));
     await p.getByRole("link", { name: /Set up your profile instead/ }).click();
@@ -124,11 +115,11 @@ async function providerNewcomer(email, name) {
     await again.context().close();
   });
 
-  // A student whose provider account is their school email.
-  const kim = `kim${n}@forge.test`;
+  // A student whose provider account uses a personal email.
+  const kim = `kim${n}@gmail.com`;
   await providerNewcomer(kim, "Kim Lee");
   const k = await as(b, kim);
-  await step("a newcomer with a school email finishes as a student and goes on to find their club", async () => {
+  await step("a newcomer with a personal email finishes as a student and goes on to find their club", async () => {
     await go(k, "/onboarding");
     await hydrated(k.getByRole("button", { name: /Student/ }));
     await k.getByRole("button", { name: /Student/ }).click();

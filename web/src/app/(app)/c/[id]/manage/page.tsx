@@ -10,6 +10,7 @@ import { timeAgo } from "@/lib/forge";
 import { RoleChip } from "../../../communities/_components/badge";
 import { loadCommunity } from "../data";
 import { dbFeatures } from "@/lib/db-features";
+import { DeleteClubForm } from "./delete-club";
 import { ClubCoverUpload } from "./cover-upload";
 import { ClubLook } from "./club-look";
 import { InviteLinks } from "./invites";
@@ -67,6 +68,8 @@ async function Manage({ params, searchParams }: { params: PageProps<"/c/[id]/man
     { id: "handoff", label: "Hand off", show: rank(role) >= 3 && features.handoff },
   ].filter((t) => t.show);
   const tab = tabs.find((t) => t.id === sp.tab)?.id ?? (rank(role) >= 3 ? "report" : c.privacy === "approval" && can(role, "approve") ? "requests" : "members");
+  const canDelete = tab === "settings" && role === "owner" && c.owner_id === user.id
+    && (await supabase.rpc("owner_club_deletion_ready")).data === true;
   const [report, copilotOn] = tab === "report" ? await Promise.all([loadClubReport(supabase, id, features), copilotEnabled()]) : [null, false];
   // The live share link, for owners and admins (club-reports.sql; absent before that step).
   const shareToken = tab === "report" && rank(role) >= 4
@@ -140,6 +143,8 @@ async function Manage({ params, searchParams }: { params: PageProps<"/c/[id]/man
         {tab === "settings" && features.media && <Panel className="mb-4 p-6"><ClubCoverUpload cid={id} path={c.cover_path} userId={user.id} /></Panel>}
         {tab === "school" && <Panel className="mb-4 p-6"><SchoolLinkPanel cid={id} link={schoolLink} canEdit={rank(role) >= (feat.schoolLinkEmail ? 3 : 4)} email={user.email ?? ""} needsSchoolEmail={feat.schoolLinkEmail} notice={typeof sp.schoolError === "string" ? sp.schoolError.slice(0, 300) : ""} /></Panel>}
         {tab === "settings" && <Panel className="p-6"><SettingsForm cid={id} about={c.about} rules={c.rules} privacy={c.privacy} words={(c.automod?.words ?? []).join("\n")} holdNewLinks={!!c.automod?.holdNewLinks} canAutomod={can(role, "automod")} /></Panel>}
+
+        {canDelete && <Panel className="mt-6 border-danger/30 p-6"><DeleteClubForm id={id} name={c.name} /></Panel>}
 
         {tab === "handoff" && (
           <HandOff cid={id} role={role ?? "member"} candidates={((members.data ?? []) as Member[]).filter((m) => rank(m.role) < rank(role)).map((m) => ({ uid: m.uid, name: `${m.first_name} ${m.last_name}`.trim() || "Member", role: m.role }))} />

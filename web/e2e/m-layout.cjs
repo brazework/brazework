@@ -106,36 +106,36 @@ async function check(page, vp, name) {
     }
     await page.context().close();
   }
-  // The Ask Ember bar (components/ember/ask-bar.tsx; docs/superpowers/specs/2026-11-19-app-flow-redesign-design.md).
+  // The Ask Torch bar (components/ember/ask-bar.tsx; docs/superpowers/specs/2026-11-19-app-flow-redesign-design.md).
   const me = await as(b, "ben@forge.test");
-  const bar = me.getByRole("search", { name: "Ask Ember or search Brazework" });
-  await step("Ask Ember bar: on a project page, / jumps to it and Enter asks Ember right there", async () => {
+  const bar = me.getByRole("search", { name: "Ask Torch or search Brazework" });
+  await step("Ask Torch bar: on a project page, / jumps to it and Enter asks Torch right there", async () => {
     await go(me, "/projects/p1");
-    await bar.getByPlaceholder("Ask Ember, or tell it what you did…").waitFor({ timeout: 15000 });
+    await bar.getByPlaceholder("Ask Torch, or tell it what you did…").waitFor({ timeout: 15000 });
     await me.evaluate(() => document.activeElement instanceof HTMLElement && document.activeElement.blur());
     await me.keyboard.press("/");
     if ((await me.evaluate(() => document.activeElement?.id)) !== "forge-search") throw new Error("/ didn't focus the bar");
     await me.keyboard.type("Got the PID loop stable");
     await me.keyboard.press("Enter");
     // This stack has no Anthropic key: the answer area opens under the bar and says why, on the same page.
-    const answer = me.getByRole("region", { name: "Ember's answer" });
+    const answer = me.getByRole("region", { name: "Torch's answer" });
     await answer.getByText("Got the PID loop stable").waitFor({ timeout: 10000 });
-    await answer.getByRole("alert").filter({ hasText: /switched on|Copilot|Ember/ }).waitFor({ timeout: 10000 });
-    await answer.getByRole("button", { name: "Close Ember's answer" }).click();
+    await answer.getByRole("alert").filter({ hasText: /switched on|Copilot|Torch/ }).waitFor({ timeout: 10000 });
+    await answer.getByRole("button", { name: "Close Torch's answer" }).click();
     await answer.waitFor({ state: "detached", timeout: 5000 });
     if (!/\/projects\/p1$/.test(me.url())) throw new Error(`asking left the page: ${me.url()}`);
   }, me);
-  await step("Ask Ember bar: search still works from it, people and clubs as you type", async () => {
+  await step("Ask Torch bar: search still works from it, people and clubs as you type", async () => {
     await bar.getByRole("searchbox").fill("Rocket");
     const panel = me.locator("#" + (await bar.getByRole("searchbox").getAttribute("aria-controls")));
-    await panel.getByRole("button", { name: /Ask Ember: .Rocket./ }).waitFor({ timeout: 10000 });
+    await panel.getByRole("button", { name: /Ask Torch: .Rocket./ }).waitFor({ timeout: 10000 });
     await panel.getByRole("region", { name: "Communities" }).getByText("Rocketry Club").first().waitFor({ timeout: 10000 });
     await me.keyboard.press("Escape");
   }, me);
-  await step("Ask Ember bar: ⌘K still opens the palette, and / in a text box is just a slash", async () => {
+  await step("Ask Torch bar: ⌘K still opens the palette, and / in a text box is just a slash", async () => {
     await me.evaluate(() => document.activeElement instanceof HTMLElement && document.activeElement.blur());
     await me.keyboard.press(process.platform === "darwin" ? "Meta+k" : "Control+k");
-    await me.getByRole("dialog", { name: "Ask Ember or jump anywhere" }).waitFor();
+    await me.getByRole("dialog", { name: "Ask Torch or jump anywhere" }).waitFor();
     await me.keyboard.press("Escape");
     // Ben's own project has the update box.
     const box = me.locator("main textarea").first();

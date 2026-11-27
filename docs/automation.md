@@ -13,7 +13,7 @@ What runs by itself, what still needs a person, and what to add next. The goal: 
 | **Dependency audit and secret scan** (npm audit, gitleaks over all history). Required to merge | Same | web.yml → security |
 | **Code security analysis** (CodeQL, fails on severity ≥ 7) | Every PR, weekly and on demand | `.github/workflows/codeql.yml` |
 | **No preview deployments** (for speed): Vercel builds `main` only (`web/vercel.json` → `ignoreCommand`): it skips a build only when it knows it is a preview or another branch, and builds whenever it can't tell (`web/tests/vercel-ignore.test.ts`). Every pull request is tested by CI on a throwaway database instead | Every pull request | `web/vercel.json` |
-| **Pull requests merge themselves** once the required checks pass. `main` is protected (branches must be up to date), and merged branches are deleted | Every PR with auto-merge on | GitHub branch protection; how we ship: [CONTRIBUTING.md](../CONTRIBUTING.md) |
+| **Pull requests merge themselves** once the required checks pass. `main` is protected (branches must be up to date), and merged branches are deleted. That is how the founders ship. Agent-authored pull requests follow [team-playbook.md](team-playbook.md) | Every PR with auto-merge on | GitHub branch protection; how we ship: [CONTRIBUTING.md](../CONTRIBUTING.md) |
 | **Dependency updates** as grouped PRs; risky major upgrades pinned on purpose | Weekly (Mondays) | `.github/dependabot.yml` |
 | **Production deploy** of `main` | Every push to `main` | Vercel's GitHub app |
 | **Preview guard:** a preview build whose Supabase URL is production's stops with an explanation, so untested code never touches members' records. Until previews get their own database (FIX-83), every preview stops here on purpose; the "Vercel" check on a PR is red but not required | Every Vercel build | `web/src/lib/preview-guard.ts`, called from `web/next.config.ts` |
@@ -50,7 +50,7 @@ What runs by itself, what still needs a person, and what to add next. The goal: 
 In this repo, Claude works from the Linear board (`.mcp.json` connects Linear; see `CLAUDE.md`):
 
 - **`/next`:** picks the next open step (title order, blockers done), builds it, tests it, ships it with the issue ID, and closes it.
-- **`/ship`:** the safe path to `main`: checks, a commit with the issue ID on a branch, a pull request with auto-merge, watch CI until it merges, report.
+- **`/ship`:** the safe path to `main`: checks, a commit with the issue ID on a branch, a pull request with auto-merge, watch CI until it merges, report. That is the founders' path. An agent follows [team-playbook.md](team-playbook.md) and `.claude/skills/ship/SKILL.md`.
 - **`/standup`:** what shipped, what's in progress, what's next, what's blocked, and the state of CI. `/standup post` also writes each project's weekly update.
 
 ## What to add next

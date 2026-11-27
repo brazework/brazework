@@ -2,7 +2,7 @@ import Foundation
 import Supabase
 
 // Creating an account and finishing your profile, with the web's rules (web/src/app/(auth)/actions.ts
-// and web/src/app/onboarding/actions.ts): 18 or older; students use a university email; 8+ character
+// and web/src/app/onboarding/actions.ts): 18 or older; any email; 8+ character
 // passwords. The database makes the profile from the sign-up details (handle_new_user).
 struct SignUpForm: Equatable, Sendable {
   var accountType = "student"
@@ -13,7 +13,6 @@ struct SignUpForm: Equatable, Sendable {
   var password = ""
 
   static let emailPattern = #"^[^\s@]+@[^\s@]+\.[^\s@]+$"#
-  static let academicPattern = #"@([a-z0-9-]+\.)*([a-z0-9-]+\.edu(\.[a-z]{2})?|[a-z0-9-]+\.ac\.[a-z]{2})$"#
 
   static func age(_ birthday: Date, now: Date = .now) -> Int {
     Calendar.current.dateComponents([.year], from: birthday, to: now).year ?? 0
@@ -27,9 +26,6 @@ struct SignUpForm: Equatable, Sendable {
     if first.count > 80 || last.count > 80 { return "Names can be up to 80 characters." }
     if Self.age(birthday) < 18 { return "You must be at least 18 to create an account." }
     if mail.range(of: Self.emailPattern, options: .regularExpression) == nil { return "Enter a valid email address." }
-    if accountType == "student" && mail.range(of: Self.academicPattern, options: [.regularExpression, .caseInsensitive]) == nil {
-      return "Use your university email (for example, ending in .edu or .ac.uk)."
-    }
     if password.count < 8 { return "Choose a password with at least 8 characters." }
     return nil
   }

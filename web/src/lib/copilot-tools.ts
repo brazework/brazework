@@ -2,13 +2,15 @@ import { goalTitle, isGoalKind } from "@/lib/goals";
 import type Anthropic from "@anthropic-ai/sdk";
 import { can, rank } from "@/lib/communities";
 import { EVENT_FORMATS, EVENT_TYPES } from "@/lib/events";
-import type { Proposal } from "@/lib/copilot-agent";
+import type { Choice, Proposal, TorchQuestion, TorchRubricRow } from "@/lib/copilot-agent";
+import { MAX_OPTION, MAX_OPTIONS, MIN_OPTIONS, cleanOptions, cleanThen } from "@/lib/ember-thread";
 import { dbFeatures } from "@/lib/db-features";
 import { newestFirst } from "@/lib/ember-record";
 import { ALL_TOPICS, requestTime } from "@/lib/forge";
 import { loadClubReport } from "@/lib/club-report";
 import { GitHubError, fetchRepo, fetchUser, matchTopics, parseRepo, parseUser } from "@/lib/connectors/github";
 import { loadGuide } from "@/lib/guide";
+import { cleanClubDraft } from "@/lib/torch-club";
 import { buildBuilders, rankBuilders, type Person, type VerifiedRow } from "@/lib/talent";
 import type { createClient } from "@/lib/supabase/server";
 
@@ -73,7 +75,7 @@ export const TOOLS: Anthropic.Tool[] = [
   },
   {
     name: "my_record",
-    description: "The member's proven work: every milestone that was signed by a person, verified by a club or backed by GitHub, newest first, each with its date, project, who stood behind it and its proof link; plus how many are still waiting and a count per year. Use it to write a self-review, résumé bullets, a summary for a manager, or the story of their record year by year. Write only from what it returns, and name who signed each result.",
+    description: "The member's proven work: every milestone that was signed by a person, verified by a club or backed by GitHub, newest first, each with its date, project, who stood behind it and its proof link; plus how many are still waiting and a count per year. Use it to write a self-review, résumé bullets, a summary for a coworker, or the story of their record year by year. Write only from what it returns, and name who signed each result.",
     input_schema: { type: "object", properties: { since: { type: "string", description: "Optional YYYY-MM-DD: only work on or after this day (for example six months ago for a review)" } } },
   },
   {
@@ -103,8 +105,8 @@ export const TOOLS: Anthropic.Tool[] = [
   },
   {
     name: "propose_signature",
-    description: "Prepare an ask for a person who saw the member's work to sign a milestone, by email: a manager, tech lead, professor, TA, lab PI, mentor, client or a colleague who isn't on the project. Two uses. A new milestone: pass project_id (from my_profile), title and evidence. A milestone already waiting: pass milestone_id from my_profile's open_milestones and nothing else about the milestone. Pass the person's email only if the member gave it; never guess one. Without it the card still shows, and the member types the address there. It is NOT sent until they confirm the card.",
-    input_schema: { type: "object", properties: { milestone_id: { type: "string", description: "Only for a milestone already waiting: its id from open_milestones" }, project_id: { type: "string" }, title: { type: "string", description: "What happened, at most 120 characters, with the number if the member gave one" }, evidence: { type: "string", description: "For a new milestone, required: an https link to a pull request, commit, doc, photo, video or file. Ask the member for it; never invent one." }, detail: { type: "string", description: "Numbers, method, what it was measured against (optional)" }, achieved_on: { type: "string", description: "YYYY-MM-DD, the day it happened (default today)" }, email: { type: "string", description: "The signer's email, exactly as the member gave it" }, relationship: { type: "string", enum: ["professor", "ta", "pi", "manager", "mentor", "other"], description: "How the signer knows the work. A tech lead is 'manager'; a client or colleague is 'other'." } } },
+    description: "Prepare an ask for a person who saw the member's work to sign a milestone, by email: a coworker, tech lead, professor, TA, lab PI, mentor or client who isn't on the project. Two uses. A new milestone: pass project_id (from my_profile), title and evidence. A milestone already waiting: pass milestone_id from my_profile's open_milestones and nothing else about the milestone. Pass the person's email only if the member gave it; never guess one. Without it the card still shows, and the member types the address there. It is NOT sent until they confirm the card.",
+    input_schema: { type: "object", properties: { milestone_id: { type: "string", description: "Only for a milestone already waiting: its id from open_milestones" }, project_id: { type: "string" }, title: { type: "string", description: "What happened, at most 120 characters, with the number if the member gave one" }, evidence: { type: "string", description: "For a new milestone, required: an https link to a pull request, commit, doc, photo, video or file. Ask the member for it; never invent one." }, detail: { type: "string", description: "Numbers, method, what it was measured against (optional)" }, achieved_on: { type: "string", description: "YYYY-MM-DD, the day it happened (default today)" }, email: { type: "string", description: "The signer's email, exactly as the member gave it" }, relationship: { type: "string", enum: ["professor", "ta", "pi", "manager", "mentor", "other"], description: "How the signer knows the work. Use the API value 'manager' for a coworker, including a tech lead. Use 'other' for a client." } } },
   },
   {
     name: "propose_join_club",
@@ -138,13 +140,54 @@ export const TOOLS: Anthropic.Tool[] = [
   },
   {
     name: "verify_queue",
-    description: "Milestones members asked the club to verify, oldest first, with their details and evidence links (for the club's moderators and up). Read-only: Ember never verifies; officers review each one themselves in the club's Verify tab.",
+    description: "Milestones members asked the club to verify, oldest first, with their details and evidence links (for the club's moderators and up). Read-only: Torch never verifies; officers review each one themselves in the club's Verify tab.",
     input_schema: { type: "object", properties: { club_id: { type: "string" } }, required: ["club_id"] },
   },
   {
     name: "propose_club_post",
     description: "Prepare a post in one of the member's clubs (for example the weekly update, an announcement or a welcome). It is NOT posted until they confirm.",
     input_schema: { type: "object", properties: { club_id: { type: "string" }, body: { type: "string", description: "At most 3000 characters" }, kind: { type: "string", enum: ["update", "question", "result", "project"] } }, required: ["club_id", "body"] },
+  },
+  {
+    name: "my_courses",
+    description: "The member's classes on Brazework Courses, with their role. For classes they teach (owner, admin or moderator): each assignment and quiz with its id, due date, whether it's published, how many handed in and how many are graded. For classes they take: what's due, with whether they handed it in.",
+    input_schema: { type: "object", properties: {} },
+  },
+  {
+    name: "course_roster",
+    description: "For a class the member teaches: its students (id and name) and, given an assignment_id, who handed it in, when, and whether it was late. Use it before propose_extension.",
+    input_schema: { type: "object", properties: { class_id: { type: "string" }, assignment_id: { type: "string" } }, required: ["class_id"] },
+  },
+  {
+    name: "propose_quiz",
+    description: "Write a quiz for a class the member teaches. Each question: prompt; type 'choice' (one right option: answer is its 0-based index), 'multi' (several right: answer is an array of indexes), 'number' (answer is the number, tolerance the allowed error) or 'short' (no answer: the professor scores it); options (2 to 10) for choice and multi; points. Write accurate questions with one defensible right answer, at the level of the course; never invent course facts you weren't given. closes_at is ISO 8601 with a timezone offset. publish false keeps it a draft (the default). Nothing is saved until the member confirms.",
+    input_schema: { type: "object", properties: {
+      class_id: { type: "string" }, title: { type: "string" }, instructions: { type: "string" }, closes_at: { type: "string" },
+      questions: { type: "array", items: { type: "object", properties: { prompt: { type: "string" }, type: { type: "string", enum: ["choice", "multi", "number", "short"] }, options: { type: "array", items: { type: "string" } }, answer: {}, tolerance: { type: "number" }, points: { type: "number" } }, required: ["prompt", "type", "points"] } },
+      show_score: { type: "boolean" }, publish: { type: "boolean" } }, required: ["class_id", "title", "questions"] },
+  },
+  {
+    name: "propose_assignment",
+    description: "Draft an assignment for a class the member teaches: title, instructions, due_at (ISO 8601 with offset), points, an optional rubric (rows of criterion and points, each optionally tagged with an ABET outcome '1' to '7'; with a rubric the points are its total), what students hand in (any of file, link, text, milestone), group_work, peer_eval (group work only), publish (false keeps it a draft, the default). Nothing is saved until the member confirms.",
+    input_schema: { type: "object", properties: {
+      class_id: { type: "string" }, title: { type: "string" }, instructions: { type: "string" }, due_at: { type: "string" }, points: { type: "number" },
+      rubric: { type: "array", items: { type: "object", properties: { criterion: { type: "string" }, points: { type: "number" }, outcome: { type: "string" } }, required: ["criterion", "points"] } },
+      submit_as: { type: "array", items: { type: "string", enum: ["file", "link", "text", "milestone"] } }, group_work: { type: "boolean" }, peer_eval: { type: "boolean" }, publish: { type: "boolean" } }, required: ["class_id", "title"] },
+  },
+  {
+    name: "propose_announcement",
+    description: "Draft an announcement to a class the member teaches (everyone in it is notified once they confirm). Nothing happens until the member confirms.",
+    input_schema: { type: "object", properties: { class_id: { type: "string" }, title: { type: "string" }, body: { type: "string" } }, required: ["class_id", "title", "body"] },
+  },
+  {
+    name: "propose_extension",
+    description: "Prepare an extension: a later due date on one assignment for one student in a class the member teaches (ids from my_courses and course_roster; due_at ISO 8601 with offset). Nothing happens until the member confirms.",
+    input_schema: { type: "object", properties: { assignment_id: { type: "string" }, person_id: { type: "string" }, due_at: { type: "string" } }, required: ["assignment_id", "person_id", "due_at"] },
+  },
+  {
+    name: "propose_attendance",
+    description: "Prepare taking attendance in a class the member teaches: opens check-in with a code for minutes (5 to 60; default 15). Nothing happens until the member confirms.",
+    input_schema: { type: "object", properties: { class_id: { type: "string" }, title: { type: "string" }, minutes: { type: "number" } }, required: ["class_id"] },
   },
   {
     name: "github_repo",
@@ -157,11 +200,29 @@ export const TOOLS: Anthropic.Tool[] = [
     input_schema: { type: "object", properties: { username: { type: "string" } }, required: ["username"] },
   },
   {
+    name: "propose_club",
+    description: "Prepare starting a new club, project team or study group with the member as its owner, when they ask to start or create one. name 3-60 chars; about (what it's for) <= 500; type: field (a community around a field), project (a team building something) or study (a study group for one course: course like CHEM 201 is required, term defaults to this one, meets is when and where); field from the member's field or \"Any field\"; up to 3 topics; privacy public (anyone joins) or approval (they approve who joins). Ask for the course if a study group has none. It is NOT created until they confirm.",
+    input_schema: { type: "object", properties: { name: { type: "string" }, about: { type: "string" }, type: { type: "string", enum: ["field", "project", "study"] }, field: { type: "string" }, topics: { type: "array", items: { type: "string" } }, privacy: { type: "string", enum: ["public", "approval"] }, course: { type: "string" }, term: { type: "string" }, meets: { type: "string" } }, required: ["name", "about", "type"] },
+  },
+  {
     name: "propose_project",
     description: "Prepare a new project on the member's Brazework profile, usually from github_repo. title <= 120 chars, summary <= 600, details (the write-up) <= 5000, link to the repo or demo, up to 3 tags. It is NOT added until they confirm.",
     input_schema: { type: "object", properties: { title: { type: "string" }, summary: { type: "string" }, details: { type: "string" }, link: { type: "string" }, tags: { type: "array", items: { type: "string" } }, status: { type: "string", enum: ["in_progress", "completed"] }, year: { type: "string" } }, required: ["title", "summary"] },
   },
 ];
+
+// Every card can say what Torch does next once it's confirmed (the spec's part 3). makeExec keeps it only
+// where the page can carry on; elsewhere it's dropped and the card is as before.
+const THEN_PROP = { then: { type: "string", description: "Only when your instructions say you can carry a job through: the next step, in a few of the member's words, for after they confirm this card (\"log the milestone on it\"). Leave it out on the last step." } };
+for (const t of TOOLS) if (t.name.startsWith("propose_")) Object.assign((t.input_schema.properties ??= {}) as Record<string, unknown>, THEN_PROP);
+
+// Offered only where the page can show buttons (the Ask Torch bar and Torch's page send `choices`;
+// app/api/copilot/route.ts). Elsewhere, and in group chats, Torch asks in words.
+export const OFFER_CHOICES: Anthropic.Tool = {
+  name: "offer_choices",
+  description: `Show the member ${MIN_OPTIONS} to ${MAX_OPTIONS} short answers to the question you just asked, as buttons they tap. Use it only when you need one answer to go on and the answers are things you already have: their clubs, projects or waiting milestones, people a lookup returned, or yes and no. Each answer at most ${MAX_OPTION} characters, in the member's words. It ends your message, so write the question before calling it and nothing after. Nothing is saved.`,
+  input_schema: { type: "object", properties: { options: { type: "array", items: { type: "string" }, minItems: MIN_OPTIONS, maxItems: MAX_OPTIONS } }, required: ["options"] },
+};
 
 // What Copilot hears back after a proposal: it's on screen, and the member decides.
 const SHOWN = { shown_to_member: true, note: "The member sees this as a card and will confirm, edit or dismiss it. Don't say it's done; tell them to check the card." };
@@ -174,13 +235,16 @@ const SIGNERS = ["professor", "ta", "pi", "manager", "mentor", "other"];
 const clean = (v: unknown, max = 60) => (typeof v === "string" ? v.replace(/[^\p{L}\p{N} '&.+#-]/gu, " ").replace(/\s+/g, " ").trim().slice(0, max) : "");
 const snip = (s: string | null | undefined, n = 140) => (s ?? "").replace(/\s+/g, " ").trim().slice(0, n);
 
-export function makeExec(db: DB, userId: string, onProposal: (p: Proposal) => void = () => {}) {
+// `carryOn`: the page can carry on after a yes, so a card keeps the next step Torch gave it.
+export function makeExec(db: DB, userId: string, onProposal: (p: Proposal) => void = () => {}, onChoice: (c: Choice) => void = () => {}, { carryOn = false }: { carryOn?: boolean } = {}) {
   return async (name: string, input: unknown): Promise<unknown> => {
     const a = (input ?? {}) as Record<string, unknown>;
+    const then = carryOn ? cleanThen(a.then) : "";
+    const propose = (p: Proposal) => onProposal(then ? { ...p, then } : p);
     switch (name) {
       case "search_clubs": {
         const q = clean(a.query), field = clean(a.field);
-        let req = db.from("communities").select("id, name, field, type, privacy, member_count, about, topics").order("member_count", { ascending: false }).limit(8);
+        let req = db.from("communities").select("id, name, field, type, privacy, member_count, about, topics").neq("type", "class").order("member_count", { ascending: false }).limit(8);
         if (q) req = req.or(`name.ilike.*${q}*,about.ilike.*${q}*`);
         if (field) req = req.ilike("field", `%${field}%`);
         const { data, error } = await req;
@@ -292,7 +356,7 @@ export function makeExec(db: DB, userId: string, onProposal: (p: Proposal) => vo
         if (!body) return { error: "The post is empty." };
         const kind = (["update", "question", "result", "project"] as const).find((k) => k === a.kind) ?? "update";
         const tags = (Array.isArray(a.tags) ? a.tags : []).filter((t): t is string => typeof t === "string" && ALL_TOPICS.includes(t)).slice(0, 3);
-        onProposal({ id: pid(), kind: "post", body, postKind: kind, tags });
+        propose({ id: pid(), kind: "post", body, postKind: kind, tags });
         return SHOWN;
       }
       case "propose_milestone": {
@@ -310,7 +374,7 @@ export function makeExec(db: DB, userId: string, onProposal: (p: Proposal) => vo
         const evidence = typeof a.evidence === "string" ? a.evidence.trim() : "";
         if (!/^https:\/\/\S{4,290}$/i.test(evidence)) return { error: "A milestone needs evidence: ask the member for an https link to a photo, video, file, commit or the club event. Don't make one up." };
         const day = typeof a.achieved_on === "string" && /^\d{4}-\d{2}-\d{2}$/.test(a.achieved_on) ? a.achieved_on : new Date(requestTime()).toISOString().slice(0, 10);
-        onProposal({ id: pid(), kind: "milestone", project_id: projectId, project_title: proj.data.title, club_id: clubId, club_name: club.name, title, evidence, detail: typeof a.detail === "string" ? a.detail.trim().slice(0, 600) : "", achieved_on: day });
+        propose({ id: pid(), kind: "milestone", project_id: projectId, project_title: proj.data.title, club_id: clubId, club_name: club.name, title, evidence, detail: typeof a.detail === "string" ? a.detail.trim().slice(0, 600) : "", achieved_on: day });
         return SHOWN;
       }
       case "my_record": {
@@ -357,7 +421,7 @@ export function makeExec(db: DB, userId: string, onProposal: (p: Proposal) => vo
       case "propose_memory": {
         const fact = typeof a.fact === "string" ? a.fact.trim().replace(/\s+/g, " ").slice(0, 200) : "";
         if (!fact) return { error: "Say what to remember, in one short sentence." };
-        onProposal({ id: pid(), kind: "memory", body: fact });
+        propose({ id: pid(), kind: "memory", body: fact });
         return SHOWN;
       }
       case "propose_goal": {
@@ -365,7 +429,7 @@ export function makeExec(db: DB, userId: string, onProposal: (p: Proposal) => vo
         if (!isGoalKind(kind)) return { error: "Pick one of: internship, job, grad, research, competition, funding." };
         const target = typeof a.target === "string" ? a.target.trim().replace(/[<>]/g, "").slice(0, 80) : "";
         const why = typeof a.why === "string" ? a.why.trim().slice(0, 240) : "";
-        onProposal({ id: pid(), kind: "goal", goal_kind: kind, target, title: goalTitle({ kind, target }), why });
+        propose({ id: pid(), kind: "goal", goal_kind: kind, target, title: goalTitle({ kind, target }), why });
         return SHOWN;
       }
       case "propose_project_edit": {
@@ -382,7 +446,7 @@ export function makeExec(db: DB, userId: string, onProposal: (p: Proposal) => vo
         const summary = text(a.summary, 600), details = text(a.details, 5000), link = text(a.link, 300);
         if (link !== undefined && !/^https:\/\/\S{4,290}$/i.test(link)) return { error: "The link has to be an https address." };
         if (summary === undefined && details === undefined && link === undefined) return { error: "Say what should change: the summary, the write-up or the link." };
-        onProposal({ id: pid(), kind: "project_edit", project_id: projectId, project_title: proj.title, ...(summary !== undefined && { summary }), ...(details !== undefined && { details }), ...(link !== undefined && { link }), before: { summary: proj.summary ?? "", details: now?.details ?? "", link: now?.link ?? "", specs: [] } });
+        propose({ id: pid(), kind: "project_edit", project_id: projectId, project_title: proj.title, ...(summary !== undefined && { summary }), ...(details !== undefined && { details }), ...(link !== undefined && { link }), before: { summary: proj.summary ?? "", details: now?.details ?? "", link: now?.link ?? "", specs: [] } });
         return SHOWN;
       }
       case "propose_signature": {
@@ -398,7 +462,7 @@ export function makeExec(db: DB, userId: string, onProposal: (p: Proposal) => vo
           if (!row?.id) return { error: "That isn't one of the member's milestones." };
           if (row.status !== "draft" && row.status !== "pending") return { error: "That milestone isn't waiting for proof, so nobody needs to be asked." };
           const { data: proj } = await db.from("projects").select("title").eq("id", row.project_id).maybeSingle();
-          onProposal({ id: pid(), kind: "signature", milestone_id: row.id, project_id: row.project_id, project_title: (proj as { title?: string } | null)?.title ?? "your project", title: row.title, evidence: row.evidence ?? "", detail: row.detail ?? "", achieved_on: row.achieved_on ?? "", email, relationship });
+          propose({ id: pid(), kind: "signature", milestone_id: row.id, project_id: row.project_id, project_title: (proj as { title?: string } | null)?.title ?? "your project", title: row.title, evidence: row.evidence ?? "", detail: row.detail ?? "", achieved_on: row.achieved_on ?? "", email, relationship });
           return SHOWN;
         }
         const projectId = String(a.project_id ?? "");
@@ -410,7 +474,7 @@ export function makeExec(db: DB, userId: string, onProposal: (p: Proposal) => vo
         const evidence = typeof a.evidence === "string" ? a.evidence.trim() : "";
         if (!/^https:\/\/\S{4,290}$/i.test(evidence)) return { error: "A milestone needs evidence: ask the member for an https link to a pull request, commit, doc, photo, video or file. Don't make one up." };
         const day = typeof a.achieved_on === "string" && /^\d{4}-\d{2}-\d{2}$/.test(a.achieved_on) ? a.achieved_on : new Date(requestTime()).toISOString().slice(0, 10);
-        onProposal({ id: pid(), kind: "signature", milestone_id: "", project_id: projectId, project_title: (proj as { title: string }).title, title, evidence, detail: typeof a.detail === "string" ? a.detail.trim().slice(0, 600) : "", achieved_on: day, email, relationship });
+        propose({ id: pid(), kind: "signature", milestone_id: "", project_id: projectId, project_title: (proj as { title: string }).title, title, evidence, detail: typeof a.detail === "string" ? a.detail.trim().slice(0, 600) : "", achieved_on: day, email, relationship });
         return SHOWN;
       }
       case "propose_join_club": {
@@ -422,7 +486,7 @@ export function makeExec(db: DB, userId: string, onProposal: (p: Proposal) => vo
         ]);
         if (!c.data) return { error: "No club with that id." };
         if (mem.data) return { error: "The member is already in this club." };
-        onProposal({ id: pid(), kind: "join", club_id: clubId, club_name: c.data.name, privacy: c.data.privacy === "approval" ? "approval" : "public" });
+        propose({ id: pid(), kind: "join", club_id: clubId, club_name: c.data.name, privacy: c.data.privacy === "approval" ? "approval" : "public" });
         return SHOWN;
       }
       case "propose_rsvp": {
@@ -435,7 +499,7 @@ export function makeExec(db: DB, userId: string, onProposal: (p: Proposal) => vo
         if (!ev.data || ev.data.status !== "published") return { error: "No upcoming event with that id." };
         if (Date.parse(ev.data.starts_at) < requestTime()) return { error: "That event has already started." };
         if (mine.data) return { error: "The member is already going." };
-        onProposal({ id: pid(), kind: "rsvp", event_id: eventId, title: ev.data.title, starts_at: ev.data.starts_at, where: ev.data.format === "Online" ? "Online" : ev.data.location ?? "", going: ev.data.rsvp_count ?? 0 });
+        propose({ id: pid(), kind: "rsvp", event_id: eventId, title: ev.data.title, starts_at: ev.data.starts_at, where: ev.data.format === "Online" ? "Online" : ev.data.location ?? "", going: ev.data.rsvp_count ?? 0 });
         return SHOWN;
       }
       case "propose_message": {
@@ -445,7 +509,7 @@ export function makeExec(db: DB, userId: string, onProposal: (p: Proposal) => vo
         if (!body) return { error: "Write the message to propose." };
         const person = await db.from("profiles").select("first_name, last_name, headline").eq("id", personId).maybeSingle();
         if (!person.data) return { error: "No member with that id." };
-        onProposal({ id: pid(), kind: "message", person_id: personId, name: `${person.data.first_name} ${person.data.last_name}`.trim(), headline: person.data.headline ?? "", body });
+        propose({ id: pid(), kind: "message", person_id: personId, name: `${person.data.first_name} ${person.data.last_name}`.trim(), headline: person.data.headline ?? "", body });
         return SHOWN;
       }
       case "propose_follow": {
@@ -457,7 +521,7 @@ export function makeExec(db: DB, userId: string, onProposal: (p: Proposal) => vo
         ]);
         if (!person.data) return { error: "No member with that id." };
         if (already.data) return { error: "The member already follows them." };
-        onProposal({ id: pid(), kind: "follow", person_id: personId, name: `${person.data.first_name} ${person.data.last_name}`.trim(), headline: person.data.headline ?? "" });
+        propose({ id: pid(), kind: "follow", person_id: personId, name: `${person.data.first_name} ${person.data.last_name}`.trim(), headline: person.data.headline ?? "" });
         return SHOWN;
       }
       case "propose_event": {
@@ -475,7 +539,7 @@ export function makeExec(db: DB, userId: string, onProposal: (p: Proposal) => vo
         const end = Number.isNaN(endRaw.getTime()) || endRaw <= start ? new Date(start.getTime() + 2 * 3600e3) : endRaw;
         const topics = ((c.data?.topics ?? []) as string[]).filter((t) => ALL_TOPICS.includes(t));
         const topic = typeof a.topic === "string" && ALL_TOPICS.includes(a.topic) ? a.topic : topics[0] ?? "";
-        onProposal({
+        propose({
           id: pid(), kind: "event", club_id: clubId, club_name: c.data?.name ?? "your club",
           title: typeof a.title === "string" ? a.title.trim().slice(0, 120) : "", description: typeof a.description === "string" ? a.description.trim().slice(0, 2000) : "",
           type: (EVENT_TYPES as readonly string[]).includes(String(a.type)) ? String(a.type) : "Workshop",
@@ -509,12 +573,12 @@ export function makeExec(db: DB, userId: string, onProposal: (p: Proposal) => vo
         const club = (m as unknown as { communities: { name: string } | null } | null)?.communities;
         if (!club) return { error: "The member isn't in that club, so they can't post there." };
         const kind = (["update", "question", "result", "project"] as const).find((k) => k === a.kind) ?? "update";
-        onProposal({ id: pid(), kind: "club_post", club_id: clubId, club_name: club.name, body, postKind: kind });
+        propose({ id: pid(), kind: "club_post", club_id: clubId, club_name: club.name, body, postKind: kind });
         return SHOWN;
       }
       case "propose_review": {
-        // Verification is a person checking evidence; Ember never prepares or makes that decision.
-        if (true as boolean) return { error: "Ember doesn't verify milestones. Officers review each one in the club's Verify tab." };
+        // Verification is a person checking evidence; Torch never prepares or makes that decision.
+        if (true as boolean) return { error: "Torch doesn't verify milestones. Officers review each one in the club's Verify tab." };
         const id = String(a.milestone_id ?? "");
         if (!ID_RE.test(id)) return { error: "Use a milestone_id from verify_queue." };
         if (!(await dbFeatures()).milestones) return { error: "Milestones aren't switched on yet." };
@@ -527,7 +591,125 @@ export function makeExec(db: DB, userId: string, onProposal: (p: Proposal) => vo
         if (!m || rank(m.role) < 3) return { error: "Only the club's moderators, admins and owner can review milestones." };
         const verify = a.verify === true;
         const note = typeof a.note === "string" ? a.note.trim().slice(0, 300) : "";
-        onProposal({ id: pid(), kind: "review", milestone_id: id, club_name: q.community_name, member: q.owner ? `${q.owner.first_name} ${q.owner.last_name}`.trim() : "A member", title: q.title, detail: q.detail, evidence: q.evidence, verify, note });
+        propose({ id: pid(), kind: "review", milestone_id: id, club_name: q.community_name, member: q.owner ? `${q.owner.first_name} ${q.owner.last_name}`.trim() : "A member", title: q.title, detail: q.detail, evidence: q.evidence, verify, note });
+        return SHOWN;
+      }
+      case "my_courses": {
+        if (!(await dbFeatures()).courses) return { error: "Courses aren't switched on yet." };
+        const { data: classes } = await db.rpc("my_classes");
+        const list = (classes ?? []) as { id: string; name: string; course: string; term: string; role: string }[];
+        if (!list.length) return { classes: [], note: "The member isn't in any class on Brazework." };
+        const teaching = list.filter((c) => rank(c.role) >= 3);
+        const out: Record<string, unknown>[] = [];
+        for (const c of teaching.slice(0, 8)) {
+          const [asg, subs, grs] = await Promise.all([
+            db.from("assignments").select("id, title, due_at, published, kind").eq("community_id", c.id).order("due_at", { ascending: true, nullsFirst: false }).limit(40),
+            db.from("submissions").select("assignment_id").eq("community_id", c.id).limit(5000),
+            db.from("grades").select("assignment_id, released").eq("community_id", c.id).limit(5000),
+          ]);
+          const n = (rows: { assignment_id: string }[] | null, id: string) => (rows ?? []).filter((r) => r.assignment_id === id).length;
+          out.push({ class_id: c.id, name: c.name, term: c.term, role: "teaching", link: `/c/${c.id}/course`,
+            assignments: ((asg.data ?? []) as { id: string; title: string; due_at: string | null; published: boolean; kind?: string }[]).map((a) => ({ assignment_id: a.id, title: a.title, kind: a.kind ?? "assignment", due: a.due_at, published: a.published, handed_in: n(subs.data as { assignment_id: string }[] | null, a.id), graded: n(grs.data as { assignment_id: string }[] | null, a.id) })) });
+        }
+        const { data: due } = await db.rpc("my_due", { p_days: 30 });
+        for (const c of list.filter((x) => rank(x.role) < 3)) {
+          out.push({ class_id: c.id, name: c.name, term: c.term, role: "student", link: `/c/${c.id}/course`,
+            due: ((due ?? []) as { id: string; community_id: string; title: string; due_at: string | null; submitted_at: string | null; graded: boolean }[]).filter((d) => d.community_id === c.id).map((d) => ({ title: d.title, due: d.due_at, handed_in: !!d.submitted_at, graded: d.graded, link: `/c/${c.id}/course/a/${d.id}` })) });
+        }
+        return { classes: out };
+      }
+      case "course_roster": {
+        const cid = String(a.class_id ?? "");
+        if (!ID_RE.test(cid)) return { error: "Use a class_id from my_courses." };
+        const { data: st, error } = await db.rpc("course_students", { p_cid: cid });
+        if (error) return { error: "Only the class's professor or teaching assistants can see its roster." };
+        const students = ((st ?? []) as { uid: string; first_name: string; last_name: string }[]).map((x) => ({ person_id: x.uid, name: `${x.first_name} ${x.last_name}`.trim() }));
+        const aid = String(a.assignment_id ?? "");
+        if (!aid) return { students };
+        if (!ID_RE.test(aid)) return { error: "Use an assignment_id from my_courses." };
+        const [as_, subs] = await Promise.all([
+          db.from("assignments").select("title, due_at").eq("id", aid).eq("community_id", cid).maybeSingle(),
+          db.from("submissions").select("uid, project_id, submitted_at").eq("assignment_id", aid).limit(2000),
+        ]);
+        const asg = as_.data as { title: string; due_at: string | null } | null;
+        if (!asg) return { error: "No assignment with that id in this class." };
+        const by = new Map(((subs.data ?? []) as { uid: string; submitted_at: string }[]).map((x) => [x.uid, x.submitted_at]));
+        return { assignment: asg.title, due: asg.due_at, students: students.map((x) => ({ ...x, handed_in: by.get(x.person_id) ?? null, late: !!(by.get(x.person_id) && asg.due_at && by.get(x.person_id)! > asg.due_at) })) };
+      }
+      case "propose_quiz": case "propose_assignment": case "propose_announcement": case "propose_attendance": {
+        const cid = String(a.class_id ?? "");
+        if (!ID_RE.test(cid)) return { error: "Use a class_id from my_courses." };
+        const [{ data: c }, { data: m }] = await Promise.all([
+          db.from("communities").select("name, type").eq("id", cid).maybeSingle(),
+          db.from("community_members").select("role").eq("community_id", cid).eq("uid", userId).maybeSingle(),
+        ]);
+        const klass = c as { name: string; type: string } | null;
+        if (!klass || klass.type !== "class") return { error: "That isn't a class." };
+        if (!m || rank((m as { role: string }).role) < 3) return { error: "Only the class's professor or teaching assistants can do that. Students can ask Torch what's due." };
+        const text = (v: unknown, max: number) => (typeof v === "string" ? v.trim().slice(0, max) : "");
+        const when = (v: unknown) => (typeof v === "string" && !Number.isNaN(Date.parse(v)) ? new Date(v).toISOString() : "");
+        if (name === "propose_announcement") {
+          const title = text(a.title, 160), body = text(a.body, 10000);
+          if (!title || !body) return { error: "An announcement needs a title and a message." };
+          onProposal({ id: pid(), kind: "announcement", class_id: cid, class_name: klass.name, title, body });
+          return SHOWN;
+        }
+        if (name === "propose_attendance") {
+          const minutes = Math.min(60, Math.max(5, Math.round(Number(a.minutes) || 15)));
+          onProposal({ id: pid(), kind: "attendance", class_id: cid, class_name: klass.name, title: text(a.title, 120), minutes });
+          return SHOWN;
+        }
+        const title = text(a.title, 160);
+        if (!title) return { error: "Give it a title." };
+        if (name === "propose_quiz") {
+          const raw = Array.isArray(a.questions) ? a.questions : [];
+          if (!raw.length || raw.length > 60) return { error: "A quiz has 1 to 60 questions." };
+          const questions: TorchQuestion[] = [];
+          for (const [i, q] of raw.entries()) {
+            const o = q as Record<string, unknown>;
+            const type = (["choice", "multi", "number", "short"] as const).find((t) => t === o.type);
+            const prompt = text(o.prompt, 2000), points = Number(o.points);
+            if (!type || !prompt || !(points > 0 && points <= 1000)) return { error: `Question ${i + 1} needs words, a type and some points.` };
+            const options = Array.isArray(o.options) ? o.options.map((x) => text(x, 300)).filter(Boolean).slice(0, 10) : [];
+            const base = { id: `q${i + 1}`, prompt, type, points };
+            if (type === "choice") {
+              const ans = Number(o.answer);
+              if (options.length < 2 || !Number.isInteger(ans) || ans < 0 || ans >= options.length) return { error: `Question ${i + 1}: give 2 to 10 options and the index of the right one.` };
+              questions.push({ ...base, options, answer: ans });
+            } else if (type === "multi") {
+              const ans = (Array.isArray(o.answer) ? o.answer : []).map(Number).filter((x) => Number.isInteger(x) && x >= 0 && x < options.length);
+              if (options.length < 2 || !ans.length) return { error: `Question ${i + 1}: give 2 to 10 options and the indexes of the right ones.` };
+              questions.push({ ...base, options, answer: [...new Set(ans)] });
+            } else if (type === "number") {
+              const ans = Number(o.answer);
+              if (!Number.isFinite(ans)) return { error: `Question ${i + 1}: give the right number.` };
+              questions.push({ ...base, answer: ans, tolerance: Math.abs(Number(o.tolerance) || 0) });
+            } else questions.push(base);
+          }
+          onProposal({ id: pid(), kind: "quiz", class_id: cid, class_name: klass.name, title, instructions: text(a.instructions, 20000), closes_at: when(a.closes_at), questions, show_score: a.show_score !== false, publish: a.publish === true });
+          return SHOWN;
+        }
+        const rubric: TorchRubricRow[] = (Array.isArray(a.rubric) ? a.rubric : []).slice(0, 20).map((r) => r as Record<string, unknown>)
+          .map((r) => ({ criterion: text(r.criterion, 200), points: Math.max(0, Number(r.points) || 0), ...(/^[1-7]$/.test(String(r.outcome ?? "")) ? { outcome: String(r.outcome) } : {}) }))
+          .filter((r) => r.criterion);
+        const submit_as = (Array.isArray(a.submit_as) ? a.submit_as : ["file", "link"]).filter((k): k is string => ["file", "link", "text", "milestone"].includes(String(k)));
+        const points = rubric.length ? rubric.reduce((t, r) => t + r.points, 0) : Math.max(0, Math.min(10000, Number(a.points) || 100));
+        const group = a.group_work === true;
+        onProposal({ id: pid(), kind: "assignment", class_id: cid, class_name: klass.name, title, instructions: text(a.instructions, 20000), due_at: when(a.due_at), points, rubric, submit_as: submit_as.length ? submit_as : ["file", "link"], group_work: group, peer_eval: group && a.peer_eval === true, publish: a.publish === true });
+        return SHOWN;
+      }
+      case "propose_extension": {
+        const aid = String(a.assignment_id ?? ""), who = String(a.person_id ?? "");
+        if (!ID_RE.test(aid) || !/^[0-9a-f-]{36}$/i.test(who)) return { error: "Use an assignment_id from my_courses and a person_id from course_roster." };
+        if (typeof a.due_at !== "string" || Number.isNaN(Date.parse(a.due_at))) return { error: "Give the new due date as ISO 8601 with a timezone offset." };
+        const { data: asg } = await db.from("assignments").select("title, community_id").eq("id", aid).maybeSingle();
+        const row = asg as { title: string; community_id: string } | null;
+        if (!row) return { error: "No assignment with that id that the member can see." };
+        const { data: st, error } = await db.rpc("course_students", { p_cid: row.community_id });
+        if (error) return { error: "Only the class's professor or teaching assistants give extensions." };
+        const s = ((st ?? []) as { uid: string; first_name: string; last_name: string }[]).find((x) => x.uid === who);
+        if (!s) return { error: "That person isn't a student in this class." };
+        onProposal({ id: pid(), kind: "extension", class_id: row.community_id, assignment_id: aid, assignment_title: row.title, person_id: who, name: `${s.first_name} ${s.last_name}`.trim(), due_at: new Date(a.due_at).toISOString() });
         return SHOWN;
       }
       case "github_repo": {
@@ -543,6 +725,12 @@ export function makeExec(db: DB, userId: string, onProposal: (p: Proposal) => vo
         if (!u) return { error: "Give a GitHub username." };
         try { return await fetchUser(u); } catch (e) { return { error: e instanceof GitHubError ? e.message : "GitHub lookup failed." }; }
       }
+      case "propose_club": {
+        const d = cleanClubDraft(a, Date.now());
+        if ("error" in d) return d;
+        propose({ id: pid(), kind: "club", ...d });
+        return SHOWN;
+      }
       case "propose_project": {
         const title = typeof a.title === "string" ? a.title.trim().slice(0, 120) : "";
         const summary = typeof a.summary === "string" ? a.summary.trim().slice(0, 600) : "";
@@ -551,8 +739,14 @@ export function makeExec(db: DB, userId: string, onProposal: (p: Proposal) => vo
         const status = a.status === "completed" ? "completed" : "in_progress";
         const year = status === "completed" && typeof a.year === "string" && /^\d{4}$/.test(a.year) ? a.year : "";
         const tags = (Array.isArray(a.tags) ? a.tags : []).filter((t): t is string => typeof t === "string" && ALL_TOPICS.includes(t)).slice(0, 3);
-        onProposal({ id: pid(), kind: "project", title, summary, details: typeof a.details === "string" ? a.details.trim().slice(0, 5000) : "", link, tags, status, year, source: link.includes("github.com") ? "GitHub" : "" });
+        propose({ id: pid(), kind: "project", title, summary, details: typeof a.details === "string" ? a.details.trim().slice(0, 5000) : "", link, tags, status, year, source: link.includes("github.com") ? "GitHub" : "" });
         return SHOWN;
+      }
+      case "offer_choices": {
+        const c = cleanOptions(a.options);
+        if ("error" in c) return c;
+        onChoice({ id: pid(), options: c.options });
+        return { shown_to_member: true, note: "The member sees these as buttons and may tap one or type an answer. Your message ends here." };
       }
       default:
         return { error: `Unknown tool ${name}.` };

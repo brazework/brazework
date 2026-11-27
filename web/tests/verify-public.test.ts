@@ -3,7 +3,7 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { encode } from "uqr";
-import { evidenceLinks, qrSvgPath, roleLabel, signerLine, stateLine, verifyUrl, type PublicVerify } from "@/lib/verify-public";
+import { linkedinAddUrl, evidenceLinks, qrSvgPath, roleLabel, signerLine, stateLine, verifyUrl, type PublicVerify } from "@/lib/verify-public";
 
 const base: PublicVerify = {
   id: "m1", title: "Static fire at 1.2 kN", detail: "", achieved_on: "2026-11-01", project: "Test stand", state: "valid",
@@ -57,4 +57,14 @@ test("the link and its QR code", () => {
   const grid = Array.from({ length: qr.size }, () => Array<boolean>(qr.size).fill(false));
   for (const [, x, y, w] of qr.d.matchAll(/M(\d+) (\d+)h(\d+)/g)) for (let i = 0; i < +w; i++) grid[+y][+x + i] = true;
   assert.deepEqual(grid, encode(url, { ecc: "M", border: 2 }).data);
+});
+
+test("Add to LinkedIn: LinkedIn's own add-to-profile link, with the verify page as the credential", () => {
+  const u = new URL(linkedinAddUrl("https://brazework.com/", "abc-123", "  Ran 2 hours at 40 N·m & no slip  "));
+  assert.equal(u.origin + u.pathname, "https://www.linkedin.com/profile/add");
+  assert.equal(u.searchParams.get("startTask"), "CERTIFICATION_NAME");
+  assert.equal(u.searchParams.get("name"), "Ran 2 hours at 40 N·m & no slip");
+  assert.equal(u.searchParams.get("organizationName"), "Brazework");
+  assert.equal(u.searchParams.get("certUrl"), "https://brazework.com/v/abc-123");
+  assert.equal(u.searchParams.get("certId"), "abc-123");
 });

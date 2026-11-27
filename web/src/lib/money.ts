@@ -8,7 +8,7 @@ import { friendlyError } from "@/lib/forge";
 import { SALES_KINDS } from "@/lib/pricing";
 import { getViewer } from "@/lib/supabase/server";
 
-// Money paths (supabase/money.sql, lib/pricing.ts): Plus for builders, search seats for verified
+// Money paths (supabase/money.sql, lib/pricing.ts): Plus for builders who aren't students, search seats for verified
 // companies, and requests (a pilot, sponsoring a chapter or a challenge, a school's demo) that land in
 // the founders' admin queue. Stripe Checkout through lib/billing.ts when its keys and prices are set;
 // until then, a request the founders answer. Nobody types an email address: requests carry the
@@ -26,10 +26,12 @@ export async function startPlus(yearly = false): Promise<MoneyState> {
   if (!(await dbFeatures()).money) return { ok: false, message: "Plus isn't open yet. Try again soon." };
   const { data: has } = await supabase.rpc("has_plus");
   if (has) return { ok: true, message: "You already have Plus." };
+  // Students never pay (founders, 2026-11-26): no checkout and no waitlist for a student account.
+  if (profile.account_type === "student") return { ok: false, message: "Students never pay on Brazework. Plus is for professionals and independent builders." };
   if (plusOnSale()) {
+    const priceEnv = plusPriceEnv({ student: false, yearly: yearly === true });
     const pay = await billing().checkout({
-      plan: "plus", userId: user.id, reference: user.id, email: user.email,
-      priceEnv: plusPriceEnv({ student: profile.account_type === "student", yearly: yearly === true }),
+      plan: "plus", userId: user.id, reference: user.id, email: user.email, priceEnv,
       successUrl: `${env.siteUrl}/plus?welcome=1`, cancelUrl: `${env.siteUrl}/plus`,
     });
     if (pay.ok) redirect(pay.url);

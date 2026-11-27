@@ -1,13 +1,15 @@
 "use client";
-import { PROOF_TOOLS_HINT, proofSource } from "@/lib/proof-source";
+import { proofSource } from "@/lib/proof-source";
+import { ProofPicker } from "@/components/projects/proof-picker";
 import { AnimatePresence, motion } from "motion/react";
-import { BadgeCheck, Clock, ExternalLink, Eye, EyeOff, Flag, GitMerge, Loader2, Plus, Scale, Share2, Trash2, X, XCircle } from "lucide-react";
+import { BadgeCheck, ChevronDown, Clock, ExternalLink, Eye, EyeOff, Flag, GitMerge, Loader2, Plus, Scale, Share2, Trash2, X, XCircle } from "lucide-react";
 import Link from "next/link";
-import { useActionState, useEffect, useRef, useState, useTransition } from "react";
+import { useActionState, useEffect, useId, useRef, useState, useTransition } from "react";
 import { Celebrate } from "@/components/app/celebrate";
 import { FreshSeal } from "@/components/app/fresh-seal";
 import { Button, Field, inputCls } from "@/components/ui";
 import { cn } from "@/lib/forge";
+import { anchoredMilestone, latestSigned, logFolds, logSummary, milestoneAnchor } from "@/lib/milestone-log";
 import { signerNote } from "@/lib/signers";
 import { LINKEDIN_PLACEHOLDER, LINKEDIN_PRIVATE, LINKEDIN_WHY } from "@/lib/linkedin";
 import { addMilestone, addMilestoneEvidence, disputeMilestone, removeMilestone, setMilestoneVisible, shareMilestone, type EvidenceItem, type MilestoneState } from "@/lib/milestones";
@@ -72,7 +74,7 @@ export function MilestoneTimeline({ items, own, projectPrivate = false }: { item
       {msg && <li className="text-xs text-muted" role="status">{msg}</li>}
       <AnimatePresence initial={false}>
         {shown.map((m) => (
-          <motion.li key={m.id} layout initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, height: 0 }} className={cn("relative", m.status === "pending" && "rounded-xl border border-dashed border-line-strong px-2.5 py-2")}>
+          <motion.li key={m.id} id={milestoneAnchor(m.id)} layout initial={{ opacity: 0, x: -8 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, height: 0 }} className={cn("relative scroll-mt-24", m.status === "pending" && "rounded-xl border border-dashed border-line-strong px-2.5 py-2")}>
             <span className={cn("absolute top-0.5 -left-[25px] grid size-[18px] place-items-center rounded-full ring-4 ring-surface", m.status === "verified" ? "bg-ok text-white" : m.status === "logged" ? "bg-info text-white" : m.status === "pending" || m.status === "disputed" || m.status === "draft" ? "bg-raised text-muted" : "bg-danger text-white")}>
               {m.status === "verified" ? <BadgeCheck className="size-3" /> : m.status === "disputed" ? <Scale className="size-3" /> : m.status === "logged" ? <GitMerge className="size-3" /> : m.status === "pending" || m.status === "draft" ? <Clock className="size-3" /> : <X className="size-3" />}
             </span>
@@ -92,7 +94,7 @@ export function MilestoneTimeline({ items, own, projectPrivate = false }: { item
                     // Inline text, not flex: on a phone the sentence wraps as one line of text instead of
                     // splitting into columns (each text piece was its own flex item).
                     <span className="inline-block max-w-full rounded-lg bg-[color-mix(in_oklab,var(--ok)_14%,transparent)] px-2 py-0.5 font-medium text-ok">
-                      <FreshSeal id={m.id} at={m.reviewed_at}><BadgeCheck className="block size-3" /></FreshSeal>Verified{m.reviewer_name ? ` by ${m.reviewer_name}` : ""}{m.reviewer_role ? ` (${m.reviewer_role})` : ""}, <Link href={`/c/${m.community_id}`} className="hover:underline">{m.community_name}</Link>{m.reviewed_at ? ` · ${new Date(m.reviewed_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" })}` : ""}
+                      <FreshSeal id={m.id} at={m.reviewed_at}><BadgeCheck className="block size-3" /></FreshSeal>Verified{m.reviewer_name ? ` by ${m.reviewer_name}` : ""}{m.reviewer_role ? ` (${m.reviewer_role})` : ""}{m.community_name && <>, {m.community_id ? <Link href={`/c/${m.community_id}`} className="hover:underline">{m.community_name}</Link> : m.community_name}</>}{m.reviewed_at ? ` · ${new Date(m.reviewed_at).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric", timeZone: "UTC" })}` : ""}
                     </span>
                   )}
                   {m.status === "pending" && <span data-waiting className="inline-flex items-center gap-1 rounded-full border border-dashed border-wait/60 bg-[color-mix(in_oklab,var(--wait)_9%,transparent)] px-2 py-0.5 font-medium text-wait"><Clock className="size-3" /> {m.community_id ? `Waiting for ${m.community_name}` : "Waiting for a vouch"}</span>}
@@ -172,6 +174,56 @@ export function MilestoneTimeline({ items, own, projectPrivate = false }: { item
   );
 }
 
+// A project's milestones on a profile (Linear FIX-240), folded to one line so a long build log doesn't
+// push the rest of the profile down: "8 milestones · 5 signed · latest Nov 18", with the most recent
+// signed one under it. The full log stays in the page while folded, so its state survives a toggle and
+// print shows it. A #milestone-… link (the proof list, a share card) opens it and scrolls there.
+export function MilestoneLog({ items, own, projectPrivate = false }: { items: Milestone[]; own: boolean; projectPrivate?: boolean }) {
+  const folds = logFolds(items);
+  const [open, setOpen] = useState(false);
+  const listId = useId();
+  const ids = items.map((m) => m.id).join(",");
+  useEffect(() => {
+    const go = () => {
+      const id = anchoredMilestone(window.location.hash);
+      if (!id || !ids.split(",").includes(id)) return;
+      setOpen(true);
+      // After the log is shown: the browser's own jump to the anchor happened while it was hidden.
+      requestAnimationFrame(() => {
+        const row = document.getElementById(milestoneAnchor(id));
+        const projects = row?.closest<HTMLDetailsElement>("#projects details");
+        if (projects) projects.open = true;
+        row?.scrollIntoView({ block: "center" });
+      });
+    };
+    go();
+    window.addEventListener("hashchange", go);
+    return () => window.removeEventListener("hashchange", go);
+  }, [ids]);
+  if (!items.length) return null;
+  if (!folds) return <MilestoneTimeline items={items} own={own} projectPrivate={projectPrivate} />;
+  const top = latestSigned(items);
+  return (
+    <div data-milestone-log className="mt-4">
+      <button type="button" aria-expanded={open} aria-controls={listId} onClick={() => setOpen((v) => !v)}
+        className="inline-flex max-w-full items-center gap-1.5 rounded-lg px-1 py-0.5 -mx-1 text-left text-xs font-medium text-text-2 transition hover:bg-hover hover:text-text print:hidden">
+        <ChevronDown aria-hidden="true" className={cn("size-3.5 shrink-0 transition-transform", open && "rotate-180")} />
+        <span suppressHydrationWarning>{logSummary(items, undefined, own)}</span>
+        <span className="sr-only">{open ? ", hide the log" : ", show the log"}</span>
+      </button>
+      {!open && top && (
+        <p data-log-latest className="mt-1.5 flex items-start gap-1.5 text-xs text-muted print:hidden">
+          <BadgeCheck aria-hidden="true" className="mt-px size-3.5 shrink-0 text-ok" />
+          <span className="min-w-0"><span className="font-medium text-text-2">{top.title}</span>{" · "}{top.vouched_by ? `Signed by ${top.vouched_by.split(",")[0]}` : `Verified by ${top.reviewer_name ? `${top.reviewer_name}, ` : ""}${top.community_name}`}</span>
+        </p>
+      )}
+      <div id={listId} className={cn(!open && "hidden print:block")}>
+        <MilestoneTimeline items={items} own={own} projectPrivate={projectPrivate} />
+      </div>
+    </div>
+  );
+}
+
 // Share one result as a public proof card: what anyone with the link sees, then the link and where to
 // post it. Nothing is public until "Create link"; "Stop sharing" takes it down (supabase/proof-cards.sql).
 function ShareProof({ m, onClose, onChange }: { m: Milestone; onClose: () => void; onChange: (shared_at: string | null, priv: boolean) => void }) {
@@ -230,7 +282,7 @@ const initial: MilestoneState = { ok: false, message: "" };
 // "Add milestone": what happened, when, a link to the evidence, and the club that saw it.
 // `vouches`: whether the database has vouches (supabase/vouches.sql); until then it's clubs only.
 // `backing`: whether "No one yet: back it with GitHub" is on (supabase/backed.sql run, GitHub App set up).
-export function AddMilestone({ projectId, projectTitle, clubs, vouches = false, backing = false }: { projectId: string; projectTitle: string; clubs: Club[]; vouches?: boolean; backing?: boolean }) {
+export function AddMilestone({ projectId, projectTitle, clubs, vouches = false, backing = false, field }: { projectId: string; projectTitle: string; clubs: Club[]; vouches?: boolean; backing?: boolean; field?: string | null }) {
   const [open, setOpen] = useState(false);
   const [sent, setSent] = useState(false);
   return (
@@ -239,12 +291,12 @@ export function AddMilestone({ projectId, projectTitle, clubs, vouches = false, 
         {sent && <Celebrate pieces={16} />}
         <Flag className="size-3.5" /> Add milestone
       </button>
-      {open && <MilestoneDialog projectId={projectId} projectTitle={projectTitle} clubs={clubs} vouches={vouches} backing={backing} onClose={() => setOpen(false)} onSent={() => setSent(true)} />}
+      {open && <MilestoneDialog projectId={projectId} projectTitle={projectTitle} clubs={clubs} vouches={vouches} backing={backing} field={field} onClose={() => setOpen(false)} onSent={() => setSent(true)} />}
     </>
   );
 }
 
-function MilestoneDialog({ projectId, projectTitle, clubs, vouches, backing, onClose, onSent }: { projectId: string; projectTitle: string; clubs: Club[]; vouches: boolean; backing: boolean; onClose: () => void; onSent: () => void }) {
+function MilestoneDialog({ projectId, projectTitle, clubs, vouches, backing, field, onClose, onSent }: { projectId: string; projectTitle: string; clubs: Club[]; vouches: boolean; backing: boolean; field?: string | null; onClose: () => void; onSent: () => void }) {
   const ref = useRef<HTMLDialogElement>(null);
   const [state, action, pending] = useActionState(addMilestone, initial);
   const [by, setBy] = useState<"club" | "vouch" | "data">(clubs.length || !vouches ? "club" : "vouch");
@@ -271,16 +323,14 @@ function MilestoneDialog({ projectId, projectTitle, clubs, vouches, backing, onC
         <input type="hidden" name="projectId" value={projectId} />
         <Field label="What happened?"><input name="title" maxLength={120} required placeholder="e.g. Passed load test at 3.2 g" className={inputCls} /></Field>
         <Field label="Details" hint="Numbers, conditions, who was there."><textarea name="detail" maxLength={600} rows={3} className={cn(inputCls, "h-auto resize-none py-3")} /></Field>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <Field label="When"><input name="achievedOn" type="date" max={today} defaultValue={today} required className={inputCls} /></Field>
-          <Field label="Evidence" hint={PROOF_TOOLS_HINT}><input name="evidence" type="url" required maxLength={300} placeholder="https://…" className={inputCls} /></Field>
-        </div>
+        <div className="sm:w-1/2 sm:pr-2"><Field label="When"><input name="achievedOn" type="date" max={today} defaultValue={today} required className={inputCls} /></Field></div>
+        <ProofPicker field={field} label="Evidence" required />
         {!vouches && !clubs.length && <p className="rounded-2xl border border-dashed border-line p-4 text-sm text-muted">Milestones are verified by a club you belong to. <Link href="/communities?tab=discover" className="font-medium text-text underline underline-offset-4">Join your club</Link> first.</p>}
         {vouches && <fieldset>
           <legend className="text-sm font-medium">Who confirms it?</legend>
           <input type="hidden" name="verifyBy" value={by} />
           <div role="radiogroup" className={cn("mt-2 grid grid-cols-1 gap-2", backing ? "sm:grid-cols-3" : "grid-cols-2")}>
-            {([["club", "Your club", clubs.length ? "Its officers verify it" : "You're not in one yet"], ["vouch", "Someone who saw it", "A professor, TA, PI, manager or mentor"], ...(backing ? [["data", "No one yet", "Back it with GitHub: your own commit, merged pull request or release"]] : [])] as [("club" | "vouch" | "data"), string, string][]).map(([id, label, hint]) => (
+            {([["club", "Your club", clubs.length ? "Its officers verify it" : "You're not in one yet"], ["vouch", "Someone who saw it", "A professor, TA, PI, coworker or mentor"], ...(backing ? [["data", "No one yet", "Back it with GitHub: your own commit, merged pull request or release"]] : [])] as [("club" | "vouch" | "data"), string, string][]).map(([id, label, hint]) => (
               <button key={id} type="button" role="radio" aria-checked={by === id} disabled={id === "club" && !clubs.length} onClick={() => setBy(id)}
                 className={cn("rounded-xl border p-3 text-left transition disabled:opacity-50", by === id ? "border-text bg-surface-2" : "border-line hover:border-line-strong")}>
                 <span className="block text-sm font-medium">{label}</span>

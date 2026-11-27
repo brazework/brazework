@@ -1,0 +1,17 @@
+---
+description: Hard rules for agents in this repo. Production data, secrets, git, checks, student records, and the founders.
+alwaysApply: true
+---
+
+# Hard rules
+
+These hold on every task. The longer form is `AGENTS.md`.
+
+- No SQL against production. Don't paste SQL into a production project, and don't point a script at it. Database changes are a new additive file in `supabase/` on a branch.
+- No production secrets and no production environment variables. Don't read, print, copy, or commit them.
+- `web/.env.local` is production. Don't open it, edit it, commit it, or point tests or scripts at it. Use the local stack.
+- Never push to `main`. Push the feature branch only. Never force-push.
+- Never weaken or skip a check. Don't skip tests, lower a threshold, or edit a workflow so a failure passes.
+- FERPA: student data stays in the product. Never copy a student's name, email, grade, roster, or other education record into an issue, a pull request, a chat, or a file. Use local test members (`maya@forge.test`, `josh@forge.test`, `ben@forge.test`, `cara@forge.test`, or Demo University).
+- Never mention the founders' day jobs, employers, or work outside Brazework. Don't look them up to add them.
+- Never commit `public/js/supabase-config.local.bak` or `scripts/check.mjs`.

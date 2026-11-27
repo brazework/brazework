@@ -5,7 +5,7 @@ import { addMilestone, type MilestoneState } from "@/lib/milestones";
 import { getViewer } from "@/lib/supabase/server";
 import { requestVouch } from "@/lib/vouches";
 
-// What Ember's "Ask them to sign" card does when the member confirms it (Linear FIX-216). Nothing new
+// What Torch's "Ask them to sign" card does when the member confirms it (Linear FIX-216). Nothing new
 // is decided here: a new milestone goes through addMilestone() exactly as the Add milestone dialog
 // sends it, and an ask about a milestone that is already waiting goes through requestVouch(). So every
 // rule holds unchanged: the limits on asks, the LinkedIn link a working account adds first, throwaway

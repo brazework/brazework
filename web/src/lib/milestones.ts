@@ -11,6 +11,7 @@ import { backingMessage } from "@/lib/backing";
 import { checkBacking, recordBacking } from "@/lib/backing-check";
 import { mailer } from "@/lib/email";
 import { env } from "@/lib/env";
+import { evidenceItem, evidenceLinks } from "@/lib/proof-tools";
 import { proofUrl } from "@/lib/proof-card";
 import { createAdminClient } from "@/lib/supabase/admin";
 import { buildProofSharedEmail } from "@/lib/witness-invite";
@@ -21,7 +22,7 @@ import { buildProofSharedEmail } from "@/lib/witness-invite";
 // validate input and turn database errors into plain sentences.
 
 // linkedin: the ask needs the member's LinkedIn link first; the form shows the field (Linear FIX-214).
-export type MilestoneState = { ok: boolean; message: string; linkedin?: boolean };
+export type MilestoneState = { ok: boolean; message: string; linkedin?: boolean; id?: string };
 
 const add = z.object({
   projectId: z.string().min(1).max(64),
@@ -42,10 +43,12 @@ const add = z.object({
 const reason = (e: { message?: string; code?: string }) => (e.code === "P0001" || e.code === "23514" ? e.message ?? friendlyError(e) : friendlyError(e));
 
 export async function addMilestone(_: MilestoneState, form: FormData): Promise<MilestoneState> {
+  // Every link from the proof picker (components/projects/proof-picker.tsx): the cards, then the box.
+  const links = evidenceLinks(String(form.get("evidence") ?? ""), form.get("evidenceMore"));
   const v = add.safeParse({
     projectId: form.get("projectId"), verifyBy: form.get("verifyBy") === "vouch" ? "vouch" : form.get("verifyBy") === "data" ? "data" : "club",
     communityId: form.get("communityId") ?? "", vouchEmail: form.get("vouchEmail") ?? "", vouchRelationship: form.get("vouchRelationship") ?? "", title: form.get("title"),
-    detail: form.get("detail") ?? "", evidence: form.get("evidence") ?? "", achievedOn: form.get("achievedOn"),
+    detail: form.get("detail") ?? "", evidence: links[0] ?? String(form.get("evidence") ?? ""), achievedOn: form.get("achievedOn"),
     showOnProfile: form.get("showOnProfile") === "on",
   });
   if (!v.success) return { ok: false, message: v.error.issues[0]?.message ?? "Check the form." };
@@ -65,6 +68,8 @@ export async function addMilestone(_: MilestoneState, form: FormData): Promise<M
   const backing = d.verifyBy === "data" ? await checkBacking(d.evidence, d.projectId, user.id) : null;
   if (backing && !backing.ok) return { ok: false, message: backingMessage(backing.reason) };
   const row: Record<string, unknown> = { project_id: d.projectId, community_id: d.verifyBy === "club" ? d.communityId : null, title: d.title, detail: d.detail, evidence: d.evidence, achieved_on: d.achievedOn };
+  // More than one link: the rest go with it, as evidence the signer sees (supabase/verification.sql).
+  if (links.length > 1) row.evidence_items = links.slice(1).map(evidenceItem);
   if (d.verifyBy === "data") row.status = "logged";
   // Private by default once verification.sql has run; showing it is the member's choice.
   if (d.showOnProfile) row.private = false;
@@ -90,10 +95,10 @@ export async function addMilestone(_: MilestoneState, form: FormData): Promise<M
     // No ask went out: don't leave a milestone waiting on nobody.
     if (!asked.ok) { await supabase.from("milestones").delete().eq("id", made.id).eq("owner_id", user.id); return asked; }
     revalidatePath(`/u/${user.id}`);
-    return asked;
+    return { ...asked, id: made.id };
   }
   revalidatePath(`/u/${user.id}`);
-  return { ok: true, message: "Sent to the club for verification." };
+  return { ok: true, message: "Sent to the club for verification.", id: made.id };
 }
 
 // More evidence after it's logged (FIX-238, supabase/milestone-late-evidence.sql): a link added to a

@@ -11,7 +11,7 @@ import { TOOLS } from "@/lib/tool-setup";
 export const FLOW = [
   { title: "Your AI drafts it", body: "Ask in plain words. Your assistant reads the tools you already use and writes the result, with its proof." },
   { title: "You approve it", body: "It shows you first, or leaves a draft in Brazework. Nothing goes out until you say yes." },
-  { title: "Someone who saw it signs", body: "Your club, a professor, a manager or a client signs it. Then it's on your record, wherever you go next." },
+  { title: "Someone who saw it signs", body: "Your club, a professor, a coworker or a client signs it. Then it's on your record, wherever you go next." },
 ] as const;
 
 /** What it never does. True of every tool, whatever its token may do. */

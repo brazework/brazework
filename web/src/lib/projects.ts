@@ -24,6 +24,7 @@ const schema = z
     link: z.string().trim().max(300).default(""),
     tools: z.array(z.string().trim().min(1).max(40).refine((t) => !/[<>]/.test(t))).max(12, "Pick up to 12 tools.").default([]),
     specs: z.array(z.object({ label: z.string().trim().min(1).max(40, "Spec names are up to 40 characters."), value: z.string().trim().min(1).max(80, "Spec values are up to 80 characters.") })).max(16, "Up to 16 specs.").default([]),
+    community_id: z.string().regex(/^[A-Za-z0-9_-]{0,64}$/).default(""),
   })
   .refine((v) => v.link === "" || /^https?:\/\/\S+$/i.test(v.link), { message: "Links must start with http:// or https://", path: ["link"] });
 
@@ -40,6 +41,8 @@ export async function saveProject(_: ProjectState, form: FormData): Promise<Proj
     link: form.get("link") ?? "",
     tools: [...new Set(form.getAll("tools").map(String))],
     // Specs come as matching label/value rows; a row with either side empty is dropped.
+    // A club project (supabase/club-projects.sql): the club it's for, when a club's owner or admin starts one.
+    community_id: String(form.get("community_id") ?? ""),
     specs: form.getAll("spec_label").map((l, i) => ({ label: String(l).trim(), value: String(form.getAll("spec_value")[i] ?? "").trim() })).filter((r) => r.label && r.value),
   });
   if (!parsed.success) return { ok: false, message: parsed.error.issues[0]?.message ?? "Check the form." };
@@ -48,8 +51,11 @@ export async function saveProject(_: ProjectState, form: FormData): Promise<Proj
   if (!user) return { ok: false, message: "Log in again to save." };
   const year = v.status === "completed" && /^\d{4}$/.test(v.year) ? Number(v.year) : null;
   // "Built with" is saved once supabase/project-stack.sql is applied.
-  const row = { title: v.title, summary: v.summary, status: v.status, year, tags: v.tags, private: v.private, ...((await dbFeatures()).projectTools && { tools: v.tools }) };
-  const q = v.id ? supabase.from("projects").update(row).eq("id", v.id).select("id") : supabase.from("projects").insert(row).select("id");
+  const feat = await dbFeatures();
+  const row = { title: v.title, summary: v.summary, status: v.status, year, tags: v.tags, private: v.private, ...(feat.projectTools && { tools: v.tools }) };
+  // Row-level security decides who may: the owner, or for a club project the club's owners and admins.
+  const club = !v.id && v.community_id && feat.clubProjects ? { community_id: v.community_id } : {};
+  const q = v.id ? supabase.from("projects").update(row).eq("id", v.id).select("id") : supabase.from("projects").insert({ ...row, ...club }).select("id");
   const { data, error } = await q;
   if (error) return { ok: false, message: friendlyError(error) };
   const id = data?.[0]?.id as string | undefined;
@@ -62,6 +68,7 @@ export async function saveProject(_: ProjectState, form: FormData): Promise<Proj
   }
   revalidatePath(`/u/${user.id}`);
   revalidatePath(`/projects/${id}`);
+  if (feat.clubProjects) revalidatePath("/c/[id]", "page");
   return { ok: true, message: v.id ? "Project saved." : "Project added." };
 }
 
@@ -121,18 +128,24 @@ export async function startProject(text: string): Promise<ProjectState & { id?: 
 export async function deleteProject(id: string): Promise<ProjectState> {
   const { supabase, user } = await getViewer();
   if (!user) return { ok: false, message: "Log in again." };
-  const { error } = await supabase.from("projects").delete().eq("id", id).eq("owner_id", user.id);
+  // Its owner, or for a club project the club's owners and admins (row-level security).
+  const { data, error } = await supabase.from("projects").delete().eq("id", id).select("id");
   if (error) return { ok: false, message: friendlyError(error) };
+  if (!data?.length) return { ok: false, message: "You don't have permission to do that." };
   revalidatePath(`/u/${user.id}`);
   revalidatePath("/feed");
+  revalidatePath("/c/[id]", "page");
   return { ok: true, message: "" };
 }
 
 export async function setProjectPrivate(id: string, value: boolean): Promise<ProjectState> {
   const { supabase, user } = await getViewer();
   if (!user) return { ok: false, message: "Log in again." };
-  const { error } = await supabase.from("projects").update({ private: value }).eq("id", id).eq("owner_id", user.id);
+  // Its owner, or for a club project the club's owners and admins (row-level security).
+  const { data, error } = await supabase.from("projects").update({ private: value }).eq("id", id).select("id");
   if (error) return { ok: false, message: friendlyError(error) };
+  if (!data?.length) return { ok: false, message: "You don't have permission to do that." };
+  revalidatePath("/c/[id]", "page");
   revalidatePath(`/u/${user.id}`);
   revalidatePath(`/projects/${id}`);
   revalidatePath("/projects");
@@ -140,9 +153,10 @@ export async function setProjectPrivate(id: string, value: boolean): Promise<Pro
 }
 
 // A feed post about your project. Its topics come from the project.
-export async function shareProject(id: string, body: string): Promise<ProjectState & { postId?: string }> {
+// attachments: files or links come with it, so it may have no text (supabase/post-files-only.sql, FIX-247).
+export async function shareProject(id: string, body: string, opts: { attachments?: boolean } = {}): Promise<ProjectState & { postId?: string }> {
   const text = body.trim();
-  if (!text) return { ok: false, message: "Write something about it first." };
+  if (!text && !opts.attachments) return { ok: false, message: "Write something about it first." };
   if (text.length > 3000) return { ok: false, message: "Posts can be up to 3,000 characters." };
   const { supabase, user } = await getViewer();
   if (!user) return { ok: false, message: "Log in again." };

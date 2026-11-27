@@ -38,7 +38,7 @@ async function FindYourClub() {
   if (!profile.onboarded) redirect("/onboarding");
   const [mine, top] = await Promise.all([
     supabase.from("community_members").select("community_id").eq("uid", user.id).limit(1),
-    supabase.from("communities").select(COMMUNITY_COLS).order("member_count", { ascending: false }).limit(200),
+    supabase.from("communities").select(COMMUNITY_COLS).neq("type", "class").order("member_count", { ascending: false }).limit(200),
   ]);
   if (mine.data?.length) redirect("/feed");
   const interests = new Set<string>(profile.interests ?? []);

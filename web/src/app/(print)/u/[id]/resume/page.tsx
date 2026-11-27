@@ -39,7 +39,7 @@ async function Resume({ params }: { params: PageProps<"/u/[id]/resume">["params"
     supabase.from("profiles").select(`id, first_name, last_name, account_type, headline, bio, field${f.profileExtras ? ", open_to, links, location" : ""}`).eq("id", id).maybeSingle(),
     supabase.from("projects").select(f.projectTools ? "id, title, summary, status, year, private, tools" : "id, title, summary, status, year, private").eq("owner_id", id).order("updated_at", { ascending: false }).limit(30),
     f.milestones ? supabase.from("milestones").select("id, project_id, community_name, title, achieved_on, reviewer_name").eq("owner_id", id).eq("status", "verified").order("achieved_on", { ascending: false }).limit(40) : Promise.resolve({ data: [] }),
-    supabase.from("community_members").select("role, communities(name)").eq("uid", id).limit(12),
+    supabase.from("community_members").select("role, communities!inner(name)").eq("uid", id).neq("communities.type", "class").limit(12),
   ]);
   if (!pr.data) notFound();
   const redacted = f.redactedProof ? (((await supabase.rpc("redacted_proof", { p_member: id })).data ?? []) as Redacted[]) : [];

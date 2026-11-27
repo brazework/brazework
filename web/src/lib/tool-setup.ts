@@ -50,6 +50,15 @@ export function vscodeLink(endpoint: string, token?: string): string {
 /** Claude Code with one-click sign-in: add the server, then /mcp in Claude Code opens the sign-in. */
 export const claudeCodeSignIn = (endpoint: string) => `claude mcp add --transport http ${SERVER_NAME} ${endpoint} --scope user`;
 
+// A public explanation is separate from connecting a member's record. Fixed URLs only:
+// never include the current URL, referral, typed build, account details or tokens here.
+export const PUBLIC_EXPLAIN_PROMPT = [
+  "Explain Brazework using its public pages only: https://brazework.com and https://brazework.com/pricing.",
+  "Describe how someone records a result, adds evidence and asks a person who saw the work to sign it. Give examples from mechanical engineering, research and design as well as software.",
+  "Explain what is free, what Plus adds and what companies and schools pay. Distinguish available features from previews and coming-soon features.",
+  "Do not connect any accounts, access personal information or take actions. If you cannot read the pages, say so rather than guessing. Include links to the pages you used.",
+].join("\n");
+
 // ---------- Ask your AI to set it up ----------
 // One prompt that any assistant can follow (Claude, ChatGPT, Codex…): it checks whether Brazework is
 // already connected, tells the person how to add it in the app they're in (each assistant knows its

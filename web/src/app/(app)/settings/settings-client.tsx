@@ -24,7 +24,7 @@ function Status({ state }: { state: SettingsState }) {
 // canSwitch: Studying or working can be changed (supabase/account-type.sql has run).
 // linkedin: the member's own LinkedIn link; undefined until supabase/linkedin-required.sql has run
 // (the field stays hidden). A working account needs one to ask someone to sign; the link is private.
-export function ProfileSettings({ profile, gradYear, canSwitch = false, linkedin }: { profile: Profile; gradYear?: number | null; canSwitch?: boolean; linkedin?: string }) {
+export function ProfileSettings({ profile, gradYear, canSwitch = false, linkedin, linkedinPublic }: { profile: Profile; gradYear?: number | null; canSwitch?: boolean; linkedin?: string; linkedinPublic?: boolean }) {
   const [state, action, pending] = useActionState(saveProfileSettings, init);
   // Only current topics count (renamed or retired ones would be invisible yet still submitted).
   const [picked, setPicked] = useState<string[]>((profile.interests ?? []).filter((t) => ALL_TOPICS.includes(t)));
@@ -38,6 +38,7 @@ export function ProfileSettings({ profile, gradYear, canSwitch = false, linkedin
         <Field label="First name"><input name="first_name" defaultValue={profile.first_name} maxLength={80} className={inputCls} /></Field>
         <Field label="Last name"><input name="last_name" defaultValue={profile.last_name} maxLength={80} className={inputCls} /></Field>
       </div>
+      <Field label="Headline"><input name="headline" defaultValue={profile.headline} maxLength={200} className={inputCls} /></Field>
       {canSwitch && (
         <fieldset>
           <legend className="mb-2 text-sm font-medium text-text-2">Right now you&apos;re</legend>
@@ -56,9 +57,15 @@ export function ProfileSettings({ profile, gradYear, canSwitch = false, linkedin
         <Field label="LinkedIn profile" hint={`${LINKEDIN_WHY} ${LINKEDIN_PRIVATE}`}>
           <input type="hidden" name="linkedin_was" value={linkedin} />
           <input name="linkedin" type="text" inputMode="url" autoComplete="url" autoCapitalize="none" autoCorrect="off" spellCheck={false} maxLength={200} defaultValue={linkedin} placeholder={LINKEDIN_PLACEHOLDER} className={inputCls} />
+          {linkedinPublic !== undefined && (
+            <label className="mt-2 flex items-center gap-2 text-sm text-text-2">
+              <input type="hidden" name="linkedin_public_was" value={linkedinPublic ? "on" : ""} />
+              <input type="checkbox" name="linkedin_public" defaultChecked={linkedinPublic} className="size-4 accent-accent" />
+              Show it on my profile
+            </label>
+          )}
         </Field>
       )}
-      <Field label="Headline"><input name="headline" defaultValue={profile.headline} maxLength={200} className={inputCls} /></Field>
       <Field label="Field"><select name="field" defaultValue={fieldKnown ? profile.field : ""} className={inputCls}>{!fieldKnown && <option value="" disabled>Pick your field</option>}{FIELDS.map((f) => <option key={f}>{f}</option>)}</select></Field>
       {gradYear !== undefined && (
         <Field label="Graduation year" optional hint="Companies on Find builders can filter by class year.">
@@ -68,8 +75,8 @@ export function ProfileSettings({ profile, gradYear, canSwitch = false, linkedin
           </select>
         </Field>
       )}
-      <div>
-        <div className="mb-2 flex items-baseline justify-between text-sm">
+      <div className="border-t border-line pt-5">
+        <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2 text-sm">
           <span className="font-medium text-text-2">Interests</span>
           <span className={cn("font-mono text-xs", picked.length >= 3 ? "text-faint" : "text-danger")}>{picked.length} picked · at least 3</span>
         </div>
@@ -112,65 +119,37 @@ function applyTheme(c: Choice) {
   } catch {}
 }
 
-// App-wide themes (html[data-skin], saved as localStorage "forge-skin"). Mono = no attribute.
-const SKINS = [
-  { id: "mono", label: "Mono", bg: "#0b0b0d", card: "#18181b", grad: "linear-gradient(135deg, #fafafa, #a1a1aa)" },
-  { id: "fire", label: "Brazework Fire", bg: "#120a07", card: "#21150e", grad: "linear-gradient(135deg, #ffd166, #ff8a3d 45%, #ff4d4d)" },
-  { id: "blueprint", label: "Blueprint", bg: "#0a1c35", card: "#112d52", grad: "linear-gradient(135deg, #a5d8ff, #7cc4ff 50%, #5b9dff)" },
-  { id: "aurora", label: "Aurora", bg: "#0b0a1a", card: "#171433", grad: "linear-gradient(135deg, #22d3ee, #818cf8 50%, #e879f9)" },
-  { id: "emerald", label: "Emerald", bg: "#06140f", card: "#0e241b", grad: "linear-gradient(135deg, #d9f99d, #34d399 50%, #22d3ee)" },
-] as const;
-type Skin = (typeof SKINS)[number]["id"];
-const readSkin = (): Skin => (SKINS.find((k) => k.id === document.documentElement.dataset.skin)?.id ?? "mono");
-const subSkin = (cb: () => void) => {
-  const mo = new MutationObserver(cb);
-  mo.observe(document.documentElement, { attributes: true, attributeFilter: ["data-skin"] });
-  return () => mo.disconnect();
-};
-function applySkin(k: Skin) {
-  const root = document.documentElement;
-  try {
-    if (k === "mono") { root.removeAttribute("data-skin"); localStorage.removeItem("forge-skin"); }
-    else { root.setAttribute("data-skin", k); localStorage.setItem("forge-skin", k); }
-  } catch {}
-}
-
+// One Brazework theme, in light and dark (redesign 2026-11). The colour skins (Blueprint, Fire,
+// Aurora, Emerald) are gone: colour in the app means proof, so the chrome stays ink on paper.
 // Same storage as the header toggle: html[data-theme] + localStorage "forge-theme"; System clears both.
 export function AppearanceSettings() {
   const choice = useSyncExternalStore(sub, read, () => "system" as Choice);
-  const skin = useSyncExternalStore(subSkin, readSkin, () => "mono" as Skin);
-  const opts: [Choice, string, typeof Sun][] = [["light", "Light", Sun], ["dark", "Dark", Moon], ["system", "System", Monitor]];
+  const opts: [Choice, string, typeof Sun, string][] = [
+    ["system", "System", Monitor, "Follows your device"],
+    ["light", "Light", Sun, "Paper and ink"],
+    ["dark", "Dark", Moon, "Graphite"],
+  ];
   return (
-    <div className="flex flex-col gap-6">
-      <div role="radiogroup" aria-label="Theme" className="grid grid-cols-3 gap-2">
-        {opts.map(([id, label, Icon]) => (
-          <button key={id} role="radio" aria-checked={choice === id} onClick={() => applyTheme(id)} className="flex flex-col items-center gap-2 rounded-2xl border border-line p-4 text-sm text-muted transition hover:text-text aria-checked:border-text aria-checked:text-text">
-            <Icon className="size-5" /> {label}
-          </button>
-        ))}
-      </div>
-      <div>
-        <div className="mb-3 text-sm font-medium text-text-2">Theme</div>
-        <div role="radiogroup" aria-label="Theme" className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          {SKINS.map((k) => (
-            <button key={k.id} role="radio" aria-checked={skin === k.id} onClick={() => applySkin(k.id)} className="group overflow-hidden rounded-2xl border border-line text-left transition aria-checked:border-transparent aria-checked:ring-2 aria-checked:ring-[var(--accent)]">
-              {/* A tiny preview of the theme: its background, a card and its gradient. */}
-              <div className="relative h-20 p-2.5" style={{ background: k.bg }}>
-                <div className="h-full rounded-lg p-2" style={{ background: k.card }}>
-                  <div className="h-1.5 w-1/2 rounded-full bg-white/30" />
-                  <div className="mt-1.5 h-1.5 w-3/4 rounded-full bg-white/15" />
-                  <div className="mt-2.5 h-3.5 w-12 rounded-full" style={{ background: k.grad }} />
-                </div>
-              </div>
-              <div className="flex items-center justify-between px-3 py-2 text-xs font-medium">
-                {k.label}
-                {skin === k.id && <Check className="size-3.5" />}
-              </div>
-            </button>
-          ))}
-        </div>
-        <p className="mt-3 text-xs text-faint">Themes change the whole app, in light and dark. Saved on this device.</p>
-      </div>
+    <div role="radiogroup" aria-label="Theme" className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+      {opts.map(([id, label, Icon, hint]) => (
+        <button key={id} role="radio" aria-checked={choice === id} onClick={() => applyTheme(id)}
+          className="group overflow-hidden rounded-xl border border-line bg-surface text-left transition hover:border-line-strong aria-checked:border-text aria-checked:ring-1 aria-checked:ring-text">
+          {/* A small preview of the theme: page, sidebar, a card and a primary button. */}
+          <div aria-hidden="true" className="flex h-20 gap-1.5 p-2.5" style={{ background: id === "dark" ? "#0b0c0e" : id === "light" ? "#f7f7f5" : "linear-gradient(90deg, #f7f7f5 50%, #0b0c0e 50%)" }}>
+            <div className="w-1/4 rounded-md" style={{ background: id === "dark" ? "#17181c" : "#efefec", opacity: id === "system" ? 0.9 : 1 }} />
+            <div className="flex-1 rounded-md p-2" style={{ background: id === "dark" ? "#131418" : "#ffffff", boxShadow: "0 0 0 1px rgba(127,127,127,0.18)" }}>
+              <div className="h-1.5 w-2/3 rounded-full" style={{ background: id === "dark" ? "#3a3b42" : "#d4d4cf" }} />
+              <div className="mt-1.5 h-1.5 w-1/2 rounded-full" style={{ background: id === "dark" ? "#2a2b31" : "#e5e5e1" }} />
+              <div className="mt-2.5 h-3 w-10 rounded-full" style={{ background: id === "dark" ? "#f4f4f5" : "#0f1012" }} />
+            </div>
+          </div>
+          <div className="flex items-center gap-2 px-3 py-2.5 text-sm">
+            <Icon className="size-4 text-muted" />
+            <span className="font-medium">{label}</span>
+            <span className="ml-auto text-xs text-faint">{choice === id ? <Check className="size-3.5 text-text" /> : hint}</span>
+          </div>
+        </button>
+      ))}
     </div>
   );
 }
@@ -243,7 +222,7 @@ export function PasswordForm() {
   );
 }
 
-// What Ember can and can't see, and deleting your chats with it (supabase/copilot-chats.sql).
+// What Torch can and can't see, and deleting your chats with it (supabase/copilot-chats.sql).
 export function EmberSettings({ saving, chats, memories }: { saving: boolean; chats: number; memories?: Memory[] }) {
   const [left, setLeft] = useState(chats);
   const [msg, setMsg] = useState("");
@@ -251,8 +230,8 @@ export function EmberSettings({ saving, chats, memories }: { saving: boolean; ch
   return (
     <div className="space-y-4 text-sm leading-relaxed text-text-2">
       <ul className="space-y-2">
-        <li><strong className="font-medium text-text">What Ember reads:</strong> your profile, clubs and projects, and what any member can see on Brazework (clubs, events, people, posts), plus public GitHub when you ask about a repo.</li>
-        <li><strong className="font-medium text-text">What it never reads:</strong> your direct messages. In a group chat it reads recent messages only when someone there asks @Ember or taps Catch me up.</li>
+        <li><strong className="font-medium text-text">What Torch reads:</strong> your profile, clubs and projects, and what any member can see on Brazework (clubs, events, people, posts), plus public GitHub when you ask about a repo.</li>
+        <li><strong className="font-medium text-text">What it never reads:</strong> your direct messages. In a group chat it reads recent messages only when someone there asks @Torch or taps Catch me up.</li>
         <li><strong className="font-medium text-text">What it does on its own:</strong> nothing. It prepares cards; posting, joining, RSVPing or messaging happens only when you confirm.</li>
         <li><strong className="font-medium text-text">Your chats:</strong> {saving ? "private to you, and deleted 180 days after you last use them. A thumbs up or down sends only that question and answer to the Brazework team." : "not kept after you leave the page."}</li>
       </ul>
@@ -260,8 +239,8 @@ export function EmberSettings({ saving, chats, memories }: { saving: boolean; ch
       {saving && (
         <div className="flex flex-wrap items-center gap-3 border-t border-line pt-4">
           <span className="text-muted">{left ? `${left} saved ${left === 1 ? "chat" : "chats"}` : "No saved chats"}</span>
-          <button type="button" disabled={!left || pending} onClick={() => { if (!confirm("Delete all your Ember chats? This can't be undone.")) return; start(async () => { const r = await deleteAllChats(); setMsg(r.ok ? "All your Ember chats are deleted." : r.message); if (r.ok) setLeft(0); }); }} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-line px-4 font-medium text-text transition hover:border-danger hover:text-danger disabled:opacity-40">
-            {pending && <Loader2 className="size-4 animate-spin" />} Delete all Ember chats
+          <button type="button" disabled={!left || pending} onClick={() => { if (!confirm("Delete all your Torch chats? This can't be undone.")) return; start(async () => { const r = await deleteAllChats(); setMsg(r.ok ? "All your Torch chats are deleted." : r.message); if (r.ok) setLeft(0); }); }} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-line px-4 font-medium text-text transition hover:border-danger hover:text-danger disabled:opacity-40">
+            {pending && <Loader2 className="size-4 animate-spin" />} Delete all Torch chats
           </button>
           {msg && <p role="status" className="w-full text-xs text-muted">{msg}</p>}
         </div>
@@ -359,15 +338,15 @@ export function EmailSettings({ weekly, alerts, dailyDrafts }: { weekly: boolean
   );
 }
 
-// What Ember remembers (supabase/ember-memory.sql): every item, in the member's words, each with Forget.
+// What Torch remembers (supabase/ember-memory.sql): every item, in the member's words, each with Forget.
 function EmberMemories({ initial }: { initial: Memory[] }) {
   const [items, setItems] = useState(initial);
   const [msg, setMsg] = useState("");
   const [pending, start] = useTransition();
   return (
     <div className="border-t border-line pt-4">
-      <p className="font-medium text-text">What Ember remembers</p>
-      <p className="mt-0.5 text-xs text-muted">Only what you said yes to on a card. Only you can see it, and Ember uses it in your next chats.</p>
+      <p className="font-medium text-text">What Torch remembers</p>
+      <p className="mt-0.5 text-xs text-muted">Only what you said yes to on a card. Only you can see it, and Torch uses it in your next chats.</p>
       {items.length ? (
         <ul className="mt-3 divide-y divide-line rounded-xl border border-line">
           {items.map((m) => (
@@ -379,7 +358,7 @@ function EmberMemories({ initial }: { initial: Memory[] }) {
           ))}
         </ul>
       ) : (
-        <p className="mt-3 rounded-xl border border-dashed border-line px-3 py-2.5 text-xs text-muted">Nothing yet. When you tell Ember something worth keeping, it offers to remember it.</p>
+        <p className="mt-3 rounded-xl border border-dashed border-line px-3 py-2.5 text-xs text-muted">Nothing yet. When you tell Torch something worth keeping, it offers to remember it.</p>
       )}
       {msg && <p role="status" className="mt-2 text-xs text-muted">{msg}</p>}
     </div>

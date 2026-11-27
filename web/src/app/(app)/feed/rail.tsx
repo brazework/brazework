@@ -1,92 +1,56 @@
 import { dbFeatures, eventWithHost } from "@/lib/db-features";
-import { CalendarDays, Trophy } from "lucide-react";
+import { CalendarDays } from "lucide-react";
 import Link from "next/link";
 import { DROP_AFTER_MS, dateParts, withHost, type HostedEvent } from "@/lib/events";
 import { requestTime } from "@/lib/forge";
 import { getViewer } from "@/lib/supabase/server";
 import { RailCard } from "@/components/app/rail-card";
 import { MessageDock } from "@/components/messages/dock";
-import { UpdatesPanel } from "@/components/tour/updates-panel";
-import { newsPool, pickNews, type NewsPick } from "@/lib/news";
+import { ThisWeekCard } from "./streak";
 import { TrendingNews } from "./trending-news";
-import { YourWeekCard } from "./streak";
+import { newsPool, pickNews, type NewsPick } from "@/lib/news";
 import { ConnectAgentCard } from "./connect-agent";
 import { Suspense } from "react";
 
-// The feed's right rail (wide screens): your week, what's coming up, your clubs and open challenges, then what's trending and Brazework's own updates, so the rest of Brazework is one glance away.
+// The feed's right rail (wide screens), redesign 2026-11 (top card 2026-11-26): this week (what the
+// band above the feed doesn't say), what's coming up, your messages, then trending and news. Challenges and Brazework's own updates are a tab away, so Home stays calm.
 export async function FeedRail() {
   const { supabase, user, profile } = await getViewer();
   if (!user || !profile) return null;
   const now = requestTime();
   const cutoff = new Date(now - DROP_AFTER_MS).toISOString();
-  const since = new Date(now - 14 * 864e5).toISOString();
   const f = await dbFeatures();
-  const [mine, ev, going, recent, pool, ch, tokens] = await Promise.all([
-    supabase.from("community_members").select("role, communities(id, name, member_count)").eq("uid", user.id).limit(50),
-    supabase.from("events").select(await eventWithHost()).eq("status", "published").gt("ends_at", cutoff).order("starts_at", { ascending: true }).limit(4),
+  const since = new Date(now - 14 * 864e5).toISOString();
+  const [ev, going, tokens, recent, pool] = await Promise.all([
+    supabase.from("events").select(await eventWithHost()).eq("status", "published").gt("ends_at", cutoff).order("starts_at", { ascending: true }).limit(3),
     supabase.from("event_rsvps").select("event_id").eq("user_id", user.id).limit(500),
-    supabase.from("posts").select("tags").is("community_id", null).gt("created_at", since).limit(300),
-    newsPool().catch(() => []),
-    // Open sponsored challenges (supabase/challenges.sql), soonest deadline first.
-    f.challenges
-      ? supabase.from("challenges").select("id, title, prize, deadline, organizations(name)").eq("status", "open").gt("deadline", new Date(now).toISOString()).order("deadline", { ascending: true }).limit(3)
-      : Promise.resolve({ data: [] }),
     // Has this member connected an AI tool yet (supabase/mcp.sql)? If not, Home suggests it.
     f.mcp ? supabase.from("api_tokens").select("id", { count: "exact", head: true }).is("revoked_at", null) : Promise.resolve({ count: 1 }),
+    supabase.from("posts").select("tags").is("community_id", null).gt("created_at", since).limit(300),
+    newsPool().catch(() => []),
   ]);
-  const challenges: RailChallenge[] = ((ch.data ?? []) as unknown as { id: string; title: string; prize: string; deadline: string; organizations: { name: string } | null }[])
-    .map((c) => ({ id: c.id, title: c.title, sponsor: c.organizations?.name ?? "Sponsor", prize: c.prize, days: Math.max(0, Math.ceil((Date.parse(c.deadline) - now) / 864e5)) }));
-  // News from around the web, on your interests first.
-  const news = pickNews(pool, profile.interests ?? [], profile.field ?? "", 6, now);
-  type C = { id: string; name: string; member_count: number };
-  const clubs = ((mine.data ?? []) as unknown as { communities: C | C[] | null }[])
-    .flatMap((r) => (Array.isArray(r.communities) ? r.communities : r.communities ? [r.communities] : []))
-    .slice(0, 5);
-  const events = ((ev.data ?? []) as unknown as Parameters<typeof withHost>[0][]).map(withHost) as HostedEvent[];
-  const goingSet = new Set((going.data ?? []).map((g) => g.event_id as string));
-
-  // Trending: the most-used tags on public posts in the last two weeks.
+  // Trending tags on public posts in the last two weeks, and news on your interests first.
   const counts = new Map<string, number>();
   for (const r of (recent.data ?? []) as { tags: string[] }[]) for (const t of r.tags ?? []) counts.set(t, (counts.get(t) ?? 0) + 1);
   const trending = [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 6);
-
-  // Your week tops the rail (FIX-67, FIX-92): streak, proof, views and to-dos in one card.
-  // (Your goal is in Home's stream now, on every width: feed/stream.tsx.)
-  return <RailView top={<><Suspense fallback={null}><YourWeekCard /></Suspense>{(tokens.count ?? 1) === 0 && <ConnectAgentCard />}</>} trending={trending} news={news} hasInterests={(profile.interests ?? []).length > 0} clubs={clubs} events={events} going={goingSet} challenges={challenges} />;
+  const news = pickNews(pool, profile.interests ?? [], profile.field ?? "", 6, now);
+  const events = ((ev.data ?? []) as unknown as Parameters<typeof withHost>[0][]).map(withHost) as HostedEvent[];
+  const goingSet = new Set((going.data ?? []).map((g) => g.event_id as string));
+  return <RailView top={<><Suspense fallback={<div className="h-40 shimmer rounded-xl" aria-hidden="true" />}><ThisWeekCard /></Suspense>{(tokens.count ?? 1) === 0 && <ConnectAgentCard />}</>} events={events} going={goingSet} trending={trending} news={news} hasInterests={(profile.interests ?? []).length > 0} />;
 }
 
-type Club = { id: string; name: string; member_count: number };
-type RailChallenge = { id: string; title: string; sponsor: string; prize: string; days: number };
 
 // The rail's markup, separate from its queries so it can be previewed with sample data.
-// Order (FIX-92): what's yours first (your week, what's coming up, your clubs, open challenges), then
-// what's around (trending), and Brazework's own news last.
-export function RailView({ trending, news = [], hasInterests = false, events, going: goingSet, challenges = [], top }: { trending: [string, number][]; news?: NewsPick[]; hasInterests?: boolean; clubs: Club[]; events: HostedEvent[]; going: Set<string>; challenges?: RailChallenge[]; top?: React.ReactNode }) {
+export function RailView({ events, going: goingSet, top, trending = [], news = [], hasInterests = false }: { events: HostedEvent[]; going: Set<string>; top?: React.ReactNode; trending?: [string, number][]; news?: NewsPick[]; hasInterests?: boolean }) {
   return (
-    <div className="no-scrollbar sticky top-8 flex max-h-[calc(100dvh-4rem)] flex-col gap-4 [&>*]:shrink-0 overflow-y-auto overscroll-contain pb-2 min-[137.5rem]:grid min-[137.5rem]:grid-cols-2 min-[137.5rem]:items-start">
+    <div className="no-scrollbar sticky top-6 flex max-h-[calc(100dvh-3rem)] flex-col gap-3 [&>*]:shrink-0 overflow-y-auto overscroll-contain pb-2">
       {top}
       <ComingUp events={events} going={goingSet} />
 
-      {/* Your clubs are in the sidebar on every page now (redesign stage 1), so the rail no longer repeats them. */}
-
-      {challenges.length > 0 && (
-        <RailCard id="challenges" title="Open challenges" icon={<Trophy className="size-3.5" />} href="/challenges" summary={`${challenges.length} open · next deadline in ${challenges[0]?.days ?? 0} ${challenges[0]?.days === 1 ? "day" : "days"}`}>
-          <ul className="mt-3 flex flex-col gap-1">
-            {challenges.map((c) => (
-              <li key={c.id}>
-                <Link href={`/challenges/${c.id}`} className="block rounded-xl p-1.5 transition hover:bg-hover">
-                  <span className="block truncate text-sm font-medium">{c.title}</span>
-                  <span className="block truncate text-xs text-faint">{c.sponsor}{c.prize ? ` · ${c.prize}` : ""} · {c.days} {c.days === 1 ? "day" : "days"} left</span>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </RailCard>
-      )}
-
-      <TrendingNews trending={trending} news={news} hasInterests={hasInterests} />
-      <UpdatesPanel />
       <MessageDock variant="rail" />
+      {/* Redesign 2026-11: what's yours first (your week, what's coming up, your messages), then one card
+          for what's around: trending and news. Challenges and Brazework's own updates are a tab away. */}
+      <TrendingNews trending={trending} news={news} hasInterests={hasInterests} />
     </div>
   );
 }

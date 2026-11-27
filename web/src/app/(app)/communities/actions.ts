@@ -9,6 +9,7 @@ import { validMedia } from "@/lib/media";
 import { STUDY_LIMITS } from "@/lib/study";
 import { STARTER_RULES, reusableInvite, type InviteRow } from "@/lib/club-setup";
 import { getViewer } from "@/lib/supabase/server";
+import { clubForm, cleanClubDraft } from "@/lib/torch-club";
 
 export type Result = { ok: boolean; message: string };
 export type JoinResult = Result & { state?: "member" | "requested" | "none" };
@@ -51,8 +52,9 @@ const studySchema = z.object({
 
 const str = (v: FormDataEntryValue | null) => (typeof v === "string" ? v : "");
 
-// Creates the community with you as owner, in one step (create_community RPC), then opens it.
-export async function createCommunity(_prev: CreateState, form: FormData): Promise<CreateState> {
+// Creates the community with you as owner, in one step (create_community RPC). Shared by the Start a
+// community page (createCommunity, which then opens it) and Torch's card (createClubFromCard).
+async function makeCommunity(form: FormData): Promise<{ ok: false; message: string } | { ok: true; id: string; supabase: Awaited<ReturnType<typeof getViewer>>["supabase"] }> {
   const parsed = createSchema.safeParse({
     name: str(form.get("name")),
     about: str(form.get("about")),
@@ -90,6 +92,14 @@ export async function createCommunity(_prev: CreateState, form: FormData): Promi
     if (sErr) console.error("study group details", sErr.message);
   }
   revalidatePath("/communities");
+  return { ok: true, id, supabase };
+}
+
+// The Start a community page: makes it, asks the school if that was ticked, then opens it.
+export async function createCommunity(_prev: CreateState, form: FormData): Promise<CreateState> {
+  const made = await makeCommunity(form);
+  if (!made.ok) return made;
+  const { id, supabase } = made;
   // "This club operates under a university" (FIX-237): ask the school now. The club exists either way;
   // if the ask is refused (most often: not signed in with an address at that school), Manage → School
   // opens with the reason, so it can be fixed and sent from there.
@@ -103,6 +113,33 @@ export async function createCommunity(_prev: CreateState, form: FormData): Promi
     }
   }
   redirect(`/c/${id}?created=1`);
+}
+
+// Torch's "Start a club" card (lib/torch-club.ts): the same checks and the same insert as the page, but
+// it answers instead of redirecting, so the card can say it's done and link to the new club.
+export async function createClubFromCard(raw: Record<string, unknown>): Promise<Result & { id?: string }> {
+  const d = cleanClubDraft({ ...raw, type: raw.club_type }, Date.now());
+  if ("error" in d) return { ok: false, message: d.error };
+  const made = await makeCommunity(clubForm(d));
+  if (!made.ok) return made;
+  return { ok: true, message: "Created", id: made.id };
+}
+
+export async function deleteClub(_prev: Result, form: FormData): Promise<Result> {
+  const cid = cidSchema.safeParse(str(form.get("cid")));
+  const name = str(form.get("name"));
+  if (!cid.success || !name || name.length > 100) return { ok: false, message: "Check the club name and try again." };
+  const { supabase, user } = await getViewer();
+  if (!user) return { ok: false, message: "Log in again." };
+
+  const { error } = await supabase.rpc("delete_owned_club", { p_cid: cid.data, p_name: name });
+  if (error) return { ok: false, message: error.code === "42501" || error.code === "P0001" ? error.message : "Couldn't delete this club. Try again." };
+
+  revalidateCommunity(cid.data);
+  revalidatePath("/admin");
+  revalidatePath("/events");
+  revalidatePath("/messages");
+  redirect("/communities?deleted=1");
 }
 
 /* ---------- Join, request, withdraw, leave ---------- */
@@ -318,10 +355,10 @@ export async function setCommunityLogo(cid: string, path: string): Promise<Resul
   if (!user || !can(role, "editInfo")) return denied;
   if (path && !new RegExp(`^${user.id}/[A-Za-z0-9._-]+$`).test(path)) return { ok: false, message: "That file couldn't be used." };
   const { data, error } = await supabase.from("communities").update({ logo_path: path }).eq("id", cid).select("id");
-  if (error) return { ok: false, message: error.code === "42703" ? "Club logos aren't turned on yet." : communityError(error) };
+  if (error) return { ok: false, message: error.code === "42703" ? "Club pictures aren't turned on yet." : communityError(error) };
   if (!data?.length) return denied;
   revalidateCommunity(cid);
-  return { ok: true, message: path ? "Logo updated." : "Logo removed." };
+  return { ok: true, message: path ? "Club picture updated." : "Club picture removed." };
 }
 
 export async function saveCommunityLook(cid: string, look: { tagline: string; website: string; accent: string }): Promise<Result> {

@@ -7,7 +7,7 @@ import { ThemeChrome } from "@/components/theme-chrome";
 import { Logo } from "@/components/ui";
 import { plusOnSale, plusYearlyOnSale } from "@/lib/billing";
 import { dbFeatures } from "@/lib/db-features";
-import { PLUS, PLUS_SOON, TIERS } from "@/lib/pricing";
+import { EMBER_DAILY_LIMIT, PLUS, PLUS_SOON, PLUS_TIER } from "@/lib/pricing";
 import { getViewer } from "@/lib/supabase/server";
 import { PlusButton } from "./plus-button";
 
@@ -45,14 +45,14 @@ async function Plus({ searchParams }: { searchParams: PageProps<"/plus">["search
   const { supabase, user, profile } = await getViewer();
   const has = user && (await dbFeatures()).money ? Boolean((await supabase.rpc("has_plus")).data) : false;
   const onSale = plusOnSale();
-  // By the year, when its Stripe price is set: the button names the viewer's own price.
+  // Students never pay (founders, 2026-11-26): Plus is for professionals and independent builders.
+  const studying = profile?.account_type === "student";
   const yearly = onSale && plusYearlyOnSale();
-  const student = profile?.account_type === "student";
-  const tier = TIERS.find((t) => t.id === "plus")!;
+  const tier = PLUS_TIER;
   return (
     <>
       <h1 className="text-[clamp(2rem,5vw,2.75rem)] leading-[1.05] font-semibold tracking-[-0.03em]">{PLUS.name}</h1>
-      <p className="mt-3 text-[15px] leading-relaxed text-muted">Your signed work, ready for your next review or promotion, and every company that looked. Everything in Free stays free, for good.</p>
+      <p className="mt-3 text-[15px] leading-relaxed text-muted">Your signed work, ready for your next review or promotion, and every company that looked. Plus also includes {EMBER_DAILY_LIMIT.plus} Torch credits a day.</p>
       <section className="mt-8 rounded-[1.25rem] border border-line bg-surface p-6 sm:p-8">
         <p className="text-3xl font-semibold tracking-tight">{tier.price}</p>
         <p className="mt-1 text-sm text-muted">{tier.note}</p>
@@ -62,20 +62,22 @@ async function Plus({ searchParams }: { searchParams: PageProps<"/plus">["search
         <div className="mt-8">
           {has ? (
             <p role="status" className="flex items-start gap-2 text-[15px]"><Check className="mt-0.5 size-4 shrink-0 text-ok" /> {welcome ? "Welcome to Plus. It's on your account now." : "You have Plus."} <Link href="/dashboard" className="font-medium underline-offset-4 hover:underline">See who looked</Link></p>
+          ) : studying ? (
+            <p role="status" className="flex items-start gap-2 text-[15px]"><Check className="mt-0.5 size-4 shrink-0 text-ok" /> Students never pay. Your record, every signature, your clubs and being found are free for good. Plus is for professionals and independent builders.</p>
           ) : user ? (
             yearly ? (
               <div className="flex flex-wrap gap-3">
-                <PlusButton yearly label={`Get ${PLUS.name} for a year, $${student ? PLUS.studentYear : PLUS.everyoneYear}`} />
-                <PlusButton quiet label={`Monthly, $${student ? PLUS.student : PLUS.everyone}/mo`} />
+                <PlusButton yearly label={`Get ${PLUS.name} for a year, $${PLUS.everyoneYear}`} />
+                <PlusButton quiet label={`Monthly, $${PLUS.everyone}/mo`} />
               </div>
             ) : (
               <PlusButton label={onSale ? `Get ${PLUS.name}` : "Join the waitlist"} />
             )
           ) : (
-            <Link href="/login?next=/plus" className="inline-flex h-11 items-center rounded-lg bg-accent px-5 text-[15px] font-medium text-on-accent hover:opacity-90">Log in to get {PLUS.name}</Link>
+            <Link href="/login?next=/plus" className="inline-flex h-11 items-center rounded-lg bg-accent px-5 text-[15px] font-medium text-on-accent hover:opacity-90">{onSale ? `Log in to get ${PLUS.name}` : "Log in to join the waitlist"}</Link>
           )}
-          {!has && !onSale && <p className="mt-3 text-sm text-muted">{PLUS.name} opens soon. Join the waitlist and we&apos;ll email you, at the launch price.</p>}
-          {!has && onSale && <p className="mt-3 text-sm text-muted">Cancel anytime, from Settings. Your record stays yours either way.</p>}
+          {!has && !studying && !onSale && <p className="mt-3 text-sm text-muted">{PLUS.name} opens soon. Join the waitlist and we&apos;ll email you, at the launch price.</p>}
+          {!has && !studying && onSale && <p className="mt-3 text-sm text-muted">Cancel anytime, from Settings. Your record stays yours either way.</p>}
         </div>
       </section>
 

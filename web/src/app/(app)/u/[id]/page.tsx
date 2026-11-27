@@ -2,7 +2,7 @@ import { githubConfig } from "@/lib/github-app";
 import { canUse } from "@/lib/plans";
 import type { Metadata } from "next";
 import { ReportLink } from "@/components/report/report-dialog";
-import { BadgeCheck, BarChart3, ClipboardList, Eye, FileText, FolderGit2, Lock, MapPin, MessageSquare, Trophy } from "lucide-react";
+import { BadgeCheck, BarChart3, ChevronDown, ClipboardList, Eye, FileText, FolderGit2, Lock, MapPin, MessageSquare, Trophy } from "lucide-react";
 import { MoreMenu } from "@/components/app/more-menu";
 import { RecordCard } from "@/components/profile/record-card";
 import { buildTimeline } from "@/lib/record-timeline";
@@ -17,7 +17,6 @@ import { ConfidentialWork } from "./confidential-work";
 import { CopyLink } from "@/components/app/copy-link";
 import { signersFor, type MemberRow } from "@/lib/signers";
 import { PlaceTabsRow } from "@/components/app/place-tabs";
-import { FoundingBadge } from "@/components/profile/founding-badge";
 import { OwnProofTabs } from "@/components/app/place-tabs-counted";
 import { GoalCard, GoalLine } from "@/components/app/goal-card";
 import { loadGoal, loadRecord } from "@/lib/goal-load";
@@ -43,9 +42,8 @@ import { PostCard } from "../../feed/post-card";
 import { PeopleStrip } from "../../feed/discover";
 import { StripSkeleton } from "@/components/app/discover-cards";
 import { CoverBanner, ProfilePhoto } from "@/components/media/profile-media";
-import { schematicFor } from "@/lib/schematic-field";
 import { OnlineLabel, WithPresence } from "@/components/presence/presence";
-import { EditBasics, ProjectEditor, ProjectGrid, type ProjectView } from "./profile-client";
+import { EditProfile, ProjectEditor, ProjectGrid, type ProjectView } from "./profile-client";
 import type { Club, Milestone } from "./milestones";
 import { FirstMilestoneWelcome } from "./welcome";
 
@@ -86,14 +84,14 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
 
   // Everything that only needs the profile's id, at once (one round of requests, not seven).
   const [pr, rel, counts, postsRes, projectsRes, msRes, theirClubs, followRows, myClubRows, myFollows, , copilotOn] = await Promise.all([
-    supabase.from("profiles").select(`id, first_name, last_name, account_type, headline, bio, field, interests, onboarded, created_at${f.media ? ", avatar_path, cover_path" : ""}${extrasOn ? ", open_to, links, location" : ""}${f.gradYear ? ", grad_year" : ""}${f.foundingMembers ? ", founding_number" : ""}`).eq("id", id).maybeSingle(),
+    supabase.from("profiles").select(`id, first_name, last_name, account_type, headline, bio, field, interests, onboarded, created_at${f.media ? ", avatar_path, cover_path" : ""}${extrasOn ? ", open_to, links, location" : ""}${f.gradYear ? ", grad_year" : ""}`).eq("id", id).maybeSingle(),
     own ? Promise.resolve(null) : getRelationship(id),
     getNetworkCounts(id),
     supabase.from("posts").select(await postSelect()).eq("author_id", id).is("community_id", null).order("created_at", { ascending: false }).limit(50),
-    supabase.from("projects").select(stackOn ? "id, title, summary, status, year, tags, private, updated_at, tools" : "id, title, summary, status, year, tags, private, updated_at").eq("owner_id", id).order("created_at", { ascending: false }).limit(100),
+    supabase.from("projects").select(`id, title, summary, status, year, tags, private, updated_at${stackOn ? ", tools" : ""}${f.clubProjects ? ", club:communities(id, name)" : ""}`).eq("owner_id", id).order("created_at", { ascending: false }).limit(100),
     // Milestones (supabase/milestones.sql): others only get verified ones back, the owner gets all of theirs.
     msOn ? supabase.from("milestones").select(await milestoneCols()).eq("owner_id", id).order("achieved_on", { ascending: false }).limit(300) : Promise.resolve({ data: [] }),
-    supabase.from("community_members").select(`role, communities(${clubCols})`).eq("uid", id).limit(12),
+    supabase.from("community_members").select(`role, communities!inner(${clubCols})`).eq("uid", id).neq("communities.type", "class").limit(12),
     supabase.from("follows").select("follower, follower_info").eq("target", id).order("created_at", { ascending: false }).limit(5),
     supabase.from("community_members").select("communities(id, name)").eq("uid", user.id).limit(50),
     own ? Promise.resolve({ data: [] }) : supabase.from("follows").select("target").eq("follower", user.id).limit(500),
@@ -101,11 +99,19 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
     own ? copilotEnabled() : Promise.resolve(false),
   ]);
   if (!pr.data) notFound();
-  const p = pr.data as unknown as Profile & { open_to?: string[]; links?: ProfileLink[]; location?: string; grad_year?: number | null; founding_number?: number | null };
+  const p = pr.data as unknown as Profile & { open_to?: string[]; links?: ProfileLink[]; location?: string; grad_year?: number | null };
   const mediaOn = f.media;
 
   const posts = (postsRes.data ?? []) as unknown as Post[];
-  const projectRows = ((projectsRes.data ?? []) as unknown as (Omit<ProjectView, "details" | "link"> & { tools?: string[] })[]).filter((r) => !preview || !r.private);
+  // Club projects they build on (supabase/club-projects.sql): teammates and project admins get them on
+  // their own record, marked "with <club>". They don't run them, so no edit controls here.
+  type Row = Omit<ProjectView, "details" | "link"> & { tools?: string[] };
+  const teamRes = f.clubProjects
+    ? await supabase.from("project_members").select(`role, projects!inner(id, title, summary, status, year, tags, private, updated_at, owner_id, community_id${stackOn ? ", tools" : ""}, club:communities(id, name))`).eq("uid", id).in("role", ["admin", "member"]).not("projects.community_id", "is", null).limit(100)
+    : { data: [] };
+  const teamRows: Row[] = ((teamRes.data ?? []) as unknown as { projects: (Row & { owner_id: string; community_id?: string }) | null }[])
+    .flatMap((r) => (r.projects && r.projects.owner_id !== id ? [{ ...r.projects, canEdit: false }] : []));
+  const projectRows = [...((projectsRes.data ?? []) as unknown as Row[]), ...teamRows].filter((r) => !preview || !r.private);
   const following = ((myFollows.data ?? []) as { target: string }[]).map((r) => r.target).filter((t) => t !== id);
   // Second round: what depends on the first (your likes on these posts, project write-ups, mutual follows).
   const [likesRes, detailsRes, mutualRes, winsRes, replies] = await Promise.all([
@@ -120,7 +126,9 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
   const viewer = { id: user.id, first: me?.first_name ?? "", last: me?.last_name ?? "" };
   type Win = { challenge_id: string; placement: number; challenges: { title: string; status: string; organizations: { name: string } | null } | null };
   const wins = ((winsRes.data ?? []) as unknown as Win[]).filter((w) => w.challenges?.status === "closed").sort((a, b) => a.placement - b.placement);
-  const [goal, record] = await Promise.all([goalP, recordP]);
+  // Their LinkedIn, only if they chose to show it (supabase/linkedin-public.sql); an error before that step runs.
+  const [goal, record, liRes] = await Promise.all([goalP, recordP, supabase.rpc("profile_linkedin", { p_id: id })]);
+  const linkedinUrl = !liRes.error && typeof liRes.data === "string" && liRes.data.startsWith("https://www.linkedin.com/in/") ? liRes.data : null;
   const liked = new Set(((likesRes.data ?? []) as { post_id: string }[]).map((l) => l.post_id));
   const details = new Map(((detailsRes.data ?? []) as unknown as { project_id: string; details: string; link: string; specs?: { label: string; value: string }[] }[]).map((d) => [d.project_id, d]));
   const byId = Object.fromEntries(projectRows.map((r) => [r.id, r]));
@@ -138,7 +146,12 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
   const projects: ProjectView[] = projectRows.map((r) => ({ ...r, details: details.get(r.id)?.details ?? null, link: details.get(r.id)?.link ?? null, specs: details.get(r.id)?.specs ?? [], milestones: msOn && (own || !r.private) ? ms.filter((m) => m.project_id === r.id) : undefined }));
   // Proof shows work on public projects (and your own private ones, to you), like the feed and résumé.
   const titles = new Map(projectRows.filter((r) => mine || !r.private).map((r) => [r.id, r.title]));
-  const proofBase: ProofItem[] = ms.filter((m) => m.status === "verified" && titles.has(m.project_id)).map((m) => ({ id: m.id, title: m.title, detail: m.detail, achieved_on: m.achieved_on, community_id: m.community_id, community_name: m.community_name, reviewer_name: m.reviewer_name, vouched_by: m.vouched_by, project: { id: m.project_id, title: titles.get(m.project_id)! } }));
+  // Work verified in a class (supabase/school-portal.sql) says its term too: "ME 410 · Capstone Design · Fall 2026".
+  const signedIn = [...new Set(ms.filter((m) => m.status === "verified" && m.community_id).map((m) => m.community_id as string))];
+  const { data: classRows } = signedIn.length && f.schoolPortal ? await supabase.from("communities").select("id, term").eq("type", "class").in("id", signedIn) : { data: [] };
+  const termOf = new Map(((classRows ?? []) as { id: string; term: string }[]).filter((c) => c.term).map((c) => [c.id, c.term]));
+  const where = (m: { community_id: string | null; community_name: string }) => (m.community_id && termOf.has(m.community_id) ? `${m.community_name} · ${termOf.get(m.community_id)}` : m.community_name);
+  const proofBase: ProofItem[] = ms.filter((m) => m.status === "verified" && titles.has(m.project_id)).map((m) => ({ id: m.id, title: m.title, detail: m.detail, achieved_on: m.achieved_on, community_id: m.community_id, community_name: where(m), reviewer_name: m.reviewer_name, vouched_by: m.vouched_by, project: { id: m.project_id, title: titles.get(m.project_id)! } }));
   // Pro sign-offs (supabase/pro-verification.sql): an engineer's name, title, employer and note. Work
   // they signed comes first: Pro-verified, then club-verified (Linear FIX-72).
   type ProRow = { milestone_id: string; reviewer_name: string; reviewer_title: string; employer_name: string; note: string; created_at: string };
@@ -182,8 +195,8 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
   const skills = [...projectRows.flatMap((x) => x.tools ?? []).reduce((m, t) => m.set(t, (m.get(t) ?? 0) + 1), new Map<string, number>())].sort((a, b) => b[1] - a[1]).slice(0, 12);
   const steps: Step[] = [
     ...(mediaOn ? [{ done: !!p.avatar_path, label: "Add a profile photo", href: "#top" }] : []),
-    { done: !!p.headline, label: "Write a headline", href: "#about" },
-    { done: !!p.bio, label: "Add a short bio", href: "#about" },
+    { done: !!p.headline, label: "Write a headline", href: "#edit-profile" },
+    { done: !!p.bio, label: "Add a short bio", href: "#edit-profile" },
     { done: projects.length > 0, label: "Add a project", href: "#projects" },
     ...(stackOn ? [{ done: projectRows.some((x) => (x.tools ?? []).length > 0), label: "Say what you built with", href: "#projects" }] : []),
     ...(msOn ? [{ done: proof.length > 0, label: "Get a milestone verified", href: "#proof" }] : []),
@@ -196,20 +209,21 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
     <div id="top" className="scroll-mt-24">
       {/* Your own profile is the first page of Record: its other pages are a click away (lib/places.ts). */}
       {mine && <Suspense fallback={<PlaceTabsRow place="record" active="profile" />}><OwnProofTabs /></Suspense>}
-      {mine && sp.welcome === "1" && <FirstMilestoneWelcome supabase={supabase} userId={user.id} milestone={ms[0]} />}
+      {mine && sp.welcome === "1" && <FirstMilestoneWelcome supabase={supabase} userId={user.id} milestone={typeof sp.result === "string" ? ms.find((m) => m.id === sp.result) : ms[0]} student={p.account_type === "student"} />}
       {preview && (
         <p role="status" className="mb-4 flex items-start gap-2 rounded-2xl border border-line bg-surface-2/70 px-4 py-3 text-sm text-text-2">
           <Eye className="mt-0.5 size-4 shrink-0" /> This is how other members see your profile. Private projects, private milestones and anything not yet verified are left out.
         </p>
       )}
       <Panel className="relative overflow-hidden rounded-2xl p-0">
-        <CoverBanner path={p.cover_path} editable={mine && mediaOn} userId={user.id} schematic={schematicFor([p.field ?? "", ...(p.interests ?? [])], [])} />
+        <CoverBanner path={p.cover_path} editable={mine && mediaOn} userId={user.id} label={[p.field, p.grad_year ? classOf(p.grad_year) : ""].filter(Boolean).join(" · ")} />
         <div className="px-5 pb-5 sm:px-6">
-          <div className="pointer-events-none relative z-10 -mt-11 flex flex-wrap items-end justify-between gap-3 *:pointer-events-auto">
-            <div className="inline-flex rounded-full">
-              <WithPresence id={p.id} dot="size-5 ring-4 top-[4%] bottom-auto"><ProfilePhoto path={p.avatar_path} first={p.first_name} last={p.last_name} editable={mine && mediaOn} userId={user.id} size={88} /></WithPresence>
+          <div className="pointer-events-none relative z-10 -mt-10 flex flex-wrap items-end justify-between gap-3 *:pointer-events-auto">
+            <div className="inline-flex rounded-full shadow-[0_8px_24px_-8px_rgb(0_0_0/0.45)] ring-4 ring-surface">
+              <WithPresence id={p.id} dot="size-5 ring-4 top-[4%] bottom-auto"><ProfilePhoto path={p.avatar_path} first={p.first_name} last={p.last_name} editable={mine && mediaOn} userId={user.id} size={80} /></WithPresence>
             </div>
             <div data-tour={mine ? "share" : undefined} className="flex flex-wrap items-center gap-2">
+              {mine && <EditProfile headline={p.headline} bio={p.bio} />}
               <CopyLink path={`/u/${p.id}`} label="Share" />
               <Link href={`/u/${p.id}/resume`} className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-line bg-surface px-3.5 text-sm transition hover:bg-hover active:scale-95"><FileText className="size-4" /> Résumé</Link>
               {mine ? (
@@ -226,10 +240,10 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
               )}
             </div>
           </div>
-          <div className="mt-3 flex flex-wrap items-center gap-3"><h1 className="text-[1.75rem] leading-tight font-semibold tracking-[-0.02em] sm:text-3xl">{name || "Brazework member"}</h1><OnlineLabel id={p.id} />{p.founding_number ? <FoundingBadge n={p.founding_number} /> : null}</div>
-          {p.headline && <p className="mt-1 text-base text-text-2 sm:text-lg">{p.headline}</p>}
+          <div className="mt-2.5 flex flex-wrap items-center gap-3"><h1 className="text-[1.65rem] leading-tight font-semibold tracking-[-0.03em] sm:text-[2rem]">{name || "Brazework member"}</h1><OnlineLabel id={p.id} /></div>
+          {p.headline && <p className="mt-0.5 text-[15px] text-text-2 sm:text-base">{p.headline}</p>}
           {goal && !mine && <div className="mt-2.5"><GoalLine goal={goal} /></div>}
-          <p className="mt-2 flex flex-wrap items-center gap-x-1.5 text-sm text-muted">
+          <p className="mt-1.5 flex flex-wrap items-center gap-x-1.5 text-[13px] text-muted">
             {p.account_type === "student" ? "Student" : "Professional"}
             {p.grad_year && <> · {classOf(p.grad_year)}</>}
             {p.field && <> · {p.field}</>}
@@ -245,7 +259,7 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
 
           {/* The record in one row (profile redesign, Nov 19): signed results lead in the seal's green, then
               projects and posts; yours also says what's waiting and who looked this month. */}
-          <div className="mt-4 flex flex-wrap items-center gap-x-5 gap-y-3">
+          <div className="mt-3.5 flex flex-wrap items-center gap-x-5 gap-y-2.5 border-t border-line pt-3.5">
             <p className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm text-muted" aria-label="Record">
               {stats.map((st) => (
                 <a key={st.href} href={st.href} className="inline-flex items-center gap-1.5 transition hover:text-text">
@@ -280,8 +294,17 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
             )}
           </div>
 
+          {/* LinkedIn (supabase/linkedin-public.sql): shown only when its owner turned it on in Settings. */}
+          {linkedinUrl ? (
+            <a href={linkedinUrl} target="_blank" rel="noopener noreferrer me" data-linkedin className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-text-2 transition hover:text-text hover:underline">
+              <LinkedinMark /> LinkedIn
+            </a>
+          ) : mine && !liRes.error ? (
+            <Link href="/settings#profile" className="mt-3 inline-flex items-center gap-1.5 text-sm text-muted transition hover:text-text"><LinkedinMark /> Show your LinkedIn here</Link>
+          ) : null}
+
           <div id="about" className="scroll-mt-24">
-            {mine ? <EditBasics headline={p.headline} bio={p.bio} /> : p.bio && <p className="mt-5 max-w-2xl text-[15px] leading-relaxed whitespace-pre-wrap text-text-2">{p.bio}</p>}
+            {p.bio ? <p className="mt-5 max-w-2xl text-[15px] leading-relaxed whitespace-pre-wrap text-text-2">{p.bio}</p> : mine && <p className="mt-5 text-sm text-muted">Add a short bio so people know what you work on.</p>}
           </div>
         </div>
       </Panel>
@@ -302,9 +325,16 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
                   content: (
                     <>
                       {mine && <div className="mb-3 flex justify-end"><ProjectEditor interests={p.interests ?? []} copilot={copilotOn} stack={stackOn} specsOn={f.projectSpecs} /></div>}
-                      <ProjectGrid projects={projects} own={mine} interests={p.interests ?? []} copilot={copilotOn} clubs={msOn && mine ? myClubs : undefined} vouches={f.vouches} backing={f.backed && !!githubConfig()} stack={stackOn} specsOn={f.projectSpecs} />
-                      {!projects.length && <EmptyState icon={<FolderGit2 className="size-6" />} title={mine ? "Show what you've built" : "No projects yet"} body={mine ? "Add a project with a summary, what you did and a link. Keep the write-up private and share only the card if you like." : undefined} />}
-                      {projects.some((x) => x.private) && !mine && <p className="mt-3 flex items-center gap-1.5 text-xs text-faint"><Lock className="size-3" /> Private projects show their card only.</p>}
+                      <details open className="group/projects">
+                        <summary className="mb-3 flex min-h-11 cursor-pointer list-none items-center gap-2 rounded-xl border border-line bg-surface px-3 text-sm font-medium hover:bg-hover [&::-webkit-details-marker]:hidden">
+                          <FolderGit2 aria-hidden="true" className="size-4 text-muted" />
+                          Project list
+                          <ChevronDown aria-hidden="true" className="ml-auto size-4 text-muted transition-transform group-open/projects:rotate-180" />
+                        </summary>
+                        <ProjectGrid projects={projects} own={mine} field={p.field} interests={p.interests ?? []} copilot={copilotOn} clubs={msOn && mine ? myClubs : undefined} vouches={f.vouches} backing={f.backed && !!githubConfig()} stack={stackOn} specsOn={f.projectSpecs} />
+                        {!projects.length && <EmptyState icon={<FolderGit2 className="size-6" />} title={mine ? "Show what you've built" : "No projects yet"} body={mine ? "Add a project with a summary, what you did and a link. Keep the write-up private and share only the card if you like." : undefined} />}
+                        {projects.some((x) => x.private) && !mine && <p className="mt-3 flex items-center gap-1.5 text-xs text-faint"><Lock className="size-3" /> Private projects show their card only.</p>}
+                      </details>
                     </>
                   ),
                 },
@@ -321,7 +351,7 @@ async function ProfileView({ params, searchParams }: { params: PageProps<"/u/[id
             />
           </section>
           {mine ? (hideStrength ? null : <ProfileStrength steps={steps} />) : <SharedContext clubs={sharedClubs} mutual={mutual} mutualCount={mutualCount} />}
-          {mine && f.goals && record && <GoalCard goal={goal} record={record} profileId={p.id} />}
+          {mine && f.goals && record && <GoalCard goal={goal} record={record} profileId={p.id} accountType={p.account_type} />}
 
           {/* Proof without revealing (redacted-proof.sql): private signed work, as one line each. */}
           {f.redactedProof && <Suspense fallback={null}><ConfidentialWork member={p.id} mine={mine} /></Suspense>}
@@ -383,5 +413,17 @@ function ProfileSkeleton() {
       <Skeleton className="mt-8 h-12" />
       <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2"><Skeleton className="h-48" /><Skeleton className="h-48" /></div>
     </div>
+  );
+}
+
+// LinkedIn's "in" mark, drawn plain in the text colour (the icon set has no brand icons).
+function LinkedinMark() {
+  return (
+    <svg viewBox="0 0 16 16" aria-hidden="true" className="size-4 shrink-0" fill="currentColor">
+      <rect x="0.5" y="0.5" width="15" height="15" rx="3" fill="none" stroke="currentColor" />
+      <rect x="3.5" y="6.5" width="2" height="6" rx="0.4" />
+      <circle cx="4.5" cy="4.3" r="1.15" />
+      <path d="M7.5 6.5h1.9v.9c.4-.7 1.2-1.1 2.1-1.1 1.6 0 2.1 1 2.1 2.6v3.6h-2V9.3c0-.8-.2-1.3-.9-1.3-.8 0-1.2.6-1.2 1.4v3.1h-2z" />
+    </svg>
   );
 }

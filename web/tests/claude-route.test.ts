@@ -1,6 +1,6 @@
-// How Ember reaches Claude (lib/claude.ts, Linear FIX-15): an Anthropic key goes direct; Vercel AI
+// How Torch reaches Claude (lib/claude.ts, Linear FIX-15): an Anthropic key goes direct; Vercel AI
 // Gateway only when switched on with EMBER_VIA_GATEWAY=1 (on Vercel, or with a gateway key);
-// otherwise Ember stays off. Run: npm test
+// otherwise Torch stays off. Run: npm test
 import assert from "node:assert/strict";
 import { test } from "node:test";
 import { claudeModel, claudeRoute } from "@/lib/claude";
@@ -17,7 +17,7 @@ test("the gateway is used only when switched on", () => {
   assert.equal(claudeRoute({ EMBER_VIA_GATEWAY: "true", VERCEL: "1" }), "off", "only 1 switches it on");
 });
 
-test("with nothing set, Ember is off (CI and the local demo)", () => {
+test("with nothing set, Torch is off (CI and the local demo)", () => {
   assert.equal(claudeRoute({}), "off");
   assert.equal(claudeRoute({ ANTHROPIC_API_KEY: "" }), "off");
 });

@@ -1,0 +1,17 @@
+---
+description: How agents branch, check, and open pull requests in this repo. Auto-merge only safe work.
+alwaysApply: true
+---
+
+# Pull requests
+
+These rules are for an agent (Forge, Rivet, or another cloud agent). Follow `AGENTS.md` and `docs/team-playbook.md`. Josh and Ian still ship as `CONTRIBUTING.md` describes, including auto-merge when CI is green.
+
+- Branch from the latest `main`: `fix-<id>-short-topic`. One small pull request. Two in progress at a time.
+- From `web/`, before pushing: `npx next typegen`, then `npx tsc --noEmit && npm run lint && npm test`, then the end-to-end specs the change touches (or `npm run e2e` when the change is broad). Typegen is what CI runs first. Don't commit its output. The steps are `.cursor/skills/verify/SKILL.md`.
+- Pull request title starts with the Linear id (`FIX-30: …`). Team Forge, key `FIX`. If the issue cap refuses a new issue, say so. Don't invent an id.
+- Pull request body: what changes for a member (or that members see no change), how it was done, what was tested, and what was not.
+- Open the pull request with auto-merge off. Never enable it before Temper approves.
+- After Temper approves, auto-merge only a safe pull request whose CI is green. Safe means the diff does not touch the database, auth or row-level security, workflow (`.github/workflows/` or the shipping rules in `AGENTS.md`, `docs/team-playbook.md`, `.cursor/`, `.claude/skills/`), or pricing.
+- Josh's yes comes before merge for any of those. Leave auto-merge off until he says yes, even after Temper approves.
+- Never push to `main`. Never force-push. Never merge a red pull request, and never weaken a check to make it green.

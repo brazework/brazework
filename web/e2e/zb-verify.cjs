@@ -6,7 +6,7 @@
 // 4. Ben finds "Verify link" on his profile (link, QR, open the page); hiding the milestone takes the
 //    page down at once, even though it was just cached.
 const { execSync } = require("child_process");
-const { BASE, step, browser, as, go, summary } = require("./lib.cjs");
+const { BASE, step, browser, as, go, openLogs, summary } = require("./lib.cjs");
 
 const psql = (sql) => execSync("docker exec -i forge-e2e-db psql -U postgres -h localhost -d postgres -v ON_ERROR_STOP=1 -qtA", { input: sql }).toString().trim();
 const ben = psql("select id from auth.users where email = 'ben@forge.test'");
@@ -60,20 +60,25 @@ const rid = `vrev-${Date.now()}`;
   }, anon);
 
   const page = await as(b, "ben@forge.test");
-  await step("Ben's Verify link: the link, its QR code, and the page", async () => {
+  await step("Ben's Verify link: the link, its QR code, the page, and Add to LinkedIn", async () => {
     await go(page, `/u/${ben}`);
+    await openLogs(page); // a long log on the profile is folded (FIX-240)
     await page.getByRole("button", { name: "Verify link" }).first().click();
     const dialog = page.getByRole("dialog", { name: "Verify link for your résumé" });
     await dialog.waitFor({ timeout: 10000 });
     const url = await dialog.getByRole("textbox", { name: "Verify link" }).inputValue();
     if (!/\/v\/m[12]$/.test(url)) throw new Error("unexpected link: " + url);
     if (!(await dialog.getByRole("img", { name: /^QR code for / }).isVisible())) throw new Error("no QR code in the dialog");
+    // Add to LinkedIn: LinkedIn's own add-to-profile link, carrying this verify link as the credential.
+    const li = new URL(await dialog.getByRole("link", { name: "Add to LinkedIn" }).getAttribute("href"));
+    if (li.origin + li.pathname !== "https://www.linkedin.com/profile/add" || li.searchParams.get("certUrl") !== url || li.searchParams.get("organizationName") !== "Brazework") throw new Error("Add to LinkedIn link: " + li.href);
   }, page);
 
   await step("hiding the milestone takes its page down at once", async () => {
     await anon.goto(`${BASE}/v/m1`, { waitUntil: "networkidle" });
     await anon.getByRole("heading", { level: 1, name: "Static fire at 1.2 kN" }).waitFor({ timeout: 15000 });
     await go(page, `/u/${ben}`);
+    await openLogs(page); // a long log on the profile is folded (FIX-240)
     const hide = page.getByRole("button", { name: /On your profile · Hide/ });
     const row = page.locator("li").filter({ hasText: "Static fire at 1.2 kN" }).filter({ has: hide }).last();
     await row.getByRole("button", { name: /On your profile · Hide/ }).click();

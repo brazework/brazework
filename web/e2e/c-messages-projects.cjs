@@ -73,6 +73,10 @@ async function saved(page, path, text) {
     await josh.getByRole("button", { name: "Add project" }).first().click();
     await josh.fill('input[name="title"]', title);
     await josh.fill('textarea[name="summary"]', "A small open-loop wind tunnel for testing fin shapes.");
+    // Adding a project goes in steps (lib/project-steps.ts): the specs are on the last one.
+    const dialog = josh.locator("dialog[open]");
+    await dialog.getByRole("button", { name: "Next" }).click();
+    await dialog.getByRole("button", { name: "Next" }).click();
     await josh.locator('input[name="spec_label"]').first().fill("Test section");
     await josh.locator('input[name="spec_value"]').first().fill("30 × 30 cm");
     await josh.getByRole("button", { name: "Add project" }).last().click();
@@ -132,11 +136,17 @@ async function saved(page, path, text) {
     const card = josh.locator("article, li, div").filter({ hasText: title }).filter({ has: josh.getByRole("button", { name: /Add milestone/ }) }).last();
     await card.getByRole("button", { name: /Add milestone/ }).click();
     await josh.fill('input[name="title"]', "Measured lift on 3 fin shapes");
+    // The proof picker (FIX-235): the commit becomes a card with Enter; a second link left in the box still counts.
     await josh.fill('input[name="evidence"]', "https://github.com/josh/wind-tunnel/commit/3f2a9c1");
+    await josh.press('input[name="evidence"]', "Enter");
+    await josh.getByRole("list", { name: "Proof added" }).getByRole("listitem").first().waitFor({ timeout: 10000 });
+    await josh.fill('input[name="evidence"]', "youtu.be/fin-shapes-run3");
     // Who can sign is said before he asks (lib/signers.ts): the club's officers, not him.
     await josh.getByText(/can sign this\. They'll see it on Home\./).waitFor({ timeout: 10000 });
     await josh.getByRole("button", { name: /Ask for verification/ }).click();
     await josh.getByText(/Measured lift on 3 fin shapes/).first().waitFor({ timeout: 15000 });
+    const saved = require("child_process").execSync("docker exec -i forge-e2e-db psql -U postgres -h localhost -d postgres -tA", { input: "select evidence || '|' || (evidence_items->0->>'url') from public.milestones where title = 'Measured lift on 3 fin shapes' order by created_at desc limit 1" }).toString().trim();
+    if (saved !== "https://github.com/josh/wind-tunnel/commit/3f2a9c1|https://youtu.be/fin-shapes-run3") throw new Error(`both links weren't saved: ${saved}`);
   }, josh);
   await step("Ben's week on Home says a milestone is waiting for him", async () => {
     await go(ben, "/feed");

@@ -1,16 +1,18 @@
 "use client";
 import { AnimatePresence, motion } from "motion/react";
-import { ArrowRight, BadgeCheck, CalendarCheck, CalendarPlus, Check, ExternalLink, Flag, Loader2, Megaphone, MessageSquare, PenLine, PencilLine, Sparkles, Target, Bookmark, UserPlus, Users, X } from "lucide-react";
+import { ArrowRight, BadgeCheck, CalendarCheck, CalendarClock, CalendarPlus, Check, ClipboardList, DoorOpen, ExternalLink, Flag, ListChecks, Loader2, Megaphone, MessageSquare, PenLine, PencilLine, Sparkles, Target, Bookmark, UserPlus, Users, X } from "lucide-react";
 import Link from "next/link";
 import { useState, useTransition } from "react";
 import { createPost } from "@/app/(app)/feed/actions";
-import { joinCommunity, postInCommunity } from "@/app/(app)/communities/actions";
+import { createClubFromCard, joinCommunity, postInCommunity } from "@/app/(app)/communities/actions";
 import { saveEvent } from "@/app/(app)/org/actions";
 import { Celebrate } from "@/components/app/celebrate";
 import type { Proposal } from "@/lib/copilot-agent";
 import { EVENT_FORMATS, EVENT_TYPES } from "@/lib/events";
 import { cardLabels, cardSummary } from "@/lib/ember-bar";
 import { emberAskToSign } from "@/lib/ember-sign";
+import { outcomeOf, type CardOutcome } from "@/lib/ember-thread";
+import { noteCardOutcome } from "@/lib/ember-stats";
 import { ALL_TOPICS, cn } from "@/lib/forge";
 import { LINKEDIN_PLACEHOLDER, LINKEDIN_PRIVATE, LINKEDIN_WHY } from "@/lib/linkedin";
 import { addMilestone, reviewMilestone } from "@/lib/milestones";
@@ -25,15 +27,18 @@ import { setGoal } from "@/lib/goal-actions";
 import { rememberThis } from "@/lib/ember-memory";
 import { GOAL_KINDS } from "@/lib/goals";
 import { RELATIONSHIPS } from "@/lib/vouch-email";
+import { torchAnnouncement, torchAssignment, torchAttendance, torchExtension, torchQuiz } from "@/lib/courses";
+import { ABET_OUTCOMES } from "@/lib/course-math";
 
 const field = "w-full rounded-xl border border-line bg-surface px-3 py-2 text-sm outline-none focus:border-line-strong";
 const HEAD = {
-  memory: { icon: Bookmark, title: "Remember this", done: "Remembered", href: "/settings#ember", go: "See what Ember remembers" },
+  memory: { icon: Bookmark, title: "Remember this", done: "Remembered", href: "/settings#ember", go: "See what Torch remembers" },
   goal: { icon: Target, title: "Set your goal", done: "Goal set", href: "/feed", go: "See your path on Home" },
   post: { icon: Megaphone, title: "Post to the feed", done: "Posted", href: "/feed?tab=latest", go: "See it in the feed" },
   milestone: { icon: Flag, title: "Ask your club to verify", done: "Sent to the club", href: "/profile#projects", go: "See your projects" },
   signature: { icon: PenLine, title: "Ask them to sign", done: "Asked", href: "/profile#projects", go: "See your projects" },
   join: { icon: Users, title: "Join a club", done: "Done", href: "", go: "Open the club" },
+  club: { icon: Users, title: "Start a club", done: "Your club is live", href: "/communities", go: "Open your club" },
   follow: { icon: UserPlus, title: "Follow", done: "Following", href: "", go: "Open their profile" },
   event: { icon: CalendarPlus, title: "Host a club event", done: "Published", href: "", go: "See the club's events" },
   club_post: { icon: Megaphone, title: "Post in your club", done: "Posted", href: "", go: "See it in the club" },
@@ -44,6 +49,11 @@ const HEAD = {
   project_edit: { icon: PencilLine, title: "Update a project", done: "Saved", href: "", go: "Open the project" },
   teammate: { icon: UserPlus, title: "Add a teammate", done: "Added", href: "", go: "Open the project" },
   invite: { icon: Users, title: "Accept a club invite", done: "You're in", href: "", go: "Open the club" },
+  quiz: { icon: ListChecks, title: "Add a quiz", done: "Quiz saved", href: "", go: "Open the course" },
+  assignment: { icon: ClipboardList, title: "Add an assignment", done: "Assignment saved", href: "", go: "Open the course" },
+  announcement: { icon: Megaphone, title: "Announce to the class", done: "Announced", href: "", go: "Open the announcements" },
+  extension: { icon: CalendarClock, title: "Give an extension", done: "Extension given", href: "", go: "Open the assignment" },
+  attendance: { icon: DoorOpen, title: "Take attendance", done: "Check-in is open", href: "", go: "Show the code" },
 } as const;
 // Shown under a field a card changes: what's there now.
 const was = (v: string) => <span className="block text-[11px] text-faint">Now: {v ? (v.length > 140 ? `${v.slice(0, 140)}…` : v) : "empty"}</span>;
@@ -53,15 +63,21 @@ const toLocal = (iso: string) => { const d = new Date(iso); return new Date(d.ge
 const fromLocal = (v: string) => new Date(v).toISOString();
 
 // A draft Copilot prepared, or one an AI tool left over MCP (fromTool: the same card, from /drafts and
-// Ember's page; supabase/tool-actions.sql). Nothing is saved until the member presses Confirm, which
+// Torch's page; supabase/tool-actions.sql). Nothing is saved until the member presses Confirm, which
 // runs the app's normal server action (with all its checks) as them; a tool's draft is then marked done.
-// `inline`: in a page (under the Ask Ember bar, or a project's own drafts), the card is a short summary
+// `inline`: in a page (under the Ask Torch bar, or a project's own drafts), the card is a short summary
 // with buttons that say what happens ("Log and send to club", "Edit", "Not now"); Edit opens the fields.
-export function ProposalCard({ p: initial, fromTool, inline = false }: { p: Proposal; fromTool?: { draftId: string; via: string; source: string }; inline?: boolean }) {
+// `onOutcome`: the chat hears what happened to the card (confirmed as the member left it, dismissed, or
+// refused with the server's reason), so Torch knows on its next turn (lib/ember-thread.ts). `settled` is
+// false for the optimistic "confirmed" at the tap and true once the server has answered: only then may
+// the page carry on to the card's next step.
+export function ProposalCard({ p: initial, fromTool, inline = false, onOutcome }: { p: Proposal; fromTool?: { draftId: string; via: string; source: string }; inline?: boolean; onOutcome?: (id: string, o: CardOutcome, settled: boolean) => void }) {
   const [p, setP] = useState(initial);
   const [state, setState] = useState<"open" | "done" | "dismissed">("open");
   const [msg, setMsg] = useState("");
   const [held, setHeld] = useState("");
+  // The club a "Start a club" card made, so Done links to it.
+  const [madeClub, setMadeClub] = useState("");
   const [cid, setCid] = useState("");
   // The signature card: what the server said when it sent the ask, and the LinkedIn link a working
   // account adds first (the field shows only once the server asks for it).
@@ -75,15 +91,22 @@ export function ProposalCard({ p: initial, fromTool, inline = false }: { p: Prop
   const h = HEAD[p.kind];
   const labels = cardLabels(p.kind, inline);
   const short = inline && !editing ? cardSummary(p) : null;
-  const href = p.kind === "join" || p.kind === "club_post" || p.kind === "invite" ? `/c/${p.club_id}` : p.kind === "follow" ? `/u/${p.person_id}` : p.kind === "event" ? `/c/${p.club_id}?tab=events` : p.kind === "review" ? "/communities" : p.kind === "rsvp" ? `/events/${p.event_id}` : p.kind === "message" && cid ? `/messages/${cid}` : p.kind === "project_edit" || p.kind === "teammate" ? `/projects/${p.project_id}` : h.href;
+  const href = p.kind === "club" ? (madeClub ? `/c/${madeClub}` : h.href) : p.kind === "join" || p.kind === "club_post" || p.kind === "invite" ? `/c/${p.club_id}` : p.kind === "follow" ? `/u/${p.person_id}` : p.kind === "event" ? `/c/${p.club_id}?tab=events` : p.kind === "review" ? "/communities" : p.kind === "rsvp" ? `/events/${p.event_id}` : p.kind === "message" && cid ? `/messages/${cid}` : p.kind === "project_edit" || p.kind === "teammate" ? `/projects/${p.project_id}` : p.kind === "quiz" || p.kind === "assignment" ? `/c/${p.class_id}/course?tab=assignments` : p.kind === "announcement" ? `/c/${p.class_id}/course?tab=announcements` : p.kind === "attendance" ? `/c/${p.class_id}/course?tab=attendance` : p.kind === "extension" ? `/c/${p.class_id}/course/a/${p.assignment_id}` : h.href;
   const set = (patch: Partial<Proposal>) => setP((cur) => ({ ...cur, ...patch }) as Proposal);
 
+  // Torch's numbers (supabase/ember-card-counts.sql): once the server has answered, count what happened to
+  // Torch's own card. A draft an AI tool left over MCP isn't Torch's, so it isn't counted here.
+  const counted = (o: CardOutcome) => { if (!fromTool && o.state !== "open") void noteCardOutcome(o.state === "confirmed" ? "confirmed" : o.state === "dismissed" ? "dismissed" : "failed"); };
   const confirm = () => start(async () => {
     setMsg("");
     // Optimistic: the card shows it's done at once, and goes back with the reason if the server says no.
     setState("done");
+    // The chat hears it at the same moment, so a follow-up asked while the server is still answering
+    // doesn't tell Torch the card is untouched. A refusal below corrects it.
+    onOutcome?.(initial.id, outcomeOf(p, "confirmed"), false);
     try {
     let r: { ok: boolean; message: string };
+    let heldNote = "";
     if (p.kind === "post") {
       const f = new FormData();
       f.set("body", p.body); f.set("kind", p.postKind); p.tags.forEach((t) => f.append("tags", t)); f.set("media", "[]");
@@ -97,6 +120,10 @@ export function ProposalCard({ p: initial, fromTool, inline = false }: { p: Prop
       if (res.linkedin) setAskLinkedin(true);
       if (res.ok) setNote(res.message);
       r = res;
+    } else if (p.kind === "club") {
+      const res = await createClubFromCard(p);
+      if (res.ok && res.id) setMadeClub(res.id);
+      r = res;
     } else if (p.kind === "join") {
       r = await joinCommunity(p.club_id);
     } else if (p.kind === "follow") {
@@ -109,7 +136,7 @@ export function ProposalCard({ p: initial, fromTool, inline = false }: { p: Prop
     } else if (p.kind === "club_post") {
       const res = await postInCommunity(p.club_id, p.body, p.postKind, []);
       // Auto-moderation can hold a post for review; say so instead of "Posted".
-      if (res.ok && res.held) { setHeld(res.message || "Held for a moderator to review before it shows."); }
+      if (res.ok && res.held) { heldNote = res.message || "Held for a moderator to review before it shows."; setHeld(heldNote); }
       r = res;
     } else if (p.kind === "review") {
       r = await reviewMilestone(p.milestone_id, p.verify, p.note);
@@ -131,6 +158,16 @@ export function ProposalCard({ p: initial, fromTool, inline = false }: { p: Prop
       const res = acc.ok ? await messagePerson(p.person_id, p.body) : { ...acc, cid: undefined };
       if (res.cid) setCid(res.cid);
       r = res;
+    } else if (p.kind === "quiz") {
+      r = await torchQuiz(p);
+    } else if (p.kind === "assignment") {
+      r = await torchAssignment(p);
+    } else if (p.kind === "announcement") {
+      r = await torchAnnouncement(p);
+    } else if (p.kind === "extension") {
+      r = await torchExtension(p);
+    } else if (p.kind === "attendance") {
+      r = await torchAttendance(p);
     } else {
       const f = new FormData();
       for (const k of ["title", "description", "type", "format", "location", "topic", "starts_at", "ends_at"] as const) f.set(k, String(p[k]));
@@ -138,13 +175,24 @@ export function ProposalCard({ p: initial, fromTool, inline = false }: { p: Prop
       r = await saveEvent({ ok: false, message: "" }, f);
     }
     if (r.ok) {
+      const done = outcomeOf(p, "confirmed", heldNote ? "held for a moderator to review before it shows" : "");
+      onOutcome?.(initial.id, done, true);
+      counted(done);
       if (fromTool) await settleDraft(fromTool.draftId);
-    } else { setState("open"); setMsg(r.message || "That didn't work. Check the details and try again."); }
-    } catch { setState("open"); setMsg("That didn't work. Check your connection and try again."); }
+    } else {
+      setState("open"); setMsg(r.message || "That didn't work. Check the details and try again.");
+      const failed = outcomeOf(p, "failed", r.message);
+      onOutcome?.(initial.id, failed, true);
+      counted(failed);
+    }
+    } catch { setState("open"); setMsg("That didn't work. Check your connection and try again."); const dropped = outcomeOf(p, "failed", "the connection dropped"); onOutcome?.(initial.id, dropped, true); counted(dropped); }
   });
   const dismiss = () => start(async () => {
     if (fromTool) await dismissDraft(fromTool.draftId);
     setState("dismissed");
+    const gone = outcomeOf(p, "dismissed");
+    onOutcome?.(initial.id, gone, true);
+    counted(gone);
   });
 
   if (state === "dismissed") return <p className="mt-2 text-xs text-faint">Dismissed. Nothing was saved.</p>;
@@ -154,7 +202,7 @@ export function ProposalCard({ p: initial, fromTool, inline = false }: { p: Prop
       <div className="flex items-center gap-2">
         <span className={cn("grid size-7 place-items-center rounded-lg", state === "done" ? "bg-ok text-white" : "bg-accent-grad text-on-accent")}>{state === "done" ? <Check className="size-4" /> : <h.icon className="size-4" />}</span>
         <span className="font-semibold text-text">{p.kind === "rsvp" && p.cancel ? (state === "done" ? "You're not going" : "Take back your RSVP") : state === "done" ? (held ? "Sent for review" : h.done) : h.title}</span>
-        {state === "open" && <span className="ml-auto inline-flex items-center gap-1 text-[11px] text-faint"><Sparkles className="size-3" /> Drafted by {fromTool ? fromTool.via : "Ember"} · not saved yet</span>}
+        {state === "open" && <span className="ml-auto inline-flex items-center gap-1 text-[11px] text-faint"><Sparkles className="size-3" /> Drafted by {fromTool ? fromTool.via : "Torch"} · not saved yet</span>}
       </div>
 
       {state === "done" ? (
@@ -244,11 +292,36 @@ export function ProposalCard({ p: initial, fromTool, inline = false }: { p: Prop
               <input aria-label="Note to the member" value={p.note} onChange={(e) => set({ note: e.target.value })} maxLength={300} placeholder={p.verify ? "Note (optional)" : "Why? They'll see this."} className={field} />
             </>
           )}
+          {p.kind === "club" && (
+            <>
+              <div role="radiogroup" aria-label="Kind of club" className="inline-flex flex-wrap gap-1 self-start rounded-full bg-surface-2 p-1">
+                {([["field", "Field community"], ["project", "Project team"], ["study", "Study group"]] as const).map(([k, label]) => (
+                  <button key={k} type="button" role="radio" aria-checked={p.club_type === k} onClick={() => set({ club_type: k })} className="rounded-full px-3 py-1 text-xs text-muted transition aria-checked:bg-surface aria-checked:text-text aria-checked:shadow-sm">{label}</button>
+                ))}
+              </div>
+              <input aria-label="Club name" value={p.name} onChange={(e) => set({ name: e.target.value })} maxLength={60} className={field} />
+              <textarea aria-label="What it's for" value={p.about} onChange={(e) => set({ about: e.target.value })} maxLength={500} rows={2} className={cn(field, "resize-none")} />
+              {p.club_type === "study" && (
+                <div className="grid grid-cols-2 gap-2">
+                  <input aria-label="Course" value={p.course} onChange={(e) => set({ course: e.target.value })} maxLength={20} placeholder="Course, like CHEM 201" className={field} />
+                  <input aria-label="Term" value={p.term} onChange={(e) => set({ term: e.target.value })} maxLength={24} placeholder="Term" className={field} />
+                  <input aria-label="When and where you meet" value={p.meets} onChange={(e) => set({ meets: e.target.value })} maxLength={80} placeholder="When and where you meet (optional)" className={cn(field, "col-span-2")} />
+                </div>
+              )}
+              <div role="radiogroup" aria-label="Who can join" className="inline-flex gap-1 self-start rounded-full bg-surface-2 p-1">
+                {([["public", "Anyone can join"], ["approval", "I approve who joins"]] as const).map(([k, label]) => (
+                  <button key={k} type="button" role="radio" aria-checked={p.privacy === k} onClick={() => set({ privacy: k })} className="rounded-full px-3 py-1 text-xs text-muted transition aria-checked:bg-surface aria-checked:text-text aria-checked:shadow-sm">{label}</button>
+                ))}
+              </div>
+              <div className="flex flex-wrap gap-1.5 text-xs text-muted"><span className="rounded-full bg-surface-2 px-2 py-0.5">{p.field}</span>{p.topics.map((t) => <span key={t} className="rounded-full bg-surface-2 px-2 py-0.5">#{t}</span>)}</div>
+              <p className="text-[11px] text-faint">You&apos;ll own it. Rules, a cover, invites and the rest are in Manage once it&apos;s made.</p>
+            </>
+          )}
           {p.kind === "join" && <p className="text-text-2"><b className="font-medium">{p.club_name}</b> · {p.privacy === "public" ? "open to join" : "the club approves new members, so this sends a request"}</p>}
           {p.kind === "memory" && (
             <div className="space-y-1">
               <p className="text-text-2">&ldquo;{p.body}&rdquo;</p>
-              <p className="text-xs text-muted">Ember will use this in your next chats. Only you can see it, and you can forget it any time in Settings.</p>
+              <p className="text-xs text-muted">Torch will use this in your next chats. Only you can see it, and you can forget it any time in Settings.</p>
             </div>
           )}
           {p.kind === "goal" && (
@@ -287,6 +360,46 @@ export function ProposalCard({ p: initial, fromTool, inline = false }: { p: Prop
             </>
           )}
           {p.kind === "invite" && <p className="text-text-2">Join <b className="font-medium">{p.club_name}</b> with the invite link you were sent.</p>}
+          {p.kind === "quiz" && (
+            <div className="flex flex-col gap-2">
+              <p className="text-text-2"><b className="font-medium text-text">{p.title}</b> · {p.class_name} · {p.questions.reduce((t, q) => t + q.points, 0)} points{p.closes_at ? ` · closes ${new Date(p.closes_at).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}` : ""}</p>
+              <ol className="flex flex-col gap-2">
+                {p.questions.map((q, i) => (
+                  <li key={q.id} className="rounded-xl bg-[color-mix(in_oklab,var(--text)_4%,transparent)] px-3 py-2">
+                    <p className="text-text"><span className="mr-1.5 font-mono text-[11px] text-faint">{i + 1}</span>{q.prompt} <span className="text-[11px] text-faint">{q.points} pt{q.points === 1 ? "" : "s"}</span></p>
+                    {(q.type === "choice" || q.type === "multi") && (
+                      <ul className="mt-1 flex flex-col gap-0.5 text-xs">
+                        {(q.options ?? []).map((o, k) => { const right = Array.isArray(q.answer) ? q.answer.includes(k) : q.answer === k; return <li key={k} className={right ? "font-medium text-ok" : "text-text-2"}>{right ? "✓ " : "· "}{o}</li>; })}
+                      </ul>
+                    )}
+                    {q.type === "number" && <p className="mt-1 text-xs font-medium text-ok">Answer {String(q.answer)}{q.tolerance ? ` ± ${q.tolerance}` : ""}</p>}
+                    {q.type === "short" && <p className="mt-1 text-xs text-muted">Short answer: you score it.</p>}
+                  </li>
+                ))}
+              </ol>
+              <p className="text-xs text-muted">{p.publish ? "Confirm posts it to the class and tells them." : "Confirm saves it as a draft; publish it from the course when you're ready."} Answers stay hidden from students.</p>
+            </div>
+          )}
+          {p.kind === "assignment" && (
+            <div className="flex flex-col gap-2">
+              <p className="text-text-2"><b className="font-medium text-text">{p.title}</b> · {p.class_name} · {p.points} points{p.due_at ? ` · due ${new Date(p.due_at).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}` : ""}{p.group_work ? " · group work" : ""}{p.peer_eval ? " · peer evaluation" : ""}</p>
+              {p.instructions && <p className="whitespace-pre-line text-text-2">{p.instructions.length > 600 ? `${p.instructions.slice(0, 600)}…` : p.instructions}</p>}
+              {p.rubric.length > 0 && (
+                <ul className="flex flex-col gap-0.5 rounded-xl bg-[color-mix(in_oklab,var(--text)_4%,transparent)] px-3 py-2 text-xs">
+                  {p.rubric.map((r, i) => <li key={i} className="flex justify-between gap-3"><span>{r.criterion}{r.outcome && <span className="ml-1.5 text-faint">{ABET_OUTCOMES.find((o) => o.id === r.outcome)?.label ?? `ABET ${r.outcome}`}</span>}</span><span className="tabular-nums">{r.points}</span></li>)}
+                </ul>
+              )}
+              <p className="text-xs text-muted">Hand in: {p.submit_as.join(", ")}. {p.publish ? "Confirm posts it to the class and tells them." : "Confirm saves it as a draft."}</p>
+            </div>
+          )}
+          {p.kind === "announcement" && (
+            <div className="flex flex-col gap-1.5">
+              <label className="flex flex-col gap-1"><span className="text-xs text-muted">Title</span><input value={p.title} maxLength={160} onChange={(e) => set({ title: e.target.value })} className={field} /></label>
+              <label className="flex flex-col gap-1"><span className="text-xs text-muted">Message to everyone in {p.class_name}</span><textarea value={p.body} rows={4} maxLength={10000} onChange={(e) => set({ body: e.target.value })} className={field} /></label>
+            </div>
+          )}
+          {p.kind === "extension" && <p className="text-text-2">Move <b className="font-medium text-text">{p.assignment_title}</b> for <b className="font-medium text-text">{p.name}</b> to <b className="font-medium text-text">{new Date(p.due_at).toLocaleString("en-US", { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })}</b>. Only you and they see it.</p>}
+          {p.kind === "attendance" && <p className="text-text-2">Open check-in for <b className="font-medium text-text">{p.class_name}</b>{p.title ? <> · {p.title}</> : null} for {p.minutes} minutes. You get a code to put on the screen; students check in with it.</p>}
           {p.kind === "teammate" && <p className="text-text-2">Add <b className="font-medium">{p.name}</b>{p.headline && <span className="text-muted"> · {p.headline}</span>} to <b className="font-medium">{p.project_title}</b> as {p.role === "viewer" ? "a viewer (sees it, changes nothing)" : "a teammate (posts updates, logs milestones)"}.</p>}
           {p.kind === "follow" && <p className="text-text-2"><b className="font-medium">{p.name}</b>{p.headline && <span className="text-muted"> · {p.headline}</span>}</p>}
           {p.kind === "event" && (
@@ -306,6 +419,8 @@ export function ProposalCard({ p: initial, fromTool, inline = false }: { p: Prop
           )}
           </>}
           <AnimatePresence>{msg && <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} role="alert" className="text-xs text-danger">{msg}</motion.p>}</AnimatePresence>
+          {/* What Torch does once this is confirmed (the spec's part 3): it carries on by itself. */}
+          {p.then && <p className="text-xs text-muted"><span className="font-medium text-text-2">Then:</span> {p.then}</p>}
           <div className="flex items-center gap-2">
             <button type="button" onClick={confirm} disabled={pending} className="bg-accent-grad inline-flex h-9 items-center gap-1.5 rounded-lg px-4 text-sm font-medium text-on-accent transition active:scale-95 disabled:opacity-50">
               {pending ? <Loader2 className="size-4 animate-spin" /> : <Check className="size-4" />} {labels.confirm}

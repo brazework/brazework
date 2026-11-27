@@ -256,8 +256,8 @@ export const WELCOME_TARGETS = ["menu", "search", "feed-tabs", "composer", "proj
 export function welcomeSteps(firstName: string): TourStep[] {
   return [
     { route: ROUTES.feed, title: `Welcome to Brazework, ${firstName || "there"}`, body: "A one-minute look at how it works: log what you build, get it signed by someone who saw it, and let that record speak for you. Close this at any time, or use Back to see a step again." },
-    { route: ROUTES.feed, target: "menu", title: "Five places", body: "Home is what needs you. Projects is what you're making. Clubs is your team. Record is what you've proven and who looked. Inbox is who's reaching out." },
-    { route: ROUTES.feed, target: "search", title: "Ask Ember, or log what you did", body: "One bar above every page. Search people and clubs, ask Ember, Brazework's assistant, a question, or tell it what you built today and it drafts the update for you." },
+    { route: ROUTES.feed, target: "menu", title: "Five places", body: "Home is what needs you. Projects is what you're making. Clubs is your team. Record is what you've proven and who looked. Chats is who's reaching out." },
+    { route: ROUTES.feed, target: "search", title: "Ask Torch, or log what you did", body: "One bar above every page. Search people and clubs, ask Torch, Brazework's assistant, a question, or tell it what you built today and it drafts the update for you." },
     { route: ROUTES.feed, target: "feed-tabs", title: "Your feed", body: "For you shows posts that match your interests, with a note saying why. Latest has every post, Following the people you follow, and Clubs your clubs." },
     { route: ROUTES.feed, target: "composer", title: "Share progress", body: "Post an update, a result or a question. Add up to 3 topics so it reaches the people who care about them." },
     { route: "/projects", target: "projects", title: "Projects", body: "Each project keeps its updates, files and 3D models together, with teammates if you build with others. A project stays private until you're ready to show it." },

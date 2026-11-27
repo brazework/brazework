@@ -15,7 +15,7 @@ export default function AuthLayout({ children }: { children: React.ReactNode }) 
           <div aria-hidden="true"><AppMoment /></div>
           <div className="max-w-md">
             <p className="text-[2.5rem] leading-[1.08] font-semibold tracking-tight text-balance">Your work, signed by the people who saw it.</p>
-            <p className="mt-4 text-[15px] leading-relaxed text-muted">Log what you finished, with the proof. A manager, a client, a professor or your club signs it, and it goes with you wherever you go next. Your AI can write it up for you, and nothing is saved until you say yes.</p>
+            <p className="mt-4 text-[15px] leading-relaxed text-muted">Log what you finished, with the proof. A coworker, a client, a professor or your club signs it, and it goes with you wherever you go next. Your AI can write it up for you, and nothing is saved until you say yes.</p>
           </div>
         </div>
       </aside>

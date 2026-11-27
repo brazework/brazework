@@ -1,8 +1,8 @@
+import { emberCreditCost } from "@/lib/ember-credits";
 import { ProjectSignoff } from "./signoff";
 import type { Metadata } from "next";
 import { ReportLink } from "@/components/report/report-dialog";
-import { ArrowLeft, BadgeCheck, ExternalLink, Images, Megaphone, Pencil, Play } from "lucide-react";
-import { schematicFor } from "@/lib/schematic-field";
+import { ArrowLeft, BadgeCheck, ChevronDown, ExternalLink, Images, Megaphone, Pencil, Play } from "lucide-react";
 import { MediaGrid } from "@/components/media/media-grid";
 import { signedUrls } from "@/lib/signed-urls";
 import { mediaUrl, type MediaItem } from "@/lib/media";
@@ -52,17 +52,17 @@ export default function ProjectPage({ params, searchParams }: PageProps<"/projec
   );
 }
 
-type Project = { tools?: string[]; id: string; title: string; summary: string; status: "in_progress" | "completed"; year: number | null; tags: string[]; private: boolean; updated_at: string; created_at: string; owner_id: string; profiles: { first_name: string; last_name: string; headline: string; field: string } | null };
+type Project = { tools?: string[]; id: string; title: string; summary: string; status: "in_progress" | "completed"; year: number | null; tags: string[]; private: boolean; updated_at: string; created_at: string; owner_id: string; community_id?: string | null; club?: { id: string; name: string } | null; profiles: { first_name: string; last_name: string; headline: string; field: string } | null };
 
 // A project's home: what it is, the write-up, what its club has verified, its updates over time,
-// and who built it. The owner posts updates here; anyone can send it on or ask Ember about it.
+// and who built it. The owner posts updates here; anyone can send it on or ask Torch about it.
 async function ProjectView({ params, searchParams }: { params: PageProps<"/projects/[id]">["params"]; searchParams: PageProps<"/projects/[id]">["searchParams"] }) {
   const { id } = await params;
   const ghNote = (await searchParams).github;
   const { supabase, user, profile: viewerProfile } = await getViewer();
   if (!user) redirect("/login");
-  const { milestones: msOn, projectTools: stackOn, projectSpecs: specsOn, projectFiles: filesOn, updateFiles: updFilesOn, github: ghOn, projectAccess: accessOn } = await dbFeatures();
-  const { data } = await supabase.from("projects").select(`id, title, summary, status, year, tags, private, updated_at, created_at, owner_id, profiles!projects_owner_id_fkey(first_name, last_name, headline, field)${stackOn ? ", tools" : ""}`).eq("id", id).maybeSingle();
+  const { milestones: msOn, projectTools: stackOn, projectSpecs: specsOn, projectFiles: filesOn, updateFiles: updFilesOn, github: ghOn, projectAccess: accessOn, clubProjects: clubOn } = await dbFeatures();
+  const { data } = await supabase.from("projects").select(`id, title, summary, status, year, tags, private, updated_at, created_at, owner_id, profiles!projects_owner_id_fkey(first_name, last_name, headline, field)${stackOn ? ", tools" : ""}${clubOn ? ", community_id, club:communities(id, name)" : ""}`).eq("id", id).maybeSingle();
   const p = data as unknown as Project | null;
   const own = p?.owner_id === user.id;
   // Your role on it (step 55): owner, admin, teammate ("member") or viewer. A private project is for
@@ -71,6 +71,10 @@ async function ProjectView({ params, searchParams }: { params: PageProps<"/proje
   const role = own ? "owner" : ((roleData as string | null) ?? null);
   const builder = role === "owner" || role === "admin" || role === "member";
   const canManage = role === "owner" || role === "admin";
+  // A club project (supabase/club-projects.sql) is also run by every owner and admin of its club: they
+  // edit it and set it public or private, like its owner.
+  const { data: clubRole } = p?.community_id && !own && role === "admin" ? await supabase.from("community_members").select("role").eq("community_id", p.community_id).eq("uid", user.id).maybeSingle() : { data: null };
+  const editor = own || ["owner", "admin"].includes((clubRole as { role: string } | null)?.role ?? "");
   if (!p || (p.private && !role)) return <EmptyState title="This project isn't available" body="It may be private, or it was removed." />;
 
   const [det, ms, ups, more, teamRes, clubRes, filesRes, ghEvents, ghRepos] = await Promise.all([
@@ -87,11 +91,12 @@ async function ProjectView({ params, searchParams }: { params: PageProps<"/proje
   ]);
   const events = (ghEvents.data ?? []) as BuildEvent[];
   const repos = (ghRepos.data ?? []) as { repo_id: number; full_name: string; html_url: string }[];
-  // The files folder: photos, videos and 3D models get a signed link up front for their previews
-  // (the bucket is private). Other files get one when opened.
+  // The files folder: photos and videos get a signed link up front for their previews (the bucket is
+  // private). Documents and 3D models are view-only outside the team (project-files-view-only.sql): the
+  // reader and the 3D viewer fetch them through /api/project-files/<id>, and only builders download.
   type FileRow = Omit<ProjectFileItem, "src"> & { path: string | null };
   const fileRows = (filesRes.data ?? []) as unknown as FileRow[];
-  const previewPaths = fileRows.filter((f) => f.path && ["image", "video", "model"].includes(kindOfFile(f.name) ?? "")).map((f) => f.path!);
+  const previewPaths = fileRows.filter((f) => f.path && ["image", "video"].includes(kindOfFile(f.name) ?? "")).map((f) => f.path!);
   // Reused between renders (lib/signed-urls.ts), so the browser and the image cache keep their copies.
   const srcByPath = previewPaths.length ? await signedUrls(supabase, "project-files", previewPaths) : new Map<string, string>();
   const files: ProjectFileItem[] = fileRows.map(({ path, ...f }) => ({ ...f, src: path ? srcByPath.get(path) ?? null : null }));
@@ -114,7 +119,7 @@ async function ProjectView({ params, searchParams }: { params: PageProps<"/proje
   const verified = milestones.filter((m) => m.status === "verified");
   const signoffResults = milestones.filter((m) => !m.community_id && (m.status === "draft" || m.status === "logged")).map((m) => ({ id: m.id, title: m.title }));
   // The flow redesign (lib/next-step.ts): the one step this project needs next (toward the member's
-  // goal when they have one), the drafts Ember or their tools left for it, and who could sign a waiting
+  // goal when they have one), the drafts Torch or their tools left for it, and who could sign a waiting
   // milestone, by name (lib/signers.ts).
   const f = await dbFeatures();
   const [draftRes, officerRes, goal, record] = builder ? await Promise.all([
@@ -131,7 +136,7 @@ async function ProjectView({ params, searchParams }: { params: PageProps<"/proje
   const asker = waitingOn ? officers.find((o) => o.community_id === waitingOn && o.uid !== user.id) : undefined;
   // Adding a milestone happens here, for the owner too (it used to send them to their profile).
   const addMilestone = builder && (myClubs.length > 0 || f.vouches)
-    ? <AddMilestone projectId={id} projectTitle={p.title} clubs={myClubs.map((c) => ({ ...c, signers: signers.get(c.id) ?? [] }))} vouches={f.vouches} backing={f.backed && !!githubConfig()} />
+    ? <AddMilestone projectId={id} projectTitle={p.title} clubs={myClubs.map((c) => ({ ...c, signers: signers.get(c.id) ?? [] }))} vouches={f.vouches} backing={f.backed && !!githubConfig()} field={p.profiles?.field} />
     : null;
   const posts = (ups.data ?? []) as unknown as Post[];
   const ids = posts.map((x) => x.id);
@@ -180,10 +185,11 @@ async function ProjectView({ params, searchParams }: { params: PageProps<"/proje
       <div className="flex min-w-0 flex-col gap-6">
         <section aria-label="Project" className="glass-card overflow-hidden rounded-2xl">
           {/* The drawing sheet: the work, the title, and the title block with where it stands. */}
-          <ProjectCover title={p.title} isPrivate={p.private} live={live} year={p.year} last={last} schematic={schematicFor(p.tags, tools)}
+          <ProjectCover title={p.title} isPrivate={p.private} live={live} year={p.year} last={last}
             cover={cover ? { src: mediaUrl(cover.path), alt: cover.alt || "" } : null}
-            facts={{ club: milestones.find((m) => m.status === "verified" || m.status === "pending")?.community_name ?? myClubs[0]?.name ?? null, signed: verified.length, waiting: milestones.filter((m) => m.status === "pending").length, builders: team.length + 1, started: new Date(p.created_at).toLocaleDateString("en-US", { month: "short", year: "numeric", timeZone: "UTC" }) }} />
+            facts={{ club: p.club?.name ?? milestones.find((m) => m.status === "verified" || m.status === "pending")?.community_name ?? myClubs[0]?.name ?? null, signed: verified.length, waiting: milestones.filter((m) => m.status === "pending").length, builders: team.length + 1, started: new Date(p.created_at).toLocaleDateString("en-US", { month: "short", year: "numeric", timeZone: "UTC" }) }} />
           <div className="p-5 sm:p-7">
+            {p.club && <p className="mb-2 text-sm text-muted">A <Link href={`/c/${p.club.id}`} className="font-medium text-text-2 hover:underline">{p.club.name}</Link> project</p>}
             {p.summary && <p className="text-lg leading-relaxed text-text-2">{p.summary}</p>}
             {p.tags.length > 0 && <div className="mt-3 flex flex-wrap gap-x-3 gap-y-1 text-sm">{p.tags.map((t) => <Link key={t} href={`/projects?topic=${encodeURIComponent(t)}`} className="text-muted transition hover:text-text">#{t}</Link>)}</div>}
             <ActivityStrip weeks={weeks} />
@@ -195,9 +201,9 @@ async function ProjectView({ params, searchParams }: { params: PageProps<"/proje
               {link && <a href={link} target="_blank" rel="noopener noreferrer nofollow" className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-line px-4 text-sm font-medium transition hover:bg-hover"><ExternalLink className="size-4" /> {new URL(link).host.replace(/^www\./, "")}</a>}
               <SendPost projectId={p.id} compact={false} />
               <CopyLink path={`/projects/${p.id}`} label="Share" />
-              {own && p.private && <MakePublic projectId={p.id} />}
+              {editor && p.private && <MakePublic projectId={p.id} />}
               {!role && <ReportLink kind="project" id={p.id} label="this project" className="ml-auto" />}
-              {own && <Link href={`/u/${user.id}#projects`} className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-line px-4 text-sm transition hover:bg-hover"><Pencil className="size-4" /> Edit</Link>}
+              {editor && <Link href={p.club ? `/c/${p.club.id}#projects` : `/u/${user.id}#projects`} className="inline-flex h-10 items-center gap-1.5 rounded-lg border border-line px-4 text-sm transition hover:bg-hover"><Pencil className="size-4" /> Edit</Link>}
             </div>
           </div>
         </section>
@@ -220,7 +226,7 @@ async function ProjectView({ params, searchParams }: { params: PageProps<"/proje
           <Panel className="p-6">
             <div className="flex flex-wrap items-baseline justify-between gap-2">
               <h2 className="inline-flex items-center gap-2 text-lg font-semibold tracking-tight"><BadgeCheck className="size-5 text-ok" /> Milestones</h2>
-              <span className="text-xs text-muted">{own ? "Verified ones show to everyone; pending and declined ones only to you." : "Each one signed by someone who saw it happen: a club officer, a professor or a manager."}</span>
+              <span className="text-xs text-muted">{own ? "Verified ones show to everyone; pending and declined ones only to you." : "Each one signed by someone who saw it happen: a club officer, a professor or a coworker."}</span>
             </div>
             <ProjectDrafts drafts={drafts} projectTitle={p.title} clubName={new Map(myClubs.map((c) => [c.id, c.name]))} />
             {milestones.length > 0 && <MilestoneTimeline items={milestones} own={own} projectPrivate={!!p.private} />}
@@ -235,16 +241,16 @@ async function ProjectView({ params, searchParams }: { params: PageProps<"/proje
         <section id="log" aria-label="Build log" className="flex scroll-mt-24 flex-col gap-4">
           <div className="flex flex-wrap items-baseline justify-between gap-2">
             <h2 className="text-lg font-semibold tracking-tight">Build log</h2>
-            <span className="text-xs text-muted">
-              {log.length ? `${posts.length} ${posts.length === 1 ? "update" : "updates"} · ${verified.length} verified` : "Updates and verified milestones, as they happen"}
-              {repos.map((r) => <a key={r.full_name} href={r.html_url} target="_blank" rel="noopener noreferrer nofollow" className="ml-2 inline-flex items-center gap-1 rounded-md border border-line px-1.5 py-0.5 font-medium text-text-2 hover:text-text"><span className="size-1.5 rounded-full bg-ok" aria-hidden="true" /> Live from {r.full_name}</a>)}
-            </span>
+            {repos.length > 0 && (
+              <div className="flex flex-wrap gap-2 text-xs">
+                {repos.map((r) => <a key={r.full_name} href={r.html_url} target="_blank" rel="noopener noreferrer nofollow" className="inline-flex items-center gap-1 rounded-md border border-line px-1.5 py-0.5 font-medium text-text-2 hover:text-text"><span className="size-1.5 rounded-full bg-ok" aria-hidden="true" /> Live from {r.full_name}</a>)}
+              </div>
+            )}
           </div>
-          {own && ghOn && <GitHubConnect supabase={supabase} projectId={p.id} linked={repos} note={typeof ghNote === "string" ? ghNote : undefined} />}
           {builder && <PostUpdate projectId={p.id} title={p.title} attach={filesOn} />}
           {log.length > 0 && <BuildLogTimeline entries={log} liked={liked} saved={saved} me={user.id} projectId={p.id} ownerId={p.owner_id} filesByPost={filesByPost} replies={replies} viewer={{ id: user.id, first: viewerProfile?.first_name ?? "", last: viewerProfile?.last_name ?? "" }} />}
           {!log.length && (own ? (
-            <p className="rounded-xl border border-dashed border-line-strong px-4 py-3 text-sm text-muted">
+            <p className="glass-card rounded-xl px-4 py-3 text-sm text-muted">
               Log what you did, what broke and what you learned: a few lines a week adds up to proof. Or let your AI tool do it as you work: <Link href="/settings/tools" className="font-medium text-text underline underline-offset-4">connect Claude Code, Cursor or Codex</Link>.
             </p>
           ) : <p className="text-sm text-muted">No updates yet.</p>)}
@@ -273,13 +279,21 @@ async function ProjectView({ params, searchParams }: { params: PageProps<"/proje
           {!own && <Link href={`/messages/new?to=${p.owner_id}`} className="mt-4 inline-flex h-9 w-full items-center justify-center rounded-lg border border-line text-sm font-medium transition hover:bg-hover">Message {owner?.first_name || "them"}</Link>}
         </Panel>
         {/* For people reading someone else's build (less clutter, Nov 21): you know your own project, and
-            Ember is in the bar at the top of every page. */}
+            Torch is in the bar at the top of every page. */}
         {!own && <ThirtySeconds lines={summary} ownerId={p.owner_id} />}
         {/* Rendered once (no hidden copy for phones): the side column follows the log on a phone. */}
         {about}
+        {own && ghOn && githubConfig() && (
+          <details open={repos.length > 0 || typeof ghNote === "string"} className="group rounded-2xl border border-line bg-surface p-4">
+            <summary className="flex min-h-9 cursor-pointer list-none items-center justify-between gap-2 text-sm font-medium [&::-webkit-details-marker]:hidden">
+              GitHub repository <ChevronDown className="size-4 text-muted transition-transform group-open:rotate-180" aria-hidden="true" />
+            </summary>
+            <div className="pt-3"><GitHubConnect supabase={supabase} projectId={p.id} linked={repos} note={typeof ghNote === "string" ? ghNote : undefined} /></div>
+          </details>
+        )}
         {!own && <Link href={`/copilot?q=${encodeURIComponent(ask)}`} className="glass-card flex items-center gap-3 rounded-3xl p-4 transition">
           <Ember size={36} />
-          <span className="min-w-0"><span className="block text-sm font-medium">Ask Ember about this project</span><span className="block text-xs text-muted">What it is, what&apos;s impressive, what to ask.</span></span>
+          <span className="min-w-0"><span className="block text-sm font-medium">Ask Torch about this project</span><span className="block text-xs text-muted">{emberCreditCost("ask")} · What it is, what&apos;s impressive, what to ask.</span></span>
         </Link>}
         {(more.data ?? []).length > 0 && (
           <Panel>

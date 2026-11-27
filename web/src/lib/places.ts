@@ -8,7 +8,7 @@ import { onPage } from "@/lib/nav-match";
 // Every page lives inside one of them. This is the single list the sidebar, the phone tab bar and the
 // place tabs read, so "you are here" can't disagree between them. Pure, and tested (tests/places.test.ts).
 
-export type PlaceId = "home" | "projects" | "clubs" | "record" | "inbox";
+export type PlaceId = "home" | "school" | "projects" | "clubs" | "record" | "inbox";
 // `signing`: results members have asked your clubs to sign, when you're one of their officers.
 export type BadgeKey = "notifications" | "messages" | "invites" | "signing";
 // `tour`: a tour anchor (data-tour) that moved onto this tab when the More drawer went away.
@@ -23,36 +23,49 @@ export const PLACES: Place[] = [
     tabs: [
       { id: "home", label: "Home", href: "/feed" },
       { id: "notifications", label: "Notifications", href: "/notifications", badge: "notifications", tour: "bell" },
-      { id: "saved", label: "Saved", href: "/saved" },
     ],
   },
   // One page today (the workbench above Explore); it gets its own tabs when stage 2 splits it.
   { id: "projects", label: "Projects", href: "/projects", match: ["/projects"], tabs: [] },
   {
     id: "clubs", label: "Clubs", href: "/communities", badge: "signing",
-    match: ["/communities", "/c", "/events", "/org", "/challenges", "/chapters"],
+    match: ["/communities", "/c", "/events", "/school", "/org", "/challenges", "/chapters"],
     tabs: [
       { id: "clubs", label: "Clubs", href: "/communities" },
+      { id: "school", label: "Your school", href: "/school" },
       { id: "events", label: "Events", href: "/events" },
-      { id: "challenges", label: "Challenges", href: "/challenges" },
     ],
   },
   {
-    id: "record", label: "Record", href: "/profile", badge: "invites",
+    id: "record", label: "Record", href: "/profile",
     match: ["/profile", "/u", "/dashboard", "/analytics", "/network", "/settings", "/pro"],
     tabs: [
       { id: "profile", label: "Profile", href: "/profile" },
-      { id: "connections", label: "Connections", href: "/network", badge: "invites" },
-      { id: "analytics", label: "Analytics", href: "/dashboard" },
-      { id: "pro", label: "Pro reviews", href: "/pro" },
+      { id: "analytics", label: "Progress", href: "/dashboard" },
     ],
   },
-  { id: "inbox", label: "Inbox", href: "/messages", badge: "messages", match: ["/messages"], tabs: [] },
+  { id: "inbox", label: "Chats", href: "/messages", badge: "messages", match: ["/messages"], tabs: [] },
 ];
 
-// Which place lights up for this path (null for pages outside the five, like Ember's own page).
-export function placeFor(path: string): Place | null {
-  return PLACES.find((p) => p.match.some((m) => onPage(path, m))) ?? null;
+// School (the student portal, 2026-11-26): a place of its own for anyone placed at a school by their
+// email (students, faculty, the school's admins), right after Home. Everyone else keeps the five.
+export const SCHOOL_PLACE: Place = { id: "school", label: "School", href: "/school", match: ["/school"], tabs: [] };
+
+/** The places this member sees: School after Home when they're at a school. Clubs then drops its
+ * "Your school" tab, since School is a place. */
+export function placesFor(atSchool: boolean): Place[] {
+  if (!atSchool) return PLACES;
+  return [PLACES[0], SCHOOL_PLACE, ...PLACES.slice(1).map((p) => (p.id === "clubs" ? { ...p, match: p.match.filter((m) => m !== "/school"), tabs: p.tabs.filter((t) => t.id !== "school") } : p))];
+}
+
+/** The phone's tab bar: five slots. At a school, School takes Chats' slot and Chats moves to the top bar. */
+export function phoneTabsFor(atSchool: boolean): Place[] {
+  return atSchool ? placesFor(true).filter((p) => p.id !== "inbox") : PLACES;
+}
+
+// Which place lights up for this path (null for pages outside them, like Torch's own page).
+export function placeFor(path: string, places: Place[] = PLACES): Place | null {
+  return places.find((p) => p.match.some((m) => onPage(path, m))) ?? null;
 }
 
 // The tab row for this page, if it has one: only a place's own top pages, never a detail page under
@@ -67,15 +80,14 @@ export function placeTabsFor(path: string): { place: Place; active: string } | n
   return null;
 }
 
-// The pages the old More drawer listed. Each now lives inside a place (a tab, or the avatar menu);
-// the phone's Menu sheet still lists them all, so nothing is more than a tap away on a small screen.
+// The pages inside the places that the phone's Menu sheet lists, so nothing is more than a tap away
+// on a small screen. Since the school-first realignment (2026-11-26, docs/strategy.md) Challenges,
+// Saved, Connections and Pro reviews are off the navigation: their pages still answer old links and
+// emails, and live under their place, but nothing in the app points at them.
 export const MENU_PAGES: { href: string; label: string; badge?: BadgeKey }[] = [
   { href: "/notifications", label: "Notifications", badge: "notifications" },
+  { href: "/school", label: "Your school" },
   { href: "/events", label: "Events" },
-  { href: "/challenges", label: "Challenges" },
-  { href: "/pro", label: "Pro reviews" },
-  { href: "/saved", label: "Saved" },
-  { href: "/network", label: "Connections", badge: "invites" },
-  { href: "/dashboard", label: "Analytics" },
+  { href: "/dashboard", label: "Progress" },
   { href: "/settings", label: "Settings" },
 ];

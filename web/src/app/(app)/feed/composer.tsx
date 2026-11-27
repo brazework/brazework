@@ -1,4 +1,5 @@
 "use client";
+import { emberCreditCost } from "@/lib/ember-credits";
 import { AnimatePresence, motion } from "motion/react";
 import { ArrowRight, ArrowUp, AtSign, Check, FlaskConical, FolderGit2, Hash, HelpCircle, ImagePlus, Loader2, Megaphone, PenLine, Plus, Rocket, Square, Undo2, Upload, Users, Video, Wand2, X } from "lucide-react";
 import Link from "next/link";
@@ -21,7 +22,7 @@ const MAX = 3000;
 const NO_ANSWER: EmberAnswerState = { q: "", text: "", tools: [], proposals: [] };
 
 // The top of the feed: one box to create and to ask. "Post" is the composer (photos and video by
-// pick, drop or paste; Ember can polish the draft in place). "Ask Ember" sends the same box to
+// pick, drop or paste; Torch can polish the draft in place). "Ask Torch" sends the same box to
 // Copilot, with answers and confirm cards right underneath.
 export function Composer({ first, last, interests, userId, mediaEnabled = false, captionsEnabled = false, avatarSrc, copilot = false, club = null, next = null, mentionsEnabled = false, projects = [], clubs = [], initialProject, defaultShareTo }: { first: string; last: string; interests: string[]; userId: string; mediaEnabled?: boolean; captionsEnabled?: boolean; avatarSrc?: string | null; copilot?: boolean; club?: { id: string; name: string } | null; next?: { label: string; href: string } | null; projects?: { id: string; title: string }[]; clubs?: { id: string; name: string }[]; initialProject?: string; mentionsEnabled?: boolean; defaultShareTo?: string }) {
   const [mode, setMode] = useState<"post" | "ask">("post");
@@ -59,7 +60,7 @@ export function Composer({ first, last, interests, userId, mediaEnabled = false,
   // switched by typing @ and its name, or dropped with the chip's ×. No dropdown.
   const linked = projects.find((p) => p.id === projectId) ?? null;
 
-  // Ask Ember.
+  // Ask Torch.
   const [question, setQuestion] = useState("");
   const [answer, setAnswer] = useState<EmberAnswerState>(NO_ANSWER);
   const [soon, setSoon] = useState(false);
@@ -71,14 +72,14 @@ export function Composer({ first, last, interests, userId, mediaEnabled = false,
     if (!copilot) { setSoon(true); return; }
     setQuestion("");
     setAnswer({ ...NO_ANSWER, q: t });
-    await ai.run({ task: "ask", input: t, preset }, (full, tools, proposals) => setAnswer({ q: t, text: full, tools, proposals }));
+    await ai.run({ task: "ask", input: t, preset }, (full, tools, proposals, segments) => setAnswer({ q: t, text: full, tools, proposals, segments }));
   };
   const pickAction = (a: EmberAction) => {
     if (a.ask) void ask(a.ask, a.preset);
     else if (a.prefill) { setQuestion(a.prefill); requestAnimationFrame(() => { textRef.current?.focus(); textRef.current?.setSelectionRange(a.prefill!.length, a.prefill!.length); }); }
   };
 
-  // Polish with Ember: rewrites the draft in place; Undo brings the original back.
+  // Polish with Torch: rewrites the draft in place; Undo brings the original back.
   const [before, setBefore] = useState<string | null>(null);
   const polish = async () => {
     if (!body.trim() || ai.busy) return;
@@ -161,25 +162,25 @@ export function Composer({ first, last, interests, userId, mediaEnabled = false,
       <input ref={photoRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" multiple hidden onChange={(e) => { if (e.target.files) pickFiles(e.target.files); e.target.value = ""; }} />
       <input ref={videoRef} type="file" accept="video/mp4,video/webm,video/quicktime" hidden onChange={(e) => { if (e.target.files) pickFiles(e.target.files); e.target.value = ""; }} />
 
-      {/* One row: you (or Ember), and the orb, which turns this same box into a question for Ember.
+      {/* One row: you (or Torch), and the orb, which turns this same box into a question for Torch.
           Everything else (media, @ people and projects, #, post type, audience) is a tool under the box. */}
       <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-x-3">
         {asking
           ? <Ember size={40} mood={ai.busy ? "thinking" : answer.text ? "happy" : "idle"} />
           : <Avatar first={first} last={last} size={40} src={avatarSrc} />}
         {asking
-          ? <p className="min-w-0 text-sm font-medium">Ask Ember <span className="font-normal text-muted">· it checks real Brazework data first</span></p>
+          ? <p className="min-w-0 text-sm font-medium">Ask Torch <span className="font-normal text-muted">· {emberCreditCost("ask")} per message</span></p>
           : <p className="min-w-0"><span className="block truncate text-sm font-medium">{first} {last}</span><span className="block truncate text-xs text-faint">Share what you built</span></p>}
-        {/* The orb, on the first row's centre line: ask Ember in this same box, and back to writing. */}
+        {/* The orb, on the first row's centre line: ask Torch in this same box, and back to writing. */}
         <button type="button" onClick={() => { setMode(asking ? "post" : "ask"); requestAnimationFrame(() => textRef.current?.focus()); }} aria-pressed={asking}
-          aria-label={asking ? "Back to writing a post" : "Ask Ember"} title={asking ? "Back to writing a post" : "Ask Ember"}
+          aria-label={asking ? "Back to writing a post" : "Ask Torch"} title={asking ? "Back to writing a post" : "Ask Torch"}
           className={cn("group grid size-10 place-items-center rounded-lg transition active:scale-95", asking ? "nav-tile-on" : "nav-tile")}>
           {asking ? <PenLine className="size-4" /> : <span className="transition duration-300 group-hover:scale-110"><Ember size={26} mood={ai.busy ? "thinking" : "idle"} /></span>}
         </button>
       </div>
 
       {/* The box itself: always open, three lines to start, growing with what you write. */}
-      <label htmlFor="create-box" className="sr-only">{asking ? "Ask Ember" : `What are you building, ${first}?`}</label>
+      <label htmlFor="create-box" className="sr-only">{asking ? "Ask Torch" : `What are you building, ${first}?`}</label>
       <div className="relative mt-2">
         {/* The words you type, drawn underneath the (transparent) text box so #tags and @mentions can
             carry colour. Same font, padding and wrapping; only colours differ, so the caret lines up. */}
@@ -211,7 +212,7 @@ export function Composer({ first, last, interests, userId, mediaEnabled = false,
           maxLength={asking ? 4000 : MAX}
           rows={asking ? 2 : focused || body ? 3 : 1}
           // Idle: one short line. Tapped in: the @ hint too.
-          placeholder={asking ? typed || "Ask Ember anything" : !focused ? `What did you build today, ${first}?` : `Share progress, a result or a question, ${first}.${mentionsEnabled ? " Type @ for people or a project." : projects.length ? " Type @ for a project." : ""}`}
+          placeholder={asking ? typed || "Ask Torch anything" : !focused ? `What did you build today, ${first}?` : `Share progress, a result or a question, ${first}.${mentionsEnabled ? " Type @ for people or a project." : projects.length ? " Type @ for a project." : ""}`}
           onScroll={(e) => { if (mirrorRef.current) mirrorRef.current.scrollTop = e.currentTarget.scrollTop; }}
           style={{ outline: "none" }}
           className={cn("relative block max-h-80 w-full resize-none bg-transparent px-0.5 py-2 text-[16px] focus:outline-none leading-relaxed placeholder:text-faint", asking ? "min-h-[4.5rem] pr-14 text-text" : "no-scrollbar text-transparent caret-[var(--text)] selection:bg-[color-mix(in_oklab,var(--accent)_22%,transparent)]",
@@ -223,28 +224,28 @@ export function Composer({ first, last, interests, userId, mediaEnabled = false,
           <div className="absolute right-2 bottom-2">
             {ai.busy
               ? <button type="button" onClick={ai.stop} aria-label="Stop" className="grid size-9 place-items-center rounded-xl border border-line bg-surface"><Square className="size-3.5 fill-current" /></button>
-              : <button type="submit" disabled={!question.trim()} aria-label="Ask Ember" className="bg-accent-grad grid size-9 place-items-center rounded-xl text-on-accent transition active:scale-90 disabled:opacity-40"><ArrowUp className="size-4" /></button>}
+              : <button type="submit" disabled={!question.trim()} aria-label="Ask Torch" className="bg-accent-grad grid size-9 place-items-center rounded-xl text-on-accent transition active:scale-90 disabled:opacity-40"><ArrowUp className="size-4" /></button>}
           </div>
         )}
       </div>
 
-      {/* Ask Ember: one-tap starts, then the answer. */}
+      {/* Ask Torch: one-tap starts, then the answer. */}
       {asking && (
         <>
           <div className="no-scrollbar -mx-1 mt-3 flex gap-2 overflow-x-auto px-1 pb-1">
             {emberActions(club).map((a) => {
               const cls = "inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full border border-line bg-surface/80 px-3 py-1.5 text-xs font-medium text-text-2 transition hover:border-line-strong hover:text-text active:scale-95";
               return copilot
-                ? <button key={a.label} type="button" onClick={() => pickAction(a)} className={cls}><a.icon className="size-3.5 text-accent" /> {a.label}</button>
+                ? <button key={a.label} type="button" onClick={() => pickAction(a)} className={cls}><a.icon className="size-3.5 text-accent" /> {a.label} · {emberCreditCost("ask")}</button>
                 : <Link key={a.label} href={a.href} className={cls}><a.icon className="size-3.5 text-accent" /> {a.label}</Link>;
             })}
           </div>
-          {soon && <p className="mt-2 text-xs text-muted">Ember is waking up soon. Until then, these shortcuts take you to the right place.</p>}
+          {soon && <p className="mt-2 text-xs text-muted">Torch is waking up soon. Until then, these shortcuts take you to the right place.</p>}
           <EmberAnswer a={answer} busy={ai.busy} error={ai.error} remaining={ai.remaining} onClear={() => { ai.stop(); setAnswer(NO_ANSWER); }} />
         </>
       )}
 
-      {/* Posting: what you've attached, then one toolbar (add media, polish with Ember, post). */}
+      {/* Posting: what you've attached, then one toolbar (add media, polish with Torch, post). */}
       {!asking && (
         <>
           <div role="group" aria-label="Linked project" className="mt-2 flex min-w-0 items-center gap-1.5 px-1 text-xs">
@@ -276,7 +277,7 @@ export function Composer({ first, last, interests, userId, mediaEnabled = false,
               ? <button type="button" onClick={ai.stop} aria-label="Stop polishing" className="inline-flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-sm text-muted"><Loader2 className="size-4 animate-spin" /><span className="hidden sm:inline">Polishing…</span></button>
               : before !== null
                 ? <button type="button" onClick={() => { setBody(before); setBefore(null); }} aria-label="Undo polish" className="inline-flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-sm text-muted hover:bg-hover hover:text-text"><Undo2 className="size-4" /><span className="hidden sm:inline">Undo polish</span></button>
-                : <button type="button" onClick={() => void polish()} disabled={!body.trim()} aria-label="Polish with Ember" title="Polish with Ember" className="ai-chip inline-flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-sm font-medium text-text-2 transition hover:text-text active:scale-95 disabled:pointer-events-none disabled:opacity-40"><Wand2 className="size-4 text-accent" /><span className="hidden sm:inline">Polish</span></button>)}
+                : <button type="button" onClick={() => void polish()} disabled={!body.trim()} aria-label="Polish with Torch" title={`Polish with Torch · ${emberCreditCost("post")}`} className="ai-chip inline-flex h-9 items-center gap-1.5 rounded-lg px-2.5 text-sm font-medium text-text-2 transition hover:text-text active:scale-95 disabled:pointer-events-none disabled:opacity-40"><Wand2 className="size-4 text-accent" /><span className="hidden sm:inline">Polish · </span><span className="text-xs">{emberCreditCost("post")}</span></button>)}
             <span className="ml-auto flex shrink-0 items-center gap-2.5">
               <span className="hidden sm:block"><CharRing used={body.length} max={MAX} /></span>
               {remaining <= 200 && <span className={cn("text-xs tabular-nums", remaining < 0 ? "text-danger" : "text-faint")}>{remaining}</span>}

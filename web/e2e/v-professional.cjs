@@ -1,7 +1,7 @@
 // Someone who already works (Linear FIX-120). Brazework is for anyone who builds, so a professional
 // with no club isn't sent to "Find your club" or told to "Join your club": after onboarding they
 // land on Today, start with what they're building, and the next steps send them to a person who saw
-// it. The landing page says who signs for a student, an employee and someone on their own. Home asks
+// it. Home asks
 // what they're working on (no semester), and Settings lets anyone switch Studying ↔ Working.
 // The LinkedIn profile link (Linear FIX-214) is optional (supabase/linkedin-optional.sql, step 87):
 // offered in About you and Settings, never asked for where they ask, removable, kept private.
@@ -15,28 +15,6 @@ const psql = (sql) => execSync(`docker exec -i ${process.env.E2E_STACK || "forge
   const ctx = await b.newContext({ viewport: { width: 1440, height: 950 } });
   const page = await ctx.newPage(); page.errs = []; page.on("pageerror", (e) => page.errs.push(e.message));
   const email = `pat${Date.now() % 100000}@voltline.test`;
-
-  await step("landing: one record for someone studying, working and on their own, each with who signed", async () => {
-    await go(page, "/");
-    const who = page.locator("#who");
-    for (const h of ["Studying", "Working", "On your own"]) await who.getByRole("heading", { name: h, exact: true }).waitFor();
-    const signed = await who.getByText(/^Verified by /).count();
-    if (signed !== 3) throw new Error(`expected 3 signed examples, got ${signed}`);
-    await page.locator("#faq").getByRole("button", { name: "I already work. Is this for me?" }).waitFor();
-    const text = await page.locator("main").innerText();
-    if (/for students and clubs/i.test(text)) throw new Error("the landing page still says it's for students and clubs");
-  }, page);
-
-  await step("landing on a phone: the three stages stack and nothing scrolls sideways", async () => {
-    const phone = await (await b.newContext({ viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true })).newPage();
-    await go(phone, "/");
-    await phone.locator("#who").getByRole("heading", { name: "On your own", exact: true }).scrollIntoViewIfNeeded();
-    const wide = await phone.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
-    if (wide > 1) throw new Error(`the page scrolls sideways by ${wide}px`);
-    const tops = await phone.locator("#who li h3").evaluateAll((els) => els.map((e) => Math.round(e.getBoundingClientRect().top)));
-    if (!(tops[0] < tops[1] && tops[1] < tops[2])) throw new Error("the stages should stack on a phone: " + tops.join(","));
-    await phone.context().close();
-  }, page);
 
   await step("sign up as a professional with a work email", async () => {
     await go(page, "/signup");
@@ -53,17 +31,11 @@ const psql = (sql) => execSync(`docker exec -i ${process.env.E2E_STACK || "forge
     await hydrated(page.getByRole("button", { name: /professional/i }));
     if (await page.locator('input[name="linkedin"]').count()) throw new Error("LinkedIn is asked before Professional is picked");
     await page.getByRole("button", { name: /professional/i }).click();
-    await page.getByText("Employed, freelancing or building on your own.").waitFor();
+    await page.getByText("Work, freelance, or independent projects.").waitFor();
     await page.getByText("Step 2 of 5").waitFor();
     await page.fill('input[name="firstName"]', "Pat"); await page.fill('input[name="lastName"]', "Okoro");
     await page.fill('input[name="birthday"]', "1996-03-12");
-    // A professional is offered a LinkedIn profile link: optional, but a wrong one is refused.
-    await page.getByLabel(/LinkedIn profile/).waitFor();
-    await page.getByText("Private: it isn't shown on your profile or your record.").waitFor();
-    await page.getByLabel(/LinkedIn profile/).fill("twitter.com/pat");
-    await page.getByRole("button", { name: "Continue" }).click();
-    await page.getByText(/Enter your LinkedIn profile link/).waitFor({ timeout: 15000 });
-    await page.getByLabel(/LinkedIn profile/).fill("");
+    if (await page.locator('input[name="linkedin"]').count()) throw new Error("About you asks for a LinkedIn link");
     await page.getByRole("button", { name: "Continue" }).click();
     await page.getByText("Step 3 of 5").waitFor({ timeout: 20000 });
     await hydrated(page.getByRole("link", { name: /Set up your profile instead/ }));
@@ -90,7 +62,7 @@ const psql = (sql) => execSync(`docker exec -i ${process.env.E2E_STACK || "forge
     const text = await page.locator("main").innerText();
     if (/Next: Join your club/.test(text)) throw new Error("Today told a professional to join a club first");
     // Asked about their work, not a semester or a club (lib/front-door.ts firstBuildCopy).
-    await page.getByText(/^What are you working on, /).waitFor();
+    await page.getByLabel(/^What are you working on, /).waitFor();
     const box = await page.getByRole("region", { name: "Your first build" }).innerText();
     if (/semester|club/i.test(box)) throw new Error("the first-build box talks about a semester or a club: " + box.replace(/\s+/g, " ").slice(0, 200));
   }, page);
@@ -110,16 +82,19 @@ const psql = (sql) => execSync(`docker exec -i ${process.env.E2E_STACK || "forge
     if (/club/i.test(all)) throw new Error("the list mentions a club: " + all.replace(/\s+/g, " ").slice(0, 240));
   }, page);
 
-  await step("Settings: Working is picked, and Studying needs a university email (a work address is refused)", async () => {
+  await step("Settings: switching to Studying accepts a work address", async () => {
     await go(page, "/settings");
     const working = page.getByRole("radio", { name: "Working" });
     await working.waitFor({ timeout: 15000 });
     if (!(await working.isChecked())) throw new Error("Working isn't picked for a professional");
     await page.getByRole("radio", { name: "Studying" }).check();
     await page.getByRole("button", { name: "Save profile" }).click();
-    await page.getByText(/A student account needs your university email/).waitFor({ timeout: 15000 });
+    await page.getByText("Profile saved.").waitFor({ timeout: 15000 });
     await go(page, "/settings");
-    if (!(await page.getByRole("radio", { name: "Working" }).isChecked())) throw new Error("the refused switch changed the account anyway");
+    if (!(await page.getByRole("radio", { name: "Studying" }).isChecked())) throw new Error("the account did not switch");
+    await page.getByRole("radio", { name: "Working" }).check();
+    await page.getByRole("button", { name: "Save profile" }).click();
+    await page.getByText("Profile saved.").waitFor({ timeout: 15000 });
   }, page);
 
   const id = psql(`select id from auth.users where email = '${email}'`);
@@ -212,10 +187,10 @@ const psql = (sql) => execSync(`docker exec -i ${process.env.E2E_STACK || "forge
     await p2.getByRole("button", { name: /Next: proof/ }).click();
     await p2.getByText("Step 4 of 5").waitFor({ timeout: 10000 });
     await p2.getByRole("radio", { name: /A link/ }).click();
-    await p2.getByPlaceholder("https://github.com/you/your-project").fill("https://github.com/voltline/cell/pull/12");
+    await p2.getByLabel("Link to your proof").fill("https://github.com/voltline/cell/pull/12");
     await p2.getByRole("button", { name: /Next: who saw it/ }).click();
     await p2.getByText("Step 5 of 5").waitFor({ timeout: 10000 });
-    await p2.getByRole("radio", { name: /A manager or mentor/ }).click();
+    await p2.getByRole("radio", { name: /A coworker or mentor/ }).click();
     await p2.locator('input[name="signerEmail"]').fill("sam.rivera@northwind-payments.io");
     if (await p2.getByLabel("Your LinkedIn profile").count()) throw new Error("the last screen asks for a LinkedIn link");
     await p2.getByRole("button", { name: "Ask for a signature" }).click();

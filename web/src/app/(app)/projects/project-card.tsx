@@ -28,12 +28,12 @@ export function ExploreCard({ p }: { p: ExploreProject }) {
   const name = `${p.owner?.first_name ?? ""} ${p.owner?.last_name ?? ""}`.trim() || "Brazework member";
   const tools = p.tools ?? [];
   return (
-    <article className="group relative flex h-full flex-col rounded-2xl border border-line bg-surface p-5 transition-colors hover:border-line-strong">
+    <article className="glass-card group relative flex h-full flex-col rounded-2xl p-5">
       <div className="flex items-center gap-2">
-        <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-surface-2 text-text-2 transition group-hover:text-text"><ProjectIcon tools={tools} className="size-5" /></span>
+        <span className="shrink-0 text-text-2 transition group-hover:text-text"><ProjectIcon tools={tools} className="size-5" /></span>
         <span className="ml-auto flex flex-wrap justify-end gap-1.5">
           {p.verified > 0 && <span className="inline-flex items-center gap-1 px-1 py-0.5 text-[11px] font-medium text-ok"><BadgeCheck className="size-3.5" /> {p.verified} verified</span>}
-          <span className="inline-flex items-center gap-1 rounded-full border border-line px-2 py-0.5 text-[11px] text-muted">
+          <span className="inline-flex items-center gap-1 px-1 py-0.5 text-[11px] text-muted">
             {p.status === "completed" ? <><CheckCircle2 className="size-3 text-ok" /> Completed{p.year ? ` ${p.year}` : ""}</> : <><span className="size-1.5 rounded-full bg-text" /> Building</>}
           </span>
         </span>
@@ -50,7 +50,7 @@ export function ExploreCard({ p }: { p: ExploreProject }) {
       )}
       {p.tags.length > 0 && <p className="mt-2 truncate text-xs text-faint">{p.tags.map((t) => `#${t}`).join("  ")}</p>}
       <div className="min-h-4 flex-1" aria-hidden="true" />
-      <div className="mt-auto flex items-center gap-2 border-t border-line pt-3 text-xs text-muted">
+      <div className="mt-auto flex items-center gap-2 pt-1 text-xs text-muted">
         <Avatar first={p.owner?.first_name ?? ""} last={p.owner?.last_name ?? ""} size={22} className="text-[9px]" />
         <span className="truncate"><span className="font-medium text-text-2">{name}</span>{p.owner?.field ? ` · ${p.owner.field}` : ""}</span>
         <span className="ml-auto shrink-0 text-faint">{p.updates > 0 ? `${p.updates} update${p.updates === 1 ? "" : "s"} · ` : ""}{timeAgo(p.updated_at)}</span>

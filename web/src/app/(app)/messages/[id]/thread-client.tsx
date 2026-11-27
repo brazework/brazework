@@ -1,11 +1,13 @@
 "use client";
-import { ArrowUp, Loader2 } from "lucide-react";
+import { ArrowUp, Loader2, Trash2 } from "lucide-react";
+import { bubbleCls, dayPillCls } from "@/components/chat/bubble";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { cn } from "@/lib/forge";
 import { useTimeZone } from "../../events/local-time";
 import { getBrowserClient } from "@/lib/supabase/client";
 import { MessageBody } from "@/components/share/message-body";
-import { acceptConversation, blockAndReport, declineConversation, markConversationRead, sendMessage } from "@/lib/messages";
+import { acceptConversation, blockAndReport, declineConversation, deleteConversation, markConversationRead, sendMessage } from "@/lib/messages";
+import { useRouter } from "next/navigation";
 import { MessageTools, REPLY, ReactionChips, ReplyBar, ReplyQuote, UNSEND_MS, startReply, useReactions, type Reaction, type ReplyTarget } from "@/components/chat/message-tools";
 
 export type Msg = { id: string; sender_id: string; body: string; created_at: string; reply_to?: string | null };
@@ -98,8 +100,9 @@ export function ThreadScroll({ msgs, me, cid, otherName = "", reactions = [], ex
           const quoted = m.reply_to ? byId.get(m.reply_to) : undefined;
           return (
             <li key={m.id} className={cn("flex flex-col", joinsPrev ? "mt-0.5" : "mt-3", mineRx.length && "mb-1")}>
-              {showDay && <span className="mb-3 self-center px-3 py-0.5 text-xs text-faint">{d}</span>}
-              <div className={cn("group/msg relative max-w-[78%]", mine ? "self-end" : "self-start")}>
+              {showDay && <span className={cn("mb-3 self-center", dayPillCls)}>{d}</span>}
+              {/* Room beside the bubble for its toolbar on a laptop (message-tools.tsx). */}
+              <div className={cn("group/msg relative max-w-[78%] sm:max-w-[min(78%,calc(100%-15rem))]", mine ? "self-end" : "self-start")}>
               {extras && !isPending && (
                 <MessageTools
                   mine={mine}
@@ -110,12 +113,7 @@ export function ThreadScroll({ msgs, me, cid, otherName = "", reactions = [], ex
                   onUnsend={() => { setActive(null); void rx.unsend(m.id); }}
                 />
               )}
-              <div onClick={(e) => { if (extras && !(e.target as Element).closest("a,button")) setActive((a) => (a === m.id ? null : m.id)); }} className={cn(
-                "px-3.5 py-2 text-[15px] leading-relaxed whitespace-pre-wrap transition-opacity",
-                mine ? "bg-text text-surface" : "border border-line bg-surface text-text",
-                mine ? cn("rounded-3xl", joinsPrev && "rounded-tr-md", joinsNext && "rounded-br-md") : cn("rounded-3xl", joinsPrev && "rounded-tl-md", joinsNext && "rounded-bl-md"),
-                isPending && "opacity-60",
-              )}>
+              <div onClick={(e) => { if (extras && !(e.target as Element).closest("a,button")) setActive((a) => (a === m.id ? null : m.id)); }} className={bubbleCls({ mine, joinsPrev: !!joinsPrev, joinsNext: !!joinsNext, pending: isPending })}>
                 {m.reply_to && <ReplyQuote target={quoted ? { id: quoted.id, name: nameOf(quoted), body: quoted.body } : null} mine={mine} />}
                 <MessageBody body={m.body} mine={mine} />
               </div>
@@ -186,7 +184,7 @@ export function Composer({ cid, placeholder }: { cid: string; placeholder: strin
           style={{ outline: "none" }}
           className="max-h-40 min-h-10 flex-1 resize-none bg-transparent px-3 py-2 text-[15px] text-text placeholder:text-faint"
         />
-        <button type="submit" disabled={!body.trim()} aria-label="Send" className="bg-text text-surface grid size-10 shrink-0 place-items-center rounded-full transition active:scale-90 disabled:opacity-40">
+        <button type="submit" disabled={!body.trim()} aria-label="Send" className="bg-accent-grad text-on-accent grid size-10 shrink-0 place-items-center rounded-full transition active:scale-90 disabled:opacity-40">
           {pending ? <Loader2 className="size-4 animate-spin" /> : <ArrowUp className="size-4" />}
         </button>
       </div>
@@ -206,5 +204,18 @@ export function RequestBar({ cid, firstName }: { cid: string; firstName: string 
       <button className={cn(btn, "text-danger hover:bg-hover")} disabled={pending} onClick={() => confirm("Block and report? They won't be able to message you, and we get a copy of these messages.") && start(async () => { const r = await blockAndReport(cid); if (r && !r.ok) setError(r.message); })}>Block &amp; report</button>
       {error && <p role="alert" className="w-full text-xs text-danger">{error}</p>}
     </div>
+  );
+}
+
+// Delete this chat for yourself (supabase/chat-delete.sql). The other person keeps their copy.
+export function DeleteChat({ cid, name }: { cid: string; name: string }) {
+  const router = useRouter();
+  const [pending, start] = useTransition();
+  return (
+    <button type="button" disabled={pending} aria-label="Delete chat" title="Delete chat"
+      onClick={() => { if (!confirm(`Delete your chat with ${name}? It's removed from your Chats. ${name} keeps their copy.`)) return; start(async () => { const r = await deleteConversation(cid); if (r.ok) router.push("/messages"); else alert(r.message); }); }}
+      className="ml-auto grid size-9 shrink-0 place-items-center rounded-full text-faint transition hover:bg-hover hover:text-danger disabled:opacity-50">
+      {pending ? <Loader2 className="size-4 animate-spin" /> : <Trash2 className="size-4" />}
+    </button>
   );
 }

@@ -27,7 +27,7 @@ export function VerifyQueue({ items }: { items: QueueItem[] }) {
   const left = items.filter((m) => !done[m.id]).length;
   return (
     <div className="flex flex-col gap-2.5">
-      <p className="text-sm text-muted">{left ? `${left} waiting. Sign only what the club saw happen: a test, a build night, a competition result.` : "All caught up. Nothing is waiting for a signature."}</p>
+      <p className="text-sm text-muted">{left ? `${left} waiting. Sign only what you saw happen: a test, a demo, a build night, a competition result.` : "All caught up. Nothing is waiting for a signature."}</p>
       <AnimatePresence initial={false}>
         {items.map((m) => <QueueCard key={m.id} m={m} result={done[m.id]} onDone={(r) => setDone((d) => { const next = { ...d }; if (r) next[m.id] = r; else delete next[m.id]; return next; })} />)}
       </AnimatePresence>

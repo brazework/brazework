@@ -1,5 +1,7 @@
 "use client";
-import { ArrowUp, Check, Eye, Hash, Loader2, Megaphone, Plus, Search, X } from "lucide-react";
+import { emberCreditCost } from "@/lib/ember-credits";
+import { bubbleCls, dayPillCls } from "@/components/chat/bubble";
+import { ArrowUp, Check, ChevronDown, Eye, Hash, Loader2, Megaphone, Plus, Search, SmilePlus, Users, X } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
 import { Avatar } from "@/components/ui";
@@ -7,7 +9,7 @@ import { cn } from "@/lib/forge";
 import { useTimeZone } from "../../../events/local-time";
 import { getBrowserClient } from "@/lib/supabase/client";
 import { createTeamChat, markChatRead, sendChatMessage } from "@/lib/chats";
-import { MessageTools, REPLY, ReactionChips, ReplyBar, ReplyQuote, UNSEND_MS, startReply, useReactions, type Reaction, type ReplyTarget } from "@/components/chat/message-tools";
+import { GroupMessageTools, REPLY, ReactionChips, ReplyBar, ReplyQuote, UNSEND_MS, startReply, useReactions, type Reaction, type ReplyTarget } from "@/components/chat/message-tools";
 import { MessageBody } from "@/components/share/message-body";
 import { Ember } from "@/components/ember/ember";
 import { askEmberInChat } from "@/lib/chat-ember";
@@ -38,6 +40,9 @@ export function GroupThread({ msgs, pics = {}, me, myName, chatId, seen = {}, re
   const end = useRef<HTMLDivElement>(null);
   const rx = useReactions("group", me, reactions);
   const [active, setActive] = useState<string | null>(null);
+  useEffect(() => {
+    if (active) document.getElementById(`group-message-tools-${active}`)?.scrollIntoView({ block: "nearest" });
+  }, [active]);
   const [now, setNow] = useState(() => Date.now());
   useEffect(() => { const t = setInterval(() => setNow(Date.now()), 30_000); return () => clearInterval(t); }, []);
   const [pending, setPending] = useState<GroupMsg[]>([]);
@@ -46,7 +51,7 @@ export function GroupThread({ msgs, pics = {}, me, myName, chatId, seen = {}, re
   const mine = new Set(msgs.filter((m) => m.sender_id === me).slice(-20).map((m) => m.body));
   const all = [...msgs, ...pending.filter((p) => !mine.has(p.body))].filter((m) => !rx.removed.has(m.id));
   const byId = new Map(all.map((m) => [m.id, m]));
-  const nameOf = (m: GroupMsg) => (m.ember ? "Ember" : m.sender_id === me ? "You" : `${m.sender_first} ${m.sender_last}`.trim());
+  const nameOf = (m: GroupMsg) => (m.ember ? "Torch" : m.sender_id === me ? "You" : `${m.sender_first} ${m.sender_last}`.trim());
 
   useEffect(() => {
     const onSent = (e: Event) => { const d = (e as CustomEvent<{ id: string; body: string; announcement: boolean }>).detail; if (d.id === chatId) setPending((p) => [...p, { id: `pending-${Date.now()}`, sender_id: me, sender_first: myName, sender_last: "", body: d.body, announcement: d.announcement, created_at: new Date().toISOString() }]); };
@@ -92,9 +97,18 @@ export function GroupThread({ msgs, pics = {}, me, myName, chatId, seen = {}, re
           const joinsNext = !m.announcement && next && !next.announcement && next.sender_id === m.sender_id && !!next.ember === isEmber && day(next.created_at, tz) === d && Date.parse(next.created_at) - Date.parse(m.created_at) < GROUP_MS;
           const isPending = m.id.startsWith("pending-");
           const s = seen[m.id];
+          const toolsId = `group-message-tools-${m.id}`;
+          const toolsOpen = active === m.id;
+          const canUseTools = extras && !isPending;
+          const closeTools = () => {
+            document.getElementById(`group-message-actions-${m.id}`)?.focus({ preventScroll: true });
+            setActive(null);
+          };
           return (
-            <li key={m.id} className={cn("flex flex-col", joinsPrev ? "mt-0.5" : "mt-3")}>
-              {showDay && <span className="glass-card mb-3 self-center rounded-full px-3 py-0.5 text-[11px] text-faint">{d}</span>}
+            <li key={m.id} className={cn("flex flex-col", joinsPrev ? "mt-0.5" : "mt-3")} onKeyDown={(event) => {
+              if (event.key === "Escape" && toolsOpen) closeTools();
+            }}>
+              {showDay && <span className={cn("mb-3 self-center", dayPillCls)}>{d}</span>}
               {m.announcement ? (
                 <div className={cn("glass-card mx-auto w-full max-w-xl rounded-2xl border-l-4 border-l-text p-4", isPending && "opacity-60")}>
                   <div className="flex items-center gap-2 text-xs text-muted">
@@ -106,30 +120,38 @@ export function GroupThread({ msgs, pics = {}, me, myName, chatId, seen = {}, re
               ) : (
                 <div className={cn("flex items-end gap-2", isMine ? "flex-row-reverse" : "flex-row")}>
                   {!isMine && <span className="w-7 shrink-0">{!joinsNext && (isEmber ? <Ember size={28} /> : <Avatar first={m.sender_first} last={m.sender_last} size={28} className="text-[10px]" src={pics[m.sender_id]} />)}</span>}
-                  <div className={cn("flex max-w-[78%] flex-col", isMine ? "items-end" : "items-start")}>
-                    {!isMine && !joinsPrev && <span className="mb-0.5 px-2 text-[11px] font-medium text-muted">{isEmber ? <>Ember <span className="font-normal text-faint">· asked by {m.sender_first}</span></> : <>{m.sender_first} {m.sender_last}</>}</span>}
-                    <div className="group/msg relative">
-                    {extras && !isPending && (
-                      <MessageTools
-                        mine={isMine}
-                        open={active === m.id}
-                        canUnsend={isMine && now - Date.parse(m.created_at) < UNSEND_MS}
-                        onReact={(e) => { setActive(null); void rx.toggle(m.id, e); }}
-                        onReply={() => { setActive(null); startReply(`g:${chatId}`, { id: m.id, name: nameOf(m), body: m.body.slice(0, 140) }); }}
-                        onUnsend={() => { setActive(null); void rx.unsend(m.id); }}
-                      />
-                    )}
-                    <div onClick={(e) => { if (extras && !(e.target as Element).closest("a,button")) setActive((a) => (a === m.id ? null : m.id)); }} className={cn("px-3.5 py-2 text-[15px] leading-relaxed whitespace-pre-wrap", isMine ? "bg-accent-grad text-on-accent" : "glass-card text-text",
-                      isMine ? cn("rounded-3xl", joinsPrev && "rounded-tr-md", joinsNext && "rounded-br-md") : cn("rounded-3xl", joinsPrev && "rounded-tl-md", joinsNext && "rounded-bl-md"),
-                      isPending && "opacity-60")}>
-                      {m.reply_to && (() => { const q = byId.get(m.reply_to!); return <ReplyQuote target={q ? { id: q.id, name: nameOf(q), body: q.body } : null} mine={isMine} />; })()}
-                      <MessageBody body={m.body} mine={isMine} />
+                  <div className={cn("min-w-0 w-fit max-w-[85%]", !isMine && "mr-1")}>
+                    {!isMine && !joinsPrev && <div className="mb-0.5 px-2 text-[11px] font-medium text-muted">{isEmber ? <>Torch <span className="font-normal text-faint">· asked by {m.sender_first}</span></> : <>{m.sender_first} {m.sender_last}</>}</div>}
+                    <div className={cn("group/msg flex min-w-0 items-center gap-1", isMine && "flex-row-reverse")}>
+                      <div className={cn("min-w-0", bubbleCls({ mine: isMine, joinsPrev: !!joinsPrev, joinsNext: !!joinsNext, pending: isPending }))}>
+                        {m.reply_to && (() => { const q = byId.get(m.reply_to!); return <ReplyQuote target={q ? { id: q.id, name: nameOf(q), body: q.body } : null} mine={isMine} />; })()}
+                        <MessageBody body={m.body} mine={isMine} />
+                      </div>
+                      {canUseTools && <button
+                        id={`group-message-actions-${m.id}`}
+                        type="button"
+                        aria-label="Message actions"
+                        title="React or reply"
+                        aria-expanded={toolsOpen}
+                        aria-controls={toolsOpen ? toolsId : undefined}
+                        onClick={() => setActive(toolsOpen ? null : m.id)}
+                        className={cn("grid size-8 shrink-0 place-items-center rounded-full text-muted transition hover:bg-hover hover:text-text focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-accent", toolsOpen ? "bg-hover" : "pointer-fine:opacity-0 pointer-fine:group-hover/msg:opacity-100")}
+                      ><SmilePlus className="size-[17px]" /></button>}
                     </div>
                     <ReactionChips list={rx.reactions.filter((x) => x.message_id === m.id)} me={me} mine={isMine} onToggle={(e) => void rx.toggle(m.id, e)} />
-                    </div>
-                    {!joinsNext && <span className="mt-1 px-2 text-[10px] text-faint">{isPending ? "Sending…" : time(m.created_at, tz)}</span>}
+                    {!joinsNext && <div className={cn("mt-1 px-2 text-[10px] text-faint", isMine && "text-right")}>{isPending ? "Sending…" : time(m.created_at, tz)}</div>}
                   </div>
                 </div>
+              )}
+              {!m.announcement && canUseTools && toolsOpen && (
+                <GroupMessageTools
+                  id={toolsId}
+                  mine={isMine}
+                  canUnsend={isMine && now - Date.parse(m.created_at) < UNSEND_MS}
+                  onReact={(emoji) => { closeTools(); void rx.toggle(m.id, emoji); }}
+                  onReply={() => { closeTools(); startReply(`g:${chatId}`, { id: m.id, name: nameOf(m), body: m.body.slice(0, 140) }); }}
+                  onUnsend={() => { closeTools(); void rx.unsend(m.id); }}
+                />
               )}
             </li>
           );
@@ -137,7 +159,7 @@ export function GroupThread({ msgs, pics = {}, me, myName, chatId, seen = {}, re
       </ol>
       {rx.error && <p role="alert" className="mt-2 text-center text-xs text-danger" onClick={rx.clearError}>{rx.error}</p>}
       {emberBusy && (
-        <div className="mt-3 flex items-center gap-2 text-xs text-muted"><Ember size={28} mood="thinking" /> Ember is thinking…</div>
+        <div className="mt-3 flex items-center gap-2 text-xs text-muted"><Ember size={28} mood="thinking" /> Torch is thinking…</div>
       )}
       {typers.length > 0 && (
         <div className="mt-3 flex items-center gap-2 text-xs text-muted">
@@ -180,14 +202,14 @@ export function GroupComposer({ chatId, canAnnounce = false, placeholder = "Writ
       } catch {
         return fail("Couldn't send. Check your connection and try again.");
       }
-      // "@Ember …": once the question is in the chat, Ember answers the group.
+      // "@Torch …": once the question is in the chat, Torch answers the group.
       if (ember && /^@ember\b/i.test(text)) {
         window.dispatchEvent(new CustomEvent(EMBER, { detail: { id: chatId, on: true } }));
         try {
           const a = await askEmberInChat(chatId, text);
           if (!a.ok) setError(a.message);
         } catch {
-          setError("Ember couldn't answer. Try again.");
+          setError("Torch couldn't answer. Try again.");
         } finally {
           window.dispatchEvent(new CustomEvent(EMBER, { detail: { id: chatId, on: false } }));
         }
@@ -198,8 +220,9 @@ export function GroupComposer({ chatId, canAnnounce = false, placeholder = "Writ
     <form onSubmit={(e) => { e.preventDefault(); send(); }} className="border-t border-line p-3">
       {error && <p role="alert" className="mb-2 px-1 text-xs text-danger">{error}</p>}
       {ember && !body && (
-        <button type="button" onClick={() => { setBody("@Ember "); ref.current?.focus(); }} className="mb-2 mr-3 inline-flex items-center gap-1.5 rounded-full border border-line px-2.5 py-1 text-xs text-text-2 transition hover:bg-hover"><Ember size={16} /> Ask Ember</button>
+        <button type="button" onClick={() => { setBody("@Torch "); ref.current?.focus(); }} className="mb-2 mr-3 inline-flex items-center gap-1.5 rounded-full border border-line px-2.5 py-1 text-xs text-text-2 transition hover:bg-hover"><Ember size={16} /> Ask Torch · {emberCreditCost("group_ask")}</button>
       )}
+      {ember && /^@ember\b/i.test(body.trim()) && <p className="mb-2 px-1 text-xs text-muted">{emberCreditCost("group_ask")} to ask Torch</p>}
       {canAnnounce && (
         <label className="mb-2 inline-flex cursor-pointer items-center gap-2 px-1 text-xs text-muted">
           <input type="checkbox" checked={announce} onChange={(e) => setAnnounce(e.target.checked)} className="size-3.5 accent-[var(--text)]" />
@@ -229,10 +252,57 @@ export function GroupComposer({ chatId, canAnnounce = false, placeholder = "Writ
   );
 }
 
-// Start a team chat inside the club: name it, pick people from the club, go.
-export function NewTeamChat({ communityId, members, me }: { communityId: string; members: { uid: string; first: string; last: string }[]; me: string }) {
+// The club's chats in one menu (FIX-248): its main chat, the team chats you're in, and "New team chat".
+// Switching opens that chat in this same screen; the list on the left keeps one row per club.
+export type ClubChatLink = { id: string; kind: "club" | "team"; name: string };
+export function TeamSwitcher({ communityId, current, chats, members, me }: { communityId: string; current: string; chats: ClubChatLink[]; members: { uid: string; first: string; last: string }[]; me: string }) {
   const router = useRouter();
-  const [open, setOpen] = useState(false);
+  const [mode, setMode] = useState<"closed" | "menu" | "new">("closed");
+  const box = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    if (mode !== "menu") return;
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setMode("closed");
+    const onDown = (e: PointerEvent) => { if (!box.current?.contains(e.target as Node)) setMode("closed"); };
+    window.addEventListener("keydown", onKey);
+    window.addEventListener("pointerdown", onDown);
+    return () => { window.removeEventListener("keydown", onKey); window.removeEventListener("pointerdown", onDown); };
+  }, [mode]);
+  const main = chats.find((c) => c.kind === "club");
+  const teams = chats.filter((c) => c.kind === "team").sort((a, b) => a.name.localeCompare(b.name));
+  const item = "flex w-full items-center gap-2 rounded-lg px-2.5 py-1.5 text-left text-sm transition hover:bg-hover";
+  const go = (id: string) => { setMode("closed"); if (id !== current) router.push(`/messages/g/${id}`); };
+  return (
+    <div ref={box} className="relative">
+      <button type="button" onClick={() => setMode(mode === "menu" ? "closed" : "menu")} aria-haspopup="menu" aria-expanded={mode === "menu"} className="inline-flex h-8 items-center gap-1.5 rounded-lg border border-line px-3 text-xs font-medium text-text-2 transition hover:bg-hover">
+        <Hash className="size-3.5" /> Teams{teams.length ? <span className="font-mono text-[10px] text-faint">{teams.length}</span> : null} <ChevronDown className="size-3.5" />
+      </button>
+      {mode === "menu" && (
+        <div role="menu" aria-label="Club chats" className="absolute top-full right-0 z-30 mt-2 w-64 rounded-2xl border border-line bg-surface p-1.5 shadow-[var(--shadow-float)]">
+          {main && (
+            <button type="button" role="menuitemradio" aria-checked={main.id === current} onClick={() => go(main.id)} className={item}>
+              <Users className="size-4 shrink-0 text-muted" /> <span className="flex-1 truncate">Main club chat</span>{main.id === current && <Check className="size-4" />}
+            </button>
+          )}
+          {teams.length > 0 && <div className="mx-2.5 mt-1.5 mb-1 font-mono text-[10px] tracking-wide text-faint uppercase">Team chats</div>}
+          {teams.map((t) => (
+            <button key={t.id} type="button" role="menuitemradio" aria-checked={t.id === current} onClick={() => go(t.id)} className={item}>
+              <Hash className="size-4 shrink-0 text-muted" /> <span className="flex-1 truncate">{t.name}</span>{t.id === current && <Check className="size-4" />}
+            </button>
+          ))}
+          <div className="my-1 border-t border-line" />
+          <button type="button" role="menuitem" onClick={() => setMode("new")} className={cn(item, "font-medium")}><Plus className="size-4 shrink-0" /> New team chat</button>
+        </div>
+      )}
+      {mode === "new" && <NewTeamChat communityId={communityId} members={members} me={me} defaultOpen onClose={() => setMode("closed")} />}
+    </div>
+  );
+}
+
+// Start a team chat inside the club: name it, pick people from the club, go.
+export function NewTeamChat({ communityId, members, me, defaultOpen = false, onClose }: { communityId: string; members: { uid: string; first: string; last: string }[]; me: string; defaultOpen?: boolean; onClose?: () => void }) {
+  const router = useRouter();
+  const [open, setOpenState] = useState(defaultOpen);
+  const setOpen = (v: boolean) => { setOpenState(v); if (!v) onClose?.(); };
   const [name, setName] = useState("");
   const [q, setQ] = useState("");
   const [picked, setPicked] = useState<string[]>([]);

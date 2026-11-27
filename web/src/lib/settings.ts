@@ -1,7 +1,9 @@
 "use server";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
-import { ALL_TOPICS, FIELDS, friendlyError } from "@/lib/forge";
+import { ALL_TOPICS, EMAIL_RE, FIELDS, friendlyError } from "@/lib/forge";
+import { env } from "@/lib/env";
+import { cleanEmail, personalEmailProblem, personalEmailSent } from "@/lib/graduate-email";
 import { cleanLinkedin } from "@/lib/linkedin";
 import { parseGradYear } from "@/lib/profile-meta";
 import { getViewer } from "@/lib/supabase/server";
@@ -50,13 +52,21 @@ export async function saveProfileSettings(_: SettingsState, form: FormData): Pro
   const toStudent = form.get("account_type") === "student" && form.get("account_type_was") !== "student";
   if (!toStudent) { const bad = await saveLink(); if (bad) { revalidatePath("/", "layout"); return bad; } }
   // Studying or working (supabase/account-type.sql): the form only sends it once that step has run,
-  // and only a change is saved. Becoming a student needs a university email, as at sign-up.
+  // and only a change is saved.
   const kind = form.get("account_type");
   if ((kind === "student" || kind === "professional") && kind !== form.get("account_type_was")) {
     const { error: e2 } = await supabase.rpc("set_account_type", { p_type: kind });
     if (e2) { revalidatePath("/", "layout"); return { ok: false, message: e2.code === "P0001" ? e2.message : friendlyError(e2) }; }
   }
   if (toStudent) { const bad = await saveLink(); if (bad) { revalidatePath("/", "layout"); return bad; } }
+  // Show it on my profile (supabase/linkedin-public.sql): sent once that step has run; only a change is saved.
+  if (form.has("linkedin_public_was")) {
+    const on = form.get("linkedin_public") === "on";
+    if (on !== (form.get("linkedin_public_was") === "on")) {
+      const { error: e4 } = await supabase.rpc("set_linkedin_public", { p_on: on });
+      if (e4) { revalidatePath("/", "layout"); return { ok: false, message: friendlyError(e4) }; }
+    }
+  }
   revalidatePath("/", "layout");
   return { ok: true, message: "Profile saved." };
 }
@@ -79,6 +89,62 @@ export async function unblockPerson(otherId: string): Promise<SettingsState> {
   if (error) return { ok: false, message: friendlyError(error) };
   revalidatePath("/settings");
   return { ok: true, message: "Unblocked." };
+}
+
+export async function changeSchoolEmail(_: SettingsState, form: FormData): Promise<SettingsState> {
+  const email = String(form.get("email") ?? "").trim().toLowerCase();
+  if (!EMAIL_RE.test(email) || email.length > 254) return { ok: false, message: "Enter your school email address." };
+  const { supabase, user } = await getViewer();
+  if (!user) return { ok: false, message: "Log in again." };
+  if (user.email?.toLowerCase() === email) return { ok: false, message: "This is already your sign-in email." };
+
+  const { data: school, error: checkError } = await supabase.rpc("is_school_email", { p_email: email });
+  if (checkError) return { ok: false, message: "Couldn’t check that school email. Try again." };
+  if (school !== true) return { ok: false, message: "We don’t recognize this school email. You can request your school below." };
+
+  const redirectTo = new URL("/auth/callback", env.siteUrl);
+  redirectTo.searchParams.set("flow", "email-change");
+  redirectTo.searchParams.set("next", "/settings#school-email");
+  const { error } = await supabase.auth.updateUser({ email }, { emailRedirectTo: redirectTo.toString() });
+  if (error) {
+    return { ok: false, message: error.code === "email_exists" || error.code === "user_already_exists"
+      ? "That email is already on a Brazework account. Contact support for help keeping your records together."
+      : friendlyError(error) };
+  }
+  return { ok: true, message: "Check your school inbox and your current inbox. Follow the confirmation links to finish switching." };
+}
+
+// Graduating (lib/graduate-email.ts): your sign-in moves from your school email to a personal one once
+// you follow the links sent to both. Your account, and everything on it, stays the same. Ticking
+// "switch to Working" changes the account type now, so Home and your profile read as a graduate's.
+export async function moveToPersonalEmail(_: SettingsState, form: FormData): Promise<SettingsState> {
+  const email = cleanEmail(form.get("email"));
+  const { supabase, user } = await getViewer();
+  if (!user) return { ok: false, message: "Log in again." };
+  const [cur, nxt] = await Promise.all([
+    supabase.rpc("is_school_email", { p_email: user.email ?? "" }),
+    EMAIL_RE.test(email) ? supabase.rpc("is_school_email", { p_email: email }) : Promise.resolve({ data: false, error: null }),
+  ]);
+  if (cur.error || nxt.error) return { ok: false, message: "Couldn’t check that email. Try again." };
+  const problem = personalEmailProblem({ next: email, current: user.email, currentIsSchool: cur.data === true, nextIsSchool: nxt.data === true });
+  if (problem) return { ok: false, message: problem };
+
+  const redirectTo = new URL("/auth/callback", env.siteUrl);
+  redirectTo.searchParams.set("flow", "email-change");
+  // Once it's done this section is gone (the new email isn't a school one): land on Account.
+  redirectTo.searchParams.set("next", "/settings#account");
+  const { error } = await supabase.auth.updateUser({ email }, { emailRedirectTo: redirectTo.toString() });
+  if (error) {
+    return { ok: false, message: error.code === "email_exists" || error.code === "user_already_exists"
+      ? "That email is already on a Brazework account. Contact support for help keeping your records together."
+      : friendlyError(error) };
+  }
+  if (form.get("working") === "on") {
+    const { error: e2 } = await supabase.rpc("set_account_type", { p_type: "professional" });
+    revalidatePath("/", "layout");
+    if (e2) return { ok: true, message: `${personalEmailSent(email)} Switch to Working under Profile when you're ready.` };
+  }
+  return { ok: true, message: personalEmailSent(email) };
 }
 
 export async function changePassword(_: SettingsState, form: FormData): Promise<SettingsState> {

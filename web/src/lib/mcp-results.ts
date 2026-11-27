@@ -28,7 +28,7 @@ export function nextStep(tool: string, data: unknown, origin: string): { next: s
     case "request_signature":
       return null; // Says its own next step (the email went out, and to whom).
   }
-  // Actions shared with Ember (supabase/tool-actions.sql): drafted, or done with the member's yes.
+  // Actions shared with Torch (supabase/tool-actions.sql): drafted, or done with the member's yes.
   if ((tool === "draft_event" || tool === "draft_announcement") && d.drafted === true && d.duplicate !== true)
     return { next: "Waiting as a card in the member's Brazework drafts. They check it there and publish it to the club; nothing goes out before that.", open: site(origin, "/drafts") };
   if (tool === "draft_reply" && d.drafted === true && d.duplicate !== true)
@@ -36,7 +36,7 @@ export function nextStep(tool: string, data: unknown, origin: string): { next: s
   if (d.drafted === true) {
     return d.duplicate === true
       ? { next: "This was drafted before (same source_key), so nothing new was added. It's still in the member's Brazework drafts.", open: site(origin, "/drafts") }
-      : { next: "Waiting as a card in the member's Brazework drafts (and on Ember's page). They can edit it there, then confirm or dismiss it. Nothing happens before that.", open: site(origin, "/drafts") };
+      : { next: "Waiting as a card in the member's Brazework drafts (and on Torch's page). They can edit it there, then confirm or dismiss it. Nothing happens before that.", open: site(origin, "/drafts") };
   }
   const url = str(d.url) ? (str(d.url).startsWith("http") ? str(d.url) : site(origin, str(d.url))) : undefined;
   switch (tool) {
@@ -77,7 +77,7 @@ export function nextStep(tool: string, data: unknown, origin: string): { next: s
 // get one more line where the member or the assistant has a choice to make.
 const HINTS: [RegExp, string][] = [
   [/throwaway inbox/i, "Ask the member for the address that person really uses: school, work or personal (a personal one is labelled as such on the signature). Throwaway inboxes can't sign."],
-  [/isn'?t on the project/i, "Teammates can't sign each other's work. Ask a professor, PI, manager or mentor who saw it."],
+  [/isn'?t on the project/i, "Teammates can't sign each other's work. Ask someone outside the project who saw it, such as a coworker, professor, PI or mentor."],
   [/asked 3 people|already asked them/i, "Wait for an answer: the member is notified. my_projects shows what's still open."],
   [/asks this week|drafts this hour|milestones waiting for review/i, "This is a limit, not an error. Tell the member, and try again later."],
   [/30 drafts waiting/i, "The member has drafts to review first. Point them to Brazework → Drafts."],

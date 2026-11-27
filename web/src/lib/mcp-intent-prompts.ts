@@ -10,7 +10,7 @@ export const INTENT_PROMPTS: PromptDef[] = [
   { name: "career_fair", title: "Get me ready for a career fair", description: "Get ready for a career fair or employer session: check your projects, get unsigned milestones signed, build your résumé section with a link to each signed result, and RSVP you to the employer session. It asks before every step that writes.", arguments: [
     { name: "event", description: "The fair or session, e.g. “Spring Engineering Career Fair”. Leave it out to pick from what's coming up.", required: false },
   ] },
-  { name: "club_week", title: "My club's week (officers)", description: "For club officers: Ember's weekly brief for your club, turned into this week's update, a plan for the next meeting, or a recap of the last one, ready for you to post.", arguments: [
+  { name: "club_week", title: "My club's week (officers)", description: "For club officers: Torch's weekly brief for your club, turned into this week's update, a plan for the next meeting, or a recap of the last one, ready for you to post.", arguments: [
     { name: "club", description: "Which club (name or id). Leave it out if you run just one.", required: false },
     { name: "what", description: "update (default), meeting plan, or recap.", required: false },
   ] },

@@ -13,6 +13,9 @@ export async function NextStep() {
   const { supabase, user, profile } = await getViewer();
   if (!user) return null;
   const { goal } = await loadLoop(supabase, user.id, requestTime(), profile?.account_type === "professional");
+  // What waits on you to verify is already under "Needs you", with Verify and Decline in place
+  // (verify-inbox.tsx): a strip above it saying the same thing is noise.
+  if (goal.id === "verify") return null;
   if (goal.done) {
     return (
       <section aria-label="Next step">

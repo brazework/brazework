@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { ALL_TOPICS, FIELDS, ageFrom, friendlyError } from "@/lib/forge";
 import { dbFeatures } from "@/lib/db-features";
+import { signupGoalFrom } from "@/lib/goals";
 import { joinRememberedInvite } from "@/lib/invites";
 import { LINKEDIN_ADD_HERE, cleanLinkedin } from "@/lib/linkedin";
 import { needsLinkedin, saveLinkedinFrom } from "@/lib/linkedin-gate";
@@ -15,11 +16,11 @@ import { RELATIONSHIPS } from "@/lib/vouch-email";
 import { joinCommunity } from "../(app)/communities/actions";
 
 export type OnboardState = { message: string };
-export type FinishState = { message: string; school?: boolean };
+export type FinishState = { message: string };
 
 // Someone who signed up with Google, GitHub or LinkedIn gives what the sign-up form asks for.
 // The database applies the same rules as for an email sign-up (finish_signup() in
-// supabase/oauth-signup.sql: minimum age, a school email for a student account); this only
+// supabase/oauth-signup.sql: confirmed email and minimum age); this only
 // catches the obvious before the round trip.
 const finishSchema = z
   .object({
@@ -54,8 +55,12 @@ export async function finishSignup(_: FinishState, form: FormData): Promise<Fini
   const { error } = linkedin ? await supabase.rpc("finish_signup", { ...args, p_linkedin: linkedin }) : await supabase.rpc("finish_signup", args);
   if (error) {
     const message = error.code === "P0001" ? error.message : friendlyError(error);
-    return { message, school: /university email/.test(message) };
+    return { message };
   }
+  // Where they're headed, if they said (optional; private until they choose otherwise). A goal that
+  // can't be saved never stops sign-up: Torch offers to set one later.
+  const goal = signupGoalFrom(form.get("goalKind"), form.get("goalTarget"), accountType);
+  if (goal && (await dbFeatures()).goals) await supabase.rpc("set_goal", { p_kind: goal.kind, p_target: goal.target, p_visible: false });
   redirect("/onboarding");
 }
 
@@ -151,6 +156,7 @@ export async function finishFirstBuild(input: FirstBuildInput): Promise<FirstBui
 
   const title = d.text.length <= 120 ? d.text : `${d.text.slice(0, 117).replace(/\s+\S*$/, "")}...`;
   const asking = d.evidence !== "" && d.signer.kind !== "none";
+  let milestoneId: string | undefined;
   if (asking) {
     if (d.signer.kind === "club") {
       const { data: member } = await supabase.from("community_members").select("community_id").eq("community_id", d.signer.clubId).eq("uid", user.id).maybeSingle();
@@ -173,12 +179,14 @@ export async function finishFirstBuild(input: FirstBuildInput): Promise<FirstBui
     form.set("showOnProfile", "on");
     const r = await addMilestone({ ok: false, message: "" }, form);
     if (!r.ok) return { ok: false, message: r.message, step: "signer", projectId };
+    milestoneId = r.id;
   } else {
     // Nothing to ask yet: a draft, on the record for its owner, ready for proof and a signer.
     const row = { project_id: projectId, community_id: null, title, detail: "", evidence: d.evidence, achieved_on: d.achievedOn, status: "draft", private: false };
-    let { error } = await supabase.from("milestones").insert(row);
-    if (error && /private/.test(error.message ?? "")) ({ error } = await supabase.from("milestones").insert({ ...row, private: undefined }));
-    if (error) return { ok: false, message: error.code === "P0001" ? error.message : friendlyError(error), step: "proof", projectId };
+    let { data: saved, error } = await supabase.from("milestones").insert(row).select("id").single();
+    if (error && /private/.test(error.message ?? "")) ({ data: saved, error } = await supabase.from("milestones").insert({ ...row, private: undefined }).select("id").single());
+    if (error || !saved) return { ok: false, message: error?.code === "P0001" ? error.message : friendlyError(error ?? {}), step: "proof", projectId };
+    milestoneId = saved.id;
   }
   // Last, so the onboarding page (which re-renders when a step above revalidates) stays on the
   // wizard until everything is saved, and a retry still finds it.
@@ -189,5 +197,7 @@ export async function finishFirstBuild(input: FirstBuildInput): Promise<FirstBui
     }).eq("id", user.id);
     if (error) return { ok: false, message: friendlyError(error), step: "build", projectId };
   }
-  redirect(`/u/${user.id}?welcome=1`);
+  const welcome = new URLSearchParams({ welcome: "1" });
+  if (milestoneId) welcome.set("result", milestoneId);
+  redirect(`/u/${user.id}?${welcome}`);
 }

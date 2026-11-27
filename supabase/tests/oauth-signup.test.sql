@@ -1,6 +1,6 @@
 -- Tests for supabase/oauth-signup.sql: someone who signs up with Google, GitHub or LinkedIn gets no
 -- profile until they finish sign-up, and finishing holds them to the email form's rules (old enough,
--- school email for students, one profile, verified email). The email path is unchanged.
+-- one profile and verified email). Students can use a personal address.
 -- Inserts into auth.users the way Supabase Auth does for an OAuth sign-up. Rolls back.
 \set QUIET on
 begin;
@@ -39,12 +39,11 @@ select t.must_fail($$insert into public.profiles (id, first_name, last_name, bir
 select t.must_fail($$select public.finish_signup('professional', 'Ola', 'Ade', (now() - interval '16 years')::date::text)$$, 'at least 18');
 select t.must_fail($$select public.finish_signup('professional', 'Ola', 'Ade', '')$$, 'Enter your birthday');
 select t.must_fail($$select public.finish_signup('professional', 'Ola', 'Ade', 'not a date')$$, 'Enter your birthday');
-select t.must_fail($$select public.finish_signup('student', 'Ola', 'Ade', '2003-01-01')$$, 'university email');
 select t.must_fail($$select public.finish_signup('admin', 'Ola', 'Ade', '2003-01-01')$$, 'student or professional');
 select t.must_fail($$select public.finish_signup('professional', ' ', 'Ade', '2003-01-01')$$, 'first and last name');
 select t.must_fail($$select public.signup_check('x@gmail.com', 'professional', '2000-01-01')$$, 'permission denied');
-select public.finish_signup('professional', '  Ola ', 'Ade', '1995-06-30');
-select t.ok((select first_name = 'Ola' and last_name = 'Ade' and account_type = 'professional' and not onboarded from public.profiles where id = auth.uid()), 'a professional with a personal email finishes sign-up, not yet onboarded');
+select public.finish_signup('student', '  Ola ', 'Ade', '1995-06-30');
+select t.ok((select first_name = 'Ola' and last_name = 'Ade' and account_type = 'student' and not onboarded from public.profiles where id = auth.uid()), 'a student with a personal email finishes sign-up, not yet onboarded');
 select t.must_fail($$select public.finish_signup('student', 'Ola', 'Ade', '1995-06-30')$$, 'already set up');
 select t.must_fail($$update public.profiles set account_type = 'student' where id = auth.uid()$$, 'permission denied');
 reset role;
@@ -79,7 +78,6 @@ insert into auth.users (id, aud, role, email, raw_user_meta_data)
 values (gen_random_uuid(), 'authenticated', 'authenticated', 'eli@hartford.edu', '{"accountType": "student", "firstName": "Eli", "lastName": "Ng", "birthday": "2004-01-01"}');
 select t.ok(exists (select 1 from public.profiles p join auth.users u on u.id = p.id where u.email = 'eli@hartford.edu' and p.account_type = 'student'), 'email sign-ups still get their profile from the trigger');
 select t.must_fail($$insert into auth.users (id, aud, role, email, raw_user_meta_data) values (gen_random_uuid(), 'authenticated', 'authenticated', 'kid@hartford.edu', jsonb_build_object('accountType', 'student', 'firstName', 'K', 'lastName', 'D', 'birthday', (now() - interval '15 years')::date::text))$$, 'at least 18');
-select t.must_fail($$insert into auth.users (id, aud, role, email, raw_user_meta_data) values (gen_random_uuid(), 'authenticated', 'authenticated', 'pat@gmail.com', '{"accountType": "student", "firstName": "P", "lastName": "T", "birthday": "2004-01-01"}')$$, 'university email');
 
 rollback;
 \echo 'oauth-signup tests: all passed'

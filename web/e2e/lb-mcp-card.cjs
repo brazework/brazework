@@ -34,7 +34,9 @@ const psql = (sql) => execSync(`docker exec -i forge-e2e-db psql -U postgres -h 
   async function host(args, result) {
     const page = await (await b.newContext({ viewport: { width: 640, height: 600 } })).newPage();
     page.errs = []; page.on("pageerror", (e) => page.errs.push(e.message));
-    await page.setContent(`<!doctype html><body style="margin:0"><iframe id="v" sandbox="allow-scripts" style="width:600px;height:420px;border:0"></iframe>
+    // Served from an address (not set on a blank page): Chrome 158 crashes when a blank page gives a
+    // sandboxed frame its srcdoc, which closed the browser under this spec. A real host has an origin too.
+    const hostPage = `<!doctype html><body style="margin:0"><iframe id="v" sandbox="allow-scripts" style="width:600px;height:420px;border:0"></iframe>
       <script>
         window.__log = []; window.__links = [];
         const f = document.getElementById("v");
@@ -50,7 +52,9 @@ const psql = (sql) => execSync(`docker exec -i forge-e2e-db psql -U postgres -h 
           if (m.method === "ui/open-link") { window.__links.push(m.params.url); reply({}); }
         });
         f.srcdoc = ${js(html)};
-      </script></body>`);
+      </script></body>`;
+    await page.route("http://card-host.test/", (r) => r.fulfill({ contentType: "text/html; charset=utf-8", body: hostPage }));
+    await page.goto("http://card-host.test/");
     const view = page.frameLocator("#v");
     return { page, view };
   }

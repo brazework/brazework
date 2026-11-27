@@ -1,0 +1,30 @@
+name: Linear cleanup
+
+# Run by hand: archives the one-issue-per-commit Done issues the Linear sync used to create, which
+# filled Linear's Free plan cap of 250 issues (.github/scripts/linear-archive-logged.mjs). Leave
+# "archive" unticked for a dry run that only lists them.
+on:
+  workflow_dispatch:
+    inputs:
+      archive:
+        description: Archive them (unticked only lists them)
+        type: boolean
+        default: false
+
+jobs:
+  archive:
+    name: Archive auto-logged commit issues
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          sparse-checkout: .github/scripts
+      - uses: actions/setup-node@v7
+        with:
+          node-version: 22
+      - name: List or archive them
+        env:
+          LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}
+          ARCHIVE: ${{ inputs.archive }}
+        run: node .github/scripts/linear-archive-logged.mjs

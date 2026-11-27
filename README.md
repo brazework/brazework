@@ -2,7 +2,7 @@
 
 **Build it. Prove it. Get found.** The record of your work, signed by the people who saw it.
 
-People post what they build. Someone who saw the work happen verifies it: a club's officers, a manager, a mentor. Companies find proven builders through that verified work instead of through résumés anyone can write.
+People post what they build. Someone who saw the work happen verifies it: a club's officers, a coworker, a mentor. Companies find proven builders through that verified work instead of through résumés anyone can write.
 
 > **Brazework** was called Forge until November 2026 ([why the new name](docs/naming.md); the trademark check is still open). Internal names keep the old one: the repo `forge-app`, tables like `forge_admins`, env vars like `FORGE_EMAIL_FROM` and the Linear team "Forge".
 
@@ -80,6 +80,8 @@ public/                 The original app, kept until production is confirmed on 
 docs/                   Everything else: start at docs/README.md
 .github/workflows/      CI, CodeQL, preview deploy, Linear sync, load test
 .claude/skills/         /next, /ship, /standup: working from the Linear board in Claude Code
+AGENTS.md               How agents work in this repo, and the hard rules
+.cursor/                Rules and skills for the AI engineering team (docs/team-playbook.md)
 ```
 
 ### Database
@@ -88,4 +90,4 @@ The SQL files are additive and run in the order in [`supabase/order.txt`](supaba
 
 ### How we work
 
-Two founders, small commits straight to `main`, with CI as the gate: a red check is fixed before anything else. Commits start with their Linear issue ID (`FIX-30: …`), and the Linear sync keeps the board current. The full guide, including the switch to pull requests when the team grows, is in [CONTRIBUTING.md](CONTRIBUTING.md). What runs automatically: [docs/automation.md](docs/automation.md).
+Two founders, small commits straight to `main`, with CI as the gate: a red check is fixed before anything else. Commits start with their Linear issue ID (`FIX-30: …`), and the Linear sync keeps the board current. The full guide, including the switch to pull requests when the team grows, is in [CONTRIBUTING.md](CONTRIBUTING.md). What runs automatically: [docs/automation.md](docs/automation.md). Agent-authored pull requests follow [docs/team-playbook.md](docs/team-playbook.md).

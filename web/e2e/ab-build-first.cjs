@@ -9,7 +9,7 @@
 // 5. /pricing is public and says the record is free.
 const { execSync } = require("child_process");
 const { step, browser, go, hydrated, summary } = require("./lib.cjs");
-const psql = (sql) => execSync(`docker exec -i forge-e2e-db psql -U postgres -h localhost -d postgres -tA`, { input: sql }).toString().trim();
+const psql = (sql) => execSync(`docker exec -i ${process.env.E2E_STACK || "forge-e2e"}-db psql -U postgres -h localhost -d postgres -tA`, { input: sql }).toString().trim();
 
 (async () => {
   const b = await browser();
@@ -39,12 +39,10 @@ const psql = (sql) => execSync(`docker exec -i forge-e2e-db psql -U postgres -h 
   await step("a visitor from Product Hunt is welcomed on the landing page", async () => {
     await go(page, "/?ref=producthunt");
     await page.getByRole("status", { name: "Welcome from Product Hunt" }).waitFor({ timeout: 15000 });
-    // Product Hunt's crowd ships software: the hero starts on the engineer's story (lib/launch.ts).
-    await page.getByRole("group", { name: "Ways people use Brazework" }).getByRole("button", { name: /^Software/, pressed: true }).waitFor({ timeout: 15000 });
     const box = page.locator("#hero-build");
     await hydrated(box);
     await box.fill(BUILD);
-    await page.getByRole("link", { name: /Start with this build/ }).click();
+    await page.locator("#top").getByRole("link", { name: /Get it verified/ }).click();
     await page.waitForURL((u) => u.pathname === "/signup", { timeout: 20000 });
     await page.getByRole("status", { name: "Welcome from Product Hunt" }).waitFor({ timeout: 15000 });
   }, page);
@@ -52,13 +50,23 @@ const psql = (sql) => execSync(`docker exec -i forge-e2e-db psql -U postgres -h 
     await newcomer(page, email, "Eli");
     await page.getByRole("heading", { name: /What did you build/ }).waitFor();
     if ((await page.locator("#first-build-text").inputValue()) !== BUILD) throw new Error("the landing page's build isn't waiting");
+    const fields = page.locator('summary[aria-label="Edit field and date"]');
+    await fields.getByText("Engineering", { exact: true }).waitFor();
+    await fields.click();
     await page.getByRole("radio", { name: "Engineering", checked: true }).waitFor();
+    await fields.click();
     await page.getByRole("button", { name: /Next: proof/ }).click();
   }, page);
   await step("proof: a link", async () => {
     await page.getByText("Step 4 of 5").waitFor({ timeout: 10000 });
     await page.getByRole("radio", { name: /A link/ }).click();
-    await page.getByPlaceholder("https://github.com/you/your-project").fill(`https://github.com/eli/robot-${n}`);
+    // Engineering's own tools lead (lib/proof-tools.ts); picking one shows what its link looks like.
+    const where = page.getByRole("group", { name: "Where your proof is" });
+    if ((await where.getByRole("button").first().innerText()) !== "Onshape") throw new Error("Engineering's proof tools don't lead with Onshape");
+    await where.getByRole("button", { name: "Onshape", exact: true }).click();
+    await page.getByPlaceholder("https://cad.onshape.com/documents/…").waitFor();
+    await page.getByText(/view-only link sharing/).waitFor();
+    await page.getByLabel("Link to your proof").fill(`https://github.com/eli/robot-${n}`);
     await page.getByRole("button", { name: /Next: who saw it/ }).click();
     await page.getByText("Step 5 of 5").waitFor({ timeout: 10000 });
   }, page);
@@ -118,14 +126,38 @@ const psql = (sql) => execSync(`docker exec -i forge-e2e-db psql -U postgres -h 
     await go(p2, "/signup");
     await newcomer(p2, `fay${n}@forge.edu`, "Fay");
     await p2.locator("#first-build-text").fill("A podcast on our town's history");
-    await p2.getByRole("radio", { name: "Media & Communication", checked: true }).waitFor();
+    await p2.locator('summary[aria-label="Edit field and date"]').getByText("Media & Communication", { exact: true }).waitFor();
     await p2.getByRole("button", { name: /Next: proof/ }).click();
     await p2.getByRole("radio", { name: /Add it later/ }).click();
     await p2.getByRole("button", { name: /Next: who saw it/ }).click();
     await p2.getByText(/A signature needs proof to look at/).waitFor({ timeout: 10000 });
-    await p2.getByRole("button", { name: "Finish" }).click();
+    await p2.getByRole("button", { name: "Save draft" }).click();
     await p2.waitForURL(/\/u\/[0-9a-f-]{36}\?welcome=1/, { timeout: 30000 });
     await p2.getByRole("region", { name: "Welcome to Brazework" }).getByText(/as a draft/).waitFor({ timeout: 15000 });
+    const welcome = p2.getByRole("region", { name: "Welcome to Brazework" });
+    await welcome.getByRole("link", { name: "View your record" }).waitFor();
+    await welcome.getByRole("button", { name: "Add evidence", exact: true }).click();
+    await welcome.getByLabel("Evidence link").fill("https://example.com/podcast-evidence");
+    await welcome.getByRole("button", { name: "Save evidence" }).click();
+    await welcome.getByRole("button", { name: "Ask someone to sign", exact: true }).waitFor();
+    await welcome.getByRole("button", { name: "Ask someone to sign", exact: true }).click();
+    await welcome.getByLabel(/Signer.s email/).fill("witness@example.edu");
+    await welcome.getByRole("button", { name: "Send signature request" }).click();
+    await welcome.getByRole("alert").getByText(/email isn.t available/i).waitFor();
+  }, p2);
+  await step("with evidence and no signer, Save result and ask later offers a signing action", async () => {
+    await p2.context().clearCookies();
+    await go(p2, "/signup");
+    await newcomer(p2, `ava${n}@forge.edu`, "Ava");
+    await p2.locator("#first-build-text").fill("Finished a classroom audio project");
+    await p2.getByRole("button", { name: /Next: proof/ }).click();
+    await p2.getByLabel("Link to your proof").fill("https://example.com/audio-project");
+    await p2.getByRole("button", { name: /Next: who saw it/ }).click();
+    await p2.getByRole("radio", { name: /Not yet/ }).click();
+    await p2.getByRole("button", { name: "Save result and ask later" }).click();
+    const welcome = p2.getByRole("region", { name: "Welcome to Brazework" });
+    await welcome.getByRole("button", { name: "Ask someone to sign", exact: true }).waitFor();
+    await welcome.getByRole("link", { name: "View your record" }).waitFor();
   }, p2);
   await step("someone who hasn't built anything yet can set up their profile instead", async () => {
     await go(p2, "/signup");
@@ -141,11 +173,27 @@ const psql = (sql) => execSync(`docker exec -i forge-e2e-db psql -U postgres -h 
   // 5: pricing.
   const ctx3 = await b.newContext();
   const p3 = await ctx3.newPage(); p3.errs = [];
-  await step("/pricing is public: free for builders, Plus coming, and who pays", async () => {
+  await step("/pricing is public: schools pay first, then builders (free, and Plus for anyone who isn't a student), then companies", async () => {
     await go(p3, "/pricing");
-    await p3.getByRole("heading", { name: /Free for the people who build/ }).waitFor({ timeout: 15000 });
-    for (const t of ["Builders", "Clubs, networks and schools", "Companies", "Book a pilot", "$15,000", "Every club included"]) await p3.getByText(t, { exact: false }).first().waitFor();
+    await p3.getByRole("heading", { name: /Schools pay/ }).waitFor({ timeout: 15000 });
+    for (const t of ["Builders", "Companies", "Semester pilot", "$1,500", "$6,000", "From $18,000", "Every student and every club", "Starter", "Book a pilot", "$15,000"]) await p3.getByText(t, { exact: false }).first().waitFor();
+    const order = await p3.locator("h3[id^=pricing-]").evaluateAll((els) => els.map((el) => el.id));
+    if (order.join() !== "pricing-schools,pricing-builders,pricing-companies") throw new Error(`price list order: ${order.join()}`);
+    // Plus is on the list for builders who aren't students; students never pay.
+    if ((await p3.getByRole("link", { name: "See Plus" }).getAttribute("href")) !== "/plus") throw new Error("Plus isn't on the price list");
+    await p3.getByText(/For professionals and independent builders.*Students never pay/).waitFor();
     if (await p3.getByText(/\bPro\b/).count()) throw new Error("the price list says Pro, which means pro verification");
+    const allowance = p3.getByText(/Free includes 15 credits a day/);
+    await allowance.waitFor();
+    const details = await allowance.innerText();
+    for (const text of ["1 credit", "2 credits", "3 credits", "Web and iPhone share one balance"]) {
+      if (!details.includes(text)) throw new Error(`Torch pricing is missing ${text}`);
+    }
+  }, p3);
+  await step("Plus explains the waitlist and its Torch balance", async () => {
+    await go(p3, "/plus");
+    await p3.getByText(/Plus also includes 50 Torch credits a day/).waitFor();
+    await p3.getByRole("link", { name: "Log in to join the waitlist" }).waitFor();
   }, p3);
   await ctx3.close();
 
