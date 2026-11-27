@@ -9,6 +9,7 @@
     "lint": "eslint",
     "typecheck": "next typegen && tsc --noEmit",
     "e2e": "bash e2e/run.sh",
+    "e2e:fast": "E2E_SHARD=fast bash e2e/run.sh",
     "quality": "bash e2e/quality.sh",
     "load": "bash e2e/load.sh",
     "test": "tsx --test tests/*.test.ts"
