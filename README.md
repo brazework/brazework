@@ -90,4 +90,4 @@ The SQL files are additive and run in the order in [`supabase/order.txt`](supaba
 
 ### How we work
 
-Two founders, small commits straight to `main`, with CI as the gate: a red check is fixed before anything else. Commits start with their Linear issue ID (`FIX-30: …`), and the Linear sync keeps the board current. The full guide, including the switch to pull requests when the team grows, is in [CONTRIBUTING.md](CONTRIBUTING.md). What runs automatically: [docs/automation.md](docs/automation.md).
+Two founders, small commits straight to `main`, with CI as the gate: a red check is fixed before anything else. Commits start with their Linear issue ID (`FIX-30: …`), and the Linear sync keeps the board current. The full guide, including the switch to pull requests when the team grows, is in [CONTRIBUTING.md](CONTRIBUTING.md). What runs automatically: [docs/automation.md](docs/automation.md). Agent-authored pull requests follow [docs/team-playbook.md](docs/team-playbook.md).

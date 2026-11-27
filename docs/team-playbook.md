@@ -2,7 +2,7 @@
 
 How Rivet, Temper, and Kiln ship. What Brazework is, and what a school pays, is in [today.md](today.md). The goals this log serves are a first **$1,500** school pilot and a live **University of Hartford** pilot ([strategy.md](strategy.md)).
 
-Day-to-day commands that still match this page are in [operating.md](operating.md) and [../CONTRIBUTING.md](../CONTRIBUTING.md). Agent rules are in [../AGENTS.md](../AGENTS.md). Some older pages still say every pull request merges itself. They were left as they are, for the founders to decide. Don't edit them to match this page.
+This page is for a pull request an agent opens (Forge, Rivet, or another cloud agent). Josh and Ian ship as [operating.md](operating.md) and [../CONTRIBUTING.md](../CONTRIBUTING.md) describe, including a pull request that merges itself when CI is green. Agent rules are in [../AGENTS.md](../AGENTS.md).
 
 ## Intake
 
@@ -22,17 +22,18 @@ Preview deploys are off today ([../CONTRIBUTING.md](../CONTRIBUTING.md), [automa
 
 ## Merging
 
-Auto-merge only a safe pull request, and only once CI is green. GitHub squash-merges it. Nobody pushes to `main`, and nobody force-pushes.
+An agent never pushes to `main` and never force-pushes. Auto-merge stays off until Temper approves. Never enable it before that review.
 
-**Josh's yes** is required before merge when the change touches any of these:
+After Temper approves, auto-merge only a safe pull request, and only once CI is green. GitHub squash-merges it.
+
+**Josh's yes** is required before merge when the change touches any of these. Auto-merge stays off until he says yes, even after Temper approves:
 
 - the database (`supabase/`)
 - auth or row-level security
-- GitHub workflows (`.github/workflows/`)
-- these shipping rules (`AGENTS.md`, this page, `.cursor/`)
+- workflow: GitHub workflows (`.github/workflows/`) or these shipping rules (`AGENTS.md`, this page, `.cursor/`, `.claude/skills/`)
 - payments or pricing
 
-Anything else is safe. Rivet turns auto-merge on for a safe pull request after the local checks pass, and leaves it off for the list above until Josh says yes.
+Anything else is safe.
 
 ## In progress
 
@@ -44,13 +45,13 @@ A change is done when all of these are true:
 
 - The pull request body says what a member sees, how the change was made, what was tested, and what was not.
 - From `web/`: `npx next typegen`, then `npx tsc --noEmit && npm run lint && npm test`, passed, and so did the end-to-end specs the change touches (or `npm run e2e` when the change is broad). Typegen is the step CI runs first. CI on the pull request is green. Nothing was skipped or weakened to get there.
-- A safe pull request has merged on green CI, and CI on `main` is green.
-- A pull request on Josh's list has his yes, then the same green merge.
+- A safe pull request has Temper's approval, has merged on green CI, and CI on `main` is green.
+- A pull request on Josh's list has Temper's approval and his yes, then the same green merge.
 - The Linear issue has a comment with the pull request and the check results, and it is moved to Done.
 
-## Monday ship log
+## Weekly ship log
 
-Before the Monday 7pm ET sync, write a short log from Linear and git. `/standup` is how you gather the board ([operating.md](operating.md)). Facts only. Don't add numbers that are not already in [strategy.md](strategy.md) or [today.md](today.md).
+Before the weekly founder sync, write a short log from Linear and git. `/standup` is how you gather the board ([operating.md](operating.md)). Facts only. Don't add numbers that are not already in [strategy.md](strategy.md) or [today.md](today.md).
 
 - **Shipped** since the last sync: issue and pull request.
 - **In progress:** at most two.

@@ -21,7 +21,7 @@
 ## Running it
 
 - [operating.md](operating.md): **running the company week to week.** Shipping, testing the school side, demos and the Reel, the weekly rhythm, and what to watch.
-- [team-playbook.md](team-playbook.md): **how the AI engineering team ships.** Intake, Rivet, Temper, and Kiln, what may auto-merge, two at a time, done, and the Monday ship log.
+- [team-playbook.md](team-playbook.md): **how the AI engineering team ships.** Intake, Rivet, Temper, and Kiln, what an agent may auto-merge, two at a time, done, and the weekly ship log.
 - [demo-university.md](demo-university.md): a whole demo school (dean, professor, students, a capstone course) for sales calls, locally today and hosted once there's a domain.
 - [launch.md](launch.md): the launch runbook for Sunday, November 22 (past; kept for the checklists). What's live, what only a founder can do, the days before and after, go/no-go checks, rollback, and every launch link in one list.
 - [product-hunt.md](product-hunt.md): the Product Hunt launch kit (tagline, first comment, gallery, demo script, answers, launch-day checklist).

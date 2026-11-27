@@ -20,6 +20,8 @@ watch. For what exists, see [today.md](today.md); for accounts and costs, [accou
 
 Done means merged and CI on `main` green, not just pushed. Details: [../CONTRIBUTING.md](../CONTRIBUTING.md).
 
+The steps above are how the founders ship. Agent-authored pull requests follow [team-playbook.md](team-playbook.md).
+
 ## Testing the school side
 
 The school portal and Courses show you the school your account is confirmed with (your university

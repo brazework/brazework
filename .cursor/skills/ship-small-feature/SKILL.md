@@ -1,6 +1,6 @@
 ---
 name: ship-small-feature
-description: Ship one small Brazework feature as a single pull request from main, with local checks and auto-merge only when the change is safe. Use for a small member-facing feature that fits in one issue and one pull request.
+description: Ship one small Brazework feature as a single agent pull request from main. Local checks first. Auto-merge stays off until Temper approves, and then only if the change is safe and CI is green. Database, auth or row-level security, workflow, or pricing changes also wait for Josh's yes. Use for a small member-facing feature that fits in one issue and one pull request.
 ---
 
 # Ship a small feature
@@ -33,7 +33,7 @@ The body states:
 - how it was done
 - what `verify` ran and what it did not run
 
-Auto-merge only when the diff is safe and the local checks passed: no database, auth, row-level security, workflows, shipping rules, payments, or pricing. Otherwise leave auto-merge off and ask Josh.
+Open the pull request with auto-merge off. Never enable it before Temper approves. After that approval, auto-merge only when CI is green and the diff is safe: no database, auth, row-level security, workflow, or pricing. Otherwise leave auto-merge off until Josh says yes.
 
 Don't merge by hand. Don't push to `main`. Don't force-push.
 

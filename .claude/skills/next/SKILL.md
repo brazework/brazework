@@ -1,6 +1,6 @@
 ---
 name: next
-description: Work the next Linear issue end to end, like a product agent. Pick the next open step from the Brazework team's board (or the issue named in the arguments), plan it, build it, test it, ship it to main with the issue ID, and keep the issue updated the whole way. Use when asked "what's next", "do the next thing", "work FIX-30", or "/next".
+description: Work the next Linear issue end to end, like a product agent. Pick the next open step from the Brazework team's board (or the issue named in the arguments), plan it, build it, test it, and ship it through /ship. An agent leaves auto-merge off until Temper approves. Use when asked "what's next", "do the next thing", "work FIX-30", or "/next".
 ---
 
 # /next: work the board
@@ -31,7 +31,7 @@ The Linear team is **Forge** (team ID `e9a4549f-0bad-4ef4-a105-e907d69ab2ca`; ke
 
 ## 4. Ship
 
-Use the `/ship` skill, with the issue ID. It commits with `FIX-n:` in the subject and `Fixes FIX-n` in the body, opens a pull request with auto-merge, watches CI until it merges into main, and reports.
+Use the `/ship` skill, with the issue ID. It commits with `FIX-n:` in the subject and `Fixes FIX-n` in the body. Founders: the pull request auto-merges and `/ship` watches CI until it merges. An agent: auto-merge stays off until Temper approves, and database, auth or row-level security, workflow, or pricing changes also wait for Josh's yes.
 
 ## 5. Close the loop in Linear
 

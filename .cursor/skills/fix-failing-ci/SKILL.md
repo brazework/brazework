@@ -30,7 +30,7 @@ git push origin HEAD
 
 Never force-push. Never push to `main`.
 
-If the pull request is safe (see `docs/team-playbook.md`), auto-merge can stay on and GitHub merges it once the new run is green. If it is on Josh's list, auto-merge stays off.
+A new push does not turn auto-merge on. It stays off until Temper has approved. After that approval, a safe pull request may auto-merge once the new run is green. Database, auth or row-level security, workflow, or pricing stays off until Josh says yes (`docs/team-playbook.md`).
 
 ## 4. Report
 

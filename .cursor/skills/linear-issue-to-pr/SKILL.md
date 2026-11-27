@@ -1,6 +1,6 @@
 ---
 name: linear-issue-to-pr
-description: Turn one Linear issue on team Forge (key FIX) into one pull request. Branches from main, runs verify, and auto-merges only a safe pull request with green CI. Use when asked to implement a FIX issue or open its pull request.
+description: Turn one Linear issue on team Forge (key FIX) into one agent pull request. Branches from main, runs verify, and leaves auto-merge off until Temper approves. After that, auto-merge only a safe pull request with green CI. Database, auth or row-level security, workflow, or pricing changes also wait for Josh's yes. Use when asked to implement a FIX issue or open its pull request.
 ---
 
 # Linear issue to pull request
@@ -43,14 +43,15 @@ Run the `verify` skill. Stop if it fails.
 
 ## 6. Merge
 
-Leave auto-merge off when the diff touches any of these. Josh's yes is required first:
+Leave auto-merge off when you open the pull request. Never enable it before Temper approves, and don't merge it yourself.
+
+After Temper approves, leave auto-merge off when the diff touches any of these until Josh says yes:
 
 - `supabase/` or other database work
 - auth or row-level security
-- `.github/workflows/`
-- the shipping rules (`AGENTS.md`, `docs/team-playbook.md`, `.cursor/`)
+- workflow (`.github/workflows/`, or the shipping rules in `AGENTS.md`, `docs/team-playbook.md`, `.cursor/`, `.claude/skills/`)
 - payments or pricing (`web/src/lib/pricing.ts` and the payment code)
 
-Otherwise, after `verify` passes, turn auto-merge on (squash) so the pull request merges itself when CI is green. Don't merge it yourself, and don't merge while a check is red.
+If Temper has approved, CI is green, and the diff touches none of those, turn auto-merge on (squash). Don't merge while a check is red.
 
 Comment on the issue with the pull request link and the verify report. Move it to Done only when `docs/team-playbook.md` says the change is done.

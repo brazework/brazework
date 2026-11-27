@@ -1,8 +1,6 @@
 # Agents
 
-How an agent works in this repo. The team flow is [docs/team-playbook.md](docs/team-playbook.md). Day-to-day shipping that still matches this page is in [CONTRIBUTING.md](CONTRIBUTING.md) and [docs/operating.md](docs/operating.md).
-
-Some older pages still say every pull request merges itself, and that preview deploys are off. Those pages were left as they are. The pull request that added this file lists each disagreement for the founders. Don't edit those pages to match this one.
+How an agent works in this repo. The team flow is [docs/team-playbook.md](docs/team-playbook.md). Josh and Ian ship as [CONTRIBUTING.md](CONTRIBUTING.md) and [docs/operating.md](docs/operating.md) describe, including a pull request that merges itself when CI is green. You are an agent. Follow this page.
 
 ## Branch and pull request
 
@@ -13,7 +11,7 @@ Some older pages still say every pull request merges itself, and that preview de
 - The pull request title starts with the same id.
 - The pull request body covers three things: what changes for a member (or that members see no change), how it was done, and what was tested and what was not.
 - Before you push, run [verify](.cursor/skills/verify/SKILL.md). From `web/`: `npx next typegen`, then `npx tsc --noEmit && npm run lint && npm test`, plus the end-to-end specs the change touches. Typegen is the step CI runs first so `tsc` can see the generated route types. Don't commit its output.
-- Open the pull request after those checks pass. Auto-merge only a safe pull request, so GitHub merges it when CI is green. Database, auth or row-level security, GitHub workflows, these shipping rules, payments, or pricing: leave auto-merge off until Josh says yes.
+- Open the pull request after those checks pass, with auto-merge off. Never enable it before Temper approves. After that approval, auto-merge only a safe pull request whose CI is green. Database, auth or row-level security, workflow, or pricing: leave auto-merge off until Josh says yes.
 
 Linear is team **Forge**, key `FIX`. When the free-plan issue cap refuses a new issue, say so in the pull request and don't invent an id.
 
@@ -42,4 +40,4 @@ You open the pull request as **Rivet** (engineer). **Temper** (QA) reviews it. *
 | `ship-small-feature` | A small feature, in one pull request |
 | `bug-triage-from-feedback` | Member feedback or a bug report, before any fix |
 
-Claude Code still has `/next`, `/ship`, and `/standup` in `.claude/skills/`. `/ship` still turns auto-merge on for every pull request. That file was left as it is.
+Claude Code's `/next`, `/ship`, and `/standup` live in `.claude/skills/`. When an agent runs `/ship`, auto-merge stays off until Temper approves, and database, auth or row-level security, workflow, or pricing changes also wait for Josh. Founders running `/ship` still turn auto-merge on.
