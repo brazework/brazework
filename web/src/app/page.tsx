@@ -4,7 +4,8 @@ import { Hero } from "@/components/landing/hero";
 import { LegacyLinks } from "@/components/landing/legacy-links";
 import { Nav } from "@/components/landing/nav";
 import { Organizations } from "@/components/landing/organizations";
-import { Audiences, Faq, ForSchools, How } from "@/components/landing/sections";
+import { How } from "@/components/landing/how";
+import { Audiences, Faq, ForSchools } from "@/components/landing/sections";
 import { ThemeChrome } from "@/components/theme-chrome";
 import { ProductHuntWelcome } from "@/components/launch/product-hunt-welcome";
 

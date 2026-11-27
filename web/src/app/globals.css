@@ -701,3 +701,123 @@ select option { background-color: var(--surface); color: var(--text); }
   .hero-pin { position: sticky; top: 0; height: 100svh; }
   .hero-scroll-hint { display: inline-flex; }
 }
+
+/* The braze seam (premium landing, 2026-11-27): Brazework joins metal with heat, so the page's one
+   signature is a seam that runs hot as you go. Behind it the joint has cooled to copper; at the head
+   the filler is white-hot. --seam (0 to 1) is how far along: the hero's scroll run when it pins, the
+   chosen view otherwise (components/landing/hero.tsx), and the steps on /schools (scroll-story.tsx). */
+.landing { --heat-white: #fff6e3; --heat-amber: #ffc06a; --heat-cool: color-mix(in oklab, var(--brand) 55%, var(--text) 10%); }
+.seam { position: relative; height: 2px; background: color-mix(in oklab, var(--text) 8%, transparent); }
+.seam-fill {
+  position: absolute; inset: 0 auto 0 0; width: calc(var(--seam, 0) * 100%);
+  background: linear-gradient(90deg, var(--heat-cool), var(--brand) 70%, var(--heat-amber) 96%, var(--heat-white));
+  transition: width 0.5s var(--ease);
+}
+.seam-head {
+  position: absolute; top: 50%; left: calc(var(--seam, 0) * 100%); width: 9px; height: 9px; margin: -4.5px 0 0 -4.5px;
+  border-radius: 999px; background: var(--heat-white);
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--heat-amber) 70%, transparent), 0 0 12px 3px color-mix(in oklab, var(--heat-amber) 75%, transparent), 0 0 34px 8px color-mix(in oklab, var(--brand) 55%, transparent);
+  transition: left 0.5s var(--ease); animation: seam-flicker 1.8s ease-in-out infinite;
+}
+.seam[data-live] .seam-fill, .seam[data-live] .seam-head { transition: none; }
+.seam-v { position: relative; width: 2px; background: color-mix(in oklab, var(--text) 9%, transparent); }
+.seam-v .seam-fill { inset: 0 0 auto 0; width: auto; height: calc(var(--seam, 0) * 100%); background: linear-gradient(180deg, var(--heat-cool), var(--brand) 70%, var(--heat-amber) 96%, var(--heat-white)); transition: height 0.5s var(--ease); }
+.seam-v .seam-head { top: calc(var(--seam, 0) * 100%); left: 50%; transition: top 0.5s var(--ease); }
+@keyframes seam-flicker { 0%, 100% { opacity: 1; } 45% { opacity: 0.82; } 55% { opacity: 0.95; } }
+
+/* The hero's headline is welded line by line as the run plays: a line still ahead is an outline,
+   the line the seam is on gets one pass of heat, and lines behind it are solid. Only when it pins. */
+.weld-line { --ink: var(--text); display: block; transition: color 0.4s var(--ease); }
+.weld-line.text-brand { --ink: var(--brand); }
+.hero-run[data-pinned] .weld-line[data-state="ahead"] { color: transparent; -webkit-text-stroke: 1.5px color-mix(in oklab, var(--ink) 45%, transparent); }
+.hero-run[data-pinned] .weld-line[data-state="hot"] {
+  background: linear-gradient(100deg, var(--ink) 0 38%, var(--brand) 48%, var(--heat-amber) 52%, var(--ink) 62% 100%) 0 0 / 260% 100% no-repeat;
+  -webkit-background-clip: text; background-clip: text; color: transparent; animation: weld-pass 1.1s var(--ease) both;
+}
+@keyframes weld-pass { from { background-position: 100% 0; } to { background-position: 0 0; } }
+
+/* A panel that changes on a click settles in (the office previews on /schools). */
+.hero-rise { animation: hero-rise 0.5s var(--ease) both; }
+@keyframes hero-rise { from { opacity: 0.4; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+/* A work light follows the pointer across the window (devices with a mouse). */
+.hero-window { position: relative; }
+@media (hover: hover) {
+  .hero-window::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none; border-radius: inherit; opacity: var(--lamp, 0); transition: opacity 0.4s ease;
+    background: radial-gradient(28rem circle at var(--mx, 50%) var(--my, 0%), color-mix(in oklab, var(--brand) 9%, transparent), transparent 60%);
+  }
+}
+
+/* /schools: the report builds as you scroll (components/landing/scroll-story.tsx). */
+.story-run[data-pinned] { height: 300svh; }
+.story-run[data-pinned] .story-pin { position: sticky; top: 0; min-height: 100svh; display: flex; align-items: center; }
+.bar-grow { transform-origin: bottom; transform: scaleY(var(--h, 0)); transition: transform 0.9s var(--ease); transition-delay: calc(var(--d, 0) * 70ms); }
+
+@media (prefers-reduced-motion: reduce) {
+  .seam-head, .hero-run .weld-line[data-state="hot"], .hero-rise { animation: none; }
+  .seam-fill, .seam-head, .bar-grow { transition: none; }
+}
+/* The hero's example builds take turns (hero.tsx CYCLE_MS): a hairline fills under the one showing. */
+.chip-timer { animation: chip-timer 5.5s linear both; }
+@keyframes chip-timer { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+/* The comparison, pinned (compare.tsx): three panels in one space. As the rows play, the profiles
+   and the LMS step back and dim, and Brazework comes forward on its own light. */
+.cmp-run[data-pinned] { height: 240svh; }
+/* Pinned, the comparison must fit one laptop screen under the nav. */
+.cmp-run[data-pinned] .story-pin { padding-top: 5rem; padding-bottom: 1rem; }
+.cmp-run[data-pinned] .cmp-cell { padding-top: 0.35rem; padding-bottom: 0.35rem; }
+.cmp-stage { perspective: 1800px; }
+.cmp-run[data-pinned] .cmp-col { transition: transform 0.2s linear, opacity 0.2s linear; will-change: transform; }
+.cmp-run[data-pinned] .cmp-col[data-side="other"] { transform: translateZ(calc(var(--p, 0) * -110px)) rotateY(calc(var(--p, 0) * 5deg)); opacity: calc(1 - var(--p, 0) * 0.35); }
+.cmp-run[data-pinned] .cmp-col[data-side="us"] {
+  transform: translateZ(calc(var(--p, 0) * 50px)) translateY(calc(var(--p, 0) * -6px));
+  box-shadow: 0 30px 70px -30px color-mix(in oklab, var(--brand) calc(var(--p, 0) * 70%), transparent), var(--shadow-float);
+}
+.cmp-run[data-pinned] .cmp-cell { transition: opacity 0.45s var(--ease), transform 0.45s var(--ease); }
+.cmp-run[data-pinned] .cmp-cell[data-state="ahead"] { opacity: 0.28; transform: translateY(4px); }
+.cmp-run[data-pinned] .cmp-col[data-side="us"] .cmp-cell[data-state="now"] { box-shadow: inset 2px 0 0 var(--brand); background: color-mix(in oklab, var(--brand) 6%, transparent); }
+.cmp-label { transition: color 0.3s ease; }
+.cmp-dot { transition: background-color 0.3s ease, box-shadow 0.3s ease; }
+.cmp-run[data-pinned] .cmp-label[data-state="now"] { color: var(--text); }
+.cmp-run[data-pinned] .cmp-label[data-state="now"] .cmp-dot { background: var(--heat-white); box-shadow: 0 0 10px 2px color-mix(in oklab, var(--heat-amber) 70%, transparent); }
+.cmp-run[data-pinned] .cmp-label[data-state="done"] .cmp-dot { background: var(--brand); }
+
+/* How it works (how.tsx): an exploded view. The signed results sit in one assembly, come apart
+   to be signed, and close under the packet's cover, which drops onto the stack. */
+.xv-run[data-pinned] { height: 240svh; }
+.xv-stage { perspective: 1600px; }
+.xv-assembly {
+  --gap: 10px; width: min(25rem, 80vw); height: 7rem; transform-style: preserve-3d;
+  transform: translate(-50%, -25%) rotateX(38deg) rotateZ(calc(-16deg + var(--p, 0) * 6deg));
+}
+.xv-run[data-step="1"] .xv-assembly { --gap: 64px; }
+.xv-run[data-step="2"] .xv-assembly { --gap: 7px; }
+.xv-card {
+  position: absolute; inset: 0; padding: 14px 16px; border-radius: 14px; border: 1px solid var(--border);
+  background: var(--surface); transform: translateZ(calc(var(--i) * var(--gap)));
+  box-shadow: inset 0 1px 0 var(--window-rim, transparent), 0 18px 30px -18px rgba(0, 0, 0, 0.45);
+  transition: transform 0.9s var(--ease), opacity 0.5s var(--ease), border-color 0.5s ease;
+}
+.xv-seal { opacity: 0; transform: scale(0.6); transition: opacity 0.4s ease, transform 0.5s var(--ease); transition-delay: calc(var(--i) * 90ms); }
+.xv-run:not([data-step="0"]) .xv-seal { opacity: 1; transform: none; }
+.xv-cover { opacity: 0; transform: translateZ(calc(var(--i) * var(--gap) + 120px)); border-color: color-mix(in oklab, var(--brand) 45%, var(--border)); background: linear-gradient(160deg, color-mix(in oklab, var(--brand) 9%, var(--surface)), var(--surface) 60%); }
+.xv-run[data-step="2"] .xv-cover { opacity: 1; transform: translateZ(calc(var(--i) * var(--gap))); box-shadow: inset 0 1px 0 var(--window-rim, transparent), 0 24px 50px -20px color-mix(in oklab, var(--brand) 55%, transparent); }
+@media (prefers-reduced-motion: reduce) { .xv-card, .xv-seal { transition: none; } }
+
+/* Cards with depth (tilt.tsx): a layered shadow, a lit top edge, and a lean toward the pointer. */
+.tilt {
+  position: relative; transform: perspective(900px) rotateX(var(--rx, 0deg)) rotateY(var(--ry, 0deg));
+  transition: transform 0.35s var(--ease), box-shadow 0.35s var(--ease);
+  box-shadow: inset 0 1px 0 var(--window-rim, transparent), 0 1px 2px rgba(0, 0, 0, 0.06), 0 20px 40px -24px rgba(0, 0, 0, 0.35);
+}
+.tilt::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none; opacity: 0; transition: opacity 0.35s ease;
+  background: radial-gradient(18rem circle at var(--mx, 50%) var(--my, 0%), color-mix(in oklab, var(--brand) 10%, transparent), transparent 65%);
+}
+@media (hover: hover) { .tilt:hover::after { opacity: 1; } .tilt:hover { box-shadow: inset 0 1px 0 var(--window-rim, transparent), 0 2px 4px rgba(0, 0, 0, 0.06), 0 30px 60px -28px rgba(0, 0, 0, 0.45); } }
+@media (prefers-reduced-motion: reduce) { .tilt { transform: none; transition: none; } }
+
+
+
+

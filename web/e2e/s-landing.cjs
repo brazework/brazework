@@ -21,6 +21,8 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
   await step("hero: what you type is the milestone in the product window, and it goes with you to sign-up", async () => {
     await go(page, "/");
     await hydrated(page.locator("#hero-build"));
+    // The example builds take turns on a timer until the visitor picks one or types; pick the arm.
+    await page.getByRole("group", { name: "Example builds" }).getByRole("button", { name: "Robot arm", exact: true }).click();
     await page.locator("#hero-build").fill(BUILD);
     await page.locator("#hero-card").getByText(BUILD).waitFor();
     // The robot arm leads: a class milestone, submitted to its assignment in the course.
@@ -71,6 +73,18 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
     // What isn't built says so: Torch's feedback draft.
     await tabs().getByRole("tab", { name: "Professor" }).click();
     await view("verify").getByText("Coming soon:").waitFor();
+  }, page);
+
+  await step("hero: the example builds take turns on a timer, and picking one stops it", async () => {
+    await go(page, "/");
+    await hydrated(page.locator("#hero-build"));
+    const builds = page.getByRole("group", { name: "Example builds" });
+    const shown = () => builds.getByRole("button", { pressed: true }).innerText();
+    if ((await shown()) !== "Robot arm") throw new Error(`the hero opens on ${await shown()}`);
+    await page.waitForFunction(() => document.querySelector('[aria-label="Example builds"] [aria-pressed="true"]')?.textContent !== "Robot arm", null, { timeout: 9000 });
+    await builds.getByRole("button", { name: "Drone", exact: true }).click();
+    await page.waitForTimeout(6500);
+    if ((await shown()) !== "Drone") throw new Error(`after picking Drone the hero moved on to ${await shown()}`);
   }, page);
 
   await step("hero: every build draws in 3D in its three views (software ones name theirs), and a club build is verified by its officer", async () => {
@@ -187,9 +201,21 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
     await sec.getByText(/It never signs anything/).waitFor();
   }, page);
 
-  await step("the page stays short: the hero's scroll run plus a few screens on a laptop", async () => {
+  await step("no prices on the landing page: they're on /pricing, and schools talk to us", async () => {
+    if (/\$\d/.test(await page.locator("main").innerText())) throw new Error("the landing page shows a price");
+    const cost = page.locator("#faq").getByText("What does it cost?", { exact: true });
+    await cost.click();
+    await page.locator("#faq").getByRole("link", { name: "the pricing page" }).waitFor();
+  }, page);
+
+  // Three sections pin and play as you scroll on a laptop (the hero, how it works and the comparison;
+  // premium pass 2026-11-27), so the page runs longer than it reads: the cap is eleven screens.
+  await step("the page stays within eleven laptop screens, with three sections that play as you scroll", async () => {
     const h = await page.evaluate(() => document.documentElement.scrollHeight);
-    if (h > 950 * 8) throw new Error(`the page is ${h}px tall, more than eight screens`);
+    if (h > 950 * 11) throw new Error(`the page is ${h}px tall, more than eleven screens`);
+    for (const sel of ["#top[data-pinned]", "#how [data-pinned]", "#compare[data-pinned]"]) if (!(await page.locator(sel).count())) throw new Error(`${sel.split(" ")[0].replace("[data-pinned]", "")} doesn't pin on a laptop`);
+    await page.locator("#how").getByRole("button", { name: /It's yours for good/ }).click();
+    await page.waitForFunction(() => document.querySelector("#how [data-step]")?.getAttribute("data-step") === "2", null, { timeout: 5000 });
   }, page);
 
   await step("the AI guide: a signed-out visitor follows the footer to /ai and finds the setup, what to ask, the rules and all 20 fields", async () => {
@@ -257,6 +283,7 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
   await step("reduced motion: the hero doesn't pin, and each view shows its end state as soon as it opens", async () => {
     await still.goto(BASE + "/", { waitUntil: "networkidle" });
     await hydrated(still.locator("#hero-build"));
+    if (await still.locator("[data-pinned]").count()) throw new Error("a section still pins with reduced motion");
     const run = await still.evaluate(() => { const el = document.getElementById("top"); return el.offsetHeight - el.firstElementChild.offsetHeight; });
     if (Math.abs(run) > 2) throw new Error(`the hero still has a scroll run (${run}px)`);
     const t = still.getByRole("tablist", { name: "Follow one project" });

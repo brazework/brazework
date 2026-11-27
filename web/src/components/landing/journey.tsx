@@ -1,5 +1,5 @@
 import { ArrowRight, Box, Check, Code2, Download, Eye, FileText, Gauge, Image as ImageIcon, Link2, Lock, Scissors, Search, Sparkles, X } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Seal } from "@/components/app/verified-seal";
 import { cn } from "@/lib/forge";
 import { CadStage, type Mode } from "./cad-stage";
@@ -37,18 +37,25 @@ const MODES: { id: Mode; label: string; icon: typeof Box }[] = [
 ];
 
 // 1. The student: a build to turn and cut open, and the milestone with its proof, under its class or club.
-export function StudentView({ ex, title, on, pick, choose, next }: ViewProps & { pick: string; choose: (id: Example["id"]) => void }) {
+export function StudentView({ ex, title, on, pick, choose, next, cycling }: ViewProps & { pick: string; choose: (id: Example["id"]) => void; cycling?: boolean }) {
   const [mode, setMode] = useState<Mode>("render");
+  const row = useRef<HTMLDivElement>(null);
+  // Keep the chosen build in view in its row when the timer moves it (sideways only, never the page).
+  useEffect(() => {
+    const el = row.current, b = el?.querySelector<HTMLElement>('[aria-pressed="true"]');
+    if (el && b) el.scrollTo({ left: b.offsetLeft - el.clientWidth / 2 + b.offsetWidth / 2, behavior: "smooth" });
+  }, [pick]);
   const [lo, hi] = ex.field ?? ["Low", "High"];
   const names = ex.modes ?? MODES.map((m) => m.label);
   return (
     <div className="flex h-full flex-col">
       <div className="flex items-center border-b border-line px-3 py-2">
-        <div role="group" aria-label="Example builds" className="no-scrollbar -mx-1 flex min-w-0 flex-1 gap-1 overflow-x-auto px-1">
+        <div ref={row} role="group" aria-label="Example builds" className="no-scrollbar -mx-1 flex min-w-0 flex-1 gap-1 overflow-x-auto px-1">
           {EXAMPLES.map((e) => (
             <button key={e.id} type="button" aria-pressed={e.id === pick} tabIndex={on ? 0 : -1} onClick={() => choose(e.id)}
-              className={cn("inline-flex h-8 shrink-0 items-center rounded-lg px-2.5 text-[13px] whitespace-nowrap transition-colors", e.id === pick ? "bg-raised font-medium text-text" : "text-muted hover:bg-hover hover:text-text")}>
+              className={cn("relative inline-flex h-8 shrink-0 items-center overflow-hidden rounded-lg px-2.5 text-[13px] whitespace-nowrap transition-colors", e.id === pick ? "bg-raised font-medium text-text" : "text-muted hover:bg-hover hover:text-text")}>
               {e.chip}
+              {cycling && e.id === pick && <span key={pick} aria-hidden="true" className="chip-timer absolute inset-x-2 bottom-0.5 h-px origin-left bg-brand" />}
             </button>
           ))}
         </div>

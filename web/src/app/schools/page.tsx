@@ -3,7 +3,9 @@ import { ArrowRight, Check, Lock } from "lucide-react";
 import Link from "next/link";
 import { Footer } from "@/components/landing/closing";
 import { Nav } from "@/components/landing/nav";
-import { H2, SCHOOL_OUTCOMES } from "@/components/landing/sections";
+import { ScrollStory } from "@/components/landing/scroll-story";
+import { CampusPrice, Offices } from "@/components/landing/schools-interactive";
+import { H2 } from "@/components/landing/sections";
 import { ThemeChrome } from "@/components/theme-chrome";
 import { CAMPUS_BANDS, FOUNDING, SCHOOL, SCHOOL_SOON, perStudent } from "@/lib/pricing";
 
@@ -75,36 +77,11 @@ export default function SchoolsPage() {
         <section aria-labelledby="offices-h" className="py-14 md:py-24">
           <div className="mx-auto max-w-6xl px-5 sm:px-6">
             <h2 id="offices-h" className={H2}>What each office gets</h2>
-            <ul className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 md:mt-10">
-              {SCHOOL_OUTCOMES.map((o) => (
-                <li key={o.title} className="flex flex-col rounded-2xl border border-line bg-surface p-6">
-                  <span className="flex items-center justify-between gap-3">
-                    <span className="grid size-10 place-items-center rounded-xl bg-surface-2 text-text-2"><o.icon className="size-5" aria-hidden="true" /></span>
-                    {o.soon && <span className="rounded-full border border-line px-2.5 py-0.5 font-mono text-[11px] text-muted">Building with pilot schools</span>}
-                  </span>
-                  <p className="mt-5 font-mono text-xs text-faint">{o.office}</p>
-                  <h3 className="mt-1 text-xl font-semibold tracking-tight">{o.title}</h3>
-                  <p className="mt-2 text-[15px] leading-relaxed text-muted">{o.body}</p>
-                </li>
-              ))}
-            </ul>
+            <Offices />
           </div>
         </section>
 
-        <section aria-labelledby="how-h" className="border-y border-line bg-surface-2/60 py-14 md:py-24">
-          <div className="mx-auto max-w-6xl px-5 sm:px-6">
-            <h2 id="how-h" className={H2}>How it works at your school</h2>
-            <ol className="mt-8 grid grid-cols-1 gap-4 md:mt-10 md:grid-cols-2 lg:grid-cols-4">
-              {HOW.map((s) => (
-                <li key={s.n} className="rounded-2xl border border-line bg-surface p-5">
-                  <span className="grid size-8 place-items-center rounded-full bg-accent text-sm font-semibold text-on-accent">{s.n}</span>
-                  <h3 className="mt-4 text-lg font-semibold tracking-tight">{s.title}</h3>
-                  <p className="mt-2 text-[15px] leading-relaxed text-muted">{s.body}</p>
-                </li>
-              ))}
-            </ol>
-          </div>
-        </section>
+        <ScrollStory steps={HOW} />
 
         <section aria-labelledby="lms-h" className="py-14 md:py-24">
           <div className="mx-auto max-w-6xl px-5 sm:px-6">
@@ -143,6 +120,7 @@ export default function SchoolsPage() {
               <p className="text-sm font-medium text-muted">Department</p>
               <p className="mt-2 text-4xl font-semibold tracking-tight">{usd(SCHOOL.department)}<span className="text-lg font-normal text-muted"> / year</span></p>
               <p className="mt-1 text-sm text-muted">With {SCHOOL.seatsIncluded} faculty seats, {usd(SCHOOL.perSeat)} per extra seat. A whole campus, every department and unlimited faculty: {usd(CAMPUS_BANDS[0].price)} to {usd(CAMPUS_BANDS[2].price)} a year by enrollment.</p>
+              <CampusPrice />
               <p className="mt-3 rounded-lg border border-line bg-surface-2 px-3 py-2.5 text-sm text-text-2"><span className="font-medium text-text">Founding schools:</span> the first {FOUNDING.schools} campuses keep that price for {FOUNDING.lockYears} years (list price from {usd(CAMPUS_BANDS[0].list)}). At {CAMPUS_BANDS[1].upTo.toLocaleString("en-US")} students that&apos;s {perStudent(CAMPUS_BANDS[1].upTo)} a student a year.</p>
               <ul className="mt-6 flex flex-1 flex-col gap-2.5 text-[15px] text-text-2">
                 {["Every student and every club included, never priced per head", "Classes by course and semester, rosters from a CSV", "Faculty from your own list verify class projects", "Evidence export for accreditation, and your school's numbers", "Your official school account and its verified clubs"].map((x) => <li key={x} className="flex gap-2.5"><Check className="mt-1 size-4 shrink-0 text-ok" aria-hidden="true" />{x}</li>)}

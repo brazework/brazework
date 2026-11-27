@@ -27,6 +27,7 @@ const RUN = "(min-width: 1024px) and (min-height: 700px) and (prefers-reduced-mo
 const subscribe = (f: () => void) => { const m = matchMedia(RUN); m.addEventListener("change", f); return () => m.removeEventListener("change", f); };
 const usePinned = () => useSyncExternalStore(subscribe, () => matchMedia(RUN).matches, () => false);
 
+const CYCLE_MS = 5500;
 const VIEWS = [
   { id: "student", tab: "Student", say: "The student hands in the milestone for the assignment, with the file that proves it.", note: "Example project" },
   { id: "verify", tab: "Professor", say: "The professor grades it with the rubric, and the same click verifies it. Only the student and the course's faculty see the grade.", note: "Example · Torch's feedback draft is coming soon" },
@@ -40,13 +41,17 @@ export function Hero() {
   const [pick, setPick] = useState<Example["id"]>("arm");
   const [view, setView] = useState(0);
   const [verified, setVerified] = useState(false);
+  // The example builds take turns on a timer while the visitor is on the first view (premium pass,
+  // 2026-11-27); choosing one or typing stops it for good. Never with reduced motion, off screen or
+  // in a hidden tab.
+  const [auto, setAuto] = useState(true);
   const still = useReducedMotion();
   const pinned = usePinned();
   const run = useRef<HTMLElement>(null);
   const quietUntil = useRef(0);
   // The progress line under the tabs: written straight to the element on scroll (no re-render), so it
   // follows the page continuously while the view changes only at each stretch.
-  const line = useRef<HTMLSpanElement>(null);
+  const line = useRef<HTMLDivElement>(null);
   const ex = EXAMPLES.find((e) => e.id === pick)!;
   const build = cleanBuild(typed);
   const title = build || ex.milestone;
@@ -62,7 +67,7 @@ export function Hero() {
       if (!el) return;
       const length = el.offsetHeight - innerHeight;
       const p = length > 0 ? Math.min(1, Math.max(0, -el.getBoundingClientRect().top / length)) : 0;
-      if (line.current) line.current.style.transform = `scaleX(${Math.max(0.2, p)})`;
+      line.current?.style.setProperty("--seam", String(Math.max(0.2, p)));
       if (performance.now() < quietUntil.current) return;
       setView(Math.min(VIEWS.length - 1, Math.floor(p * VIEWS.length)));
     };
@@ -88,7 +93,26 @@ export function Hero() {
     quietUntil.current = performance.now() + 2000;
     scrollTo({ top: top + (length * (k + 0.5)) / VIEWS.length, behavior: "smooth" });
   }, [pinned]);
-  const choose = (id: Example["id"]) => { setPick(id); setVerified(false); };
+  const choose = (id: Example["id"]) => { setAuto(false); setPick(id); setVerified(false); };
+  const cycling = auto && !still && view === 0 && !typed;
+  useEffect(() => {
+    if (!cycling) return;
+    const t = setInterval(() => {
+      const r = run.current?.getBoundingClientRect();
+      if (document.hidden || (r && (r.bottom < 0 || r.top > innerHeight))) return;
+      setPick((p) => EXAMPLES[(EXAMPLES.findIndex((e) => e.id === p) + 1) % EXAMPLES.length].id);
+    }, CYCLE_MS);
+    return () => clearInterval(t);
+  }, [cycling]);
+  // The headline is welded line by line as the run plays (globals.css .weld-line): Build with the
+  // student, Prove once it's verified and counted, Own once it goes with them. It ends as it reads.
+  const weld = [0, 1, 1, 2, 2][view];
+  const lamp = (e: React.PointerEvent<HTMLDivElement>) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    e.currentTarget.style.setProperty("--mx", `${e.clientX - r.left}px`);
+    e.currentTarget.style.setProperty("--my", `${e.clientY - r.top}px`);
+    e.currentTarget.style.setProperty("--lamp", "1");
+  };
   const verify = useCallback(() => setVerified(true), []);
   const onKeyTabs = (e: React.KeyboardEvent) => {
     const d = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0;
@@ -102,20 +126,22 @@ export function Hero() {
   const props = (k: number) => ({ ex, title, on: view === k, still, next: () => go(k + 1) });
 
   return (
-    <section id="top" ref={run} aria-labelledby="hero-h" className="hero-run relative isolate overflow-clip bg-bg text-text">
+    <section id="top" ref={run} aria-labelledby="hero-h" data-pinned={pinned || undefined} className="hero-run relative isolate overflow-clip bg-bg text-text">
       <div className="hero-pin relative isolate flex flex-col justify-center pt-24 pb-12 sm:pt-28 lg:pt-20 lg:pb-6">
         <div aria-hidden="true" className="hero-glow pointer-events-none absolute inset-0 -z-10" />
         <div className="mx-auto grid w-full max-w-6xl grid-cols-1 items-center gap-10 px-5 sm:px-6 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)] lg:gap-12">
           <div className="min-w-0">
             <p className="inline-flex items-center gap-2 rounded-full border border-line bg-surface/60 px-3 py-1 text-xs text-text-2"><span aria-hidden="true" className="size-1.5 rounded-full bg-brand" /> New: Brazework Courses</p>
-            <h1 id="hero-h" className="mt-5 text-[clamp(2.75rem,6.2vw,4.75rem)] leading-[0.95] font-semibold tracking-[-0.05em]">Build it.<br />Prove it.<br /><span className="text-brand">Own it.</span></h1>
+            <h1 id="hero-h" className="mt-5 text-[clamp(2.75rem,6.2vw,4.75rem)] leading-[0.95] font-semibold tracking-[-0.05em]">{["Build it.", "Prove it.", "Own it."].map((w, i) => (
+                <span key={w} className={cn("weld-line", i === 2 && "text-brand")} data-state={i < weld ? "done" : i === weld ? "hot" : "ahead"}>{w}</span>
+              ))}</h1>
             <p className="mt-5 max-w-[31rem] text-lg leading-relaxed text-muted">A record of the work you&apos;ve really done, each piece signed by the person who saw it: your professor, your club or your coworker. Free for students and professionals. Schools run their project courses on it.</p>
 
             <div className="mt-8 max-w-[30rem]">
               <label htmlFor="hero-build" className="text-sm font-medium text-text-2">What did you build?</label>
               <div className="mt-2 grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_auto]">
                 <input id="hero-build" value={typed} maxLength={300} autoComplete="off" enterKeyHint="go"
-                  onChange={(e) => { setTyped(e.target.value); setVerified(false); if (view !== 0) go(0); }}
+                  onChange={(e) => { setAuto(false); setTyped(e.target.value); setVerified(false); if (view !== 0) go(0); }}
                   onKeyDown={(e) => { if (e.key === "Enter" && build) window.location.assign(signupHref("", build)); }}
                   placeholder={ex.milestone} aria-describedby="hero-build-hint" aria-controls="hero-card"
                   className="h-12 w-full min-w-0 rounded-xl border border-line-strong bg-surface px-4 text-[16px] transition outline-none placeholder:text-faint focus:border-text focus:shadow-[0_0_0_4px_color-mix(in_oklab,var(--text)_12%,transparent)]" />
@@ -128,7 +154,7 @@ export function Hero() {
 
           {/* The product window: five views of one project, the same size, so nothing moves. */}
           <div className="min-w-0">
-            <div className="hero-window overflow-hidden rounded-2xl border border-line bg-surface">
+            <div onPointerMove={lamp} onPointerLeave={(e) => e.currentTarget.style.setProperty("--lamp", "0")} className="hero-window overflow-hidden rounded-2xl border border-line bg-surface">
               <div role="tablist" aria-label="Follow one project" onKeyDown={onKeyTabs} className="relative grid grid-cols-5 border-b border-line">
                 {tabs.map((v, k) => (
                   <button key={v.id} id={`hero-tab-${v.id}`} type="button" role="tab" aria-selected={view === k} aria-controls={`hero-view-${v.id}`} tabIndex={view === k ? 0 : -1} onClick={() => go(k)}
@@ -137,13 +163,14 @@ export function Hero() {
                     <span className="max-w-full truncate">{v.tab}</span>
                   </button>
                 ))}
-                <span ref={line} aria-hidden="true" className={cn("absolute right-0 bottom-[-1px] left-0 h-0.5 origin-left bg-brand will-change-transform", !pinned && "transition-transform duration-500 ease-out")} style={pinned ? undefined : { transform: `scaleX(${(view + 1) / VIEWS.length})` }} />
+                {/* The braze seam: cooled copper behind, a white-hot bead where the run is (globals.css .seam). */}
+                <div ref={line} aria-hidden="true" data-live={pinned || undefined} className="seam absolute inset-x-0 bottom-[-1px]" style={pinned ? undefined : ({ "--seam": (view + 1) / VIEWS.length } as React.CSSProperties)}><span className="seam-fill" /><span className="seam-head" /></div>
               </div>
               <div className="hero-body relative">
                 {tabs.map((v, k) => (
                   <div key={v.id} id={`hero-view-${v.id}`} role="tabpanel" aria-labelledby={`hero-tab-${v.id}`} inert={view !== k}
                     className={cn("absolute inset-0 transition-[opacity,translate,visibility] duration-[420ms] ease-[cubic-bezier(0.2,0.8,0.2,1)] motion-reduce:transition-none", view === k ? "visible translate-y-0 opacity-100" : "invisible translate-y-1.5 opacity-0")}>
-                    {k === 0 && <StudentView {...props(0)} pick={pick} choose={choose} />}
+                    {k === 0 && <StudentView {...props(0)} pick={pick} choose={choose} cycling={cycling} />}
                     {k === 1 && <VerifyView key={ex.id} {...props(1)} verified={verified} verify={verify} />}
                     {k === 2 && <SchoolView key={ex.id} {...props(2)} />}
                     {k === 3 && <RecruiterView key={ex.id} {...props(3)} />}
