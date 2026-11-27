@@ -137,7 +137,7 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
   await step("what the others can't do: profiles, the course site and Brazework, straight after the hero, with what's still being built marked", async () => {
     await go(page, "/");
     const order = await page.locator("main > section").evaluateAll((els) => els.map((el) => el.id));
-    if (order.join(",") !== "top,how,for,schools,compare,faq,pilot") throw new Error(`the page runs ${order.join(", ")}`);
+    if (order.join(",") !== "top,how,torch,for,schools,compare,faq,pilot") throw new Error(`the page runs ${order.join(", ")}`);
     const sec = page.locator("#compare");
     await sec.getByRole("heading", { name: /Everything a course needs, built around what students build/ }).waitFor();
     // Brazework is the course platform now (docs/strategy.md): the page no longer hands grades to an LMS.
@@ -169,12 +169,18 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
     await go(page, "/");
   }, page);
 
-  await step("how it works: three steps that are the same for everyone, and Torch does the busywork", async () => {
+  await step("how it works: three steps that are the same for everyone, then Torch: pick an example, scroll it from one sentence to a yes", async () => {
     const sec = page.locator("#how");
     for (const h of ["Log what you built", "Someone who saw it signs it", "It's yours for good"]) await sec.getByRole("heading", { name: h, exact: true }).waitFor();
     for (const who of ["Your professor", "Your club", "Your coworker", "A client"]) await sec.getByText(who, { exact: true }).waitFor();
-    await sec.getByText(/nothing is saved until you say yes/).waitFor();
-    if ((await sec.getByRole("link", { name: /Use it from Claude or ChatGPT/ }).getAttribute("href")) !== "/ai") throw new Error("the Torch line doesn't link to /ai");
+    const torch = page.locator("#torch");
+    await torch.getByRole("heading", { name: "Nothing is saved until you say yes" }).waitFor();
+    if ((await torch.getByRole("link", { name: /Use it from Claude or ChatGPT/ }).getAttribute("href")) !== "/ai") throw new Error("the Torch section doesn't link to /ai");
+    // Pick the work example, scroll to the last step, and say yes: the screen answers, and sends nothing.
+    await torch.getByRole("group", { name: "Try it with" }).getByRole("button", { name: "Something from work" }).click();
+    await torch.locator("li[data-k='3']").evaluate((el) => el.scrollIntoView({ block: "center" }));
+    await torch.getByRole("button", { name: "Yes, save it" }).click();
+    await torch.getByRole("status").filter({ hasText: /R\. Okoro was asked to sign\. \(An example: nothing is sent from this page\.\)/ }).waitFor();
   }, page);
 
   await step("who it's for: students, professionals, clubs and schools, each with where to start; companies get a line", async () => {
@@ -209,13 +215,43 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
   }, page);
 
   // Three sections pin and play as you scroll on a laptop (the hero, how it works and the comparison;
-  // premium pass 2026-11-27), so the page runs longer than it reads: the cap is eleven screens.
-  await step("the page stays within eleven laptop screens, with three sections that play as you scroll", async () => {
+  // premium pass 2026-11-27) and Torch's story scrolls past its screen, so the page runs longer than it
+  // reads: the cap is fifteen screens.
+  await step("the page stays within fifteen laptop screens, with three sections that play as you scroll", async () => {
     const h = await page.evaluate(() => document.documentElement.scrollHeight);
-    if (h > 950 * 11) throw new Error(`the page is ${h}px tall, more than eleven screens`);
+    if (h > 950 * 15) throw new Error(`the page is ${h}px tall, more than fifteen screens`);
     for (const sel of ["#top[data-pinned]", "#how [data-pinned]", "#compare[data-pinned]"]) if (!(await page.locator(sel).count())) throw new Error(`${sel.split(" ")[0].replace("[data-pinned]", "")} doesn't pin on a laptop`);
     await page.locator("#how").getByRole("button", { name: /It's yours for good/ }).click();
     await page.waitForFunction(() => document.querySelector("#how [data-step]")?.getAttribute("data-step") === "2", null, { timeout: 5000 });
+  }, page);
+
+  await step("a page for each: students, professionals and clubs, each told as a scroll story, linked from who it's for", async () => {
+    await go(page, "/");
+    for (const [who, path, h1, cta] of [["students", "/for/students", /Your work, signed by the people who saw it/, "/signup"], ["professionals", "/for/professionals", /What you ship, signed by the people you ship it with/, "/signup?goal=job"], ["clubs", "/for/clubs", /Run your club\. Stand behind what it builds/, "/#pilot"]]) {
+      if ((await page.locator("#for").getByRole("link", { name: `How it works for ${who}` }).getAttribute("href")) !== path) throw new Error(`the ${who} card doesn't link to ${path}`);
+      await go(page, path);
+      await page.getByRole("heading", { level: 1, name: h1 }).waitFor();
+      if ((await page.locator("#top").getByRole("link").first().getAttribute("href")) !== cta) throw new Error(`${path}: the first button doesn't lead to ${cta}`);
+      const steps = page.locator("li[data-k]");
+      const n = await steps.count();
+      if (n < 4) throw new Error(`${path}: ${n} steps in the story`);
+      await steps.nth(n - 1).evaluate((el) => el.scrollIntoView({ block: "center" }));
+      await page.waitForFunction(() => document.querySelectorAll("figure > div:not([inert])").length === 1, null, { timeout: 5000 });
+      if (/\$\d/.test(await page.locator("main").innerText())) throw new Error(`${path} shows a price`);
+      await go(page, "/");
+    }
+  }, page);
+
+  await step("phone: /for/clubs keeps its screen under the nav while the steps scroll, with nothing sideways", async () => {
+    const p = await (await b.newContext({ viewport: { width: 390, height: 844 }, deviceScaleFactor: 3, isMobile: true, hasTouch: true })).newPage();
+    await go(p, "/for/clubs");
+    const steps = p.locator("li[data-k]");
+    await steps.nth(2).evaluate((el) => el.scrollIntoView({ block: "center" }));
+    const fig = await p.locator("figure").boundingBox();
+    if (!fig || fig.y < 60 || fig.y > 120) throw new Error(`the screen isn't held under the nav (top at ${fig && Math.round(fig.y)}px)`);
+    await p.locator("figure > div:not([inert])").getByText("Asked to verify").waitFor({ timeout: 5000 });
+    if (await p.evaluate(() => document.documentElement.scrollWidth > innerWidth)) throw new Error("/for/clubs scrolls sideways on a phone");
+    await p.context().close();
   }, page);
 
   await step("the AI guide: a signed-out visitor follows the footer to /ai and finds the setup, what to ask, the rules and all 20 fields", async () => {

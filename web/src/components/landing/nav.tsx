@@ -11,9 +11,13 @@ import { cn } from "@/lib/forge";
 // `wide`: only in the bar on a wide screen. `noPhone`: a section a phone doesn't show (app/page.tsx), so
 // the phone menu leaves it out. Section links (#top, the hero's product window) point back at the
 // landing page from /schools.
-const LINKS: { href: string; label: string; wide?: boolean; noPhone?: boolean }[] = [
+const LINKS: { href: string; label: string; wide?: boolean; noPhone?: boolean; phoneOnly?: boolean }[] = [
   { href: "#how", label: "How it works" },
-  { href: "#for", label: "Who it's for" },
+  { href: "#for", label: "Who it's for", noPhone: true },
+  // On a phone the menu names each page for who it's for (app/for/*); the bar has "Who it's for".
+  { href: "/for/students", label: "For students", phoneOnly: true },
+  { href: "/for/professionals", label: "For professionals", phoneOnly: true },
+  { href: "/for/clubs", label: "For clubs", phoneOnly: true },
   { href: "/schools", label: "For schools" },
   { href: "/pricing", label: "Pricing" },
   { href: "/ai", label: "Connect your AI", wide: true },
@@ -59,14 +63,14 @@ export function Nav() {
         aria-label="Main"
         className={cn(
           "relative flex w-full max-w-6xl flex-wrap items-center gap-x-3 gap-y-0 rounded-2xl sm:gap-x-6 px-4 py-2.5 transition-all duration-500",
-          scrolled || open ? "glass shadow-[var(--shadow-float)]" : cn("border border-transparent bg-transparent", path !== "/" && "theme-dark"),
+          scrolled || open ? "glass shadow-[var(--shadow-float)]" : cn("border border-transparent bg-transparent", path !== "/" && !path.startsWith("/for/") && "theme-dark"),
         )}
       >
         {/* How far down the page you've read: a hairline along the bar's lower edge, once it floats. */}
         <motion.span aria-hidden="true" className={cn("pointer-events-none absolute inset-x-4 bottom-0 h-px origin-left bg-text transition-opacity duration-300", scrolled && !open ? "opacity-60" : "opacity-0")} style={{ scaleX: scrollYProgress }} />
         <Link href="/" aria-label="Brazework home"><Logo /></Link>
         <ul className="ml-4 hidden items-center gap-1 md:flex">
-          {LINKS.map((l) => (
+          {LINKS.filter((l) => !l.phoneOnly).map((l) => (
             <li key={l.href} className={cn(l.wide && "hidden xl:block")}>
               <a href={to(l.href)} aria-current={here === l.href ? "location" : path === l.href ? "page" : undefined} className={cn("rounded-md px-3 py-1.5 text-sm transition hover:bg-hover hover:text-text", current(l.href) ? "bg-hover text-text" : "text-muted")}>{l.label}</a>
             </li>

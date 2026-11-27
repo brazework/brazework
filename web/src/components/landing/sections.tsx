@@ -58,10 +58,10 @@ export function ForSchools() {
   );
 }
 
-const FOR = [
-  { icon: GraduationCap, who: "Students", body: "Your classes, clubs and projects in one place. Your professor or club signs what you built, and it stays yours after you graduate. Free with your school email.", cta: "Start your record", href: "/signup" },
-  { icon: Briefcase, who: "Professionals", body: "Log what you ship at work. A coworker, tech lead or client signs it from their work email. Nothing is public until you choose, and your record moves with you when you change jobs. Free to start.", cta: "Start as a professional", href: "/signup?goal=job" },
-  { icon: Users, who: "Clubs", body: "Officers sign what members build, and your school sees what the club does. Free for every club and member.", cta: "Bring your club", href: "#pilot" },
+const FOR: { icon: typeof Users; who: string; body: string; cta: string; href: string; more?: string }[] = [
+  { icon: GraduationCap, who: "Students", body: "Your classes, clubs and projects in one place. Your professor or club signs what you built, and it stays yours after you graduate. Free with your school email.", cta: "Start your record", href: "/signup" , more: "/for/students"},
+  { icon: Briefcase, who: "Professionals", body: "Log what you ship at work. A coworker, tech lead or client signs it from their work email. Nothing is public until you choose, and your record moves with you when you change jobs. Free to start.", cta: "Start as a professional", href: "/signup?goal=job" , more: "/for/professionals"},
+  { icon: Users, who: "Clubs", body: "Officers sign what members build, and your school sees what the club does. Free for every club and member.", cta: "Bring your club", href: "#pilot" , more: "/for/clubs"},
   { icon: Landmark, who: "Schools", body: "Run your project courses on it. Faculty grade and verify in one step, and each office gets the evidence it's measured on.", cta: "What schools get", href: "/schools" },
 ];
 
@@ -79,7 +79,10 @@ export function Audiences() {
                 <h3 className="text-xl font-semibold tracking-tight md:mt-5">{f.who}</h3>
               </span>
               <p className="mt-2 flex-1 text-[15px] leading-relaxed text-muted">{f.body}</p>
-              <Link href={f.href} className="mt-5 inline-flex items-center gap-1.5 text-sm font-medium text-text underline-offset-4 hover:underline">{f.cta} <ArrowRight className="size-3.5" /></Link>
+              <span className="mt-5 flex flex-wrap items-center gap-x-4 gap-y-2">
+                <Link href={f.href} className="inline-flex items-center gap-1.5 text-sm font-medium text-text underline-offset-4 hover:underline">{f.cta} <ArrowRight className="size-3.5" /></Link>
+                {f.more && <Link href={f.more} className="text-sm text-muted underline-offset-4 hover:text-text hover:underline">How it works for {f.who.toLowerCase()}</Link>}
+              </span>
             </Tilt>
           ))}
         </ul>

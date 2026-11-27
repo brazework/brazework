@@ -5,6 +5,7 @@ import { LegacyLinks } from "@/components/landing/legacy-links";
 import { Nav } from "@/components/landing/nav";
 import { Organizations } from "@/components/landing/organizations";
 import { How } from "@/components/landing/how";
+import { Torch } from "@/components/landing/torch";
 import { Audiences, Faq, ForSchools } from "@/components/landing/sections";
 import { ThemeChrome } from "@/components/theme-chrome";
 import { ProductHuntWelcome } from "@/components/launch/product-hunt-welcome";
@@ -26,6 +27,7 @@ export default function Landing() {
         <ProductHuntWelcome place="landing" />
         <Hero />
         <How />
+        <Torch />
         <Audiences />
         <ForSchools />
         <Compare />

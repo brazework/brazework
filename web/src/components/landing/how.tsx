@@ -1,14 +1,12 @@
 "use client";
-import { ArrowRight, Link2, PenLine, Plus } from "lucide-react";
-import Link from "next/link";
+import { Link2, PenLine, Plus } from "lucide-react";
 import { Seal } from "@/components/app/verified-seal";
-import { Ember } from "@/components/ember/ember";
 import { cn } from "@/lib/forge";
 import { H2 } from "./sections";
 import { useScrollRun } from "./use-scroll-run";
 
 // How it works: the same three steps for a student, a professional and a club member. Torch, the AI
-// built in, does the busywork, and nothing is saved or signed until a person says yes.
+// built in, has its own section right after (torch.tsx).
 // Premium pass (2026-11-27): on a laptop it pins and plays as you scroll (use-scroll-run.ts), beside
 // an exploded view of four pieces of work, from a class, a club, a job and a client: they sit in one
 // stack as they're logged, come apart to be signed, and close under the record they become
@@ -85,13 +83,6 @@ export function How() {
         </div>
       </div>
 
-      <div className="mx-auto max-w-6xl px-5 pb-16 sm:px-6 md:pb-24">
-        <div className="reveal flex flex-col gap-4 rounded-2xl border border-line bg-surface p-5 sm:flex-row sm:items-center md:p-6">
-          <Ember mood="happy" size={44} label="Torch" />
-          <p className="flex-1 text-[15px] leading-relaxed text-muted"><span className="font-semibold text-text">Torch, your AI teammate, does the busywork.</span> It writes up what you did, finds who should sign it, plans your week and can start a club or study group for you. It never signs anything, and nothing is saved until you say yes.</p>
-          <Link href="/ai" className="inline-flex shrink-0 items-center gap-1.5 text-sm font-medium text-text underline-offset-4 hover:underline">Use it from Claude or ChatGPT <ArrowRight className="size-3.5" /></Link>
-        </div>
-      </div>
     </section>
   );
 }

@@ -20,6 +20,9 @@ export function Footer() {
           <Link href="/signup" className="hover:text-text">Sign up</Link>
           <Link href="/#how" className="hover:text-text">How it works</Link>
           <Link href="/signup?goal=job" className="hover:text-text">For professionals</Link>
+          <Link href="/for/students" className="hover:text-text">For students</Link>
+          <Link href="/for/professionals" className="hover:text-text">For professionals</Link>
+          <Link href="/for/clubs" className="hover:text-text">For clubs</Link>
           <Link href="/schools" className="hover:text-text">For schools</Link>
           <Link href="/pricing" className="hover:text-text">Pricing</Link>
           <Link href="/ai" className="hover:text-text">Connect your AI</Link>

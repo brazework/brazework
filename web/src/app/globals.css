@@ -821,3 +821,11 @@ select option { background-color: var(--surface); color: var(--text); }
 
 
 
+
+/* The sticky story's screen on a phone (sticky-story.tsx): words scroll up beneath it and fade out
+   rather than being cut off at its edge. */
+@media (max-width: 1023px) {
+  .story-stage::after { content: ""; position: absolute; left: 0; right: 0; top: 100%; height: 2rem; pointer-events: none; background: linear-gradient(var(--bg), transparent); }
+}
+.story-device { box-shadow: var(--shadow-float), inset 0 1px 0 var(--window-rim, transparent); }
+@media (min-width: 1024px) { .story-device { border-width: 7px; border-color: var(--border-strong); box-shadow: 0 40px 80px -40px rgba(0, 0, 0, 0.45), var(--shadow-float); } }
