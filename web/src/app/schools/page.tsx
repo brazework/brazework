@@ -23,7 +23,7 @@ export const metadata: Metadata = {
 // the visitor's theme. What's built is said plainly; what's being built with pilot schools says so.
 
 const HOW = [
-  { n: "1", title: "Students join with their school email", body: "Their domain places them at your school automatically. No codes, no invites, no IT ticket. Students already on Brazework are waiting when you sign up." },
+  { n: "1", title: "Plug into your tools", body: "IT registers Brazework once in your LMS and your single sign-on, so students and faculty arrive from the course already signed in (being built with pilot schools). Until then, a school email places them at your school, with no codes or invites." },
   { n: "2", title: "Faculty sign on from your list", body: "Faculty accounts come only from your school's own list, because only faculty verify class projects. Club advisors and officers verify club work." },
   { n: "3", title: "Projects live under a class or a club", body: "A teacher assigns a project group, or students list their project under a class they take. Updates, milestones, files and 3D models, by course and semester." },
   { n: "4", title: "Faculty verify, your offices see it", body: "A professor confirms the work and each student's part. It counts in your reports, and it stays on the student's record after they graduate." },
@@ -32,17 +32,16 @@ const HOW = [
 // Brazework Courses against Blackboard and Canvas (docs/strategy.md, "Brazework Courses"). The fourth
 // field marks what's being built with the pilot schools, so no school pays for something not there yet.
 const LMS: [string, string, string, boolean][] = [
-  ["The course", "Modules, assignments, a gradebook", "All of it: modules of pages, links and files; assignments with due dates and rubrics; announcements; each student's due list", false],
-  ["Grading", "A gradebook, apart from the work", "Grade against the rubric beside the work itself, release when you choose, export the gradebook as CSV. Grading a milestone verifies it onto the student's record", false],
+  ["The course", "Modules, readings, quizzes, the gradebook", "Stays in your LMS. Brazework adds project milestones to its modules", true],
+  ["Signing in", "Your LMS account", "Students and faculty open Brazework from the course, already signed in", true],
+  ["Grading", "A score on an uploaded file", "Grade against the rubric beside the work itself; the same click verifies it and sends the grade to your gradebook", true],
   ["Teams", "A group set", "Teams with roles, one hand-in per group, and each member's part on record", false],
-  ["Progress", "One file per assignment", "Milestones against your deliverable schedule: proposal, design review, prototype, final", true],
   ["Evidence", "Files in a course shell", "CAD you can turn, test logs and video, with who verified it", false],
   ["Teamwork", "A separate peer-evaluation tool, if you buy one", "Peer evaluation built in: each teammate rates contribution, and only faculty see it", false],
   ["Accreditation", "Assembled by hand each cycle", "Rubric rows carry ABET outcomes as faculty grade; attainment by outcome and course is a download for the self-study", false],
   ["Industry sponsors", "Can't see the course", "Sign off results by email, no account needed", false],
   ["After the course", "The shell is archived", "The verified work stays on the student's record", false],
-  ["Quizzes and attendance", "Built in", "Quizzes marked the moment they're handed in, attendance by check-in code, extensions and accommodations that move each student's due dates", false],
-  ["Switching", "Years of course shells", "Import a Canvas or Blackboard course, single sign-on, roster sync from your student system", true],
+  ["Clubs", "Outside the LMS", "Clubs run on Brazework too, so student life sees what they build", false],
 ];
 
 
@@ -57,12 +56,12 @@ export default function SchoolsPage() {
           <div className="mx-auto max-w-6xl px-5 sm:px-6">
             <p className="inline-flex items-center gap-2 rounded-full border border-line bg-surface/60 px-3 py-1 text-xs text-text-2"><span aria-hidden="true" className="size-1.5 rounded-full bg-brand" /> Brazework for schools</p>
             <h1 id="schools-h" className="mt-6 max-w-[17ch] text-[clamp(2.5rem,7.5vw,4.5rem)] leading-[0.98] font-semibold tracking-[-0.045em]">Your courses, projects and clubs, in one place.</h1>
-            <p className="mt-6 max-w-[40rem] text-lg leading-relaxed text-muted">Run courses on Brazework, with modules, assignments, rubric grading and a gradebook, built around the projects your students make and the work your faculty verify. Your dean gets accreditation evidence, student life sees its clubs, the career center sees who&apos;s hiring your students, and admissions gets a showcase. Students and clubs never pay.</p>
+            <p className="mt-6 max-w-[40rem] text-lg leading-relaxed text-muted">The portal for your students&apos; project work, plugged into the tools you already run: your LMS, your single sign-on and your student system. Faculty grade and verify project milestones inside the course. Your dean gets accreditation evidence, student life sees its clubs, the career center sees who&apos;s hiring your students, and admissions gets a showcase. Students and clubs never pay.</p>
             <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center">
               <Link href="#portal" className="inline-flex h-12 items-center justify-center gap-1.5 rounded-xl bg-accent px-6 text-[16px] font-medium text-on-accent transition hover:opacity-90 active:scale-[0.98]">Try the portal <ArrowRight className="size-4" aria-hidden="true" /></Link>
               <Link href="#pilot" className="inline-flex h-12 items-center justify-center rounded-xl border border-line-strong px-6 text-[16px] transition hover:bg-hover active:scale-[0.98]">Talk to us</Link>
             </div>
-            <p className="mt-4 text-sm text-faint">Move one course this semester. Blackboard or Canvas keeps the rest while you switch, course by course.</p>
+            <p className="mt-4 text-sm text-faint">Start with one course this semester. Canvas, Blackboard, Brightspace or Moodle keeps the course and the official grades.</p>
           </div>
         </section>
 
@@ -85,11 +84,11 @@ export default function SchoolsPage() {
 
         <section aria-labelledby="lms-h" className="py-14 md:py-24">
           <div className="mx-auto max-w-6xl px-5 sm:px-6">
-            <h2 id="lms-h" className={H2}>Everything Blackboard and Canvas do for a course, and what they can&apos;t</h2>
-            <p className="mt-5 max-w-[42rem] text-lg leading-relaxed text-muted">Brazework runs the course: modules, assignments, grading, announcements and every student&apos;s due dates. Then it does what an LMS never could: teams, milestones, real engineering files, work verified by the person who saw it, and a record that outlives the course. Start with your capstone and design courses; the rest follow.</p>
+            <h2 id="lms-h" className={H2}>What your LMS does, and what Brazework adds to it</h2>
+            <p className="mt-5 max-w-[42rem] text-lg leading-relaxed text-muted">Your LMS keeps doing what it does well. Brazework adds what it never could: teams, milestones, real engineering files, work verified by the person who saw it, and a record that outlives the course. Start with your capstone and design courses.</p>
             <div className="reveal mt-8 overflow-x-auto rounded-2xl border border-line bg-surface">
               <table className="w-full min-w-[640px] text-left text-[15px]">
-                <thead className="bg-surface-2 text-sm text-muted"><tr><th className="px-5 py-3 font-medium">In a project course</th><th className="px-5 py-3 font-medium">Blackboard or Canvas</th><th className="px-5 py-3 font-medium text-text">Brazework</th></tr></thead>
+                <thead className="bg-surface-2 text-sm text-muted"><tr><th className="px-5 py-3 font-medium">In a project course</th><th className="px-5 py-3 font-medium">Your LMS alone</th><th className="px-5 py-3 font-medium text-text">With Brazework inside</th></tr></thead>
                 <tbody>
                   {LMS.map(([what, lms, us, soon]) => (
                     <tr key={what} className="border-t border-line align-top">

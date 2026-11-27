@@ -147,7 +147,7 @@ export function Hero() {
             <h1 id="hero-h" className="mt-6 text-[clamp(3.6rem,16vw,5.5rem)] leading-[0.9] font-semibold tracking-[-0.055em] lg:text-[clamp(4.75rem,6.6vw,6rem)]">{["Build it.", "Prove it.", "Own it."].map((w, i) => (
                 <span key={w} className={cn("weld-line", i === 2 && "text-brand")} data-state={i < weld ? "done" : i === weld ? "hot" : "ahead"}>{w}</span>
               ))}</h1>
-            <p className="mt-5 max-w-[31rem] text-lg leading-relaxed text-muted">A record of the work you&apos;ve really done, each piece signed by the person who saw it: your professor, your club or your coworker. Free for students and professionals. Schools run their project courses on it.</p>
+            <p className="mt-5 max-w-[31rem] text-lg leading-relaxed text-muted">A record of the work you&apos;ve really done, each piece signed by the person who saw it: your professor, your club or your coworker. Free for students and professionals. Schools run their project courses on it, inside the LMS they already use.</p>
 
             <div className="mt-8 max-w-[30rem]">
               <label htmlFor="hero-build" className="text-sm font-medium text-text-2">What did you build?</label>

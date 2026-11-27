@@ -32,7 +32,7 @@ export function ForSchools() {
       <div className="mx-auto max-w-6xl px-5 sm:px-6">
         <p className="inline-flex items-center gap-2 font-mono text-xs text-faint"><GraduationCap className="size-3.5" aria-hidden="true" /> For schools</p>
         <h2 id="schools-h" className={`${H2} mt-4 max-w-[22ch]`}>Your students&apos; project work, verified by the people who saw it.</h2>
-        <p className="mt-5 max-w-[40rem] text-lg leading-relaxed text-muted">Brazework is where your project courses run and your clubs build. Faculty grade and verify in one step, each office gets the evidence it&apos;s measured on, and students and clubs never pay.</p>
+        <p className="mt-5 max-w-[40rem] text-lg leading-relaxed text-muted">Brazework runs your project courses inside the LMS you already have, and your clubs build on it. Faculty grade and verify in one step, each office gets the evidence it&apos;s measured on, and students and clubs never pay.</p>
         <ul className="reveal mt-8 grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-line bg-line md:mt-10 lg:grid-cols-4">
           {SCHOOL_OUTCOMES.map((o) => (
             <li key={o.title} className="flex flex-col bg-surface p-4 sm:p-6">
@@ -94,6 +94,7 @@ export function Audiences() {
 
 // Plain answers to what people ask first. Short on purpose: the details live on /schools, /pricing and /ai.
 const FAQ: [string, React.ReactNode][] = [
+  ["Do we have to leave Canvas or Blackboard?", "No. Brazework opens inside Canvas, Blackboard, Brightspace and Moodle: students hand in from the course, and the grade goes back to your gradebook. Your LMS keeps the course and the official grades. Connecting to an LMS is being built with our pilot schools; until then a class list comes in as a CSV."],
   ["What is Brazework, in one line?", "A record of the work you've really done, each piece signed by someone who saw it happen."],
   ["I already have a job. Is this for me?", "Yes. Log what you ship, and your coworker, tech lead or client signs it from their work email, with no account needed. Nothing shows on your profile until you choose, so work for your employer is never public by accident. Leave out numbers your employer hasn't published: the person who signs still knows what you did."],
   ["Who can sign my work?", "Someone who saw it happen: a professor, TA, lab lead, club officer, coworker, manager or client. A work or university email carries the most weight, and the signature says which kind it came from. You can't sign your own work."],
