@@ -3,7 +3,7 @@ import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
-import { EmptyState, Panel, Skeleton, Tabs } from "@/components/app/page-ui";
+import { EmptyState, Panel, Skeleton, Tabs, pageTitleCls } from "@/components/app/page-ui";
 import { Avatar } from "@/components/ui";
 import { PERMS, ROLE_LABEL, ROLES, can, rank, type Ban, type JoinRequest, type Member } from "@/lib/communities";
 import { timeAgo } from "@/lib/forge";
@@ -93,7 +93,7 @@ async function Manage({ params, searchParams }: { params: PageProps<"/c/[id]/man
   return (
     <>
       <Link href={`/c/${id}`} className="mb-5 inline-flex items-center gap-1.5 text-sm text-muted hover:text-text"><ArrowLeft className="size-4" /> {c.name}</Link>
-      <h1 className="text-3xl font-semibold tracking-tight">Manage</h1>
+      <h1 className={pageTitleCls}>Manage</h1>
       <p className="mt-1.5 text-sm text-muted">You&apos;re {/^[aeiou]/i.test(ROLE_LABEL[role!]) ? "an" : "a"} {ROLE_LABEL[role!].toLowerCase()}. You can act on people below your own role.</p>
       <div className="mt-6"><Tabs active={tab} tabs={tabs.map((t) => ({ id: t.id, label: t.label, href: `/c/${id}/manage?tab=${t.id}`, count: "count" in t ? (t.count as number) : undefined }))} /></div>
       <div className="mt-6">

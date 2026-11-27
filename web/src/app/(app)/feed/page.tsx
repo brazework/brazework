@@ -298,13 +298,13 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
               <SlidersHorizontal className="size-4" />{filterLabel !== "Filter" && <span className="max-w-28 truncate">{filterLabel}</span>}
             </summary>
             <div className={cn(menuCls, "absolute top-full right-0 z-30 mt-1.5 w-72 p-2")}>
-              <div className="px-1 pb-1 text-[11px] font-medium tracking-wide text-faint uppercase">Order</div>
+              <div className="px-1 pb-1 text-[13px] font-medium text-faint">Order</div>
               <div className="flex items-center gap-0.5 rounded-full bg-surface-2 p-0.5" role="group" aria-label="Sort posts">
                 {SORTS.filter((x) => x.id !== "best" || tab === "for-you").map((x) => (
                   <Link key={x.id} href={href({ sort: x.id })} aria-current={sort === x.id ? "true" : undefined} className={cn("flex-1 rounded-full px-2.5 py-1 text-center text-xs whitespace-nowrap transition", sort === x.id ? "bg-text text-surface" : "text-muted hover:text-text")}>{x.label}</Link>
                 ))}
               </div>
-              <div className="px-1 pt-3 pb-1 text-[11px] font-medium tracking-wide text-faint uppercase">Show</div>
+              <div className="px-1 pt-3 pb-1 text-[13px] font-medium text-faint">Show</div>
               <div className="flex flex-wrap gap-1.5" role="group" aria-label="Kind of post">
                 {KINDS.map((k) => (
                   <Link key={k.id || "all"} href={href({ kind: k.id })} aria-current={kind === k.id ? "true" : undefined}
@@ -314,7 +314,7 @@ async function Feed({ searchParams }: { searchParams: PageProps<"/feed">["search
                 ))}
               </div>
               {interests.length > 0 && <>
-                <div className="px-1 pt-3 pb-1 text-[11px] font-medium tracking-wide text-faint uppercase">Your topics</div>
+                <div className="px-1 pt-3 pb-1 text-[13px] font-medium text-faint">Your topics</div>
                 <div className="flex flex-wrap gap-1.5">
                   {interests.map((t) => (
                     <Link key={t} href={href({ tag: tag === t ? "" : t })} aria-current={tag === t ? "true" : undefined}

@@ -32,7 +32,7 @@ export async function CourseStrip({ cid, staff }: { cid: string; staff: boolean 
     <Link href={`/c/${cid}/course`} className="home-glass group mt-5 flex items-center gap-4 rounded-2xl px-5 py-4 transition ">
       <span className="grid size-10 shrink-0 place-items-center rounded-xl bg-text text-bg"><ClipboardList className="size-5" aria-hidden="true" /></span>
       <span className="min-w-0 flex-1">
-        <span className="block text-xs font-medium tracking-wide text-muted uppercase">Course</span>
+        <span className="block text-[13px] font-medium text-muted">Course</span>
         <span suppressHydrationWarning className="block truncate font-semibold tracking-tight">{line}</span>
         {latest && <span className="mt-0.5 flex items-center gap-1.5 truncate text-sm text-text-2"><Megaphone className="size-3.5 shrink-0" aria-hidden="true" /> {latest.title}</span>}
       </span>

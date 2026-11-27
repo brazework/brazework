@@ -6,18 +6,22 @@ import { TabRow } from "@/components/app/tab-row";
 
 // Shared building blocks for signed-in pages, so every screen looks like one product.
 
+// A page's main heading, on the landing page's scale (app design pass, 2026-11-27). PageHeader uses
+// it; pages that draw their own top (Home, a club, an event) use it too, so every title matches.
+export const pageTitleCls = "text-[clamp(1.9rem,5vw,2.5rem)] leading-[1.05] font-semibold tracking-[-0.035em] text-balance break-words";
+
 // The top of every page (docs/design/app.md): the title, a one-line subtitle, optional `back` link
 // above and `meta` line below (a status, a count), actions on the right.
 // `tour`: a product-tour anchor (data-tour, lib/tours.ts) for the page.
 export function PageHeader({ title, subtitle, actions, back, meta, tour }: { title: string; subtitle?: React.ReactNode; actions?: React.ReactNode; back?: { href: string; label: string }; meta?: React.ReactNode; tour?: string }) {
   return (
-    <header data-tour={tour} className="pt-2 pb-1">
-      {back && <Link href={back.href} className="mb-3 inline-flex items-center gap-1.5 text-sm text-muted transition hover:text-text"><ArrowLeft className="size-4" /> {back.label}</Link>}
+    <header data-tour={tour} className="pt-2 pb-3">
+      {back && <Link href={back.href} className="mb-3 inline-flex h-8 items-center gap-1.5 text-sm text-muted transition hover:text-text"><ArrowLeft className="size-4" /> {back.label}</Link>}
       <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-3">
         <div className="min-w-0">
-          <h1 className="text-[1.75rem] leading-tight font-semibold tracking-[-0.02em] text-balance break-words text-text sm:text-[2rem]">{title}</h1>
-          {subtitle && <p className="mt-1.5 max-w-2xl text-[15px] text-muted">{subtitle}</p>}
-          {meta && <div className="mt-2 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-text-2">{meta}</div>}
+          <h1 className={cn(pageTitleCls, "text-text")}>{title}</h1>
+          {subtitle && <p className="mt-2.5 max-w-2xl text-[16px] leading-relaxed text-muted">{subtitle}</p>}
+          {meta && <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-text-2">{meta}</div>}
         </div>
         {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
       </div>
@@ -61,12 +65,12 @@ export function Tabs({ tabs, active }: { tabs: { id: string; label: string; href
           href={t.href}
           aria-current={t.id === active ? "page" : undefined}
           className={cn(
-            "relative -mb-px inline-flex shrink-0 items-center gap-2 border-b-2 py-2.5 text-sm whitespace-nowrap transition-colors",
+            "relative -mb-px inline-flex shrink-0 items-center gap-2 border-b-2 py-3 text-[15px] whitespace-nowrap transition-colors sm:py-2.5 sm:text-sm",
             t.id === active ? "border-text font-medium text-text" : "border-transparent text-muted hover:text-text",
           )}
         >
           {t.label}
-          {t.count ? <span className="rounded bg-raised px-1.5 font-mono text-[10px] text-text-2">{t.count}</span> : null}
+          {t.count ? <span className="rounded-md bg-raised px-1.5 text-[11px] text-text-2 tabular-nums">{t.count}</span> : null}
         </Link>
       ))}
     </TabRow>

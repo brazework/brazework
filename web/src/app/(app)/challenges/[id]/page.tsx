@@ -4,9 +4,9 @@ import { ArrowLeft, BadgeCheck, Building2, CalendarClock, Trophy } from "lucide-
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { Suspense } from "react";
-import { Panel, Skeleton } from "@/components/app/page-ui";
+import { Panel, Skeleton, pageTitleCls } from "@/components/app/page-ui";
 import { Avatar, Kicker } from "@/components/ui";
-import { requestTime } from "@/lib/forge";
+import { requestTime, cn } from "@/lib/forge";
 import { getViewer } from "@/lib/supabase/server";
 import { LocalTime } from "../../events/local-time";
 import { EnterForm, PlaceButtons, SponsorControls, WithdrawButton } from "../challenge-client";
@@ -69,7 +69,7 @@ async function ChallengeView({ params }: { params: PageProps<"/challenges/[id]">
             <span className="rounded-full bg-surface-2 px-2 py-0.5 text-[11px] text-text-2">{STATUS_LABEL[c.status]}</span>
             {isSponsor && <span className="rounded-full bg-surface-2 px-2 py-0.5 text-[11px] text-text-2">{SPONSOR_LABEL[c.sponsorship]}</span>}
           </div>
-          <h1 className="text-text mt-2 text-2xl font-semibold tracking-tight sm:text-3xl">{c.title}</h1>
+          <h1 className={cn(pageTitleCls, "mt-2 text-text")}>{c.title}</h1>
           <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-text-2">
             {c.prize && <span className="inline-flex items-center gap-1.5 font-medium text-text"><Trophy className="size-4" /> {c.prize}</span>}
             <span className="inline-flex items-center gap-1.5"><CalendarClock className="size-4" /> Due <LocalTime kind="full-clock" value={c.deadline} />{c.status === "open" ? ` · ${left} ${left === 1 ? "day" : "days"} left` : ""}</span>

@@ -10,12 +10,12 @@ import { dbFeatures } from "@/lib/db-features";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
-import { EmptyState, Panel, Skeleton } from "@/components/app/page-ui";
+import { EmptyState, Panel, Skeleton, pageTitleCls } from "@/components/app/page-ui";
 import { ORG_LABEL, pluralize, whenBadge, whereLabel, withHost, type HostedEvent } from "@/lib/events";
 import { CopyLink } from "@/components/app/copy-link";
 import { SendPost } from "@/components/share/send-post";
 import { Ember } from "@/components/ember/ember";
-import { requestTime } from "@/lib/forge";
+import { requestTime, cn } from "@/lib/forge";
 import { getViewer } from "@/lib/supabase/server";
 import { CalendarButton } from "../event-controls";
 import { DetailActions } from "./detail-actions";
@@ -84,7 +84,7 @@ async function EventView({ params }: { params: PageProps<"/events/[id]">["params
                 <span className="text-xs font-medium text-muted">{e.type} · {e.topic} · {e.format}</span>
                 {badge && e.status !== "cancelled" && <span className={`inline-flex items-center gap-1 rounded-full px-2 py-px text-[11px] font-medium ${badge.live ? "bg-emerald-500/12 text-emerald-500" : "bg-surface-2 text-text-2"}`}>{badge.live && <span className="size-1.5 animate-pulse rounded-full bg-emerald-500" />}{badge.text}</span>}
               </div>
-              <h1 className="mt-1.5 text-3xl leading-tight font-semibold tracking-tight">{e.title}</h1>
+              <h1 className={cn(pageTitleCls, "mt-1.5")}>{e.title}</h1>
               <p className="mt-2 flex flex-wrap items-center gap-x-1.5 text-sm text-text-2"><Clock className="size-4 text-faint" /> <LocalTime kind="full" value={e.starts_at} /> · <LocalTime kind="range" value={e} /></p>
               <p className="mt-1 flex items-center gap-1.5 text-sm text-text-2"><MapPin className="size-4 text-faint" /> {whereLabel(e)}</p>
               {e.host && (e.community_id

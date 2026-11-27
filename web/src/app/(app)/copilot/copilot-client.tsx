@@ -78,7 +78,7 @@ export function CopilotSoon() {
         ))}
       </div>
       <section className="mt-8">
-        <h2 className="text-center text-xs font-medium tracking-wide text-faint uppercase">Meanwhile</h2>
+        <h2 className="text-center text-[13px] font-medium text-faint">Meanwhile</h2>
         <div className="mt-3 flex flex-wrap justify-center gap-2">
           {[[Search, "Search Brazework", "/search"], [Users, "Find clubs", "/communities?tab=discover"], [CalendarDays, "Events this week", "/events"], [FileText, "Add a project", "/profile#projects"]].map(([Icon, label, href]) => {
             const I = Icon as typeof Search;
@@ -405,7 +405,7 @@ function ChatRail({ list, current, opening, onOpen, onNew, onDelete, onDeleteAll
   return (
     <div className="flex h-full flex-col">
       <button type="button" onClick={onNew} className="glass-card inline-flex items-center justify-center gap-1.5 rounded-2xl px-3 py-2.5 text-sm font-medium transition"><Plus className="size-4" /> New chat</button>
-      <h2 className="mt-5 mb-2 px-2 text-xs font-medium tracking-wide text-faint uppercase">Your chats</h2>
+      <h2 className="mt-5 mb-2 px-2 text-[13px] font-medium text-faint">Your chats</h2>
       <ul className="-mx-1 min-h-0 flex-1 space-y-0.5 overflow-y-auto px-1">
         {list.map((c) => (
           <li key={c.id} className="group relative">
@@ -476,7 +476,7 @@ function FromYourTools({ cards, others }: FromTools) {
   if (!cards.length && !others) return null;
   return (
     <section aria-label="Waiting from your tools" className="mt-6">
-      <h2 className="mb-1 flex items-center px-1 text-xs font-medium tracking-wide text-faint uppercase">
+      <h2 className="mb-1 flex items-center px-1 text-[13px] font-medium text-faint">
         Waiting from your tools
         <Link href="/drafts" className="ml-auto text-[11px] font-medium tracking-normal normal-case text-muted hover:text-text">{others ? `${others} more in Drafts` : "All drafts"}</Link>
       </h2>

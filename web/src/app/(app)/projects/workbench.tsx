@@ -16,7 +16,7 @@ export function Workbench({ projects, interests, copilot, stack, specsOn = false
       <section aria-label="Your projects" className="home-glass relative mt-6 overflow-hidden rounded-3xl p-6 sm:p-8">
         <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-xl">
-            <p className="text-xs font-medium tracking-wide text-muted uppercase">Your projects</p>
+            <p className="text-[13px] font-medium text-muted">Your projects</p>
             <h2 className="mt-1.5 text-[1.6rem] leading-tight font-semibold tracking-[-0.025em] sm:text-[2rem]">Start your first project</h2>
             <p className="mt-2 text-[15px] leading-relaxed text-text-2">Anything you&apos;re building counts. Post updates as you go, and get each milestone signed by someone who saw it: that&apos;s what goes on your record.</p>
           </div>

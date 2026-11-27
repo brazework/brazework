@@ -160,7 +160,7 @@ function GoalSetup({ current, reached, accountType, onDone, compact }: { current
         </fieldset>
 
         <div className="rounded-xl border border-dashed border-line px-3 py-2.5" aria-live="polite">
-          <p className="text-[11px] font-medium tracking-wide text-faint uppercase">{visible ? "How it reads on your profile" : "Only you will see"}</p>
+          <p className="text-[13px] font-medium text-faint">{visible ? "How it reads on your profile" : "Only you will see"}</p>
           <p className="mt-1 flex items-center gap-2 text-sm text-text"><GoalMark className="size-3.5 shrink-0 text-muted" /> <span className="min-w-0">Working toward {preview}</span></p>
         </div>
 
@@ -263,7 +263,7 @@ function GoalPath({ goal, record, profileId, onEdit, returnFocus, compact }: { g
           <div className="mt-4 rounded-xl border border-line bg-surface-2/60 p-3.5">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-4">
               <div className="min-w-0 flex-1">
-                <p className="text-[11px] font-medium tracking-wide text-muted uppercase">Next step</p>
+                <p className="text-[13px] font-medium text-muted">Next step</p>
                 <p className="mt-0.5 text-sm leading-snug text-text-2">{next.text}</p>
               </div>
               {/* Torch does it: the ask opens in the Ask Torch bar, with cards to approve (FIX-95). The way to do it yourself stays beside it. */}

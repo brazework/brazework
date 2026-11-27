@@ -405,7 +405,8 @@ input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; opacity
 @utility glass-card {
   background: linear-gradient(180deg, color-mix(in oklab, var(--surface) 76%, transparent), color-mix(in oklab, var(--surface) 58%, transparent));
   border: 1px solid color-mix(in oklab, var(--border) 80%, transparent);
-  box-shadow: inset 0 1px 0 var(--glass-hi), 0 1px 2px rgb(0 0 0 / 0.04), 0 14px 34px -22px rgb(0 0 0 / 0.22);
+  /* App design pass (2026-11-27): the landing's depth, a lit top edge over a longer, softer shadow. */
+  box-shadow: inset 0 1px 0 var(--glass-hi), 0 1px 2px rgb(0 0 0 / 0.04), 0 24px 48px -30px rgb(0 0 0 / 0.3);
   transition: border-color 0.15s ease, box-shadow 0.2s ease;
   &:hover, &:focus-within { border-color: var(--border-strong); }
 }

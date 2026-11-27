@@ -29,7 +29,7 @@ export function MemberList({ people }: { people: { uid: string; first: string; l
   const online = useOnlineCount(people.map((p) => p.uid));
   return (
     <div>
-      <div className="flex items-baseline justify-between"><h3 className="text-xs font-medium tracking-wide text-faint uppercase">People</h3><span className="text-[11px] text-emerald-500">{online ? `${online} online` : ""}</span></div>
+      <div className="flex items-baseline justify-between"><h3 className="text-[13px] font-medium text-faint">People</h3><span className="text-[11px] text-emerald-500">{online ? `${online} online` : ""}</span></div>
       <ul className="mt-2 max-h-64 space-y-1 overflow-y-auto">
         {people.slice(0, 100).map((p) => (
           <li key={p.uid}>

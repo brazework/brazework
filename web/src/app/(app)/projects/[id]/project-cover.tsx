@@ -30,7 +30,7 @@ export function ProjectCover({ title, isPrivate, live, year, last, cover, facts 
             : <span className="inline-flex items-center gap-1.5"><span className="size-2 rounded-full bg-faint" aria-hidden="true" /> Quiet{ago ? `, last activity ${ago}` : ""}</span>}
           {isPrivate && <span className="inline-flex items-center gap-1"><Lock className="size-3.5" /> Private</span>}
         </p>
-        <h1 className="mt-2 text-[2rem] leading-[1.08] font-semibold tracking-[-0.025em] text-balance break-words text-text sm:text-[2.9rem]">{title}</h1>
+        <h1 className="mt-2 text-[clamp(2.1rem,6vw,3rem)] leading-[1.04] font-semibold tracking-[-0.04em] text-balance break-words text-text">{title}</h1>
       </div>
       {/* Where it stands, as quiet facts (no boxes or dividers). */}
       <dl aria-label="Where it stands" className="flex flex-wrap gap-2 sm:col-start-1 sm:row-start-2">

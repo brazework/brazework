@@ -17,8 +17,9 @@ type BtnProps = { href?: string; variant?: "primary" | "ghost" | "outline"; size
 export function Button({ href, variant = "primary", size = "md", className, children, ...rest }: BtnProps) {
   const cls = cn(
     // Redesign 2026-11: calm and precise. 8px corners, no glow, no lift; the colour does the work.
-    "group relative inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-colors duration-150 select-none disabled:opacity-50 disabled:pointer-events-none",
-    size === "lg" ? "h-11 px-5 text-[15px]" : "h-9 px-3.5 text-sm",
+    // Phone first (app design pass, 2026-11-27): a taller target below sm, a short press on tap.
+    "group relative inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-[color,background-color,border-color,opacity,transform] duration-150 select-none active:scale-[0.98] motion-reduce:active:scale-100 disabled:opacity-50 disabled:pointer-events-none",
+    size === "lg" ? "h-12 px-6 text-[16px] sm:h-11 sm:px-5 sm:text-[15px]" : "h-10 px-4 text-[15px] sm:h-9 sm:px-3.5 sm:text-sm",
     variant === "primary" && "bg-accent-grad text-on-accent hover:opacity-90 active:opacity-100",
     variant === "outline" && "border border-line bg-surface text-text hover:border-line-strong hover:bg-hover",
     variant === "ghost" && "text-muted hover:bg-hover hover:text-text",
@@ -28,8 +29,9 @@ export function Button({ href, variant = "primary", size = "md", className, chil
   return <button className={cls} {...rest}>{children}</button>;
 }
 
+// A small label above a heading: sentence case, never all caps (docs/design/app.md).
 export function Kicker({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <div className={cn("text-[11px] font-medium uppercase tracking-[0.06em] text-faint", className)}>{children}</div>;
+  return <div className={cn("text-[13px] font-medium text-muted", className)}>{children}</div>;
 }
 
 export function Avatar({ first, last, size = 40, className, src }: { first: string; last: string; size?: number; className?: string; src?: string | null }) {
@@ -80,4 +82,4 @@ export const menuItemCls = "flex w-full items-center gap-2.5 rounded-md px-2.5 p
 export const selectPillCls =
   "h-9 max-w-full truncate rounded-lg border border-line bg-surface pl-3 text-sm text-text-2 transition hover:border-line-strong hover:text-text focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)] disabled:opacity-50";
 export const inputCls =
-  "h-10 w-full rounded-lg border border-line bg-surface px-3 text-[15px] text-text placeholder:text-faint outline-none transition hover:border-line-strong focus:border-line-strong focus:ring-[3px] focus:ring-text/8 aria-[invalid=true]:border-danger aria-[invalid=true]:ring-danger/15 disabled:cursor-not-allowed disabled:opacity-60";
+  "h-11 w-full rounded-lg border border-line bg-surface px-3 text-[16px] text-text sm:h-10 sm:text-[15px] placeholder:text-faint outline-none transition hover:border-line-strong focus:border-line-strong focus:ring-[3px] focus:ring-text/8 aria-[invalid=true]:border-danger aria-[invalid=true]:ring-danger/15 disabled:cursor-not-allowed disabled:opacity-60";
