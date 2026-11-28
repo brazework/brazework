@@ -58,13 +58,7 @@ export async function saveAssignment(_: CourseState, form: FormData): Promise<Co
   const cid = str(form, "cid", 80);
   const title = str(form, "title", 160);
   if (!title) return { ok: false, message: "Give the assignment a title." };
-  const isQuiz = form.get("kind") === "quiz";
-  let questions: unknown[] = [];
-  if (isQuiz) {
-    try { questions = JSON.parse(String(form.get("quiz_json") ?? "[]")); } catch { questions = []; }
-    if (!Array.isArray(questions) || !questions.length) return { ok: false, message: "Add at least one question." };
-  }
-  const submit_as = isQuiz ? ["text"] : ["file", "link", "text", "milestone"].filter((k) => form.get(`as_${k}`) === "on");
+  const submit_as = ["file", "link", "text", "milestone"].filter((k) => form.get(`as_${k}`) === "on");
   if (!submit_as.length) return { ok: false, message: "Choose at least one way to hand it in." };
   const due = str(form, "due_iso", 40);
   const rubric = rubricFromForm(form);
@@ -76,23 +70,16 @@ export async function saveAssignment(_: CourseState, form: FormData): Promise<Co
     instructions: str(form, "instructions"),
     due_at: due && !Number.isNaN(Date.parse(due)) ? new Date(due).toISOString() : null,
     points: Number.isFinite(points) && points >= 0 ? points : 100,
-    group_work: !isQuiz && form.get("group_work") === "on",
+    group_work: form.get("group_work") === "on",
     submit_as,
-    rubric: isQuiz ? [] : rubric,
+    rubric,
     published: form.get("published") === "on",
-    ...(form.get("peer_eval") === "on" && !isQuiz ? { peer_eval: true } : {}),
-    ...(isQuiz ? { show_score: form.get("show_score") === "on" } : {}),
+    ...(form.get("peer_eval") === "on" ? { peer_eval: true } : {}),
   };
-  // A quiz is saved as a draft first, so the class is told only once its questions are in.
-  const { data, error } = await v.supabase.from("assignments").insert({ ...row, published: isQuiz ? false : row.published }).select("id").single();
+  const { data, error } = await v.supabase.from("assignments").insert(row).select("id").single();
   if (error) return { ok: false, message: said(error) };
-  if (isQuiz) {
-    const q = await v.supabase.rpc("set_quiz", { p_aid: data.id, p_questions: questions });
-    if (q.error) { await v.supabase.from("assignments").delete().eq("id", data.id); return { ok: false, message: said(q.error) }; }
-    if (row.published) await v.supabase.from("assignments").update({ published: true }).eq("id", data.id);
-  }
   refresh(cid);
-  return { ok: true, message: row.published ? `${isQuiz ? "Quiz" : "Assignment"} posted. The class has been told.` : "Saved as a draft. Publish it when you're ready.", id: data.id as string };
+  return { ok: true, message: row.published ? "Assignment posted. The class has been told." : "Saved as a draft. Publish it when you're ready.", id: data.id as string };
 }
 
 /** Publish or unpublish a module or an assignment (publishing an assignment tells the class). */
@@ -182,17 +169,8 @@ export async function releaseGrades(cid: string, aid: string): Promise<CourseSta
 }
 
 // ---------- Phase B (supabase/courses-b.sql) ----------
-
-export async function takeQuiz(_: CourseState, form: FormData): Promise<CourseState> {
-  const v = await viewer(); if (!v) return { ok: false, message: "Log in again." };
-  const cid = str(form, "cid", 80), aid = str(form, "aid", 80);
-  let answers: Record<string, unknown> = {};
-  try { answers = JSON.parse(String(form.get("answers") ?? "{}")); } catch { return { ok: false, message: "Those answers look wrong. Try again." }; }
-  const { data, error } = await v.supabase.rpc("submit_quiz", { p_aid: aid, p_answers: answers });
-  if (error) return { ok: false, message: said(error) };
-  refresh(cid, aid);
-  return { ok: true, message: data == null ? "Handed in. Your score comes when your professor releases it." : `Handed in. You scored ${data}.` };
-}
+// Quizzes and attendance were taken out of the app (2026-11-27, the plug-in angle: the school's LMS
+// runs them). Their tables and functions stay in the database, unused, until a cleanup step drops them.
 
 export async function setExtension(_: CourseState, form: FormData): Promise<CourseState> {
   const v = await viewer(); if (!v) return { ok: false, message: "Log in again." };
@@ -217,42 +195,6 @@ export async function setAccommodation(_: CourseState, form: FormData): Promise<
   return { ok: true, message: days || pct ? "Accommodation saved. Due dates move for this student on every assignment." : "Accommodation removed." };
 }
 
-export async function openSession(_: CourseState, form: FormData): Promise<CourseState> {
-  const v = await viewer(); if (!v) return { ok: false, message: "Log in again." };
-  const cid = str(form, "cid", 80);
-  const minutes = Math.round(Number(str(form, "minutes", 4) || "15"));
-  const { data, error } = await v.supabase.rpc("open_session", { p_cid: cid, p_title: str(form, "title", 120), p_minutes: minutes });
-  if (error) return { ok: false, message: said(error) };
-  revalidatePath(`/c/${cid}/course`);
-  return { ok: true, message: minutes ? `Check-in is open for ${minutes} minutes.` : "Session added. Mark attendance below.", id: data as string };
-}
-
-export async function markAttendance(cid: string, sid: string, uid: string, status: string): Promise<CourseState> {
-  const v = await viewer(); if (!v) return { ok: false, message: "Log in again." };
-  const { error } = await v.supabase.rpc("mark_attendance", { p_sid: sid, p_uid: uid, p_status: status });
-  if (error) return { ok: false, message: said(error) };
-  revalidatePath(`/c/${cid}/course`);
-  return { ok: true, message: "Saved." };
-}
-
-export async function closeSession(cid: string, sid: string): Promise<CourseState> {
-  const v = await viewer(); if (!v) return { ok: false, message: "Log in again." };
-  const { error } = await v.supabase.rpc("close_session", { p_sid: sid });
-  if (error) return { ok: false, message: said(error) };
-  revalidatePath(`/c/${cid}/course`);
-  return { ok: true, message: "Check-in closed." };
-}
-
-export async function checkIn(_: CourseState, form: FormData): Promise<CourseState> {
-  const v = await viewer(); if (!v) return { ok: false, message: "Log in again." };
-  const code = str(form, "code", 12);
-  if (!code) return { ok: false, message: "Type the code on the screen." };
-  const { data, error } = await v.supabase.rpc("check_in", { p_code: code });
-  if (error) return { ok: false, message: said(error) };
-  revalidatePath("/school");
-  return { ok: true, message: `You're checked in to ${data as string}.` };
-}
-
 export async function peerReview(_: CourseState, form: FormData): Promise<CourseState> {
   const v = await viewer(); if (!v) return { ok: false, message: "Log in again." };
   const cid = str(form, "cid", 80), aid = str(form, "aid", 80);
@@ -273,15 +215,6 @@ export async function peerReview(_: CourseState, form: FormData): Promise<Course
 // The professor confirms a card Torch drafted; these run the same checks as the course forms.
 type P<K extends string> = Extract<Proposal, { kind: K }>;
 const none: CourseState = { ok: false, message: "" };
-
-export async function torchQuiz(p: P<"quiz">): Promise<CourseState> {
-  const f = new FormData();
-  f.set("cid", p.class_id); f.set("kind", "quiz"); f.set("title", p.title); f.set("instructions", p.instructions ?? "");
-  f.set("due_iso", p.closes_at ?? ""); f.set("quiz_json", JSON.stringify(p.questions));
-  if (p.show_score) f.set("show_score", "on");
-  if (p.publish) f.set("published", "on");
-  return saveAssignment(none, f);
-}
 
 export async function torchAssignment(p: P<"assignment">): Promise<CourseState> {
   const f = new FormData();
@@ -307,8 +240,3 @@ export async function torchExtension(p: P<"extension">): Promise<CourseState> {
   return setExtension(none, f);
 }
 
-export async function torchAttendance(p: P<"attendance">): Promise<CourseState> {
-  const f = new FormData();
-  f.set("cid", p.class_id); f.set("title", p.title ?? ""); f.set("minutes", String(p.minutes || 15));
-  return openSession(none, f);
-}

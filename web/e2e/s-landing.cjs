@@ -139,17 +139,34 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
   await step("what the others can't do: profiles, the course site and Brazework, straight after the hero, with what's still being built marked", async () => {
     await go(page, "/");
     const order = await page.locator("main > section").evaluateAll((els) => els.map((el) => el.id));
-    if (order.join(",") !== "top,how,torch,for,schools,compare,faq,pilot") throw new Error(`the page runs ${order.join(", ")}`);
+    if (order.join(",") !== "top,how,torch,for,lms,schools,compare,faq,pilot") throw new Error(`the page runs ${order.join(", ")}`);
     const sec = page.locator("#compare");
-    await sec.getByRole("heading", { name: /Everything a course needs, built around what students build/ }).waitFor();
+    await sec.getByRole("heading", { name: /Your LMS runs the course\. Brazework proves the work/ }).waitFor();
     // Brazework is the course platform now (docs/strategy.md): the page no longer hands grades to an LMS.
     if (await page.getByText(/keeps the gradebook|opened through LTI/).count()) throw new Error("the page still says the LMS keeps the grades");
-    for (const h of ["LinkedIn, Handshake", "Blackboard, Canvas", "Brazework"]) await sec.getByRole("heading", { name: h, exact: true }).waitFor();
+    for (const h of ["LinkedIn, Handshake", "Canvas or Blackboard alone", "Brazework"]) await sec.getByRole("heading", { name: h, exact: true }).waitFor();
     await sec.getByText("The professor, club or sponsor who saw it").waitFor();
     await sec.getByText("Upload a file, get a grade").waitFor();
     // What isn't built yet says so, in one line: imports, sign-on, LTI (peer evaluation shipped in #260).
-    if (await sec.getByText("with pilot schools", { exact: true }).count()) throw new Error("the strip still marks shipped Courses features as coming");
-    await sec.getByText(/Coming with pilot schools: importing a course/).waitFor();
+    // Working inside the LMS is being built with pilot schools, and the strip says so on those two rows.
+    if ((await sec.getByText("with pilot schools", { exact: true }).count()) !== 2) throw new Error("the strip should mark the two LMS rows as being built");
+    await sec.getByText(/connects to Canvas, Blackboard, Brightspace and Moodle through LTI/).waitFor();
+  }, page);
+
+  await step("works inside your LMS: the four named, marked as being built, told from setup to the gradebook", async () => {
+    await go(page, "/");
+    const sec = page.locator("#lms");
+    await sec.getByRole("heading", { name: /Works inside the LMS you already have/ }).waitFor();
+    for (const l of ["Canvas", "Blackboard", "Brightspace", "Moodle"]) await sec.getByRole("list", { name: "Works with" }).getByText(l, { exact: true }).waitFor();
+    await sec.getByText("Connecting to your LMS is being built with our pilot schools.").waitFor();
+    const steps = sec.locator("li[data-k]");
+    if ((await steps.count()) !== 4) throw new Error(`${await steps.count()} steps in the LMS story`);
+    await steps.nth(3).evaluate((el) => el.scrollIntoView({ block: "center" }));
+    await sec.locator("figure > div:not([inert])").getByText(/Verified by Prof\. Dana Ruiz, on each student/).waitFor({ timeout: 5000 });
+    if ((await sec.getByRole("link", { name: /How it works for your school/ }).getAttribute("href")) !== "/schools") throw new Error("the LMS story doesn't lead to /schools");
+    const faq = page.locator("#faq");
+    await faq.getByText("Do we have to leave Canvas or Blackboard?", { exact: true }).click();
+    await faq.getByText(/Your LMS keeps the course and the official grades/).waitFor();
   }, page);
 
   await step("for schools: the band names each office's outcome, marks what's still being built, and leads to /schools", async () => {
@@ -230,10 +247,10 @@ const { BASE, step, browser, go, hydrated, summary } = require("./lib.cjs");
 
   // Three sections pin and play as you scroll on a laptop (the hero, how it works and the comparison;
   // premium pass 2026-11-27) and Torch's story scrolls past its screen, so the page runs longer than it
-  // reads: the cap is fifteen screens.
-  await step("the page stays within fifteen laptop screens, with three sections that play as you scroll", async () => {
+  // reads; the LMS story (2026-11-27) adds its own: the cap is eighteen screens.
+  await step("the page stays within eighteen laptop screens, with three sections that play as you scroll", async () => {
     const h = await page.evaluate(() => document.documentElement.scrollHeight);
-    if (h > 950 * 15) throw new Error(`the page is ${h}px tall, more than fifteen screens`);
+    if (h > 950 * 18) throw new Error(`the page is ${h}px tall, more than eighteen screens`);
     for (const sel of ["#top[data-pinned]", "#how [data-pinned]", "#compare[data-pinned]"]) if (!(await page.locator(sel).count())) throw new Error(`${sel.split(" ")[0].replace("[data-pinned]", "")} doesn't pin on a laptop`);
     await page.locator("#how").getByRole("button", { name: /It's yours for good/ }).click();
     await page.waitForFunction(() => document.querySelector("#how [data-step]")?.getAttribute("data-step") === "2", null, { timeout: 5000 });

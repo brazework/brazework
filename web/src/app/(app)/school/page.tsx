@@ -11,7 +11,8 @@ import { termsAround } from "@/lib/school-roster";
 import { dueText } from "@/lib/course-math";
 import { getViewer } from "@/lib/supabase/server";
 import { CreateClassForm, FacultyForm, RemoveFaculty, RosterForm } from "./portal-forms";
-import { CheckInForm } from "../c/[id]/course/course-client";
+import { StudentHome } from "./student-home";
+import type { DueItem } from "./student-client";
 import { ABET_OUTCOMES } from "@/lib/course-math";
 
 export const metadata: Metadata = { title: "Your school" };
@@ -80,7 +81,8 @@ async function School() {
   const now = classes.filter((c) => c.term === terms[0]);
   // What's due across your classes (Brazework Courses): not handed in yet, soonest first, then missing.
   const nowMs = requestTime();
-  const due = ((dueRes.data ?? []) as Due[]).filter((d) => !d.submitted_at && !d.graded);
+  // Quizzes were taken out (2026-11-27: the school's LMS runs them); an old one never shows as due.
+  const due = ((dueRes.data ?? []) as Due[]).filter((d) => !d.submitted_at && !d.graded && d.kind !== "quiz");
   const dueNext = [...due.filter((d) => !d.due_at || new Date(d.due_at).getTime() >= nowMs), ...due.filter((d) => d.due_at && new Date(d.due_at).getTime() < nowMs)].slice(0, 6);
   const other = classes.filter((c) => c.term !== terms[0]);
   const teaching = classes.filter((c) => ["owner", "admin", "moderator"].includes(c.role));
@@ -103,6 +105,15 @@ async function School() {
   const faculty = (facultyList.data ?? []) as Faculty[];
 
   const role = runs ? "School admin" : isFaculty ? "Faculty" : null;
+
+  // A student gets the student portal (student-home.tsx): this week, classes, chats, verified work.
+  // A student whose school hasn't joined and who has no classes yet keeps the page below: what the
+  // portal is, and what's coming.
+  if (!runs && !isFaculty && teaching.length === 0 && (official || classes.length > 0)) {
+    const items: DueItem[] = due.map((d) => ({ id: d.id, classId: d.community_id, course: d.course || d.class_name, title: d.title, dueAt: d.due_at, points: d.points, group: d.group_work }))
+      .sort((x, y) => (x.dueAt ? Date.parse(x.dueAt) : Infinity) - (y.dueAt ? Date.parse(y.dueAt) : Infinity));
+    return <StudentHome school={name} domain={domain} official={official} classes={now.length ? now : classes} due={items} standing={standing} clubs={clubs} now={nowMs} />;
+  }
 
   return (
     <>
@@ -184,7 +195,6 @@ async function School() {
 
       {/* Classes: yours this term, then the rest. Faculty start them here. (A school admin who teaches
           nothing doesn't need an empty list.) */}
-      {coursesB && classes.some((c) => !["owner", "admin", "moderator"].includes(c.role)) && <div className="mt-8"><CheckInForm /></div>}
 
       {dueNext.length > 0 && (
         <section className="mt-8" aria-labelledby="school-due">
@@ -198,7 +208,7 @@ async function School() {
                     <ClipboardList className="size-4 shrink-0 text-text-2" aria-hidden="true" />
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-sm font-medium group-hover:underline">{d.title}</span>
-                      <span className="block truncate text-xs text-muted">{d.course}{d.kind === "quiz" ? " · Quiz" : ""}{d.group_work ? " · Group work" : ""} · {d.points} points</span>
+                      <span className="block truncate text-xs text-muted">{d.course}{d.group_work ? " · Group work" : ""} · {d.points} points</span>
                     </span>
                     <span suppressHydrationWarning className={cn("shrink-0 text-xs font-medium", late ? "text-danger" : "text-text-2")}>{late ? "Missing" : dueText(d.due_at, nowMs)}</span>
                   </Link>

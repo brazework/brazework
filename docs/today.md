@@ -22,7 +22,7 @@ portal, company search, and Torch, the AI teammate that drafts everything for th
 | **Record** | Projects, milestones with evidence, three kinds of proof: **signed** by a person, **verified** by a club or class, **backed** by GitHub. Share cards (`/p/<id>`), verify links (`/v/<id>`), a résumé view, a review packet, the record by year, founding-member badges. Long milestone logs fold on a profile. | `web/src/app/(app)/u/[id]`, `web/src/lib/milestones.ts`, `supabase/verification.sql`, `vouches.sql`, `backed.sql`, `proof-cards.sql` |
 | **Signing** | Ask anyone who saw it by email: a one-time link, no account needed. University and work addresses carry the most weight; a company that isn't verified is labelled. Rate limits per milestone, per week and per signer. | `web/src/lib/vouch-email.ts`, `supabase/vouches.sql`, `work-email-signers.sql`, `personal-email-signers.sql` |
 | **Clubs** | Clubs, chapters, events, announcements, club chats, club projects, an officer verification queue, a semester report, school-verified clubs. | `web/src/app/(app)/c/[id]` |
-| **Courses** (new 26 Nov) | **Phase A** (#254): modules, assignments with rubrics, submissions and a private gradebook; grading a milestone verifies it. **Phase B** (#260): quizzes (keys only staff see), attendance with check-in codes, extensions and accommodations, peer evaluation, ABET outcome attainment. | `web/src/app/(app)/c/[id]/course`, `supabase/courses.sql`, `courses-b.sql` |
+| **Courses** (new 26 Nov) | **Phase A** (#254): modules, assignments with rubrics, submissions and a private gradebook; grading a milestone verifies it. **Phase B** (#260): extensions and accommodations, peer evaluation, ABET outcome attainment (quizzes and attendance were taken out on 27 Nov: the school's LMS runs them). | `web/src/app/(app)/c/[id]/course`, `supabase/courses.sql`, `courses-b.sql` |
 | **School portal** (new 26 Nov) | A school's view: students, classes, verified work, active clubs, faculty list, ABET evidence by outcome with CSV exports. Students are grouped by their confirmed university email. | `web/src/app/(app)/school`, `supabase/school-portal.sql` |
 | **Torch** (the AI, once called Ember) | Asks and answers from the member's real record, drafts cards (posts, milestones, signature asks, goals, projects, events, messages, course work for faculty) that the member approves. Free follow-ups after each paid ask (#263). Asks with tap-to-answer buttons (#258). In the bar on every page and on its own page. | `web/src/lib/copilot*.ts`, `web/src/components/ember/`, `web/src/app/api/copilot/route.ts` |
 | **Goals** | "Where you're headed": a goal (internship, job, grad school, lab, competition, funding), a path built from the record, the next step. With #265, Torch sets the goal from your own words and does the next step. | `web/src/lib/goals.ts`, `web/src/components/app/goal-card.tsx` |
@@ -71,7 +71,6 @@ reworked Torch before it can ship.
 
 **Courses, later (from the Courses plan):**
 - Scores flowing back from LTI tools into the gradebook.
-- Importing quizzes from Canvas or Blackboard.
 - A scheduled roster sync.
 - An outside accessibility audit (VPAT).
 - Courses on the mobile app.

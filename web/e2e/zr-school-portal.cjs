@@ -48,6 +48,10 @@ const COURSE = `ME ${400 + (Date.now() % 90)}`;
     const cara = await as(b, "cara@forge.test");
     await step("a student on the roster finds the class under Your school and in the sidebar, and can start a class project", async () => {
       await go(cara, "/school");
+      // The student portal (student-home.tsx): a greeting, this week's days to tap, and her chats.
+      await cara.getByRole("heading", { level: 1, name: /^Good (morning|afternoon|evening), Cara\./ }).waitFor({ timeout: 15000 });
+      await cara.getByRole("region", { name: "This week" }).getByRole("group", { name: "Pick a day" }).waitFor();
+      await cara.getByRole("region", { name: "Chats" }).getByRole("form", { name: "Message a class" }).waitFor();
       const card = cara.locator("main").getByRole("link", { name: /Capstone Design/ }).first();
       await card.waitFor({ timeout: 15000 });
       await cara.getByTestId("sidebar-school").waitFor();
