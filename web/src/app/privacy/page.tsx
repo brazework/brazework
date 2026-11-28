@@ -67,7 +67,7 @@ export default function PrivacyPage() {
       <div className="mx-auto max-w-2xl px-4 py-10 sm:px-6 sm:py-16">
         <Link href="/" aria-label="Brazework home"><Logo /></Link>
         <h1 className="text-grad mt-10 text-3xl font-semibold tracking-tight sm:text-4xl">How Brazework handles your data</h1>
-        <p className="mt-3 text-[15px] leading-relaxed text-muted">The short version, in plain language. It describes what Brazework does today; full terms will be published before Brazework opens publicly.</p>
+        <p className="mt-3 text-[15px] leading-relaxed text-muted">The short version, in plain language. It describes what Brazework does today. The rules for using Brazework are in the <Link href="/terms" className="underline hover:text-text">Terms of Service</Link>.</p>
         {SECTIONS.map((s) => (
           <section key={s.h} className="mt-10">
             <h2 className="text-lg font-semibold tracking-tight">{s.h}</h2>
@@ -81,7 +81,9 @@ export default function PrivacyPage() {
             </ul>
           </section>
         ))}
-        <p className="mt-12 border-t border-line pt-6 text-sm text-faint"><Link href="/" className="hover:text-text">Back to Brazework</Link></p>
+        <p className="mt-12 border-t border-line pt-6 text-sm text-faint">
+          Questions: <a href="mailto:hello@brazework.com" className="hover:text-text">hello@brazework.com</a> · <Link href="/terms" className="hover:text-text">Terms</Link> · <Link href="/" className="hover:text-text">Back to Brazework</Link>
+        </p>
       </div>
     </main>
   );

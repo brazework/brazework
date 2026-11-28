@@ -13,7 +13,7 @@ export function Footer() {
       <div className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-6 px-5 py-10 sm:px-6">
         <div className="flex items-center gap-4">
           <Logo />
-          <span className="text-sm text-faint">© <Year /> Brazework. Your work, signed by the people who saw it.</span>
+          <span className="text-sm text-faint">© <Year /> Brazework, Inc. Your work, signed by the people who saw it.</span>
         </div>
         <nav className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted">
           <Link href="/login" className="hover:text-text">Log in</Link>
@@ -28,6 +28,7 @@ export function Footer() {
           <Link href="/ai" className="hover:text-text">Connect your AI</Link>
           <Link href="/#pilot" className="hover:text-text">Start a pilot</Link>
           <Link href="/privacy" className="hover:text-text">Privacy</Link>
+          <Link href="/terms" className="hover:text-text">Terms</Link>
           <a href="#top" className="hover:text-text">Back to top</a>
         </nav>
       </div>
