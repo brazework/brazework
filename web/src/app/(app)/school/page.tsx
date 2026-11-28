@@ -11,6 +11,8 @@ import { termsAround } from "@/lib/school-roster";
 import { dueText } from "@/lib/course-math";
 import { getViewer } from "@/lib/supabase/server";
 import { CreateClassForm, FacultyForm, RemoveFaculty, RosterForm } from "./portal-forms";
+import { StudentHome } from "./student-home";
+import type { DueItem } from "./student-client";
 import { ABET_OUTCOMES } from "@/lib/course-math";
 
 export const metadata: Metadata = { title: "Your school" };
@@ -103,6 +105,15 @@ async function School() {
   const faculty = (facultyList.data ?? []) as Faculty[];
 
   const role = runs ? "School admin" : isFaculty ? "Faculty" : null;
+
+  // A student gets the student portal (student-home.tsx): this week, classes, chats, verified work.
+  // A student whose school hasn't joined and who has no classes yet keeps the page below: what the
+  // portal is, and what's coming.
+  if (!runs && !isFaculty && teaching.length === 0 && (official || classes.length > 0)) {
+    const items: DueItem[] = due.map((d) => ({ id: d.id, classId: d.community_id, course: d.course || d.class_name, title: d.title, dueAt: d.due_at, points: d.points, group: d.group_work }))
+      .sort((x, y) => (x.dueAt ? Date.parse(x.dueAt) : Infinity) - (y.dueAt ? Date.parse(y.dueAt) : Infinity));
+    return <StudentHome school={name} domain={domain} official={official} classes={now.length ? now : classes} due={items} standing={standing} clubs={clubs} now={nowMs} />;
+  }
 
   return (
     <>

@@ -47,6 +47,19 @@ export async function createTeamChat(communityId: string, name: string, members:
   return { ok: true, message: "", id: String(data) };
 }
 
+// The student portal's quick box (app/(app)/school/student-home.tsx): post to a class's chat without
+// leaving the page. Opens the chat first if nobody has yet (open_club_chat checks you're in the class).
+export async function sendToClassChat(communityId: string, body: string): Promise<R & { id?: string }> {
+  if (!ID_RE.test(communityId)) return { ok: false, message: "That class wasn't found." };
+  const { supabase, user } = await getViewer();
+  if (!user) return { ok: false, message: "Log in again." };
+  const { data, error } = await supabase.rpc("open_club_chat", { p_community: communityId });
+  if (error || !data) return { ok: false, message: friendlyError(error) };
+  const r = await sendChatMessage(String(data), body);
+  revalidatePath("/school");
+  return r.ok ? { ok: true, message: "", id: String(data) } : r;
+}
+
 export async function sendChatMessage(chatId: string, body: string, announcement = false, replyTo?: string | null): Promise<R> {
   const text = body.trim();
   if (!ID_RE.test(chatId)) return { ok: false, message: "That chat couldn't be found." };
