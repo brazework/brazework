@@ -217,7 +217,7 @@ export function SignupForm({ invite, clubName, providers = [], oauth, build }: {
       <Field label="Password" hint="At least 8 characters. Longer, with a mix of letters and numbers, is stronger."><PasswordInput name="password" autoComplete="new-password" meter /></Field>
       <ErrorLine message={state.message} />
       <Button type="submit" size="lg" disabled={pending}>{pending && <Loader2 className="size-4 animate-spin" />} {pending ? "Creating your account…" : "Create account"}</Button>
-      <p className="text-xs text-faint">Next: a confirmation email, then a minute about you and your work. <Link href="/privacy" className="underline hover:text-text">How we handle your data</Link></p>
+      <p className="text-xs text-faint">Next: a confirmation email, then a minute about you and your work. By creating an account you agree to the <Link href="/terms" className="underline hover:text-text">Terms</Link>. <Link href="/privacy" className="underline hover:text-text">How we handle your data</Link></p>
       <p className="text-sm text-muted">Already have an account? <Link href="/login" className="text-accent hover:underline">Log in</Link></p>
     </form>
   );
